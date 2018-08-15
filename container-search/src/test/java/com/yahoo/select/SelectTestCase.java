@@ -15,14 +15,14 @@ import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordAlternativesItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
-import com.yahoo.search.federation.ProviderConfig;
+import com.yahoo.search.grouping.GroupingRequest;
+import com.yahoo.search.grouping.request.AllOperation;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.Select;
 import com.yahoo.search.query.SelectParser;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.yql.VespaGroupingStep;
-import org.apache.http.client.utils.URIBuilder;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -33,24 +33,23 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-
 /**
- * Specification for the conversion of Select expressions to Vespa search queries.
+ * Tests Query.Select
  *
  * @author henrhoi
+ * @author bratseth
  */
-
-public class SelectParserTestCase {
+public class SelectTestCase {
 
     private final SelectParser parser = new SelectParser(new ParserEnvironment());
 
-
-    /** WHERE TESTS */
+    //------------------------------------------------------------------- "where" tests
 
     @Test
     public void test_contains() throws Exception {
@@ -136,7 +135,6 @@ public class SelectParserTestCase {
                 "+title:madonna -title:saint");
     }
 
-
     @Test
     public void testLessThan() throws JSONException {
         JSONObject range_json = new JSONObject();
@@ -164,7 +162,6 @@ public class SelectParserTestCase {
         assertParse(range_json.toString(),
                 "price:>500");
     }
-
 
     @Test
     public void testLessThanOrEqual() throws JSONException {
@@ -326,7 +323,6 @@ public class SelectParserTestCase {
         assertEquals(3, origin.end);
     }
 
-
     @Test
     public void testSameElement() {
         assertParse("{ \"contains\": [ \"baz\", {\"sameElement\" : [ { \"contains\" : [\"f1\", \"a\"] }, { \"contains\" : [\"f2\", \"b\"] } ]} ] }",
@@ -420,7 +416,7 @@ public class SelectParserTestCase {
         WordItem first = (WordItem)root.getItem(0);
         WordItem second = (WordItem)root.getItem(1);
         WordItem third = (WordItem)root.getItem(2);
-        assertTrue(first.getConnectedItem() == third);
+        assertEquals(third, first.getConnectedItem());
         assertEquals(first.getConnectivity(), 7.0d, 1E-6);
         assertNull(second.getConnectedItem());
 
@@ -557,17 +553,17 @@ public class SelectParserTestCase {
     @Test
     public void testAffixItems() {
         assertRootClass("{ \"contains\" : { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"suffix\": true} } }",
-                SuffixItem.class);
+                        SuffixItem.class);
 
 
         assertRootClass("{ \"contains\" : { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"prefix\": true} } }",
-                PrefixItem.class);
+                        PrefixItem.class);
         assertRootClass("{ \"contains\" : { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"substring\": true} } }",
-                SubstringItem.class);
+                        SubstringItem.class);
         assertParseFail("{ \"contains\" : { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"suffix\": true, \"prefix\" : true} } }",
-                new IllegalArgumentException("Only one of prefix, substring and suffix can be set."));
+                        new IllegalArgumentException("Only one of prefix, substring and suffix can be set."));
         assertParseFail("{ \"contains\" : { \"children\" : [\"baz\", \"colors\"], \"attributes\" : {\"suffix\": true, \"substring\" : true} } }",
-                new IllegalArgumentException("Only one of prefix, substring and suffix can be set."));
+                        new IllegalArgumentException("Only one of prefix, substring and suffix can be set."));
     }
 
     @Test
@@ -641,7 +637,7 @@ public class SelectParserTestCase {
         checkWordAlternativesContent(alternatives);
     }
 
-    /** GROUPING TESTS */
+    //------------------------------------------------------------------- grouping tests
 
     @Test
     public void testGrouping(){
@@ -659,9 +655,7 @@ public class SelectParserTestCase {
         assertGrouping(expected, parseGrouping(grouping));
     }
 
-
-
-    /** OTHER TESTS */
+    //------------------------------------------------------------------- Other tests
 
     @Test
     public void testOverridingOtherQueryTree() {
@@ -669,16 +663,15 @@ public class SelectParserTestCase {
         assertEquals("default:query", query.getModel().getQueryTree().toString());
         assertEquals(Query.Type.ALL, query.getModel().getType());
 
-        query.getSelect().setWhere("{\"contains\" : [\"default\", \"select\"] }");
+        query.getSelect().setWhereString("{\"contains\" : [\"default\", \"select\"] }");
         assertEquals("default:select", query.getModel().getQueryTree().toString());
         assertEquals(Query.Type.SELECT, query.getModel().getType());
     }
 
-
     @Test
     public void testOverridingWhereQueryTree() {
-        Query query = new Query();
-        query.getSelect().setWhere("{\"contains\" : [\"default\", \"select\"] }");
+        Query query = new Query("?query=default:query");
+        query.getSelect().setWhereString("{\"contains\" : [\"default\", \"select\"] }");
         assertEquals("default:select", query.getModel().getQueryTree().toString());
         assertEquals(Query.Type.SELECT, query.getModel().getType());
 
@@ -688,10 +681,44 @@ public class SelectParserTestCase {
         assertEquals(Query.Type.ALL, query.getModel().getType());
     }
 
+    @Test
+    public void testProgrammaticAssignment() {
+        Query query = new Query();
+        query.getSelect().setGroupingString("[ { \"all\" : { \"group\" : \"time.year(a)\", \"each\" : { \"output\" : \"count()\" } } } ]");
+        assertEquals(1, query.getSelect().getGrouping().size());
+        assertEquals("all(group(time.year(a)) each(output(count())))", query.getSelect().getGrouping().get(0).getRootOperation().toString());
+
+        // Setting from string resets the grouping expression
+        query.getSelect().setGroupingString("[ { \"all\" : { \"group\" : \"time.dayofmonth(a)\", \"each\" : { \"output\" : \"count()\" } } } ]");
+        assertEquals(1, query.getSelect().getGrouping().size());
+        assertEquals("all(group(time.dayofmonth(a)) each(output(count())))", query.getSelect().getGrouping().get(0).getRootOperation().toString());
+    }
+
+    @Test
+    public void testConstructionAndClone() {
+        Query query = new Query();
+        query.getSelect().setWhereString("{\"contains\" : [\"default\", \"select\"] }");
+        query.getSelect().setGroupingString("[ { \"all\" : { \"group\" : \"time.dayofmonth(a)\", \"each\" : { \"output\" : \"count()\" } } } ]");
+        GroupingRequest secondRequest = GroupingRequest.newInstance(query);
+        assertEquals("default:select", query.getModel().getQueryTree().toString());
+        assertEquals(2, query.getSelect().getGrouping().size());
+        assertEquals("all(group(time.dayofmonth(a)) each(output(count())))", query.getSelect().getGrouping().get(0).toString());
+
+        Query clone = query.clone();
+        assertNotSame(query.getSelect(), clone.getSelect());
+        assertNotSame(query.getSelect().getGrouping(), clone.getSelect().getGrouping());
+        assertNotSame(query.getSelect().getGrouping().get(0), clone.getSelect().getGrouping().get(0));
+        assertNotSame(query.getSelect().getGrouping().get(1), clone.getSelect().getGrouping().get(1));
+        assertEquals(query.getSelect().getWhereString(), clone.getSelect().getWhereString());
+        assertEquals(query.getSelect().getGroupingString(), clone.getSelect().getGroupingString());
+        assertEquals(query.getSelect().getGrouping().get(0).toString(), clone.getSelect().getGrouping().get(0).toString());
+        assertEquals(query.getSelect().getGrouping().get(1).toString(), clone.getSelect().getGrouping().get(1).toString());
 
 
+    }
 
-    /** Assert-methods */
+    //------------------------------------------------------------------- Assert methods
+
     private void assertParse(String where, String expectedQueryTree) {
         String queryTree = parseWhere(where).toString();
         assertEquals(expectedQueryTree, queryTree);
@@ -721,13 +748,10 @@ public class SelectParserTestCase {
         assertEquals(expected, actual.toString());
     }
 
-
-
-
-    /** Parse-methods*/
+    //------------------------------------------------------------------- Parse methods
 
     private QueryTree parseWhere(String where) {
-        Select select = new Select(where, "");
+        Select select = new Select(where, "", new Query());
 
         return parser.parse(new Parsable().setSelect(select));
     }
@@ -737,17 +761,8 @@ public class SelectParserTestCase {
         return parser.getGroupingSteps(grouping);
     }
 
-    private QueryTree parse(String where, String grouping) {
-        Select select = new Select(where, grouping);
+    //------------------------------------------------------------------- Other methods
 
-        return parser.parse(new Parsable().setSelect(select));
-    }
-
-
-
-
-
-    /** Other methods */
     private WordItem getRootWord(String yqlQuery) {
         Item root = parseWhere(yqlQuery).getRoot();
         assertTrue(root instanceof WordItem);
@@ -774,6 +789,5 @@ public class SelectParserTestCase {
             }
         }
     }
-
 
 }

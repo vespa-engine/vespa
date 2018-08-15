@@ -14,8 +14,8 @@ public abstract class FunctionNode extends GroupingExpression implements Iterabl
 
     private final List<GroupingExpression> args = new ArrayList<>();
 
-    protected FunctionNode(String image, List<GroupingExpression> args) {
-        super(image + "(" + asString(args) + ")");
+    protected FunctionNode(String image, String label, Integer level, List<GroupingExpression> args) {
+        super(image + "(" + asString(args) + ")", label, level);
         this.args.addAll(args);
     }
 
@@ -38,6 +38,10 @@ public abstract class FunctionNode extends GroupingExpression implements Iterabl
     public GroupingExpression getArg(int i) {
         return args.get(i);
     }
+
+    /** Returns the arguments of this as a list which cannot be modified */
+    // Note: If this is made public the returned list must be immutable
+    protected List<GroupingExpression> args() { return args; }
 
     @Override
     public Iterator<GroupingExpression> iterator() {
@@ -75,4 +79,5 @@ public abstract class FunctionNode extends GroupingExpression implements Iterabl
         ret.addAll(bar);
         return ret;
     }
+
 }

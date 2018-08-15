@@ -8,6 +8,7 @@ import java.util.Arrays;
  * result of the argument, sorted in descending order.
  *
  * @author baldersheim
+ * @author bratseth
  */
 public class ReverseFunction extends FunctionNode {
 
@@ -17,6 +18,16 @@ public class ReverseFunction extends FunctionNode {
      * @param exp The expression to evaluate, must evaluate to a list.
      */
     public ReverseFunction(GroupingExpression exp) {
-        super("reverse", Arrays.asList(exp));
+        this(null, null, exp);
     }
+
+    private ReverseFunction(String label, Integer level, GroupingExpression exp) {
+        super("reverse", label, level, Arrays.asList(exp));
+    }
+
+    @Override
+    public ReverseFunction copy() {
+        return new ReverseFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
+    }
+
 }

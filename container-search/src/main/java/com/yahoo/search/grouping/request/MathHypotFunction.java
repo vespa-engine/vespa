@@ -5,8 +5,10 @@ import java.util.Arrays;
 
 /**
  * @author baldersheim
+ * @author bratseth
  */
 public class MathHypotFunction extends FunctionNode {
+
     /**
      * Constructs a new instance of this class.
      *
@@ -14,6 +16,16 @@ public class MathHypotFunction extends FunctionNode {
      * @param y The expression to evaluate for y exponent, double value will be requested.
      */
     public MathHypotFunction(GroupingExpression x, GroupingExpression y) {
-        super("math.hypot", Arrays.asList(x, y));
+        this(null, null, x, y);
     }
+
+    private MathHypotFunction(String label, Integer level, GroupingExpression x, GroupingExpression y) {
+        super("math.hypot", label, level, Arrays.asList(x, y));
+    }
+
+    @Override
+    public MathHypotFunction copy() {
+        return new MathHypotFunction(getLabel(), getLevelOrNull(), getArg(0).copy(), getArg(1).copy());
+    }
+
 }

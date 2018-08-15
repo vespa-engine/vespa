@@ -5,6 +5,7 @@ package com.yahoo.search.grouping.request;
  * This class represents a constant {@link Long} value in a {@link GroupingExpression}.
  *
  * @author Simon Thoresen Hult
+ * @author bratseth
  */
 public class LongValue extends ConstantValue<Long> {
 
@@ -14,7 +15,16 @@ public class LongValue extends ConstantValue<Long> {
      * @param value the immutable value to assign to this.
      */
     public LongValue(long value) {
-        super(value);
+        super(null, null, value);
+    }
+
+    private LongValue(String label, Integer level, Long value) {
+        super(label, level, value);
+    }
+
+    @Override
+    public LongValue copy() {
+        return new LongValue(getLabel(), getLevelOrNull(), getValue());
     }
 
 }

@@ -13,7 +13,17 @@ public class NormalizeSubjectFunction extends FunctionNode {
      * @param exp The expression to evaluate, must evaluate to a string.
      */
     public NormalizeSubjectFunction(GroupingExpression exp) {
-        super("normalizesubject", Arrays.asList(exp));
+        this(null, null, exp);
     }
+
+    private NormalizeSubjectFunction(String label, Integer level, GroupingExpression exp) {
+        super("normalizesubject", label, level, Arrays.asList(exp));
+    }
+
+    @Override
+    public NormalizeSubjectFunction copy() {
+        return new NormalizeSubjectFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
+    }
+
 }
 

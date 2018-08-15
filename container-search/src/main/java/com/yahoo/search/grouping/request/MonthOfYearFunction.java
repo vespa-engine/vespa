@@ -8,6 +8,7 @@ import java.util.Arrays;
  * equals the month of year (1-12) of the result of the argument.
  *
  * @author Simon Thoresen Hult
+ * @author bratseth
  */
 public class MonthOfYearFunction extends FunctionNode {
 
@@ -17,6 +18,16 @@ public class MonthOfYearFunction extends FunctionNode {
      * @param exp The expression to evaluate, must evaluate to a long.
      */
     public MonthOfYearFunction(GroupingExpression exp) {
-        super("time.monthofyear", Arrays.asList(exp));
+        this(null, null, exp);
     }
+
+    private MonthOfYearFunction(String label, Integer level, GroupingExpression exp) {
+        super("time.monthofyear", label, level, Arrays.asList(exp));
+    }
+
+    @Override
+    public MonthOfYearFunction copy() {
+        return new MonthOfYearFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
+    }
+
 }

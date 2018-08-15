@@ -203,7 +203,7 @@ public class FastSearcher extends VespaBackEndSearcher {
     
     /** When we only search a single node, doing all grouping in one pass is more efficient */
     private void forceSinglePassGrouping(Query query) {
-        for (GroupingRequest groupingRequest : GroupingRequest.getRequests(query))
+        for (GroupingRequest groupingRequest : query.getSelect().getGrouping())
             forceSinglePassGrouping(groupingRequest.getRootOperation());
     }
     

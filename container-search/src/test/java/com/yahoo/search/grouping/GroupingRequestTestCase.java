@@ -10,8 +10,10 @@ import com.yahoo.search.result.Hit;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -26,7 +28,10 @@ public class GroupingRequestTestCase {
         assertTrue(req.continuations().isEmpty());
 
         Continuation foo = new Continuation() {
-
+            @Override
+            public Continuation copy() {
+                return null;
+            }
         };
         req.continuations().add(foo);
         assertEquals(Arrays.asList(foo), req.continuations());
@@ -105,32 +110,22 @@ public class GroupingRequestTestCase {
     @Test
     public void requireThatGetRequestsReturnsAllRequests() {
         Query query = new Query();
-        assertEquals(Collections.emptyList(), GroupingRequest.getRequests(query));
+        assertEquals(Collections.emptyList(), query.getSelect().getGrouping());
 
         GroupingRequest foo = GroupingRequest.newInstance(query);
-        assertEquals(Arrays.asList(foo), GroupingRequest.getRequests(query));
+        assertEquals(Arrays.asList(foo), query.getSelect().getGrouping());
 
         GroupingRequest bar = GroupingRequest.newInstance(query);
-        assertEquals(Arrays.asList(foo, bar), GroupingRequest.getRequests(query));
+        assertEquals(Arrays.asList(foo, bar), query.getSelect().getGrouping());
     }
-
-    @Test
-    public void requireThatGetRequestThrowsIllegalArgumentOnBadProperty() throws Exception {
-        Query query = new Query();
-        Field propName = GroupingRequest.class.getDeclaredField("PROP_REQUEST");
-        propName.setAccessible(true);
-        query.properties().set((CompoundName)propName.get(null), new Object());
-        try {
-            GroupingRequest.getRequests(query);
-            fail();
-        } catch (IllegalArgumentException e) {
-
-        }
-    }
+    
 
     private static RootGroup newRootGroup(int id) {
         return new RootGroup(id, new Continuation() {
-
+            @Override
+            public Continuation copy() {
+                return null;
+            }
         });
     }
 }
