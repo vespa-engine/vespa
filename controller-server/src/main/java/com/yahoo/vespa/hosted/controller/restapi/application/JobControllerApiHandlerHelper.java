@@ -91,6 +91,7 @@ class JobControllerApiHandlerHelper {
     }
 
     private static void applicationVersionToSlime(Cursor cursor, ApplicationVersion version) {
+        cursor.setString("id", version.id());
         cursor.setLong("build", version.buildNumber().get());
         cursor.setString("repository", version.source().get().repository());
         cursor.setString("branch", version.source().get().branch());

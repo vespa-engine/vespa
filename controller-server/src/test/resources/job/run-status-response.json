@@ -6,6 +6,7 @@
     "id":1,
     "targetPlatform": "1.2.3",
     "targetApplication": {
+      "id": "1.0.321-bada55",
       "build": 321,
       "repository": "repo",
       "branch": "branch",
@@ -54,6 +55,7 @@
     "id":2,
     "targetPlatform": "1.2.3",
     "targetApplication": {
+      "id": "1.0.321-bada55",
       "build": 321,
       "repository": "repo",
       "branch": "branch",
@@ -103,6 +105,7 @@
     "id":3,
     "targetPlatform": "1.2.3",
     "targetApplication": {
+      "id": "1.0.321-bada55",
       "build": 321,
       "repository": "repo",
       "branch": "branch",
