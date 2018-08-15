@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -10,7 +11,9 @@ import com.yahoo.vespa.hosted.controller.maintenance.OsUpgrader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -38,7 +41,9 @@ public class OsVersionStatus {
      * must be queried.
      */
     public static OsVersionStatus compute(Controller controller) {
-        List<OsVersion.Node> versions = new ArrayList<>();
+        Map<Version, List<OsVersion.Node>> versions = new HashMap<>();
+        // Always include target version, if set
+        controller.osVersion().ifPresent(version -> versions.put(version, new ArrayList<>()));
         for (SystemApplication application : SystemApplication.all()) {
             if (application.nodeTypesWithUpgradableOs().isEmpty()) {
                 continue; // Avoid querying applications that do not have nodes with upgradable OS
@@ -47,12 +52,16 @@ public class OsVersionStatus {
                 controller.configServer().nodeRepository().list(zone, application.id()).stream()
                           .filter(node -> OsUpgrader.eligibleForUpgrade(node, application))
                           .map(node -> new OsVersion.Node(node.hostname(), node.currentOsVersion(), zone.environment(), zone.region()))
-                          .forEach(versions::add);
+                          .forEach(node -> versions.compute(node.version(), (ignored, nodes) -> {
+                              if (nodes == null) {
+                                  nodes = new ArrayList<>();
+                              }
+                              nodes.add(node);
+                              return nodes;
+                          }));
             }
         }
-        return new OsVersionStatus(versions.stream()
-                                           .collect(Collectors.groupingBy(OsVersion.Node::version))
-                                           .entrySet()
+        return new OsVersionStatus(versions.entrySet()
                                            .stream()
                                            .map(kv -> new OsVersion(kv.getKey(), kv.getValue()))
                                            .sorted(Comparator.comparing(OsVersion::version))

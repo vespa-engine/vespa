@@ -30,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
+import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
@@ -224,6 +225,18 @@ public class Controller extends AbstractComponent {
     public void upgradeOs(Version version) {
         try (Lock lock = curator.lockOsTargetVersion()) {
             curator.writeOsTargetVersion(version);
+        }
+    }
+
+    /** Returns the current OS version status */
+    public OsVersionStatus osVersionStatus() {
+        return curator.readOsVersionStatus();
+    }
+
+    /** Replace the current OS version status with a new one */
+    public void updateOsVersionStatus(OsVersionStatus newStatus) {
+        try (Lock lock = curator.lockOsVersionStatus()) {
+            curator.writeOsVersionStatus(newStatus);
         }
     }
 

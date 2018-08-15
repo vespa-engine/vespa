@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
+import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
@@ -70,6 +71,7 @@ public class CuratorDb {
     private final TenantSerializer tenantSerializer = new TenantSerializer();
     private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
+    private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer();
 
     private final Curator curator;
 
@@ -151,6 +153,10 @@ public class CuratorDb {
 
     public Lock lockOsTargetVersion() {
         return lock(lockRoot.append("osTargetVersion"), defaultLockTimeout);
+    }
+
+    public Lock lockOsVersionStatus() {
+        return lock(lockRoot.append("osVersionStatus"), defaultLockTimeout);
     }
 
     // -------------- Helpers ------------------------------------------
@@ -247,6 +253,14 @@ public class CuratorDb {
 
     public Optional<Version> readOsTargetVersion() {
         return readSlime(osTargetVersionPath()).map(versionSerializer::fromSlime);
+    }
+
+    public void writeOsVersionStatus(OsVersionStatus status) {
+        curator.set(osVersionStatusPath(), asJson(osVersionStatusSerializer.toSlime(status)));
+    }
+
+    public OsVersionStatus readOsVersionStatus() {
+        return readSlime(osVersionStatusPath()).map(osVersionStatusSerializer::fromSlime).orElse(OsVersionStatus.empty);
     }
 
     // -------------- Tenant --------------------------------------------------
@@ -451,6 +465,10 @@ public class CuratorDb {
 
     private static Path osTargetVersionPath() {
         return root.append("osUpgrader").append("targetVersion");
+    }
+
+    private static Path osVersionStatusPath() {
+        return root.append("osVersionStatus");
     }
 
     private static Path versionStatusPath() {
