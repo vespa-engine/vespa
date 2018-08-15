@@ -33,6 +33,7 @@ public class NodeSpec {
     private final long currentRebootGeneration;
 
     private final Optional<Boolean> allowedToBeDown;
+    private final Optional<Boolean> wantToDeprovision;
     private final Optional<Owner> owner;
     private final Optional<Membership> membership;
 
@@ -44,6 +45,7 @@ public class NodeSpec {
     private final Set<String> ipAddresses;
 
     private final Optional<String> hardwareDivergence;
+    private final Optional<String> hardwareFailureDescription;
     private final Optional<String> parentHostname;
 
     public NodeSpec(
@@ -57,6 +59,7 @@ public class NodeSpec {
             final Optional<String> wantedVespaVersion,
             final Optional<String> vespaVersion,
             final Optional<Boolean> allowedToBeDown,
+            final Optional<Boolean> wantToDeprovision,
             final Optional<Owner> owner,
             final Optional<Membership> membership,
             final Optional<Long> wantedRestartGeneration,
@@ -69,6 +72,7 @@ public class NodeSpec {
             final boolean fastDisk,
             final Set<String> ipAddresses,
             final Optional<String> hardwareDivergence,
+            final Optional<String> hardwareFailureDescription,
             final Optional<String> parentHostname) {
         this.hostname = Objects.requireNonNull(hostname);
         this.wantedDockerImage = Objects.requireNonNull(wantedDockerImage);
@@ -80,6 +84,7 @@ public class NodeSpec {
         this.wantedVespaVersion = Objects.requireNonNull(wantedVespaVersion);
         this.vespaVersion = Objects.requireNonNull(vespaVersion);
         this.allowedToBeDown = Objects.requireNonNull(allowedToBeDown);
+        this.wantToDeprovision = Objects.requireNonNull(wantToDeprovision);
         this.owner = Objects.requireNonNull(owner);
         this.membership = Objects.requireNonNull(membership);
         this.wantedRestartGeneration = wantedRestartGeneration;
@@ -92,6 +97,7 @@ public class NodeSpec {
         this.fastDisk = fastDisk;
         this.ipAddresses = Objects.requireNonNull(ipAddresses);
         this.hardwareDivergence = Objects.requireNonNull(hardwareDivergence);
+        this.hardwareFailureDescription = Objects.requireNonNull(hardwareFailureDescription);
         this.parentHostname = Objects.requireNonNull(parentHostname);
     }
 
@@ -151,6 +157,10 @@ public class NodeSpec {
         return allowedToBeDown;
     }
 
+    public Optional<Boolean> getWantToDeprovision() {
+        return wantToDeprovision;
+    }
+
     public Optional<Owner> getOwner() {
         return owner;
     }
@@ -183,6 +193,10 @@ public class NodeSpec {
         return hardwareDivergence;
     }
 
+    public Optional<String> getHardwareFailureDescription() {
+        return hardwareFailureDescription;
+    }
+
     public Optional<String> getParentHostname() {
         return parentHostname;
     }
@@ -204,6 +218,7 @@ public class NodeSpec {
                 Objects.equals(wantedVespaVersion, that.wantedVespaVersion) &&
                 Objects.equals(vespaVersion, that.vespaVersion) &&
                 Objects.equals(allowedToBeDown, that.allowedToBeDown) &&
+                Objects.equals(wantToDeprovision, that.wantToDeprovision) &&
                 Objects.equals(owner, that.owner) &&
                 Objects.equals(membership, that.membership) &&
                 Objects.equals(wantedRestartGeneration, that.wantedRestartGeneration) &&
@@ -216,6 +231,7 @@ public class NodeSpec {
                 Objects.equals(fastDisk, that.fastDisk) &&
                 Objects.equals(ipAddresses, that.ipAddresses) &&
                 Objects.equals(hardwareDivergence, that.hardwareDivergence) &&
+                Objects.equals(hardwareFailureDescription, that.hardwareFailureDescription) &&
                 Objects.equals(parentHostname, that.parentHostname);
     }
 
@@ -232,6 +248,7 @@ public class NodeSpec {
                 wantedVespaVersion,
                 vespaVersion,
                 allowedToBeDown,
+                wantToDeprovision,
                 owner,
                 membership,
                 wantedRestartGeneration,
@@ -244,6 +261,7 @@ public class NodeSpec {
                 fastDisk,
                 ipAddresses,
                 hardwareDivergence,
+                hardwareFailureDescription,
                 parentHostname);
     }
 
@@ -260,6 +278,7 @@ public class NodeSpec {
                 + " wantedVespaVersion=" + wantedVespaVersion
                 + " vespaVersion=" + vespaVersion
                 + " allowedToBeDown=" + allowedToBeDown
+                + " wantToDeprovision=" + wantToDeprovision
                 + " owner=" + owner
                 + " membership=" + membership
                 + " minCpuCores=" + minCpuCores
@@ -272,6 +291,7 @@ public class NodeSpec {
                 + " fastDisk=" + fastDisk
                 + " ipAddresses=" + ipAddresses
                 + " hardwareDivergence=" + hardwareDivergence
+                + " hardwareFailureDescription=" + hardwareFailureDescription
                 + " parentHostname=" + parentHostname
                 + " }";
     }
@@ -412,6 +432,7 @@ public class NodeSpec {
         private Optional<String> wantedVespaVersion = Optional.empty();
         private Optional<String> vespaVersion = Optional.empty();
         private Optional<Boolean> allowedToBeDown = Optional.empty();
+        private Optional<Boolean> wantToDeprovision = Optional.empty();
         private Optional<Owner> owner = Optional.empty();
         private Optional<Membership> membership = Optional.empty();
         private Optional<Long> wantedRestartGeneration = Optional.empty();
@@ -424,6 +445,7 @@ public class NodeSpec {
         private boolean fastDisk = false;
         private Set<String> ipAddresses = Collections.emptySet();
         private Optional<String> hardwareDivergence = Optional.empty();
+        private Optional<String> hardwareFailureDescription = Optional.empty();
         private Optional<String> parentHostname = Optional.empty();
 
         public Builder() {}
@@ -447,11 +469,13 @@ public class NodeSpec {
             node.wantedVespaVersion.ifPresent(this::wantedVespaVersion);
             node.vespaVersion.ifPresent(this::vespaVersion);
             node.allowedToBeDown.ifPresent(this::allowedToBeDown);
+            node.wantToDeprovision.ifPresent(this::wantToDeprovision);
             node.owner.ifPresent(this::owner);
             node.membership.ifPresent(this::membership);
             node.wantedRestartGeneration.ifPresent(this::wantedRestartGeneration);
             node.currentRestartGeneration.ifPresent(this::currentRestartGeneration);
             node.hardwareDivergence.ifPresent(this::hardwareDivergence);
+            node.hardwareFailureDescription.ifPresent(this::hardwareFailureDescription);
             node.parentHostname.ifPresent(this::parentHostname);
         }
 
@@ -502,6 +526,11 @@ public class NodeSpec {
 
         public Builder allowedToBeDown(boolean allowedToBeDown) {
             this.allowedToBeDown = Optional.of(allowedToBeDown);
+            return this;
+        }
+
+        public Builder wantToDeprovision(boolean wantToDeprovision) {
+            this.wantToDeprovision = Optional.of(wantToDeprovision);
             return this;
         }
 
@@ -565,6 +594,11 @@ public class NodeSpec {
             return this;
         }
 
+        public Builder hardwareFailureDescription(String hardwareFailureDescription) {
+            this.hardwareFailureDescription = Optional.of(hardwareFailureDescription);
+            return this;
+        }
+
         public Builder parentHostname(String parentHostname) {
             this.parentHostname = Optional.of(parentHostname);
             return this;
@@ -575,6 +609,8 @@ public class NodeSpec {
             attributes.getHardwareDivergence().ifPresent(this::hardwareDivergence);
             attributes.getRebootGeneration().ifPresent(this::currentRebootGeneration);
             attributes.getRestartGeneration().ifPresent(this::currentRestartGeneration);
+            attributes.getHardwareFailureDescription().ifPresent(this::hardwareFailureDescription);
+            attributes.getWantToDeprovision().ifPresent(this::wantToDeprovision);
             return this;
         }
 
@@ -616,6 +652,10 @@ public class NodeSpec {
 
         public Optional<Boolean> getAllowedToBeDown() {
             return allowedToBeDown;
+        }
+
+        public Optional<Boolean> getWantToDeprovision() {
+            return wantToDeprovision;
         }
 
         public Optional<Owner> getOwner() {
@@ -666,6 +706,10 @@ public class NodeSpec {
             return hardwareDivergence;
         }
 
+        public Optional<String> getHardwareFailureDescription() {
+            return hardwareFailureDescription;
+        }
+
         public Optional<String> getParentHostname() {
             return parentHostname;
         }
@@ -673,11 +717,13 @@ public class NodeSpec {
         public NodeSpec build() {
             return new NodeSpec(hostname, wantedDockerImage, currentDockerImage, state, nodeType,
                     flavor, canonicalFlavor,
-                                         wantedVespaVersion, vespaVersion, allowedToBeDown, owner, membership,
-                                         wantedRestartGeneration, currentRestartGeneration,
-                                         wantedRebootGeneration, currentRebootGeneration,
-                                         minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb,
-                                         fastDisk, ipAddresses, hardwareDivergence, parentHostname);
+                    wantedVespaVersion, vespaVersion, allowedToBeDown, wantToDeprovision,
+                    owner, membership,
+                    wantedRestartGeneration, currentRestartGeneration,
+                    wantedRebootGeneration, currentRebootGeneration,
+                    minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb,
+                    fastDisk, ipAddresses, hardwareDivergence, hardwareFailureDescription,
+                    parentHostname);
         }
 
     }

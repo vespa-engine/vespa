@@ -175,6 +175,7 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.wantedVespaVersion),
                 Optional.ofNullable(node.vespaVersion),
                 Optional.ofNullable(node.allowedToBeDown),
+                Optional.ofNullable(node.wantToDeprovision),
                 Optional.ofNullable(owner),
                 Optional.ofNullable(membership),
                 Optional.ofNullable(node.restartGeneration),
@@ -187,6 +188,7 @@ public class RealNodeRepository implements NodeRepository {
                 node.fastDisk,
                 node.ipAddresses,
                 Optional.ofNullable(node.hardwareDivergence),
+                Optional.ofNullable(node.hardwareFailureDescription),
                 Optional.ofNullable(node.parentHostname));
     }
 
@@ -209,6 +211,8 @@ public class RealNodeRepository implements NodeRepository {
         node.currentRebootGeneration = nodeAttributes.getRebootGeneration().orElse(null);
         node.vespaVersion = nodeAttributes.getVespaVersion().orElse(null);
         node.hardwareDivergence = nodeAttributes.getHardwareDivergence().orElse(null);
+        node.hardwareFailureDescription = nodeAttributes.getHardwareFailureDescription().orElse(null);
+        node.wantToDeprovision = nodeAttributes.getWantToDeprovision().orElse(null);
         return node;
     }
 }

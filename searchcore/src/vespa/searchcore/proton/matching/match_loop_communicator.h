@@ -16,17 +16,16 @@ private:
         EstimateMatchFrequency(size_t n) : vespalib::Rendezvous<Matches, double>(n) {}
         void mingle() override;
     };
-    struct SelectBest : vespalib::Rendezvous<Hits, Hits> {
+    struct SelectBest : vespalib::Rendezvous<SortedHitSequence, Hits> {
         size_t topN;
-        std::vector<uint32_t> _indexes;
         std::unique_ptr<IDiversifier> _diversifier;
         SelectBest(size_t n, size_t topN_in, std::unique_ptr<IDiversifier>);
         ~SelectBest() override;
         void mingle() override;
         template<typename Q, typename F>
-        void mingle(Q & queue, F && accept);
+        void mingle(Q &queue, F &&accept);
         bool cmp(uint32_t a, uint32_t b) {
-            return (in(a)[_indexes[a]].second > in(b)[_indexes[b]].second);
+            return (in(a).get().second > in(b).get().second);
         }
     };
     struct SelectCmp {
@@ -52,7 +51,7 @@ public:
     double estimate_match_frequency(const Matches &matches) override {
         return _estimate_match_frequency.rendezvous(matches);
     }
-    Hits selectBest(Hits sortedHits) override {
+    Hits selectBest(SortedHitSequence sortedHits) override {
         return _selectBest.rendezvous(sortedHits);
     }
     RangePair rangeCover(const RangePair &ranges) override {

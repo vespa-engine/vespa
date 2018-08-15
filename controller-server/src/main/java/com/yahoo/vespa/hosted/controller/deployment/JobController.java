@@ -41,7 +41,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.te
  * The deployment jobs run tests using regular applications, but these tester application IDs are not to be used elsewhere.
  *
  * Jobs consist of sets of {@link Step}s, defined in {@link JobProfile}s.
- * Each run is represented by a {@link RunStatus}, which holds the status of each step of the run, as well as
+ * Each run is represented by a {@link Run}, which holds the status of each step of the run, as well as
  * some other meta data.
  *
  * @author jonmv
@@ -71,7 +71,7 @@ public class JobController {
 
     /** Returns the details currently logged for the given run, if known. */
     public Optional<RunDetails> details(RunId id) {
-        RunStatus run = runs(id.application(), id.type()).get(id);
+        Run run = runs(id.application(), id.type()).get(id);
         if (run == null)
             return Optional.empty();
 
@@ -107,33 +107,33 @@ public class JobController {
     }
 
     /** Returns an immutable map of all known runs for the given application and job type. */
-    public Map<RunId, RunStatus> runs(ApplicationId id, JobType type) {
-        Map<RunId, RunStatus> runs = curator.readHistoricRuns(id, type);
+    public Map<RunId, Run> runs(ApplicationId id, JobType type) {
+        Map<RunId, Run> runs = curator.readHistoricRuns(id, type);
         last(id, type).ifPresent(run -> runs.putIfAbsent(run.id(), run));
         return ImmutableMap.copyOf(runs);
     }
 
     /** Returns the run with the given id, if it exists. */
-    public Optional<RunStatus> run(RunId id) {
+    public Optional<Run> run(RunId id) {
         return runs(id.application(), id.type()).values().stream()
                                                 .filter(run -> run.id().equals(id))
                                                 .findAny();
     }
 
     /** Returns the last run of the given type, for the given application, if one has been run. */
-    public Optional<RunStatus> last(ApplicationId id, JobType type) {
+    public Optional<Run> last(ApplicationId id, JobType type) {
         return curator.readLastRun(id, type);
     }
 
     /** Returns the run with the given id, provided it is still active. */
-    public Optional<RunStatus> active(RunId id) {
+    public Optional<Run> active(RunId id) {
         return last(id.application(), id.type())
                 .filter(run -> ! run.hasEnded())
                 .filter(run -> run.id().equals(id));
     }
 
     /** Returns a list of all active runs. */
-    public List<RunStatus> active() {
+    public List<Run> active() {
         return copyOf(applications().stream()
                                     .flatMap(id -> Stream.of(JobType.values())
                                                          .map(type -> last(id, type))
@@ -143,14 +143,14 @@ public class JobController {
     }
 
     /** Changes the status of the given step, for the given run, provided it is still active. */
-    public void update(RunId id, Step.Status status, LockedStep step) {
+    public void update(RunId id, RunStatus status, LockedStep step) {
         locked(id, run -> run.with(status, step));
     }
 
     /** Changes the status of the given run to inactive, and stores it as a historic run. */
     public void finish(RunId id) {
         locked(id, run -> { // Store the modified run after it has been written to the collection, in case the latter fails.
-            RunStatus finishedRun = run.finished(controller.clock().instant());
+            Run finishedRun = run.finished(controller.clock().instant());
             locked(id.application(), id.type(), runs -> runs.put(run.id(), finishedRun));
             return finishedRun;
         });
@@ -176,10 +176,10 @@ public class JobController {
             version.set(ApplicationVersion.from(revision, run));
 
             controller.applications().artifacts().putApplicationPackage(id,
-                                                                        version.toString(),
+                                                                        version.get().id(),
                                                                         applicationPackage);
             controller.applications().artifacts().putTesterPackage(InternalStepRunner.testerOf(id),
-                                                                   version.toString(),
+                                                                   version.get().id(),
                                                                    applicationTestPackage);
 
             application = application.withBuiltInternally(true);
@@ -198,12 +198,12 @@ public class JobController {
                 throw new IllegalArgumentException(id + " is not built here!");
 
             locked(id, type, __ -> {
-                Optional<RunStatus> last = last(id, type);
+                Optional<Run> last = last(id, type);
                 if (last.flatMap(run -> active(run.id())).isPresent())
                     throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
 
                 RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-                curator.writeLastRun(RunStatus.initial(newId, versions, controller.clock().instant()));
+                curator.writeLastRun(Run.initial(newId, versions, controller.clock().instant()));
             });
         });
     }
@@ -272,18 +272,18 @@ public class JobController {
     }
 
     /** Locks and modifies the list of historic runs for the given application and job type. */
-    private void locked(ApplicationId id, JobType type, Consumer<Map<RunId, RunStatus>> modifications) {
+    private void locked(ApplicationId id, JobType type, Consumer<Map<RunId, Run>> modifications) {
         try (Lock __ = curator.lock(id, type)) {
-            Map<RunId, RunStatus> runs = curator.readHistoricRuns(id, type);
+            Map<RunId, Run> runs = curator.readHistoricRuns(id, type);
             modifications.accept(runs);
             curator.writeHistoricRuns(id, type, runs.values());
         }
     }
 
     /** Locks and modifies the run with the given id, provided it is still active. */
-    private void locked(RunId id, UnaryOperator<RunStatus> modifications) {
+    private void locked(RunId id, UnaryOperator<Run> modifications) {
         try (Lock __ = curator.lock(id.application(), id.type())) {
-            RunStatus run = active(id).orElseThrow(() -> new IllegalArgumentException(id + " is not an active run!"));
+            Run run = active(id).orElseThrow(() -> new IllegalArgumentException(id + " is not an active run!"));
             run = modifications.apply(run);
             curator.writeLastRun(run);
         }

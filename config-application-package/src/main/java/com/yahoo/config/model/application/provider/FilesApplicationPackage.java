@@ -272,7 +272,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         String dir = include.getAttribute(IncludeDirs.DIR);
         validateIncludeDir(dir);
         IncludeDirs.validateFilesInIncludedDir(dir, include.getParentNode(), this);
-        log.log(LogLevel.INFO, "Adding user include dir '" + dir + "'");
+        log.log(LogLevel.DEBUG, "Adding user include dir '" + dir + "'");
         userIncludeDirs.add(dir);
     }
 

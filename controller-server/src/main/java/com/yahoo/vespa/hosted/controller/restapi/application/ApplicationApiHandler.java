@@ -65,7 +65,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
@@ -175,7 +175,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job"))
             return JobControllerApiHandlerHelper.jobTypeResponse(jobTypes(path), latestRuns(path), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}"))
-            return JobControllerApiHandlerHelper.runStatusResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
+            return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/run/{number}"))
             return JobControllerApiHandlerHelper.runDetailsResponse(controller.jobController(), runIdFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -1235,8 +1235,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return deploymentSteps.jobs();
     }
 
-    private Map<JobType, RunStatus> latestRuns(Path path) {
-        Map<JobType, RunStatus> jobMap = new HashMap<>();
+    private Map<JobType, Run> latestRuns(Path path) {
+        Map<JobType, Run> jobMap = new HashMap<>();
         ApplicationId appId = appIdFromPath(path);
         controller.jobController().jobs(appId)
                 .forEach(jobType -> jobMap.put(jobType, controller.jobController()

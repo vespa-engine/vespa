@@ -34,11 +34,9 @@ HitCollector::sortHitsByDocId()
 }
 
 HitCollector::HitCollector(uint32_t numDocs,
-                           uint32_t maxHitsSize,
-                           uint32_t maxReRankHitsSize)
+                           uint32_t maxHitsSize)
     : _numDocs(numDocs),
       _maxHitsSize(maxHitsSize),
-      _maxReRankHitsSize(maxReRankHitsSize),
       _maxDocIdVectorSize((numDocs + 31) / 32),
       _hits(),
       _hitsSortOrder(SortOrder::DOC_ID),
@@ -168,17 +166,12 @@ HitCollector::DocIdCollector<CollectRankedHit>::collectAndChangeCollector(uint32
     hc._collector = std::make_unique<BitVectorCollector<CollectRankedHit>>(hc); // note - self-destruct.
 }
 
-std::vector<HitCollector::Hit>
-HitCollector::getSortedHeapHits()
+SortedHitSequence
+HitCollector::getSortedHitSequence(size_t max_hits)
 {
-    std::vector<Hit> scores;
-    size_t scoresToReturn = std::min(_hits.size(), static_cast<size_t>(_maxReRankHitsSize));
-    scores.reserve(scoresToReturn);
-    sortHitsByScore(scoresToReturn);
-    for (size_t i = 0; i < scoresToReturn; ++i) {
-        scores.push_back(_hits[_scoreOrder[i]]);
-    }
-    return scores;
+    size_t num_hits = std::min(_hits.size(), max_hits);
+    sortHitsByScore(num_hits);
+    return SortedHitSequence(&_hits[0], &_scoreOrder[0], num_hits);
 }
 
 size_t

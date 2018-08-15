@@ -22,12 +22,12 @@ template <typename IN, typename OUT>
 class Rendezvous
 {
 private:
-    Monitor                 _monitor;
-    size_t                  _size;
-    size_t                  _next;
-    size_t                  _gen;
-    std::vector<const IN *> _in;
-    std::vector<OUT *>      _out;
+    Monitor            _monitor;
+    size_t             _size;
+    size_t             _next;
+    size_t             _gen;
+    std::vector<IN *>  _in;
+    std::vector<OUT *> _out;
 
     /**
      * Function called to perform the actual inter-thread state
@@ -47,10 +47,10 @@ protected:
     /**
      * Obtain an input parameter. This function is called by mingle.
      *
-     * @return const reference to the appropriate input
+     * @return reference to the appropriate input
      * @param i the index of the requested input [0 .. size-1]
      **/
-    const IN &in(size_t i) const { return *_in[i]; }
+    IN &in(size_t i) const { return *_in[i]; }
 
     /**
      * Obtain the storage location of an output parameter. This
@@ -80,10 +80,9 @@ public:
      * @return output parameter for a single thread
      * @param input input parameter for a single thread
      **/
-    OUT rendezvous(const IN &input);
+    OUT rendezvous(IN input);
 };
 
 } // namespace vespalib
 
 #include "rendezvous.hpp"
-

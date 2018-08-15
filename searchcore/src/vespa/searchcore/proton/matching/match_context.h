@@ -20,8 +20,8 @@ public:
         : _attrCtx(std::move(attrCtx)),
           _searchCtx(std::move(searchCtx))
     {
-        assert(_attrCtx.get());
-        assert(_searchCtx.get());
+        assert(_attrCtx);
+        assert(_searchCtx);
     }
 
     IAttributeContext &getAttributeContext() const { return *_attrCtx; }

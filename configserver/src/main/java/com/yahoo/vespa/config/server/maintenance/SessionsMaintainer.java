@@ -1,8 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.maintenance;
 
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.curator.Curator;
 
@@ -32,12 +30,7 @@ public class SessionsMaintainer extends Maintainer {
         // probably due to some race or another bug
         if (hostedVespa) {
             Duration expiryTime = Duration.ofDays(30);
-            Zone zone = applicationRepository.zone();
-            // TODO: Delete in all zones
-            boolean deleteFromZooKeeper = zone.system() == SystemName.cd ||
-                    zone.environment().isTest() ||
-                    zone.region().value().equals("us-central-1");
-            applicationRepository.deleteExpiredRemoteSessions(expiryTime, deleteFromZooKeeper);
+            applicationRepository.deleteExpiredRemoteSessions(expiryTime);
         }
     }
 }

@@ -97,17 +97,15 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
         return getSessionList(curator.getChildren(sessionsPath));
     }
 
-    public int deleteExpiredSessions(Duration expiryTime, boolean deleteFromZooKeeper) {
+    public int deleteExpiredSessions(Duration expiryTime) {
         int deleted = 0;
         for (long sessionId : getSessions()) {
             RemoteSession session = getSession(sessionId);
             Instant created = Instant.ofEpochSecond(session.getCreateTime());
             if (sessionHasExpired(created, expiryTime)) {
-                log.log(LogLevel.INFO, "Remote session " + sessionId + " for " + tenantName + " has expired");
-                if (deleteFromZooKeeper) {
-                    session.delete();
-                    deleted++;
-                }
+                log.log(LogLevel.INFO, "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
+                session.delete();
+                deleted++;
             }
         }
         return deleted;

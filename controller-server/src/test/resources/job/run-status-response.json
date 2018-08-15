@@ -1,9 +1,17 @@
 {
   "1":{
-    "result":"success",
+    "status":"success",
     "start":"2018-06-27T10:12:35Z",
     "end":"2018-06-27T10:13:19Z",
     "id":1,
+    "wantedPlatform": "1.2.3",
+    "wantedApplication": {
+      "id": "1.0.321-bada55",
+      "build": 321,
+      "repository": "repo",
+      "branch": "branch",
+      "commit": "bada55"
+    },
     "steps":[
       {
         "deployInitialReal":"succeeded"
@@ -42,10 +50,17 @@
     "logs":"https://domain.tld/application/v4/tenant/sometenant/application/someapp/instance/usuallydefault/job/systemtest/run/1"
   },
   "2":{
-    "result":"testError",
+    "status":"error",
     "start":"2018-06-27T10:12:35Z",
-    "end":"2018-06-27T10:13:31Z",
     "id":2,
+    "wantedPlatform": "1.2.3",
+    "wantedApplication": {
+      "id": "1.0.321-bada55",
+      "build": 321,
+      "repository": "repo",
+      "branch": "branch",
+      "commit": "bada55"
+    },
     "steps":[
       {
         "deployInitialReal":"succeeded"
@@ -84,10 +99,18 @@
     "logs":"https://domain.tld/application/v4/tenant/sometenant/application/someapp/instance/usuallydefault/job/systemtest/run/2"
   },
   "3":{
-    "result":"success",
+    "status":"success",
     "start":"2018-06-27T10:12:35Z",
     "end":"2018-06-27T10:13:05Z",
     "id":3,
+    "wantedPlatform": "1.2.3",
+    "wantedApplication": {
+      "id": "1.0.321-bada55",
+      "build": 321,
+      "repository": "repo",
+      "branch": "branch",
+      "commit": "bada55"
+    },
     "steps":[
       {
         "deployInitialReal":"succeeded"

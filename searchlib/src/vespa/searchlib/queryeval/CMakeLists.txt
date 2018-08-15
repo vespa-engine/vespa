@@ -41,6 +41,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     simple_phrase_search.cpp
     simpleresult.cpp
     simplesearch.cpp
+    sorted_hit_sequence.cpp
     sourceblendersearch.cpp
     split_float.cpp
     termasstring.cpp

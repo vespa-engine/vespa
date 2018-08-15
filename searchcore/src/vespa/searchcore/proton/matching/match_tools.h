@@ -104,6 +104,7 @@ public:
     bool valid() const { return _valid; }
     const MaybeMatchPhaseLimiter &match_limiter() const { return *_match_limiter; }
     MatchTools::UP createMatchTools() const;
+    bool should_diversify() const { return _diversityParams.enabled(); }
     std::unique_ptr<search::queryeval::IDiversifier> createDiversifier() const;
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
     bool has_first_phase_rank() const { return !_rankSetup.getFirstPhaseRank().empty(); }

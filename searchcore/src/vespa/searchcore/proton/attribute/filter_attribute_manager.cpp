@@ -69,7 +69,7 @@ FilterAttributeManager::FilterAttributeManager(const AttributeSet &acceptedAttri
     }
 }
 
-FilterAttributeManager::~FilterAttributeManager() { }
+FilterAttributeManager::~FilterAttributeManager() = default;
 
 search::attribute::IAttributeContext::UP
 FilterAttributeManager::createContext() const {
@@ -185,14 +185,12 @@ FilterAttributeManager::getWritableAttributes() const
 }
 
 void
-FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>
-                                        func) const
+FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const
 {
     // Run by document db master thread
     std::vector<AttributeGuard> completeList;
     _mgr->getAttributeList(completeList);
-    search::ISequencedTaskExecutor &attributeFieldWriter =
-        getAttributeFieldWriter();
+    search::ISequencedTaskExecutor &attributeFieldWriter = getAttributeFieldWriter();
     for (auto &guard : completeList) {
         search::AttributeVector::SP attrsp = guard.getSP();
         // Name must be extracted in document db master thread or attribute
