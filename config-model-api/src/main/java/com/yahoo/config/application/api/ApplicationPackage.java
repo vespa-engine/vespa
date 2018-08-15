@@ -88,12 +88,14 @@ public interface ApplicationPackage {
 
     /**
      * Contents of services.xml. Caller must close reader after use.
+     *
      * @return a Reader, or null if no services.xml/vespa-services.xml present
      */
     Reader getServices();
 
     /**
      * Contents of hosts.xml. Caller must close reader after use.
+     *
      * @return a Reader, or null if no hosts.xml/vespa-hosts.xml present
      */
     Reader getHosts();
