@@ -66,6 +66,7 @@ public enum Step {
 
     public List<Step> prerequisites() { return prerequisites; }
 
+
     public enum Status {
 
         /** Step still has unsatisfied finish criteria -- it may not even have started. */
@@ -75,7 +76,16 @@ public enum Step {
         failed,
 
         /** Step succeeded and subsequent steps may now start. */
-        succeeded
+        succeeded;
+
+        public static Step.Status of(RunStatus status) {
+            switch (status) {
+                case success :
+                case aborted : throw new AssertionError("Unexpected run status '" + status + "'!");
+                case running : return succeeded;
+                default      : return failed;
+            }
+        }
 
     }
 

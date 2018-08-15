@@ -391,7 +391,7 @@ public class DeploymentTrigger {
 
     private JobState jobStateOf(Application application, JobType jobType) {
         if (application.deploymentJobs().builtInternally()) {
-            Optional<RunStatus> run = controller.jobController().last(application.id(), jobType);
+            Optional<Run> run = controller.jobController().last(application.id(), jobType);
             return run.isPresent() && ! run.get().hasEnded() ? JobState.running : JobState.idle;
         }
         return buildService.stateOf(BuildJob.of(application.id(),

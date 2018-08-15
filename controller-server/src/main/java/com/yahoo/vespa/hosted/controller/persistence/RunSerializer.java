@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
@@ -22,6 +23,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -50,7 +59,7 @@ public class RunSerializer {
     private static final String numberField = "number";
     private static final String startField = "start";
     private static final String endField = "end";
-    private static final String abortedField = "aborted";
+    private static final String statusField = "status";
     private static final String versionsField = "versions";
     private static final String platformVersionField = "platform";
     private static final String repositoryField = "repository";
@@ -59,35 +68,35 @@ public class RunSerializer {
     private static final String buildField = "build";
     private static final String sourceField = "source";
 
-    RunStatus runFromSlime(Slime slime) {
+    Run runFromSlime(Slime slime) {
         return runFromSlime(slime.get());
     }
 
-    Map<RunId, RunStatus> runsFromSlime(Slime slime) {
-        Map<RunId, RunStatus> runs = new LinkedHashMap<>();
+    Map<RunId, Run> runsFromSlime(Slime slime) {
+        Map<RunId, Run> runs = new LinkedHashMap<>();
         Inspector runArray = slime.get();
         runArray.traverse((ArrayTraverser) (__, runObject) -> {
-            RunStatus run = runFromSlime(runObject);
+            Run run = runFromSlime(runObject);
             runs.put(run.id(), run);
         });
         return runs;
     }
 
-    private RunStatus runFromSlime(Inspector runObject) {
+    private Run runFromSlime(Inspector runObject) {
         EnumMap<Step, Status> steps = new EnumMap<>(Step.class);
         runObject.field(stepsField).traverse((ObjectTraverser) (step, status) -> {
-            steps.put(stepOf(step), statusOf(status.asString()));
+            steps.put(stepOf(step), stepStatusOf(status.asString()));
         });
-        return new RunStatus(new RunId(ApplicationId.fromSerializedForm(runObject.field(applicationField).asString()),
-                                       JobType.fromJobName(runObject.field(jobTypeField).asString()),
-                                       runObject.field(numberField).asLong()),
-                             steps,
-                             versionsFromSlime(runObject.field(versionsField)),
-                             Instant.ofEpochMilli(runObject.field(startField).asLong()),
-                             Optional.of(runObject.field(endField))
-                                     .filter(Inspector::valid)
-                                     .map(end -> Instant.ofEpochMilli(end.asLong())),
-                             runObject.field(abortedField).asBool());
+        return new Run(new RunId(ApplicationId.fromSerializedForm(runObject.field(applicationField).asString()),
+                                 JobType.fromJobName(runObject.field(jobTypeField).asString()),
+                                 runObject.field(numberField).asLong()),
+                       steps,
+                       versionsFromSlime(runObject.field(versionsField)),
+                       Instant.ofEpochMilli(runObject.field(startField).asLong()),
+                       Optional.of(runObject.field(endField))
+                               .filter(Inspector::valid)
+                               .map(end -> Instant.ofEpochMilli(end.asLong())),
+                       runStatusOf(runObject.field(statusField).asString()));
     }
 
     private Versions versionsFromSlime(Inspector versionsObject) {
@@ -109,26 +118,26 @@ public class RunSerializer {
         return new Versions(targetPlatformVersion, targetApplicationVersion, sourcePlatformVersion, sourceApplicationVersion);
     }
 
-    Slime toSlime(Iterable<RunStatus> runs) {
+    Slime toSlime(Iterable<Run> runs) {
         Slime slime = new Slime();
         Cursor runArray = slime.setArray();
         runs.forEach(run -> toSlime(run, runArray.addObject()));
         return slime;
     }
 
-    Slime toSlime(RunStatus run) {
+    Slime toSlime(Run run) {
         Slime slime = new Slime();
         toSlime(run, slime.setObject());
         return slime;
     }
 
-    private void toSlime(RunStatus run, Cursor runObject) {
+    private void toSlime(Run run, Cursor runObject) {
         runObject.setString(applicationField, run.id().application().serializedForm());
         runObject.setString(jobTypeField, run.id().type().jobName());
         runObject.setLong(numberField, run.id().number());
         runObject.setLong(startField, run.start().toEpochMilli());
         run.end().ifPresent(end -> runObject.setLong(endField, end.toEpochMilli()));
-        if (run.isAborted()) runObject.setBool(abortedField, true);
+        runObject.setString(statusField, valueOf(run.status()));
 
         Cursor stepsObject = runObject.setObject(stepsField);
         run.steps().forEach((step, status) -> stepsObject.setString(valueOf(step), valueOf(status)));
@@ -138,7 +147,7 @@ public class RunSerializer {
         run.versions().sourcePlatform().ifPresent(sourcePlatformVersion -> {
             toSlime(sourcePlatformVersion,
                     run.versions().sourceApplication()
-                   .orElseThrow(() -> new IllegalArgumentException("Source versions must be both present or absent.")),
+                       .orElseThrow(() -> new IllegalArgumentException("Source versions must be both present or absent.")),
                     versionsObject.setObject(sourceField));
         });
     }
@@ -146,12 +155,12 @@ public class RunSerializer {
     private void toSlime(Version platformVersion, ApplicationVersion applicationVersion, Cursor versionsObject) {
         versionsObject.setString(platformVersionField, platformVersion.toString());
         SourceRevision targetSourceRevision = applicationVersion.source()
-                .orElseThrow(() -> new IllegalArgumentException("Source revision must be present in target application version."));
+                                                                .orElseThrow(() -> new IllegalArgumentException("Source revision must be present in target application version."));
         versionsObject.setString(repositoryField, targetSourceRevision.repository());
         versionsObject.setString(branchField, targetSourceRevision.branch());
         versionsObject.setString(commitField, targetSourceRevision.commit());
         versionsObject.setLong(buildField, applicationVersion.buildNumber()
-                              .orElseThrow(() -> new IllegalArgumentException("Build number must be present in target application version.")));
+                                                             .orElseThrow(() -> new IllegalArgumentException("Build number must be present in target application version.")));
     }
 
     static String valueOf(Step step) {
@@ -168,7 +177,7 @@ public class RunSerializer {
             case endTests           : return "endTests";
             case report             : return "report";
 
-            default                 : throw new AssertionError("No value defined for '" + step + "'!");
+            default: throw new AssertionError("No value defined for '" + step + "'!");
         }
     }
 
@@ -186,7 +195,7 @@ public class RunSerializer {
             case "endTests"           : return endTests;
             case "report"             : return report;
 
-            default                   : throw new IllegalArgumentException("No step defined by '" + step + "'!");
+            default: throw new IllegalArgumentException("No step defined by '" + step + "'!");
         }
     }
 
@@ -196,17 +205,47 @@ public class RunSerializer {
             case failed     : return "failed";
             case succeeded  : return "succeeded";
 
-            default         : throw new AssertionError("No value defined for '" + status + "'!");
+            default: throw new AssertionError("No value defined for '" + status + "'!");
         }
     }
 
-    static Status statusOf(String status) {
+    static Status stepStatusOf(String status) {
         switch (status) {
             case "unfinished" : return unfinished;
             case "failed"     : return failed;
             case "succeeded"  : return succeeded;
 
-            default           : throw new IllegalArgumentException("No status defined by '" + status + "'!");
+            default: throw new IllegalArgumentException("No status defined by '" + status + "'!");
+        }
+    }
+
+    static String valueOf(RunStatus status) {
+        switch (status) {
+            case running            : return "running";
+            case outOfCapacity      : return "outOfCapacity";
+            case deploymentFailed   : return "deploymentFailed";
+            case installationFailed : return "installationFailed";
+            case testFailure        : return "testFailure";
+            case error              : return "error";
+            case success            : return "success";
+            case aborted            : return "aborted";
+
+            default: throw new AssertionError("No value defined for '" + status + "'!");
+        }
+    }
+
+    static RunStatus runStatusOf(String status) {
+        switch (status) {
+            case "running"            : return running;
+            case "outOfCapacity"      : return outOfCapacity;
+            case "deploymentFailed"   : return deploymentFailed;
+            case "installationFailed" : return installationFailed;
+            case "testFailure"        : return testFailure;
+            case "error"              : return error;
+            case "success"            : return success;
+            case "aborted"            : return aborted;
+
+            default: throw new IllegalArgumentException("No run status defined by '" + status + "'!");
         }
     }
 

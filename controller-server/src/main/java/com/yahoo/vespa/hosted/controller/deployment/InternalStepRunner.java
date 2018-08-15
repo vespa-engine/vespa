@@ -52,6 +52,11 @@ import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Con
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.OUT_OF_CAPACITY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -89,7 +94,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     @Override
-    public Status run(LockedStep step, RunId id) {
+    public Optional<RunStatus> run(LockedStep step, RunId id) {
         ByteArrayLogger logger = ByteArrayLogger.of(id.application(), id.type(), step.get());
         try {
             switch (step.get()) {
@@ -109,14 +114,18 @@ public class InternalStepRunner implements StepRunner {
         }
         catch (RuntimeException e) {
             logger.log(INFO, "Unexpected exception running " + id, e);
-            return failed;
+            if (JobProfile.of(id.type()).alwaysRun().contains(step.get())) {
+                logger.log("Will keep trying, as this is a cleanup step.");
+                return Optional.empty();
+            }
+            return Optional.of(error);
         }
         finally {
             controller.jobController().log(id, step.get(), logger.getLog());
         }
     }
 
-    private Status deployInitialReal(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> deployInitialReal(RunId id, ByteArrayLogger logger) {
         Versions versions = controller.jobController().run(id).get().versions();
         logger.log("Deploying platform version " +
                    versions.sourcePlatform().orElse(versions.targetPlatform()) +
@@ -125,14 +134,14 @@ public class InternalStepRunner implements StepRunner {
         return deployReal(id, true, logger);
     }
 
-    private Status deployReal(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> deployReal(RunId id, ByteArrayLogger logger) {
         Versions versions = controller.jobController().run(id).get().versions();
         logger.log("Deploying platform version " + versions.targetPlatform() +
                          " and application version " + versions.targetApplication().id() + " ...");
         return deployReal(id, false, logger);
     }
 
-    private Status deployReal(RunId id, boolean setTheStage, ByteArrayLogger logger) {
+    private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, ByteArrayLogger logger) {
         return deploy(id.application(),
                       id.type(),
                       () -> controller.applications().deploy(id.application(),
@@ -145,7 +154,7 @@ public class InternalStepRunner implements StepRunner {
                       logger);
     }
 
-    private Status deployTester(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> deployTester(RunId id, ByteArrayLogger logger) {
         // TODO jvenstad: Consider deploying old version of tester for initial staging feeding?
         logger.log("Deploying the tester container ...");
         return deploy(testerOf(id.application()),
@@ -160,7 +169,7 @@ public class InternalStepRunner implements StepRunner {
                       logger);
     }
 
-    private Status deploy(ApplicationId id, JobType type, Supplier<ActivateResult> deployment, ByteArrayLogger logger) {
+    private Optional<RunStatus> deploy(ApplicationId id, JobType type, Supplier<ActivateResult> deployment, ByteArrayLogger logger) {
         try {
             PrepareResponse prepareResponse = deployment.get().prepareResponse();
             if ( ! prepareResponse.configChangeActions.refeedActions.stream().allMatch(action -> action.allowed)) {
@@ -179,7 +188,7 @@ public class InternalStepRunner implements StepRunner {
                                         prepareResponse.log.stream()
                                                            .map(entry -> entry.message)
                                                            .collect(Collectors.joining("\n")));
-                return failed;
+                return Optional.of(deploymentFailed);
             }
 
             if (prepareResponse.configChangeActions.restartActions.isEmpty())
@@ -195,28 +204,28 @@ public class InternalStepRunner implements StepRunner {
                                                                       logger.log("Restarting services on host " + hostname.id() + ".");
                                                                   });
             logger.log("Deployment successful.");
-            return succeeded;
+            return Optional.of(running);
         }
         catch (ConfigServerException e) {
             if (   e.getErrorCode() == OUT_OF_CAPACITY && type.isTest()
                 || e.getErrorCode() == ACTIVATION_CONFLICT
                 || e.getErrorCode() == APPLICATION_LOCK_FAILURE) {
                 logger.log("Will retry, because of '" + e.getErrorCode() + "' deploying:\n" + e.getMessage());
-                return unfinished;
+                return Optional.empty();
             }
             throw e;
         }
     }
 
-    private Status installInitialReal(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> installInitialReal(RunId id, ByteArrayLogger logger) {
         return installReal(id, true, logger);
     }
 
-    private Status installReal(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> installReal(RunId id, ByteArrayLogger logger) {
         return installReal(id, false, logger);
     }
 
-    private Status installReal(RunId id, boolean setTheStage, ByteArrayLogger logger) {
+    private Optional<RunStatus> installReal(RunId id, boolean setTheStage, ByteArrayLogger logger) {
         Versions versions = controller.jobController().run(id).get().versions();
         Version platform = setTheStage ? versions.sourcePlatform().orElse(versions.targetPlatform()) : versions.targetPlatform();
         ApplicationVersion application = setTheStage ? versions.sourceApplication().orElse(versions.targetApplication()) : versions.targetApplication();
@@ -224,33 +233,33 @@ public class InternalStepRunner implements StepRunner {
 
         if (nodesConverged(id.application(), id.type(), platform, logger) && servicesConverged(id.application(), id.type())) {
             logger.log("Installation succeeded!");
-            return succeeded;
+            return Optional.of(running);
         }
 
         if (timedOut(id.application(), id.type(), installationTimeout)) {
             logger.log(INFO, "Installation failed to complete within " + installationTimeout.toMinutes() + " minutes!");
-            return failed;
+            return Optional.of(installationFailed);
         }
 
         logger.log("Installation not yet complete.");
-        return unfinished;
+        return Optional.empty();
     }
 
-    private Status installTester(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> installTester(RunId id, ByteArrayLogger logger) {
         logger.log("Checking installation of tester container ...");
 
         if (servicesConverged(testerOf(id.application()), id.type())) {
             logger.log("Tester container successfully installed!");
-            return succeeded;
+            return Optional.of(running);
         }
 
         if (timedOut(id.application(), id.type(), installationTimeout)) {
             logger.log(WARNING, "Installation of tester failed to complete within " + installationTimeout.toMinutes() + " minutes of real deployment!");
-            return failed;
+            return Optional.of(error);
         }
 
         logger.log("Installation of tester not yet complete.");
-        return unfinished;
+        return Optional.empty();
     }
 
     private boolean nodesConverged(ApplicationId id, JobType type, Version target, ByteArrayLogger logger) {
@@ -277,7 +286,7 @@ public class InternalStepRunner implements StepRunner {
                          .orElse(false);
     }
 
-    private Status startTests(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> startTests(RunId id, ByteArrayLogger logger) {
         logger.log("Attempting to find endpoints ...");
         Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id.application());
         logger.log("Found endpoints:\n" +
@@ -290,11 +299,11 @@ public class InternalStepRunner implements StepRunner {
         if ( ! endpoints.containsKey(id.type().zone(controller.system()))) {
             if (timedOut(id.application(), id.type(), endpointTimeout)) {
                 logger.log(WARNING, "Endpoints failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
-                return failed;
+                return Optional.of(error);
             }
 
             logger.log("Endpoints for the deployment to test are not yet ready.");
-            return unfinished;
+            return Optional.empty();
         }
 
         Optional<URI> testerEndpoint = testerEndpoint(id);
@@ -303,60 +312,60 @@ public class InternalStepRunner implements StepRunner {
             testerCloud.startTests(testerEndpoint.get(),
                                    TesterCloud.Suite.of(id.type()),
                                    testConfig(id.application(), id.type().zone(controller.system()), controller.system(), endpoints));
-            return succeeded;
+            return Optional.of(running);
         }
 
         if (timedOut(id.application(), id.type(), endpointTimeout)) {
             logger.log(WARNING, "Endpoint for tester failed to show up within " + endpointTimeout.toMinutes() + " minutes of real deployment!");
-            return failed;
+            return Optional.of(error);
         }
 
         logger.log("Endpoints of tester container not yet available.");
-        return unfinished;
+        return Optional.empty();
     }
 
-    private Status endTests(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> endTests(RunId id, ByteArrayLogger logger) {
         URI testerEndpoint = testerEndpoint(id)
                 .orElseThrow(() -> new NoSuchElementException("Endpoint for tester vanished again before tests were complete!"));
 
-        Status status;
+        RunStatus status;
         switch (testerCloud.getStatus(testerEndpoint)) {
             case NOT_STARTED:
                 throw new IllegalStateException("Tester reports tests not started, even though they should have!");
             case RUNNING:
                 logger.log("Tests still running ...");
-                return unfinished;
+                return Optional.empty();
             case FAILURE:
                 logger.log("Tests failed.");
-                status = failed; break;
+                status = testFailure; break;
             case ERROR:
                 logger.log(INFO, "Tester failed running its tests!");
-                status = failed; break;
+                status = error; break;
             case SUCCESS:
                 logger.log("Tests completed successfully.");
-                status = succeeded; break;
+                status = running; break;
             default:
                 throw new AssertionError("Unknown status!");
         }
         logger.log(new String(testerCloud.getLogs(testerEndpoint))); // TODO jvenstad: Replace with something less hopeless!
-        return status;
+        return Optional.of(status);
     }
 
-    private Status deactivateReal(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> deactivateReal(RunId id, ByteArrayLogger logger) {
         logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
         controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
-        return succeeded;
+        return Optional.of(running);
     }
 
-    private Status deactivateTester(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> deactivateTester(RunId id, ByteArrayLogger logger) {
         logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
         controller.jobController().deactivateTester(id.application(), id.type());
-        return succeeded;
+        return Optional.of(running);
     }
 
-    private Status report(RunId id) {
+    private Optional<RunStatus> report(RunId id) {
         controller.jobController().active(id).ifPresent(run -> controller.applications().deploymentTrigger().notifyOfCompletion(report(run)));
-        return succeeded;
+        return Optional.of(running);
     }
 
     /** Returns the real application with the given id. */
@@ -370,7 +379,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns a generated job report for the given run. */
-    private DeploymentJobs.JobReport report(RunStatus run) {
+    private DeploymentJobs.JobReport report(Run run) {
         return new DeploymentJobs.JobReport(run.id().application(),
                                             run.id().type(),
                                             1,
