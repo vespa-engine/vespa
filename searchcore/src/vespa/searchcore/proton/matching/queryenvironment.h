@@ -6,8 +6,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/location.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * Query environment implementation for the proton matching pipeline.
@@ -78,6 +77,4 @@ public:
     ~QueryEnvironment();
 };
 
-} // namespace matching
-} // namespace proton
-
+}
