@@ -715,6 +715,7 @@ public class ConvertedModel {
     static class FeatureArguments {
 
         private final String modelName;
+        private final Path modelPath;
 
         /** Optional arguments */
         private final Optional<String> signature, output;
@@ -726,10 +727,13 @@ public class ConvertedModel {
         }
 
         public FeatureArguments(Path modelPath, Optional<String> signature, Optional<String> output) {
+            this.modelPath = modelPath;
             this.modelName = toModelName(modelPath);
             this.signature = signature;
             this.output = output;
         }
+
+        public Path modelPath() { return modelPath; }
 
         public Optional<String> signature() { return signature; }
         public Optional<String> output() { return output; }
