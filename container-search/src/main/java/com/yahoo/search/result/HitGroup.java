@@ -274,13 +274,13 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     /**
      * Returns the hit with the given id, or null if there is no hit with this id
      * in this group or any subgroup.
-     * This method is o(min(number of nested hits in this result,depth)).
+     * This method is o(min(number of nested hits in this result, depth)).
      *
      * @param id the id of the hit to return from this or any nested group
      * @param depth the max depth to recurse into nested groups: -1: Recurse infinitely deep, 0: Only look at hits in
      *        the list of this group, 1: Look at hits in this group, and the hits of any immediate nested HitGroups,
      *        etc.
-     * @return The hit, or null if not found.
+     * @return the hit, or null if not found
      */
     public Hit get(URI id, int depth) {
         updateHits();
@@ -292,7 +292,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
                 return hit;
             }
 
-            if (hit instanceof HitGroup && depth!=0) {
+            if (hit instanceof HitGroup && depth != 0) {
                 Hit found=((HitGroup)hit).get(id,depth-1);
                 if (found!=null) return found;
             }
@@ -319,10 +319,9 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
 
     /**
      * Adds a hit to this group in the specified index,
-     * all existing hits on this index and higher will have their index
-     * increased by one.
-     * <b>Note:</b> If the group was sorted, it will still be considered sorted
-     * after this call.
+     * all existing hits on this index and higher will have their index increased by one.
+     *
+     * <b>Note:</b> If the group was sorted, it will still be considered sorted after this call.
      */
     public void add(int index, Hit hit) {
         if (hit instanceof ErrorHit) { // Merge instead

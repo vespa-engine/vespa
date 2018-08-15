@@ -65,8 +65,8 @@ class ResultBuilder {
     /**
      * Sets the id of the {@link GroupingRequest} that this builder is creating the result for.
      *
-     * @param requestId The id of the corresponding GroupingRequest.
-     * @return This, to allow chaining.
+     * @param requestId the id of the corresponding GroupingRequest
+     * @return this, to allow chaining
      */
     public ResultBuilder setRequestId(int requestId) {
         root = new RootGroup(requestId, continuation);
@@ -77,8 +77,8 @@ class ResultBuilder {
     /**
      * Sets the transform that details how the result should be built.
      *
-     * @param transform The transform to set.
-     * @return This, to allow chaining.
+     * @param transform the transform to set
+     * @return this, to allow chaining
      */
     public ResultBuilder setTransform(GroupingTransform transform) {
         this.transform = transform;
@@ -88,8 +88,8 @@ class ResultBuilder {
     /**
      * Sets the converts that details how hits are converted.
      *
-     * @param hitConverter The converter to set.
-     * @return This, to allow chaining.
+     * @param hitConverter the converter to set
+     * @return this, to allow chaining
      */
     public ResultBuilder setHitConverter(HitConverter hitConverter) {
         this.hitConverter = hitConverter;
@@ -100,7 +100,7 @@ class ResultBuilder {
      * Adds a grouping result to this transform. This method will recurse through the given object and retrieve all the
      * information it needs to produce the desired result when calling {@link #build()}.
      *
-     * @param executionResult The grouping result to process.
+     * @param executionResult the grouping result to process
      */
     public void addGroupingResult(Grouping executionResult) {
         executionResult.unifyNull();
@@ -110,7 +110,7 @@ class ResultBuilder {
     /**
      * Returns the root {@link RootGroup} that was created when {@link #build()} was called.
      *
-     * @return The root that was built.
+     * @return the root that was built
      */
     public RootGroup getRoot() {
         return root;

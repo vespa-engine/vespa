@@ -8,6 +8,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.grouping.result.Group;
 import com.yahoo.search.grouping.result.RootGroup;
+import com.yahoo.search.grouping.result.RootId;
 import com.yahoo.search.query.Select;
 import com.yahoo.search.result.Hit;
 
@@ -115,8 +116,8 @@ public class GroupingRequest {
      * @return the result {@link RootGroup} of this request, or null if not found.
      */
     public RootGroup getResultGroup(Result result) {
-        Hit root = result.hits().get(resultId, -1);
-        if (!(root instanceof RootGroup)) {
+        Hit root = result.hits().get(new URI(new RootId(getRequestId()).toString()), -1);
+        if ( ! (root instanceof RootGroup)) {
             return null;
         }
         return (RootGroup)root;

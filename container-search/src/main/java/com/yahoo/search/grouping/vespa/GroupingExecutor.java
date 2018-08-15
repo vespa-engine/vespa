@@ -103,7 +103,7 @@ public class GroupingExecutor extends Searcher {
         for (Iterator<Hit> it = result.hits().unorderedDeepIterator(); it.hasNext(); ) {
             Hit hit = it.next();
             Object metaData = hit.getSearcherSpecificMetaData(this);
-            if (metaData != null && metaData instanceof String) {
+            if (metaData instanceof String) {
                 // Use the summary class specified by grouping, set in HitConverter, for the first fill request
                 // after grouping. This assumes the first fill request is using the default summary class,
                 // which may be a fragile assumption. But currently we cannot do better because the difference
