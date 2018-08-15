@@ -58,8 +58,11 @@ public class OsUpgrader extends InfrastructureUpgrader {
 
     @Override
     protected Optional<Version> targetVersion() {
-        // TODO: Read a computed version status instead, and only return a target if there are nodes on a lower version
-        return controller().curator().readOsTargetVersion();
+        // Only schedule upgrades if we have nodes in the system on a lower version
+        return controller().curator().readOsTargetVersion().filter(
+                target -> controller().osVersionStatus().versions().stream()
+                                      .anyMatch(osVersion -> osVersion.version().isBefore(target))
+        );
     }
 
     /** Returns whether node in application should be upgraded by this */

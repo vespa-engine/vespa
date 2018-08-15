@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
+import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author mpolden
@@ -34,16 +36,18 @@ public class OsUpgraderTest {
     private static final ZoneId zone4 = ZoneId.from("prod", "us-east-3");
 
     private DeploymentTester tester;
-    private OsUpgrader osUpgrader;
+    private OsVersionStatusUpdater statusUpdater;
 
     @Before
     public void before() {
         tester = new DeploymentTester();
+        statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1),
+                                                   new JobControl(tester.controller().curator()));
     }
 
     @Test
     public void upgrade_os() {
-        osUpgrader = osUpgrader(
+        OsUpgrader osUpgrader = osUpgrader(
                 UpgradePolicy.create()
                              .upgrade(zone1)
                              .upgradeInParallel(zone2, zone3)
@@ -68,6 +72,7 @@ public class OsUpgraderTest {
         // New OS version released
         Version version1 = Version.fromString("7.1");
         tester.controller().upgradeOs(version1);
+        statusUpdater.maintain();
 
         // zone 1: begins upgrading
         osUpgrader.maintain();
@@ -78,6 +83,9 @@ public class OsUpgraderTest {
 
         // zone 1: completes upgrade
         completeUpgrade(version1, SystemApplication.zone, zone1);
+        statusUpdater.maintain();
+        assertEquals(2, nodesOn(version1).size());
+        assertEquals(8, nodesOn(Version.emptyVersion).size());
 
         // zone 2 and 3: begins upgrading
         osUpgrader.maintain();
@@ -99,8 +107,16 @@ public class OsUpgraderTest {
         // Next run does nothing as all zones are upgraded
         osUpgrader.maintain();
         assertWanted(version1, SystemApplication.zone, zone1, zone2, zone3, zone4);
+        statusUpdater.maintain();
+        assertTrue("All nodes on target version", tester.controller().osVersionStatus().versions().stream()
+                                                        .allMatch(osVersion -> osVersion.version().equals(version1)));
+    }
 
-        // TODO: Test that OS version status is updated
+    private List<OsVersion.Node> nodesOn(Version version) {
+        return tester.controller().osVersionStatus().versions().stream()
+                     .filter(osVersion -> osVersion.version().equals(version))
+                     .flatMap(osVersion -> osVersion.nodes().stream())
+                     .collect(Collectors.toList());
     }
 
     private void assertCurrent(Version version, SystemApplication application, ZoneId... zones) {
@@ -123,7 +139,7 @@ public class OsUpgraderTest {
     private List<Node> nodesRequiredToUpgrade(ZoneId zone, SystemApplication application) {
         return nodeRepository().list(zone, application.id())
                                .stream()
-                               .filter(node -> osUpgrader.requireUpgradeOf(node, application))
+                               .filter(node -> OsUpgrader.eligibleForUpgrade(node, application))
                                .collect(Collectors.toList());
     }
 
