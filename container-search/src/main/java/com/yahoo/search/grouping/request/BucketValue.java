@@ -14,18 +14,13 @@ public class BucketValue extends GroupingExpression implements Comparable<Bucket
     private final ConstantValue<?> to;
     private final ConstantValueComparator comparator = new ConstantValueComparator();
 
-    protected BucketValue(String label, Integer level, ConstantValue<?> inclusiveFrom, ConstantValue<?> exclusiveTo) {
-        super("bucket[" + asImage(inclusiveFrom) + ", " + asImage(exclusiveTo) + ">", label, level);
+    protected BucketValue(ConstantValue<?> inclusiveFrom, ConstantValue<?> exclusiveTo) {
+        super("bucket[" + asImage(inclusiveFrom) + ", " + asImage(exclusiveTo) + ">");
         if (comparator.compare(exclusiveTo, inclusiveFrom) < 0) {
             throw new IllegalArgumentException("Bucket to-value can not be less than from-value.");
         }
         from = inclusiveFrom;
         to = exclusiveTo;
-    }
-
-    @Override
-    public BucketValue copy() {
-        return new BucketValue(getLabel(), getLevelOrNull(), getFrom().copy(), getTo().copy());
     }
 
     /**

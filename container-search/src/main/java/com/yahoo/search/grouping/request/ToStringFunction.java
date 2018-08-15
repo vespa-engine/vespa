@@ -8,7 +8,6 @@ import java.util.Arrays;
  * long. If the argument can not be converted, this function returns 0.
  *
  * @author baldersheim
- * @author bratseth
  */
 public class ToStringFunction extends FunctionNode {
 
@@ -18,16 +17,6 @@ public class ToStringFunction extends FunctionNode {
      * @param exp The expression to evaluate.
      */
     public ToStringFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("tostring", Arrays.asList(exp));
     }
-
-    private ToStringFunction(String label, Integer level, GroupingExpression exp) {
-        super("tostring", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public ToStringFunction copy() {
-        return new ToStringFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }

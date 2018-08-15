@@ -2,14 +2,12 @@
 package com.yahoo.search.grouping.request;
 
 import java.util.Arrays;
-import java.util.stream.Collectors;
 
 /**
  * This class represents a day-of-month timestamp-function in a {@link GroupingExpression}. It evaluates to a long that
  * equals the day of month (1-31) of the result of the argument.
  *
  * @author Simon Thoresen Hult
- * @author bratseth
  */
 public class DayOfMonthFunction extends FunctionNode {
 
@@ -19,18 +17,6 @@ public class DayOfMonthFunction extends FunctionNode {
      * @param exp The expression to evaluate, must evaluate to a long.
      */
     public DayOfMonthFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("time.dayofmonth", Arrays.asList(exp));
     }
-
-    private DayOfMonthFunction(String label, Integer level, GroupingExpression exp) {
-        super("time.dayofmonth", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public DayOfMonthFunction copy() {
-        return new DayOfMonthFunction(getLabel(),
-                                      getLevelOrNull(),
-                                      getArg(0).copy());
-    }
-
 }

@@ -26,7 +26,7 @@ public class DoubleBucket extends BucketValue {
      * @param to            The to-value to assign to this.
      */
     public DoubleBucket(double from, double to) {
-        super(null, null, new DoubleValue(from), new DoubleValue(to));
+        super(new DoubleValue(from), new DoubleValue(to));
     }
 
     /**
@@ -36,16 +36,6 @@ public class DoubleBucket extends BucketValue {
      * @param to            The to-value to assign to this.
      */
     public DoubleBucket(ConstantValue<?> from, ConstantValue<?> to) {
-        super(null, null, from, to);
+        super(from, to);
     }
-
-    private DoubleBucket(String label, Integer level, ConstantValue<?> from, ConstantValue<?> to) {
-        super(label, level, from, to);
-    }
-
-    @Override
-    public DoubleBucket copy() {
-        return new DoubleBucket(getLabel(), getLevelOrNull(), getFrom().copy(), getTo().copy());
-    }
-
 }

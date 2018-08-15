@@ -491,7 +491,7 @@ public class FastSearcherTestCase {
     }
 
     private void assertForceSinglePassIs(boolean expected, Query query) {
-        for (GroupingRequest request : query.getSelect().getGrouping())
+        for (GroupingRequest request : GroupingRequest.getRequests(query))
             assertForceSinglePassIs(expected, request.getRootOperation());
     }
 

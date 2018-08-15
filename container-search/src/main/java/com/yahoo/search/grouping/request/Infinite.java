@@ -3,13 +3,12 @@ package com.yahoo.search.grouping.request;
 
 /**
  * This class represents an Infinite value that may be used as a bucket
- * size specifier. This is immutable.
+ * size specifier.
  *
- * @author Ulf Lilleengen
+ * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
  */
 @SuppressWarnings("rawtypes")
 public class Infinite implements Comparable {
-
     private final boolean negative;
 
     /**

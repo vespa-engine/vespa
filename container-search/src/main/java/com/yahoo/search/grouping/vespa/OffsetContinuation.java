@@ -20,11 +20,6 @@ class OffsetContinuation extends EncodableContinuation {
         this.flags = flags;
     }
 
-    @Override
-    public OffsetContinuation copy() {
-        return this; // immutable
-    }
-
     public ResultId getResultId() {
         return resultId;
     }
@@ -86,5 +81,4 @@ class OffsetContinuation extends EncodableContinuation {
         int flags = in.next();
         return new OffsetContinuation(resultId, tag, offset, flags);
     }
-
 }

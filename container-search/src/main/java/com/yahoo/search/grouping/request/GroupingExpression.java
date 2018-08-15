@@ -15,13 +15,9 @@ public abstract class GroupingExpression extends GroupingNode {
 
     private Integer level = null;
 
-    protected GroupingExpression(String image, String label, Integer level) {
-        super(image, label);
-        this.level = level;
+    protected GroupingExpression(String image) {
+        super(image);
     }
-
-    /** Returns a deep copy of this */
-    public abstract GroupingExpression copy();
 
     /**
      * Resolves the conceptual level of this expression. This level represents the type of data that is consumed by this
@@ -43,8 +39,8 @@ public abstract class GroupingExpression extends GroupingNode {
     /**
      * Returns the conceptual level of this expression.
      *
-     * @return the level.
-     * @throws IllegalArgumentException thrown if the level of this expression has not been resolved.
+     * @return The level.
+     * @throws IllegalArgumentException Thrown if the level of this expression has not been resolved.
      * @see #resolveLevel(int)
      */
     public int getLevel() {
@@ -53,8 +49,6 @@ public abstract class GroupingExpression extends GroupingNode {
         }
         return level;
     }
-
-    protected final Integer getLevelOrNull() { return level; }
 
     /**
      * Recursively calls {@link ExpressionVisitor#visitExpression(GroupingExpression)} for this expression and all of

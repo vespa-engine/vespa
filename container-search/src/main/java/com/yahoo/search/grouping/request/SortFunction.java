@@ -8,7 +8,6 @@ import java.util.Arrays;
  * result of the argument, sorted in ascending order.
  *
  * @author baldersheim
- * @author bratseth
  */
 public class SortFunction  extends FunctionNode {
 
@@ -18,16 +17,6 @@ public class SortFunction  extends FunctionNode {
      * @param exp The expression to evaluate, must evaluate to a list.
      */
     public SortFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("sort", Arrays.asList(exp));
     }
-
-    private SortFunction(String label, Integer level, GroupingExpression exp) {
-        super("sort", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public SortFunction copy() {
-        return new SortFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }

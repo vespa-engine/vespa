@@ -6,26 +6,13 @@ package com.yahoo.search.grouping.request;
  * of the values that the contained expression evaluated to over all the inputs.
  *
  * @author bjorncs
- * @author bratseth
  */
 public class StandardDeviationAggregator extends AggregatorNode {
 
     /**
-     * Constructs a new instance of this class.
-     *
-     * @param expression the expression to aggregate on.
+     * @param exp The expression to aggregate on.
      */
-    public StandardDeviationAggregator(GroupingExpression expression) {
-        this(null, null, expression);
+    public StandardDeviationAggregator(GroupingExpression exp) {
+        super("stddev", exp);
     }
-
-    private StandardDeviationAggregator(String label, Integer level, GroupingExpression expression) {
-        super("stddev", label, level, expression);
-    }
-
-    @Override
-    public StandardDeviationAggregator copy() {
-        return new StandardDeviationAggregator(getLabel(), getLevelOrNull(), getExpression().copy());
-    }
-
 }

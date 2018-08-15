@@ -6,7 +6,6 @@ package com.yahoo.search.grouping.request;
  * the input {@link com.yahoo.search.result.Hit}.
  *
  * @author Simon Thoresen Hult
- * @author bratseth
  */
 public class RelevanceValue extends DocumentValue {
 
@@ -14,16 +13,7 @@ public class RelevanceValue extends DocumentValue {
      * Constructs a new instance of this class.
      */
     public RelevanceValue() {
-        this(null, null);
-    }
-
-    private RelevanceValue(String label, Integer level) {
-        super("relevance()", label, level);
-    }
-
-    @Override
-    public RelevanceValue copy() {
-        return new RelevanceValue(getLabel(), getLevelOrNull());
+        super("relevance()");
     }
 
 }

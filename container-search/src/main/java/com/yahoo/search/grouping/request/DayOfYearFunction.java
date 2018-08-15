@@ -8,7 +8,6 @@ import java.util.Arrays;
  * equals the day of year (0-365) of the result of the argument.
  *
  * @author Simon Thoresen Hult
- * @author bratseth
  */
 public class DayOfYearFunction extends FunctionNode {
 
@@ -18,18 +17,6 @@ public class DayOfYearFunction extends FunctionNode {
      * @param exp The expression to evaluate, must evaluate to a long.
      */
     public DayOfYearFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("time.dayofyear", Arrays.asList(exp));
     }
-
-    private DayOfYearFunction(String label, Integer level, GroupingExpression exp) {
-        super("time.dayofyear", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public DayOfYearFunction copy() {
-        return new DayOfYearFunction(getLabel(),
-                                     getLevelOrNull(),
-                                     getArg(0).copy());
-    }
-
 }

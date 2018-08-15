@@ -10,11 +10,6 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.yql.VespaGroupingStep;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
 
 
 /**
@@ -32,75 +27,67 @@ public class Select implements Cloneable {
     public static final String WHERE = "where";
     public static final String GROUPING = "grouping";
 
-    private final Query parent;
-    private final List<GroupingRequest> groupingRequests;
 
-    private String where;
-    private String grouping;
+    private static Model model;
+    private Query parent;
+    private String where = "";
+    private String grouping = "";
 
     static {
         argumentType = new QueryProfileType(SELECT);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
-        argumentType.addField(new FieldDescription(WHERE, "string"));
-        argumentType.addField(new FieldDescription(GROUPING, "string"));
+        argumentType.addField(new FieldDescription(WHERE, "string", "where"));
+        argumentType.addField(new FieldDescription(GROUPING, "string", "grouping"));
         argumentType.freeze();
-        argumentTypeName = new CompoundName(argumentType.getId().getName());
+        argumentTypeName=new CompoundName(argumentType.getId().getName());
     }
 
     public static QueryProfileType getArgumentType() { return argumentType; }
 
-    /** Creates an empty select statement */
-    public Select(Query query) {
-        this("", "", query);
-    }
-
-    public Select(String where, String grouping, Query query) {
-        this(where, grouping, query, Collections.emptyList());
-    }
-
-    private Select(String where, String grouping, Query query, List<GroupingRequest> groupingRequests) {
-        this.where = Objects.requireNonNull(where, "A Select must have a where string (possibly the empty string)");
-        this.grouping = Objects.requireNonNull(grouping, "A Select must have a select string (possibly the empty string)");
-        this.parent = Objects.requireNonNull(query, "A Select must have a parent query");
-        this.groupingRequests = deepCopy(groupingRequests, this);
-    }
-
-    private static List<GroupingRequest> deepCopy(List<GroupingRequest> groupingRequests, Select parentOfCopy) {
-        List<GroupingRequest> copy = new ArrayList<>(groupingRequests.size());
-        for (GroupingRequest request : groupingRequests)
-            copy.add(request.copy(parentOfCopy));
-        return copy;
-    }
-
-    /**
-     * Sets the document selection criterion of the query.
-     *
-     * @param where the documents to select as a JSON string on the format specified in
-     *        <a href="https://docs.vespa.ai/documentation/reference/select-reference.html">the select reference doc</a>
-     */
-    public void setWhereString(String where) {
+    public Select(String where, String grouping){
         this.where = where;
-        parent.getModel().setType(SELECT);
-
-        // This replaces the current query
-        parent.getModel().clearQueryTree();
+        this.grouping = grouping;
     }
 
-    /** Returns the where clause string previously assigned, or an empty string if none */
-    public String getWhereString(){ return where; }
+    public Select(Query query) {
+        setParent(query);
+        model = query.getModel();
+    }
 
 
-    /**
-     * Sets the grouping operation of the query.
-     *
-     * @param grouping the grouping to perform as a JSON string on the format specified in
-     *        <a href="https://docs.vespa.ai/documentation/reference/select-reference.html">the select reference doc</a>
-     */
-    public void setGroupingString(String grouping) {
-        groupingRequests.clear();
+    /** Returns the query owning this, never null */
+    private Query getParent() { return parent; }
+
+
+    /** Assigns the query owning this */
+    public void setParent(Query parent) {
+        if (parent==null) throw new NullPointerException("A query models owner cannot be null");
+        this.parent = parent;
+    }
+
+
+    /** Set the where-clause for the query. Must be a JSON-string, with the format described in the Select Reference doc - https://docs.vespa.ai/documentation/reference/select-reference.html. */
+    public void setWhere(String where) {
+        this.where = where;
+        model.setType(SELECT);
+
+        // Setting the queryTree to null
+        model.setQueryString(null);
+    }
+
+
+    /** Returns the where-clause in the query */
+    public String getWhereString(){
+        return this.where;
+    }
+
+
+    /** Set the grouping-string for the query. Must be a JSON-string, with the format described in the Select Reference doc - https://docs.vespa.ai/documentation/reference/select-reference.html. */
+    public void setGrouping(String grouping){
         this.grouping = grouping;
         SelectParser parser = (SelectParser) ParserFactory.newInstance(Query.Type.SELECT, new ParserEnvironment());
+
         for (VespaGroupingStep step : parser.getGroupingSteps(grouping)) {
             GroupingRequest.newInstance(parent)
                     .setRootOperation(step.getOperation())
@@ -111,28 +98,13 @@ public class Select implements Cloneable {
 
     /** Returns the grouping in the query */
     public String getGroupingString(){
-        return grouping;
+        return this.grouping;
     }
-
-    /**
-     * Returns the query's {@link GroupingRequest} as a mutable list. Changing this directly changes the grouping
-     * operations which will be performed by this query.
-     */
-    public List<GroupingRequest> getGrouping() { return groupingRequests; }
 
 
     @Override
     public String toString() {
         return "where: [" + where + "], grouping: [" + grouping+ "]";
-    }
-
-    @Override
-    public Object clone() {
-        return new Select(where, grouping, parent, groupingRequests);
-    }
-
-    public Select cloneFor(Query parent)  {
-        return new Select(where, grouping, parent, groupingRequests);
     }
 
 }

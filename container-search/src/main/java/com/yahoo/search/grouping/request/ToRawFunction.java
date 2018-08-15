@@ -8,8 +8,7 @@ import java.util.Arrays;
  * converts the result of the argument to a raw type. If the argument can not
  * be converted, this function returns null.
  *
- * @author Ulf Lilleengen
- * @author bratseth
+ * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
  */
 public class ToRawFunction extends FunctionNode {
 
@@ -19,16 +18,6 @@ public class ToRawFunction extends FunctionNode {
      * @param exp The expression to evaluate.
      */
     public ToRawFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("toraw", Arrays.asList(exp));
     }
-
-    private ToRawFunction(String label, Integer level, GroupingExpression exp) {
-        super("toraw", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public ToRawFunction copy() {
-        return new ToRawFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }

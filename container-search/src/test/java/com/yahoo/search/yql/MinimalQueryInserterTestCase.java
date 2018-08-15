@@ -329,8 +329,9 @@ public class MinimalQueryInserterTestCase {
 
     private static void assertGrouping(String expected, Query query) {
         List<String> actual = new ArrayList<>();
-        for (GroupingRequest request : query.getSelect().getGrouping())
+        for (GroupingRequest request : GroupingRequest.getRequests(query)) {
             actual.add(request.continuations().toString() + request.getRootOperation());
+        }
         assertEquals(expected, actual.toString());
     }
 

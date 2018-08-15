@@ -109,11 +109,6 @@ public class CompositeContinuationTestCase {
     private static class MyContinuation extends EncodableContinuation {
 
         @Override
-        public EncodableContinuation copy() {
-            return null;
-        }
-
-        @Override
         public void encode(IntegerEncoder out) {
 
         }

@@ -8,7 +8,6 @@ import java.util.Arrays;
  * negative of the results of the argument.
  *
  * @author Simon Thoresen Hult
- * @author bratseth
  */
 public class NegFunction extends FunctionNode {
 
@@ -18,17 +17,7 @@ public class NegFunction extends FunctionNode {
      * @param exp The expression to evaluate, must evaluate to a number.
      */
     public NegFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("neg", Arrays.asList(exp));
     }
-
-    private NegFunction(String label, Integer level, GroupingExpression exp) {
-        super("neg", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public NegFunction copy() {
-        return new NegFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }
 

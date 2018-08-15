@@ -5,26 +5,14 @@ import java.util.Arrays;
 
 /**
  * @author baldersheim
- * @author bratseth
  */
 public class MathCosHFunction extends FunctionNode {
-
-    /**
+/**
      * Constructs a new instance of this class.
      *
      * @param exp The expression to evaluate, double value will be requested.
      */
     public MathCosHFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("math.cosh", Arrays.asList(exp));
     }
-
-    private MathCosHFunction(String label, Integer level, GroupingExpression exp) {
-        super("math.cosh", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public MathCosHFunction copy() {
-        return new MathCosHFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }

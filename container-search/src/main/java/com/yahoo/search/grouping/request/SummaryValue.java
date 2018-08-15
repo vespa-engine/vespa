@@ -15,7 +15,8 @@ public class SummaryValue extends DocumentValue {
      * Constructs a new instance of this class, using the default summary class.
      */
     public SummaryValue() {
-        this(null, null, null);
+        super("summary()");
+        name = null;
     }
 
     /**
@@ -24,17 +25,8 @@ public class SummaryValue extends DocumentValue {
      * @param summaryName The name of the summary class to assign to this.
      */
     public SummaryValue(String summaryName) {
-        this(null, null, summaryName);
-    }
-
-    private SummaryValue(String label, Integer level, String summaryName) {
-        super("summary(" + (summaryName == null ? "" : summaryName)  + ")", label, level);
+        super("summary(" + summaryName + ")");
         name = summaryName;
-    }
-
-    @Override
-    public SummaryValue copy() {
-        return new SummaryValue(getLabel(), getLevelOrNull(), getSummaryName());
     }
 
     /**
@@ -45,5 +37,4 @@ public class SummaryValue extends DocumentValue {
     public String getSummaryName() {
         return name;
     }
-
 }

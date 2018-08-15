@@ -5,26 +5,14 @@ import java.util.Arrays;
 
 /**
  * @author baldersheim
- * @author bratseth
  */
 public class MathCbrtFunction extends FunctionNode {
-
-    /**
+/**
      * Constructs a new instance of this class.
      *
      * @param exp The expression to evaluate, double value will be requested.
      */
     public MathCbrtFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("math.cbrt", Arrays.asList(exp));
     }
-
-    private MathCbrtFunction(String label, Integer level, GroupingExpression exp) {
-        super("math.cbrt", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public MathCbrtFunction copy() {
-        return new MathCbrtFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }

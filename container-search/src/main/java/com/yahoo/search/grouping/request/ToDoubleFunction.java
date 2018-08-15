@@ -8,7 +8,6 @@ import java.util.Arrays;
  * a double. If the argument can not be converted, this function returns 0.
  *
  * @author baldersheim
- * @author bratseth
  */
 public class ToDoubleFunction extends FunctionNode {
 
@@ -18,18 +17,6 @@ public class ToDoubleFunction extends FunctionNode {
      * @param exp The expression to evaluate.
      */
     public ToDoubleFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("todouble", Arrays.asList(exp));
     }
-
-    private ToDoubleFunction(String label, Integer level, GroupingExpression exp) {
-        super("todouble", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public ToDoubleFunction copy() {
-        return new ToDoubleFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }
-
-

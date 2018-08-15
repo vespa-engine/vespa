@@ -8,7 +8,6 @@ import java.util.Arrays;
  * that equals the second of minute (0-59) of the result of the argument.
  *
  * @author Simon Thoresen Hult
- * @author bratseth
  */
 public class SecondOfMinuteFunction extends FunctionNode {
 
@@ -18,16 +17,6 @@ public class SecondOfMinuteFunction extends FunctionNode {
      * @param exp The expression to evaluate, must evaluate to a long.
      */
     public SecondOfMinuteFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("time.secondofminute", Arrays.asList(exp));
     }
-
-    private SecondOfMinuteFunction(String label, Integer level, GroupingExpression exp) {
-        super("time.secondofminute", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public SecondOfMinuteFunction copy() {
-        return new SecondOfMinuteFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }

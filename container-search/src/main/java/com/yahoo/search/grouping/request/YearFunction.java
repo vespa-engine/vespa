@@ -8,7 +8,6 @@ import java.util.Arrays;
  * the full year (e.g. 2010) of the result of the argument.
  *
  * @author Simon Thoresen Hult
- * @author bratseth
  */
 public class YearFunction extends FunctionNode {
 
@@ -18,16 +17,6 @@ public class YearFunction extends FunctionNode {
      * @param exp The expression to evaluate, must evaluate to a long.
      */
     public YearFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("time.year", Arrays.asList(exp));
     }
-
-    private YearFunction(String label, Integer level, GroupingExpression exp) {
-        super("time.year", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public YearFunction copy() {
-        return new YearFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }

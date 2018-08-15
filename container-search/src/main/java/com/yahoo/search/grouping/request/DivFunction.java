@@ -2,7 +2,6 @@
 package com.yahoo.search.grouping.request;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * This class represents a div-function in a {@link GroupingExpression}. It evaluates to a number that equals the result
@@ -10,7 +9,6 @@ import java.util.stream.Collectors;
  * second, result by third, ...).
  *
  * @author Simon Thoresen Hult
- * @author bratseth
  */
 public class DivFunction extends FunctionNode {
 
@@ -22,18 +20,11 @@ public class DivFunction extends FunctionNode {
      * @param argN The optional arguments, must evaluate to a number.
      */
     public DivFunction(GroupingExpression arg1, GroupingExpression arg2, GroupingExpression... argN) {
-        this(null, null, asList(arg1, arg2, argN));
+        this(asList(arg1, arg2, argN));
     }
 
-    private DivFunction(String label, Integer level, List<GroupingExpression> args) {
-        super("div", label, level, args);
-    }
-
-    @Override
-    public DivFunction copy() {
-        return new DivFunction(getLabel(),
-                               getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+    private DivFunction(List<GroupingExpression> args) {
+        super("div", args);
     }
 
     /**
@@ -47,6 +38,6 @@ public class DivFunction extends FunctionNode {
         if (args.size() < 2) {
             throw new IllegalArgumentException("Expected 2 or more arguments, got " + args.size() + ".");
         }
-        return new DivFunction(null, null, args);
+        return new DivFunction(args);
     }
 }

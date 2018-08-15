@@ -8,7 +8,6 @@ import java.util.Arrays;
  * that equals the minute of hour (0-59) of the result of the argument.
  *
  * @author Simon Thoresen Hult
- * @author bratseth
  */
 public class MinuteOfHourFunction extends FunctionNode {
 
@@ -18,16 +17,6 @@ public class MinuteOfHourFunction extends FunctionNode {
      * @param exp The expression to evaluate, must evaluate to a long.
      */
     public MinuteOfHourFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("time.minuteofhour", Arrays.asList(exp));
     }
-
-    private MinuteOfHourFunction(String label, Integer level, GroupingExpression exp) {
-        super("time.minuteofhour", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public MinuteOfHourFunction copy() {
-        return new MinuteOfHourFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }

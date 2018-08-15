@@ -12,13 +12,13 @@ public abstract class AggregatorNode extends GroupingExpression {
 
     private final GroupingExpression exp;
 
-    protected AggregatorNode(String image, String label, Integer level) {
-        super(image + "()", label, level);
+    protected AggregatorNode(String image) {
+        super(image + "()");
         this.exp = null;
     }
 
-    protected AggregatorNode(String image, String label, Integer level, GroupingExpression exp) {
-        super(image + "(" + exp.toString() + ")", label, level);
+    protected AggregatorNode(String image, GroupingExpression exp) {
+        super(image + "(" + exp.toString() + ")");
         this.exp = exp;
     }
 
