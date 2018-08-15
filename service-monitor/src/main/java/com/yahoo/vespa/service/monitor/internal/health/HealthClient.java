@@ -2,8 +2,6 @@
 package com.yahoo.vespa.service.monitor.internal.health;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -21,9 +19,7 @@ import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
-import javax.net.ssl.SSLContext;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -34,7 +30,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  *
  * @author hakon
  */
-public class HealthClient implements AutoCloseable, ServiceIdentityProvider.Listener {
+public class HealthClient implements AutoCloseable {
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final long MAX_CONTENT_LENGTH = 1L << 20; // 1 MB
     private static final int DEFAULT_TIMEOUT_MILLIS = 1_000;
@@ -54,34 +50,22 @@ public class HealthClient implements AutoCloseable, ServiceIdentityProvider.List
             };
 
     private final HealthEndpoint endpoint;
-    private final Supplier<CloseableHttpClient> clientSupplier;
+    private final CloseableHttpClient httpClient;
     private final Function<HttpEntity, String> getContentFunction;
-
-    private CloseableHttpClient httpClient = null;
 
     public HealthClient(HealthEndpoint endpoint) {
         this(endpoint,
-                () -> makeCloseableHttpClient(endpoint),
+                makeCloseableHttpClient(endpoint),
                 entity -> uncheck(() -> EntityUtils.toString(entity)));
     }
 
     /** For testing. */
     HealthClient(HealthEndpoint endpoint,
-                 Supplier<CloseableHttpClient> clientSupplier,
+                 CloseableHttpClient httpClient,
                  Function<HttpEntity, String> getContentFunction) {
         this.endpoint = endpoint;
-        this.clientSupplier = clientSupplier;
+        this.httpClient = httpClient;
         this.getContentFunction = getContentFunction;
-    }
-
-    public void start() {
-        updateHttpClient();
-        endpoint.registerListener(this);
-    }
-
-    @Override
-    public void onCredentialsUpdate(SSLContext sslContext, AthenzService ignored) {
-        updateHttpClient();
     }
 
     public HealthEndpoint getEndpoint() {
@@ -98,27 +82,11 @@ public class HealthClient implements AutoCloseable, ServiceIdentityProvider.List
 
     @Override
     public void close() {
-        endpoint.removeListener(this);
-
-        if (httpClient != null) {
-            try {
-                httpClient.close();
-            } catch (Exception e) {
-                // ignore
-            }
-            httpClient = null;
+        try {
+            httpClient.close();
+        } catch (Exception e) {
+            // ignore
         }
-    }
-
-    private void updateHttpClient() {
-        CloseableHttpClient httpClient = clientSupplier.get();
-
-        if (this.httpClient != null) {
-            // Note: close() can be called any number of times.
-            uncheck(() -> this.httpClient.close());
-        }
-
-        this.httpClient = httpClient;
     }
 
     private static CloseableHttpClient makeCloseableHttpClient(HealthEndpoint endpoint) {

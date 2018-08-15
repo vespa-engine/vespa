@@ -22,7 +22,7 @@ import com.yahoo.vespa.athenz.client.zts.bindings.RoleTokenResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.TenantDomainsResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.utils.IdentityCsrGenerator;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
-import com.yahoo.vespa.athenz.identity.SiaBackedApacheHttpClient;
+import com.yahoo.vespa.athenz.identity.ServiceIdentitySslSocketFactory;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
 import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
 import org.apache.http.HttpResponse;
@@ -30,6 +30,7 @@ import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -37,6 +38,7 @@ import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.eclipse.jetty.http.HttpStatus;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
@@ -78,7 +80,7 @@ public class DefaultZtsClient implements ZtsClient {
     private DefaultZtsClient(URI ztsUrl, AthenzIdentity identity, Supplier<SSLContext> sslContextSupplier) {
         this.ztsUrl = addTrailingSlash(ztsUrl);
         this.identity = identity;
-        this.client = new SiaBackedApacheHttpClient(sslContextSupplier, DefaultZtsClient::createHttpClient);
+        this.client = createHttpClient(sslContextSupplier);
     }
 
     @Override
@@ -241,11 +243,11 @@ public class DefaultZtsClient implements ZtsClient {
         }
     }
 
-    private static CloseableHttpClient createHttpClient(SSLContext sslContext) {
+    private static CloseableHttpClient createHttpClient(Supplier<SSLContext> sslContextSupplier) {
         return HttpClientBuilder.create()
                 .setRetryHandler(new DefaultHttpRequestRetryHandler(3, /*requestSentRetryEnabled*/true))
                 .setUserAgent("vespa-zts-client")
-                .setSSLContext(sslContext)
+                .setSSLSocketFactory(new SSLConnectionSocketFactory(new ServiceIdentitySslSocketFactory(sslContextSupplier), (HostnameVerifier)null))
                 .setDefaultRequestConfig(RequestConfig.custom()
                                                  .setConnectTimeout((int)Duration.ofSeconds(10).toMillis())
                                                  .setConnectionRequestTimeout((int)Duration.ofSeconds(10).toMillis())
