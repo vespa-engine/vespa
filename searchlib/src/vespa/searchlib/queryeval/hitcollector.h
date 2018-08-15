@@ -165,7 +165,10 @@ public:
     }
 
     /**
-     * Returns a sorted sequence of hits that reference internal data.
+     * Returns a sorted sequence of hits that reference internal
+     * data. The number of hits returned in the sequence is controlled
+     * by the parameter and also affects how many hits need to be
+     * fully sorted.
      *
      * @param max_hits maximum number of hits returned in the sequence.
      */

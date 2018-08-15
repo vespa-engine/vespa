@@ -267,7 +267,9 @@ MatchThread::findMatches(MatchTools &tools)
             tools.setup_second_phase();
             DocidRange docid_range = scheduler.total_span(thread_id);
             tools.search().initRange(docid_range.begin, docid_range.end);
-            auto sorted_hit_seq = hits.getSortedHitSequence(matchParams.heapSize);
+            auto sorted_hit_seq = matchToolsFactory.should_diversify()
+                                  ? hits.getSortedHitSequence(matchParams.arraySize)
+                                  : hits.getSortedHitSequence(matchParams.heapSize);
             WaitTimer select_best_timer(wait_time_s);
             auto kept_hits = communicator.selectBest(sorted_hit_seq);
             select_best_timer.done();
