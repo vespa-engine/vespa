@@ -194,7 +194,7 @@ struct FakeTimer : public MetricManager::Timer {
     time_t getTime() const override { return _timeInSecs; }
 };
 
-} // End of anonymous namespace
+void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *name) __attribute__((noinline));
 
 void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *name)
 {
@@ -204,6 +204,8 @@ void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *na
     }
     CPPUNIT_ASSERT_EQUAL(value, int32_t(_metricValue_->getLongValue("value")));
 }
+
+} // End of anonymous namespace
 
 void SnapshotTest::testSnapshotTwoDays()
 {
