@@ -67,6 +67,7 @@ public class RunSerializer {
     private static final String commitField = "commit";
     private static final String buildField = "build";
     private static final String sourceField = "source";
+    private static final String lastTestRecordField = "lastTestRecord";
 
     Run runFromSlime(Slime slime) {
         return runFromSlime(slime.get());
@@ -96,7 +97,8 @@ public class RunSerializer {
                        Optional.of(runObject.field(endField))
                                .filter(Inspector::valid)
                                .map(end -> Instant.ofEpochMilli(end.asLong())),
-                       runStatusOf(runObject.field(statusField).asString()));
+                       runStatusOf(runObject.field(statusField).asString()),
+                       runObject.field(lastTestRecordField).asLong());
     }
 
     private Versions versionsFromSlime(Inspector versionsObject) {
@@ -138,6 +140,7 @@ public class RunSerializer {
         runObject.setLong(startField, run.start().toEpochMilli());
         run.end().ifPresent(end -> runObject.setLong(endField, end.toEpochMilli()));
         runObject.setString(statusField, valueOf(run.status()));
+        runObject.setLong(lastTestRecordField, run.lastTestRecord());
 
         Cursor stepsObject = runObject.setObject(stepsField);
         run.steps().forEach((step, status) -> stepsObject.setString(valueOf(step), valueOf(status)));

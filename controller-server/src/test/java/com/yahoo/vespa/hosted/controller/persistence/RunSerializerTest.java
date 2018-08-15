@@ -66,6 +66,7 @@ public class RunSerializerTest {
         assertEquals(start, run.start());
         assertFalse(run.hasEnded());
         assertEquals(running, run.status());
+        assertEquals(3, run.lastTestRecord());
         assertEquals(ImmutableMap.<Step, Step.Status>builder()
                              .put(deployInitialReal, unfinished)
                              .put(installInitialReal, failed)

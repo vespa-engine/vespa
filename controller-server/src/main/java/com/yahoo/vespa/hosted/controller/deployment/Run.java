@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -31,22 +30,24 @@ public class Run {
     private final Instant start;
     private final Optional<Instant> end;
     private final RunStatus status;
+    private final long lastTestRecord;
 
     // For deserialisation only -- do not use!
-    public Run(RunId id, Map<Step, Step.Status> steps, Versions versions,
-               Instant start, Optional<Instant> end, RunStatus status) {
+    public Run(RunId id, Map<Step, Step.Status> steps, Versions versions, Instant start,
+               Optional<Instant> end, RunStatus status, long lastTestRecord) {
         this.id = id;
         this.steps = Collections.unmodifiableMap(new EnumMap<>(steps));
         this.versions = versions;
         this.start = start;
         this.end = end;
         this.status = status;
+        this.lastTestRecord = lastTestRecord;
     }
 
     public static Run initial(RunId id, Versions versions, Instant now) {
         EnumMap<Step, Step.Status> steps = new EnumMap<>(Step.class);
         JobProfile.of(id.type()).steps().forEach(step -> steps.put(step, unfinished));
-        return new Run(id, steps, requireNonNull(versions), requireNonNull(now), Optional.empty(), running);
+        return new Run(id, steps, requireNonNull(versions), requireNonNull(now), Optional.empty(), running, -1);
     }
 
     /** Returns a new Run with the new status, and with the status of the given, completed step set accordingly. */
@@ -60,21 +61,21 @@ public class Run {
 
         EnumMap<Step, Step.Status> steps = new EnumMap<>(this.steps);
         steps.put(step.get(), Step.Status.of(status));
-        return new Run(id, steps, versions, start, end, this.status == running ? status : this.status); // Keep first terminal status.
+        return new Run(id, steps, versions, start, end, this.status == running ? status : this.status, lastTestRecord);
     }
 
     public Run finished(Instant now) {
         if (hasEnded())
             throw new AssertionError("This run ended at " + end.get() + " -- it can't be ended again!");
 
-        return new Run(id, new EnumMap<>(steps), versions, start, Optional.of(now), status == running ? success : status);
+        return new Run(id, new EnumMap<>(steps), versions, start, Optional.of(now), status == running ? success : status, lastTestRecord);
     }
 
     public Run aborted() {
         if (hasEnded())
             throw new AssertionError("This run ended at " + end.get() + " -- it can't be aborted now!");
 
-        return new Run(id, new EnumMap<>(steps), versions, start, end, aborted);
+        return new Run(id, new EnumMap<>(steps), versions, start, end, aborted, lastTestRecord);
     }
 
     /** Returns the id of this run. */
@@ -114,6 +115,11 @@ public class Run {
     /** Returns the target, and possibly source, versions for this run. */
     public Versions versions() {
         return versions;
+    }
+
+    /** Returns the sequence id of the last test record received from the tester, for the test logs of this run. */
+    public long lastTestRecord() {
+        return lastTestRecord;
     }
 
     @Override

@@ -5,6 +5,7 @@
     "number": 112358,
     "start": 1196676930000,
     "status": "running",
+    "lastTestRecord": 3,
     "steps": {
       "deployInitialReal": "unfinished",
       "installInitialReal": "failed",

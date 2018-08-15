@@ -143,7 +143,7 @@ public class JobControllerApiHandlerHelperTest {
         RunStatus status = end.isPresent() && lastStepStatus.equals(Optional.of(RunStatus.running))
                 ? RunStatus.success
                 : lastStepStatus.orElse(RunStatus.running);
-        return new Run(runId, stepStatusMap, versions, start, end, status);
+        return new Run(runId, stepStatusMap, versions, start, end, status, -1);
     }
 
     private void compare(HttpResponse response, String expected) {
