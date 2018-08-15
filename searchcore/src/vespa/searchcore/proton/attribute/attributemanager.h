@@ -176,6 +176,7 @@ public:
     const std::vector<search::AttributeVector *> &getWritableAttributes() const override;
 
     void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const override;
+    void asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const override;
 
     ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const override;
 
@@ -185,3 +186,4 @@ public:
 };
 
 } // namespace proton
+

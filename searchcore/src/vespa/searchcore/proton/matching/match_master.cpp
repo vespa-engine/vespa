@@ -4,6 +4,7 @@
 #include "docid_range_scheduler.h"
 #include "match_loop_communicator.h"
 #include "match_thread.h"
+#include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
@@ -15,6 +16,7 @@ namespace proton::matching {
 using namespace search::fef;
 using search::queryeval::SearchIterator;
 using search::FeatureSet;
+using search::attribute::AttributeOperation;
 
 namespace {
 
@@ -136,6 +138,10 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &mtf,
         } else {
             LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. Skipping hit", docs[i]);
         }
+    }
+    if (mtf.hasOnReRankOperation()) {
+        mtf.runOnReRankOperation(AttributeOperation::create(mtf.getOnSummaryAttributeType(),
+                                                            mtf.getOnSummaryOperation(), docs));
     }
     return retval;
 }

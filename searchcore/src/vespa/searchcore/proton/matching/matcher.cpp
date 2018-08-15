@@ -95,7 +95,7 @@ bool willNotNeedRanking(const SearchRequest & request, const GroupingContext & g
 
 FeatureSet::SP
 Matcher::getFeatureSet(const DocsumRequest & req, ISearchContext & searchCtx, IAttributeContext & attrCtx,
-                       SessionManager & sessionMgr, bool summaryFeatures)
+                       const IAttributeExecutor & attrExec, SessionManager & sessionMgr, bool summaryFeatures)
 {
     SessionId sessionId(&req.sessionId[0], req.sessionId.size());
     if (!sessionId.empty()) {
@@ -113,7 +113,7 @@ Matcher::getFeatureSet(const DocsumRequest & req, ISearchContext & searchCtx, IA
     }
 
     StupidMetaStore metaStore;
-    MatchToolsFactory::UP mtf = create_match_tools_factory(req, searchCtx, attrCtx, metaStore,
+    MatchToolsFactory::UP mtf = create_match_tools_factory(req, searchCtx, attrCtx, attrExec, metaStore,
                                                            req.propertiesMap.featureOverrides());
     if (!mtf->valid()) {
         LOG(warning, "getFeatureSet(%s): query execution failed (invalid query). Returning empty feature set",
@@ -159,8 +159,8 @@ using search::fef::indexproperties::softtimeout::Factor;
 
 std::unique_ptr<MatchToolsFactory>
 Matcher::create_match_tools_factory(const search::engine::Request &request, ISearchContext &searchContext,
-                                    IAttributeContext &attrContext, const search::IDocumentMetaStore &metaStore,
-                                    const Properties &feature_overrides) const
+                                    IAttributeContext &attrContext, const IAttributeExecutor & attrExec,
+                                    const search::IDocumentMetaStore &metaStore, const Properties &feature_overrides) const
 {
     const Properties & rankProperties = request.propertiesMap.rankProperties();
     bool softTimeoutEnabled = Enabled::lookup(rankProperties, _rankSetup->getSoftTimeoutEnabled());
@@ -176,7 +176,8 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
     return std::make_unique<MatchToolsFactory>(_queryLimiter, vespalib::Doom(_clock, safeDoom),
                                                vespalib::Doom(_clock, request.getTimeOfDoom()), searchContext,
                                                attrContext, request.getStackRef(), request.location, _viewResolver,
-                                               metaStore, _indexEnv, *_rankSetup, rankProperties, feature_overrides);
+                                               attrExec, metaStore, _indexEnv, *_rankSetup,
+                                               rankProperties, feature_overrides);
 }
 
 SearchReply::UP
@@ -205,8 +206,8 @@ Matcher::computeNumThreadsPerSearch(Blueprint::HitEstimate hits, const Propertie
 SearchReply::UP
 Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundle,
                ISearchContext &searchContext, IAttributeContext &attrContext,
-               SessionManager &sessionMgr, const search::IDocumentMetaStore &metaStore,
-               SearchSession::OwnershipBundle &&owned_objects)
+               const IAttributeExecutor & attrExec, SessionManager &sessionMgr,
+               const search::IDocumentMetaStore &metaStore, SearchSession::OwnershipBundle &&owned_objects)
 {
     fastos::StopWatch total_matching_time;
     total_matching_time.start();
@@ -236,7 +237,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             feature_overrides = owned_objects.feature_overrides.get();
         }
         MatchToolsFactory::UP mtf = create_match_tools_factory(request, searchContext, attrContext,
-                                                               metaStore, *feature_overrides);
+                                                               attrExec, metaStore, *feature_overrides);
         if (!mtf->valid()) {
             reply->errorCode = ECODE_QUERY_PARSE_ERROR;
             reply->errorMessage = "query execution failed (invalid query)";
@@ -325,17 +326,17 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
 }
 
 FeatureSet::SP
-Matcher::getSummaryFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
-                            IAttributeContext & attrCtx, SessionManager &sessionMgr)
+Matcher::getSummaryFeatures(const DocsumRequest & req, ISearchContext & searchCtx, IAttributeContext & attrCtx,
+                            const IAttributeExecutor & attrExec, SessionManager &sessionMgr)
 {
-    return getFeatureSet(req, searchCtx, attrCtx, sessionMgr, true);
+    return getFeatureSet(req, searchCtx, attrCtx, attrExec, sessionMgr, true);
 }
 
 FeatureSet::SP
-Matcher::getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
-                         IAttributeContext & attrCtx, SessionManager &sessionMgr)
+Matcher::getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx, IAttributeContext & attrCtx,
+                         const IAttributeExecutor & attrExec, SessionManager &sessionMgr)
 {
-    return getFeatureSet(req, searchCtx, attrCtx, sessionMgr, false);
+    return getFeatureSet(req, searchCtx, attrCtx, attrExec, sessionMgr, false);
 }
 
 }
