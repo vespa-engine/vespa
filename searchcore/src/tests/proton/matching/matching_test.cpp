@@ -327,10 +327,14 @@ struct MyWorld {
         }
     };
 
+    struct DummyAttributeExecutor : public IAttributeExecutor {
+        void asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor>) const override {}
+    };
     void verify_diversity_filter(SearchRequest::SP req, bool expectDiverse) {
         Matcher::SP matcher = createMatcher();
         search::fef::Properties overrides;
-        auto mtf = matcher->create_match_tools_factory(*req, searchContext, attributeContext, metaStore, overrides);
+        DummyAttributeExecutor attrExec;
+        auto mtf = matcher->create_match_tools_factory(*req, searchContext, attributeContext, attrExec, metaStore, overrides);
         auto diversity = mtf->createDiversifier();
         EXPECT_EQUAL(expectDiverse, static_cast<bool>(diversity));
     }
@@ -339,8 +343,9 @@ struct MyWorld {
         Matcher::SP matcher = createMatcher();
         SearchRequest::SP request = createSimpleRequest("f1", "spread");
         search::fef::Properties overrides;
+        DummyAttributeExecutor attrExec;
         MatchToolsFactory::UP match_tools_factory = matcher->create_match_tools_factory(
-                *request, searchContext, attributeContext, metaStore, overrides);
+                *request, searchContext, attributeContext, attrExec, metaStore, overrides);
         MatchTools::UP match_tools = match_tools_factory->createMatchTools();
         match_tools->setup_first_phase();
         return match_tools->match_data().get_termwise_limit();
@@ -353,8 +358,9 @@ struct MyWorld {
         owned_objects.context.reset(new MatchContext(std::make_unique<MyAttributeContext>(),
                                                      std::make_unique<FakeSearchContext>()));
         vespalib::SimpleThreadBundle threadBundle(threads);
+        DummyAttributeExecutor attrExec;
         SearchReply::UP reply = matcher->match(*req, threadBundle, searchContext, attributeContext,
-                                               *sessionManager, metaStore, std::move(owned_objects));
+                                               attrExec, *sessionManager, metaStore, std::move(owned_objects));
         matchingStats.add(matcher->getStats());
         return reply;
     }

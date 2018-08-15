@@ -6,18 +6,17 @@
 #include "isearchcontext.h"
 #include "query.h"
 #include "viewresolver.h"
-#include <vespa/vespalib/util/doom.h>
 #include "querylimiter.h"
 #include "match_phase_limiter.h"
 #include "handlerecorder.h"
 #include "requestcontext.h"
-
-#include <vespa/vespalib/util/clock.h>
+#include <vespa/searchcore/proton/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/queryeval/idiversifier.h>
-
+#include <vespa/vespalib/util/doom.h>
+#include <vespa/vespalib/util/clock.h>
 
 namespace proton::matching {
 
@@ -80,6 +79,7 @@ private:
     MaybeMatchPhaseLimiter::UP        _match_limiter;
     QueryEnvironment                  _queryEnv;
     search::fef::MatchDataLayout      _mdl;
+    const IAttributeExecutor        & _attrExec;
     const search::fef::RankSetup    & _rankSetup;
     const search::fef::Properties   & _featureOverrides;
     DiversityParams                   _diversityParams;
@@ -95,6 +95,7 @@ public:
                       vespalib::stringref queryStack,
                       const vespalib::string &location,
                       const ViewResolver &viewResolver,
+                      const IAttributeExecutor & attrExec,
                       const search::IDocumentMetaStore &metaStore,
                       const search::fef::IIndexEnvironment &indexEnv,
                       const search::fef::RankSetup &rankSetup,
@@ -108,6 +109,10 @@ public:
     std::unique_ptr<search::queryeval::IDiversifier> createDiversifier() const;
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
     bool has_first_phase_rank() const { return !_rankSetup.getFirstPhaseRank().empty(); }
+    bool isMatchCountingEnabled() const;
+    void matchCounting(std::shared_ptr<IAttributeFunctor> count) const;
+    bool isReRankCountingEnabled() const;
+    void reRankCounting(std::shared_ptr<IAttributeFunctor> count) const;
 };
 
 }
