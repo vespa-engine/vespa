@@ -304,7 +304,7 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
     transferExtraAttributes(currMgr);
 }
 
-AttributeManager::~AttributeManager() { }
+AttributeManager::~AttributeManager() = default;
 
 AttributeVector::SP
 AttributeManager::addAttribute(const AttributeSpec &spec, uint64_t serialNum)
@@ -579,6 +579,17 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func)
         _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(attrsp->getNamePrefix()),
                                       [attrsp, func]() { (*func)(*attrsp); });
     }
+}
+
+void
+AttributeManager::asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const {
+    AttributeMap::const_iterator itr = _attributes.find(name);
+    if (itr == _attributes.end() || itr->second.isExtra()) {
+        return;
+    }
+    AttributeVector::SP attrsp = itr->second.getAttribute();
+    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(attrsp->getNamePrefix()),
+                                  [attrsp, func]() { (*func)(*attrsp); });
 }
 
 ExclusiveAttributeReadAccessor::UP

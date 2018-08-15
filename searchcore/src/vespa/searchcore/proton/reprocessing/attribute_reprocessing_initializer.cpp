@@ -76,10 +76,9 @@ getAttributesToPopulate(const ARIConfig &newCfg,
     FilterAttributeManager::AttributeSet attrsToPopulate =
         getAttributeSetToPopulate(newCfg, oldCfg, inspector, serialNum);
     if (!attrsToPopulate.empty()) {
-        return IReprocessingReader::SP(new AttributePopulator
-                (IAttributeManager::SP(new FilterAttributeManager
-                        (attrsToPopulate, newCfg.getAttrMgr())),
-                        ATTRIBUTE_INIT_SERIAL, subDbName, serialNum));
+        return std::make_shared<AttributePopulator>
+                (std::make_shared<FilterAttributeManager>(attrsToPopulate, newCfg.getAttrMgr()),
+                 ATTRIBUTE_INIT_SERIAL, subDbName, serialNum);
     }
     return IReprocessingReader::SP();
 }

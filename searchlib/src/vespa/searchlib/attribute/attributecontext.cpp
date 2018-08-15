@@ -38,7 +38,7 @@ AttributeContext::AttributeContext(const IAttributeManager & manager) :
     _cacheLock()
 { }
 
-AttributeContext::~AttributeContext() { }
+AttributeContext::~AttributeContext() = default;
 
 const IAttributeVector *
 AttributeContext::getAttribute(const string & name) const

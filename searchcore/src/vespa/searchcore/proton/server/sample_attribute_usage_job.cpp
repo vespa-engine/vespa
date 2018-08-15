@@ -21,18 +21,14 @@ SampleAttributeUsageJob(IAttributeManagerSP readyAttributeManager,
 {
 }
 
-SampleAttributeUsageJob::~SampleAttributeUsageJob()
-{
-}
+SampleAttributeUsageJob::~SampleAttributeUsageJob() = default;
 
 bool
 SampleAttributeUsageJob::run()
 {
     auto context = std::make_shared<AttributeUsageSamplerContext> (_attributeUsageFilter);
-    _readyAttributeManager->asyncForEachAttribute(
-            std::make_shared<AttributeUsageSamplerFunctor>(context, "ready"));
-    _notReadyAttributeManager->asyncForEachAttribute(
-            std::make_shared<AttributeUsageSamplerFunctor>(context, "notready"));
+    _readyAttributeManager->asyncForEachAttribute(std::make_shared<AttributeUsageSamplerFunctor>(context, "ready"));
+    _notReadyAttributeManager->asyncForEachAttribute(std::make_shared<AttributeUsageSamplerFunctor>(context, "notready"));
     return true;
 }
 

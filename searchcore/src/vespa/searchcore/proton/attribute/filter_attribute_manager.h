@@ -32,28 +32,30 @@ public:
     ~FilterAttributeManager();
 
     // Implements search::IAttributeManager
-    virtual search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override;
-    virtual void getAttributeList(std::vector<search::AttributeGuard> &list) const override;
-    virtual search::SerialNum getFlushedSerialNum(const vespalib::string &name) const override;
-    virtual search::attribute::IAttributeContext::UP createContext() const override;
-    virtual std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(const vespalib::string &name, bool stableEnumGuard) const override;
+    search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override;
+    void getAttributeList(std::vector<search::AttributeGuard> &list) const override;
+    search::SerialNum getFlushedSerialNum(const vespalib::string &name) const override;
+    search::attribute::IAttributeContext::UP createContext() const override;
+    std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(const vespalib::string &name, bool stableEnumGuard) const override;
 
     // Implements proton::IAttributeManager
-    virtual IAttributeManager::SP create(const AttributeCollectionSpec &) const override;
-    virtual std::vector<searchcorespi::IFlushTarget::SP> getFlushTargets() const override;
-    virtual search::SerialNum getOldestFlushedSerialNumber() const override;
-    virtual search::SerialNum getNewestFlushedSerialNumber() const override;
-    virtual void getAttributeListAll(std::vector<search::AttributeGuard> &) const override;
-    virtual void pruneRemovedFields(search::SerialNum serialNum) override;
-    virtual const IAttributeFactory::SP &getFactory() const override;
-    virtual search::ISequencedTaskExecutor & getAttributeFieldWriter() const override;
+    IAttributeManager::SP create(const AttributeCollectionSpec &) const override;
+    std::vector<searchcorespi::IFlushTarget::SP> getFlushTargets() const override;
+    search::SerialNum getOldestFlushedSerialNumber() const override;
+    search::SerialNum getNewestFlushedSerialNumber() const override;
+    void getAttributeListAll(std::vector<search::AttributeGuard> &) const override;
+    void pruneRemovedFields(search::SerialNum serialNum) override;
+    const IAttributeFactory::SP &getFactory() const override;
+    search::ISequencedTaskExecutor & getAttributeFieldWriter() const override;
 
-    virtual search::AttributeVector * getWritableAttribute(const vespalib::string &name) const override;
-    virtual const std::vector<search::AttributeVector *> & getWritableAttributes() const override;
-    virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const override;
-    virtual ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const override;
-    virtual void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) override;
-    virtual const ImportedAttributesRepo *getImportedAttributes() const override;
+    search::AttributeVector * getWritableAttribute(const vespalib::string &name) const override;
+    const std::vector<search::AttributeVector *> & getWritableAttributes() const override;
+    void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const override;
+    ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const override;
+    void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) override;
+    const ImportedAttributesRepo *getImportedAttributes() const override;
+
+    void asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const override;
 };
 
 } // namespace proton
