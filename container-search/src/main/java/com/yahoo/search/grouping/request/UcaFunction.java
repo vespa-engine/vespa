@@ -42,7 +42,7 @@ public class UcaFunction extends FunctionNode {
     private UcaFunction(String label, Integer level, List<GroupingExpression> args) {
         super("uca", label, level, args);
         this.locale = ((StringValue)args.get(1)).getValue();
-        this.strength = args.size() > 2 ? ((StringValue)args.get(1)).getValue() : "TERTIARY";
+        this.strength = args.size() > 2 ? ((StringValue)args.get(2)).getValue() : "TERTIARY";
     }
 
     @Override
@@ -67,6 +67,7 @@ public class UcaFunction extends FunctionNode {
     public String getStrength() {
         return strength;
     }
+
 }
 
 
