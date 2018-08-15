@@ -9,6 +9,7 @@
 #include <vector>
 #include <vespa/vespalib/util/sort.h>
 #include <vespa/fastos/dynamiclibrary.h>
+#include "sorted_hit_sequence.h"
 
 namespace search::queryeval {
 
@@ -32,7 +33,6 @@ private:
 
     const uint32_t _numDocs;
     const uint32_t _maxHitsSize;
-    const uint32_t _maxReRankHitsSize;
     const uint32_t _maxDocIdVectorSize;
 
     std::vector<Hit>            _hits;  // used as a heap when _hits.size == _maxHitsSize
@@ -144,14 +144,12 @@ public:
     /**
      * Creates a hit collector used to store hits for doc ids in the
      * range [0, numDocs>.  Doc id and rank score are stored for the n
-     * (=maxHitsSize) best hits. The best m (=maxReRankHitsSize) hits are
-     * candidates for re-ranking. Note that n >= m.
+     * (=maxHitsSize) best hits.
      *
      * @param numDocs
      * @param maxHitsSize
-     * @param maxReRankHitsSize
      **/
-    HitCollector(uint32_t numDocs, uint32_t maxHitsSize, uint32_t maxReRankHitsSize);
+    HitCollector(uint32_t numDocs, uint32_t maxHitsSize);
     ~HitCollector();
 
     /**
@@ -167,15 +165,19 @@ public:
     }
 
     /**
-     * Returns a sorted vector of hits for the hits that are stored
-     * in the heap. These are the candidates for re-ranking.
+     * Returns a sorted sequence of hits that reference internal
+     * data. The number of hits returned in the sequence is controlled
+     * by the parameter and also affects how many hits need to be
+     * fully sorted.
+     *
+     * @param max_hits maximum number of hits returned in the sequence.
      */
-    std::vector<Hit> getSortedHeapHits();
+    SortedHitSequence getSortedHitSequence(size_t max_hits);
 
     /**
-     * Re-ranks the m (=maxHeapSize) best hits by invoking the score()
-     * method on the given document scorer. The best m hits are sorted on doc id
-     * so that score() is called in doc id order.
+     * Re-ranks the given hits by invoking the score() method on the
+     * given document scorer. The hits are sorted on doc id so that
+     * score() is called in doc id order.
      **/
     size_t reRank(DocumentScorer &scorer, std::vector<Hit> hits);
 

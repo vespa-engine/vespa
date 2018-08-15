@@ -37,6 +37,15 @@ struct PredefinedScorer : public HitCollector::DocumentScorer
     }
 };
 
+std::vector<HitCollector::Hit> extract(SortedHitSequence seq) {
+    std::vector<HitCollector::Hit> ret;
+    while (seq.valid()) {
+        ret.push_back(seq.get());
+        seq.next();
+    }
+    return ret;
+}
+
 void checkResult(const ResultSet & rs, const std::vector<RankedHit> & exp)
 {
     if ( ! exp.empty()) {
@@ -68,12 +77,12 @@ void checkResult(ResultSet & rs, BitVector * exp)
     }
 }
 
-void testAddHit(uint32_t numDocs, uint32_t maxHitsSize, uint32_t maxHeapSize)
+void testAddHit(uint32_t numDocs, uint32_t maxHitsSize)
 {
 
     LOG(info, "testAddHit: no hits");
     { // no hits
-        HitCollector hc(numDocs, maxHitsSize, maxHeapSize);
+        HitCollector hc(numDocs, maxHitsSize);
         std::vector<RankedHit> expRh;
 
         std::unique_ptr<ResultSet> rs = hc.getResultSet();
@@ -83,7 +92,7 @@ void testAddHit(uint32_t numDocs, uint32_t maxHitsSize, uint32_t maxHeapSize)
 
     LOG(info, "testAddHit: only ranked hits");
     { // only ranked hits
-        HitCollector hc(numDocs, maxHitsSize, maxHeapSize);
+        HitCollector hc(numDocs, maxHitsSize);
         std::vector<RankedHit> expRh;
 
         for (uint32_t i = 0; i < maxHitsSize; ++i) {
@@ -102,7 +111,7 @@ void testAddHit(uint32_t numDocs, uint32_t maxHitsSize, uint32_t maxHeapSize)
 
     LOG(info, "testAddHit: both ranked hits and bit vector hits");
     { // both ranked hits and bit vector hits
-        HitCollector hc(numDocs, maxHitsSize, maxHeapSize);
+        HitCollector hc(numDocs, maxHitsSize);
         std::vector<RankedHit> expRh;
         BitVector::UP expBv(BitVector::create(numDocs));
 
@@ -125,10 +134,8 @@ void testAddHit(uint32_t numDocs, uint32_t maxHitsSize, uint32_t maxHeapSize)
 }
 
 TEST("testAddHit") {
-    TEST_DO(testAddHit(30, 10, 5));
-    TEST_DO(testAddHit(30, 10, 0));
-    TEST_DO(testAddHit(400, 10, 5)); // 400/32 = 12 which is bigger than 10.
-    TEST_DO(testAddHit(400, 10, 0));
+    TEST_DO(testAddHit(30, 10));
+    TEST_DO(testAddHit(400, 10)); // 400/32 = 12 which is bigger than 10.
 }
 
 struct Fixture {
@@ -137,7 +144,7 @@ struct Fixture {
     BasicScorer scorer;
 
     Fixture()
-        : hc(20, 10, 5), expBv(BitVector::create(20)), scorer(200)
+        : hc(20, 10), expBv(BitVector::create(20)), scorer(200)
     {
     }
     virtual ~Fixture() {}
@@ -148,16 +155,10 @@ struct Fixture {
             expBv->setBit(i);
         }
     }
-    size_t reRank() {
-        return hc.reRank(scorer, hc.getSortedHeapHits());
-    }
     size_t reRank(size_t count) {
-        auto hits = hc.getSortedHeapHits();
-        if (hits.size() > count) {
-            hits.resize(count);
-        }
-        return hc.reRank(scorer, std::move(hits));
+        return hc.reRank(scorer, extract(hc.getSortedHitSequence(count)));
     }
+    size_t reRank() { return reRank(5); }
 };
 
 struct AscendingScoreFixture : Fixture {
@@ -238,7 +239,7 @@ TEST_F("testReRank - partial", AscendingScoreFixture)
 TEST_F("require that hits for 2nd phase candidates can be retrieved", DescendingScoreFixture)
 {
     f.addHits();
-    std::vector<HitCollector::Hit> scores = f.hc.getSortedHeapHits();
+    std::vector<HitCollector::Hit> scores = extract(f.hc.getSortedHitSequence(5));
     ASSERT_EQUAL(5u, scores.size());
     EXPECT_EQUAL(100, scores[0].second);
     EXPECT_EQUAL(99, scores[1].second);
@@ -249,7 +250,7 @@ TEST_F("require that hits for 2nd phase candidates can be retrieved", Descending
 
 TEST("require that score ranges can be read and set.") {
     std::pair<Scores, Scores> ranges = std::make_pair(Scores(1.0, 2.0), Scores(3.0, 4.0));
-    HitCollector hc(20, 10, 5);
+    HitCollector hc(20, 10);
     hc.setRanges(ranges);
     EXPECT_EQUAL(ranges.first.low, hc.getRanges().first.low);
     EXPECT_EQUAL(ranges.first.high, hc.getRanges().first.high);
@@ -263,7 +264,7 @@ TEST("testNoHitsToReRank") {
 
     LOG(info, "testNoMDHeap: test it");
     {
-        HitCollector hc(numDocs, maxHitsSize, 0);
+        HitCollector hc(numDocs, maxHitsSize);
         std::vector<RankedHit> expRh;
 
         for (uint32_t i = 0; i < maxHitsSize; ++i) {
@@ -285,7 +286,7 @@ void testScaling(const std::vector<feature_t> &initScores,
                  ScoreMap finalScores,
                  const std::vector<RankedHit> &expected)
 {
-    HitCollector hc(5, 5, 2);
+    HitCollector hc(5, 5);
 
     // first phase ranking
     for (uint32_t i = 0; i < 5; ++i) {
@@ -294,7 +295,7 @@ void testScaling(const std::vector<feature_t> &initScores,
 
     PredefinedScorer scorer(std::move(finalScores));
     // perform second phase ranking
-    EXPECT_EQUAL(2u, hc.reRank(scorer, hc.getSortedHeapHits()));
+    EXPECT_EQUAL(2u, hc.reRank(scorer, extract(hc.getSortedHitSequence(2))));
 
     // check results
     std::unique_ptr<ResultSet> rs = hc.getResultSet();
@@ -394,7 +395,7 @@ TEST("testOnlyBitVector") {
     uint32_t numDocs = 20;
     LOG(info, "testOnlyBitVector: test it");
     {
-        HitCollector hc(numDocs, 0, 0);
+        HitCollector hc(numDocs, 0);
         BitVector::UP expBv(BitVector::create(numDocs));
 
         for (uint32_t i = 0; i < numDocs; i += 2) {
@@ -416,7 +417,7 @@ struct MergeResultSetFixture {
     const uint32_t maxHeapSize;
     HitCollector hc;
     MergeResultSetFixture()
-        : numDocs(100), maxHitsSize(80), maxHeapSize(30), hc(numDocs * 32, maxHitsSize, maxHeapSize)
+        : numDocs(100), maxHitsSize(80), maxHeapSize(30), hc(numDocs * 32, maxHitsSize)
     {}
 };
 
@@ -461,13 +462,13 @@ TEST_F("require that result set is merged correctly with second phase ranking (d
         f.hc.addHit(i, i + 1000);
         addExpectedHitForMergeTest(f, expRh, i);
     }
-    EXPECT_EQUAL(f.maxHeapSize, f.hc.reRank(scorer, f.hc.getSortedHeapHits()));
+    EXPECT_EQUAL(f.maxHeapSize, f.hc.reRank(scorer, extract(f.hc.getSortedHitSequence(f.maxHeapSize))));
     std::unique_ptr<ResultSet> rs = f.hc.getResultSet();
     TEST_DO(checkResult(*rs, expRh));
 }
 
 TEST("require that hits can be added out of order") {
-    HitCollector hc(1000, 100, 10);
+    HitCollector hc(1000, 100);
     std::vector<RankedHit> expRh;
     // produce expected result in normal order
     for (uint32_t i = 0; i < 5; ++i) {
@@ -485,7 +486,7 @@ TEST("require that hits can be added out of order") {
 }
 
 TEST("require that hits can be added out of order when passing array limit") {
-    HitCollector hc(10000, 100, 10);
+    HitCollector hc(10000, 100);
     std::vector<RankedHit> expRh;
     // produce expected result in normal order
     const size_t numHits = 150;
@@ -504,7 +505,7 @@ TEST("require that hits can be added out of order when passing array limit") {
 }
 
 TEST("require that hits can be added out of order only after passing array limit") {
-    HitCollector hc(10000, 100, 10);
+    HitCollector hc(10000, 100);
     std::vector<RankedHit> expRh;
     // produce expected result in normal order
     const size_t numHits = 150;

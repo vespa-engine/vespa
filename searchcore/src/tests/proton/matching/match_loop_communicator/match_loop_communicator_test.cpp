@@ -13,6 +13,7 @@ using RangePair = MatchLoopCommunicator::RangePair;
 using Matches = MatchLoopCommunicator::Matches;
 using Hit = MatchLoopCommunicator::Hit;
 using Hits = MatchLoopCommunicator::Hits;
+using search::queryeval::SortedHitSequence;
 
 Hits makeScores(size_t id) {
     switch (id) {
@@ -23,6 +24,14 @@ Hits makeScores(size_t id) {
     case 4: return make_box<Hit>({41, 5.0}, {42, 4.0}, {43, 3.0}, {44, 2.0}, {45, 1.0});
     }
     return Box<Hit>();
+}
+
+Hits selectBest(MatchLoopCommunicator &com, const Hits &hits) {
+    std::vector<uint32_t> refs;
+    for (size_t i = 0; i < hits.size(); ++i) {
+        refs.push_back(i);
+    }
+    return com.selectBest(SortedHitSequence(&hits[0], &refs[0], refs.size()));
 }
 
 RangePair makeRanges(size_t id) {
@@ -51,50 +60,50 @@ struct EveryOdd : public search::queryeval::IDiversifier {
 };
 
 TEST_F("require that selectBest gives appropriate results for single thread", MatchLoopCommunicator(num_threads, 3)) {
-    TEST_DO(equal(2u, make_box<Hit>({1, 5}, {2, 4}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}))));
-    TEST_DO(equal(3u, make_box<Hit>({1, 5}, {2, 4}, {3, 3}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}, {3, 3}))));
-    TEST_DO(equal(3u, make_box<Hit>({1, 5}, {2, 4}, {3, 3}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}, {3, 3}, {4, 2}))));
+    TEST_DO(equal(2u, make_box<Hit>({1, 5}, {2, 4}), selectBest(f1, make_box<Hit>({1, 5}, {2, 4}))));
+    TEST_DO(equal(3u, make_box<Hit>({1, 5}, {2, 4}, {3, 3}), selectBest(f1, make_box<Hit>({1, 5}, {2, 4}, {3, 3}))));
+    TEST_DO(equal(3u, make_box<Hit>({1, 5}, {2, 4}, {3, 3}), selectBest(f1, make_box<Hit>({1, 5}, {2, 4}, {3, 3}, {4, 2}))));
 }
 
 TEST_F("require that selectBest gives appropriate results for single thread with filter",
        MatchLoopCommunicator(num_threads, 3, std::make_unique<EveryOdd>()))
 {
-    TEST_DO(equal(1u, make_box<Hit>({1, 5}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}))));
-    TEST_DO(equal(2u, make_box<Hit>({1, 5}, {3, 3}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}, {3, 3}))));
-    TEST_DO(equal(3u, make_box<Hit>({1, 5}, {3, 3}, {5, 1}), f1.selectBest(make_box<Hit>({1, 5}, {2, 4}, {3, 3}, {4, 2}, {5, 1}, {6, 0}))));
+    TEST_DO(equal(1u, make_box<Hit>({1, 5}), selectBest(f1, make_box<Hit>({1, 5}, {2, 4}))));
+    TEST_DO(equal(2u, make_box<Hit>({1, 5}, {3, 3}), selectBest(f1, make_box<Hit>({1, 5}, {2, 4}, {3, 3}))));
+    TEST_DO(equal(3u, make_box<Hit>({1, 5}, {3, 3}, {5, 1}), selectBest(f1, make_box<Hit>({1, 5}, {2, 4}, {3, 3}, {4, 2}, {5, 1}, {6, 0}))));
 }
 
 TEST_MT_F("require that selectBest works with no hits", 10, MatchLoopCommunicator(num_threads, 10)) {
-    EXPECT_TRUE(f1.selectBest(Box<Hit>()).empty());
+    EXPECT_TRUE(selectBest(f1, Box<Hit>()).empty());
 }
 
 TEST_MT_F("require that selectBest works with too many hits from all threads", 5, MatchLoopCommunicator(num_threads, 13)) {
     if (thread_id < 3) {
-        TEST_DO(equal(3u, makeScores(thread_id), f1.selectBest(makeScores(thread_id))));
+        TEST_DO(equal(3u, makeScores(thread_id), selectBest(f1, makeScores(thread_id))));
     } else {
-        TEST_DO(equal(2u, makeScores(thread_id), f1.selectBest(makeScores(thread_id))));
+        TEST_DO(equal(2u, makeScores(thread_id), selectBest(f1, makeScores(thread_id))));
     }
 }
 
 TEST_MT_F("require that selectBest works with some exhausted threads", 5, MatchLoopCommunicator(num_threads, 22)) {
     if (thread_id < 2) {
-        TEST_DO(equal(5u, makeScores(thread_id), f1.selectBest(makeScores(thread_id))));
+        TEST_DO(equal(5u, makeScores(thread_id), selectBest(f1, makeScores(thread_id))));
     } else {
-        TEST_DO(equal(4u, makeScores(thread_id), f1.selectBest(makeScores(thread_id))));
+        TEST_DO(equal(4u, makeScores(thread_id), selectBest(f1, makeScores(thread_id))));
     }
 }
 
 TEST_MT_F("require that selectBest can select all hits from all threads", 5, MatchLoopCommunicator(num_threads, 100)) {
-    EXPECT_EQUAL(5u, f1.selectBest(makeScores(thread_id)).size());
+    EXPECT_EQUAL(5u, selectBest(f1, makeScores(thread_id)).size());
 }
 
 TEST_MT_F("require that selectBest works with some empty threads", 10, MatchLoopCommunicator(num_threads, 7)) {
     if (thread_id < 2) {
-        TEST_DO(equal(2u, makeScores(thread_id), f1.selectBest(makeScores(thread_id))));
+        TEST_DO(equal(2u, makeScores(thread_id), selectBest(f1, makeScores(thread_id))));
     } else if (thread_id < 5) {
-        TEST_DO(equal(1u, makeScores(thread_id), f1.selectBest(makeScores(thread_id))));
+        TEST_DO(equal(1u, makeScores(thread_id), selectBest(f1, makeScores(thread_id))));
     } else {
-        EXPECT_TRUE(f1.selectBest(makeScores(thread_id)).empty());
+        EXPECT_TRUE(selectBest(f1, makeScores(thread_id)).empty());
     }
 }
 

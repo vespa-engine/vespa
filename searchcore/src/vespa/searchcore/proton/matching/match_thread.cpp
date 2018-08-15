@@ -23,6 +23,8 @@ using search::fef::MatchData;
 using search::fef::RankProgram;
 using search::fef::FeatureResolver;
 using search::fef::LazyValue;
+using search::queryeval::HitCollector;
+using search::queryeval::SortedHitSequence;
 
 namespace {
 
@@ -258,16 +260,18 @@ MatchThread::findMatches(MatchTools &tools)
     if (isFirstThread()) {
         LOG(debug, "SearchIterator after MultiBitVectorIteratorBase::optimize(): %s", tools.search().asString().c_str());
     }
-    HitCollector hits(matchParams.numDocs, matchParams.arraySize, matchParams.heapSize);
+    HitCollector hits(matchParams.numDocs, matchParams.arraySize);
     match_loop_helper(tools, hits);
     if (tools.has_second_phase_rank()) {
         { // 2nd phase ranking
             tools.setup_second_phase();
             DocidRange docid_range = scheduler.total_span(thread_id);
             tools.search().initRange(docid_range.begin, docid_range.end);
-            auto sorted_hits = hits.getSortedHeapHits();
+            auto sorted_hit_seq = matchToolsFactory.should_diversify()
+                                  ? hits.getSortedHitSequence(matchParams.arraySize)
+                                  : hits.getSortedHitSequence(matchParams.heapSize);
             WaitTimer select_best_timer(wait_time_s);
-            auto kept_hits = communicator.selectBest(std::move(sorted_hits));
+            auto kept_hits = communicator.selectBest(sorted_hit_seq);
             select_best_timer.done();
             DocumentScorer scorer(tools.rank_program(), tools.search());
             if (tools.getHardDoom().doom()) {
