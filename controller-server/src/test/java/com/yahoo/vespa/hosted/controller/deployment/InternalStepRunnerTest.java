@@ -115,8 +115,8 @@ public class InternalStepRunnerTest {
     /** Submits a new application, and returns the version of the new submission. */
     private ApplicationVersion newSubmission(ApplicationId id) {
         ApplicationVersion version = jobs.submit(id, BuildJob.defaultSourceRevision, applicationPackage.zippedContent(), new byte[0]);
-        tester.artifactRepository().putApplicationPackage(appId, version.id(), applicationPackage.zippedContent());
-        tester.artifactRepository().putTesterPackage(testerOf(appId), version.id(), new byte[0]);
+        tester.applicationStore().putApplicationPackage(appId, version.id(), applicationPackage.zippedContent());
+        tester.applicationStore().putTesterPackage(testerOf(appId), version.id(), new byte[0]);
         return version;
     }
 

@@ -8,6 +8,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
+import com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock;
 import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -88,6 +89,8 @@ public class DeploymentTester {
     public ConfigServerMock configServer() { return tester.configServer(); }
 
     public ArtifactRepositoryMock artifactRepository() { return tester.artifactRepository(); }
+
+    public ApplicationStoreMock applicationStore() { return tester.applicationStore(); }
 
     public Application application(String name) {
         return application(ApplicationId.from("tenant1", name, "default"));

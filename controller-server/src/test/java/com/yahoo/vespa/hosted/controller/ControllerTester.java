@@ -155,6 +155,8 @@ public final class ControllerTester {
 
     public ArtifactRepositoryMock artifactRepository() { return artifactRepository; }
 
+    public ApplicationStoreMock applicationStore() { return applicationStore; }
+
     public MockBuildService buildService() { return buildService; }
 
     public MetricsServiceMock metricsService() { return metricsService; }
