@@ -4,8 +4,7 @@
 
 #include "i_maintenance_job.h"
 
-namespace proton
-{
+namespace proton {
 
 class IAttributeManager;
 class AttributeUsageFilter;
@@ -30,7 +29,7 @@ public:
                             double interval);
     ~SampleAttributeUsageJob();
 
-    virtual bool run() override;
+    bool run() override;
 };
 
 } // namespace proton

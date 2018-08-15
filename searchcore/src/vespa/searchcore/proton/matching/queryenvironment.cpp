@@ -7,8 +7,7 @@ using search::fef::IIndexEnvironment;
 using search::fef::Location;
 using search::fef::Properties;
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 QueryEnvironment::QueryEnvironment(const IIndexEnvironment &indexEnv,
                                    const IAttributeContext &attrContext,
@@ -60,9 +59,6 @@ QueryEnvironment::getIndexEnvironment() const
     return _indexEnv;
 }
 
-QueryEnvironment::~QueryEnvironment()
-{
-}
+QueryEnvironment::~QueryEnvironment() = default;
 
-} // namespace matching
-} // namespace proton
+}

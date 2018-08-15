@@ -60,6 +60,8 @@ StorageBucketDBInitializer::Config::Config(const config::ConfigUri & configUri)
         _minPendingInfoReadsPerDisk, _maxPendingInfoReadsPerDisk);
 }
 
+StorageBucketDBInitializer::System::~System() = default;
+
 StorageBucketDBInitializer::System::System(
         const spi::PartitionStateList& partitions,
         DoneInitializeHandler& doneInitializeHandler,

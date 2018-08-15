@@ -88,6 +88,7 @@ class StorageBucketDBInitializer : public StorageLink,
                DoneInitializeHandler& doneInitializeHandler,
                ServiceLayerComponentRegister&,
                const Config&);
+        ~System();
 
         StorBucketDatabase &getBucketDatabase(document::BucketSpace bucketSpace) const;
     };
