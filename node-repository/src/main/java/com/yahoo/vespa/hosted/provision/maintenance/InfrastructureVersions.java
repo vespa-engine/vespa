@@ -31,6 +31,9 @@ public class InfrastructureVersions {
         if (nodeType != NodeType.config && nodeType != NodeType.confighost && nodeType != NodeType.proxyhost) {
             throw new IllegalArgumentException("Cannot set version for type " + nodeType);
         }
+        if (newTargetVersion.isEmpty()) {
+            throw  new IllegalArgumentException("Invalid target version: " + newTargetVersion.toFullString());
+        }
 
         try (Lock lock = db.lockInfrastructureVersions()) {
             Map<NodeType, Version> infrastructureVersions = db.readInfrastructureVersions();

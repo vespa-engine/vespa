@@ -67,6 +67,9 @@ public class OsVersions {
         if (!nodeType.isDockerHost()) {
             throw new IllegalArgumentException("Setting target OS version for " + nodeType + " nodes is unsupported");
         }
+        if (newTarget.isEmpty()) {
+            throw  new IllegalArgumentException("Invalid target version: " + newTarget.toFullString());
+        }
         try (Lock lock = db.lockOsVersions()) {
             Map<NodeType, Version> osVersions = db.readOsVersions();
             Optional<Version> oldTarget = Optional.ofNullable(osVersions.get(nodeType));
