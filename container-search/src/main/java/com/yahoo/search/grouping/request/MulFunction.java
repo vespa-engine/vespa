@@ -2,7 +2,6 @@
 package com.yahoo.search.grouping.request;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * This class represents a mul-function in a {@link GroupingExpression}. It evaluates to a number that equals the result
@@ -20,18 +19,11 @@ public class MulFunction extends FunctionNode {
      * @param argN The optional arguments, must evaluate to a number.
      */
     public MulFunction(GroupingExpression arg1, GroupingExpression arg2, GroupingExpression... argN) {
-        this(null, null, asList(arg1, arg2, argN));
+        this(asList(arg1, arg2, argN));
     }
 
-    private MulFunction(String label, Integer level, List<GroupingExpression> args) {
-        super("mul", label, level, args);
-    }
-
-    @Override
-    public MulFunction copy() {
-        return new MulFunction(getLabel(),
-                               getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+    private MulFunction(List<GroupingExpression> args) {
+        super("mul", args);
     }
 
     /**
@@ -45,6 +37,6 @@ public class MulFunction extends FunctionNode {
         if (args.size() < 2) {
             throw new IllegalArgumentException("Expected 2 or more arguments, got " + args.size() + ".");
         }
-        return new MulFunction(null, null, args);
+        return new MulFunction(args);
     }
 }

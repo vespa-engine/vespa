@@ -10,11 +10,10 @@ package com.yahoo.search.grouping.request;
 public abstract class GroupingNode {
 
     private final String image;
-    private String label;
+    private String label = null;
 
-    protected GroupingNode(String image, String label) {
+    protected GroupingNode(String image) {
         this.image = image;
-        this.label = label;
     }
 
     /**
@@ -25,8 +24,6 @@ public abstract class GroupingNode {
     public String getLabel() {
         return label;
     }
-
-    protected String getImage() { return image; }
 
     /**
      * Assigns a label to this grouping expression. The label is applied to the results of this expression so that they
@@ -44,5 +41,4 @@ public abstract class GroupingNode {
     public String toString() {
         return image;
     }
-
 }

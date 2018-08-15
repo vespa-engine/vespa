@@ -5,26 +5,14 @@ import java.util.Arrays;
 
 /**
  * @author baldersheim
- * @author bratseth
  */
 public class MathASinFunction extends FunctionNode {
-
     /**
      * Constructs a new instance of this class.
      *
      * @param exp The expression to evaluate, double value will be requested.
      */
     public MathASinFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("math.asin", Arrays.asList(exp));
     }
-
-    private MathASinFunction(String label, Integer level, GroupingExpression exp) {
-        super("math.asin", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public MathASinFunction copy() {
-        return new MathASinFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }

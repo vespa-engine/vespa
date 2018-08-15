@@ -167,15 +167,8 @@ public class HitRendererTestCase {
         }
 
         @Override
-        public Continuation copy() {
-            return null;
-        }
-
-        @Override
         public String toString() {
             return str;
         }
-
     }
-
 }

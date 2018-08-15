@@ -6,26 +6,15 @@ package com.yahoo.search.grouping.request;
  * the contained expression evaluated to over all the inputs.
  *
  * @author Simon Thoresen Hult
- * @author bratseth
  */
 public class XorAggregator extends AggregatorNode {
 
     /**
      * Constructs a new instance of this class.
      *
-     * @param expression the expression to aggregate on.
+     * @param exp The expression to aggregate on.
      */
-    public XorAggregator(GroupingExpression expression) {
-        this(null, null, expression);
+    public XorAggregator(GroupingExpression exp) {
+        super("xor", exp);
     }
-
-    private XorAggregator(String label, Integer level, GroupingExpression expression) {
-        super("xor", label, level, expression);
-    }
-
-    @Override
-    public XorAggregator copy() {
-        return new XorAggregator(getLabel(), getLevelOrNull(), getExpression().copy());
-    }
-
 }

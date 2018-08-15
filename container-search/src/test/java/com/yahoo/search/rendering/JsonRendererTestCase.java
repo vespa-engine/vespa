@@ -790,11 +790,6 @@ public class JsonRendererTestCase {
         Result r = newEmptyResult();
         RootGroup rg = new RootGroup(0, new Continuation() {
             @Override
-            public Continuation copy() {
-                return null;
-            }
-
-            @Override
             public String toString() {
                 return "AAAA";
             }
@@ -802,21 +797,11 @@ public class JsonRendererTestCase {
         GroupList gl = new GroupList("customer");
         gl.continuations().put("prev", new Continuation() {
             @Override
-            public Continuation copy() {
-                return null;
-            }
-
-            @Override
             public String toString() {
                 return "BBBB";
             }
         });
         gl.continuations().put("next", new Continuation() {
-            @Override
-            public Continuation copy() {
-                return null;
-            }
-
             @Override
             public String toString() {
                 return "CCCC";
@@ -874,11 +859,6 @@ public class JsonRendererTestCase {
                 + "}\n";
         Result r = newEmptyResult();
         RootGroup rg = new RootGroup(0, new Continuation() {
-            @Override
-            public Continuation copy() {
-                return null;
-            }
-
             @Override
             public String toString() {
                 return "AAAA";

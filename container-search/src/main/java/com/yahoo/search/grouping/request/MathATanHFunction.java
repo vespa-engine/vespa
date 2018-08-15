@@ -5,26 +5,14 @@ import java.util.Arrays;
 
 /**
  * @author baldersheim
- * @author bratseth
  */
 public class MathATanHFunction extends FunctionNode {
-
-    /**
+/**
      * Constructs a new instance of this class.
      *
      * @param exp The expression to evaluate, double value will be requested.
      */
     public MathATanHFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("math.atanh", Arrays.asList(exp));
     }
-
-    private MathATanHFunction(String label, Integer level, GroupingExpression exp) {
-        super("math.atanh", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public MathATanHFunction copy() {
-        return new MathATanHFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }

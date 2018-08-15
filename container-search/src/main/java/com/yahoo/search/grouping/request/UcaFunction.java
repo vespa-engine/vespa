@@ -2,19 +2,17 @@
 package com.yahoo.search.grouping.request;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * This class represents an uca-function in a {@link GroupingExpression}.
  *
- * @author Ulf Lilleengen
- * @author bratseth
+ * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
  */
 public class UcaFunction extends FunctionNode {
 
     private final String locale;
     private final String strength;
+
 
     /**
      * Constructs a new instance of this class.
@@ -23,7 +21,9 @@ public class UcaFunction extends FunctionNode {
      * @param locale  The locale to used for sorting.
      */
     public UcaFunction(GroupingExpression exp, String locale) {
-        this(null, null, Arrays.asList(exp, new StringValue(locale)));
+        super("uca", Arrays.asList(exp, new StringValue(locale)));
+        this.locale = locale;
+        this.strength = "TERTIARY";
     }
 
     /**
@@ -34,22 +34,12 @@ public class UcaFunction extends FunctionNode {
      * @param strength The strength level to use.
      */
     public UcaFunction(GroupingExpression exp, String locale, String strength) {
-        this(null, null, Arrays.asList(exp, new StringValue(locale), new StringValue(strength)));
-        if ( ! validStrength(strength))
+        super("uca", Arrays.asList(exp, new StringValue(locale), new StringValue(strength)));
+        if (!validStrength(strength)) {
             throw new IllegalArgumentException("Not a valid UCA strength: " + strength);
-    }
-
-    private UcaFunction(String label, Integer level, List<GroupingExpression> args) {
-        super("uca", label, level, args);
-        this.locale = ((StringValue)args.get(1)).getValue();
-        this.strength = args.size() > 2 ? ((StringValue)args.get(1)).getValue() : "TERTIARY";
-    }
-
-    @Override
-    public UcaFunction copy() {
-        return new UcaFunction(getLabel(),
-                               getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+        }
+        this.locale = locale;
+        this.strength = strength;
     }
 
     private boolean validStrength(String strength) {

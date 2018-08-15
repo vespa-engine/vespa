@@ -7,24 +7,23 @@ package com.yahoo.search.grouping.request;
  * data types are represented as subclasses of this.
  *
  * @author Simon Thoresen Hult
- * @author bratseth
  */
 @SuppressWarnings("rawtypes")
 public abstract class ConstantValue<T extends Comparable> extends GroupingExpression {
 
     private final T value;
 
-    protected ConstantValue(String label, Integer level, T value) {
-        super(asImage(value), label, level);
+    protected ConstantValue(T value) {
+        super(asImage(value));
         this.value = value;
     }
 
-    @Override
-    public abstract ConstantValue copy();
-
-    /** Returns the constant value of this */
+    /**
+     * Returns the constant value of this.
+     *
+     * @return The value.
+     */
     public T getValue() {
         return value;
     }
-
 }

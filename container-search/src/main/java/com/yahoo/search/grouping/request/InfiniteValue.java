@@ -4,8 +4,7 @@ package com.yahoo.search.grouping.request;
 /**
  * This class represents an infinite value in a {@link GroupingExpression}.
  *
- * @author Ulf Lilleengen
- * @author bratseth
+ * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
  */
 public class InfiniteValue extends ConstantValue<Infinite> {
 
@@ -15,16 +14,6 @@ public class InfiniteValue extends ConstantValue<Infinite> {
      * @param value The immutable value to assign to this.
      */
     public InfiniteValue(Infinite value) {
-        super(null, null, value);
+        super(value);
     }
-
-    private InfiniteValue(String label, Integer level, Infinite value) {
-        super(label, level, value);
-    }
-
-    @Override
-    public InfiniteValue copy() {
-        return new InfiniteValue(getLabel(), getLevelOrNull(), getValue());
-    }
-
 }

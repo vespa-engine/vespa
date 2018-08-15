@@ -5,7 +5,6 @@ import java.util.Arrays;
 
 /**
  * @author baldersheim
- * @author bratseth
  */
 public class ZCurveYFunction extends FunctionNode {
     /**
@@ -14,16 +13,6 @@ public class ZCurveYFunction extends FunctionNode {
      * @param exp The expression to evaluate, must evaluate to a long or long[].
      */
     public ZCurveYFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("zcurve.y", Arrays.asList(exp));
     }
-
-    private ZCurveYFunction(String label, Integer level, GroupingExpression exp) {
-        super("zcurve.y", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public ZCurveYFunction copy() {
-        return new ZCurveYFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }

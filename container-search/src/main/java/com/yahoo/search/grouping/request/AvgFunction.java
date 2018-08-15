@@ -2,14 +2,12 @@
 package com.yahoo.search.grouping.request;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * This class represents a min-function in a {@link GroupingExpression}. It evaluates to a number that equals the
  * average of the results of all arguments.
  *
  * @author Simon Thoresen Hult
- * @author bratseth
  */
 public class AvgFunction extends FunctionNode {
 
@@ -21,18 +19,11 @@ public class AvgFunction extends FunctionNode {
      * @param argN The optional arguments, must evaluate to a number.
      */
     public AvgFunction(GroupingExpression arg1, GroupingExpression arg2, GroupingExpression... argN) {
-        this(null, null, asList(arg1, arg2, argN));
+        this(asList(arg1, arg2, argN));
     }
 
-    private AvgFunction(String label, Integer level, List<GroupingExpression> args) {
-        super("avg", label, level, args);
-    }
-
-    @Override
-    public AvgFunction copy() {
-        return new AvgFunction(getLabel(),
-                               getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+    private AvgFunction(List<GroupingExpression> args) {
+        super("avg", args);
     }
 
     /**
@@ -46,6 +37,6 @@ public class AvgFunction extends FunctionNode {
         if (args.size() < 2) {
             throw new IllegalArgumentException("Expected 2 or more arguments, got " + args.size() + ".");
         }
-        return new AvgFunction(null, null, args);
+        return new AvgFunction(args);
     }
 }

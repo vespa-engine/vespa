@@ -6,7 +6,6 @@ package com.yahoo.search.grouping.request;
  * named attribute in the input {@link com.yahoo.search.result.Hit}.
  *
  * @author Simon Thoresen Hult
- * @author bratseth
  */
 public class AttributeValue extends DocumentValue {
 
@@ -18,17 +17,8 @@ public class AttributeValue extends DocumentValue {
      * @param attributeName the attribute name to assign to this.
      */
     public AttributeValue(String attributeName) {
-        this(null, null, attributeName);
-    }
-
-    private AttributeValue(String label, Integer level, String attributeName) {
-        super(attributeName, label, level);
-        this.name = attributeName;
-    }
-
-    @Override
-    public AttributeValue copy() {
-        return new AttributeValue(getLabel(), getLevelOrNull(), getAttributeName());
+        super(attributeName);
+        name = attributeName;
     }
 
     /**

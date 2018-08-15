@@ -972,7 +972,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     private void copyPropertiesTo(Query clone) {
         clone.model = model.cloneFor(clone);
-        clone.select = select.cloneFor(clone);
         clone.ranking = (Ranking) ranking.clone();
         clone.presentation = (Presentation) presentation.clone();
         clone.context = getContext(true).cloneFor(clone);

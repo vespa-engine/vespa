@@ -105,6 +105,6 @@ public class GroupingQueryParserTestCase {
         query.properties().set(GroupingQueryParser.PARAM_CONTINUE, continuation);
         query.properties().set(GroupingQueryParser.PARAM_TIMEZONE, timeZone);
         new Execution(new GroupingQueryParser(), Execution.Context.createContextStub()).search(query);
-        return query.getSelect().getGrouping();
+        return GroupingRequest.getRequests(query);
     }
 }

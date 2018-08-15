@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping.request;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * This class represents a min-function in a {@link GroupingExpression}. It evaluates to a number that equals the
@@ -21,18 +19,11 @@ public class MinFunction extends FunctionNode {
      * @param argN The optional arguments, must evaluate to a number.
      */
     public MinFunction(GroupingExpression arg1, GroupingExpression arg2, GroupingExpression... argN) {
-        this(null, null, asList(arg1, arg2, argN));
+        this(asList(arg1, arg2, argN));
     }
 
-    private MinFunction(String label, Integer level, List<GroupingExpression> args) {
-        super("min", label, level, args);
-    }
-
-    @Override
-    public MinFunction copy() {
-        return new MinFunction(getLabel(),
-                               getLevelOrNull(),
-                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
+    private MinFunction(List<GroupingExpression> args) {
+        super("min", args);
     }
 
     /**
@@ -46,7 +37,7 @@ public class MinFunction extends FunctionNode {
         if (args.size() < 2) {
             throw new IllegalArgumentException("Expected 2 or more arguments, got " + args.size() + ".");
         }
-        return new MinFunction(null, null, args);
+        return new MinFunction(args);
     }
 }
 

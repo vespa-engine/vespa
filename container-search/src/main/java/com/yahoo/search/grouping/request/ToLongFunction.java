@@ -8,7 +8,6 @@ import java.util.Arrays;
  * long. If the argument can not be converted, this function returns 0.
  *
  * @author baldersheim
- * @author bratseth
  */
 public class ToLongFunction extends FunctionNode {
 
@@ -18,16 +17,6 @@ public class ToLongFunction extends FunctionNode {
      * @param exp The expression to evaluate.
      */
     public ToLongFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("tolong", Arrays.asList(exp));
     }
-
-    private ToLongFunction(String label, Integer level, GroupingExpression exp) {
-        super("tolong", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public ToLongFunction copy() {
-        return new ToLongFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }

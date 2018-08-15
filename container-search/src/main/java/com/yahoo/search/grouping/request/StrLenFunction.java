@@ -8,7 +8,6 @@ import java.util.Arrays;
  * number of bytes in the string result of the argument.
  *
  * @author Simon Thoresen Hult
- * @author bratseth
  */
 public class StrLenFunction extends FunctionNode {
 
@@ -18,17 +17,7 @@ public class StrLenFunction extends FunctionNode {
      * @param exp The expression to evaluate, must evaluate to a string.
      */
     public StrLenFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("strlen", Arrays.asList(exp));
     }
-
-    private StrLenFunction(String label, Integer level, GroupingExpression exp) {
-        super("strlen", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public StrLenFunction copy() {
-        return new StrLenFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }
 

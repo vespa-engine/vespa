@@ -4,7 +4,7 @@ package com.yahoo.search.grouping.request;
 /**
  * This class represents a {@link RawValue} bucket in a {@link PredefinedFunction}.
  *
- * @author Ulf Lilleengen
+ * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
  */
 public class RawBucket extends BucketValue {
 
@@ -25,7 +25,7 @@ public class RawBucket extends BucketValue {
      * @param to            The to-value to assign to this.
      */
     public RawBucket(RawBuffer from, RawBuffer to) {
-        super(null, null, new RawValue(from), new RawValue(to));
+        super(new RawValue(from), new RawValue(to));
     }
 
     /**
@@ -35,16 +35,6 @@ public class RawBucket extends BucketValue {
      * @param to            The to-value to assign to this.
      */
     public RawBucket(ConstantValue<?> from, ConstantValue<?> to) {
-        super(null, null, from, to);
+        super(from, to);
     }
-
-    private RawBucket(String label, Integer level, ConstantValue<?> from, ConstantValue<?> to) {
-        super(label, level, from, to);
-    }
-
-    @Override
-    public RawBucket copy() {
-        return new RawBucket(getLabel(), getLevelOrNull(), getFrom().copy(), getTo().copy());
-    }
-
 }

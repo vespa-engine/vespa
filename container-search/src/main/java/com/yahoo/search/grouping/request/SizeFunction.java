@@ -8,7 +8,6 @@ import java.util.Arrays;
  * number of elements in the result of the argument (e.g. the number of elements in an array).
  *
  * @author Simon Thoresen Hult
- * @author bratseth
  */
 public class SizeFunction extends FunctionNode {
 
@@ -18,17 +17,7 @@ public class SizeFunction extends FunctionNode {
      * @param exp The expression to evaluate.
      */
     public SizeFunction(GroupingExpression exp) {
-        this(null, null, exp);
+        super("size", Arrays.asList(exp));
     }
-
-    private SizeFunction(String label, Integer level, GroupingExpression exp) {
-        super("size", label, level, Arrays.asList(exp));
-    }
-
-    @Override
-    public SizeFunction copy() {
-        return new SizeFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
-    }
-
 }
 

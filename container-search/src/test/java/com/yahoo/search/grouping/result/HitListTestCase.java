@@ -31,11 +31,5 @@ public class HitListTestCase {
 
     private static class MyContinuation extends Continuation {
 
-        @Override
-        public Continuation copy() {
-            return null;
-        }
-
     }
-
 }
