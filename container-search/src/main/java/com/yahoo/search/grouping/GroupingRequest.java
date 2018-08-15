@@ -29,7 +29,6 @@ public class GroupingRequest {
     private final List<Continuation> continuations = new ArrayList<>();
     private GroupingOperation root;
     private TimeZone timeZone;
-    private URI resultId;
 
     private GroupingRequest(Select parent) {
         this.parent = parent;
@@ -38,18 +37,16 @@ public class GroupingRequest {
     private GroupingRequest(Select parent,
                             List<Continuation> continuations,
                             GroupingOperation root,
-                            TimeZone timeZone,
-                            URI resultId) {
+                            TimeZone timeZone) {
         this.parent = parent;
         continuations.forEach(item -> this.continuations.add(item.copy()));
         this.root = root != null ? root.copy(null) : null;
         this.timeZone = timeZone;
-        this.resultId = resultId;
     }
 
     /** Returns a deep copy of this */
     public GroupingRequest copy(Select parentOfCopy) {
-        return new GroupingRequest(parentOfCopy, continuations, root, timeZone, resultId);
+        return new GroupingRequest(parentOfCopy, continuations, root, timeZone);
     }
 
     /**
@@ -129,9 +126,10 @@ public class GroupingRequest {
      *
      * @param group the result to set.
      * @return this, to allow chaining.
+     * @deprecated this is a noop
      */
+    @Deprecated // TODO: Remove on Vespa 7
     public GroupingRequest setResultGroup(RootGroup group) {
-        this.resultId = group.getId();
         return this;
     }
 

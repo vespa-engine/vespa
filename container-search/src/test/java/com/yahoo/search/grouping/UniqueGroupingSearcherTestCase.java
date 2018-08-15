@@ -210,7 +210,6 @@ public class UniqueGroupingSearcherTestCase {
             Result result = new Result(query);
             if (addGroupingData) {
                 result.hits().add(resultGroup);
-                query.getSelect().getGrouping().get(0).setResultGroup(resultGroup);
                 result.setTotalHitCount(totalHitCount);
             }
             return result;

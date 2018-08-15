@@ -91,7 +91,6 @@ public class GroupingExecutor extends Searcher {
         HitConverter hitConverter = new HitConverter(this, query);
         for (RequestContext context : requestContextList) {
             RootGroup group = convertResult(context, groupingMap, hitConverter);
-            context.request.setResultGroup(group);
             result.hits().add(group);
         }
         return result;

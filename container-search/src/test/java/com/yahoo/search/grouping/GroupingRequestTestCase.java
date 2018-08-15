@@ -48,7 +48,22 @@ public class GroupingRequestTestCase {
 
         res.hits().add(new Hit("foo"));
         RootGroup bar = newRootGroup(0);
-        req.setResultGroup(bar);
+        res.hits().add(bar);
+        res.hits().add(new Hit("baz"));
+
+        Group grp = req.getResultGroup(res);
+        assertNotNull(grp);
+        assertSame(bar, grp);
+    }
+
+    @Test
+    public void requireThatResultIsFoundAfterCloning() {
+        Query query = new Query();
+        GroupingRequest req = GroupingRequest.newInstance(query);
+        Result res = new Result(query.clone());
+
+        res.hits().add(new Hit("foo"));
+        RootGroup bar = newRootGroup(0);
         res.hits().add(bar);
         res.hits().add(new Hit("baz"));
 
@@ -64,12 +79,10 @@ public class GroupingRequestTestCase {
 
         GroupingRequest reqA = GroupingRequest.newInstance(query);
         RootGroup grpA = newRootGroup(0);
-        reqA.setResultGroup(grpA);
         res.hits().add(grpA);
 
         GroupingRequest reqB = GroupingRequest.newInstance(query);
         RootGroup grpB = newRootGroup(1);
-        reqB.setResultGroup(grpB);
         res.hits().add(grpB);
 
         Group grp = reqA.getResultGroup(res);
@@ -88,7 +101,6 @@ public class GroupingRequestTestCase {
 
         res.hits().add(new Hit("foo"));
         RootGroup bar = newRootGroup(0);
-        req.setResultGroup(bar);
         res.hits().add(new Hit("baz"));
 
         assertNull(req.getResultGroup(res));
@@ -101,7 +113,6 @@ public class GroupingRequestTestCase {
         Result res = new Result(query);
 
         RootGroup grp = newRootGroup(0);
-        req.setResultGroup(grp);
         res.hits().add(new Hit(grp.getId().toString()));
 
         assertNull(req.getResultGroup(res));
