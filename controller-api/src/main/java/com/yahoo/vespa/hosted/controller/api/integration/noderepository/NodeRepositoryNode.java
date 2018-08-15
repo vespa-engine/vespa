@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Arrays;
 import java.util.Set;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -45,6 +46,10 @@ public class NodeRepositoryNode {
     private String vespaVersion;
     @JsonProperty("wantedVespaVersion")
     private String wantedVespaVersion;
+    @JsonProperty("currentOsVersion")
+    private String currentOsVersion;
+    @JsonProperty("wantedOsVersion")
+    private String wantedOsVersion;
     @JsonProperty("failCount")
     private Integer failCount;
     @JsonProperty("hardwareFailure")
@@ -356,42 +361,62 @@ public class NodeRepositoryNode {
         return allowedToBeDown;
     }
 
+    public String getCurrentOsVersion() {
+        return currentOsVersion;
+    }
+
+    public void setCurrentOsVersion(String currentOsVersion) {
+        this.currentOsVersion = currentOsVersion;
+    }
+
+    public String getWantedOsVersion() {
+        return wantedOsVersion;
+    }
+
+    public void setWantedOsVersion(String wantedOsVersion) {
+        this.wantedOsVersion = wantedOsVersion;
+    }
+
     @Override
     public String toString() {
         return "NodeRepositoryNode{" +
-                "url='" + url + '\'' +
-                ", id='" + id + '\'' +
-                ", state=" + state +
-                ", hostname='" + hostname + '\'' +
-                ", ipAddresses='" + ipAddresses + '\'' +
-                ", additionalIpAddresses='" + additionalIpAddresses + '\'' +
-                ", openStackId='" + openStackId + '\'' +
-                ", flavor='" + flavor + '\'' +
-                ", canonicalFlavor='" + canonicalFlavor + '\'' +
-                ", membership=" + membership +
-                ", owner=" + owner +
-                ", restartGeneration=" + restartGeneration +
-                ", rebootGeneration=" + rebootGeneration +
-                ", currentRestartGeneration=" + currentRestartGeneration +
-                ", currentRebootGeneration=" + currentRebootGeneration +
-                ", vespaVersion='" + vespaVersion + '\'' +
-                ", wantedVespaVersion='" + wantedVespaVersion + '\'' +
-                ", failCount=" + failCount +
-                ", hardwareFailure=" + hardwareFailure +
-                ", hardwareFailureDescription='" + hardwareFailureDescription + '\'' +
-                ", hardwareDivergence='" + hardwareDivergence + '\'' +
-                ", environment=" + environment +
-                ", type=" + type +
-                ", wantedDockerImage='" + wantedDockerImage + '\'' +
-                ", currentDockerImage='" + currentDockerImage + '\'' +
-                ", wantToRetire='" + wantToRetire + '\'' +
-                ", wantToDeprovision='" + wantToDeprovision + '\'' +
-                ", minDiskAvailableGb='" + minDiskAvailableGb + '\'' +
-                ", minMainMemoryAvailableGb='" + minMainMemoryAvailableGb + '\'' +
-                ", cost='" + cost + '\'' +
-                ", minCpuCores='" + minCpuCores + '\'' +
-                ", description='" + description + '\'' +
-                ", allowedToBeDown='" + allowedToBeDown + '\'' +
-                '}';
+               "url='" + url + '\'' +
+               ", id='" + id + '\'' +
+               ", state=" + state +
+               ", hostname='" + hostname + '\'' +
+               ", ipAddresses=" + ipAddresses +
+               ", additionalIpAddresses=" + additionalIpAddresses +
+               ", openStackId='" + openStackId + '\'' +
+               ", flavor='" + flavor + '\'' +
+               ", canonicalFlavor='" + canonicalFlavor + '\'' +
+               ", membership=" + membership +
+               ", owner=" + owner +
+               ", restartGeneration=" + restartGeneration +
+               ", rebootGeneration=" + rebootGeneration +
+               ", currentRestartGeneration=" + currentRestartGeneration +
+               ", currentRebootGeneration=" + currentRebootGeneration +
+               ", vespaVersion='" + vespaVersion + '\'' +
+               ", wantedVespaVersion='" + wantedVespaVersion + '\'' +
+               ", currentOsVersion='" + currentOsVersion + '\'' +
+               ", wantedOsVersion='" + wantedOsVersion + '\'' +
+               ", failCount=" + failCount +
+               ", hardwareFailure=" + hardwareFailure +
+               ", hardwareFailureDescription='" + hardwareFailureDescription + '\'' +
+               ", hardwareDivergence='" + hardwareDivergence + '\'' +
+               ", environment=" + environment +
+               ", type=" + type +
+               ", wantedDockerImage='" + wantedDockerImage + '\'' +
+               ", currentDockerImage='" + currentDockerImage + '\'' +
+               ", parentHostname='" + parentHostname + '\'' +
+               ", wantToRetire=" + wantToRetire +
+               ", wantToDeprovision=" + wantToDeprovision +
+               ", minDiskAvailableGb=" + minDiskAvailableGb +
+               ", minMainMemoryAvailableGb=" + minMainMemoryAvailableGb +
+               ", cost=" + cost +
+               ", minCpuCores=" + minCpuCores +
+               ", description='" + description + '\'' +
+               ", history=" + Arrays.toString(history) +
+               ", allowedToBeDown=" + allowedToBeDown +
+               '}';
     }
 }
