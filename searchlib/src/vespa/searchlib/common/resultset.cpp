@@ -16,32 +16,9 @@ ResultSet::ResultSet()
       _rankedHitsArrayAllocElements(0u),
       _bitOverflow(),
       _rankedHitsArray()
-{
-}
+{}
 
-
-ResultSet::ResultSet(const ResultSet &other)
-    : _elemsUsedInRankedHitsArray(0),
-      _rankedHitsArrayAllocElements(0),
-      _bitOverflow(),
-      _rankedHitsArray()
-{
-    allocArray(other._elemsUsedInRankedHitsArray);
-    _elemsUsedInRankedHitsArray = other._elemsUsedInRankedHitsArray;
-    if (_elemsUsedInRankedHitsArray > 0)
-        memcpy(_rankedHitsArray.get(),
-               other._rankedHitsArray.get(),
-               _elemsUsedInRankedHitsArray * sizeof(RankedHit));
-
-    if (other._bitOverflow) {
-        _bitOverflow = BitVector::create(*other._bitOverflow);
-    }
-}
-
-
-ResultSet::~ResultSet()
-{
-}
+ResultSet::~ResultSet() = default;
 
 
 void
@@ -139,7 +116,7 @@ ResultSet::mergeWithBitOverflow(HitRank default_value)
     _rankedHitsArrayAllocElements =  actualHits;
     _elemsUsedInRankedHitsArray =  actualHits;
     _rankedHitsArray.swap(newHitsAlloc);
-    setBitOverflow(NULL);
+    setBitOverflow(nullptr);
 }
 
 } // namespace search

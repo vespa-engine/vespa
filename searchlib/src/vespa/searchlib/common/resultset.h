@@ -12,19 +12,16 @@ class BitVector;
 class ResultSet
 {
 private:
-    ResultSet& operator=(const ResultSet &);
-
     unsigned int _elemsUsedInRankedHitsArray;
     unsigned int _rankedHitsArrayAllocElements;
     std::unique_ptr<BitVector> _bitOverflow;
     vespalib::alloc::Alloc     _rankedHitsArray;
-
 public:
-    typedef std::unique_ptr<ResultSet> UP;
-    typedef std::shared_ptr<ResultSet> SP;
+    using UP = std::unique_ptr<ResultSet>;
+    ResultSet& operator=(const ResultSet &) = delete;
+    ResultSet(const ResultSet &) = delete;
     ResultSet();
-    ResultSet(const ResultSet &);  // Used only for testing .....
-    virtual ~ResultSet();
+    ~ResultSet();
 
     void allocArray(unsigned int arrayAllocated);
 
@@ -39,9 +36,6 @@ public:
     BitVector *       getBitOverflow()       { return _bitOverflow.get(); }
     unsigned int getNumHits() const;
     void mergeWithBitOverflow(HitRank default_value = default_rank_value);
-
-    /* isEmpty() is allowed to return false even if bitmap has no hits */
-    bool isEmpty() const { return (_bitOverflow && (_elemsUsedInRankedHitsArray == 0)); }
 };
 
 } // namespace search
