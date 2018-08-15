@@ -9,8 +9,8 @@ package com.yahoo.search.grouping.request;
  */
 public abstract class DocumentValue extends GroupingExpression {
 
-    protected DocumentValue(String image) {
-        super(image);
+    protected DocumentValue(String image, String label, Integer level) {
+        super(image, label, level);
     }
 
     @Override

@@ -7,9 +7,10 @@ import java.util.ArrayList;
  * This class represents a buffer of byte values to be used as a backing buffer
  * for raw buckets.
  *
- * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
+ * @author Ulf Lilleengen
  */
 public class RawBuffer implements Comparable<RawBuffer>, Cloneable {
+
     private final ArrayList<Byte> buffer;
 
     /**

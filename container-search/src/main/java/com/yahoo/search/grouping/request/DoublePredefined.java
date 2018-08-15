@@ -2,6 +2,7 @@
 package com.yahoo.search.grouping.request;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class represents a predefined bucket-function in a {@link GroupingExpression} for expressions that evaluate to a
@@ -19,11 +20,22 @@ public class DoublePredefined extends PredefinedFunction {
      * @param argN The optional buckets.
      */
     public DoublePredefined(GroupingExpression exp, DoubleBucket arg1, DoubleBucket... argN) {
-        this(exp, asList(arg1, argN));
+        this(null, null, exp, asList(arg1, argN));
     }
 
-    private DoublePredefined(GroupingExpression exp, List<DoubleBucket> args) {
-        super(exp, args);
+    private DoublePredefined(String label, Integer level, GroupingExpression exp, List<DoubleBucket> args) {
+        super(label, level, exp, args);
+    }
+
+    @Override
+    public DoublePredefined copy() {
+        return new DoublePredefined(getLabel(),
+                                    getLevelOrNull(),
+                                    getArg(0),
+                                    args().stream().skip(1)
+                                                   .map(DoubleBucket.class::cast)
+                                                   .map(arg -> arg.copy())
+                                                   .collect(Collectors.toList()));
     }
 
     @Override
@@ -43,6 +55,6 @@ public class DoublePredefined extends PredefinedFunction {
         if (args.isEmpty()) {
             throw new IllegalArgumentException("Expected at least one bucket, got none.");
         }
-        return new DoublePredefined(exp, args);
+        return new DoublePredefined(null, null, exp, args);
     }
 }

@@ -13,7 +13,8 @@ public interface ExpressionVisitor {
     /**
      * This method is called for every {@link GroupingExpression} object in the targeted {@link GroupingOperation}.
      *
-     * @param exp The expression being visited.
+     * @param exp the expression being visited.
      */
-    public void visitExpression(GroupingExpression exp);
+    void visitExpression(GroupingExpression exp);
+
 }

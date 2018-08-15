@@ -2,12 +2,14 @@
 package com.yahoo.search.grouping.request;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class represents an add-function in a {@link GroupingExpression}. It evaluates to a number that equals the
  * result of adding the results of all arguments together in the order they were given to the constructor.
  *
  * @author Simon Thoresen Hult
+ * @author bratseth
  */
 public class AddFunction extends FunctionNode {
 
@@ -19,11 +21,18 @@ public class AddFunction extends FunctionNode {
      * @param argN The optional arguments, must evaluate to a number.
      */
     public AddFunction(GroupingExpression arg1, GroupingExpression arg2, GroupingExpression... argN) {
-        this(asList(arg1, arg2, argN));
+        this(null, null, asList(arg1, arg2, argN));
     }
 
-    private AddFunction(List<GroupingExpression> args) {
-        super("add", args);
+    private AddFunction(String label, Integer level, List<GroupingExpression> args) {
+        super("add", label, level, args);
+    }
+
+    @Override
+    public AddFunction copy() {
+        return new AddFunction(getLabel(),
+                               getLevelOrNull(),
+                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
     }
 
     /**
@@ -37,6 +46,6 @@ public class AddFunction extends FunctionNode {
         if (args.size() < 2) {
             throw new IllegalArgumentException("Expected 2 or more arguments, got " + args.size() + ".");
         }
-        return new AddFunction(args);
+        return new AddFunction(null, null, args);
     }
 }

@@ -2,12 +2,14 @@
 package com.yahoo.search.grouping.request;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class represents a strcat-function in a {@link GroupingExpression}. It evaluates to a string that equals the
  * contatenation of the string results of all arguments in the order they were given to the constructor.
  *
  * @author Simon Thoresen Hult
+ * @author bratseth
  */
 public class StrCatFunction extends FunctionNode {
 
@@ -19,11 +21,18 @@ public class StrCatFunction extends FunctionNode {
      * @param argN The optional arguments, must evaluate to a string.
      */
     public StrCatFunction(GroupingExpression arg1, GroupingExpression arg2, GroupingExpression... argN) {
-        this(asList(arg1, arg2, argN));
+        this(null, null, asList(arg1, arg2, argN));
     }
 
-    private StrCatFunction(List<GroupingExpression> args) {
-        super("strcat", args);
+    private StrCatFunction(String label, Integer level, List<GroupingExpression> args) {
+        super("strcat", label, level, args);
+    }
+
+    @Override
+    public StrCatFunction copy() {
+        return new StrCatFunction(getLabel(),
+                                  getLevelOrNull(),
+                                  args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
     }
 
     /**
@@ -37,7 +46,7 @@ public class StrCatFunction extends FunctionNode {
         if (args.size() < 2) {
             throw new IllegalArgumentException("Expected 2 or more arguments, got " + args.size() + ".");
         }
-        return new StrCatFunction(args);
+        return new StrCatFunction(null, null, args);
     }
 }
 

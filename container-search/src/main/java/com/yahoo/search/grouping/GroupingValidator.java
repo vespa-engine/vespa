@@ -63,9 +63,8 @@ public class GroupingValidator extends Searcher {
     public Result search(Query query, Execution execution) {
         if (enabled && query.properties().getBoolean(PARAM_ENABLED, true)) {
             ExpressionVisitor visitor = new MyVisitor();
-            for (GroupingRequest req : GroupingRequest.getRequests(query)) {
+            for (GroupingRequest req : query.getSelect().getGrouping())
                 req.getRootOperation().visitExpressions(visitor);
-            }
         }
         return execution.search(query);
     }

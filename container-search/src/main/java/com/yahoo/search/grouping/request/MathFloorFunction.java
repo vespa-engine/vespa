@@ -3,14 +3,30 @@ package com.yahoo.search.grouping.request;
 
 import java.util.Arrays;
 
-/** represents the math.floor(expression) function */
+/**
+ * Represents the math.floor(expression) function
+ *
+ * @author baldersheim
+ * @author bratseth
+ */
 public class MathFloorFunction extends FunctionNode {
+
     /**
      * Constructs a new instance of this class.
      *
      * @param exp The expression to evaluate, double value will be requested.
      */
     public MathFloorFunction(GroupingExpression exp) {
-        super("math.floor", Arrays.asList(exp));
+        this(null, null, exp);
     }
+
+    private MathFloorFunction(String label, Integer level, GroupingExpression exp) {
+        super("math.floor", label, level, Arrays.asList(exp));
+    }
+
+    @Override
+    public MathFloorFunction copy() {
+        return new MathFloorFunction(getLabel(), getLevelOrNull(), getArg(0).copy());
+    }
+
 }

@@ -2,6 +2,7 @@
 package com.yahoo.search.grouping.request;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class represents a predefined bucket-function in a {@link GroupingExpression} for expressions that evaluate to a
@@ -19,11 +20,23 @@ public class StringPredefined extends PredefinedFunction {
      * @param argN The optional buckets.
      */
     public StringPredefined(GroupingExpression exp, StringBucket arg1, StringBucket... argN) {
-        this(exp, asList(arg1, argN));
+        this(null, null, exp, asList(arg1, argN));
     }
 
-    private StringPredefined(GroupingExpression exp, List<StringBucket> args) {
-        super(exp, args);
+    private StringPredefined(String label, Integer level, GroupingExpression exp, List<StringBucket> args) {
+        super(label, level, exp, args);
+    }
+
+    @Override
+    public StringPredefined copy() {
+        return new StringPredefined(getLabel(),
+                                    getLevelOrNull(),
+                                    getArg(0),
+                                    args().stream()
+                                          .skip(1)
+                                          .map(StringBucket.class::cast)
+                                          .map(arg -> arg.copy())
+                                          .collect(Collectors.toList()));
     }
 
     @Override
@@ -43,6 +56,6 @@ public class StringPredefined extends PredefinedFunction {
         if (args.isEmpty()) {
             throw new IllegalArgumentException("Expected at least one bucket, got none.");
         }
-        return new StringPredefined(exp, args);
+        return new StringPredefined(null, null, exp, args);
     }
 }

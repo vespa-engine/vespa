@@ -18,34 +18,37 @@ import com.google.common.annotations.Beta;
 public class InterpolatedLookup extends DocumentValue {
 
     private final String attributeName;
-    private final GroupingExpression arg2;
+    private final GroupingExpression lookupArgument;
 
     /**
      * Constructs a new instance of this class.
      *
-     * @param attributeName The attribute name the lookup should happen in
-     * @param lookupArg Expression giving a floating-point value for the lookup argument
+     * @param attributeName the attribute name to assign to this.
+     * @param lookupArgument Expression giving a floating-point value for the lookup argument
      */
-    public InterpolatedLookup(String attributeName, GroupingExpression lookupArg) {
-        super("interpolatedlookup(" + attributeName + ", " + lookupArg + ")");
-        this.attributeName = attributeName;
-	this.arg2 = lookupArg;
+    public InterpolatedLookup(String attributeName, GroupingExpression lookupArgument) {
+        this(null, null, attributeName, lookupArgument);
     }
 
-    /**
-     * Get the name of the attribute to be retrieved from the input hit.
-     * @return The attribute name.
-     */
+    private InterpolatedLookup(String label, Integer level, String attributeName, GroupingExpression lookupArgument) {
+        super("interpolatedlookup(" + attributeName + ", " + lookupArgument + ")", label, level);
+        this.attributeName = attributeName;
+        this.lookupArgument = lookupArgument;
+    }
+
+    @Override
+    public InterpolatedLookup copy() {
+        return new InterpolatedLookup(getLabel(), getLevelOrNull(), getAttributeName(), getLookupArgument().copy());
+    }
+
+    /** Returns the name of the attribute to retrieve from the input hit */
     public String getAttributeName() {
         return attributeName;
     }
 
-    /**
-     * Get the expression that will be evaluated before lookup.
-     * @return grouping expression argument
-     */
+    /** Return the expression to evaluate before lookup */
     public GroupingExpression getLookupArgument() {
-	return arg2;
+        return lookupArgument;
     }
 
 }
