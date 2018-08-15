@@ -7,6 +7,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.tls.KeyStoreType;
 import com.yahoo.vespa.athenz.tls.SslContextBuilder;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 
 import javax.net.ssl.SSLContext;
@@ -38,6 +39,7 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
     private final File certificateFile;
     private final File trustStoreFile;
     private final ScheduledExecutorService scheduler;
+    private final ServiceIdentityProviderListenerHelper listenerHelper;
 
     @Inject
     public SiaIdentityProvider(SiaProviderConfig config) {
@@ -69,6 +71,7 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
         this.trustStoreFile = trustStoreFile;
         this.scheduler = scheduler;
         this.sslContext.set(createIdentitySslContext());
+        this.listenerHelper = new ServiceIdentityProviderListenerHelper(service);
         scheduler.scheduleAtFixedRate(this::reloadSslContext, REFRESH_INTERVAL.toMinutes(), REFRESH_INTERVAL.toMinutes(), TimeUnit.MINUTES);
     }
 
@@ -90,6 +93,16 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
         return sslContext.get();
     }
 
+    @Override
+    public void addIdentityListener(Listener listener) {
+        listenerHelper.addIdentityListener(listener);
+    }
+
+    @Override
+    public void removeIdentityListener(Listener listener) {
+        listenerHelper.removeIdentityListener(listener);
+    }
+
     private SSLContext createIdentitySslContext() {
         return new SslContextBuilder()
                 .withTrustStore(trustStoreFile, KeyStoreType.JKS)
@@ -102,6 +115,7 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
         try {
             SSLContext sslContext = createIdentitySslContext();
             this.sslContext.set(sslContext);
+            listenerHelper.onCredentialsUpdate(sslContext);
         } catch (Exception e) {
             log.log(LogLevel.SEVERE, "Failed to update SSLContext: " + e.getMessage(), e);
         }
@@ -113,6 +127,7 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
         try {
             scheduler.shutdownNow();
             scheduler.awaitTermination(90, TimeUnit.SECONDS);
+            listenerHelper.clearListeners();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
