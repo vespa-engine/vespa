@@ -10,9 +10,16 @@ import java.util.List;
 /**
  * @author Simon Thoresen Hult
  */
-class CompositeContinuation extends EncodableContinuation implements Iterable<EncodableContinuation> {
+final class CompositeContinuation extends EncodableContinuation implements Iterable<EncodableContinuation> {
 
     private final List<EncodableContinuation> children = new ArrayList<>();
+
+    @Override
+    public CompositeContinuation copy() {
+        CompositeContinuation copy = new CompositeContinuation();
+        this.children.forEach(child -> copy.add(child.copy()));
+        return copy;
+    }
 
     public CompositeContinuation add(EncodableContinuation child) {
         children.add(child);
@@ -48,4 +55,5 @@ class CompositeContinuation extends EncodableContinuation implements Iterable<En
         }
         return ret;
     }
+
 }

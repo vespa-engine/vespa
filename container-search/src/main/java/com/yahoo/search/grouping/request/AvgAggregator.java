@@ -6,15 +6,26 @@ package com.yahoo.search.grouping.request;
  * the contained expression evaluated to over all the inputs.
  *
  * @author Simon Thoresen Hult
+ * @author bratseth
  */
 public class AvgAggregator extends AggregatorNode {
 
     /**
      * Constructs a new instance of this class.
      *
-     * @param exp The expression to aggregate on.
+     * @param expression the expression to aggregate on.
      */
-    public AvgAggregator(GroupingExpression exp) {
-        super("avg", exp);
+    public AvgAggregator(GroupingExpression expression) {
+        this(null, null, expression);
     }
+
+    private AvgAggregator(String label, Integer level, GroupingExpression expression) {
+        super("avg", label, level, expression);
+    }
+
+    @Override
+    public AvgAggregator copy() {
+        return new AvgAggregator(getLabel(), getLevelOrNull(), getExpression().copy());
+    }
+
 }

@@ -19,34 +19,36 @@ import com.google.common.annotations.Beta;
 public class ArrayAtLookup extends DocumentValue {
 
     private final String attributeName;
-    private final GroupingExpression arg2;
+    private final GroupingExpression indexArgument;
 
     /**
      * Constructs a new instance of this class.
      *
-     * @param attributeName The attribute name to assign to this.
+     * @param attributeName the attribute name to assign to this.
      */
     public ArrayAtLookup(String attributeName, GroupingExpression indexArg) {
-        super("array.at(" + attributeName + ", " + indexArg + ")");
-        this.attributeName = attributeName;
-        this.arg2 = indexArg;
+        this(null, null, attributeName, indexArg);
     }
 
-    /**
-     * Returns the name of the attribute to retrieve from the input hit.
-     *
-     * @return The attribute name.
-     */
+    private ArrayAtLookup(String label, Integer level, String attributeName, GroupingExpression indexArgument) {
+        super("array.at(" + attributeName + ", " + indexArgument + ")", label, level);
+        this.attributeName = attributeName;
+        this.indexArgument = indexArgument;
+    }
+
+    @Override
+    public ArrayAtLookup copy() {
+        return new ArrayAtLookup(getLabel(), getLevelOrNull(), getAttributeName(), getIndexArgument().copy());
+    }
+
+    /** Returns the name of the attribute to retrieve from the input hit */
     public String getAttributeName() {
         return attributeName;
     }
 
-    /**
-     * get the expression to evaluate before indexing
-     * @return grouping expression argument
-     */
+    /** Return the expression to evaluate before indexing */
     public GroupingExpression getIndexArgument() {
-	return arg2;
+        return indexArgument;
     }
 
 }

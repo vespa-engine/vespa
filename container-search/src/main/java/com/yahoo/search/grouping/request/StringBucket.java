@@ -25,7 +25,7 @@ public class StringBucket extends BucketValue {
      * @param to            The to-value to assign to this.
      */
     public StringBucket(String from, String to) {
-        super(new StringValue(from), new StringValue(to));
+        super(null, null, new StringValue(from), new StringValue(to));
     }
 
     /**
@@ -35,6 +35,16 @@ public class StringBucket extends BucketValue {
      * @param to            The to-value to assign to this.
      */
     public StringBucket(ConstantValue<?> from, ConstantValue<?> to) {
-        super(from, to);
+        super(null, null, from, to);
     }
+
+    private StringBucket(String label, Integer level, ConstantValue<?> from, ConstantValue<?> to) {
+        super(label, level, from, to);
+    }
+
+    @Override
+    public StringBucket copy() {
+        return new StringBucket(getLabel(), getLevelOrNull(), getFrom().copy(), getTo().copy());
+    }
+
 }

@@ -18,7 +18,16 @@ public class Md5Function extends FunctionNode {
      * @param numBits The number of bits of the md5 to include.
      */
     public Md5Function(GroupingExpression exp, int numBits) {
-        super("md5", Arrays.asList(exp, new LongValue(numBits)));
+        this(null, null, exp, new LongValue(numBits));
+    }
+
+    private Md5Function(String label, Integer level, GroupingExpression exp, LongValue numBits) {
+        super("md5", label, level, Arrays.asList(exp, numBits));
+    }
+
+    @Override
+    public Md5Function copy() {
+        return new Md5Function(getLabel(), getLevelOrNull(), getArg(0).copy(), (LongValue)getArg(1).copy());
     }
 
     /**

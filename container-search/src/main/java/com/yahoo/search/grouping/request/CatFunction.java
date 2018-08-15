@@ -2,12 +2,14 @@
 package com.yahoo.search.grouping.request;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class represents a cat-function in a {@link GroupingExpression}. It evaluates to a byte array that equals the
  * concatenation of the binary result of all arguments in the order they were given to the constructor.
  *
  * @author Simon Thoresen Hult
+ * @author bratseth
  */
 public class CatFunction extends FunctionNode {
 
@@ -19,11 +21,18 @@ public class CatFunction extends FunctionNode {
      * @param argN The optional arguments.
      */
     public CatFunction(GroupingExpression arg1, GroupingExpression arg2, GroupingExpression... argN) {
-        this(asList(arg1, arg2, argN));
+        this(null, null, asList(arg1, arg2, argN));
     }
 
-    private CatFunction(List<GroupingExpression> args) {
-        super("cat", args);
+    private CatFunction(String label, Integer level, List<GroupingExpression> args) {
+        super("cat", label, level, args);
+    }
+
+    @Override
+    public CatFunction copy() {
+        return new CatFunction(getLabel(),
+                               getLevelOrNull(),
+                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
     }
 
     /**
@@ -37,6 +46,6 @@ public class CatFunction extends FunctionNode {
         if (args.size() < 2) {
             throw new IllegalArgumentException("Expected 2 or more arguments, got " + args.size() + ".");
         }
-        return new CatFunction(args);
+        return new CatFunction(null, null, args);
     }
 }

@@ -5,6 +5,7 @@ package com.yahoo.search.grouping.request;
  * @author baldersheim
  */
 public abstract class MathFunctions {
+
     /**
      * Defines the different types of math functions that are available.
      */

@@ -4,7 +4,8 @@ package com.yahoo.search.grouping.request;
 /**
  * This class represents a raw value in a {@link GroupingExpression}.
  *
- * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
+ * @author Ulf Lilleengen
+ * @author bratseth
  */
 public class RawValue extends ConstantValue<RawBuffer> {
 
@@ -14,6 +15,16 @@ public class RawValue extends ConstantValue<RawBuffer> {
      * @param value The immutable value to assign to this.
      */
     public RawValue(RawBuffer value) {
-        super(value);
+        super(null, null, value);
     }
+
+    private RawValue(String label, Integer level, RawBuffer value) {
+        super(label, level, value);
+    }
+
+    @Override
+    public RawValue copy() {
+        return new RawValue(getLabel(), getLevelOrNull(), getValue().clone());
+    }
+
 }

@@ -46,7 +46,8 @@ import com.yahoo.vespa.objects.ObjectPredicate;
 public class GroupingExecutor extends Searcher {
 
     public final static String COMPONENT_NAME = "GroupingExecutor";
-    private final static CompoundName PROP_GROUPINGLIST = newCompoundName("GroupingList");
+    private final static String GROUPING_LIST = "GroupingList";
+    private final static CompoundName PROP_GROUPINGLIST = newCompoundName(GROUPING_LIST);
     private final static Logger log = Logger.getLogger(GroupingExecutor.class.getName());
 
     /**
@@ -69,26 +70,19 @@ public class GroupingExecutor extends Searcher {
     @Override
     public Result search(Query query, Execution execution) {
         String error = QueryCanonicalizer.canonicalize(query);
-        if (error != null) {
-            return new Result(query, ErrorMessage.createIllegalQuery(error));
-        }
+        if (error != null) return new Result(query, ErrorMessage.createIllegalQuery(error));
+
         query.prepare();
 
-        // Retrieve grouping requests from query.
-        List<GroupingRequest> reqList = GroupingRequest.getRequests(query);
-        if (reqList.isEmpty()) {
-            return execution.search(query);
-        }
+        if (query.getSelect().getGrouping().isEmpty()) return execution.search(query);
 
         // Convert requests to Vespa style grouping.
         Map<Integer, Grouping> groupingMap = new HashMap<>();
         List<RequestContext> requestContextList = new LinkedList<>();
-        for (GroupingRequest grpRequest : reqList) {
-            requestContextList.add(convertRequest(query, grpRequest, groupingMap));
-        }
-        if (groupingMap.isEmpty()) {
-            return execution.search(query);
-        }
+        for (int i = 0; i < query.getSelect().getGrouping().size(); i++)
+            requestContextList.add(convertRequest(query, query.getSelect().getGrouping().get(i), i, groupingMap));
+
+        if (groupingMap.isEmpty()) return execution.search(query);
 
         // Perform the necessary passes to execute grouping.
         Result result = performSearch(query, execution, groupingMap);
@@ -97,7 +91,6 @@ public class GroupingExecutor extends Searcher {
         HitConverter hitConverter = new HitConverter(this, query);
         for (RequestContext context : requestContextList) {
             RootGroup group = convertResult(context, groupingMap, hitConverter);
-            context.request.setResultGroup(group);
             result.hits().add(group);
         }
         return result;
@@ -109,7 +102,7 @@ public class GroupingExecutor extends Searcher {
         for (Iterator<Hit> it = result.hits().unorderedDeepIterator(); it.hasNext(); ) {
             Hit hit = it.next();
             Object metaData = hit.getSearcherSpecificMetaData(this);
-            if (metaData != null && metaData instanceof String) {
+            if (metaData instanceof String) {
                 // Use the summary class specified by grouping, set in HitConverter, for the first fill request
                 // after grouping. This assumes the first fill request is using the default summary class,
                 // which may be a fragile assumption. But currently we cannot do better because the difference
@@ -156,8 +149,8 @@ public class GroupingExecutor extends Searcher {
      * @param map   The grouping map to write to.
      * @return The context required to identify the request results.
      */
-    private RequestContext convertRequest(Query query, GroupingRequest req, Map<Integer, Grouping> map) {
-        RequestBuilder builder = new RequestBuilder(req.getRequestId());
+    private RequestContext convertRequest(Query query, GroupingRequest req, int requestId, Map<Integer, Grouping> map) {
+        RequestBuilder builder = new RequestBuilder(requestId);
         builder.setRootOperation(req.getRootOperation());
         builder.setDefaultSummaryName(query.getPresentation().getSummary());
         builder.setTimeZone(req.getTimeZone());
