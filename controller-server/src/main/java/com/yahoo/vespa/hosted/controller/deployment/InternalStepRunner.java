@@ -503,7 +503,7 @@ public class InternalStepRunner implements StepRunner {
         }
 
         static ByteArrayLogger of(ApplicationId id, JobType type, Step step) {
-            return new ByteArrayLogger(parent, String.format(".%s.%s.%s", id.serializedForm(), type.jobName(), step));
+            return new ByteArrayLogger(parent, String.format(".%s.%s.%s", id.toString(), type.jobName(), step));
         }
 
         @Override
