@@ -219,21 +219,51 @@ MatchToolsFactory::createDiversifier() const
 }
 
 bool
-MatchToolsFactory::isMatchCountingEnabled() const {
-    return !execute::onmatch::AttributeToIncrement::lookup(_queryEnv.getProperties()).empty();
+MatchToolsFactory::hasOnMatchOperation() const {
+    return ! execute::onmatch::Attribute::lookup(_queryEnv.getProperties()).empty() &&
+           ! execute::onmatch::Operation::lookup(_queryEnv.getProperties()).empty();
+}
+
+vespalib::string
+MatchToolsFactory::getOnMatchOperation() const {
+    return execute::onmatch::Operation::lookup(_queryEnv.getProperties());
 }
 
 void
-MatchToolsFactory::matchCounting(std::shared_ptr<IAttributeFunctor> count) const {
-    _attrExec.asyncForAttribute(execute::onmatch::AttributeToIncrement::lookup(_queryEnv.getProperties()), std::move(count));
+MatchToolsFactory::runOnMatchOperation(std::shared_ptr<IAttributeFunctor> count) const {
+    _attrExec.asyncForAttribute(execute::onmatch::Attribute::lookup(_queryEnv.getProperties()), std::move(count));
 }
+
 bool
-MatchToolsFactory::isReRankCountingEnabled() const {
-    return !execute::onrerank::AttributeToIncrement::lookup(_queryEnv.getProperties()).empty();
+MatchToolsFactory::hasOnReRankOperation() const {
+    return ! execute::onrerank::Attribute::lookup(_queryEnv.getProperties()).empty() &&
+           ! execute::onrerank::Operation::lookup(_queryEnv.getProperties()).empty();
 }
+
+vespalib::string
+MatchToolsFactory::getOnReRankOperation() const {
+    return execute::onrerank::Operation::lookup(_queryEnv.getProperties());
+}
+
 void
-MatchToolsFactory::reRankCounting(std::shared_ptr<IAttributeFunctor> count) const {
-    _attrExec.asyncForAttribute(execute::onrerank::AttributeToIncrement::lookup(_queryEnv.getProperties()), std::move(count));
+MatchToolsFactory::runOnReRankOperation(std::shared_ptr<IAttributeFunctor> count) const {
+    _attrExec.asyncForAttribute(execute::onrerank::Attribute::lookup(_queryEnv.getProperties()), std::move(count));
+}
+
+bool
+MatchToolsFactory::hasOnSummaryOperation() const {
+    return ! execute::onsummary::Attribute::lookup(_queryEnv.getProperties()).empty() &&
+           ! execute::onsummary::Operation::lookup(_queryEnv.getProperties()).empty();
+}
+
+vespalib::string
+MatchToolsFactory::getOnSummaryOperation() const {
+    return execute::onsummary::Operation::lookup(_queryEnv.getProperties());
+}
+
+void
+MatchToolsFactory::runOnSummaryOperation(std::shared_ptr<IAttributeFunctor> count) const {
+    _attrExec.asyncForAttribute(execute::onsummary::Attribute::lookup(_queryEnv.getProperties()), std::move(count));
 }
 
 }

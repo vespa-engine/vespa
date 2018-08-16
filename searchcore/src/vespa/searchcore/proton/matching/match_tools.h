@@ -109,10 +109,16 @@ public:
     std::unique_ptr<search::queryeval::IDiversifier> createDiversifier() const;
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
     bool has_first_phase_rank() const { return !_rankSetup.getFirstPhaseRank().empty(); }
-    bool isMatchCountingEnabled() const;
-    void matchCounting(std::shared_ptr<IAttributeFunctor> count) const;
-    bool isReRankCountingEnabled() const;
-    void reRankCounting(std::shared_ptr<IAttributeFunctor> count) const;
-};
+    bool hasOnMatchOperation() const;
+    vespalib::string getOnMatchOperation() const;
+    void runOnMatchOperation(std::shared_ptr<IAttributeFunctor> count) const;
+    bool hasOnReRankOperation() const;
+    vespalib::string getOnReRankOperation() const;
+    void runOnReRankOperation(std::shared_ptr<IAttributeFunctor> count) const;
+    bool hasOnSummaryOperation() const;
+    vespalib::string getOnSummaryOperation() const;
+    void runOnSummaryOperation(std::shared_ptr<IAttributeFunctor> count) const;
+    const RequestContext & requestContext() const { return _requestContext; }
+    };
 
 }
