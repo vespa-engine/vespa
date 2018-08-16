@@ -88,7 +88,13 @@ namespace dump {
 } // namespace dump
 
 namespace execute::onmatch {
-    struct AttributeToIncrement {
+    struct Attribute {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+    struct Operation {
         static const vespalib::string NAME;
         static const vespalib::string DEFAULT_VALUE;
         static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
@@ -97,7 +103,28 @@ namespace execute::onmatch {
 }
 
 namespace execute::onrerank {
-    struct AttributeToIncrement {
+    struct Attribute {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+    struct Operation {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+}
+
+namespace execute::onsummary {
+    struct Attribute {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+    struct Operation {
         static const vespalib::string NAME;
         static const vespalib::string DEFAULT_VALUE;
         static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }

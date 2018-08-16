@@ -4,6 +4,7 @@
 #include "docid_range_scheduler.h"
 #include "match_loop_communicator.h"
 #include "match_thread.h"
+#include "attribute_operation.h"
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
@@ -69,10 +70,9 @@ MatchMaster::match(const MatchParams &params,
     std::vector<MatchThread::UP> threadState;
     std::vector<vespalib::Runnable*> targets;
     for (size_t i = 0; i < threadBundle.size(); ++i) {
-        IMatchLoopCommunicator &com =
-            (i == 0)?
-            static_cast<IMatchLoopCommunicator&>(timedCommunicator) :
-            static_cast<IMatchLoopCommunicator&>(communicator);
+        IMatchLoopCommunicator &com = (i == 0)
+                ? static_cast<IMatchLoopCommunicator&>(timedCommunicator)
+                : static_cast<IMatchLoopCommunicator&>(communicator);
         threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(),
                         params, matchToolsFactory, com, *scheduler,
                         resultProcessor, mergeDirector, distributionKey));
@@ -118,7 +118,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
     for (size_t i = 0; i < resolver.num_features(); ++i) {
         featureNames.emplace_back(resolver.name_of(i));
     }
-    FeatureSet::SP retval(new FeatureSet(featureNames, docs.size()));
+    auto retval = std::make_shared<FeatureSet>(featureNames, docs.size());
     if (docs.empty()) {
         return retval;
     }
@@ -137,6 +137,9 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
         } else {
             LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. Skipping hit", docs[i]);
         }
+    }
+    if (matchToolsFactory.hasOnReRankOperation()) {
+        matchToolsFactory.runOnReRankOperation(AttributeOperation::create(matchToolsFactory.getOnSummaryOperation(), docs));
     }
     return retval;
 }
