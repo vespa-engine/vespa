@@ -324,36 +324,6 @@ public class InternalStepRunner implements StepRunner {
         URI testerEndpoint = testerEndpoint(id)
                 .orElseThrow(() -> new NoSuchElementException("Endpoint for tester vanished again before tests were complete!"));
 
-        /*
-   7    LoggingInputStream:
-
-   6    TestRunner:
-            Map<Step, List<LogRecord>> getLogs(long after); // use LogRecord id
-
-   4    LogBuffer:
-            Map<Step, List<LogRecord>> logs();
-            long last();
-            void add(Step step, LogRecord record); // reassign sequence ids here
-            void clear();
-
-   2    LogRecordSerializer:
-
-   1    Run:
-            long lastTestRecord();
-            Run with(long lastTestRecord);
-
-   3    LogStore:
-            (List<ObjectMeta> meta();)
-            Map<Step, List<LogRecord>> logs(long after);
-            void store(Map<Step, List<LogRecord>> records);
-
-   5    JobController:
-            Map<Step, List<LogRecord>> logs(long after);
-            log(RunId id, Step step, LogRecord record);
-            logTestRecords(RunId id, List<LogRecord> records, long lastId);
-
-         */
-
         RunStatus status;
         switch (testerCloud.getStatus(testerEndpoint)) {
             case NOT_STARTED:
