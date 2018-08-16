@@ -9,9 +9,10 @@ MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN)
     : MatchLoopCommunicator(threads, topN, std::unique_ptr<IDiversifier>())
 {}
 MatchLoopCommunicator::MatchLoopCommunicator(size_t threads, size_t topN, std::unique_ptr<IDiversifier> diversifier)
-    : _estimate_match_frequency(threads),
-      _selectBest(threads, topN, std::move(diversifier)),
-      _rangeCover(threads)
+    : _best_dropped(),
+      _estimate_match_frequency(threads),
+      _selectBest(threads, topN, _best_dropped, std::move(diversifier)),
+      _rangeCover(threads, _best_dropped)
 {}
 MatchLoopCommunicator::~MatchLoopCommunicator() = default;
 
@@ -32,9 +33,10 @@ MatchLoopCommunicator::EstimateMatchFrequency::mingle()
     }
 }
 
-MatchLoopCommunicator::SelectBest::SelectBest(size_t n, size_t topN_in, std::unique_ptr<IDiversifier> diversifier)
+MatchLoopCommunicator::SelectBest::SelectBest(size_t n, size_t topN_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier> diversifier)
     : vespalib::Rendezvous<SortedHitSequence, Hits>(n),
       topN(topN_in),
+      best_dropped(best_dropped_in),
       _diversifier(std::move(diversifier))
 {}
 MatchLoopCommunicator::SelectBest::~SelectBest() = default;
@@ -43,12 +45,16 @@ template<typename Q, typename F>
 void
 MatchLoopCommunicator::SelectBest::mingle(Q &queue, F &&accept)
 {
+    best_dropped.valid = false;
     for (size_t picked = 0; picked < topN && !queue.empty(); ) {
         uint32_t i = queue.front();
         const Hit & hit = in(i).get();
         if (accept(hit.first)) {
             out(i).push_back(hit);
             ++picked;
+        } else if (!best_dropped.valid) {
+            best_dropped.valid = true;
+            best_dropped.score = hit.second;
         }
         in(i).next();
         if (in(i).valid()) {
@@ -93,6 +99,10 @@ MatchLoopCommunicator::RangeCover::mingle()
                 result.second.low = std::min(result.second.low, in(i).second.low);
                 result.second.high = std::max(result.second.high, in(i).second.high);
             }
+        }
+        if (best_dropped.valid) {
+            result.first.low = std::max(result.first.low, best_dropped.score);
+            result.first.high = std::max(result.first.low, result.first.high);
         }
         for (size_t j = 0; j < size(); ++j) {
             out(j) = result;

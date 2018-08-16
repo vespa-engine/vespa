@@ -12,14 +12,19 @@ class MatchLoopCommunicator : public IMatchLoopCommunicator
 {
 private:
     using IDiversifier = search::queryeval::IDiversifier;
+    struct BestDropped {
+        bool valid = false;
+        search::feature_t score = 0.0;
+    };
     struct EstimateMatchFrequency : vespalib::Rendezvous<Matches, double> {
         EstimateMatchFrequency(size_t n) : vespalib::Rendezvous<Matches, double>(n) {}
         void mingle() override;
     };
     struct SelectBest : vespalib::Rendezvous<SortedHitSequence, Hits> {
         size_t topN;
+        BestDropped &best_dropped;
         std::unique_ptr<IDiversifier> _diversifier;
-        SelectBest(size_t n, size_t topN_in, std::unique_ptr<IDiversifier>);
+        SelectBest(size_t n, size_t topN_in, BestDropped &best_dropped_in, std::unique_ptr<IDiversifier>);
         ~SelectBest() override;
         void mingle() override;
         template<typename Q, typename F>
@@ -36,9 +41,13 @@ private:
         }
     };
     struct RangeCover : vespalib::Rendezvous<RangePair, RangePair> {
-        RangeCover(size_t n) : vespalib::Rendezvous<RangePair, RangePair>(n) {}
+        BestDropped &best_dropped;
+        RangeCover(size_t n, BestDropped &best_dropped_in)
+            : vespalib::Rendezvous<RangePair, RangePair>(n), best_dropped(best_dropped_in) {}
         void mingle() override;
     };
+
+    BestDropped                   _best_dropped;
     EstimateMatchFrequency        _estimate_match_frequency;
     SelectBest                    _selectBest;
     RangeCover                    _rangeCover;

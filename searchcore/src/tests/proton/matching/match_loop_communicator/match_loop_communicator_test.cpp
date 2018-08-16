@@ -53,6 +53,12 @@ void equal(size_t count, const Hits & a, const Hits & b) {
     }
 }
 
+void equal_range(const Range &a, const Range &b) {
+    EXPECT_EQUAL(a.isValid(), b.isValid());
+    EXPECT_EQUAL(a.low, b.low);
+    EXPECT_EQUAL(a.high, b.high);
+}
+
 struct EveryOdd : public search::queryeval::IDiversifier {
     bool accepted(uint32_t docId) override {
         return docId & 0x01;
@@ -109,36 +115,53 @@ TEST_MT_F("require that selectBest works with some empty threads", 10, MatchLoop
 
 TEST_F("require that rangeCover is identity function for single thread", MatchLoopCommunicator(num_threads, 5)) {
     RangePair res = f1.rangeCover(std::make_pair(Range(2, 4), Range(3, 5)));
-    EXPECT_EQUAL(2, res.first.low);
-    EXPECT_EQUAL(4, res.first.high);
-    EXPECT_EQUAL(3, res.second.low);
-    EXPECT_EQUAL(5, res.second.high);
+    TEST_DO(equal_range(Range(2, 4), res.first));
+    TEST_DO(equal_range(Range(3, 5), res.second));
 }
 
 TEST_MT_F("require that rangeCover can mix ranges from multiple threads", 5, MatchLoopCommunicator(num_threads, 5)) {
     RangePair res = f1.rangeCover(makeRanges(thread_id));
-    EXPECT_EQUAL(1, res.first.low);
-    EXPECT_EQUAL(5, res.first.high);
-    EXPECT_EQUAL(5, res.second.low);
-    EXPECT_EQUAL(9, res.second.high);
+    TEST_DO(equal_range(Range(1, 5), res.first));
+    TEST_DO(equal_range(Range(5, 9), res.second));
 }
 
 TEST_MT_F("require that invalid ranges are ignored", 10, MatchLoopCommunicator(num_threads, 5)) {
     RangePair res = f1.rangeCover(makeRanges(thread_id));
-    EXPECT_EQUAL(1, res.first.low);
-    EXPECT_EQUAL(5, res.first.high);
-    EXPECT_EQUAL(5, res.second.low);
-    EXPECT_EQUAL(9, res.second.high);
+    TEST_DO(equal_range(Range(1, 5), res.first));
+    TEST_DO(equal_range(Range(5, 9), res.second));
 }
 
 TEST_MT_F("require that only invalid ranges produce default invalid range", 3, MatchLoopCommunicator(num_threads, 5)) {
     RangePair res = f1.rangeCover(makeRanges(10));
     Range expect;
-    EXPECT_FALSE(expect.isValid());
-    EXPECT_EQUAL(expect.low, res.first.low);
-    EXPECT_EQUAL(expect.high, res.first.high);
-    EXPECT_EQUAL(expect.low, res.second.low);
-    EXPECT_EQUAL(expect.high, res.second.high);
+    TEST_DO(equal_range(expect, res.first));
+    TEST_DO(equal_range(expect, res.second));
+}
+
+TEST_F("require that hits dropped due to lack of diversity affects range cover result",
+       MatchLoopCommunicator(num_threads, 3, std::make_unique<EveryOdd>()))
+{
+    TEST_DO(equal(3u, make_box<Hit>({1, 5}, {3, 3}, {5, 1}), selectBest(f1, make_box<Hit>({1, 5}, {2, 4}, {3, 3}, {4, 2}, {5, 1}))));
+    // best dropped: 4
+    std::vector<RangePair> input = {
+        std::make_pair(Range(), Range()),
+        std::make_pair(Range(3, 5), Range(1, 10)),
+        std::make_pair(Range(5, 10), Range(1, 10)),
+        std::make_pair(Range(1, 3), Range(1, 10))
+    };
+    std::vector<RangePair> expect = {
+        std::make_pair(Range(), Range()),
+        std::make_pair(Range(4, 5), Range(1, 10)),
+        std::make_pair(Range(5, 10), Range(1, 10)),
+        std::make_pair(Range(4, 4), Range(1, 10))
+    };
+    ASSERT_EQUAL(input.size(), expect.size());
+    for (size_t i = 0; i < input.size(); ++i) {
+        auto output = f1.rangeCover(input[i]);
+        TEST_STATE(vespalib::make_string("case: %zu", i).c_str());
+        TEST_DO(equal_range(expect[i].first, output.first));
+        TEST_DO(equal_range(expect[i].second, output.second));
+    }
 }
 
 TEST_MT_F("require that count_matches will count hits and docs across threads", 4, MatchLoopCommunicator(num_threads, 5)) {
