@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <vespa/vespalib/stllike/string.h>
+
 namespace search { class AttributeVector; }
 
 namespace proton {
@@ -16,6 +18,12 @@ class IAttributeFunctor
 public:
     virtual void operator()(const search::AttributeVector &attributeVector) = 0;
     virtual ~IAttributeFunctor() { }
+};
+
+class IAttributeExecutor {
+public:
+    virtual ~IAttributeExecutor() { }
+    virtual void asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const = 0;
 };
 
 } // namespace proton

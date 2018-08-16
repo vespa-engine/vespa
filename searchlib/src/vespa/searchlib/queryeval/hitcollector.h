@@ -141,6 +141,9 @@ private:
     VESPA_DLL_LOCAL void sortHitsByDocId();
 
 public:
+    HitCollector(const HitCollector &) = delete;
+    HitCollector &operator=(const HitCollector &) = delete;
+
     /**
      * Creates a hit collector used to store hits for doc ids in the
      * range [0, numDocs>.  Doc id and rank score are stored for the n
@@ -174,6 +177,8 @@ public:
      */
     SortedHitSequence getSortedHitSequence(size_t max_hits);
 
+    const std::vector<Hit> & getReRankedHits() const { return _reRankedHits; }
+
     /**
      * Re-ranks the given hits by invoking the score() method on the
      * given document scorer. The hits are sorted on doc id so that
@@ -193,10 +198,6 @@ public:
      * @param default_value rank value to be used for results without rank value
      **/
     std::unique_ptr<ResultSet> getResultSet(HitRank default_value = default_rank_value);
-
-private:
-    HitCollector(const HitCollector &);  // Not implemented
-    HitCollector &operator=(const HitCollector &);  // Not implemented
 };
 
 }
