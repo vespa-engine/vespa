@@ -384,7 +384,7 @@ public class InternalStepRunnerTest {
 
     private void assertFile(String resourceName, String actualContent) {
         try {
-            Path path = Paths.get(getClass().getClassLoader().getResource(resourceName).getPath());
+            Path path = Paths.get("src/test/resources/").resolve(resourceName);
             String expectedContent = new String(Files.readAllBytes(path));
             assertEquals(expectedContent, actualContent);
         } catch (IOException e) {
