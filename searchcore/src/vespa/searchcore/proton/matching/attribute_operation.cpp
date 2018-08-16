@@ -5,6 +5,10 @@
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchcommon/attribute/basictype.h>
+#include <vespa/vespalib/util/exceptions.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("proton.matching.attribute_operation");
 
 using search::attribute::BasicType;
 
@@ -167,6 +171,8 @@ struct Operation {
     std::unique_ptr<AttributeOperation> create(search::attribute::BasicType type, V vector) const;
     template <typename IT, typename V>
     std::unique_ptr<AttributeOperation> create(V vector) const;
+    bool valid() const { return operation != BAD; }
+    bool hasArgument() const { return valid() && (operation != INC) && (operation != DEC); }
     Type operation;
     vespalib::stringref operand;
     static Operation create(vespalib::stringref s);
@@ -225,13 +231,20 @@ createOperation(std::unique_ptr<search::ResultSet> result, T operand) {
 template <typename T_IN, typename V>
 std::unique_ptr<AttributeOperation>
 Operation::create(V vector) const {
-    vespalib::asciistream is(operand);
     using T = typename T_IN::T;
     using A = typename T_IN::A;
-    T value;
-    is >> value;
-    //TODO Add error handling
-    switch (operation) {
+    T value(0);
+    Type validOp = operation;
+    if (hasArgument()) {
+        vespalib::asciistream is(operand);
+        try {
+            is >> value;
+        } catch (vespalib::IllegalArgumentException & e) {
+            LOG(warning, "Invalid operand, ignoring : %s", e.what());
+            validOp = BAD;
+        }
+    }
+    switch (validOp) {
         case INC:
             return createOperation<T, UpdateFast<A, Inc<T>>>(std::move(vector), value);
         case DEC:
@@ -280,6 +293,9 @@ struct FloatT {
 template <typename V>
 std::unique_ptr<AttributeOperation>
 Operation::create(BasicType type, V hits) const {
+    if ( ! valid()) {
+        return std::unique_ptr<AttributeOperation>();
+    }
     switch (type.type()) {
         case BasicType::INT64:
             return create<Int64T, V>(std::move(hits));
