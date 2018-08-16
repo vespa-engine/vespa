@@ -8,6 +8,15 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.serialization.DocumentUpdateReader;
 
 /**
+ * RemoveFieldPathUpdate is used to remove fields or portions of fields based on the field path supplied and optionally
+ * a where clause.
+ *
+ * If document type "testdoc" has a field "ivec" which is an array of integers, then the field path and where clause
+ * to remove all array elements having the value 5 is "ivec[$x]" and "testdoc.ivec[$x] == 5".
+ *
+ * If document type "testdoc" has a field "svec" which is an array of struct containing an integer field "ival" then
+ * "svec[$x]" and "testdoc.svec[$x].ival == 5" can be used to remove all array elements where ival is 5.
+ *
  * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
  */
 public class RemoveFieldPathUpdate extends FieldPathUpdate {
