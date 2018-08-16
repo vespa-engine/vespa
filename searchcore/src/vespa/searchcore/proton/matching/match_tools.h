@@ -85,7 +85,8 @@ private:
     DiversityParams                   _diversityParams;
     bool                              _valid;
 public:
-    typedef std::unique_ptr<MatchToolsFactory> UP;
+    using UP = std::unique_ptr<MatchToolsFactory>;
+    using BasicType = search::attribute::BasicType;
 
     MatchToolsFactory(QueryLimiter & queryLimiter,
                       const vespalib::Doom & softDoom,
@@ -110,15 +111,18 @@ public:
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
     bool has_first_phase_rank() const { return !_rankSetup.getFirstPhaseRank().empty(); }
     bool hasOnMatchOperation() const;
+    BasicType getOnMatchAttributeType() const;
     vespalib::string getOnMatchOperation() const;
     void runOnMatchOperation(std::shared_ptr<IAttributeFunctor> count) const;
     bool hasOnReRankOperation() const;
+    BasicType getOnReRankAttributeType() const;
     vespalib::string getOnReRankOperation() const;
     void runOnReRankOperation(std::shared_ptr<IAttributeFunctor> count) const;
     bool hasOnSummaryOperation() const;
+    BasicType getOnSummaryAttributeType() const;
     vespalib::string getOnSummaryOperation() const;
     void runOnSummaryOperation(std::shared_ptr<IAttributeFunctor> count) const;
     const RequestContext & requestContext() const { return _requestContext; }
-    };
+};
 
 }

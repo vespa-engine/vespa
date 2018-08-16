@@ -267,7 +267,8 @@ MatchThread::findMatches(MatchTools &tools)
             tools.setup_second_phase();
             DocidRange docid_range = scheduler.total_span(thread_id);
             tools.search().initRange(docid_range.begin, docid_range.end);
-            auto sorted_hit_seq = matchToolsFactory.should_diversify()
+            const MatchToolsFactory & mtf = matchToolsFactory;
+            auto sorted_hit_seq = mtf.should_diversify()
                                   ? hits.getSortedHitSequence(matchParams.arraySize)
                                   : hits.getSortedHitSequence(matchParams.heapSize);
             WaitTimer select_best_timer(wait_time_s);
@@ -278,8 +279,9 @@ MatchThread::findMatches(MatchTools &tools)
                 kept_hits.clear();
             }
             uint32_t reRanked = hits.reRank(scorer, std::move(kept_hits));
-            if (matchToolsFactory.hasOnReRankOperation()) {
-                matchToolsFactory.runOnReRankOperation(AttributeOperation::create(matchToolsFactory.getOnReRankOperation(), hits.getReRankedHits()));
+            if (mtf.hasOnReRankOperation()) {
+                mtf.runOnReRankOperation(AttributeOperation::create(mtf.getOnReRankAttributeType(),
+                                                                    mtf.getOnReRankOperation(), hits.getReRankedHits()));
             }
             thread_stats.docsReRanked(reRanked);
         }
@@ -347,8 +349,10 @@ MatchThread::processResult(const Doom & hardDoom,
             }
         }
     }
-    if (matchToolsFactory.hasOnMatchOperation() ) {
-        matchToolsFactory.runOnMatchOperation(AttributeOperation::create(matchToolsFactory.getOnMatchOperation(), std::move(result)));
+    const MatchToolsFactory & mtf = matchToolsFactory;
+    if (mtf.hasOnMatchOperation() ) {
+        mtf.runOnMatchOperation(AttributeOperation::create(mtf.getOnMatchAttributeType(),
+                                                           mtf.getOnMatchOperation(), std::move(result)));
     }
     if (hasGrouping) {
         context.grouping->setDistributionKey(_distributionKey);

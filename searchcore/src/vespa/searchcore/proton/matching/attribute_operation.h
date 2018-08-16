@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/attribute/i_attribute_functor.h>
+#include <vespa/searchcommon/attribute/basictype.h>
 #include <vector>
 
 namespace search { class ResultSet; }
@@ -13,11 +14,11 @@ class AttributeOperation : public IAttributeFunctor {
 public:
     using Hit = std::pair<uint32_t, double>;
     static std::unique_ptr<AttributeOperation>
-    create(const vespalib::string & operation, std::vector<uint32_t> docIds);
+    create(search::attribute::BasicType type, const vespalib::string & operation, std::vector<uint32_t> docIds);
     static std::unique_ptr<AttributeOperation>
-    create(const vespalib::string & operation, std::vector<Hit> hits);
+    create(search::attribute::BasicType type, const vespalib::string & operation, std::vector<Hit> hits);
     static std::unique_ptr<AttributeOperation>
-    create(const vespalib::string & operation, std::unique_ptr<search::ResultSet> result);
+    create(search::attribute::BasicType type, const vespalib::string & operation, std::unique_ptr<search::ResultSet> result);
 };
 
 }

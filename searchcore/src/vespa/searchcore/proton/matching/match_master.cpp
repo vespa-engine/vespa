@@ -101,10 +101,10 @@ MatchMaster::match(const MatchParams &params,
 }
 
 FeatureSet::SP
-MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
+MatchMaster::getFeatureSet(const MatchToolsFactory &mtf,
                            const std::vector<uint32_t> &docs, bool summaryFeatures)
 {
-    MatchTools::UP matchTools = matchToolsFactory.createMatchTools();
+    MatchTools::UP matchTools = mtf.createMatchTools();
     if (summaryFeatures) {
         matchTools->setup_summary();
     } else {
@@ -138,8 +138,9 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
             LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. Skipping hit", docs[i]);
         }
     }
-    if (matchToolsFactory.hasOnReRankOperation()) {
-        matchToolsFactory.runOnReRankOperation(AttributeOperation::create(matchToolsFactory.getOnSummaryOperation(), docs));
+    if (mtf.hasOnReRankOperation()) {
+        mtf.runOnReRankOperation(AttributeOperation::create(mtf.getOnSummaryAttributeType(),
+                                                            mtf.getOnSummaryOperation(), docs));
     }
     return retval;
 }
