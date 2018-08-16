@@ -311,7 +311,7 @@ public class InternalStepRunnerTest {
         cloud.set("Failure!".getBytes(), TesterCloud.Status.FAILURE);
         runner.run();
         assertEquals(failed, jobs.run(id).get().steps().get(Step.endTests));
-        assertLogMessages(id, Step.endTests, "Tests still running ...", "Tests failed.", "Failure!");
+        assertLogMessages(id, Step.endTests, "Tests failed.", "Failure!");
     }
 
     @Test
@@ -320,7 +320,7 @@ public class InternalStepRunnerTest {
         cloud.set("Error!".getBytes(), TesterCloud.Status.ERROR);
         runner.run();
         assertEquals(failed, jobs.run(id).get().steps().get(Step.endTests));
-        assertLogMessages(id, Step.endTests, "Tests still running ...", "Tester failed running its tests!", "Error!");
+        assertLogMessages(id, Step.endTests, "Tester failed running its tests!", "Error!");
     }
 
     @Test
@@ -342,7 +342,7 @@ public class InternalStepRunnerTest {
         cloud.set("Success!".getBytes(), TesterCloud.Status.SUCCESS);
         runner.run();
         assertEquals(succeeded, jobs.run(id).get().steps().get(Step.endTests));
-        assertLogMessages(id, Step.endTests, "Tests still running ...", "Tests still running ...", "Tests completed successfully.", "Success!");
+        assertLogMessages(id, Step.endTests, "Tests completed successfully.", "Success!");
     }
 
     private void assertLogMessages(RunId id, Step step, String... messages) {

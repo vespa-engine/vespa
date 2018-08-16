@@ -328,28 +328,29 @@ public class InternalStepRunner implements StepRunner {
    7    LoggingInputStream:
 
    6    TestRunner:
-            List<LogRecord> getLogs(long after); // use LogRecord id
+            Map<Step, List<LogRecord>> getLogs(long after); // use LogRecord id
 
    4    LogBuffer:
-            List<LogRecord> get();
+            Map<Step, List<LogRecord>> logs();
             long last();
-            void add(Iterable<LogRecord> records); // assign natural numbers here
+            void add(Step step, LogRecord record); // reassign sequence ids here
             void clear();
 
    2    LogRecordSerializer:
 
    1    Run:
-            int lastTestRecord();
+            long lastTestRecord();
             Run with(long lastTestRecord);
 
    3    LogStore:
             (List<ObjectMeta> meta();)
-            List<LogRecord> get(long after);
-            void add(List<LogRecord> records, long last);
+            Map<Step, List<LogRecord>> logs(long after);
+            void store(Map<Step, List<LogRecord>> records);
 
    5    JobController:
-            List<LogRecord> logs(long after);
-            log(RunId id, Step step, List<LogRecord> log[, long lastTestRecord]);
+            Map<Step, List<LogRecord>> logs(long after);
+            log(RunId id, Step step, LogRecord record);
+            logTestRecords(RunId id, List<LogRecord> records, long lastId);
 
          */
 
