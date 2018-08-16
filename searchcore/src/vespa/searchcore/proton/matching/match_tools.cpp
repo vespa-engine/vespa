@@ -234,6 +234,12 @@ MatchToolsFactory::runOnMatchOperation(std::shared_ptr<IAttributeFunctor> count)
     _attrExec.asyncForAttribute(execute::onmatch::Attribute::lookup(_queryEnv.getProperties()), std::move(count));
 }
 
+search::attribute::BasicType
+MatchToolsFactory::getOnMatchAttributeType() const {
+    auto attr = _requestContext.getAttribute(execute::onmatch::Attribute::lookup(_queryEnv.getProperties()));
+    return attr ? attr->getBasicType() : BasicType::NONE;
+}
+
 bool
 MatchToolsFactory::hasOnReRankOperation() const {
     return ! execute::onrerank::Attribute::lookup(_queryEnv.getProperties()).empty() &&
@@ -250,6 +256,12 @@ MatchToolsFactory::runOnReRankOperation(std::shared_ptr<IAttributeFunctor> count
     _attrExec.asyncForAttribute(execute::onrerank::Attribute::lookup(_queryEnv.getProperties()), std::move(count));
 }
 
+search::attribute::BasicType
+MatchToolsFactory::getOnReRankAttributeType() const {
+    auto attr = _requestContext.getAttribute(execute::onrerank::Attribute::lookup(_queryEnv.getProperties()));
+    return attr ? attr->getBasicType() : BasicType::NONE;
+}
+
 bool
 MatchToolsFactory::hasOnSummaryOperation() const {
     return ! execute::onsummary::Attribute::lookup(_queryEnv.getProperties()).empty() &&
@@ -264,6 +276,12 @@ MatchToolsFactory::getOnSummaryOperation() const {
 void
 MatchToolsFactory::runOnSummaryOperation(std::shared_ptr<IAttributeFunctor> count) const {
     _attrExec.asyncForAttribute(execute::onsummary::Attribute::lookup(_queryEnv.getProperties()), std::move(count));
+}
+
+search::attribute::BasicType
+MatchToolsFactory::getOnSummaryAttributeType() const {
+    auto attr = _requestContext.getAttribute(execute::onsummary::Attribute::lookup(_queryEnv.getProperties()));
+    return attr ? attr->getBasicType() : BasicType::NONE;
 }
 
 }
