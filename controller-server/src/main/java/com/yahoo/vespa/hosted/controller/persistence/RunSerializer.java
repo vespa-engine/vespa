@@ -51,7 +51,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
  *
  * @author jonmv
  */
-public class RunSerializer {
+class RunSerializer {
 
     private static final String stepsField = "steps";
     private static final String applicationField = "id";
