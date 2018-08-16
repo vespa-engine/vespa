@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -105,13 +104,21 @@ public class LogLevel extends Level {
         // manually enter the valid log levels we shall recognize in VESPA
         nameToLevel = new LinkedHashMap<String, Level>(32);
         nameToLevel.put("fatal", FATAL);
+        nameToLevel.put("FATAL", FATAL);
         nameToLevel.put("error", ERROR);
+        nameToLevel.put("ERROR", ERROR);
         nameToLevel.put("warning", WARNING);
+        nameToLevel.put("WARNING", WARNING);
         nameToLevel.put("config", CONFIG);
+        nameToLevel.put("CONFIG", CONFIG);
         nameToLevel.put("info", INFO);
+        nameToLevel.put("INFO", INFO);
         nameToLevel.put("event", EVENT);
+        nameToLevel.put("EVENT", EVENT);
         nameToLevel.put("debug", DEBUG);
+        nameToLevel.put("DEBUG", DEBUG);
         nameToLevel.put("spam", SPAM);
+        nameToLevel.put("SPAM", SPAM);
     }
 
     private LogLevel(String name, int value) {
@@ -132,15 +139,7 @@ public class LogLevel extends Level {
     public static Level parse(String name) {
         Level l = nameToLevel.get(name);
         if (l == null) {
-            // If name was not found, try changing the case of each character from (assumed) upper to lower:
-            byte[] nameBytes = name.getBytes(StandardCharsets.UTF_8);
-            for (int i = 0; i < nameBytes.length; i++)
-                nameBytes[i] += 32;
-            l = nameToLevel.get(new String(nameBytes));
-
-            if (l == null) {
-                return UNKNOWN;
-            }
+            return UNKNOWN;
         }
         return l;
     }
