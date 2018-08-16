@@ -58,7 +58,7 @@ private:
     search::FeatureSet::SP
     getFeatureSet(const search::engine::DocsumRequest & req, ISearchContext & searchCtx,
                   search::attribute::IAttributeContext & attrCtx,
-                  SessionManager &sessionMgr, bool summaryFeatures);
+                  const IAttributeExecutor & attrExec, SessionManager &sessionMgr, bool summaryFeatures);
     std::unique_ptr<search::engine::SearchReply>
     handleGroupingSession(SessionManager &sessionMgr,
                           search::grouping::GroupingContext & groupingContext,
@@ -138,7 +138,8 @@ public:
      **/
     search::FeatureSet::SP
     getSummaryFeatures(const search::engine::DocsumRequest & req, ISearchContext & searchCtx,
-                       search::attribute::IAttributeContext & attrCtx, SessionManager &sessionManager);
+                       search::attribute::IAttributeContext & attrCtx,
+                       const IAttributeExecutor & attrExec, SessionManager &sessionManager);
 
     /**
      * Perform matching for the documents in the given docsum request
@@ -152,7 +153,8 @@ public:
      **/
     search::FeatureSet::SP
     getRankFeatures(const search::engine::DocsumRequest & req, ISearchContext & searchCtx,
-                    search::attribute::IAttributeContext & attrCtx, SessionManager &sessionManager);
+                    search::attribute::IAttributeContext & attrCtx,
+                    const IAttributeExecutor & attrExec, SessionManager &sessionManager);
 
     /**
      * @return true if this rankprofile has summary-features enabled

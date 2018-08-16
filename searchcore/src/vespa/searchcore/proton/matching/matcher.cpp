@@ -52,13 +52,6 @@ struct StupidMetaStore : search::IDocumentMetaStore {
     void foreach(const search::IGidToLidMapperVisitor &) const override { }
 };
 
-struct DummyAttributeExecutor :public IAttributeExecutor {
-    void asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor> ) const override {
-        throw vespalib::IllegalArgumentException("DummyAttributeExecutor::asyncForAttribute() not implemented", VESPA_STRLOC);
-    }
-
-};
-
 FeatureSet::SP
 findFeatureSet(const DocsumRequest &req, MatchToolsFactory &mtf, bool summaryFeatures)
 {
@@ -102,7 +95,7 @@ bool willNotNeedRanking(const SearchRequest & request, const GroupingContext & g
 
 FeatureSet::SP
 Matcher::getFeatureSet(const DocsumRequest & req, ISearchContext & searchCtx, IAttributeContext & attrCtx,
-                       SessionManager & sessionMgr, bool summaryFeatures)
+                       const IAttributeExecutor & attrExec, SessionManager & sessionMgr, bool summaryFeatures)
 {
     SessionId sessionId(&req.sessionId[0], req.sessionId.size());
     if (!sessionId.empty()) {
@@ -120,8 +113,7 @@ Matcher::getFeatureSet(const DocsumRequest & req, ISearchContext & searchCtx, IA
     }
 
     StupidMetaStore metaStore;
-    DummyAttributeExecutor dummyExecutor;
-    MatchToolsFactory::UP mtf = create_match_tools_factory(req, searchCtx, attrCtx, dummyExecutor, metaStore,
+    MatchToolsFactory::UP mtf = create_match_tools_factory(req, searchCtx, attrCtx, attrExec, metaStore,
                                                            req.propertiesMap.featureOverrides());
     if (!mtf->valid()) {
         LOG(warning, "getFeatureSet(%s): query execution failed (invalid query). Returning empty feature set",
@@ -334,17 +326,17 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
 }
 
 FeatureSet::SP
-Matcher::getSummaryFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
-                            IAttributeContext & attrCtx, SessionManager &sessionMgr)
+Matcher::getSummaryFeatures(const DocsumRequest & req, ISearchContext & searchCtx, IAttributeContext & attrCtx,
+                            const IAttributeExecutor & attrExec, SessionManager &sessionMgr)
 {
-    return getFeatureSet(req, searchCtx, attrCtx, sessionMgr, true);
+    return getFeatureSet(req, searchCtx, attrCtx, attrExec, sessionMgr, true);
 }
 
 FeatureSet::SP
-Matcher::getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
-                         IAttributeContext & attrCtx, SessionManager &sessionMgr)
+Matcher::getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx, IAttributeContext & attrCtx,
+                         const IAttributeExecutor & attrExec, SessionManager &sessionMgr)
 {
-    return getFeatureSet(req, searchCtx, attrCtx, sessionMgr, false);
+    return getFeatureSet(req, searchCtx, attrCtx, attrExec, sessionMgr, false);
 }
 
 }

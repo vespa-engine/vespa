@@ -23,6 +23,7 @@ private:
     matching::ISearchContext             & _searchCtx;
     search::attribute::IAttributeContext & _attrCtx;
     search::IAttributeManager            & _attrMgr;
+    const IAttributeExecutor             & _attrExec;
     search::docsummary::GetDocsumsState    _docsumState;
     matching::SessionManager             & _sessionMgr;
 
@@ -40,14 +41,15 @@ public:
                   matching::ISearchContext & searchCtx,
                   search::attribute::IAttributeContext & attrCtx,
                   search::IAttributeManager & attrMgr,
+                  const IAttributeExecutor & attrExec,
                   matching::SessionManager & sessionMgr);
 
     search::engine::DocsumReply::UP getDocsums();
 
     // Implements GetDocsumsStateCallback
-    virtual void FillSummaryFeatures(search::docsummary::GetDocsumsState * state, search::docsummary::IDocsumEnvironment * env) override;
-    virtual void FillRankFeatures(search::docsummary::GetDocsumsState * state, search::docsummary::IDocsumEnvironment * env) override;
-    virtual void ParseLocation(search::docsummary::GetDocsumsState * state) override;
+    void FillSummaryFeatures(search::docsummary::GetDocsumsState * state, search::docsummary::IDocsumEnvironment * env) override;
+    void FillRankFeatures(search::docsummary::GetDocsumsState * state, search::docsummary::IDocsumEnvironment * env) override;
+    void ParseLocation(search::docsummary::GetDocsumsState * state) override;
 };
 
 } // namespace proton

@@ -96,7 +96,7 @@ convertLidsToGids(DocsumReply &reply, const DocsumRequest &request)
 DocsumReply::UP
 createEmptyReply(const DocsumRequest & request)
 {
-    DocsumReply::UP reply(new DocsumReply());
+    auto reply = std::make_unique<DocsumReply>();
     for (size_t i = 0; i < request.hits.size(); ++i) {
         reply->docsums.push_back(DocsumReply::Docsum());
         reply->docsums.back().gid = request.hits[i].gid;
@@ -113,7 +113,7 @@ SearchView::SearchView(const ISummaryManager::ISummarySetup::SP & summarySetup,
       _matchView(matchView)
 { }
 
-SearchView::~SearchView() {}
+SearchView::~SearchView() = default;
 
 DocsumReply::UP
 SearchView::getDocsums(const DocsumRequest & req)
@@ -147,9 +147,10 @@ SearchView::getDocsumsInternal(const DocsumRequest & req)
     IDocsumStore::UP store(_summarySetup->createDocsumStore(req.resultClassName));
     Matcher::SP matcher = _matchView->getMatcher(req.ranking);
     MatchContext::UP mctx = _matchView->createContext();
-    DocsumContext::UP ctx(new DocsumContext(req, _summarySetup->getDocsumWriter(), *store, matcher,
-                                            mctx->getSearchContext(), mctx->getAttributeContext(),
-                                            *_summarySetup->getAttributeManager(), *getSessionManager()));
+    auto ctx = std::make_unique<DocsumContext>(req, _summarySetup->getDocsumWriter(), *store, matcher,
+                                               mctx->getSearchContext(), mctx->getAttributeContext(),
+                                               *_summarySetup->getAttributeManager(), *_matchView->getAttributeManager(),
+                                               *getSessionManager());
     SearchView::InternalDocsumReply reply(ctx->getDocsums(), true);
     uint64_t endGeneration = readGuard->get().getCurrentGeneration();
     if (startGeneration != endGeneration) {

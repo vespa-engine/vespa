@@ -392,12 +392,14 @@ struct MyWorld {
 
     FeatureSet::SP getSummaryFeatures(DocsumRequest::SP req) {
         Matcher::SP matcher = createMatcher();
-        return matcher->getSummaryFeatures(*req, searchContext, attributeContext, *sessionManager);
+        DummyAttributeExecutor attrExec;
+        return matcher->getSummaryFeatures(*req, searchContext, attributeContext, attrExec, *sessionManager);
     }
 
     FeatureSet::SP getRankFeatures(DocsumRequest::SP req) {
         Matcher::SP matcher = createMatcher();
-        return matcher->getRankFeatures(*req, searchContext, attributeContext, *sessionManager);
+        DummyAttributeExecutor attrExec;
+        return matcher->getRankFeatures(*req, searchContext, attributeContext, attrExec, *sessionManager);
     }
 
 };
