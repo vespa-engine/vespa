@@ -55,23 +55,14 @@ public class LogLevelTestCase {
     @Test
     public void testNameToLevelMapping () {
         assertEquals(LogLevel.UNKNOWN, LogLevel.parse("unknown"));
-        assertEquals(LogLevel.UNKNOWN, LogLevel.parse("UNKNOWN"));
         assertEquals(LogLevel.FATAL, LogLevel.parse("fatal"));
-        assertEquals(LogLevel.FATAL, LogLevel.parse("FATAL"));
         assertEquals(LogLevel.ERROR, LogLevel.parse("error"));
-        assertEquals(LogLevel.ERROR, LogLevel.parse("ERROR"));
         assertEquals(LogLevel.WARNING, LogLevel.parse("warning"));
-        assertEquals(LogLevel.WARNING, LogLevel.parse("WARNING"));
         assertEquals(LogLevel.INFO, LogLevel.parse("info"));
-        assertEquals(LogLevel.INFO, LogLevel.parse("INFO"));
         assertEquals(LogLevel.CONFIG, LogLevel.parse("config"));
-        assertEquals(LogLevel.CONFIG, LogLevel.parse("CONFIG"));
         assertEquals(LogLevel.EVENT, LogLevel.parse("event"));
-        assertEquals(LogLevel.EVENT, LogLevel.parse("EVENT"));
         assertEquals(LogLevel.DEBUG, LogLevel.parse("debug"));
-        assertEquals(LogLevel.DEBUG, LogLevel.parse("DEBUG"));
         assertEquals(LogLevel.SPAM, LogLevel.parse("spam"));
-        assertEquals(LogLevel.SPAM, LogLevel.parse("SPAM"));
 
         LogLevel.getLevels().values().forEach(level -> assertEquals(level, LogLevel.parse(level.getName())));
     }
