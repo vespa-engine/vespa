@@ -584,7 +584,7 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func)
 void
 AttributeManager::asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const {
     AttributeMap::const_iterator itr = _attributes.find(name);
-    if (itr == _attributes.end() || itr->second.isExtra()) {
+    if (itr == _attributes.end() || itr->second.isExtra() || !func) {
         return;
     }
     AttributeVector::SP attrsp = itr->second.getAttribute();
