@@ -8,7 +8,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("proton.matching.attribute_operation");
+LOG_SETUP(".proton.matching.attribute_operation");
 
 using search::attribute::BasicType;
 
