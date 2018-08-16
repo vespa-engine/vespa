@@ -393,6 +393,7 @@ public class InternalStepRunner implements StepRunner {
         try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
             zipBuilder.add(testPackage);
             zipBuilder.add("services.xml", servicesXml);
+            zipBuilder.close();
             return new ApplicationPackage(zipBuilder.toByteArray());
         }
     }
