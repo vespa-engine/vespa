@@ -50,14 +50,6 @@ public class Node {
         this.wantedRebootGeneration = wantedRebootGeneration;
     }
 
-    // TODO: Remove once internal code supports new constructor
-    public Node(HostName hostname, State state, NodeType type, Optional<ApplicationId> owner,
-                Version currentVersion, Version wantedVersion, ServiceState serviceState,
-                long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration) {
-        this(hostname, state, type, owner, currentVersion, wantedVersion, Version.emptyVersion, Version.emptyVersion,
-             serviceState, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration);
-    }
-
     @TestOnly
     public Node(HostName hostname, State state, NodeType type, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion) {
