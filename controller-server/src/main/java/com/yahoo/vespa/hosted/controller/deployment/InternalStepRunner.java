@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
@@ -33,7 +34,6 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -263,7 +263,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private boolean nodesConverged(ApplicationId id, JobType type, Version target, ByteArrayLogger logger) {
-        List<Node> nodes = controller.configServer().nodeRepository().list(type.zone(controller.system()), id, Arrays.asList(active, reserved));
+        List<Node> nodes = controller.configServer().nodeRepository().list(type.zone(controller.system()), id, ImmutableSet.of(active, reserved));
         for (Node node : nodes)
             logger.log(String.format("%70s: %-16s%-25s%-32s%s",
                                            node.hostname(),

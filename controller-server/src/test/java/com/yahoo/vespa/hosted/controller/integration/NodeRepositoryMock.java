@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
@@ -30,8 +31,8 @@ public class NodeRepositoryMock implements NodeRepository {
 
     public void putByHostname(ZoneId zone, List<Node> nodes) {
         nodeRepository.putIfAbsent(zone, new HashMap<>());
-        nodeRepository.get(zone).putAll(nodes.stream().collect(Collectors.toMap(node -> node.hostname(),
-                                                                                node -> node)));
+        nodeRepository.get(zone).putAll(nodes.stream().collect(Collectors.toMap(Node::hostname,
+                                                                                Function.identity())));
     }
 
     public void putByHostname(ZoneId zone, Node node) {
@@ -71,6 +72,27 @@ public class NodeRepositoryMock implements NodeRepository {
                       .forEach(node -> putByHostname(zone, node));
     }
 
+    @Override
+    public void upgradeOs(ZoneId zone, NodeType type, Version version) {
+        nodeRepository.getOrDefault(zone, Collections.emptyMap()).values()
+                      .stream()
+                      .filter(node -> node.type() == type)
+                      .map(node -> new Node(node.hostname(),
+                                            node.state(),
+                                            node.type(),
+                                            node.owner(),
+                                            node.currentVersion(),
+                                            node.wantedVersion(),
+                                            node.currentOsVersion(),
+                                            version,
+                                            node.serviceState(),
+                                            node.restartGeneration(),
+                                            node.wantedRestartGeneration(),
+                                            node.rebootGeneration(),
+                                            node.wantedRebootGeneration()))
+                      .forEach(node -> putByHostname(zone, node));
+    }
+
     public void doUpgrade(DeploymentId deployment, Optional<HostName> hostName, Version version) {
         modifyNodes(deployment, hostName, node -> {
             assert node.wantedVersion().equals(version);
@@ -78,8 +100,8 @@ public class NodeRepositoryMock implements NodeRepository {
         });
     }
 
-    public void modifyNodes(DeploymentId deployment, Optional<HostName> hostname, UnaryOperator<Node> modification) {
-        List<Node> nodes = hostname.map(host -> require(host))
+    private void modifyNodes(DeploymentId deployment, Optional<HostName> hostname, UnaryOperator<Node> modification) {
+        List<Node> nodes = hostname.map(this::require)
                                    .map(Collections::singletonList)
                                    .orElse(list(deployment.zoneId(), deployment.applicationId()));
         putByHostname(deployment.zoneId(),
@@ -93,6 +115,8 @@ public class NodeRepositoryMock implements NodeRepository {
                                                            node.owner(),
                                                            node.currentVersion(),
                                                            node.wantedVersion(),
+                                                           node.currentOsVersion(),
+                                                           node.wantedOsVersion(),
                                                            node.serviceState(),
                                                            node.restartGeneration(),
                                                            node.wantedRestartGeneration() + 1,
@@ -107,6 +131,8 @@ public class NodeRepositoryMock implements NodeRepository {
                                                            node.owner(),
                                                            node.currentVersion(),
                                                            node.wantedVersion(),
+                                                           node.currentOsVersion(),
+                                                           node.wantedOsVersion(),
                                                            node.serviceState(),
                                                            node.restartGeneration() + 1,
                                                            node.wantedRestartGeneration(),
@@ -121,6 +147,8 @@ public class NodeRepositoryMock implements NodeRepository {
                                                            node.owner(),
                                                            node.currentVersion(),
                                                            node.wantedVersion(),
+                                                           node.currentOsVersion(),
+                                                           node.wantedOsVersion(),
                                                            node.serviceState(),
                                                            node.restartGeneration(),
                                                            node.wantedRestartGeneration(),
@@ -135,6 +163,8 @@ public class NodeRepositoryMock implements NodeRepository {
                                                            node.owner(),
                                                            node.currentVersion(),
                                                            node.wantedVersion(),
+                                                           node.currentOsVersion(),
+                                                           node.wantedOsVersion(),
                                                            node.serviceState(),
                                                            node.restartGeneration(),
                                                            node.wantedRestartGeneration(),

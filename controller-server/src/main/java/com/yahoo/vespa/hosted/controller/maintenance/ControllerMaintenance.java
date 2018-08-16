@@ -4,12 +4,12 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
-import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -40,6 +40,8 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ApplicationOwnershipConfirmer applicationOwnershipConfirmer;
     private final DnsMaintainer dnsMaintainer;
     private final SystemUpgrader systemUpgrader;
+    private final OsUpgrader osUpgrader;
+    private final OsVersionStatusUpdater osVersionStatusUpdater;
     private final JobRunner jobRunner;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
@@ -63,6 +65,8 @@ public class ControllerMaintenance extends AbstractComponent {
         dnsMaintainer = new DnsMaintainer(controller, Duration.ofHours(12), jobControl, nameService);
         systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1), jobControl);
         jobRunner = new JobRunner(controller, Duration.ofSeconds(30), jobControl, new InternalStepRunner(controller, testerCloud));
+        osUpgrader = new OsUpgrader(controller, Duration.ofMinutes(1), jobControl);
+        osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -85,6 +89,8 @@ public class ControllerMaintenance extends AbstractComponent {
         applicationOwnershipConfirmer.deconstruct();
         dnsMaintainer.deconstruct();
         systemUpgrader.deconstruct();
+        osUpgrader.deconstruct();
+        osVersionStatusUpdater.deconstruct();
         jobRunner.deconstruct();
     }
 

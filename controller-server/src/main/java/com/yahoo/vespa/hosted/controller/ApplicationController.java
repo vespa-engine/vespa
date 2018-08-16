@@ -369,7 +369,7 @@ public class ApplicationController {
             deploy(application.id(), applicationPackage, zone, options, Collections.emptySet(), Collections.emptySet());
         } else {
             // Deploy by calling node repository directly
-            configServer().nodeRepository().upgrade(zone, application.nodeType(), version);
+            application.nodeTypes().forEach(nodeType -> configServer().nodeRepository().upgrade(zone, nodeType, version));
         }
     }
 

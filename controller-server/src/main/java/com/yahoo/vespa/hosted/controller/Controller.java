@@ -30,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
+import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
@@ -212,6 +213,31 @@ public class Controller extends AbstractComponent {
         return versionStatus().systemVersion()
                 .map(VespaVersion::versionNumber)
                 .orElse(Vtag.currentVersion);
+    }
+
+    /** Returns the target OS version for infrastructure in this system. The controller will drive infrastructure OS
+     * upgrades to this version */
+    public Optional<Version> osVersion() {
+        return curator.readOsTargetVersion();
+    }
+
+    /** Set the target OS version for infrastructure in this system. */
+    public void upgradeOs(Version version) {
+        try (Lock lock = curator.lockOsTargetVersion()) {
+            curator.writeOsTargetVersion(version);
+        }
+    }
+
+    /** Returns the current OS version status */
+    public OsVersionStatus osVersionStatus() {
+        return curator.readOsVersionStatus();
+    }
+
+    /** Replace the current OS version status with a new one */
+    public void updateOsVersionStatus(OsVersionStatus newStatus) {
+        try (Lock lock = curator.lockOsVersionStatus()) {
+            curator.writeOsVersionStatus(newStatus);
+        }
     }
 
     /** Returns the hostname of this controller */
