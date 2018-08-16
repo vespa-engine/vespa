@@ -157,7 +157,7 @@ StartCommand() {
         -XX:+PreserveFramePointer \
         -XX:+HeapDumpOnOutOfMemoryError \
         -XX:HeapDumpPath="$VESPA_HOME/var/crash" \
-        -XX:+ExitOnOutOfMemoryError \
+        -XX:OnOutOfMemoryError='kill -9 %p' \
         -Djava.library.path="$VESPA_HOME/lib64" \
         -Djava.awt.headless=true \
 	-Dsun.rmi.dgc.client.gcInterval=3600000 \
