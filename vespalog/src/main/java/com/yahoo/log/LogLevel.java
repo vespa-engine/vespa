@@ -101,17 +101,24 @@ public class LogLevel extends Level {
         javaToVespa.put(DEBUG, DEBUG);
         javaToVespa.put(SPAM, SPAM);
 
-        // manually enter the valid log levels we shall recognize
-        // in VESPA
-        nameToLevel = new LinkedHashMap<String, Level>(15);
+        // manually enter the valid log levels we shall recognize in VESPA
+        nameToLevel = new LinkedHashMap<String, Level>(32);
         nameToLevel.put("fatal", FATAL);
+        nameToLevel.put("FATAL", FATAL);
         nameToLevel.put("error", ERROR);
+        nameToLevel.put("ERROR", ERROR);
         nameToLevel.put("warning", WARNING);
+        nameToLevel.put("WARNING", WARNING);
         nameToLevel.put("config", CONFIG);
+        nameToLevel.put("CONFIG", CONFIG);
         nameToLevel.put("info", INFO);
+        nameToLevel.put("INFO", INFO);
         nameToLevel.put("event", EVENT);
+        nameToLevel.put("EVENT", EVENT);
         nameToLevel.put("debug", DEBUG);
+        nameToLevel.put("DEBUG", DEBUG);
         nameToLevel.put("spam", SPAM);
+        nameToLevel.put("SPAM", SPAM);
     }
 
     private LogLevel(String name, int value) {
