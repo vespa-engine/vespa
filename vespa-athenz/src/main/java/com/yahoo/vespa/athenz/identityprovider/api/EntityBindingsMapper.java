@@ -46,7 +46,7 @@ public class EntityBindingsMapper {
                 entity.instanceHostname,
                 entity.createdAt,
                 entity.ipAddresses,
-                entity.identityType != null ? IdentityType.fromId(entity.identityType) : null); // TODO Remove support for legacy representation without type
+                IdentityType.fromId(entity.identityType));
     }
 
     public static SignedIdentityDocumentEntity toSignedIdentityDocumentEntity(SignedIdentityDocument model) {
@@ -60,7 +60,7 @@ public class EntityBindingsMapper {
                 model.instanceHostname(),
                 model.createdAt(),
                 model.ipAddresses(),
-                model.identityType() != null ? model.identityType().id() : null); // TODO Remove support for legacy representation without type
+                model.identityType().id());
     }
 
     public static SignedIdentityDocument readSignedIdentityDocumentFromFile(Path file) {

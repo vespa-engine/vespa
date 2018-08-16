@@ -37,40 +37,20 @@ public class VespaUniqueInstanceId {
         this.type = type;
     }
 
-    // TODO Remove support for legacy representation without type
-    @Deprecated
-    public VespaUniqueInstanceId(int clusterIndex,
-                                 String clusterId,
-                                 String instance,
-                                 String application,
-                                 String tenant,
-                                 String region,
-                                 String environment) {
-        this(clusterIndex, clusterId, instance, application, tenant, region, environment, null);
-    }
 
-
-    // TODO Remove support for legacy representation without type
     public static VespaUniqueInstanceId fromDottedString(String instanceId) {
         String[] tokens = instanceId.split("\\.");
-        if (tokens.length != 7 && tokens.length != 8) {
+        if (tokens.length != 8) {
             throw new IllegalArgumentException("Invalid instance id: " + instanceId);
         }
         return new VespaUniqueInstanceId(
-                Integer.parseInt(tokens[0]), tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6], tokens.length == 8 ? IdentityType.fromId(tokens[7]) : null);
+                Integer.parseInt(tokens[0]), tokens[1], tokens[2], tokens[3], tokens[4], tokens[5], tokens[6], IdentityType.fromId(tokens[7]));
     }
 
-    // TODO Remove support for legacy representation without type
     public String asDottedString() {
-        if (type != null) {
-            return String.format(
-                    "%d.%s.%s.%s.%s.%s.%s.%s",
-                    clusterIndex, clusterId, instance, application, tenant, region, environment, type.id());
-        } else {
-            return String.format(
-                    "%d.%s.%s.%s.%s.%s.%s",
-                    clusterIndex, clusterId, instance, application, tenant, region, environment);
-        }
+        return String.format(
+                "%d.%s.%s.%s.%s.%s.%s.%s",
+                clusterIndex, clusterId, instance, application, tenant, region, environment, type.id());
     }
 
     public int clusterIndex() {

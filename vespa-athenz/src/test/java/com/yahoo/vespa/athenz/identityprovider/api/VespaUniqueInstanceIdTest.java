@@ -21,16 +21,4 @@ public class VespaUniqueInstanceIdTest {
         assertEquals(id, deserializedId);
     }
 
-    // TODO Remove support for legacy representation without type
-    @Test
-    public void supports_legacy_representation_without_type() {
-        VespaUniqueInstanceId id =
-                new VespaUniqueInstanceId(1, "cluster-id", "instance", "application", "tenant", "region", "environment");
-        String stringRepresentation = id.asDottedString();
-        String expectedStringRepresentation = "1.cluster-id.instance.application.tenant.region.environment";
-        assertEquals(expectedStringRepresentation, stringRepresentation);
-        VespaUniqueInstanceId deserializedId = VespaUniqueInstanceId.fromDottedString(stringRepresentation);
-        assertEquals(id, deserializedId);
-    }
-
 }
