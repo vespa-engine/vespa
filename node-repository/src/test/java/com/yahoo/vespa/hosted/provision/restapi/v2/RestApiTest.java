@@ -522,6 +522,20 @@ public class RestApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
                 "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.456\"},\"osVersions\":{}}");
 
+        // Setting empty version fails
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                                   Utf8.toBytes("{\"version\": null}"),
+                                   Request.Method.PATCH),
+                       400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid target version: 0.0.0\"}");
+
+        // Omitting version field fails
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                                   Utf8.toBytes("{}"),
+                                   Request.Method.PATCH),
+                       400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"At least one of 'version' and 'osVersion' must be set\"}");
+
         // Downgrade without force fails
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
                         Utf8.toBytes("{\"version\": \"6.123.1\"}"),
@@ -566,6 +580,13 @@ public class RestApiTest {
                                    Request.Method.PATCH),
                        400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Setting target OS version for config nodes is unsupported\"}");
+
+        // Setting empty osVersion fails
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                                   Utf8.toBytes("{\"osVersion\": null}"),
+                                   Request.Method.PATCH),
+                       400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid target version: 0.0.0\"}");
 
         // Attempt to downgrade OS
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
