@@ -114,7 +114,7 @@ public class RankingConstantTest {
                 "  document test { }",
                 "  constant foo {",
                 "    type: tensor(x{})",
-                "    uri: http://somwhere.far.away/in/another-galaxy",
+                "    uri: http://somewhere.far.away/in/another-galaxy",
                 "  }",
                 "}"
         ));
@@ -122,8 +122,29 @@ public class RankingConstantTest {
         Search search = searchBuilder.getSearch();
         RankingConstant constant = search.getRankingConstants().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
-        assertEquals("http://somwhere.far.away/in/another-galaxy", constant.getUri());
+        assertEquals("http://somewhere.far.away/in/another-galaxy", constant.getUri());
     }
+
+    @Test
+    public void constant_https_uri_is_allowed() throws Exception {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
+        searchBuilder.importString(joinLines(
+                "search test {",
+                "  document test { }",
+                "  constant foo {",
+                "    type: tensor(x{})",
+                "    uri: https://somewhere.far.away:4443/in/another-galaxy",
+                "  }",
+                "}"
+        ));
+        searchBuilder.build();
+        Search search = searchBuilder.getSearch();
+        RankingConstant constant = search.getRankingConstants().values().iterator().next();
+        assertEquals(RankingConstant.PathType.URI, constant.getPathType());
+        assertEquals("https://somewhere.far.away:4443/in/another-galaxy", constant.getUri());
+    }
+
     @Test
     public void constant_uri_with_port_is_allowed() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
@@ -133,7 +154,7 @@ public class RankingConstantTest {
                 "  document test { }",
                 "  constant foo {",
                 "    type: tensor(x{})",
-                "    uri: http://somwhere.far.away:4080/in/another-galaxy",
+                "    uri: http://somewhere.far.away:4080/in/another-galaxy",
                 "  }",
                 "}"
         ));
@@ -141,8 +162,9 @@ public class RankingConstantTest {
         Search search = searchBuilder.getSearch();
         RankingConstant constant = search.getRankingConstants().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
-        assertEquals("http://somwhere.far.away:4080/in/another-galaxy", constant.getUri());
+        assertEquals("http://somewhere.far.away:4080/in/another-galaxy", constant.getUri());
     }
+
     @Test
     public void constant_uri_no_dual_slashes_is_allowed() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
@@ -152,7 +174,7 @@ public class RankingConstantTest {
                 "  document test { }",
                 "  constant foo {",
                 "    type: tensor(x{})",
-                "    uri: http:somwhere.far.away/in/another-galaxy",
+                "    uri: http:somewhere.far.away/in/another-galaxy",
                 "  }",
                 "}"
         ));
@@ -160,10 +182,11 @@ public class RankingConstantTest {
         Search search = searchBuilder.getSearch();
         RankingConstant constant = search.getRankingConstants().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
-        assertEquals("http:somwhere.far.away/in/another-galaxy", constant.getUri());
+        assertEquals("http:somewhere.far.away/in/another-galaxy", constant.getUri());
     }
+
     @Test
-    public void constant_uri_only_supports_http() throws Exception {
+    public void constant_uri_only_supports_http_and_https() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder searchBuilder = new SearchBuilder(rankProfileRegistry);
         thrown.expect(ParseException.class);
@@ -175,7 +198,7 @@ public class RankingConstantTest {
                 "  document test { }",
                 "  constant foo {",
                 "    type: tensor(x{})",
-                "    uri: ftp:somwhere.far.away/in/another-galaxy",
+                "    uri: ftp:somewhere.far.away/in/another-galaxy",
                 "  }",
                 "}"
         ));
