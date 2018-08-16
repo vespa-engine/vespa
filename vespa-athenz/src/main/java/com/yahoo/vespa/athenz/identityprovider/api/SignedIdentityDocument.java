@@ -3,12 +3,11 @@ package com.yahoo.vespa.athenz.identityprovider.api;
 
 import com.yahoo.vespa.athenz.api.AthenzService;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.Set;
 
 /**
- * A signed identity document which contains a {@link IdentityDocument}
+ * A signed identity document
  *
  * @author bjorncs
  */
@@ -16,13 +15,10 @@ public class SignedIdentityDocument {
     public static final int DEFAULT_KEY_VERSION = 0;
     public static final int DEFAULT_DOCUMENT_VERSION = 1;
 
-    private final IdentityDocument identityDocument;
     private final String signature;
     private final int signingKeyVersion;
     private final VespaUniqueInstanceId providerUniqueId;
-    private final String dnsSuffix;
     private final AthenzService providerService;
-    private final URI ztsEndpoint;
     private final int documentVersion;
     private final String configServerHostname;
     private final String instanceHostname;
@@ -30,37 +26,26 @@ public class SignedIdentityDocument {
     private final Set<String> ipAddresses;
     private final IdentityType identityType;
 
-    public SignedIdentityDocument(IdentityDocument identityDocument,
-                                  String signature,
+    public SignedIdentityDocument(String signature,
                                   int signingKeyVersion,
                                   VespaUniqueInstanceId providerUniqueId,
-                                  String dnsSuffix,
                                   AthenzService providerService,
-                                  URI ztsEndpoint,
                                   int documentVersion,
                                   String configServerHostname,
                                   String instanceHostname,
                                   Instant createdAt,
                                   Set<String> ipAddresses,
                                   IdentityType identityType) {
-        this.identityDocument = identityDocument;
         this.signature = signature;
         this.signingKeyVersion = signingKeyVersion;
         this.providerUniqueId = providerUniqueId;
-        this.dnsSuffix = dnsSuffix;
         this.providerService = providerService;
-        this.ztsEndpoint = ztsEndpoint;
         this.documentVersion = documentVersion;
         this.configServerHostname = configServerHostname;
         this.instanceHostname = instanceHostname;
         this.createdAt = createdAt;
         this.ipAddresses = ipAddresses;
         this.identityType = identityType;
-    }
-
-    @Deprecated
-    public IdentityDocument identityDocument() {
-        return identityDocument;
     }
 
     public String signature() {
@@ -75,18 +60,8 @@ public class SignedIdentityDocument {
         return providerUniqueId;
     }
 
-    @Deprecated
-    public String dnsSuffix() {
-        return dnsSuffix;
-    }
-
     public AthenzService providerService() {
         return providerService;
-    }
-
-    @Deprecated
-    public URI ztsEndpoint() {
-        return ztsEndpoint;
     }
 
     public int documentVersion() {
