@@ -25,7 +25,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -57,9 +56,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 
@@ -333,7 +329,6 @@ public class InternalStepRunner implements StepRunner {
             case NOT_STARTED:
                 throw new IllegalStateException("Tester reports tests not started, even though they should have!");
             case RUNNING:
-                logger.log("Tests still running ...");
                 return Optional.empty();
             case FAILURE:
                 logger.log("Tests failed.");
@@ -508,7 +503,7 @@ public class InternalStepRunner implements StepRunner {
         }
 
         static ByteArrayLogger of(ApplicationId id, JobType type, Step step) {
-            return new ByteArrayLogger(parent, String.format(".%s.%s.%s", id.serializedForm(), type.jobName(), step));
+            return new ByteArrayLogger(parent, String.format(".%s.%s.%s", id.toString(), type.jobName(), step));
         }
 
         @Override

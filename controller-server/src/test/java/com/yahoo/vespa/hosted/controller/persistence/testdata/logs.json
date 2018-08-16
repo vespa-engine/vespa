@@ -1,0 +1,32 @@
+{
+  "deployReal":
+  [
+    {
+      "id": 1,
+      "level": "info",
+      "at": 0,
+      "message": "First"
+    },
+    {
+      "id": 3,
+      "level": "debug",
+      "at": 1000,
+      "message": "Third"
+    }
+  ],
+  "deployTester":
+    [
+      {
+        "id": 2,
+        "level": "info",
+        "at": 0,
+        "message": "Second"
+      },
+      {
+        "id": 4,
+        "level": "warning",
+        "at": 2000,
+        "message": "Fourth"
+      }
+    ]
+}
