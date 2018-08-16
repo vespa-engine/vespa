@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -86,6 +87,7 @@ public class ApplicationController {
     private final CuratorDb curator;
 
     private final ArtifactRepository artifactRepository;
+    private final ApplicationStore applicationStore;
     private final RotationRepository rotationRepository;
     private final AthenzClientFactory zmsClientFactory;
     private final NameService nameService;
@@ -98,7 +100,7 @@ public class ApplicationController {
     ApplicationController(Controller controller, CuratorDb curator,
                           AthenzClientFactory zmsClientFactory, RotationsConfig rotationsConfig,
                           NameService nameService, ConfigServer configServer,
-                          ArtifactRepository artifactRepository,
+                          ArtifactRepository artifactRepository, ApplicationStore applicationStore,
                           RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
         this.controller = controller;
         this.curator = curator;
@@ -109,6 +111,7 @@ public class ApplicationController {
         this.clock = clock;
 
         this.artifactRepository = artifactRepository;
+        this.applicationStore = applicationStore;
         this.rotationRepository = new RotationRepository(rotationsConfig, this, curator);
         this.deploymentTrigger = new DeploymentTrigger(controller, buildService, clock);
 
@@ -142,6 +145,8 @@ public class ApplicationController {
     }
 
     public ArtifactRepository artifacts() { return artifactRepository; }
+
+    public ApplicationStore applicationStore() {  return applicationStore; }
 
     /**
      * Set the rotations marked as 'global' either 'in' or 'out of' service.
@@ -299,7 +304,12 @@ public class ApplicationController {
                 applicationVersion = preferOldestVersion
                         ? triggered.sourceApplication().orElse(triggered.application())
                         : triggered.application();
-                applicationPackage = new ApplicationPackage(artifactRepository.getApplicationPackage(application.get().id(), applicationVersion.id()));
+
+                if (application.get().deploymentJobs().builtInternally()) {
+                    applicationPackage = new ApplicationPackage(applicationStore.getApplicationPackage(application.get().id(), applicationVersion.id()));
+                } else {
+                    applicationPackage = new ApplicationPackage(artifactRepository.getApplicationPackage(application.get().id(), applicationVersion.id()));
+                }
                 validateRun(application.get(), zone, platformVersion, applicationVersion);
             }
 

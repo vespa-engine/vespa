@@ -92,8 +92,6 @@ public class InternalStepRunnerTest {
 
     @Test
     public void canRegisterAndRunDirectly() {
-        jobs.register(appId);
-
         deployNewSubmission();
 
         deployNewPlatform(new Version("7.1"));
@@ -105,8 +103,6 @@ public class InternalStepRunnerTest {
         tester.deployCompletely(app(), applicationPackage);
         setEndpoints(appId, JobType.productionUsWest1.zone(tester.controller().system()));
 
-        jobs.register(appId);
-
         deployNewSubmission();
 
         deployNewPlatform(new Version("7.1"));
@@ -115,8 +111,8 @@ public class InternalStepRunnerTest {
     /** Submits a new application, and returns the version of the new submission. */
     private ApplicationVersion newSubmission(ApplicationId id) {
         ApplicationVersion version = jobs.submit(id, BuildJob.defaultSourceRevision, applicationPackage.zippedContent(), new byte[0]);
-        tester.artifactRepository().putApplicationPackage(appId, version.id(), applicationPackage.zippedContent());
-        tester.artifactRepository().putTesterPackage(testerOf(appId), version.id(), new byte[0]);
+        tester.applicationStore().putApplicationPackage(appId, version.id(), applicationPackage.zippedContent());
+        tester.applicationStore().putTesterPackage(testerOf(appId), version.id(), new byte[0]);
         return version;
     }
 
@@ -134,7 +130,6 @@ public class InternalStepRunnerTest {
 
     /** Completely deploys a new submission. */
     private void deployNewSubmission() {
-        assertTrue(app().deploymentJobs().builtInternally());
         ApplicationVersion applicationVersion = newSubmission(appId);
 
         assertFalse(app().deployments().values().stream()
@@ -149,8 +144,6 @@ public class InternalStepRunnerTest {
 
     /** Completely deploys the given, new platform. */
     private void deployNewPlatform(Version version) {
-        assertTrue(app().deploymentJobs().builtInternally());
-
         tester.upgradeSystem(version);
         assertFalse(app().deployments().values().stream()
                          .anyMatch(deployment -> deployment.version().equals(version)));
@@ -368,7 +361,6 @@ public class InternalStepRunnerTest {
 
     private RunId newRun(JobType type) {
         assertFalse(app().deploymentJobs().builtInternally()); // Use this only once per test.
-        jobs.register(appId);
         newSubmission(appId);
         tester.readyJobTrigger().maintain();
 

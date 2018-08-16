@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
@@ -87,11 +88,12 @@ public class Controller extends AbstractComponent {
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, AthenzClientFactory athenzClientFactory,
-                      ArtifactRepository artifactRepository, BuildService buildService, LogStore logStore) {
+                      ArtifactRepository artifactRepository, ApplicationStore applicationStore,
+                      BuildService buildService, LogStore logStore) {
         this(curator, rotationsConfig,
              gitHub, entityService, organization, globalRoutingService, zoneRegistry,
              configServer, metricsService, nameService, routingGenerator, chef,
-             Clock.systemUTC(), athenzClientFactory, artifactRepository, buildService,
+             Clock.systemUTC(), athenzClientFactory, artifactRepository, applicationStore, buildService,
              logStore, com.yahoo.net.HostName::getLocalhost);
     }
 
@@ -102,6 +104,7 @@ public class Controller extends AbstractComponent {
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
                       AthenzClientFactory athenzClientFactory, ArtifactRepository artifactRepository,
+                      ApplicationStore applicationStore,
                       BuildService buildService, LogStore logStore, Supplier<String> hostnameSupplier) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
@@ -123,6 +126,7 @@ public class Controller extends AbstractComponent {
                                                           Objects.requireNonNull(nameService, "NameService cannot be null"),
                                                           configServer,
                                                           Objects.requireNonNull(artifactRepository, "ArtifactRepository cannot be null"),
+                                                          Objects.requireNonNull(applicationStore, "ApplicationStore cannot be null"),
                                                           Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock);

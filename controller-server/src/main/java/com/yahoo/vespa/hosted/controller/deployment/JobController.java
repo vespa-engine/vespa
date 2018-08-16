@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
@@ -161,13 +162,9 @@ public class JobController {
         locked(id, run -> run.aborted());
     }
 
-    /** Registers the given application, such that it may have deployment jobs run here. */
-    public void register(ApplicationId id) {
-        controller.applications().lockIfPresent(id, application ->
-                controller.applications().store(application.withBuiltInternally(true)));
-    }
-
-    /** Accepts and stores a new application package and test jar pair under a generated application version key. */
+    /**
+     * Accepts and stores a new application package and test jar pair under a generated application version key.
+     */
     public ApplicationVersion submit(ApplicationId id, SourceRevision revision,
                                      byte[] applicationPackage, byte[] applicationTestPackage) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
@@ -175,16 +172,26 @@ public class JobController {
             long run = nextBuild(id);
             version.set(ApplicationVersion.from(revision, run));
 
-            controller.applications().artifacts().putApplicationPackage(id,
-                                                                        version.get().id(),
-                                                                        applicationPackage);
-            controller.applications().artifacts().putTesterPackage(InternalStepRunner.testerOf(id),
-                                                                   version.get().id(),
-                                                                   applicationTestPackage);
+            controller.applications().applicationStore().putApplicationPackage(id,
+                    version.get().id(),
+                    applicationPackage);
+            controller.applications().applicationStore().putTesterPackage(InternalStepRunner.testerOf(id),
+                    version.get().id(),
+                    applicationTestPackage);
 
-            application = application.withBuiltInternally(true);
-            controller.applications().store(controller.applications().withUpdatedConfig(application,
-                                                                                        new ApplicationPackage(applicationPackage)));
+            if (!application.get().deploymentJobs().builtInternally()) {
+                // Copy all current packages to the new application store
+                application.get().deployments().values().stream()
+                        .map(Deployment::applicationVersion)
+                        .distinct()
+                        .forEach(appVersion -> {
+                            byte[] content = controller.applications().artifacts().getApplicationPackage(application.get().id(), appVersion.id());
+                            controller.applications().applicationStore().putApplicationPackage(application.get().id(), appVersion.id(), content);
+                        });
+            }
+
+            controller.applications().store(controller.applications().withUpdatedConfig(application.withBuiltInternally(true),
+                    new ApplicationPackage(applicationPackage)));
 
             notifyOfNewSubmission(id, revision, run);
         });

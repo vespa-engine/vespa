@@ -113,7 +113,6 @@ public class JobControllerApiHandlerHelperTest {
         tester.createApplication(TenantName.from("tenant"), "application", "default", 1L);
 
         JobController jobController = new JobController(tester.controller(), new MockLogStore());
-        jobController.register(ApplicationId.from("tenant", "application", "default"));
 
         HttpResponse response = JobControllerApiHandlerHelper.submitResponse(
                 jobController, "tenant", "application", new SourceRevision("repository", "branch", "commit"), new byte[0], new byte[0]);
