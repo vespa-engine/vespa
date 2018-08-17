@@ -233,11 +233,11 @@ DocumentMetaStore::removeOldGenerations(generation_t firstUsed)
 }
 
 std::unique_ptr<search::AttributeSaver>
-DocumentMetaStore::onInitSave()
+DocumentMetaStore::onInitSave(vespalib::stringref fileName)
 {
     GenerationHandler::Guard guard(getGuard());
     return std::make_unique<DocumentMetaStoreSaver>
-        (std::move(guard), createAttributeHeader(),
+        (std::move(guard), createAttributeHeader(fileName),
          _gidToLidMap.getFrozenView().begin(), _metaDataStore);
 }
 

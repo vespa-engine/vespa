@@ -50,7 +50,7 @@ private:
     virtual void onGenerationChange(generation_t generation) override;
     virtual void onCommit() override;
     virtual void onUpdateStat() override;
-    virtual std::unique_ptr<AttributeSaver> onInitSave() override;
+    virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     virtual bool onLoad() override;
     virtual uint64_t getUniqueValueCount() const override;
 

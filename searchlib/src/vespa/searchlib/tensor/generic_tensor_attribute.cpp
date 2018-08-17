@@ -103,13 +103,13 @@ GenericTensorAttribute::onLoad()
 
 
 std::unique_ptr<AttributeSaver>
-GenericTensorAttribute::onInitSave()
+GenericTensorAttribute::onInitSave(vespalib::stringref fileName)
 {
     vespalib::GenerationHandler::Guard guard(getGenerationHandler().
                                              takeGuard());
     return std::make_unique<GenericTensorAttributeSaver>
         (std::move(guard),
-         this->createAttributeHeader(),
+         this->createAttributeHeader(fileName),
          getRefCopy(),
          _genericTensorStore);
 }

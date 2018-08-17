@@ -191,13 +191,13 @@ ReferenceAttribute::onUpdateStat()
 }
 
 std::unique_ptr<AttributeSaver>
-ReferenceAttribute::onInitSave()
+ReferenceAttribute::onInitSave(vespalib::stringref fileName)
 {
     vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().
                                              takeGuard());
     return std::make_unique<ReferenceAttributeSaver>
         (std::move(guard),
-         createAttributeHeader(),
+         createAttributeHeader(fileName),
          getIndicesCopy(getCommittedDocIdLimit()),
          _store);
 }

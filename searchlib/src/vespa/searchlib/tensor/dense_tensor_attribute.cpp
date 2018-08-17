@@ -166,13 +166,13 @@ DenseTensorAttribute::onLoad()
 
 
 std::unique_ptr<AttributeSaver>
-DenseTensorAttribute::onInitSave()
+DenseTensorAttribute::onInitSave(vespalib::stringref fileName)
 {
     vespalib::GenerationHandler::Guard guard(getGenerationHandler().
                                              takeGuard());
     return std::make_unique<DenseTensorAttributeSaver>
         (std::move(guard),
-         this->createAttributeHeader(),
+         this->createAttributeHeader(fileName),
          getRefCopy(),
          _denseTensorStore);
 }

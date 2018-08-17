@@ -197,7 +197,7 @@ MultiValueEnumAttribute<B, M>::onGenerationChange(generation_t generation)
 
 template <typename B, typename M>
 std::unique_ptr<AttributeSaver>
-MultiValueEnumAttribute<B, M>::onInitSave()
+MultiValueEnumAttribute<B, M>::onInitSave(vespalib::stringref fileName)
 {
     {
         this->logEnumStoreEvent("reenumerate", "drain");
@@ -209,7 +209,7 @@ MultiValueEnumAttribute<B, M>::onInitSave()
     vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().
                                              takeGuard());
     return std::make_unique<MultiValueEnumAttributeSaver<WeightedIndex>>
-        (std::move(guard), this->createAttributeHeader(), this->_mvMapping,
+        (std::move(guard), this->createAttributeHeader(fileName), this->_mvMapping,
          this->_enumStore);
 }
 

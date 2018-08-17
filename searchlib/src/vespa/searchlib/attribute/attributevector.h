@@ -451,7 +451,7 @@ public:
     /** Saves this attribute vector using the given saveTarget **/
     bool save(IAttributeSaveTarget & saveTarget);
 
-    attribute::AttributeHeader createAttributeHeader() const;
+    attribute::AttributeHeader createAttributeHeader(vespalib::stringref fileName) const;
 
     /** Returns whether this attribute has load data files on disk **/
     bool hasLoadData() const;
@@ -676,9 +676,9 @@ public:
         return _interlock;
     }
 
-    std::unique_ptr<AttributeSaver> initSave();
+    std::unique_ptr<AttributeSaver> initSave(vespalib::stringref fileName);
 
-    virtual std::unique_ptr<AttributeSaver> onInitSave();
+    virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName);
     virtual uint64_t getEstimatedSaveByteSize() const;
 
     static bool isEnumerated(const vespalib::GenericHeader &header);

@@ -25,7 +25,7 @@ public:
     virtual std::unique_ptr<Tensor> getTensor(DocId docId) const override;
     virtual void getTensor(DocId docId, vespalib::tensor::MutableDenseTensorView &tensor) const override;
     virtual bool onLoad() override;
-    virtual std::unique_ptr<AttributeSaver> onInitSave() override;
+    virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     virtual void compactWorst() override;
     virtual uint32_t getVersion() const override;
 };
