@@ -2,7 +2,7 @@
 <services xmlns:deploy='vespa' version='1.0'>
     <container version='1.0' id='default'>
 
-        <component id="com.yahoo.vespa.hosted.testrunner.TestRunner" bundle="vepsa-testrunner-components">
+        <component id="com.yahoo.vespa.hosted.testrunner.TestRunner" bundle="vespa-testrunner-components">
             <config name="com.yahoo.vespa.hosted.testrunner.test-runner">
                 <artifactsPath>artifacts</artifactsPath>
             </config>
