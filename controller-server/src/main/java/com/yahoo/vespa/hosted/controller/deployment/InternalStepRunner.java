@@ -225,7 +225,7 @@ public class InternalStepRunner implements StepRunner {
         Versions versions = controller.jobController().run(id).get().versions();
         Version platform = setTheStage ? versions.sourcePlatform().orElse(versions.targetPlatform()) : versions.targetPlatform();
         ApplicationVersion application = setTheStage ? versions.sourceApplication().orElse(versions.targetApplication()) : versions.targetApplication();
-        logger.log("Checking installation of " + platform + " and " + application + " ...");
+        logger.log("Checking installation of " + platform + " and " + application.id() + " ...");
 
         if (nodesConverged(id.application(), id.type(), platform, logger) && servicesConverged(id.application(), id.type())) {
             logger.log("Installation succeeded!");
