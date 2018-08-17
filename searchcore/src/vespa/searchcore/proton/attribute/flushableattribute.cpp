@@ -75,7 +75,7 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncT
     _saver = attr.initSave(_flushFile);
     if (!_saver) {
         // New style background save not available, use old style save.
-        attr.save(_saveTarget);
+        attr.save(_saveTarget, _flushFile);
     }
 }
 

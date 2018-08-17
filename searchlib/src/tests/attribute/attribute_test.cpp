@@ -725,7 +725,7 @@ AttributeTest::testMemorySaver(const AttributePtr & a, const AttributePtr & b)
     LOG(info, "testMemorySaver: vector '%s'", a->getName().c_str());
 
     AttributeMemorySaveTarget saveTarget;
-    EXPECT_TRUE(a->saveAs(b->getBaseFileName(), saveTarget));
+    EXPECT_TRUE(a->save(saveTarget, b->getBaseFileName()));
     FastOS_StatInfo statInfo;
     vespalib::string datFile = vespalib::make_string("%s.dat", b->getBaseFileName().c_str());
     EXPECT_TRUE(!FastOS_File::Stat(datFile.c_str(), &statInfo));
