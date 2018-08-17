@@ -428,7 +428,7 @@ public class InternalStepRunner implements StepRunner {
                 "<services xmlns:deploy='vespa' version='1.0'>\n" +
                 "    <container version='1.0' id='default'>\n" +
                 "\n" +
-                "        <component id=\"com.yahoo.vespa.hosted.testrunner.TestRunner\" bundle=\"vepsa-testrunner-components\">\n" +
+                "        <component id=\"com.yahoo.vespa.hosted.testrunner.TestRunner\" bundle=\"vespa-testrunner-components\">\n" +
                 "            <config name=\"com.yahoo.vespa.hosted.testrunner.test-runner\">\n" +
                 "                <artifactsPath>artifacts</artifactsPath>\n" +
                 "            </config>\n" +
