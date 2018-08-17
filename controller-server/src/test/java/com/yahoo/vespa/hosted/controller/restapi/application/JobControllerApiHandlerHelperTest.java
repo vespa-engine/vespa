@@ -161,7 +161,7 @@ public class JobControllerApiHandlerHelperTest {
 
     private void assertFile(HttpResponse response, String resourceName) {
         try {
-            Path path = Paths.get(getClass().getClassLoader().getResource(resourceName).getPath());
+            Path path = Paths.get("src/test/resources/").resolve(resourceName);
             String expected = new String(Files.readAllBytes(path));
             compare(response, expected);
         } catch (Exception e) {
