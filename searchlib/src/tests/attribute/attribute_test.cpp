@@ -254,36 +254,25 @@ void AttributeTest::testBaseName()
 {
     AttributeVector::BaseName v("attr1");
     EXPECT_EQUAL(v.getAttributeName(), "attr1");
-    // EXPECT_TRUE(v.getIndexName().empty());
-    EXPECT_EQUAL("", v.getIndexName());
     EXPECT_TRUE(v.getDirName().empty());
     v = "attribute/attr1/attr1";
     EXPECT_EQUAL(v.getAttributeName(), "attr1");
-    // EXPECT_TRUE(v.getIndexName().empty());
-    EXPECT_EQUAL("", v.getIndexName());
     EXPECT_EQUAL(v.getDirName(), "attribute/attr1");
     v = "attribute/attr1/snapshot-X/attr1";
     EXPECT_EQUAL(v.getAttributeName(), "attr1");
-    // EXPECT_TRUE(v.getIndexName().empty());
-    EXPECT_EQUAL("", v.getIndexName());
     EXPECT_EQUAL(v.getDirName(), "attribute/attr1/snapshot-X");
     v = "/attribute/attr1/snapshot-X/attr1";
     EXPECT_EQUAL(v.getAttributeName(), "attr1");
-    // EXPECT_TRUE(v.getIndexName().empty());
-    EXPECT_EQUAL("", v.getIndexName());
     EXPECT_EQUAL(v.getDirName(), "/attribute/attr1/snapshot-X");
     v = "index.1/1.ready/attribute/attr1/snapshot-X/attr1";
     EXPECT_EQUAL(v.getAttributeName(), "attr1");
-    EXPECT_EQUAL(v.getIndexName(), "index.1");
     EXPECT_EQUAL(v.getDirName(), "index.1/1.ready/attribute/attr1/snapshot-X");
     v = "/index.1/1.ready/attribute/attr1/snapshot-X/attr1";
     EXPECT_EQUAL(v.getAttributeName(), "attr1");
-    EXPECT_EQUAL(v.getIndexName(), "index.1");
     EXPECT_EQUAL(v.getDirName(),
                  "/index.1/1.ready/attribute/attr1/snapshot-X");
     v = "xxxyyyy/zzz/index.1/1.ready/attribute/attr1/snapshot-X/attr1";
     EXPECT_EQUAL(v.getAttributeName(), "attr1");
-    EXPECT_EQUAL(v.getIndexName(), "index.1");
     EXPECT_EQUAL(v.getDirName(),
                "xxxyyyy/zzz/index.1/1.ready/attribute/attr1/snapshot-X");
 }

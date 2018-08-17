@@ -72,29 +72,6 @@ AttributeVector::BaseName::~BaseName() = default;
 
 
 AttributeVector::BaseName::string
-AttributeVector::BaseName::getIndexName() const
-{
-    // "$VESPA_HOME/var/db/vespa/search/cluster.search/r0/c0/typetest_search/1.ready/attribute/stringfield/snapshot-0/stringfield"
-    string index;
-    size_t snapshotPos(rfind("/snapshot-"));
-    if (snapshotPos == string::npos)
-        return index;
-    size_t attrNamePos(rfind('/', snapshotPos  - 1));
-    if (attrNamePos == string::npos || attrNamePos == 0)
-        return index;
-    size_t attrStrPos(rfind('/', attrNamePos - 1));
-    if (attrStrPos == string::npos || attrStrPos == 0)
-        return index;
-    size_t subDBPos(rfind('/', attrStrPos - 1));
-    if (subDBPos == string::npos || subDBPos == 0)
-        return index;
-    size_t indexNamePos(rfind('/', subDBPos - 1));
-    if (indexNamePos == string::npos)
-        return substr(0, subDBPos);
-    return substr(indexNamePos + 1, subDBPos - indexNamePos - 1);
-}
-
-AttributeVector::BaseName::string
 AttributeVector::BaseName::createAttributeName(vespalib::stringref s)
 {
     size_t p(s.rfind('/'));
