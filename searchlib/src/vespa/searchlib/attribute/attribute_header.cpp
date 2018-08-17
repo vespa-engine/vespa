@@ -39,18 +39,11 @@ AttributeHeader::AttributeHeader()
 {
 }
 
-AttributeHeader::AttributeHeader(const vespalib::string &fileName,
-                                 attribute::BasicType basicType,
-                                 attribute::CollectionType collectionType,
-                                 const vespalib::eval::ValueType &tensorType,
-                                 bool enumerated,
-                                 const attribute::PersistentPredicateParams &predicateParams,
-                                 uint32_t numDocs,
-                                 uint32_t fixedWidth,
-                                 uint64_t uniqueValueCount,
-                                 uint64_t totalValueCount,
-                                 uint64_t createSerialNum,
-                                 uint32_t version)
+AttributeHeader::AttributeHeader(const vespalib::string &fileName, attribute::BasicType basicType,
+                                 attribute::CollectionType collectionType, const vespalib::eval::ValueType &tensorType,
+                                 bool enumerated, const attribute::PersistentPredicateParams &predicateParams,
+                                 uint32_t numDocs, uint32_t fixedWidth, uint64_t uniqueValueCount,
+                                 uint64_t totalValueCount, uint64_t createSerialNum, uint32_t version)
     : _fileName(fileName),
       _basicType(basicType),
       _collectionType(collectionType),
@@ -102,7 +95,8 @@ AttributeHeader::internalExtractTags(const vespalib::GenericHeader &header)
             assert(header.hasTag(predicateUpperBoundTag));
             _predicateParamsSet = true;
             _predicateParams.setArity(header.getTag(predicateArityTag).asInteger());
-            _predicateParams.setBounds(header.getTag(predicateLowerBoundTag).asInteger(), header.getTag(predicateUpperBoundTag).asInteger());
+            _predicateParams.setBounds(header.getTag(predicateLowerBoundTag).asInteger(),
+                                       header.getTag(predicateUpperBoundTag).asInteger());
         } else {
             assert(!header.hasTag(predicateLowerBoundTag));
             assert(!header.hasTag(predicateUpperBoundTag));
