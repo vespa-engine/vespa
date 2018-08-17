@@ -18,10 +18,16 @@ public class ZoneId {
 
     private final Environment environment;
     private final RegionName region;
+    private final CloudName cloud;
 
-    private ZoneId(Environment environment, RegionName region) {
+    private ZoneId(Environment environment, RegionName region, CloudName cloud) {
         this.environment = Objects.requireNonNull(environment);
         this.region = Objects.requireNonNull(region);
+        this.cloud = cloud;
+    }
+
+    private ZoneId(Environment environment, RegionName region) {
+        this(environment, region, CloudName.defaultName());
     }
 
     public static ZoneId from(Environment environment, RegionName region) {
@@ -31,10 +37,19 @@ public class ZoneId {
     public static ZoneId from(String environment, String region) {
         return from(Environment.from(environment), RegionName.from(region));
     }
+
     /** Create from a serialised ZoneId. Inverse of {@code ZoneId.value()}. */
     public static ZoneId from(String value) {
         String[] parts = value.split("\\.");
         return from(parts[0], parts[1]);
+    }
+
+    public static ZoneId from(Environment environment, RegionName region, CloudName cloud) {
+        return new ZoneId(environment, region, cloud);
+    }
+
+    public static ZoneId from(String environment, String region, String cloud) {
+        return new ZoneId(Environment.from(environment), RegionName.from(region), CloudName.from(cloud));
     }
 
     public Environment environment() {
@@ -45,6 +60,10 @@ public class ZoneId {
         return region;
     }
 
+    public CloudName cloud() {
+        return cloud;
+    }
+
     /** Returns the serialised value of this. Inverse of {@code ZoneId.from(String value)}. */
     public String value() {
         return environment + "." + region;
@@ -52,21 +71,22 @@ public class ZoneId {
 
     @Override
     public String toString() {
-        return "zone " + value();
+        return "zone " + value() + " in " + cloud;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if ( ! (o instanceof ZoneId)) return false;
-        ZoneId id = (ZoneId) o;
-        return environment == id.environment &&
-               Objects.equals(region, id.region);
+        if (o == null || getClass() != o.getClass()) return false;
+        ZoneId zoneId = (ZoneId) o;
+        return environment == zoneId.environment &&
+               Objects.equals(region, zoneId.region) &&
+               Objects.equals(cloud, zoneId.cloud);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(environment, region);
+        return Objects.hash(environment, region, cloud);
     }
 
 }
