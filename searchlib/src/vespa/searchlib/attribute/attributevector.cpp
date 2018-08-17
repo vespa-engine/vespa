@@ -412,15 +412,16 @@ bool
 AttributeVector::save(IAttributeSaveTarget &saveTarget)
 {
     commit();
+    vespalib::string fileName = getBaseFileName();
     // First check if new style save is available.
-    std::unique_ptr<AttributeSaver> saver(onInitSave());
+    std::unique_ptr<AttributeSaver> saver(onInitSave(fileName));
     if (saver) {
         // Normally, new style save happens in background, but here it
         // will occur in the foreground.
         return saver->save(saveTarget);
     }
     // New style save not available, use old style save
-    saveTarget.setHeader(createAttributeHeader());
+    saveTarget.setHeader(createAttributeHeader(fileName));
     if (!saveTarget.setup()) {
         return false;
     }
@@ -430,8 +431,8 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget)
 }
 
 attribute::AttributeHeader
-AttributeVector::createAttributeHeader() const {
-    return attribute::AttributeHeader(getBaseFileName(),
+AttributeVector::createAttributeHeader(vespalib::stringref fileName) const {
+    return attribute::AttributeHeader(fileName,
                                    getConfig().basicType(),
                                    getConfig().collectionType(),
                                    getConfig().basicType().type() == BasicType::Type::TENSOR
@@ -747,14 +748,14 @@ void AttributeVector::setInterlock(const std::shared_ptr<attribute::Interlock> &
 
 
 std::unique_ptr<AttributeSaver>
-AttributeVector::initSave()
+AttributeVector::initSave(vespalib::stringref fileName)
 {
     commit();
-    return onInitSave();
+    return onInitSave(fileName);
 }
 
 std::unique_ptr<AttributeSaver>
-AttributeVector::onInitSave()
+AttributeVector::onInitSave(vespalib::stringref)
 {
     return std::unique_ptr<AttributeSaver>();
 }

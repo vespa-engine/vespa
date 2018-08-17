@@ -178,7 +178,7 @@ public:
 
     void clearDocs(DocId lidLow, DocId lidLimit) override;
     void onShrinkLidSpace() override;
-    std::unique_ptr<AttributeSaver> onInitSave() override;
+    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
 };
 
 }

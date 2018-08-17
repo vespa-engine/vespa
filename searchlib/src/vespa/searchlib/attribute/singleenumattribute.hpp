@@ -305,7 +305,7 @@ SingleValueEnumAttribute<B>::onShrinkLidSpace()
 
 template <typename B>
 std::unique_ptr<AttributeSaver>
-SingleValueEnumAttribute<B>::onInitSave()
+SingleValueEnumAttribute<B>::onInitSave(vespalib::stringref fileName)
 {
     {
         this->logEnumStoreEvent("reenumerate", "drain");
@@ -318,7 +318,7 @@ SingleValueEnumAttribute<B>::onInitSave()
                                              takeGuard());
     return std::make_unique<SingleValueEnumAttributeSaver>
         (std::move(guard),
-         this->createAttributeHeader(),
+         this->createAttributeHeader(fileName),
          getIndicesCopy(this->getCommittedDocIdLimit()),
          this->_enumStore);
 }

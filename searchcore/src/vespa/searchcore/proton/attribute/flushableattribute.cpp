@@ -72,7 +72,7 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncT
     // Called by attribute field writer executor
     _flushFile = writer.getSnapshotDir(_syncToken) + "/" + attr.getName();
     attr.setBaseFileName(_flushFile);
-    _saver = attr.initSave();
+    _saver = attr.initSave(_flushFile);
     if (!_saver) {
         // New style background save not available, use old style save.
         attr.save(_saveTarget);

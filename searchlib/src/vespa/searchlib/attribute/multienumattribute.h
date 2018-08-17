@@ -100,7 +100,7 @@ public:
         return valueCount;
     }
 
-    std::unique_ptr<AttributeSaver> onInitSave() override;
+    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
 };
 
 } // namespace search
