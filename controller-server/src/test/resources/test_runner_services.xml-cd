@@ -13,6 +13,7 @@
         </handler>
 
         <http>
+            <server id='default' port='4080'>
             <filtering>
                 <request-chain id="testrunner-api">
                     <filter id='authz-filter' class='com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilter' bundle="jdisc-security-filters">
