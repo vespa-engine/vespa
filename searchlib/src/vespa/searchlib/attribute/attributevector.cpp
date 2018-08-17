@@ -390,15 +390,6 @@ AttributeVector::saveAs(vespalib::stringref baseFileName)
 }
 
 bool
-AttributeVector::saveAs(vespalib::stringref baseFileName,
-                        IAttributeSaveTarget & saveTarget)
-{
-    _baseFileName = baseFileName;
-    return save(saveTarget, baseFileName);
-}
-
-
-bool
 AttributeVector::save()
 {
     TuneFileAttributes tune;

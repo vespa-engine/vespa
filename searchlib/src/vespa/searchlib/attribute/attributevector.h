@@ -439,12 +439,6 @@ public:
      */
     bool saveAs(vespalib::stringref baseFileName);
 
-    /**
-     * Updates the base file name of this attribute vector and saves
-     * it using the given saveTarget
-     */
-    bool saveAs(vespalib::stringref baseFileName, IAttributeSaveTarget &saveTarget);
-
     /** Saves this attribute vector to file(s) **/
     bool save();
 
