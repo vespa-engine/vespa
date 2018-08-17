@@ -591,7 +591,7 @@ EnumeratedSaveTest::saveBoth(AttributePtr v)
     AttributePtr v2 = make(v->getConfig(), basename, true);
     EXPECT_TRUE(v2->load());
     v2->enableEnumeratedSave(true);
-    EXPECT_TRUE(v2->saveAs(basename + "_e"));
+    EXPECT_TRUE(v2->save(basename + "_e"));
     if ((v->getConfig().basicType() == BasicType::INT32 &&
          v->getConfig().collectionType() == CollectionType::WSET) || true) {
         search::AttributeMemorySaveTarget ms;
