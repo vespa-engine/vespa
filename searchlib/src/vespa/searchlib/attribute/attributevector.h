@@ -140,7 +140,6 @@ public:
         BaseName(vespalib::stringref base, vespalib::stringref name);
         ~BaseName();
 
-        string getIndexName() const;
         const string & getAttributeName() const { return _name; }
         string getDirName() const;
     private:
