@@ -39,6 +39,7 @@ import com.yahoo.tensor.serialization.TypedBinaryFormat;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -516,19 +517,19 @@ public class ConvertedModel {
 
         Map<String, RankingExpression> readExpressions() {
             Map<String, RankingExpression> expressions = new HashMap<>();
-            List<NamedReader> expressionReaders = null;
-            try {
-                expressionReaders = application.getFiles(modelFiles.expressionsPath(), "expression");
-                for (NamedReader expressionReader : expressionReaders) {
-                    try {
-                        expressions.put(expressionReader.getName(), new RankingExpression(expressionReader.getReader()));
-                    } catch (ParseException e) {
-                        throw new IllegalStateException("Could not parse " + expressionReader.getName(), e);
-                    }
+            ApplicationFile expressionPath = application.getFile(modelFiles.expressionsPath());
+            if ( ! expressionPath.exists() || ! expressionPath.isDirectory()) return Collections.emptyMap();
+            for (ApplicationFile expressionFile : expressionPath.listFiles()) {
+                try {
+                    String name = expressionFile.getPath().getName();
+                    expressions.put(name, new RankingExpression(name, expressionFile.createReader()));
                 }
-            }
-            finally {
-                expressionReaders.forEach(r -> close(r));
+                catch (FileNotFoundException e) {
+                    throw new IllegalStateException("Expression file removed while reading: " + expressionFile, e);
+                }
+                catch (ParseException e) {
+                    throw new IllegalStateException("Invalid stored expression in " + expressionFile, e);
+                }
             }
             return expressions;
         }
@@ -688,7 +689,7 @@ public class ConvertedModel {
         }
 
         public Path expressionPath(String name) {
-            return storedModelPath().append("expressions").append(name + ".expression");
+            return storedModelPath().append("expressions").append(name);
         }
 
         public Path expressionsPath() {

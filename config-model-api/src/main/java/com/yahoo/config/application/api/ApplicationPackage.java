@@ -162,8 +162,8 @@ public interface ApplicationPackage {
      * Gets a file from the root of the application package
      *
      *
-     * @param relativePath The relative path of the file within this application package.
-     * @return reader for file
+     * @param relativePath the relative path of the file within this application package.
+     * @return information abut the file
      * @throws IllegalArgumentException if the given path does not exist
      */
     ApplicationFile getFile(Path relativePath);

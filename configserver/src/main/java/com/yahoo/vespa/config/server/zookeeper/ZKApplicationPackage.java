@@ -24,12 +24,14 @@ import java.io.File;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Represents an application residing in zookeeper.
@@ -200,16 +202,17 @@ public class ZKApplicationPackage implements ApplicationPackage {
         return ret;
     }
 
-    //Returns readers for all the children of a node.
-    //The node is looked up relative to the location of the active application package
-    //in zookeeper.
+    /**
+     * Returns readers for all the children of a node.
+     * The node is looked up relative to the location of the active application package in zookeeper.
+     */
     @Override
-    public List<NamedReader> getFiles(Path relativePath,String suffix,boolean recurse) {
+    public List<NamedReader> getFiles(Path relativePath, String suffix, boolean recurse) {
         return liveApp.getAllDataFromDirectory(ConfigCurator.USERAPP_ZK_SUBPATH + '/' + relativePath.getRelative(), suffix, recurse);
     }
 
     @Override
-    public ApplicationFile getFile(Path file) { // foo/bar/baz.json
+    public ApplicationFile getFile(Path file) {
         return new ZKApplicationFile(file, liveApp);
     }
 
