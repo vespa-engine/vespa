@@ -34,7 +34,7 @@ public class InstanceConfirmation {
 
     @JsonProperty("attestationData") @JsonSerialize(using = SignedIdentitySerializer.class)
     public final SignedIdentityDocumentEntity signedIdentityDocument;
-    @JsonUnwrapped public final Map<String, Object> attributes = new HashMap<>(); // optional attributes that Athenz may provide
+    @JsonUnwrapped public final Map<String, String> attributes = new HashMap<>(); // optional attributes that Athenz may provide
 
     @JsonCreator
     public InstanceConfirmation(@JsonProperty("provider") String provider,
@@ -49,7 +49,7 @@ public class InstanceConfirmation {
     }
 
     @JsonAnySetter
-    public void set(String name, Object value) {
+    public void set(String name, String value) {
         attributes.put(name, value);
     }
 

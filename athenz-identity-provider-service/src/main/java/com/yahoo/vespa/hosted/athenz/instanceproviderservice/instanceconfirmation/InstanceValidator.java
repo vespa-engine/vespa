@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation;
 
+import com.google.common.net.InetAddresses;
 import com.google.inject.Inject;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.ServiceInfo;
@@ -13,10 +14,17 @@ import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.identityprovider.client.IdentityDocumentSigner;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
+import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 
+import java.net.InetAddress;
 import java.security.PublicKey;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Verifies that the instance's identity document is valid
@@ -29,15 +37,20 @@ public class InstanceValidator {
     private static final Logger log = Logger.getLogger(InstanceValidator.class.getName());
     static final String SERVICE_PROPERTIES_DOMAIN_KEY = "identity.domain";
     static final String SERVICE_PROPERTIES_SERVICE_KEY = "identity.service";
+    static final String INSTANCE_ID_DELIMITER = ".instanceid.athenz.";
 
     private final IdentityDocumentSigner signer = new IdentityDocumentSigner();
     private final KeyProvider keyProvider;
     private final SuperModelProvider superModelProvider;
+    private final NodeRepository nodeRepository;
 
     @Inject
-    public InstanceValidator(KeyProvider keyProvider, SuperModelProvider superModelProvider) {
+    public InstanceValidator(KeyProvider keyProvider,
+                             SuperModelProvider superModelProvider,
+                             NodeRepository nodeRepository) {
         this.keyProvider = keyProvider;
         this.superModelProvider = superModelProvider;
+        this.nodeRepository = nodeRepository;
     }
 
     public boolean isValidInstance(InstanceConfirmation instanceConfirmation) {
@@ -68,8 +81,71 @@ public class InstanceValidator {
         log.log(LogLevel.INFO, () -> String.format("Accepting refresh for instance with identity '%s', provider '%s', instanceId '%s'.",
                                                    new AthenzService(confirmation.domain, confirmation.service).getFullName(),
                                                    confirmation.provider,
-                                                   confirmation.attributes.get("sanDNS").toString()));
-        return true;
+                                                   confirmation.attributes.get("sanDNS")));
+        try {
+            return validateAttributes(confirmation);
+        } catch (Exception e) {
+            log.log(LogLevel.INFO, "Encountered exception while refreshing certificate for confirmation: " + confirmation, e);
+            return true;
+        }
+    }
+
+    private boolean validateAttributes(InstanceConfirmation confirmation) {
+        // Find a list of SAN DNS
+        List<String> sanDNS = Optional.ofNullable(confirmation.attributes.get("sanDNS"))
+                .map(s -> s.split(","))
+                .map(Arrays::asList)
+                .map(List::stream)
+                .orElse(Stream.empty())
+                .collect(Collectors.toList());
+
+        VespaUniqueInstanceId vespaUniqueInstanceId = sanDNS.stream()
+                .filter(dns -> dns.contains(INSTANCE_ID_DELIMITER))
+                .findFirst()
+                .map(s -> s.replaceAll(INSTANCE_ID_DELIMITER + ".*", ""))
+                .map(VespaUniqueInstanceId::fromDottedString)
+                .orElse(null);
+        if(vespaUniqueInstanceId == null) {
+            log.log(LogLevel.WARNING, "Unabe to find unique instance ID in refresh request: " + confirmation.toString());
+            return false;
+        }
+
+        // Find node matching vespa unique id
+        Node node = nodeRepository.getNodes().stream()
+                .filter(n -> n.allocation().isPresent())
+                .filter(n -> nodeMatchesVespaUniqueId(n, vespaUniqueInstanceId))
+                .findFirst() // Should be only one
+                .orElse(null);
+        if(node == null) {
+            log.log(LogLevel.WARNING, "Invalid InstanceConfirmation, No nodes matching uniqueId: " + vespaUniqueInstanceId);
+            return false;
+        }
+
+        // Find list of ipaddresses
+        List<InetAddress> ips = Optional.ofNullable(confirmation.attributes.get("sanIP"))
+                .map(s -> s.split(","))
+                .map(Arrays::asList)
+                .map(List::stream)
+                .orElse(Stream.empty())
+                .map(InetAddresses::forString)
+                .collect(Collectors.toList());
+
+        List<InetAddress> nodeIpAddresses = node.ipAddresses().stream()
+                .map(InetAddresses::forString)
+                .collect(Collectors.toList());
+
+        // Validate that ipaddresses in request are valid for node
+        return nodeIpAddresses.containsAll(ips);
+    }
+
+    private boolean nodeMatchesVespaUniqueId(Node node, VespaUniqueInstanceId vespaUniqueInstanceId) {
+        return node.allocation().map(allocation ->
+                                             allocation.membership().index() == vespaUniqueInstanceId.clusterIndex() &&
+                                             allocation.membership().cluster().id().value().equals(vespaUniqueInstanceId.clusterId()) &&
+                                             allocation.owner().instance().value().equals(vespaUniqueInstanceId.instance()) &&
+                                             allocation.owner().application().value().equals(vespaUniqueInstanceId.application()) &&
+                                             allocation.owner().tenant().value().equals(vespaUniqueInstanceId.tenant()))
+                .orElse(false);
     }
 
     // If/when we dont care about logging exactly whats wrong, this can be simplified
