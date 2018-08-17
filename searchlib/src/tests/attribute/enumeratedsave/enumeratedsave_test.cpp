@@ -566,7 +566,7 @@ MemAttr::SP
 EnumeratedSaveTest::saveMem(AttributeVector &v)
 {
     MemAttr::SP res(new MemAttr);
-    EXPECT_TRUE(v.save(*res));
+    EXPECT_TRUE(v.save(*res, v.getBaseFileName()));
     return res;
 }
 
@@ -577,7 +577,7 @@ EnumeratedSaveTest::checkMem(AttributeVector &v, const MemAttr &e,
 {
     MemAttr m;
     v.enableEnumeratedSave(enumerated);
-    EXPECT_TRUE(v.save(m));
+    EXPECT_TRUE(v.save(m, v.getBaseFileName()));
     v.enableEnumeratedSave(false);
     ASSERT_TRUE(m == e);
 }

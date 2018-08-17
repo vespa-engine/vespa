@@ -394,7 +394,7 @@ AttributeVector::saveAs(vespalib::stringref baseFileName,
                         IAttributeSaveTarget & saveTarget)
 {
     _baseFileName = baseFileName;
-    return save(saveTarget);
+    return save(saveTarget, baseFileName);
 }
 
 
@@ -404,15 +404,14 @@ AttributeVector::save()
     TuneFileAttributes tune;
     DummyFileHeaderContext fileHeaderContext;
     AttributeFileSaveTarget saveTarget(tune, fileHeaderContext);
-    return save(saveTarget);
+    return save(saveTarget, getBaseFileName());
 }
 
 
 bool
-AttributeVector::save(IAttributeSaveTarget &saveTarget)
+AttributeVector::save(IAttributeSaveTarget &saveTarget, vespalib::stringref fileName)
 {
     commit();
-    vespalib::string fileName = getBaseFileName();
     // First check if new style save is available.
     std::unique_ptr<AttributeSaver> saver(onInitSave(fileName));
     if (saver) {

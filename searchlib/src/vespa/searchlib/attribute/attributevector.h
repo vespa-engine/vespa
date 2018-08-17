@@ -448,8 +448,8 @@ public:
     /** Saves this attribute vector to file(s) **/
     bool save();
 
-    /** Saves this attribute vector using the given saveTarget **/
-    bool save(IAttributeSaveTarget & saveTarget);
+    /** Saves this attribute vector using the given saveTarget and fileName **/
+    bool save(IAttributeSaveTarget & saveTarget, vespalib::stringref fileName);
 
     attribute::AttributeHeader createAttributeHeader(vespalib::stringref fileName) const;
 
