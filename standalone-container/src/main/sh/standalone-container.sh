@@ -151,6 +151,12 @@ StartCommand() {
     printenv > "$cfpfile"
     FixDataDirectory "$bundlecachedir"
 
+    # TODO: Change
+    #   -XX:OnOutOfMemoryError='kill -9 %p'
+    # to
+    #   -XX:+ExitOutOfMemoryError
+    # below once java version is guaranteed to be >= 8 u92
+
     java \
 	"${jvm_arguments[@]}" \
         -Xms128m -Xmx2048m \
