@@ -439,7 +439,7 @@ void AttributeTest::testReload(const AttributePtr & a, const AttributePtr & b, c
     compare<VectorType, BufferType>
         (*(static_cast<VectorType *>(a.get())), *(static_cast<VectorType *>(b.get())));
     a->setCreateSerialNum(43u);
-    EXPECT_TRUE( a->saveAs(b->getBaseFileName()) );
+    EXPECT_TRUE( a->save(b->getBaseFileName()) );
     a->commit(true);
     if (preciseEstimatedSize(*a)) {
         EXPECT_EQUAL(statSize(*b), a->getEstimatedSaveByteSize());
@@ -449,7 +449,7 @@ void AttributeTest::testReload(const AttributePtr & a, const AttributePtr & b, c
         EXPECT_LESS_EQUAL(actSize * 1.0, estSize * 1.3);
         EXPECT_GREATER_EQUAL(actSize * 1.0, estSize * 0.7);
     }
-    EXPECT_TRUE( a->saveAs(c->getBaseFileName()) );
+    EXPECT_TRUE( a->save(c->getBaseFileName()) );
     if (preciseEstimatedSize(*a)) {
         EXPECT_EQUAL(statSize(*c), a->getEstimatedSaveByteSize());
     }
@@ -650,27 +650,27 @@ void AttributeTest::testHasLoadData()
         EXPECT_TRUE(!av->hasLoadData());
         av->save();
         EXPECT_TRUE(av->hasLoadData());
-        av->saveAs(baseFileName("loaddata2"));
+        av->save(baseFileName("loaddata2"));
         av = createAttribute("loaddata2", Config(BasicType::INT32));
         EXPECT_TRUE(av->hasLoadData());
-        av->saveAs(baseFileName("loaddata3"));
+        av->save(baseFileName("loaddata3"));
     }
     { // array
         AttributePtr av = createAttribute("loaddata3", Config(BasicType::INT32, CollectionType::ARRAY));
         EXPECT_TRUE(!av->hasLoadData());
         av->save();
         EXPECT_TRUE(av->hasLoadData());
-        av->saveAs(baseFileName("loaddata4"));
+        av->save(baseFileName("loaddata4"));
         av = createAttribute("loaddata4", Config(BasicType::INT32, CollectionType::ARRAY));
         EXPECT_TRUE(av->hasLoadData());
-        av->saveAs(baseFileName("loaddata5"));
+        av->save(baseFileName("loaddata5"));
     }
     { // wset
         AttributePtr av = createAttribute("loaddata5", Config(BasicType::INT32, CollectionType::WSET));
         EXPECT_TRUE(!av->hasLoadData());
         av->save();
         EXPECT_TRUE(av->hasLoadData());
-        av->saveAs(baseFileName("loaddata6"));
+        av->save(baseFileName("loaddata6"));
         av = createAttribute("loaddata6", Config(BasicType::INT32, CollectionType::WSET));
         EXPECT_TRUE(av->hasLoadData());
     }

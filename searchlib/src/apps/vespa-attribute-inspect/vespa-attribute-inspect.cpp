@@ -200,7 +200,7 @@ LoadAttribute::Main()
         vespalib::string saveFile = fileName + ".save";
         std::cout << "saving attribute: " << saveFile << std::endl;
         timer.SetNow();
-        ptr->saveAs(saveFile);
+        ptr->save(saveFile);
         std::cout << "save time: " << timer.MilliSecsToNow() / 1000 << " seconds " << std::endl;
     }
 

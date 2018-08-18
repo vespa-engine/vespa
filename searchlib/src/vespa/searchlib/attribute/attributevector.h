@@ -429,10 +429,9 @@ public:
     bool isImported() const override;
 
     /**
-     * Updates the base file name of this attribute vector and saves
-     * it to file(s)
+     * Saves this attribute vector to named file(s)
      */
-    bool saveAs(vespalib::stringref baseFileName);
+    bool save(vespalib::stringref fileName);
 
     /** Saves this attribute vector to file(s) **/
     bool save();

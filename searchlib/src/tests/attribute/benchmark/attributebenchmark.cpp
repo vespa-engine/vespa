@@ -659,7 +659,7 @@ AttributeBenchmark::Main()
 
     if (dc._writeAttribute) {
         std::cout << "<!-- Writing attribute to disk -->" << std::endl;
-        ptr->saveAs(ptr->getBaseFileName());
+        ptr->save(ptr->getBaseFileName());
     }
 
     std::cout << "</attribute-benchmark>" << std::endl;

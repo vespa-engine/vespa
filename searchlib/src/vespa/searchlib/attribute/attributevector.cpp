@@ -334,19 +334,18 @@ AttributeVector::loadFile(const char *suffix)
 
 
 bool
-AttributeVector::saveAs(vespalib::stringref baseFileName)
+AttributeVector::save(vespalib::stringref fileName)
 {
-    _baseFileName = baseFileName;
-    return save();
+    TuneFileAttributes tune;
+    DummyFileHeaderContext fileHeaderContext;
+    AttributeFileSaveTarget saveTarget(tune, fileHeaderContext);
+    return save(saveTarget, fileName);
 }
 
 bool
 AttributeVector::save()
 {
-    TuneFileAttributes tune;
-    DummyFileHeaderContext fileHeaderContext;
-    AttributeFileSaveTarget saveTarget(tune, fileHeaderContext);
-    return save(saveTarget, getBaseFileName());
+    return save(getBaseFileName());
 }
 
 

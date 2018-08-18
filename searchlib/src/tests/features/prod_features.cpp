@@ -426,7 +426,7 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
     }
 
     // save 'sint' and load it into 'unique' (only way to set a noupdate attribute)
-    ASSERT_TRUE(avs[0]->saveAs(avs[9]->getBaseFileName()));
+    ASSERT_TRUE(avs[0]->save(avs[9]->getBaseFileName()));
     ASSERT_TRUE(avs[9]->load());
 }
 

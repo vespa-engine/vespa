@@ -418,7 +418,7 @@ StringAttributeTest::testSingleValue(Attribute & svsa, Config &cfg)
 
 
     Attribute load("load", cfg);
-    svsa.saveAs(load.getBaseFileName());
+    svsa.save(load.getBaseFileName());
     load.load();
 }
 
