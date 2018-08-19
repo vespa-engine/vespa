@@ -39,7 +39,7 @@ private:
     search::AttributeMemorySaveTarget      _saveTarget;
     std::unique_ptr<search::AttributeSaver> _saver;
     uint64_t                          _syncToken;
-    search::AttributeVector::BaseName _flushFile;
+    vespalib::string                  _flushFile;
 
     bool saveAttribute(); // not updating snap info.
 public:
@@ -71,7 +71,6 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncT
     AttributeVector &attr = *_fattr._attr;
     // Called by attribute field writer executor
     _flushFile = writer.getSnapshotDir(_syncToken) + "/" + attr.getName();
-    attr.setBaseFileName(_flushFile);
     _saver = attr.initSave(_flushFile);
     if (!_saver) {
         // New style background save not available, use old style save.
@@ -87,7 +86,7 @@ FlushableAttribute::Flusher::~Flusher()
 bool
 FlushableAttribute::Flusher::saveAttribute()
 {
-    vespalib::mkdir(_flushFile.getDirName(), false);
+    vespalib::mkdir(vespalib::dirname(_flushFile), false);
     SerialNumFileHeaderContext fileHeaderContext(_fattr._fileHeaderContext,
                                                  _syncToken);
     bool saveSuccess = true;
@@ -120,14 +119,14 @@ FlushableAttribute::Flusher::flush(AttributeDirectory::Writer &writer)
         return false;
     }
     writer.markValidSnapshot(_syncToken);
-    writer.setLastFlushTime(search::FileKit::getModificationTime(_flushFile.getDirName()));
+    writer.setLastFlushTime(search::FileKit::getModificationTime(vespalib::dirname(_flushFile)));
     return true;
 }
 
 void
 FlushableAttribute::Flusher::updateStats()
 {
-    _fattr._lastStats.setPath(_flushFile.getDirName());
+    _fattr._lastStats.setPath(vespalib::dirname(_flushFile));
 }
 
 bool

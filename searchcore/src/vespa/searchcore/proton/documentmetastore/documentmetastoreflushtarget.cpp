@@ -70,7 +70,6 @@ Flusher(DocumentMetaStoreFlushTarget &dmsft,
     // Called by document db executor
     _flushDir = writer.getSnapshotDir(syncToken);
     vespalib::string newBaseFileName(_flushDir + "/" + dms.getName());
-    dms.setBaseFileName(newBaseFileName);
     _saver = dms.initSave(newBaseFileName);
     assert(_saver);
 }
@@ -109,8 +108,8 @@ DocumentMetaStoreFlushTarget::Flusher::flush(AttributeDirectory::Writer &writer)
 {
     writer.createInvalidSnapshot(_syncToken);
     if (!saveDocumentMetaStore()) {
-        LOG(warning, "Could not write document meta store '%s' to disk",
-            _dmsft._dms->getBaseFileName().c_str());
+        vespalib::string baseFileName(_flushDir + "/" + _dmsft._dms->getName());
+        LOG(warning, "Could not write document meta store '%s' to disk", baseFileName.c_str());
         return false;
     }
     /*
