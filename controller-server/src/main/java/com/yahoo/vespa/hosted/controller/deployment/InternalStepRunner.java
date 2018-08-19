@@ -441,6 +441,11 @@ public class InternalStepRunner implements StepRunner {
                 "        <http>\n" +
                 "            <server id='default' port='4080'/>\n" +
                 "            <filtering>\n" +
+                "                <access-control domain='" + domain + "'>\n" + // Set up dummy access control to pass validation :/
+                "                    <exclude>\n" +
+                "                        <binding>http://*/tester/v1/*</binding>\n" +
+                "                    </exclude>\n" +
+                "                </access-control>\n" +
                 "                <request-chain id=\"testrunner-api\">\n" +
                 "                    <filter id='authz-filter' class='com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilter' bundle=\"jdisc-security-filters\">\n" +
                 "                        <config name=\"jdisc.http.filter.security.athenz.athenz-authorization-filter\">\n" +
