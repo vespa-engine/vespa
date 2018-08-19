@@ -15,6 +15,11 @@
         <http>
             <server id='default' port='4080'/>
             <filtering>
+                <access-control domain='vespa.vespa.cd'>
+                    <exclude>
+                        <binding>http://*/tester/v1/*</binding>
+                    </exclude>
+                </access-control>
                 <request-chain id="testrunner-api">
                     <filter id='authz-filter' class='com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilter' bundle="jdisc-security-filters">
                         <config name="jdisc.http.filter.security.athenz.athenz-authorization-filter">

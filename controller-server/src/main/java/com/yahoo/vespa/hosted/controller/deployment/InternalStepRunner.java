@@ -225,7 +225,7 @@ public class InternalStepRunner implements StepRunner {
         Versions versions = controller.jobController().run(id).get().versions();
         Version platform = setTheStage ? versions.sourcePlatform().orElse(versions.targetPlatform()) : versions.targetPlatform();
         ApplicationVersion application = setTheStage ? versions.sourceApplication().orElse(versions.targetApplication()) : versions.targetApplication();
-        logger.log("Checking installation of " + platform + " and " + application + " ...");
+        logger.log("Checking installation of " + platform + " and " + application.id() + " ...");
 
         if (nodesConverged(id.application(), id.type(), platform, logger) && servicesConverged(id.application(), id.type())) {
             logger.log("Installation succeeded!");
@@ -441,6 +441,11 @@ public class InternalStepRunner implements StepRunner {
                 "        <http>\n" +
                 "            <server id='default' port='4080'/>\n" +
                 "            <filtering>\n" +
+                "                <access-control domain='" + domain + "'>\n" + // Set up dummy access control to pass validation :/
+                "                    <exclude>\n" +
+                "                        <binding>http://*/tester/v1/*</binding>\n" +
+                "                    </exclude>\n" +
+                "                </access-control>\n" +
                 "                <request-chain id=\"testrunner-api\">\n" +
                 "                    <filter id='authz-filter' class='com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilter' bundle=\"jdisc-security-filters\">\n" +
                 "                        <config name=\"jdisc.http.filter.security.athenz.athenz-authorization-filter\">\n" +
