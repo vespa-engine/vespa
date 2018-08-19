@@ -70,7 +70,6 @@ Flusher(DocumentMetaStoreFlushTarget &dmsft,
     // Called by document db executor
     _flushDir = writer.getSnapshotDir(syncToken);
     vespalib::string newBaseFileName(_flushDir + "/" + dms.getName());
-    dms.setBaseFileName(newBaseFileName);
     _saver = dms.initSave(newBaseFileName);
     assert(_saver);
 }
