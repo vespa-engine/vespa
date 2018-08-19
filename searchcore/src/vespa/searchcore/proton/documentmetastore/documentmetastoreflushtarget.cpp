@@ -108,8 +108,8 @@ DocumentMetaStoreFlushTarget::Flusher::flush(AttributeDirectory::Writer &writer)
 {
     writer.createInvalidSnapshot(_syncToken);
     if (!saveDocumentMetaStore()) {
-        LOG(warning, "Could not write document meta store '%s' to disk",
-            _dmsft._dms->getBaseFileName().c_str());
+        vespalib::string baseFileName(_flushDir + "/" + _dmsft._dms->getName());
+        LOG(warning, "Could not write document meta store '%s' to disk", baseFileName.c_str());
         return false;
     }
     /*
