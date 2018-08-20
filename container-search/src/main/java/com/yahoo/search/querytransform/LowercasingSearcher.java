@@ -91,7 +91,7 @@ public abstract class LowercasingSearcher extends Searcher {
     }
 
     private void lowerCase(WeightedSetItem set, IndexFacts.Session indexFacts) {
-        if (!syntheticLowerCaseCheck(set.getIndexName(), indexFacts, true)) {
+        if ( ! syntheticLowerCaseCheck(set.getIndexName(), indexFacts, true)) {
             return;
         }
 
