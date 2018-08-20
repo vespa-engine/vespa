@@ -167,10 +167,13 @@ Service::start()
     // make sure the service does not restart in a tight loop:
     time_t now = time(0);
     int diff = now - _last_start;
-    if (diff < 10) {
+    if (diff < MAX_RESTART_PENALTY) {
         incrementRestartPenalty();
-        now += _restartPenalty; // will delay start this much
     }
+    if (diff > 10 * MAX_RESTART_PENALTY) {
+        resetRestartPenalty();
+    }
+    now += _restartPenalty; // will delay start this much
     _last_start = now;
 
 // make a pipe, close the good ends of it, mark it close-on-exec
@@ -230,7 +233,7 @@ Service::start()
             kill(getpid(), SIGTERM);
         }
         if (_restartPenalty > 0) {
-            LOG(debug, "%s: Applying %u sec restart penalty", name().c_str(),
+            LOG(info, "%s: Applying %u sec restart penalty", name().c_str(),
                 _restartPenalty);
             sleep(_restartPenalty);
         }
@@ -424,9 +427,9 @@ Service::setAutomatic(bool autoStatus)
 void
 Service::incrementRestartPenalty()
 {
-    if (_restartPenalty < MAX_RESTART_PENALTY) {
-        _restartPenalty++;
-    } else {
+    _restartPenalty += 1;
+    _restartPenalty *= 2;
+    if (_restartPenalty > MAX_RESTART_PENALTY) {
         _restartPenalty = MAX_RESTART_PENALTY;
     }
 }

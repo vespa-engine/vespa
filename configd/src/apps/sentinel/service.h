@@ -26,7 +26,7 @@ private:
     SentinelConfig::Service *_config;
     bool _isAutomatic;
 
-    static const unsigned int MAX_RESTART_PENALTY = 60;
+    static const int MAX_RESTART_PENALTY = 1800;
     unsigned int _restartPenalty;
     time_t _last_start;
 
