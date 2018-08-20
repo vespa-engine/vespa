@@ -178,9 +178,8 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
     fastos::TimeStamp startTime = fastos::ClockSystem::now();
     EventLogger::loadAttributeStart(_documentSubDbName, attr->getName());
     if (!attr->load()) {
-        LOG(warning, "Could not load attribute vector '%s' from disk. "
-                "Returning empty attribute vector",
-                attr->getBaseFileName().c_str());
+        LOG(warning, "Could not load attribute vector '%s' from disk. Returning empty attribute vector",
+            attr->getBaseFileName().c_str());
         return false;
     } else {
         attr->commit(serialNum, serialNum);
@@ -204,7 +203,7 @@ AttributeInitializer::setupEmptyAttribute(AttributeVectorSP &attr, search::Seria
     if (!headerTypeOK(header, attr->getConfig())) {
         logAttributeWrongType(attr, header);
     }
-    LOG(info, "Returning empty attribute vector for '%s'", attr->getName().c_str());
+    LOG(info, "Returning empty attribute vector for '%s'", attr->getBaseFileName().c_str());
     _factory.setupEmpty(attr, _currentSerialNum);
     attr->commit(serialNum, serialNum);
 }
