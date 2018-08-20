@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.util;
 
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileWriter;
 
 import java.io.IOException;
@@ -73,5 +74,18 @@ public class SecretAgentCheckConfig {
         tags.forEach((key, value) -> stringBuilder.append("    ").append(key).append(": ").append(value).append("\n"));
 
         return stringBuilder.toString();
+    }
+
+    // TODO: Change role dimension to nodeType?
+    public static String nodeTypeToRole(NodeType nodeType) {
+        switch (nodeType) {
+            case tenant: return "tenants";
+            case host: return "docker";
+            case proxy: return "routing";
+            case proxyhost: return "routinghost";
+            case config: return "configserver";
+            case confighost: return "configserverhost";
+            default: throw new IllegalArgumentException("Unknown node type " + nodeType);
+        }
     }
 }
