@@ -77,12 +77,13 @@ public class ConvertedModel {
 
     public ConvertedModel(Path modelPath,
                           RankProfileTransformContext context,
-                          ModelImporter modelImporter) {
+                          ModelImporter modelImporter,
+                          FeatureArguments arguments) { // TODO: Remove
         this.modelPath = modelPath;
         this.modelName = toModelName(modelPath);
         ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), modelPath);
         if ( ! store.hasStoredModel()) // not converted yet - access from models/ directory
-            expressions = importModel(store, context.rankProfile(), context.queryProfiles(), modelImporter);
+            expressions = importModel(store, context.rankProfile(), context.queryProfiles(), modelImporter, arguments);
         else
             expressions = transformFromStoredModel(store, context.rankProfile());
     }
@@ -90,9 +91,10 @@ public class ConvertedModel {
     private Map<String, RankingExpression> importModel(ModelStore store,
                                                        RankProfile profile,
                                                        QueryProfileRegistry queryProfiles,
-                                                       ModelImporter modelImporter) {
+                                                       ModelImporter modelImporter,
+                                                       FeatureArguments arguments) {
         ImportedModel model = modelImporter.importModel(store.modelFiles.modelName(), store.modelDir());
-        return transformFromImportedModel(model, store, profile, queryProfiles);
+        return transformFromImportedModel(model, store, profile, queryProfiles, arguments);
     }
 
     /** Returns the expression matching the given arguments */
@@ -132,7 +134,8 @@ public class ConvertedModel {
     private Map<String, RankingExpression> transformFromImportedModel(ImportedModel model,
                                                                       ModelStore store,
                                                                       RankProfile profile,
-                                                                      QueryProfileRegistry queryProfiles) {
+                                                                      QueryProfileRegistry queryProfiles,
+                                                                      FeatureArguments arguments) {
         // Add constants
         Set<String> constantsReplacedByMacros = new HashSet<>();
         model.smallConstants().forEach((k, v) -> transformSmallConstant(store, profile, k, v));
@@ -145,7 +148,10 @@ public class ConvertedModel {
         // Add expressions
         Map<String, RankingExpression> expressions = new HashMap<>();
         for (Map.Entry<String, ImportedModel.Signature> signatureEntry : model.signatures().entrySet()) {
+            if ( ! matches(signatureEntry.getValue(), arguments, Optional.empty())) continue;
+
             for (Map.Entry<String, String> outputEntry : signatureEntry.getValue().outputs().entrySet()) {
+                if ( ! matches(signatureEntry.getValue(), arguments, Optional.of(outputEntry.getKey()))) continue;
                 addExpression(model.expressions().get(outputEntry.getValue()),
                               modelName + "." + signatureEntry.getKey() + "." + outputEntry.getKey(),
                               constantsReplacedByMacros,
@@ -183,6 +189,13 @@ public class ConvertedModel {
         model.macros().forEach((k, v) -> transformGeneratedMacro(store, constantsReplacedByMacros, k, v));
 
         return expressions;
+    }
+
+    private boolean matches(ImportedModel.Signature signature, FeatureArguments arguments, Optional<String> output) {
+        if ( ! modelName.equals(arguments.modelName)) return false;
+        if ( arguments.signature.isPresent() && ! signature.name().equals(arguments.signature().get())) return false;
+        if (output.isPresent() && arguments.output().isPresent() && ! output.get().matches(arguments.output().get())) return false;
+        return true;
     }
 
     private void addExpression(RankingExpression expression,
