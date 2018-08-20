@@ -52,11 +52,11 @@ public class RankProfileRegistry {
     }
 
     private void checkForDuplicateRankProfile(RankProfile rankProfile) {
-        final String rankProfileName = rankProfile.getName();
+        String rankProfileName = rankProfile.getName();
         RankProfile existingRangProfileWithSameName = rankProfiles.get(rankProfile.getSearch()).get(rankProfileName);
         if (existingRangProfileWithSameName == null) return;
 
-        if (!overridableRankProfileNames.contains(rankProfileName)) {
+        if ( ! overridableRankProfileNames.contains(rankProfileName)) {
             throw new IllegalArgumentException("Cannot add rank profile '" + rankProfileName + "' in search definition '"
                     + rankProfile.getSearch().getName() + "', since it already exists");
         }
