@@ -159,7 +159,7 @@ public class StorageMaintainer {
 
     private SecretAgentCheckConfig annotatedCheck(NodeSpec node, SecretAgentCheckConfig check) {
         check.withTag("namespace", "Vespa")
-                .withTag("role", "tenants")
+                .withTag("role", SecretAgentCheckConfig.nodeTypeToRole(node.getNodeType()))
                 .withTag("flavor", node.getFlavor())
                 .withTag("canonicalFlavor", node.getCanonicalFlavor())
                 .withTag("state", node.getState().toString())
