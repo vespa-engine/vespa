@@ -44,6 +44,7 @@ public class WeightedSetItem extends SimpleTaggableItem {
     public Integer addToken(long value, int weight) {
         return addInternal(value, weight);
     }
+
     /**
      * Add weighted token.
      * If token is already in the set, the maximum weight is kept.
@@ -54,6 +55,7 @@ public class WeightedSetItem extends SimpleTaggableItem {
         if (token == null) throw new IllegalArgumentException("token must be a string");
         return addInternal(token, weight);
     }
+
     private Integer addInternal(Object token, int weight) {
         Integer newWeight = weight;
         Integer oldWeight = set.put(token, newWeight);
@@ -172,4 +174,5 @@ public class WeightedSetItem extends SimpleTaggableItem {
         clone.set = this.set.clone();
         return clone;
     }
+
 }

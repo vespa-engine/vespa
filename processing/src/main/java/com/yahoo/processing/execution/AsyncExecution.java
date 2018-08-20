@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.concurrent.*;
 
 /**
- * Provides asynchronous execution of processing chains. Usage:
+ * <p>Provides asynchronous execution of processing chains. Usage:</p>
  *
  * <pre>
  * Execution execution = new Execution(chain);
