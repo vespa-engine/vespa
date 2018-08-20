@@ -2,20 +2,20 @@
 
 #include "attributedisklayout.h"
 #include "flushableattribute.h"
+#include "attribute_directory.h"
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <fstream>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <future>
-#include "attribute_directory.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <fstream>
+#include <future>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.flushableattribute");
@@ -166,10 +166,7 @@ FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
                                        search::ISequencedTaskExecutor &
                                        attributeFieldWriter,
                                        const HwInfo &hwInfo)
-    : IFlushTarget(vespalib::make_string(
-                           "attribute.flush.%s",
-                           attr->getName().c_str()),
-            Type::SYNC, Component::ATTRIBUTE),
+    : IFlushTarget(make_string("attribute.flush.%s", attr->getName().c_str()), Type::SYNC, Component::ATTRIBUTE),
       _attr(attr),
       _cleanUpAfterFlush(true),
       _lastStats(),
@@ -183,10 +180,7 @@ FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
 }
 
 
-FlushableAttribute::~FlushableAttribute()
-{
-}
-
+FlushableAttribute::~FlushableAttribute() = default;
 
 IFlushTarget::SerialNum
 FlushableAttribute::getFlushedSerialNum() const

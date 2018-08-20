@@ -18,54 +18,54 @@ namespace search {
 using attribute::BasicType;
 
 AttributeVector::SP
-AttributeFactory::createSingleStd(const vespalib::string & baseFileName, const Config & info)
+AttributeFactory::createSingleStd(stringref name, const Config & info)
 {
     assert(info.collectionType().type() == attribute::CollectionType::SINGLE);
     AttributeVector::SP ret;
     switch(info.basicType().type()) {
     case BasicType::UINT1:
-        ret.reset(new SingleValueBitNumericAttribute(baseFileName, info.getGrowStrategy()));
+        ret.reset(new SingleValueBitNumericAttribute(name, info.getGrowStrategy()));
         break;
     case BasicType::UINT2:
-        ret.reset(new SingleValueSemiNibbleNumericAttribute(baseFileName, info.getGrowStrategy()));
+        ret.reset(new SingleValueSemiNibbleNumericAttribute(name, info.getGrowStrategy()));
         break;
     case BasicType::UINT4:
-        ret.reset(new SingleValueNibbleNumericAttribute(baseFileName, info.getGrowStrategy()));
+        ret.reset(new SingleValueNibbleNumericAttribute(name, info.getGrowStrategy()));
         break;
     case BasicType::INT8:
-        ret.reset(new SingleValueNumericAttribute<IntegerAttributeTemplate<int8_t> >(baseFileName, info));
+        ret.reset(new SingleValueNumericAttribute<IntegerAttributeTemplate<int8_t> >(name, info));
         break;
     case BasicType::INT16:
         // XXX: Unneeded since we don't have short document fields in java.
-        ret.reset(new SingleValueNumericAttribute<IntegerAttributeTemplate<int16_t> >(baseFileName, info));
+        ret.reset(new SingleValueNumericAttribute<IntegerAttributeTemplate<int16_t> >(name, info));
         break;
     case BasicType::INT32:
-        ret.reset(new SingleValueNumericAttribute<IntegerAttributeTemplate<int32_t> >(baseFileName, info));
+        ret.reset(new SingleValueNumericAttribute<IntegerAttributeTemplate<int32_t> >(name, info));
         break;
     case BasicType::INT64:
-        ret.reset(new SingleValueNumericAttribute<IntegerAttributeTemplate<int64_t> >(baseFileName, info));
+        ret.reset(new SingleValueNumericAttribute<IntegerAttributeTemplate<int64_t> >(name, info));
         break;
     case BasicType::FLOAT:
-        ret.reset(new SingleValueNumericAttribute<FloatingPointAttributeTemplate<float> >(baseFileName, info));
+        ret.reset(new SingleValueNumericAttribute<FloatingPointAttributeTemplate<float> >(name, info));
         break;
     case BasicType::DOUBLE:
-        ret.reset(new SingleValueNumericAttribute<FloatingPointAttributeTemplate<double> >(baseFileName, info));
+        ret.reset(new SingleValueNumericAttribute<FloatingPointAttributeTemplate<double> >(name, info));
         break;
     case BasicType::STRING:
-        ret.reset(new SingleValueStringAttribute(baseFileName, info));
+        ret.reset(new SingleValueStringAttribute(name, info));
         break;
     case BasicType::PREDICATE:
-        ret.reset(new PredicateAttribute(baseFileName, info));
+        ret.reset(new PredicateAttribute(name, info));
         break;
     case BasicType::TENSOR:
         if (info.tensorType().is_dense()) {
-            ret.reset(new tensor::DenseTensorAttribute(baseFileName, info));
+            ret.reset(new tensor::DenseTensorAttribute(name, info));
         } else {
-            ret.reset(new tensor::GenericTensorAttribute(baseFileName, info));
+            ret.reset(new tensor::GenericTensorAttribute(name, info));
         }
         break;
     case BasicType::REFERENCE:
-        ret = std::make_shared<attribute::ReferenceAttribute>(baseFileName, info);
+        ret = std::make_shared<attribute::ReferenceAttribute>(name, info);
         break;
     default:
         break;

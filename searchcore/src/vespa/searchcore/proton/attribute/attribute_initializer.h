@@ -8,9 +8,7 @@
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/searchcommon/attribute/persistent_predicate_params.h>
 
-namespace search {
-namespace attribute { class AttributeHeader; }
-}
+namespace search::attribute { class AttributeHeader; }
 
 namespace proton {
 
@@ -35,21 +33,16 @@ private:
 
     AttributeVectorSP tryLoadAttribute() const;
 
-    bool loadAttribute(const AttributeVectorSP &attr,
-                       search::SerialNum serialNum) const;
+    bool loadAttribute(const AttributeVectorSP &attr, search::SerialNum serialNum) const;
 
-    void setupEmptyAttribute(AttributeVectorSP &attr,
-                             search::SerialNum serialNum,
+    void setupEmptyAttribute(AttributeVectorSP &attr, search::SerialNum serialNum,
                              const search::attribute::AttributeHeader &header) const;
 
     AttributeVectorSP createAndSetupEmptyAttribute() const;
 
 public:
-    AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir,
-                         const vespalib::string &documentSubDbName,
-                         const AttributeSpec &spec,
-                         uint64_t currentSerialNum,
-                         const IAttributeFactory &factory);
+    AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir, const vespalib::string &documentSubDbName,
+                         const AttributeSpec &spec, uint64_t currentSerialNum, const IAttributeFactory &factory);
     ~AttributeInitializer();
 
     AttributeInitializerResult init() const;

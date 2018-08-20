@@ -1003,10 +1003,8 @@ PostingListAttributeTest::testMinMax()
     {
         Config cfg(Config(BasicType::INT32, CollectionType::WSET));
         cfg.setFastSearch(true);
-        AttributePtr ptr1 =
-            AttributeFactory::createAttribute("wsint32_1", cfg);
-        AttributePtr ptr2 =
-            AttributeFactory::createAttribute("wsint32_2", cfg);
+        AttributePtr ptr1 = AttributeFactory::createAttribute("wsint32_1", cfg);
+        AttributePtr ptr2 = AttributeFactory::createAttribute("wsint32_2", cfg);
         testMinMax<IntegerAttribute>(ptr1, ptr2);
     }
     {

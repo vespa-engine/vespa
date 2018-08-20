@@ -13,8 +13,7 @@ using vespalib::IllegalStateException;
 using proton::initializer::InitializerTask;
 using vespalib::make_string;
 
-namespace proton { 
-namespace documentmetastore {
+namespace proton::documentmetastore {
 
 DocumentMetaStoreInitializer::
 DocumentMetaStoreInitializer(const vespalib::string baseDir,
@@ -61,7 +60,4 @@ DocumentMetaStoreInitializer::run()
     }
 }
 
-
-} // namespace proton::documentmetastore
-
-} // namespace proton
+}

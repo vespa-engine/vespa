@@ -1,10 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP(".prod_features_attributematch");
 
 #include "prod_features.h"
 #include <vespa/searchlib/features/attributematchfeature.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributevector.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP(".prod_features_attributematch");
 
 using namespace search::features;
 using namespace search::fef;

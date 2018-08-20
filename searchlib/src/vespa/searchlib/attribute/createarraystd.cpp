@@ -22,7 +22,7 @@ using attribute::BasicType;
 
 
 AttributeVector::SP
-AttributeFactory::createArrayStd(const vespalib::string & baseFileName, const Config & info)
+AttributeFactory::createArrayStd(stringref name, const Config & info)
 {
     assert(info.collectionType().type() == attribute::CollectionType::ARRAY);
     AttributeVector::SP ret;
@@ -32,25 +32,25 @@ AttributeFactory::createArrayStd(const vespalib::string & baseFileName, const Co
     case BasicType::UINT4:
         break;
     case BasicType::INT8:
-        ret.reset(CREATEINTARRAY(int8_t, baseFileName, info));
+        ret.reset(CREATEINTARRAY(int8_t, name, info));
         break;
     case BasicType::INT16:
-        ret.reset(CREATEINTARRAY(int16_t, baseFileName, info));
+        ret.reset(CREATEINTARRAY(int16_t, name, info));
         break;
     case BasicType::INT32:
-        ret.reset(CREATEINTARRAY(int32_t, baseFileName, info));
+        ret.reset(CREATEINTARRAY(int32_t, name, info));
         break;
     case BasicType::INT64:
-        ret.reset(CREATEINTARRAY(int64_t, baseFileName, info));
+        ret.reset(CREATEINTARRAY(int64_t, name, info));
         break;
     case BasicType::FLOAT:
-        ret.reset(CREATEFLOATARRAY(float, baseFileName, info));
+        ret.reset(CREATEFLOATARRAY(float, name, info));
         break;
     case BasicType::DOUBLE:
-        ret.reset(CREATEFLOATARRAY(double, baseFileName, info));
+        ret.reset(CREATEFLOATARRAY(double, name, info));
         break;
     case BasicType::STRING:
-        ret.reset(static_cast<AttributeVector *>(new ArrayStringAttribute(baseFileName, info)));
+        ret.reset(static_cast<AttributeVector *>(new ArrayStringAttribute(name, info)));
         break;
     default:
         break;

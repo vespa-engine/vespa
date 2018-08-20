@@ -460,7 +460,7 @@ const char * AttributeVector::getStringFromEnum(EnumHandle) const { return nullp
 
 AttributeVector::SearchContext::SearchContext(const AttributeVector &attr) :
     _attr(attr),
-    _plsc(NULL)
+    _plsc(nullptr)
 { }
 
 AttributeVector::SearchContext::UP
@@ -470,8 +470,7 @@ AttributeVector::getSearch(QueryPacketT searchSpec, const SearchContextParams &p
 }
 
 attribute::ISearchContext::UP
-AttributeVector::createSearchContext(QueryTermSimpleUP term,
-                                     const attribute::SearchContextParams &params) const
+AttributeVector::createSearchContext(QueryTermSimpleUP term, const attribute::SearchContextParams &params) const
 {
     return getSearch(std::move(term), params);
 }
@@ -481,7 +480,7 @@ AttributeVector::SearchContext::~SearchContext() = default;
 unsigned int
 AttributeVector::SearchContext::approximateHits() const
 {
-    if (_plsc != NULL) {
+    if (_plsc != nullptr) {
         return _plsc->approximateHits();
     }
     return std::max(uint64_t(_attr.getNumDocs()),
@@ -492,7 +491,7 @@ SearchIterator::UP
 AttributeVector::SearchContext::
 createIterator(fef::TermFieldMatchData *matchData, bool strict)
 {
-    if (_plsc != NULL) {
+    if (_plsc != nullptr) {
         SearchIterator::UP res = _plsc->createPostingIterator(matchData, strict);
         if (res) {
             return res;
@@ -507,25 +506,21 @@ AttributeVector::SearchContext::
 createFilterIterator(fef::TermFieldMatchData *matchData, bool strict)
 {
     if (!valid())
-        return SearchIterator::UP(new queryeval::EmptySearch());
+        return std::make_unique<queryeval::EmptySearch>();
     if (getIsFilter()) {
         return SearchIterator::UP(strict ?
-            new FilterAttributeIteratorStrict<AttributeVector::SearchContext>
-            (*this, matchData) :
-            new FilterAttributeIteratorT<AttributeVector::SearchContext>
-            (*this, matchData));
+            new FilterAttributeIteratorStrict<AttributeVector::SearchContext>(*this, matchData) :
+            new FilterAttributeIteratorT<AttributeVector::SearchContext>(*this, matchData));
     }
     return SearchIterator::UP(strict ?
-            new AttributeIteratorStrict<AttributeVector::SearchContext>
-            (*this, matchData) :
-            new AttributeIteratorT<AttributeVector::SearchContext>
-            (*this, matchData));
+            new AttributeIteratorStrict<AttributeVector::SearchContext>(*this, matchData) :
+            new AttributeIteratorT<AttributeVector::SearchContext>(*this, matchData));
 }
 
 
 void
 AttributeVector::SearchContext::fetchPostings(bool strict) {
-    if (_plsc != NULL)
+    if (_plsc != nullptr)
         _plsc->fetchPostings(strict);
 }
 
@@ -536,8 +531,7 @@ AttributeVector::apply(DocId doc, const MapValueUpdate &map) {
     if (retval) {
         const ValueUpdate & vu(map.getUpdate());
         if (vu.inherits(ArithmeticValueUpdate::classId)) {
-            const ArithmeticValueUpdate &
-                au(static_cast<const ArithmeticValueUpdate &>(vu));
+            const ArithmeticValueUpdate &au(static_cast<const ArithmeticValueUpdate &>(vu));
             retval = applyWeight(doc, map.getKey(), au);
         } else {
             retval = false;

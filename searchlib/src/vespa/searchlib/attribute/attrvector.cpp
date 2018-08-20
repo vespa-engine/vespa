@@ -18,7 +18,7 @@ StringDirectAttribute(const vespalib::string & baseFileName, const Config & c)
 {
 }
 
-StringDirectAttribute::~StringDirectAttribute() {}
+StringDirectAttribute::~StringDirectAttribute() = default;
 
 bool StringDirectAttribute::findEnum(const char * key, EnumHandle & e) const
 {

@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "predicate_attribute.h"
+#include "iattributesavetarget.h"
+#include "attribute_header.h"
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/document/fieldvalue/predicatefieldvalue.h>
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include "iattributesavetarget.h"
-#include "attribute_header.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.predicate_attribute");
@@ -154,8 +154,7 @@ struct DocIdLimitFinderAndMinFeatureFiller : SimpleIndexDeserializeObserver<> {
     uint32_t _highest_doc_id;
     V & _min_feature;
     PredicateIndex &_index;
-    DocIdLimitFinderAndMinFeatureFiller(V & min_feature,
-                                        PredicateIndex &index) :
+    DocIdLimitFinderAndMinFeatureFiller(V & min_feature, PredicateIndex &index) :
         _highest_doc_id(0),
         _min_feature(min_feature),
         _index(index)
@@ -195,15 +194,13 @@ bool PredicateAttribute::onLoad()
     DocId highest_doc_id;
     if (version == 0) {
         DocIdLimitFinderAndMinFeatureFiller<MinFeatureVector> observer(_min_feature, *_index);
-        _index.reset(new PredicateIndex(getGenerationHandler(), getGenerationHolder(),
-                                        _limit_provider, createSimpleIndexConfig(getConfig()),
-                                        buffer, observer, 0));
+        _index = std::make_unique<PredicateIndex>(getGenerationHandler(), getGenerationHolder(), _limit_provider,
+                                                  createSimpleIndexConfig(getConfig()), buffer, observer, 0);
         highest_doc_id = observer._highest_doc_id;
     } else {
         DummyObserver observer;
-        _index.reset(
-                new PredicateIndex(getGenerationHandler(), getGenerationHolder(), _limit_provider,
-                                   createSimpleIndexConfig(getConfig()), buffer, observer, version));
+        _index = std::make_unique<PredicateIndex>(getGenerationHandler(), getGenerationHolder(), _limit_provider,
+                                                  createSimpleIndexConfig(getConfig()), buffer, observer, version);
         highest_doc_id = buffer.readInt32();
         // Deserialize min feature vector
         _min_feature.ensure_size(highest_doc_id + 1, PredicateAttribute::MIN_FEATURE_FILL);
@@ -264,8 +261,7 @@ PredicateAttribute::updateValue(uint32_t doc_id, const PredicateFieldValue &valu
         return;
     }
     PredicateTreeAnnotations result;
-    PredicateTreeAnnotator::annotate(inspector, result,
-                                     _lower_bound, _upper_bound);
+    PredicateTreeAnnotator::annotate(inspector, result, _lower_bound, _upper_bound);
     _index->indexDocument(doc_id, result);
     assert(result.min_feature <= MAX_MIN_FEATURE);
     uint8_t minFeature = static_cast<uint8_t>(result.min_feature);

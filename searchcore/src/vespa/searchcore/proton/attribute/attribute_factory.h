@@ -15,13 +15,8 @@ public:
     typedef std::shared_ptr<AttributeFactory> SP;
     AttributeFactory();
 
-    // Implements IAttributeFactory
-    virtual AttributeVectorSP create(const vespalib::string &name,
-                                     const search::attribute::Config &cfg) const override;
-
-    virtual void setupEmpty(const AttributeVectorSP &vec,
-                            search::SerialNum serialNum) const override;
+    AttributeVectorSP create(const vespalib::string &name, const search::attribute::Config &cfg) const override;
+    void setupEmpty(const AttributeVectorSP &vec, search::SerialNum serialNum) const override;
 };
 
-} // namespace proton
-
+}

@@ -2,12 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/attributesaver.h>
 #include "tensor_attribute.h"
+#include <vespa/searchlib/attribute/attributesaver.h>
 
-namespace search {
-
-namespace tensor {
+namespace search::tensor {
 
 class DenseTensorStore;
 
@@ -23,16 +21,12 @@ private:
     const DenseTensorStore &_tensorStore;
     using GenerationHandler = vespalib::GenerationHandler;
 
-    virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
+    bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:
-    DenseTensorAttributeSaver(GenerationHandler::Guard &&guard,
-                              const attribute::AttributeHeader &header,
-                              RefCopyVector &&refs,
-                              const DenseTensorStore &tensorStore);
+    DenseTensorAttributeSaver(GenerationHandler::Guard &&guard, const attribute::AttributeHeader &header,
+                              RefCopyVector &&refs, const DenseTensorStore &tensorStore);
 
-    virtual ~DenseTensorAttributeSaver();
+    ~DenseTensorAttributeSaver() override;
 };
 
-} // namespace search::tensor
-
-} // namespace search
+}

@@ -48,14 +48,9 @@ public:
     bool flush(AttributeDirectory::Writer &writer);
     void updateStats();
     bool cleanUp(AttributeDirectory::Writer &writer);
-    // Implements vespalib::Executor::Task
-    virtual void run() override;
+    void run() override;
 
-    virtual SerialNum
-    getFlushSerial() const override
-    {
-        return _syncToken;
-    }
+    SerialNum getFlushSerial() const override { return _syncToken; }
 };
 
 DocumentMetaStoreFlushTarget::Flusher::
@@ -163,12 +158,9 @@ DocumentMetaStoreFlushTarget::Flusher::run()
 }
 
 DocumentMetaStoreFlushTarget::
-DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms,
-                             ITlsSyncer &tlsSyncer,
-                             const vespalib::string & baseDir,
-                             const TuneFileAttributes &tuneFileAttributes,
-                             const FileHeaderContext &fileHeaderContext,
-                             const HwInfo &hwInfo)
+DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms, ITlsSyncer &tlsSyncer,
+                             const vespalib::string & baseDir, const TuneFileAttributes &tuneFileAttributes,
+                             const FileHeaderContext &fileHeaderContext, const HwInfo &hwInfo)
     : IFlushTarget("documentmetastore.flush", Type::SYNC, Component::ATTRIBUTE),
       _dms(dms),
       _tlsSyncer(tlsSyncer),
@@ -186,9 +178,7 @@ DocumentMetaStoreFlushTarget(const DocumentMetaStore::SP dms,
 }
 
 
-DocumentMetaStoreFlushTarget::~DocumentMetaStoreFlushTarget()
-{
-}
+DocumentMetaStoreFlushTarget::~DocumentMetaStoreFlushTarget() = default;
 
 
 IFlushTarget::SerialNum
@@ -225,21 +215,18 @@ DocumentMetaStoreFlushTarget::initFlush(SerialNum currentSerial)
 {
     // Called by document db executor
     _dms->removeAllOldGenerations();
-    SerialNum syncToken = std::max(currentSerial,
-                                   _dms->getStatus().getLastSyncToken());
+    SerialNum syncToken = std::max(currentSerial, _dms->getStatus().getLastSyncToken());
     auto writer = _dmsDir->tryGetWriter();
     if (!writer) {
         return Task::UP();
     }
     if (syncToken <= getFlushedSerialNum()) {
         writer->setLastFlushTime(fastos::ClockSystem::now());
-        LOG(debug,
-            "No document meta store to flush."
-            " Update flush time to current: lastFlushTime(%f)",
+        LOG(debug, "No document meta store to flush. Update flush time to current: lastFlushTime(%f)",
             getLastFlushTime().sec());
         return Task::UP();
     }
-    return Task::UP(new Flusher(*this, syncToken, *writer));
+    return std::make_unique<Flusher>(*this, syncToken, *writer);
 }
 
 
@@ -248,6 +235,5 @@ DocumentMetaStoreFlushTarget::getApproxBytesToWriteToDisk() const
 {
     return _dms->getEstimatedSaveByteSize();
 }
-
 
 } // namespace proton

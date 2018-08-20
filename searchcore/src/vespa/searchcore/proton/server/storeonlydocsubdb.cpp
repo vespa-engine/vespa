@@ -62,13 +62,10 @@ IIndexWriter::SP nullIndexWriter;
 
 }
 
-StoreOnlyDocSubDB::Config::Config(const DocTypeName &docTypeName,
-                                  const vespalib::string &subName,
+StoreOnlyDocSubDB::Config::Config(const DocTypeName &docTypeName, const vespalib::string &subName,
                                   const vespalib::string &baseDir,
-                                  const search::GrowStrategy &attributeGrow,
-                                  size_t attributeGrowNumDocs,
-                                  uint32_t subDbId,
-                                  SubDbType subDbType)
+                                  const search::GrowStrategy &attributeGrow, size_t attributeGrowNumDocs,
+                                  uint32_t subDbId, SubDbType subDbType)
     : _docTypeName(docTypeName),
       _subName(subName),
       _baseDir(baseDir + "/" + subName),
@@ -77,7 +74,7 @@ StoreOnlyDocSubDB::Config::Config(const DocTypeName &docTypeName,
       _subDbId(subDbId),
       _subDbType(subDbType)
 { }
-StoreOnlyDocSubDB::Config::~Config() { }
+StoreOnlyDocSubDB::Config::~Config() = default;
 
 StoreOnlyDocSubDB::Context::Context(IDocumentSubDBOwner &owner,
                                     search::transactionlog::SyncProxy &tlSyncer,
@@ -102,7 +99,7 @@ StoreOnlyDocSubDB::Context::Context(IDocumentSubDBOwner &owner,
       _configMutex(configMutex),
       _hwInfo(hwInfo)
 { }
-StoreOnlyDocSubDB::Context::~Context() { }
+StoreOnlyDocSubDB::Context::~Context() = default;
 
 StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
     : DocSubDB(ctx._owner, ctx._tlSyncer),
@@ -161,11 +158,7 @@ StoreOnlyDocSubDB::clearViews() {
 size_t
 StoreOnlyDocSubDB::getNumDocs() const
 {
-    if (_metaStoreCtx) {
-        return _metaStoreCtx->get().getNumUsedLids();
-    } else {
-        return 0u;
-    }
+    return (_metaStoreCtx) ? _metaStoreCtx->get().getNumUsedLids() : 0u;
 }
 
 size_t
@@ -209,9 +202,8 @@ StoreOnlyDocSubDB::onReplayDone()
 
 
 void
-StoreOnlyDocSubDB::onReprocessDone(SerialNum serialNum)
+StoreOnlyDocSubDB::onReprocessDone(SerialNum)
 {
-    (void) serialNum;
     _commitTimeTracker.setReplayDone();
 }
 
@@ -292,9 +284,8 @@ StoreOnlyDocSubDB::setupDocumentMetaStore(DocumentMetaStoreInitializerResult::SP
     if (dms->isLoaded()) {
         _flushedDocumentMetaStoreSerialNum = dms->getStatus().getLastSyncToken();
     }
-    _bucketDBHandlerInitializer.
-        addDocumentMetaStore(dms.get(), _flushedDocumentMetaStoreSerialNum);
-    _metaStoreCtx.reset(new DocumentMetaStoreContext(dms));
+    _bucketDBHandlerInitializer.addDocumentMetaStore(dms.get(), _flushedDocumentMetaStoreSerialNum);
+    _metaStoreCtx = std::make_shared<DocumentMetaStoreContext>(dms);
     LOG(debug, "Added document meta store '%s' with flushed serial num %lu",
                name.c_str(), _flushedDocumentMetaStoreSerialNum);
     _dms = dms;
@@ -313,18 +304,15 @@ StoreOnlyDocSubDB::createInitializer(const DocumentDBConfig &configSnapshot, Ser
 {
     (void) configSerialNum;
     (void) indexCfg;
-    auto result = std::make_unique<DocumentSubDbInitializer>
-                  (const_cast<StoreOnlyDocSubDB &>(*this),
-                   _writeService.master());
-    auto dmsInitTask =
-    createDocumentMetaStoreInitializer(configSnapshot.getTuneFileDocumentDBSP()->_attr,
-                                       result->writableResult().writableDocumentMetaStore());
+    auto result = std::make_unique<DocumentSubDbInitializer>(const_cast<StoreOnlyDocSubDB &>(*this),
+                                                             _writeService.master());
+    auto dmsInitTask = createDocumentMetaStoreInitializer(configSnapshot.getTuneFileDocumentDBSP()->_attr,
+                                                          result->writableResult().writableDocumentMetaStore());
     result->addDocumentMetaStoreInitTask(dmsInitTask);
-    auto summaryTask =
-        createSummaryManagerInitializer(configSnapshot.getStoreConfig(),
-                                        configSnapshot.getTuneFileDocumentDBSP()->_summary,
-                                        result->result().documentMetaStore()->documentMetaStore(),
-                                        result->writableResult().writableSummaryManager());
+    auto summaryTask = createSummaryManagerInitializer(configSnapshot.getStoreConfig(),
+                                                       configSnapshot.getTuneFileDocumentDBSP()->_summary,
+                                                       result->result().documentMetaStore()->documentMetaStore(),
+                                                       result->writableResult().writableSummaryManager());
     result->addDependency(summaryTask);
     summaryTask->addDependency(dmsInitTask);
 
@@ -348,8 +336,7 @@ StoreOnlyDocSubDB::getFlushTargets()
 {
     IFlushTarget::List ret;
     for (const auto &target : getFlushTargetsInternal()) {
-        ret.push_back(IFlushTarget::SP
-                (new ThreadedFlushTarget(_writeService.master(), _getSerialNum, target, _subName)));
+        ret.push_back(std::make_shared<ThreadedFlushTarget>(_writeService.master(), _getSerialNum, target, _subName));
     }
     return ret;
 }
@@ -366,13 +353,9 @@ StoreOnlyDocSubDB::getFlushTargetsInternal()
 StoreOnlyFeedView::Context
 StoreOnlyDocSubDB::getStoreOnlyFeedViewContext(const DocumentDBConfig &configSnapshot)
 {
-    return StoreOnlyFeedView::Context(getSummaryAdapter(),
-            configSnapshot.getSchemaSP(),
-            _metaStoreCtx,
-            *_gidToLidChangeHandler,
-            configSnapshot.getDocumentTypeRepoSP(),
-            _writeService,
-            *_lidReuseDelayer, _commitTimeTracker);
+    return StoreOnlyFeedView::Context(getSummaryAdapter(), configSnapshot.getSchemaSP(), _metaStoreCtx,
+                                      *_gidToLidChangeHandler, configSnapshot.getDocumentTypeRepoSP(), _writeService,
+                                      *_lidReuseDelayer, _commitTimeTracker);
 }
 
 StoreOnlyFeedView::PersistentParams
@@ -384,8 +367,7 @@ StoreOnlyDocSubDB::getFeedViewPersistentParams()
 }
 
 void
-StoreOnlyDocSubDB::initViews(const DocumentDBConfig &configSnapshot,
-                             const SessionManager::SP &sessionManager)
+StoreOnlyDocSubDB::initViews(const DocumentDBConfig &configSnapshot, const SessionManager::SP &sessionManager)
 {
     assert(_writeService.master().isCurrentThread());
     _iSearchView.set(ISearchHandler::SP(new EmptySearchView));
@@ -400,9 +382,8 @@ void
 StoreOnlyDocSubDB::initFeedView(const DocumentDBConfig &configSnapshot)
 {
     assert(_writeService.master().isCurrentThread());
-    StoreOnlyFeedView::UP feedView(new StoreOnlyFeedView(
-            getStoreOnlyFeedViewContext(configSnapshot),
-            getFeedViewPersistentParams()));
+    auto feedView = std::make_unique<StoreOnlyFeedView>(getStoreOnlyFeedViewContext(configSnapshot),
+                                                        getFeedViewPersistentParams());
 
     // XXX: Not exception safe.
     _iFeedView.set(StoreOnlyFeedView::SP(feedView.release()));
@@ -414,8 +395,7 @@ StoreOnlyDocSubDB::getSubDbName() const {
 }
 
 void
-StoreOnlyDocSubDB::updateLidReuseDelayer(const DocumentDBConfig *
-                                         newConfigSnapshot)
+StoreOnlyDocSubDB::updateLidReuseDelayer(const DocumentDBConfig * newConfigSnapshot)
 {
     LidReuseDelayerConfig lidReuseDelayerConfig(*newConfigSnapshot);
     updateLidReuseDelayer(lidReuseDelayerConfig);
@@ -485,11 +465,9 @@ StoreOnlyDocSubDB::pruneRemovedFields(SerialNum)
 }
 
 void
-StoreOnlyDocSubDB::setIndexSchema(const Schema::SP &schema, SerialNum serialNum)
+StoreOnlyDocSubDB::setIndexSchema(const Schema::SP &, SerialNum )
 {
     assert(_writeService.master().isCurrentThread());
-    (void) schema;
-    (void) serialNum;
 }
 
 search::SearchableStats
@@ -501,12 +479,9 @@ StoreOnlyDocSubDB::getSearchableStats() const
 IDocumentRetriever::UP
 StoreOnlyDocSubDB::getDocumentRetriever()
 {
-    return IDocumentRetriever::UP(new MinimalDocumentRetriever(
-                    _docTypeName,
-                    _iFeedView.get()->getDocumentTypeRepo(),
-                    *_metaStoreCtx,
-                    _iSummaryMgr->getBackingStore(),
-                    _subDbType != SubDbType::REMOVED));
+    return std::make_unique<MinimalDocumentRetriever>(_docTypeName, _iFeedView.get()->getDocumentTypeRepo(),
+                                                      *_metaStoreCtx, _iSummaryMgr->getBackingStore(),
+                                                      _subDbType != SubDbType::REMOVED);
 }
 
 MatchingStats
@@ -548,17 +523,13 @@ StoreOnlySubDBFileHeaderContext(StoreOnlyDocSubDB &owner,
       _subDB()
 {
     size_t pos = baseDir.rfind('/');
-    if (pos != vespalib::string::npos)
-        _subDB = baseDir.substr(pos + 1);
-    else
-        _subDB = baseDir;
+    _subDB = (pos != vespalib::string::npos) ? baseDir.substr(pos + 1) : baseDir;
 }
-StoreOnlySubDBFileHeaderContext::~StoreOnlySubDBFileHeaderContext() {}
+StoreOnlySubDBFileHeaderContext::~StoreOnlySubDBFileHeaderContext() = default;
 
 void
-StoreOnlyDocSubDB::tearDownReferences(IDocumentDBReferenceResolver &resolver)
+StoreOnlyDocSubDB::tearDownReferences(IDocumentDBReferenceResolver &)
 {
-    (void) resolver;
 }
 
 void
@@ -570,6 +541,5 @@ addTags(vespalib::GenericHeader &header, const vespalib::string &name) const
     header.putTag(Tag("documentType", _docTypeName.toString()));
     header.putTag(Tag("subDB", _subDB));
 }
-
 
 } // namespace proton

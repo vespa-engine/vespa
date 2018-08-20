@@ -274,9 +274,7 @@ AttributeBlueprint::AttributeBlueprint() :
 {
 }
 
-AttributeBlueprint::~AttributeBlueprint()
-{
-}
+AttributeBlueprint::~AttributeBlueprint() = default;
 
 void
 AttributeBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,

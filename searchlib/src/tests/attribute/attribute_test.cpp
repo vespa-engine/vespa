@@ -31,19 +31,20 @@ using search::common::FileHeaderContext;
 using search::index::DummyFileHeaderContext;
 using search::attribute::BasicType;
 using search::attribute::IAttributeVector;
+using vespalib::stringref;
+using vespalib::string;
 
 namespace {
 
-vespalib::string empty;
-vespalib::string tmpDir("tmp");
-vespalib::string clsDir("clstmp");
-vespalib::string asuDir("asutmp");
+string empty;
+string tmpDir("tmp");
+string clsDir("clstmp");
+string asuDir("asutmp");
 
 bool
 isUnsignedSmallIntAttribute(const BasicType::Type &type)
 {
-    switch (type)
-    {
+    switch (type) {
     case BasicType::UINT1:
     case BasicType::UINT2:
     case BasicType::UINT4:
@@ -68,13 +69,13 @@ expectZero(const BufferType &b)
 
 template <>
 void
-expectZero(const vespalib::string &b)
+expectZero(const string &b)
 {
     EXPECT_EQUAL(empty, b);
 }
 
 uint64_t
-statSize(const vespalib::string &fileName)
+statSize(const string &fileName)
 {
     FastOS_StatInfo statInfo;
     if (EXPECT_TRUE(FastOS_File::Stat(fileName.c_str(), &statInfo))) {
@@ -112,14 +113,14 @@ preciseEstimatedSize(const AttributeVector &a)
     return true;
 }
 
-vespalib::string
-baseFileName(const vespalib::string &attrName)
+string
+baseFileName(const string &attrName)
 {
     return tmpDir + "/" + attrName;
 }
 
 AttributeVector::SP
-createAttribute(const vespalib::string &attrName, const search::attribute::Config &cfg)
+createAttribute(stringref attrName, const search::attribute::Config &cfg)
 {
     return search::AttributeFactory::createAttribute(baseFileName(attrName), cfg);
 }
@@ -162,7 +163,7 @@ private:
 
     template <typename T>
     void fillNumeric(std::vector<T> & values, uint32_t numValues);
-    void fillString(std::vector<vespalib::string> & values, uint32_t numValues);
+    void fillString(std::vector<string> & values, uint32_t numValues);
     template <typename VectorType, typename BufferType>
     bool appendToVector(VectorType & v, uint32_t doc, uint32_t valueCount,
                         const std::vector<BufferType> & values);
@@ -218,9 +219,7 @@ private:
 
     template <typename VectorType, typename BufferType>
     void
-    testCompactLidSpace(const Config &config,
-                        bool fs,
-                        bool es);
+    testCompactLidSpace(const Config &config, bool fs, bool es);
 
     template <typename VectorType, typename BufferType>
     void
@@ -427,7 +426,7 @@ void AttributeTest::testReloadString(const AttributePtr & a, const AttributePtr 
     if (a->hasWeightedSetType()) {
         testReload<StringAttribute, StringAttribute::WeightedString>(a, b, c);
     } else {
-        testReload<StringAttribute, vespalib::string>(a, b, c);
+        testReload<StringAttribute, string>(a, b, c);
     }
 }
 
@@ -696,7 +695,7 @@ AttributeTest::testMemorySaverString(const AttributePtr & a, const AttributePtr 
     if (a->hasWeightedSetType()) {
         testMemorySaver<StringAttribute, StringAttribute::WeightedString>(a, b);
     } else {
-        testMemorySaver<StringAttribute, vespalib::string>(a, b);
+        testMemorySaver<StringAttribute, string>(a, b);
     }
 }
 
@@ -762,7 +761,6 @@ AttributeTest::testMemorySaver()
     }
 }
 
-
 template <typename T>
 void
 AttributeTest::fillNumeric(std::vector<T> & values, uint32_t numValues)
@@ -775,7 +773,7 @@ AttributeTest::fillNumeric(std::vector<T> & values, uint32_t numValues)
 }
 
 void
-AttributeTest::fillString(std::vector<vespalib::string> & values, uint32_t numValues)
+AttributeTest::fillString(std::vector<string> & values, uint32_t numValues)
 {
     values.clear();
     values.reserve(numValues);
@@ -941,19 +939,19 @@ AttributeTest::testSingle()
 
     }
     {
-        std::vector<vespalib::string> values;
+        std::vector<string> values;
         fillString(values, numUniques);
         {
             AttributePtr ptr = createAttribute("sv-string", Config(BasicType::STRING, CollectionType::SINGLE));
             addDocs(ptr, numDocs);
-            testSingle<StringAttribute, vespalib::string, vespalib::string>(ptr, values);
+            testSingle<StringAttribute, string, string>(ptr, values);
         }
         {
             Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("sv-fs-string", cfg);
             addDocs(ptr, numDocs);
-            testSingle<StringAttribute, vespalib::string, vespalib::string>(ptr, values);
+            testSingle<StringAttribute, string, string>(ptr, values);
         }
     }
 }
@@ -1052,7 +1050,6 @@ AttributeTest::testArray(const AttributePtr & ptr, const std::vector<BufferType>
     }
     EXPECT_TRUE(!v.remove(ptr->getNumDocs(), values[0], 1));
 
-
     // test clearDoc()
     for (uint32_t doc = 0; doc < ptr->getNumDocs(); ++doc) {
         uint32_t valueCount = doc % numUniques;
@@ -1132,19 +1129,19 @@ AttributeTest::testArray()
         }
     }
     { // StringAttribute
-        std::vector<vespalib::string> values;
+        std::vector<string> values;
         fillString(values, numUniques);
         {
             AttributePtr ptr = createAttribute("a-string", Config(BasicType::STRING, CollectionType::ARRAY));
             addDocs(ptr, numDocs);
-            testArray<StringAttribute, vespalib::string>(ptr, values);
+            testArray<StringAttribute, string>(ptr, values);
         }
         {
             Config cfg(BasicType::STRING, CollectionType::ARRAY);
             cfg.setFastSearch(true);
             AttributePtr ptr = createAttribute("afs-string", cfg);
             addDocs(ptr, numDocs);
-            testArray<StringAttribute, vespalib::string>(ptr, values);
+            testArray<StringAttribute, string>(ptr, values);
         }
     }
 }
@@ -1266,8 +1263,7 @@ AttributeTest::testWeightedSet()
         }
 
         {
-            AttributePtr ptr = createAttribute
-                ("wsint32", Config(BasicType::INT32, CollectionType::WSET));
+            AttributePtr ptr = createAttribute("wsint32", Config(BasicType::INT32, CollectionType::WSET));
             addDocs(ptr, numDocs);
             testWeightedSet<IntegerAttribute, AttributeVector::WeightedInt>(ptr, values);
         }
@@ -1319,8 +1315,7 @@ AttributeTest::testWeightedSet()
         }
 
         {
-            AttributePtr ptr = createAttribute
-                ("wsstr", Config(BasicType::STRING, CollectionType::WSET));
+            AttributePtr ptr = createAttribute("wsstr", Config(BasicType::STRING, CollectionType::WSET));
             addDocs(ptr, numDocs);
             testWeightedSet<StringAttribute, AttributeVector::WeightedString>(ptr, values);
         }
@@ -1571,14 +1566,10 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
     EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 6u);
     EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 0u);
 
-    EXPECT_TRUE(ptr->apply(0, MapVU(initFieldValue,
-                                   ArithVU(ArithVU::Add, 10))));
-    EXPECT_TRUE(ptr->apply(1, MapVU(initFieldValue,
-                                   ArithVU(ArithVU::Sub, 10))));
-    EXPECT_TRUE(ptr->apply(2, MapVU(initFieldValue,
-                                   ArithVU(ArithVU::Mul, 10))));
-    EXPECT_TRUE(ptr->apply(3, MapVU(initFieldValue,
-                                   ArithVU(ArithVU::Div, 10))));
+    EXPECT_TRUE(ptr->apply(0, MapVU(initFieldValue, ArithVU(ArithVU::Add, 10))));
+    EXPECT_TRUE(ptr->apply(1, MapVU(initFieldValue, ArithVU(ArithVU::Sub, 10))));
+    EXPECT_TRUE(ptr->apply(2, MapVU(initFieldValue, ArithVU(ArithVU::Mul, 10))));
+    EXPECT_TRUE(ptr->apply(3, MapVU(initFieldValue, ArithVU(ArithVU::Div, 10))));
     ptr->commit();
     EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 10u);
     EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 4u);
@@ -1594,8 +1585,7 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
     EXPECT_EQUAL(buf[0].getWeight(), 10);
 
     // removeifzero
-    EXPECT_TRUE(ptr->apply(4, MapVU(initFieldValue,
-                                   ArithVU(ArithVU::Sub, 100))));
+    EXPECT_TRUE(ptr->apply(4, MapVU(initFieldValue, ArithVU(ArithVU::Sub, 100))));
     ptr->commit();
     if (removeIfZero) {
         EXPECT_EQUAL(ptr->get(4, &buf[0], 2), uint32_t(0));
@@ -1607,8 +1597,7 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
     EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 5u);
 
     // createifnonexistant
-    EXPECT_TRUE(ptr->apply(5, MapVU(nonExistant,
-                                   ArithVU(ArithVU::Add, 10))));
+    EXPECT_TRUE(ptr->apply(5, MapVU(nonExistant, ArithVU(ArithVU::Add, 10))));
     ptr->commit();
     if (createIfNonExistant) {
         EXPECT_EQUAL(ptr->get(5, &buf[0], 2), uint32_t(2));
@@ -1639,25 +1628,21 @@ void
 AttributeTest::testMapValueUpdate()
 {
     { // regular set
-        AttributePtr ptr = createAttribute
-            ("wsint32", Config(BasicType::INT32, CollectionType::WSET));
+        AttributePtr ptr = createAttribute("wsint32", Config(BasicType::INT32, CollectionType::WSET));
         testMapValueUpdate<IntegerAttribute, AttributeVector::WeightedInt>
-            (ptr, AttributeVector::WeightedInt(64, 1), IntFieldValue(64),
-             IntFieldValue(32), false, false);
+            (ptr, AttributeVector::WeightedInt(64, 1), IntFieldValue(64), IntFieldValue(32), false, false);
     }
     { // remove if zero
-        AttributePtr ptr = createAttribute
-            ("wsint32", Config(BasicType::INT32, CollectionType(CollectionType::WSET, true, false)));
+        AttributePtr ptr = createAttribute("wsint32", Config(BasicType::INT32,
+                                                             CollectionType(CollectionType::WSET, true, false)));
         testMapValueUpdate<IntegerAttribute, AttributeVector::WeightedInt>
-            (ptr, AttributeVector::WeightedInt(64, 1), IntFieldValue(64),
-             IntFieldValue(32), true, false);
+            (ptr, AttributeVector::WeightedInt(64, 1), IntFieldValue(64), IntFieldValue(32), true, false);
     }
     { // create if non existant
-        AttributePtr ptr = createAttribute
-            ("wsint32", Config(BasicType::INT32, CollectionType(CollectionType::WSET, false, true)));
+        AttributePtr ptr = createAttribute("wsint32", Config(BasicType::INT32,
+                                                             CollectionType(CollectionType::WSET, false, true)));
         testMapValueUpdate<IntegerAttribute, AttributeVector::WeightedInt>
-            (ptr, AttributeVector::WeightedInt(64, 1), IntFieldValue(64),
-             IntFieldValue(32), false, true);
+            (ptr, AttributeVector::WeightedInt(64, 1), IntFieldValue(64), IntFieldValue(32), false, true);
     }
 
     Config setCfg(Config(BasicType::STRING, CollectionType::WSET));
@@ -1667,20 +1652,17 @@ AttributeTest::testMapValueUpdate()
     { // regular set
         AttributePtr ptr = createAttribute("wsstr", setCfg);
         testMapValueUpdate<StringAttribute, AttributeVector::WeightedString>
-            (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"),
-             StringFieldValue("second"), false, false);
+            (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"), StringFieldValue("second"), false, false);
     }
     { // remove if zero
         AttributePtr ptr = createAttribute("wsstr", setRemoveCfg);
         testMapValueUpdate<StringAttribute, AttributeVector::WeightedString>
-            (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"),
-             StringFieldValue("second"), true, false);
+            (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"), StringFieldValue("second"), true, false);
     }
     { // create if non existant
         AttributePtr ptr = createAttribute("wsstr", setCreateCfg);
         testMapValueUpdate<StringAttribute, AttributeVector::WeightedString>
-            (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"),
-             StringFieldValue("second"), false, true);
+            (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"), StringFieldValue("second"), false, true);
     }
 
     // fast-search - posting lists
@@ -1688,26 +1670,21 @@ AttributeTest::testMapValueUpdate()
         setCfg.setFastSearch(true);
         AttributePtr ptr = createAttribute("wsfsstr", setCfg);
         testMapValueUpdate<StringAttribute, AttributeVector::WeightedString>
-            (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"),
-             StringFieldValue("second"), false, false);
+            (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"), StringFieldValue("second"), false, false);
     }
     { // remove if zero
         setRemoveCfg.setFastSearch(true);
         AttributePtr ptr = createAttribute("wsfsstr", setRemoveCfg);
         testMapValueUpdate<StringAttribute, AttributeVector::WeightedString>
-            (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"),
-             StringFieldValue("second"), true, false);
+            (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"), StringFieldValue("second"), true, false);
     }
     { // create if non existant
         setCreateCfg.setFastSearch(true);
         AttributePtr ptr = createAttribute("wsfsstr", setCreateCfg);
         testMapValueUpdate<StringAttribute, AttributeVector::WeightedString>
-            (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"),
-            StringFieldValue("second"), false, true);
+            (ptr, AttributeVector::WeightedString("first", 1), StringFieldValue("first"), StringFieldValue("second"), false, true);
     }
 }
-
-
 
 void
 AttributeTest::commit(const AttributePtr & ptr)
@@ -1715,19 +1692,16 @@ AttributeTest::commit(const AttributePtr & ptr)
     ptr->commit();
 }
 
-
 void
 AttributeTest::testStatus()
 {
-    std::vector<vespalib::string> values;
+    std::vector<string> values;
     fillString(values, 16);
     uint32_t numDocs = 100;
     // No posting list
-    static constexpr size_t LeafNodeSize =
-        4 + sizeof(EnumStoreBase::Index) * EnumTreeTraits::LEAF_SLOTS;
+    static constexpr size_t LeafNodeSize = 4 + sizeof(EnumStoreBase::Index) * EnumTreeTraits::LEAF_SLOTS;
     static constexpr size_t InternalNodeSize =
-        8 + (sizeof(EnumStoreBase::Index) +
-             sizeof(datastore::EntryRef)) * EnumTreeTraits::INTERNAL_SLOTS;
+        8 + (sizeof(EnumStoreBase::Index) + sizeof(datastore::EntryRef)) * EnumTreeTraits::INTERNAL_SLOTS;
     static constexpr size_t NestedVectorSize = 24; // sizeof(vespalib::Array)
 
     {
@@ -1782,9 +1756,9 @@ AttributeTest::testNullProtection()
     size_t len1 = strlen("evil");
     size_t len2 = strlen("string");
     size_t len  = len1 + 1 + len2;
-    vespalib::string good("good");
-    vespalib::string evil("evil string");
-    vespalib::string pureEvil("evil");
+    string good("good");
+    string evil("evil string");
+    string pureEvil("evil");
     EXPECT_EQUAL(strlen(evil.data()),  len);
     EXPECT_EQUAL(strlen(evil.c_str()), len);
     evil[len1] = 0; // replace space with '\0'
@@ -1797,7 +1771,7 @@ AttributeTest::testNullProtection()
     EXPECT_EQUAL(evil.size(), len);
     { // string
         AttributeVector::DocId docId;
-        std::vector<vespalib::string> buf(16);
+        std::vector<string> buf(16);
         AttributePtr attr = createAttribute("string", Config(BasicType::STRING, CollectionType::SINGLE));
         StringAttribute &v = static_cast<StringAttribute &>(*attr.get());
         EXPECT_TRUE(v.addDoc(docId));
@@ -1809,7 +1783,7 @@ AttributeTest::testNullProtection()
     }
     { // string array
         AttributeVector::DocId docId;
-        std::vector<vespalib::string> buf(16);
+        std::vector<string> buf(16);
         AttributePtr attr = createAttribute("string", Config(BasicType::STRING, CollectionType::ARRAY));
         StringAttribute &v = static_cast<StringAttribute &>(*attr.get());
         EXPECT_TRUE(v.addDoc(docId));
@@ -2047,7 +2021,6 @@ AttributeTest::testCompactLidSpace(const Config &config,
     compare<VectorType, BufferType>(v, v3);
 }
 
-
 template <typename VectorType, typename BufferType>
 void
 AttributeTest::testCompactLidSpace(const Config &config)
@@ -2061,7 +2034,6 @@ AttributeTest::testCompactLidSpace(const Config &config)
     testCompactLidSpace<VectorType, BufferType>(config, true, true);
 }
 
-
 void
 AttributeTest::testCompactLidSpace(const Config &config)
 {
@@ -2074,28 +2046,24 @@ AttributeTest::testCompactLidSpace(const Config &config)
     case BasicType::INT32:
     case BasicType::INT64:
         if (config.collectionType() == CollectionType::WSET) {
-            testCompactLidSpace<IntegerAttribute,
-                IntegerAttribute::WeightedInt>(config);
+            testCompactLidSpace<IntegerAttribute, IntegerAttribute::WeightedInt>(config);
         } else {
-            testCompactLidSpace<IntegerAttribute,
-                IntegerAttribute::largeint_t>(config);
+            testCompactLidSpace<IntegerAttribute, IntegerAttribute::largeint_t>(config);
         }
         break;
     case BasicType::FLOAT:
     case BasicType::DOUBLE:
         if (config.collectionType() == CollectionType::WSET) {
-            testCompactLidSpace<FloatingPointAttribute,
-                FloatingPointAttribute::WeightedFloat>(config);
+            testCompactLidSpace<FloatingPointAttribute, FloatingPointAttribute::WeightedFloat>(config);
         } else {
             testCompactLidSpace<FloatingPointAttribute, double>(config);
         }
         break;
     case BasicType::STRING:
         if (config.collectionType() == CollectionType::WSET) {
-            testCompactLidSpace<StringAttribute,
-                StringAttribute::WeightedString>(config);
+            testCompactLidSpace<StringAttribute, StringAttribute::WeightedString>(config);
         } else {
-            testCompactLidSpace<StringAttribute, vespalib::string>(config);
+            testCompactLidSpace<StringAttribute, string>(config);
         }
         break;
     default:
@@ -2103,58 +2071,33 @@ AttributeTest::testCompactLidSpace(const Config &config)
     }
 }
 
-
 void
 AttributeTest::testCompactLidSpace()
 {
-    TEST_DO(testCompactLidSpace(Config(BasicType::UINT1,
-                                       CollectionType::SINGLE)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::UINT2,
-                                       CollectionType::SINGLE)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::UINT4,
-                                       CollectionType::SINGLE)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::INT8,
-                                       CollectionType::SINGLE)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::INT8,
-                                       CollectionType::ARRAY)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::INT8,
-                                       CollectionType::WSET)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::INT16,
-                                       CollectionType::SINGLE)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::INT16,
-                                       CollectionType::ARRAY)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::INT16,
-                                       CollectionType::WSET)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::INT32,
-                                       CollectionType::SINGLE)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::INT32,
-                                       CollectionType::ARRAY)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::INT32,
-                                       CollectionType::WSET)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::INT64,
-                                       CollectionType::SINGLE)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::INT64,
-                                       CollectionType::ARRAY)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::INT64,
-                                       CollectionType::WSET)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::FLOAT,
-                                       CollectionType::SINGLE)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::FLOAT,
-                                       CollectionType::ARRAY)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::FLOAT,
-                                       CollectionType::WSET)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::DOUBLE,
-                                       CollectionType::SINGLE)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::DOUBLE,
-                                       CollectionType::ARRAY)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::DOUBLE,
-                                       CollectionType::WSET)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::STRING,
-                                       CollectionType::SINGLE)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::STRING,
-                                       CollectionType::ARRAY)));
-    TEST_DO(testCompactLidSpace(Config(BasicType::STRING,
-                                       CollectionType::WSET)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::UINT1, CollectionType::SINGLE)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::UINT2, CollectionType::SINGLE)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::UINT4, CollectionType::SINGLE)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::INT8, CollectionType::SINGLE)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::INT8, CollectionType::ARRAY)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::INT8, CollectionType::WSET)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::INT16, CollectionType::SINGLE)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::INT16, CollectionType::ARRAY)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::INT16, CollectionType::WSET)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::INT32, CollectionType::SINGLE)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::INT32, CollectionType::ARRAY)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::INT32, CollectionType::WSET)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::INT64, CollectionType::SINGLE)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::INT64, CollectionType::ARRAY)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::INT64, CollectionType::WSET)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::FLOAT, CollectionType::SINGLE)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::FLOAT, CollectionType::ARRAY)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::FLOAT, CollectionType::WSET)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::DOUBLE, CollectionType::SINGLE)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::DOUBLE, CollectionType::ARRAY)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::DOUBLE, CollectionType::WSET)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::STRING, CollectionType::SINGLE)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::STRING, CollectionType::ARRAY)));
+    TEST_DO(testCompactLidSpace(Config(BasicType::STRING, CollectionType::WSET)));
 }
 
 template <typename AttributeType>
@@ -2220,7 +2163,6 @@ AttributeTest::requireThatAddressSpaceUsageIsReported()
     TEST_DO(requireThatAddressSpaceUsageIsReported<StringAttribute>(Config(BasicType::STRING, CollectionType::ARRAY)));
 }
 
-
 template <typename AttributeType, typename BufferType>
 void
 AttributeTest::testReaderDuringLastUpdate(const Config &config, bool fs, bool compact)
@@ -2230,7 +2172,7 @@ AttributeTest::testReaderDuringLastUpdate(const Config &config, bool fs, bool co
         config.collectionType().asString() <<
         (fs ? "-fs" : "") <<
         (compact ? "-compact" : "");
-    vespalib::string name(ss.str());
+    string name(ss.str());
     Config cfg = config;
     cfg.setFastSearch(fs);
     cfg.setGrowStrategy(GrowStrategy::make(100, 50, 0));
@@ -2261,7 +2203,6 @@ AttributeTest::testReaderDuringLastUpdate(const Config &config, bool fs, bool co
     }
 }
 
-
 template <typename AttributeType, typename BufferType>
 void
 AttributeTest::testReaderDuringLastUpdate(const Config &config)
@@ -2281,8 +2222,8 @@ AttributeTest::testReaderDuringLastUpdate()
     TEST_DO((testReaderDuringLastUpdate<FloatingPointAttribute,double>(Config(BasicType::FLOAT, CollectionType::SINGLE))));
     TEST_DO((testReaderDuringLastUpdate<FloatingPointAttribute,double>(Config(BasicType::FLOAT, CollectionType::ARRAY))));
     TEST_DO((testReaderDuringLastUpdate<FloatingPointAttribute,FloatingPointAttribute::WeightedFloat>(Config(BasicType::FLOAT, CollectionType::WSET))));
-    TEST_DO((testReaderDuringLastUpdate<StringAttribute,vespalib::string>(Config(BasicType::STRING, CollectionType::SINGLE))));
-    TEST_DO((testReaderDuringLastUpdate<StringAttribute,vespalib::string>(Config(BasicType::STRING, CollectionType::ARRAY))));
+    TEST_DO((testReaderDuringLastUpdate<StringAttribute,string>(Config(BasicType::STRING, CollectionType::SINGLE))));
+    TEST_DO((testReaderDuringLastUpdate<StringAttribute,string>(Config(BasicType::STRING, CollectionType::ARRAY))));
     TEST_DO((testReaderDuringLastUpdate<StringAttribute,StringAttribute::WeightedString>(Config(BasicType::STRING, CollectionType::WSET))));
 }
 
@@ -2373,6 +2314,5 @@ int AttributeTest::Main()
 }
 
 }
-
 
 TEST_APPHOOK(search::AttributeTest);

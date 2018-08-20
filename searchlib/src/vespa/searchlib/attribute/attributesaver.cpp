@@ -15,10 +15,7 @@ AttributeSaver::AttributeSaver(GenerationHandler::Guard &&guard,
 }
 
 
-AttributeSaver::~AttributeSaver()
-{
-}
-
+AttributeSaver::~AttributeSaver() = default;
 
 bool
 AttributeSaver::save(IAttributeSaveTarget &saveTarget)
