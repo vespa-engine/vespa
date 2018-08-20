@@ -31,8 +31,6 @@ public interface NodeRepository {
     void upgrade(ZoneId zone, NodeType type, Version version);
 
     /** Upgrade OS for all nodes of given type to a new version */
-    default void upgradeOs(ZoneId zone, NodeType type, Version version) {
-        // TODO: Remove default implementation once implemented in internal code
-    }
+    void upgradeOs(ZoneId zone, NodeType type, Version version);
 
 }

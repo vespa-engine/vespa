@@ -53,9 +53,14 @@ public interface ZoneRegistry {
     UpgradePolicy upgradePolicy();
 
     /** Returns the OS upgrade policy to use for zones in this registry */
-    // TODO: Remove default once internal code implements this
+    // TODO: Remove
     default UpgradePolicy osUpgradePolicy() {
         return upgradePolicy();
+    }
+
+    /** Returns the OS upgrade policy to use for zones belonging to given cloud, in this registry */
+    default UpgradePolicy osUpgradePolicy(CloudName cloud) {
+        return osUpgradePolicy(); // TODO: Remove default implementation
     }
 
 }
