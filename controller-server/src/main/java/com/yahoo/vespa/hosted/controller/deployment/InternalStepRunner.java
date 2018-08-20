@@ -114,7 +114,7 @@ public class InternalStepRunner implements StepRunner {
             return Optional.empty();
         }
         catch (RuntimeException e) {
-            logger.log(INFO, "Unexpected exception running " + id + ": " + Exceptions.toMessageString(e));
+            logger.log(INFO, "Unexpected exception running " + id, e);
             if (JobProfile.of(id.type()).alwaysRun().contains(step.get())) {
                 logger.log("Will keep trying, as this is a cleanup step.");
                 return Optional.empty();
