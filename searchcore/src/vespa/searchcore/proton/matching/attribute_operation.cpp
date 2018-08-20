@@ -239,6 +239,10 @@ Operation::create(V vector) const {
         vespalib::asciistream is(operand);
         try {
             is >> value;
+            if (!is.empty()) {
+                LOG(warning, "Invalid operand, unable to consume all of (%s). (%s) is unconsumed.", operand.data(), is.c_str());
+                validOp = BAD;
+            }
         } catch (vespalib::IllegalArgumentException & e) {
             LOG(warning, "Invalid operand, ignoring : %s", e.what());
             validOp = BAD;
