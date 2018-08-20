@@ -11,7 +11,6 @@
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
 #include <vespa/storage/persistence/persistencethread.h>
-#include <vespa/storage/storageutil/log.h>
 #include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/state.h>
