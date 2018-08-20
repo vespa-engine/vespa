@@ -33,7 +33,7 @@ struct Dec {
 template <typename T>
 struct Add {
     using V = T;
-    Add(T m) : _m(m) { }
+    Add(T m) : _m(m) {}
     T _m;
     T operator()(T oldVal) const { return oldVal + _m; }
 };
@@ -41,7 +41,7 @@ struct Add {
 template <typename T>
 struct Mul {
     using V = T;
-    Mul(T m) : _m(m) { }
+    Mul(T m) : _m(m) {}
     T _m;
     T operator()(T oldVal) const { return oldVal * _m; }
 };
@@ -49,7 +49,7 @@ struct Mul {
 template <typename T>
 struct Div {
     using V = T;
-    Div(T m) : _m(m) { }
+    Div(T m) : _m(m) {}
     T _m;
     T operator()(T oldVal) const { return oldVal / _m; }
 };
@@ -57,7 +57,7 @@ struct Div {
 template <typename T>
 struct Mod {
     using V = T;
-    Mod(T m) : _m(m) { }
+    Mod(T m) : _m(m) {}
     T _m;
     T operator()(T oldVal) const { return oldVal % static_cast<int64_t>(_m); }
 };
@@ -65,21 +65,21 @@ struct Mod {
 template <>
 struct Mod<double> {
     using V = double;
-    Mod(double ) { }
+    Mod(double ) {}
     double operator()(double oldVal) const { return oldVal; }
 };
 
 template <>
 struct Mod<float> {
     using V = float;
-    Mod(float ) { }
+    Mod(float ) {}
     float operator()(float oldVal) const { return oldVal; }
 };
 
 template <typename T>
 struct Set {
     using V = T;
-    Set(T m) : _m(m) { }
+    Set(T m) : _m(m) {}
     T _m;
     T operator()(T) const { return  _m; }
 };
@@ -241,6 +241,10 @@ Operation::create(V vector) const {
             is >> value;
             if (!is.empty()) {
                 LOG(warning, "Invalid operand, unable to consume all of (%s). (%s) is unconsumed.", operand.data(), is.c_str());
+                validOp = BAD;
+            }
+            if (((validOp == DIV) || (validOp == MOD)) && (value == 0)) {
+                LOG(warning, "Division by zero is not acceptable (%s).", operand.data());
                 validOp = BAD;
             }
         } catch (vespalib::IllegalArgumentException & e) {
