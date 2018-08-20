@@ -71,6 +71,28 @@ public class Versions {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if ( ! (o instanceof Versions)) return false;
+
+        Versions versions = (Versions) o;
+
+        if ( ! targetPlatform.equals(versions.targetPlatform)) return false;
+        if ( ! targetApplication.equals(versions.targetApplication)) return false;
+        if ( ! sourcePlatform.equals(versions.sourcePlatform)) return false;
+        return sourceApplication.equals(versions.sourceApplication);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = targetPlatform.hashCode();
+        result = 31 * result + targetApplication.hashCode();
+        result = 31 * result + sourcePlatform.hashCode();
+        result = 31 * result + sourceApplication.hashCode();
+        return result;
+    }
+
+    @Override
     public String toString() {
         return String.format("platform %s%s, application %s%s",
                              sourcePlatform.filter(source -> !source.equals(targetPlatform))

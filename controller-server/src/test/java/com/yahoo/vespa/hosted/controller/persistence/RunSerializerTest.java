@@ -1,10 +1,13 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -67,6 +70,18 @@ public class RunSerializerTest {
         assertFalse(run.hasEnded());
         assertEquals(running, run.status());
         assertEquals(3, run.lastTestRecord());
+        assertEquals(new Version(1, 2, 3), run.versions().targetPlatform());
+        assertEquals(ApplicationVersion.from(new SourceRevision("git@github.com:user/repo.git",
+                                                                "master",
+                                                                "f00bad"),
+                                             123),
+                     run.versions().targetApplication());
+        assertEquals(new Version(1, 2, 2), run.versions().sourcePlatform().get());
+        assertEquals(ApplicationVersion.from(new SourceRevision("git@github.com:user/repo.git",
+                                                                "master",
+                                                                "badb17"),
+                                             122),
+                     run.versions().sourceApplication().get());
         assertEquals(ImmutableMap.<Step, Step.Status>builder()
                              .put(deployInitialReal, unfinished)
                              .put(installInitialReal, failed)
@@ -91,6 +106,8 @@ public class RunSerializerTest {
         assertEquals(run.start(), phoenix.start());
         assertEquals(run.end(), phoenix.end());
         assertEquals(run.status(), phoenix.status());
+        assertEquals(run.lastTestRecord(), phoenix.lastTestRecord());
+        assertEquals(run.versions(), phoenix.versions());
         assertEquals(run.steps(), phoenix.steps());
     }
 
