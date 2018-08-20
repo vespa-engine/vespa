@@ -27,13 +27,10 @@ class BasicType
         MAX_TYPE
     };
 
-    explicit
-    BasicType(int t) : _type(Type(t)) { }
-    explicit
-    BasicType(unsigned int t) : _type(Type(t)) { }
+    explicit BasicType(int t) : _type(Type(t)) { }
+    explicit BasicType(unsigned int t) : _type(Type(t)) { }
     BasicType(Type t) : _type(t) { }
-    explicit
-    BasicType(const vespalib::string & t) : _type(asType(t)) { }
+    explicit BasicType(const vespalib::string & t) : _type(asType(t)) { }
 
     Type type() const { return _type; }
     const char * asString() const { return asString(_type); }

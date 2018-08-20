@@ -69,10 +69,9 @@ MatchMaster::match(const MatchParams &params,
     std::vector<MatchThread::UP> threadState;
     std::vector<vespalib::Runnable*> targets;
     for (size_t i = 0; i < threadBundle.size(); ++i) {
-        IMatchLoopCommunicator &com =
-            (i == 0)?
-            static_cast<IMatchLoopCommunicator&>(timedCommunicator) :
-            static_cast<IMatchLoopCommunicator&>(communicator);
+        IMatchLoopCommunicator &com = (i == 0)
+                ? static_cast<IMatchLoopCommunicator&>(timedCommunicator)
+                : static_cast<IMatchLoopCommunicator&>(communicator);
         threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(),
                         params, matchToolsFactory, com, *scheduler,
                         resultProcessor, mergeDirector, distributionKey));
@@ -101,10 +100,10 @@ MatchMaster::match(const MatchParams &params,
 }
 
 FeatureSet::SP
-MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
+MatchMaster::getFeatureSet(const MatchToolsFactory &mtf,
                            const std::vector<uint32_t> &docs, bool summaryFeatures)
 {
-    MatchTools::UP matchTools = matchToolsFactory.createMatchTools();
+    MatchTools::UP matchTools = mtf.createMatchTools();
     if (summaryFeatures) {
         matchTools->setup_summary();
     } else {
@@ -118,7 +117,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
     for (size_t i = 0; i < resolver.num_features(); ++i) {
         featureNames.emplace_back(resolver.name_of(i));
     }
-    FeatureSet::SP retval(new FeatureSet(featureNames, docs.size()));
+    auto retval = std::make_shared<FeatureSet>(featureNames, docs.size());
     if (docs.empty()) {
         return retval;
     }
