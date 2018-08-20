@@ -26,10 +26,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Organizati
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
+import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -42,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -217,14 +221,22 @@ public class Controller extends AbstractComponent {
 
     /** Returns the target OS version for infrastructure in this system. The controller will drive infrastructure OS
      * upgrades to this version */
-    public Optional<Version> osVersion() {
-        return curator.readOsTargetVersion();
+    public Optional<OsVersion> osVersion(CloudName cloud) {
+        return osVersions().stream().filter(osVersion -> osVersion.cloud().equals(cloud)).findFirst();
     }
 
-    /** Set the target OS version for infrastructure in this system. */
-    public void upgradeOs(Version version) {
-        try (Lock lock = curator.lockOsTargetVersion()) {
-            curator.writeOsTargetVersion(version);
+    /** Returns all target OS versions in this system */
+    public Set<OsVersion> osVersions() {
+        return curator.readOsVersions();
+    }
+
+    /** Set the target OS version for infrastructure on cloud in this system */
+    public void upgradeOsIn(CloudName cloud, Version version) {
+        try (Lock lock = curator.lockOsVersions()) {
+            Set<OsVersion> versions = new TreeSet<>(curator.readOsVersions());
+            versions.removeIf(osVersion -> osVersion.cloud().equals(cloud)); // Only allow a single target per cloud
+            versions.add(new OsVersion(version, cloud));
+            curator.writeOsVersions(versions);
         }
     }
 

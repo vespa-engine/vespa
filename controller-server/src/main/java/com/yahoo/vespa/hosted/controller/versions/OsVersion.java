@@ -1,28 +1,25 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.RegionName;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
 import java.util.Objects;
 
 /**
- * Information about a given OS version in the system.
+ * An OS version for a cloud in this system.
  *
  * @author mpolden
  */
-public class OsVersion {
+public class OsVersion implements Comparable<OsVersion> {
 
     private final Version version;
-    private final List<Node> nodes;
+    private final CloudName cloud;
 
-    public OsVersion(Version version, List<Node> nodes) {
-        this.version = version;
-        this.nodes = ImmutableList.copyOf(nodes);
+    public OsVersion(Version version, CloudName cloud) {
+        this.version = Objects.requireNonNull(version, "version must be non-null");
+        this.cloud = Objects.requireNonNull(cloud, "cloud must be non-null");
     }
 
     /** The version number of this */
@@ -30,56 +27,37 @@ public class OsVersion {
         return version;
     }
 
-    /** Nodes on this version */
-    public List<Node> nodes() {
-        return nodes;
+    /** The cloud where this OS version is used */
+    public CloudName cloud() {
+        return cloud;
     }
 
-    public static class Node {
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OsVersion osVersion = (OsVersion) o;
+        return Objects.equals(version, osVersion.version) &&
+               Objects.equals(cloud, osVersion.cloud);
+    }
 
-        private final HostName hostname;
-        private final Version version;
-        private final Environment environment;
-        private final RegionName region;
+    @Override
+    public int hashCode() {
+        return Objects.hash(version, cloud);
+    }
 
-        public Node(HostName hostname, Version version, Environment environment, RegionName region) {
-            this.hostname = hostname;
-            this.version = version;
-            this.environment = environment;
-            this.region = region;
+    @Override
+    public String toString() {
+        return "version " + version + " for " + cloud + " cloud";
+    }
+
+    @Override
+    public int compareTo(@NotNull OsVersion o) {
+        int cloudCmp = cloud.compareTo(o.cloud());
+        if (cloudCmp == 0) { // Same cloud, sort by version
+            return version.compareTo(o.version());
         }
-
-        public HostName hostname() {
-            return hostname;
-        }
-
-        public Version version() {
-            return version;
-        }
-
-        public Environment environment() {
-            return environment;
-        }
-
-        public RegionName region() {
-            return region;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Node node = (Node) o;
-            return Objects.equals(hostname, node.hostname) &&
-                   Objects.equals(version, node.version) &&
-                   environment == node.environment &&
-                   Objects.equals(region, node.region);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(hostname, version, environment, region);
-        }
+        return cloudCmp;
     }
 
 }

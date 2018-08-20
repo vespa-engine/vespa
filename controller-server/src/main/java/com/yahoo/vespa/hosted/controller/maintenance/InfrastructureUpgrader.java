@@ -27,8 +27,9 @@ public abstract class InfrastructureUpgrader extends Maintainer {
 
     private final UpgradePolicy upgradePolicy;
 
-    public InfrastructureUpgrader(Controller controller, Duration interval, JobControl jobControl, UpgradePolicy upgradePolicy) {
-        super(controller, interval, jobControl);
+    public InfrastructureUpgrader(Controller controller, Duration interval, JobControl jobControl,
+                                  UpgradePolicy upgradePolicy, String name) {
+        super(controller, interval, jobControl, name);
         this.upgradePolicy = upgradePolicy;
     }
 
@@ -74,26 +75,26 @@ public abstract class InfrastructureUpgrader extends Maintainer {
         return applications.stream().allMatch(application -> convergedOn(target, application, zone));
     }
 
-    /** Upgrade components to target version. Implementation should be idempotent */
+    /** Upgrade component to target version. Implementation should be idempotent */
     protected abstract void upgrade(Version target, SystemApplication application, ZoneId zone);
 
     /** Returns whether application has converged to target version in zone */
     protected abstract boolean convergedOn(Version target, SystemApplication application, ZoneId zone);
 
-    /** Returns target version for components upgraded by this */
+    /** Returns the target version for the component upgraded by this, if any */
     protected abstract Optional<Version> targetVersion();
 
-    /** Returns whether the upgrader should require given node to upgrade in application */
-    protected abstract boolean requireUpgradeOf(Node node, SystemApplication application);
+    /** Returns whether the upgrader should require given node to upgrade */
+    protected abstract boolean requireUpgradeOf(Node node, SystemApplication application, ZoneId zone);
 
     /** Find the minimum value of a version field in a zone */
-    protected Optional<Version> minVersion(ZoneId zone, SystemApplication application, Function<Node, Version> versionField) {
+    protected final Optional<Version> minVersion(ZoneId zone, SystemApplication application, Function<Node, Version> versionField) {
         try {
             return controller().configServer()
                                .nodeRepository()
                                .list(zone, application.id())
                                .stream()
-                               .filter((node) -> requireUpgradeOf(node, application))
+                               .filter((node) -> requireUpgradeOf(node, application, zone))
                                .map(versionField)
                                .min(Comparator.naturalOrder());
         } catch (Exception e) {
