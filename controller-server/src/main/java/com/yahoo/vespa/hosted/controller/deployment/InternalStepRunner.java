@@ -524,6 +524,8 @@ public class InternalStepRunner implements StepRunner {
             String timestamp = timestampFormat.format(new Date(record.getMillis()));
             for (String line : record.getMessage().split("\n"))
                 out.println(timestamp + ": " + line);
+            if (record.getThrown() != null)
+                record.getThrown().printStackTrace(out);
 
             record.setSourceClassName(null); // Makes the root logger's ConsoleHandler use the logger name instead, when printing.
             getParent().log(record);
