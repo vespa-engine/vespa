@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public class DomAdminV4Builder extends DomAdminBuilderBase {
+
     private ApplicationId ZONE_APPLICATION_ID = ApplicationId.from("hosted-vespa", "routing", "default");
 
     private final Collection<ContainerModel> containerModels;
