@@ -165,7 +165,6 @@ void TransLogServer::run()
 {
     FRT_RPCRequest *req(NULL);
     bool hasPacket(false);
-    logMetric();
     do {
         for (req = NULL; (hasPacket = _reqQ.pop(req, 60000)) && (req != NULL); req = NULL) {
             bool immediate = true;
@@ -199,20 +198,8 @@ void TransLogServer::run()
                 req->Return();
             }
         }
-        logMetric();
     } while (running() && !(hasPacket && (req == NULL)));
     LOG(info, "TLS Stopped");
-}
-
-void TransLogServer::logMetric() const
-{
-    Guard domainGuard(_lock);
-    for (DomainList::const_iterator it(_domains.begin()), mt(_domains.end()); it != mt; it++) {
-        vespalib::string prefix("translogserver." + it->first + ".serialnum.");
-        EV_COUNT((prefix + "last").c_str(),  it->second->end());
-        EV_COUNT((prefix + "first").c_str(), it->second->begin());
-        EV_VALUE((prefix + "numused").c_str(), it->second->size());
-    }
 }
 
 DomainStats
