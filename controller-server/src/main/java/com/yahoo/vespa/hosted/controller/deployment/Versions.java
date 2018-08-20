@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -74,22 +75,16 @@ public class Versions {
     public boolean equals(Object o) {
         if (this == o) return true;
         if ( ! (o instanceof Versions)) return false;
-
         Versions versions = (Versions) o;
-
-        if ( ! targetPlatform.equals(versions.targetPlatform)) return false;
-        if ( ! targetApplication.equals(versions.targetApplication)) return false;
-        if ( ! sourcePlatform.equals(versions.sourcePlatform)) return false;
-        return sourceApplication.equals(versions.sourceApplication);
+        return Objects.equals(targetPlatform, versions.targetPlatform) &&
+               Objects.equals(targetApplication, versions.targetApplication) &&
+               Objects.equals(sourcePlatform, versions.sourcePlatform) &&
+               Objects.equals(sourceApplication, versions.sourceApplication);
     }
 
     @Override
     public int hashCode() {
-        int result = targetPlatform.hashCode();
-        result = 31 * result + targetApplication.hashCode();
-        result = 31 * result + sourcePlatform.hashCode();
-        result = 31 * result + sourceApplication.hashCode();
-        return result;
+        return Objects.hash(targetPlatform, targetApplication, sourcePlatform, sourceApplication);
     }
 
     @Override
