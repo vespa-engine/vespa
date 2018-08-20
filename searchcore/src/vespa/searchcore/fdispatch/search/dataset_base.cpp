@@ -248,13 +248,11 @@ FastS_DataSetBase::AbortQueryQueue_HasLock()
     }
 }
 
-
 void
 FastS_DataSetBase::AddCost()
 {
     _totalrefcost += _unitrefcost;
 }
-
 
 void
 FastS_DataSetBase::SubCost()
@@ -263,10 +261,8 @@ FastS_DataSetBase::SubCost()
     _totalrefcost -= _unitrefcost;
 }
 
-
 void
-FastS_DataSetBase::UpdateSearchTime(double tnow,
-                                    double elapsed, bool timedout)
+FastS_DataSetBase::UpdateSearchTime(double tnow, double elapsed, bool timedout)
 {
     int slot;
     auto dsGuard(getDsGuard());
@@ -279,35 +275,17 @@ FastS_DataSetBase::UpdateSearchTime(double tnow,
     _total._normalTimeStat.Update(tnow, elapsed, timedout);
 }
 
-
 void
 FastS_DataSetBase::UpdateEstimateCount()
 {
     ++_total._estimates;
 }
 
-
 void
 FastS_DataSetBase::CountTimeout()
 {
     ++_total._nTimedOut;
 }
-
-
-void
-FastS_DataSetBase::addPerformance(FastS_QueryPerf &qp)
-{
-    FastS_TimeStatTotals totals;
-    auto dsGuard(getDsGuard());
-    _total._normalTimeStat.AddTotal(&totals);
-    qp.queueLen   += _queryQueue.GetQueueLen();
-    qp.activeCnt  += _queryQueue.GetActiveQueries();
-    qp.queryCnt   += totals._totalCount;
-    qp.queryTime  += totals._totalAccTime;
-    qp.dropCnt    += _total._nOverload;
-    qp.timeoutCnt += _total._nTimedOut;
-}
-
 
 ChildInfo
 FastS_DataSetBase::getChildInfo() const

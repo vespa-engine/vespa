@@ -41,7 +41,6 @@ public:
     virtual FNET_Scheduler *GetFNETScheduler();
     virtual FastS_DataSetCollection *GetDataSetCollection();
     virtual FastOS_ThreadPool *GetThreadPool();
-    virtual void logPerformance();
     virtual uint32_t getDispatchLevel();
 private:
 };

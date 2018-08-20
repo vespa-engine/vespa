@@ -20,7 +20,6 @@ class FastS_QueryResult;
 class FastS_PlainDataSet;
 class FastS_FNET_DataSet;
 class FastS_AppContext;
-class FastS_QueryPerf;
 class FNET_Task;
 
 //---------------------------------------------------------------------------
@@ -220,13 +219,9 @@ public:
                                         FastS_TimeKeeper *timeKeeper,
                                         bool async) = 0;
     virtual void Free() = 0;
-    virtual void addPerformance(FastS_QueryPerf &qp);
 
     // typesafe down-cast
     //-------------------
     virtual FastS_PlainDataSet     *GetPlainDataSet()     { return nullptr; }
     virtual FastS_FNET_DataSet     *GetFNETDataSet()      { return nullptr; }
 };
-
-//---------------------------------------------------------------------------
-

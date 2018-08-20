@@ -5,7 +5,6 @@
 #include "child_info.h"
 #include "configdesc.h"
 #include <vespa/config/helper/configfetcher.h>
-#include <vespa/searchcore/fdispatch/common/queryperf.h>
 #include <vespa/vespalib/net/simple_component_config_producer.h>
 #include <vespa/config/subscription/configuri.h>
 #include <vespa/vespalib/util/executor.h>
@@ -34,7 +33,6 @@ private:
     uint32_t          _mldDocStampMin;  // Bumped for global cache flush
     uint32_t          _gencnt;
 
-    FastS_QueryPerf   _queryPerf;
 
 
     std::unique_ptr<config::ConfigFetcher> _fetcher;
@@ -88,12 +86,6 @@ public:
     uint32_t GetTotalPartitions();
     ChildInfo getChildInfo();
     void ShutdownConfig();
-
-    /**
-     * log query performance. This method should only be invoked from
-     * the FNET thread.
-     **/
-    void logPerformance(vespalib::Executor &executor);
 
     void CheckEvents(FastS_TimeKeeper *timeKeeper); // invoked by FNET thread
 };

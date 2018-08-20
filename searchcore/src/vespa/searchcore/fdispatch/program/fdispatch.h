@@ -96,7 +96,6 @@ public:
     virtual FastS_NodeManager *GetNodeManager() override;
     virtual FastS_DataSetCollection *GetDataSetCollection() override;
     virtual FastOS_ThreadPool *GetThreadPool() override;
-    virtual void logPerformance() override;
     virtual uint32_t getDispatchLevel() override;
     bool CheckTempFail();
     bool Failed();
