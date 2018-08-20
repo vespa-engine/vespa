@@ -17,9 +17,7 @@ AttributeDiskLayout::AttributeDiskLayout(const vespalib::string &baseDir, Privat
     vespalib::File::sync(vespalib::dirname(_baseDir));
 }
 
-AttributeDiskLayout::~AttributeDiskLayout()
-{
-}
+AttributeDiskLayout::~AttributeDiskLayout() = default;
 
 std::vector<vespalib::string>
 AttributeDiskLayout::listAttributes()

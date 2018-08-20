@@ -161,7 +161,7 @@ AttributeManager::getAttribute(const string & name) const
 {
     AttributeGuard::UP attrGuard(new AttributeGuard(VectorHolder()));
     const VectorHolder * vh = findAndLoadAttribute(name);
-    if ( vh != NULL ) {
+    if ( vh != nullptr ) {
         attrGuard.reset(new AttributeGuard(*vh));
     }
     return attrGuard;

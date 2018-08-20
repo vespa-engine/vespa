@@ -26,15 +26,14 @@ public:
 
 private:
     std::weak_ptr<AttributeDiskLayout> _diskLayout;
-    const vespalib::string _name;
-    fastos::TimeStamp      _lastFlushTime;
-    Writer                *_writer; // current writer
-    mutable std::mutex     _mutex;
+    const vespalib::string  _name;
+    fastos::TimeStamp       _lastFlushTime;
+    Writer                 *_writer; // current writer
+    mutable std::mutex      _mutex;
     std::condition_variable _cv;
-    search::IndexMetaInfo  _snapInfo;
+    search::IndexMetaInfo   _snapInfo;
 
     void saveSnapInfo();
-    vespalib::string getSnapshotDir(SerialNum serialNum);
     void setLastFlushTime(fastos::TimeStamp lastFlushTime);
     void createInvalidSnapshot(SerialNum serialNum);
     void markValidSnapshot(SerialNum serialNum);
@@ -49,6 +48,9 @@ public:
     AttributeDirectory(const std::shared_ptr<AttributeDiskLayout> &diskLayout,
                        const vespalib::string &name);
     ~AttributeDirectory();
+
+    const vespalib::string & getAttrName() const { return _name; }
+    vespalib::string getSnapshotDir(SerialNum serialNum);
 
     /*
      * Class to make changes to an attribute directory in a

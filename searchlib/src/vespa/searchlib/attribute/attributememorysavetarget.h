@@ -38,17 +38,15 @@ public:
     /**
      * Write the underlying buffer(s) to file(s).
      **/
-    bool
-    writeToFile(const TuneFileAttributes &tuneFileAttributes,
-                const search::common::FileHeaderContext &fileHeaderContext);
+    bool writeToFile(const TuneFileAttributes &tuneFileAttributes,
+                     const search::common::FileHeaderContext &fileHeaderContext);
 
-    // Implements IAttributeSaveTarget
-    virtual bool setup() override { return true; }
-    virtual void close() override {}
-    virtual IAttributeFileWriter &datWriter() override;
-    virtual IAttributeFileWriter &idxWriter() override;
-    virtual IAttributeFileWriter &weightWriter() override;
-    virtual IAttributeFileWriter &udatWriter() override;
+    bool setup() override { return true; }
+    void close() override {}
+    IAttributeFileWriter &datWriter() override;
+    IAttributeFileWriter &idxWriter() override;
+    IAttributeFileWriter &weightWriter() override;
+    IAttributeFileWriter &udatWriter() override;
 };
 
 } // namespace search

@@ -21,7 +21,7 @@ using attribute::BasicType;
 
 
 AttributeVector::SP
-AttributeFactory::createSetStd(const vespalib::string & baseFileName, const Config & info)
+AttributeFactory::createSetStd(stringref name, const Config & info)
 {
     assert(info.collectionType().type() == attribute::CollectionType::WSET);
     AttributeVector::SP ret;
@@ -31,25 +31,25 @@ AttributeFactory::createSetStd(const vespalib::string & baseFileName, const Conf
     case BasicType::UINT4:
         break;
     case BasicType::INT8:
-        ret.reset(CREATEINTSET(int8_t, baseFileName, info));
+        ret.reset(CREATEINTSET(int8_t, name, info));
         break;
     case BasicType::INT16:
-        ret.reset(CREATEINTSET(int16_t, baseFileName, info));
+        ret.reset(CREATEINTSET(int16_t, name, info));
         break;
     case BasicType::INT32:
-        ret.reset(CREATEINTSET(int32_t, baseFileName, info));
+        ret.reset(CREATEINTSET(int32_t, name, info));
         break;
     case BasicType::INT64:
-        ret.reset(CREATEINTSET(int64_t, baseFileName, info));
+        ret.reset(CREATEINTSET(int64_t, name, info));
         break;
     case BasicType::FLOAT:
-        ret.reset(CREATEFLOATSET(float, baseFileName, info));
+        ret.reset(CREATEFLOATSET(float, name, info));
         break;
     case BasicType::DOUBLE:
-        ret.reset(CREATEFLOATSET(double, baseFileName, info));
+        ret.reset(CREATEFLOATSET(double, name, info));
         break;
     case BasicType::STRING:
-        ret.reset(static_cast<AttributeVector *>(new WeightedSetStringAttribute(baseFileName, info)));
+        ret.reset(static_cast<AttributeVector *>(new WeightedSetStringAttribute(name, info)));
         break;
     default:
         break;

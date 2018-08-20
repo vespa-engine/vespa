@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/multivalueattribute.h>
-#include <vespa/searchlib/attribute/enumstorebase.h>
-#include <vespa/searchlib/attribute/loadedenumvalue.h>
+#include "multivalueattribute.h"
+#include "enumstorebase.h"
+#include "loadedenumvalue.h"
 
 namespace search {
 

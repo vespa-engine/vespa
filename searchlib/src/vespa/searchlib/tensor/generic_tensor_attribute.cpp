@@ -13,9 +13,7 @@ using vespalib::eval::ValueType;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorMapper;
 
-namespace search {
-
-namespace tensor {
+namespace search::tensor {
 
 namespace {
 
@@ -36,8 +34,8 @@ public:
 
 }
 
-GenericTensorAttribute::GenericTensorAttribute(vespalib::stringref baseFileName, const Config &cfg)
-    : TensorAttribute(baseFileName, cfg, _genericTensorStore)
+GenericTensorAttribute::GenericTensorAttribute(stringref name, const Config &cfg)
+    : TensorAttribute(name, cfg, _genericTensorStore)
 {
 }
 
@@ -120,7 +118,4 @@ GenericTensorAttribute::compactWorst()
     doCompactWorst<GenericTensorStore::RefType>();
 }
 
-
-}  // namespace search::tensor
-
-}  // namespace search
+}

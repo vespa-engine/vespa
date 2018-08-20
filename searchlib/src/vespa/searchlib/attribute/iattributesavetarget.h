@@ -2,9 +2,6 @@
 
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/data/databuffer.h>
-#include <stdint.h>
 #include "iattributefilewriter.h"
 #include "attribute_header.h"
 
@@ -21,6 +18,7 @@ protected:
 public:
     IAttributeSaveTarget() : _header() {}
     void setHeader(const attribute::AttributeHeader & header) { _header = header; }
+    const attribute::AttributeHeader & getHeader() const { return _header; }
 
     bool getEnumerated() const { return _header.getEnumerated(); }
 

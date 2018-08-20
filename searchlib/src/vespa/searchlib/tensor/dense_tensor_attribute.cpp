@@ -16,9 +16,7 @@ using vespalib::tensor::MutableDenseTensorView;
 using vespalib::tensor::Tensor;
 using vespalib::tensor::TensorMapper;
 
-namespace search {
-
-namespace tensor {
+namespace search::tensor {
 
 namespace {
 
@@ -59,7 +57,7 @@ TensorReader::TensorReader(AttributeVector &attr)
     }
     _unboundDimSizes.resize(_numUnboundDims);
 }
-TensorReader::~TensorReader() { }
+TensorReader::~TensorReader() = default;
 
 size_t
 TensorReader::getNumCells() {
@@ -73,8 +71,7 @@ TensorReader::getNumCells() {
     }
     size_t numCells = _numBoundCells;
     if (_numUnboundDims != 0) {
-        _datFile->ReadBuf(&_unboundDimSizes[0],
-                          _numUnboundDims * sizeof(uint32_t));
+        _datFile->ReadBuf(&_unboundDimSizes[0], _numUnboundDims * sizeof(uint32_t));
         for (auto i = 0u; i < _numUnboundDims; ++i) {
             assert(_unboundDimSizes[i] != 0u);
             numCells *= _unboundDimSizes[i];
@@ -189,6 +186,4 @@ DenseTensorAttribute::getVersion() const
     return DENSE_TENSOR_ATTRIBUTE_VERSION;
 }
 
-}  // namespace search::tensor
-
-}  // namespace search
+}

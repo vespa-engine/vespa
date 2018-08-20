@@ -108,7 +108,7 @@ protected:
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
 
     MultiExtAttribute(const vespalib::string &name, const attribute::CollectionType &ctype)
-            : Super(name, Config(BasicType::fromType(T()), ctype))
+        : Super(name, Config(BasicType::fromType(T()), ctype))
     { }
 private:
     AttributeVector::SearchContext::UP

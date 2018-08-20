@@ -67,9 +67,9 @@ public:
     DECLARE_IDENTIFIABLE_ABSTRACT(ReferenceAttribute);
     ReferenceAttribute(const vespalib::stringref baseFileName,
                        const Config & cfg);
-    virtual ~ReferenceAttribute();
-    virtual bool addDoc(DocId &doc) override;
-    virtual uint32_t clearDoc(DocId doc) override;
+    ~ReferenceAttribute() override;
+    bool addDoc(DocId &doc) override;
+    uint32_t clearDoc(DocId doc) override;
     void update(DocId doc, const GlobalId &gid);
     const Reference *getReference(DocId doc);
     void setGidToLidMapperFactory(std::shared_ptr<IGidToLidMapperFactory> gidToLidMapperFactory);
@@ -83,8 +83,8 @@ public:
     void notifyReferencedPut(const GlobalId &gid, DocId targetLid);
     void notifyReferencedRemove(const GlobalId &gid);
     void populateTargetLids();
-    virtual void clearDocs(DocId lidLow, DocId lidLimit) override;
-    virtual void onShrinkLidSpace() override;
+    void clearDocs(DocId lidLow, DocId lidLimit) override;
+    void onShrinkLidSpace() override;
 
     template <typename FunctionType>
     void

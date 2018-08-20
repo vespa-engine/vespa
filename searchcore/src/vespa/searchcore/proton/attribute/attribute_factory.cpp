@@ -2,18 +2,17 @@
 
 #include "attribute_factory.h"
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributevector.h>
+
 
 namespace proton {
 
 using search::AttributeVector;
 
-AttributeFactory::AttributeFactory()
-{
-}
+AttributeFactory::AttributeFactory() = default;
 
 AttributeVector::SP
-AttributeFactory::create(const vespalib::string &name,
-                         const search::attribute::Config &cfg) const
+AttributeFactory::create(const vespalib::string &name, const search::attribute::Config &cfg) const
 {
     AttributeVector::SP v(search::AttributeFactory::createAttribute(name, cfg));
     v->enableEnumeratedSave(true);
@@ -21,8 +20,7 @@ AttributeFactory::create(const vespalib::string &name,
 }
 
 void
-AttributeFactory::setupEmpty(const AttributeVector::SP &vec,
-                             search::SerialNum serialNum) const
+AttributeFactory::setupEmpty(const AttributeVector::SP &vec, search::SerialNum serialNum) const
 {
     vec->setCreateSerialNum(serialNum);
     vec->addReservedDoc();

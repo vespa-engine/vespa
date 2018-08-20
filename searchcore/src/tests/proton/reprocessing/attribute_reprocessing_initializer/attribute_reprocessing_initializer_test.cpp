@@ -1,6 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("attribute_reprocessing_initializer_test");
 
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
@@ -18,6 +16,9 @@ LOG_SETUP("attribute_reprocessing_initializer_test");
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attribute_reprocessing_initializer_test");
 
 using namespace proton;
 using namespace search;
@@ -91,7 +92,7 @@ MyConfig::MyConfig()
                                 _attributeFieldWriter, _hwInfo)),
       _schema()
 {}
-MyConfig::~MyConfig() {}
+MyConfig::~MyConfig() = default;
 
 struct MyDocTypeInspector : public IDocumentTypeInspector
 {
@@ -162,17 +163,13 @@ struct Fixture
                             "test", INIT_SERIAL_NUM));
         _initializer->initialize(_handler);
     }
-    Fixture &addOldConfig(const StringVector &fields,
-                          const StringVector &attrs) {
+    Fixture &addOldConfig(const StringVector &fields, const StringVector &attrs) {
         return addConfig(fields, attrs, _oldCfg);
     }
-    Fixture &addNewConfig(const StringVector &fields,
-                          const StringVector &attrs) {
+    Fixture &addNewConfig(const StringVector &fields, const StringVector &attrs) {
         return addConfig(fields, attrs, _newCfg);
     }
-    Fixture &addConfig(const StringVector &fields,
-                       const StringVector &attrs,
-                       MyConfig &cfg) {
+    Fixture &addConfig(const StringVector &fields, const StringVector &attrs, MyConfig &cfg) {
         cfg.addFields(fields);
         cfg.addAttrs(attrs);
         return *this;
@@ -181,10 +178,8 @@ struct Fixture
         if (expAttrs.empty()) {
             if (!EXPECT_TRUE(_handler._reader.get() == nullptr)) return false;
         } else {
-            const AttributePopulator &populator =
-                    dynamic_cast<const AttributePopulator &>(*_handler._reader);
-            std::vector<search::AttributeVector *> attrList =
-                populator.getWriter().getWritableAttributes();
+            const auto & populator = dynamic_cast<const AttributePopulator &>(*_handler._reader);
+            std::vector<search::AttributeVector *> attrList = populator.getWriter().getWritableAttributes();
             std::set<vespalib::string> actAttrs;
             for (const auto attr : attrList) {
                 actAttrs.insert(attr->getName());
@@ -199,8 +194,7 @@ struct Fixture
         } else {
             StringSet actFields;
             for (auto rewriter : _handler._rewriters) {
-                const DocumentFieldPopulator &populator =
-                    dynamic_cast<const DocumentFieldPopulator &>(*rewriter);
+                const auto & populator = dynamic_cast<const DocumentFieldPopulator &>(*rewriter);
                 actFields.insert(populator.getAttribute().getName());
             }
             if (!EXPECT_EQUAL(expFields, actFields)) return false;
@@ -273,16 +267,14 @@ TEST_F("require that initializer can setup both attribute and document field pop
 
 TEST_F("require that tensor fields are not populated from attribute", Fixture)
 {
-    f.addOldConfig({"a", "b", "c", "d", "tensor"},
-                   {"a", "b", "c", "d", "tensor"}).
+    f.addOldConfig({"a", "b", "c", "d", "tensor"}, {"a", "b", "c", "d", "tensor"}).
         addNewConfig({"a", "b", "c", "d", "tensor"}, {"a", "b"}).init();
     EXPECT_TRUE(f.assertFields({"c", "d"}));
 }
 
 TEST_F("require that predicate fields are not populated from attribute", Fixture)
 {
-    f.addOldConfig({"a", "b", "c", "d", "predicate"},
-                   {"a", "b", "c", "d", "predicate"}).
+    f.addOldConfig({"a", "b", "c", "d", "predicate"}, {"a", "b", "c", "d", "predicate"}).
         addNewConfig({"a", "b", "c", "d", "predicate"}, {"a", "b"}).init();
     EXPECT_TRUE(f.assertFields({"c", "d"}));
 }

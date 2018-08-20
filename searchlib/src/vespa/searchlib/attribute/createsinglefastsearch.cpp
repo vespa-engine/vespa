@@ -23,7 +23,7 @@ namespace search {
 using attribute::BasicType;
 
 AttributeVector::SP
-AttributeFactory::createSingleFastSearch(const vespalib::string & baseFileName, const Config & info)
+AttributeFactory::createSingleFastSearch(stringref name, const Config & info)
 {
     assert(info.collectionType().type() == attribute::CollectionType::SINGLE);
     assert(info.fastSearch());
@@ -34,25 +34,25 @@ AttributeFactory::createSingleFastSearch(const vespalib::string & baseFileName, 
     case BasicType::UINT4:
         break;
     case BasicType::INT8:
-        ret.reset(new INTPOSTING(int8_t)(baseFileName, info));
+        ret.reset(new INTPOSTING(int8_t)(name, info));
         break;
     case BasicType::INT16:
-        ret.reset(new INTPOSTING(int16_t)(baseFileName, info));
+        ret.reset(new INTPOSTING(int16_t)(name, info));
         break;
     case BasicType::INT32:
-        ret.reset(new INTPOSTING(int32_t)(baseFileName, info));
+        ret.reset(new INTPOSTING(int32_t)(name, info));
         break;
     case BasicType::INT64:
-        ret.reset(new INTPOSTING(int64_t)(baseFileName, info));
+        ret.reset(new INTPOSTING(int64_t)(name, info));
         break;
     case BasicType::FLOAT:
-        ret.reset(new FLOATPOSTING(float)(baseFileName, info));
+        ret.reset(new FLOATPOSTING(float)(name, info));
         break;
     case BasicType::DOUBLE:
-        ret.reset(new FLOATPOSTING(double)(baseFileName, info));
+        ret.reset(new FLOATPOSTING(double)(name, info));
         break;
     case BasicType::STRING:
-        ret.reset(new SingleValueStringPostingAttribute(baseFileName, info));
+        ret.reset(new SingleValueStringPostingAttribute(name, info));
         break;
     default:
         break;

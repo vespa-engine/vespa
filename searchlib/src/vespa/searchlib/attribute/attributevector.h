@@ -121,6 +121,7 @@ protected:
     using QueryTermSimpleUP = std::unique_ptr<QueryTermSimple>;
     using QueryPacketT = vespalib::stringref;
     using LoadedBufferUP = std::unique_ptr<fileutil::LoadedBuffer>;
+    using stringref = vespalib::stringref;
 public:
     typedef std::shared_ptr<AttributeVector> SP;
     class BaseName : public vespalib::string
@@ -226,7 +227,7 @@ protected:
     private:
         AttributeVector * stealAttr() const {
             AttributeVector * ret(_attr);
-            _attr = NULL;
+            _attr = nullptr;
             return ret;
         }
 
@@ -237,8 +238,7 @@ protected:
     {
         std::unique_lock<std::shared_timed_mutex> _enumLock;
     public:
-        EnumModifier(std::shared_timed_mutex &lock,
-                     attribute::InterlockGuard &interlockGuard)
+        EnumModifier(std::shared_timed_mutex &lock, attribute::InterlockGuard &interlockGuard)
             : _enumLock(lock)
         {
             (void) interlockGuard;
@@ -557,8 +557,8 @@ public:
     };
 
     SearchContext::UP getSearch(QueryPacketT searchSpec, const attribute::SearchContextParams &params) const;
-    virtual attribute::ISearchContext::UP createSearchContext(QueryTermSimpleUP term,
-                                                              const attribute::SearchContextParams &params) const override;
+    attribute::ISearchContext::UP createSearchContext(QueryTermSimpleUP term,
+                                                      const attribute::SearchContextParams &params) const override;
     virtual SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams &params) const = 0;
     virtual const EnumStoreBase *getEnumStoreBase() const;
     virtual const attribute::MultiValueMappingBase *getMultiValueBase() const;
@@ -648,15 +648,15 @@ public:
     bool hasPostings();
     virtual uint64_t getUniqueValueCount() const;
     virtual uint64_t getTotalValueCount() const;
-    virtual void compactLidSpace(uint32_t wantedLidLimit) override;
+    void compactLidSpace(uint32_t wantedLidLimit) override;
     virtual void clearDocs(DocId lidLow, DocId lidLimit);
     bool wantShrinkLidSpace() const { return _committedDocIdLimit < getNumDocs(); }
-    virtual bool canShrinkLidSpace() const override;
-    virtual void shrinkLidSpace() override;
+    bool canShrinkLidSpace() const override;
+    void shrinkLidSpace() override;
     virtual void onShrinkLidSpace();
-    virtual size_t getEstimatedShrinkLidSpaceGain() const override;
+    size_t getEstimatedShrinkLidSpaceGain() const override;
 
-    virtual std::unique_ptr<attribute::AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
+    std::unique_ptr<attribute::AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
 
     void setInterlock(const std::shared_ptr<attribute::Interlock> &interlock);
 

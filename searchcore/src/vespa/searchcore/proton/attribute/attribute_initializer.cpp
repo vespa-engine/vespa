@@ -121,30 +121,21 @@ extractHeader(const vespalib::string &attrFileName)
 }
 
 void
-logAttributeTooNew(const AttributeVector::SP &attr,
-                   const AttributeHeader &header,
-                   uint64_t serialNum)
+logAttributeTooNew(const AttributeHeader &header, uint64_t serialNum)
 {
     LOG(info, "Attribute vector '%s' is too new (%" PRIu64 " > %" PRIu64 ")",
-        attr->getBaseFileName().c_str(),
-        header.getCreateSerialNum(),
-        serialNum);
+        header.getFileName().c_str(), header.getCreateSerialNum(), serialNum);
 }
 
 void
-logAttributeTooOld(const AttributeVector::SP &attr,
-                   search::SerialNum flushedSerialNum,
-                   uint64_t serialNum)
+logAttributeTooOld(const AttributeHeader &header, uint64_t flushedSerialNum, uint64_t serialNum)
 {
     LOG(info, "Attribute vector '%s' is too old (%" PRIu64 " < %" PRIu64 ")",
-        attr->getBaseFileName().c_str(),
-        flushedSerialNum,
-        serialNum);
+        header.getFileName().c_str(), flushedSerialNum, serialNum);
 }
 
 void
-logAttributeWrongType(const AttributeVector::SP &attr,
-                      const AttributeHeader &header)
+logAttributeWrongType(const AttributeVector::SP &attr, const AttributeHeader &header)
 {
     const Config &cfg(attr->getConfig());
     vespalib::string extraCfgType = extraType(cfg);
@@ -152,13 +143,8 @@ logAttributeWrongType(const AttributeVector::SP &attr,
     vespalib::string cfgCollStr = collectionTypeString(cfg.collectionType(), true);
     vespalib::string headerCollStr = collectionTypeString(header.getCollectionType(), header.getCollectionTypeParamsSet());
     LOG(info, "Attribute vector '%s' is of wrong type (expected %s/%s/%s, got %s/%s/%s)",
-            attr->getBaseFileName().c_str(),
-            cfg.basicType().asString(),
-            cfgCollStr.c_str(),
-            extraCfgType.c_str(),
-            header.getBasicType().asString(),
-            headerCollStr.c_str(),
-            extraHeaderType.c_str());
+        header.getFileName().c_str(), cfg.basicType().asString(), cfgCollStr.c_str(), extraCfgType.c_str(),
+        header.getBasicType().asString(), headerCollStr.c_str(), extraHeaderType.c_str());
 }
 
 }
@@ -206,21 +192,19 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
 }
 
 void
-AttributeInitializer::setupEmptyAttribute(AttributeVectorSP &attr,
-                                          search::SerialNum serialNum,
+AttributeInitializer::setupEmptyAttribute(AttributeVectorSP &attr, search::SerialNum serialNum,
                                           const AttributeHeader &header) const
 {
     if (header.getCreateSerialNum() > _currentSerialNum) {
-        logAttributeTooNew(attr, header, _currentSerialNum);
+        logAttributeTooNew(header, _currentSerialNum);
     }
     if (serialNum < _currentSerialNum) {
-        logAttributeTooOld(attr, serialNum, _currentSerialNum);
+        logAttributeTooOld(header, serialNum, _currentSerialNum);
     }
     if (!headerTypeOK(header, attr->getConfig())) {
         logAttributeWrongType(attr, header);
     }
-    LOG(info, "Returning empty attribute vector for '%s'",
-            attr->getBaseFileName().c_str());
+    LOG(info, "Returning empty attribute vector for '%s'", attr->getName().c_str());
     _factory.setupEmpty(attr, _currentSerialNum);
     attr->commit(serialNum, serialNum);
 }
@@ -228,8 +212,7 @@ AttributeInitializer::setupEmptyAttribute(AttributeVectorSP &attr,
 AttributeVector::SP
 AttributeInitializer::createAndSetupEmptyAttribute() const
 {
-    vespalib::string attrFileName = _attrDir->getAttributeFileName(0);
-    AttributeVector::SP attr = _factory.create(attrFileName, _spec.getConfig());
+    AttributeVector::SP attr = _factory.create(_attrDir->getAttrName(), _spec.getConfig());
     _factory.setupEmpty(attr, _currentSerialNum);
     return attr;
 }
@@ -247,7 +230,7 @@ AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirect
 {
 }
 
-AttributeInitializer::~AttributeInitializer() {}
+AttributeInitializer::~AttributeInitializer() = default;
 
 AttributeInitializerResult
 AttributeInitializer::init() const

@@ -301,10 +301,8 @@ DocumentMetaStore::onLoad()
 }
 
 bool
-DocumentMetaStore::checkBuckets(const GlobalId &gid,
-                                const BucketId &bucketId,
-                                const TreeType::Iterator &itr,
-                                bool found)
+DocumentMetaStore::checkBuckets(const GlobalId &gid, const BucketId &bucketId,
+                                const TreeType::Iterator &itr, bool found)
 {
     bool success = true;
 #if 0
@@ -394,8 +392,7 @@ DocumentMetaStore::updateMetaDataAndBucketDB(const GlobalId &gid,
 }
 
 
-namespace
-{
+namespace {
 
 void
 unloadBucket(BucketDBOwner &db, const BucketId &id, const BucketState &delta)

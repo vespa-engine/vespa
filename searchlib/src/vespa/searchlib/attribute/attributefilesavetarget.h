@@ -21,21 +21,20 @@ private:
 
 public:
     AttributeFileSaveTarget(const TuneFileAttributes &tuneFileAttributes,
-                            const search::common::FileHeaderContext &
-                            fileHeaderContext);
-    ~AttributeFileSaveTarget();
+                            const search::common::FileHeaderContext &fileHeaderContext);
+    ~AttributeFileSaveTarget() override;
 
     // Implements IAttributeSaveTarget
     /** Setups this saveTarget by opening the relevant files **/
-    virtual bool setup() override;
+    bool setup() override;
 
     /** Closes the files used **/
-    virtual void close() override;
+    void close() override;
 
-    virtual IAttributeFileWriter &datWriter() override;
-    virtual IAttributeFileWriter &idxWriter() override;
-    virtual IAttributeFileWriter &weightWriter() override;
-    virtual IAttributeFileWriter &udatWriter() override;
+    IAttributeFileWriter &datWriter() override;
+    IAttributeFileWriter &idxWriter() override;
+    IAttributeFileWriter &weightWriter() override;
+    IAttributeFileWriter &udatWriter() override;
 };
 
 } // namespace search

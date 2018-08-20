@@ -145,7 +145,7 @@ AttributeManager::internalAddAttribute(const AttributeSpec &spec,
 void
 AttributeManager::addAttribute(const AttributeWrap &attribute, const ShrinkerSP &shrinker)
 {
-    LOG(debug, "Adding attribute vector '%s'", attribute.getAttribute()->getBaseFileName().c_str());
+    LOG(debug, "Adding attribute vector '%s'", attribute.getAttribute()->getName().c_str());
     _attributes[attribute.getAttribute()->getName()] = attribute;
     assert(attribute.getAttribute()->getInterlock() == _interlock);
     if ( ! attribute.isExtra() ) {

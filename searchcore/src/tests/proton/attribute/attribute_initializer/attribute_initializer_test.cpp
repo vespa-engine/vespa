@@ -8,7 +8,6 @@
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/test/directory_handler.h>
-#include <vespa/vespalib/stllike/string.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_initializer_test");
@@ -88,7 +87,7 @@ Fixture::Fixture()
 {
 }
 
-Fixture::~Fixture() {}
+Fixture::~Fixture() = default;
 
 std::unique_ptr<AttributeInitializer>
 Fixture::createInitializer(const AttributeSpec &spec, SerialNum serialNum)

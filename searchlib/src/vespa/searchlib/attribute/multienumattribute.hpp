@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/multienumattribute.h>
-#include <vespa/searchlib/attribute/multivalueattribute.hpp>
+#include "multienumattribute.h"
+#include "multivalueattribute.hpp"
 #include "multienumattributesaver.h"
 #include "load_utils.h"
 
