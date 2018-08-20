@@ -84,7 +84,6 @@ public final class Path {
 
     /**
      * Get the name of this path element, typically the last element in the path string.
-     *
      * @return the name
      */
     public String getName() {

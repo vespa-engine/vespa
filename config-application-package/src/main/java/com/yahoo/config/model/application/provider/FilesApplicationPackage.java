@@ -45,7 +45,6 @@ import java.security.MessageDigest;
 import java.util.*;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -165,7 +164,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         return metaData;
     }
 
-    private List<NamedReader> getFiles(Path relativePath, String namePrefix, String suffix, boolean recurse) {
+    private List<NamedReader> getFiles(Path relativePath,String namePrefix,String suffix,boolean recurse) {
         try {
             List<NamedReader> readers=new ArrayList<>();
             File dir = new File(appDir, relativePath.getRelative());
