@@ -26,7 +26,7 @@
       "commit": "f00bad",
       "build": 123,
       "source": {
-        "platform": "1.2.3",
+        "platform": "1.2.2",
         "repository": "git@github.com:user/repo.git",
         "branch": "master",
         "commit": "badb17",

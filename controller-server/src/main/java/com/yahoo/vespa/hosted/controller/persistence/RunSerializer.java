@@ -111,10 +111,10 @@ class RunSerializer {
                 ? Optional.of(Version.fromString(versionsObject.field(sourceField).field(platformVersionField).asString()))
                 : Optional.empty();
         Optional<ApplicationVersion> sourceApplicationVersion = versionsObject.field(sourceField).valid()
-                ? Optional.of(ApplicationVersion.from(new SourceRevision(versionsObject.field(repositoryField).asString(),
-                                                                         versionsObject.field(branchField).asString(),
-                                                                         versionsObject.field(commitField).asString()),
-                                                      versionsObject.field(buildField).asLong()))
+                ? Optional.of(ApplicationVersion.from(new SourceRevision(versionsObject.field(sourceField).field(repositoryField).asString(),
+                                                                         versionsObject.field(sourceField).field(branchField).asString(),
+                                                                         versionsObject.field(sourceField).field(commitField).asString()),
+                                                      versionsObject.field(sourceField).field(buildField).asLong()))
                 : Optional.empty();
 
         return new Versions(targetPlatformVersion, targetApplicationVersion, sourcePlatformVersion, sourceApplicationVersion);
