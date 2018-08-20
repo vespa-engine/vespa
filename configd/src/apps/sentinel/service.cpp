@@ -336,7 +336,6 @@ Service::youExited(int status)
         LOG(debug, "%s: Has autorestart flag, restarting.", name().c_str());
         setState(READY);
         _metrics.totalRestartsCounter++;
-        _metrics.totalRestartsLastPeriod++;
         _metrics.sentinel_restarts.add();
         start();
     }

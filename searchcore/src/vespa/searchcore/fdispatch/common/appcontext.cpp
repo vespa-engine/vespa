@@ -28,52 +28,37 @@ FastS_AppContext::FastS_AppContext()
     _createTime = _timeKeeper.GetTime();
 }
 
-
-FastS_AppContext::~FastS_AppContext()
-{
-}
-
+FastS_AppContext::~FastS_AppContext() = default;
 
 FNET_Transport *
 FastS_AppContext::GetFNETTransport()
 {
-    return NULL;
+    return nullptr;
 }
-
 
 FNET_Scheduler *
 FastS_AppContext::GetFNETScheduler()
 {
-    return NULL;
+    return nullptr;
 }
-
 
 FastS_NodeManager *
 FastS_AppContext::GetNodeManager()
 {
-    return NULL;
+    return nullptr;
 }
-
 
 FastS_DataSetCollection *
 FastS_AppContext::GetDataSetCollection()
 {
-    return NULL;
+    return nullptr;
 }
-
 
 FastOS_ThreadPool *
 FastS_AppContext::GetThreadPool()
 {
-    return NULL;
+    return nullptr;
 }
-
-
-void
-FastS_AppContext::logPerformance()
-{
-}
-
 
 uint32_t
 FastS_AppContext::getDispatchLevel()

@@ -67,7 +67,6 @@ private:
     void finiSession(FRT_RPCRequest *req);
     void downSession(FRT_RPCRequest *req);
 
-    void logMetric() const;
     std::vector<vespalib::string> getDomainNames();
     Domain::SP findDomain(vespalib::stringref name);
     vespalib::string dir()        const { return _baseDir + "/" + _name; }

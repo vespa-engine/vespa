@@ -88,7 +88,6 @@ FastS_NodeManager::FastS_NodeManager(vespalib::SimpleComponentConfigProducer &co
       _mldDocStamp(0),
       _mldDocStampMin(0),
       _gencnt(0),
-      _queryPerf(),
       _fetcher(),
       _configUri(config::ConfigUri::createEmpty()),
       _lastPartMap(NULL),
@@ -388,24 +387,6 @@ FastS_NodeManager::getChildInfo()
     dsc->subRef();
     return r;
 }
-
-
-void
-FastS_NodeManager::logPerformance(vespalib::Executor &executor)
-{
-    _queryPerf.reset();
-    FastS_DataSetCollection *dsc = GetDataSetCollection();
-
-    for (unsigned int i = 0; i < dsc->GetMaxNumDataSets(); i++) {
-        if (dsc->PeekDataSet(i) != NULL) {
-            dsc->PeekDataSet(i)->addPerformance(_queryPerf);
-        }
-    }
-
-    dsc->subRef();
-    executor.execute(_queryPerf.make_log_task());
-}
-
 
 void
 FastS_NodeManager::CheckEvents(FastS_TimeKeeper *timeKeeper)

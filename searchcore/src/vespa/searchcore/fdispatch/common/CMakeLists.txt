@@ -2,8 +2,6 @@
 vespa_add_library(searchcore_fdcommon STATIC
     SOURCES
     appcontext.cpp
-    perftask.cpp
-    queryperf.cpp
     rpc.cpp
     search.cpp
     timestat.cpp

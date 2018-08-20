@@ -389,13 +389,6 @@ Fdispatch::Init()
     return true;
 }
 
-
-void
-Fdispatch::logPerformance()
-{
-    _nodeManager->logPerformance(_executor);
-}
-
 uint32_t
 Fdispatch::getDispatchLevel()
 {
