@@ -31,7 +31,7 @@ public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTrans
     private final OnnxImporter onnxImporter = new OnnxImporter();
 
     /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
-    private final Map<Path, ImportedModel> importedModels = new HashMap<>();
+    private final Map<Path, ConvertedModel> convertedModels = new HashMap<>();
 
     @Override
     public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
@@ -47,9 +47,9 @@ public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTrans
         if ( ! feature.getName().equals("onnx")) return feature;
 
         try {
-            ConvertedModel convertedModel = new ConvertedModel(asFeatureArguments(feature.getArguments()),
-                                                               context, onnxImporter, importedModels);
-            return convertedModel.expression();
+            Path modelPath = Path.fromString(ConvertedModel.FeatureArguments.asString(feature.getArguments().expressions().get(0)));
+            ConvertedModel convertedModel = convertedModels.computeIfAbsent(modelPath, path -> new ConvertedModel(path, context, onnxImporter, new ConvertedModel.FeatureArguments(feature.getArguments())));
+            return convertedModel.expression(asFeatureArguments(feature.getArguments()));
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use Onnx model from " + feature, e);
