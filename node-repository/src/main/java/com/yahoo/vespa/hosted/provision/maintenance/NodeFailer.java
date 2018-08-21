@@ -22,7 +22,6 @@ import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,11 +93,12 @@ public class NodeFailer extends Maintainer {
         }
 
         // Active nodes
-        for (Node node : determineActiveNodeDownStatus()) {
-            Instant graceTimeEnd = clock.instant().minus(downTimeLimit);
-            if (node.history().hasEventBefore(History.Event.Type.down, graceTimeEnd) && ! applicationSuspended(node) && failAllowedFor(node.type()))
-                if (!throttle(node)) failActive(node, "Node has been down longer than " + downTimeLimit);
-        }
+        updateNodeDownState();
+        getActiveNodesByFailureReason().forEach((node, reason) -> {
+            if (failAllowedFor(node.type()) && !throttle(node)) {
+                failActive(node, reason);
+            }
+        });
     }
 
     private void updateNodeLivenessEventsForReadyNodes() {
@@ -134,6 +134,38 @@ public class NodeFailer extends Maintainer {
                 nodesByFailureReason.put(node, "Node has hardware failure");
             } else if (node.status().hardwareDivergence().isPresent()) {
                 nodesByFailureReason.put(node, "Node has hardware divergence");
+            }
+        }
+        return nodesByFailureReason;
+    }
+
+    /**
+     * If the node is down (see {@link #badNode}), and there is no "down" history record, we add it.
+     * Otherwise we remove any "down" history record.
+     */
+    private void updateNodeDownState() {
+        Map<String, Node> activeNodesByHostname = nodeRepository().getNodes(Node.State.active).stream()
+                .collect(Collectors.toMap(Node::hostname, node -> node));
+
+        serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName()
+                .forEach((hostName, serviceInstances) -> {
+                    Node node = activeNodesByHostname.get(hostName.s());
+                    if (node == null) return;
+
+                    if (badNode(serviceInstances)) {
+                        recordAsDown(node);
+                    } else {
+                        clearDownRecord(node);
+                    }
+                });
+    }
+
+    private Map<Node, String> getActiveNodesByFailureReason() {
+        Instant graceTimeEnd = clock.instant().minus(downTimeLimit);
+        Map<Node, String> nodesByFailureReason = new HashMap<>();
+        for (Node node : nodeRepository().getNodes(Node.State.active)) {
+            if (node.history().hasEventBefore(History.Event.Type.down, graceTimeEnd) && ! applicationSuspended(node)) {
+                nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
             }
         }
         return nodesByFailureReason;
@@ -186,31 +218,6 @@ public class NodeFailer extends Maintainer {
 
         return countsByStatus.getOrDefault(ServiceStatus.UP, 0L) <= 0L &&
                 countsByStatus.getOrDefault(ServiceStatus.DOWN, 0L) > 0L;
-    }
-
-    /**
-     * If the node is down (see badNode()), and there is no "down" history record, we add it.
-     * Otherwise we remove any "down" history record.
-     *
-     * @return a list of all nodes that should be considered as down
-     */
-    private List<Node> determineActiveNodeDownStatus() {
-        List<Node> downNodes = new ArrayList<>();
-        serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName()
-                .entrySet().stream().forEach(
-                        entry -> {
-                            Optional<Node> node = nodeRepository().getNode(entry.getKey().s(), Node.State.active);
-                            if (node.isPresent()) {
-                                if (badNode(entry.getValue())) {
-                                    downNodes.add(recordAsDown(node.get()));
-                                } else {
-                                    clearDownRecord(node.get());
-                                }
-                            }
-                        }
-        );
-
-        return downNodes;
     }
 
     /**
