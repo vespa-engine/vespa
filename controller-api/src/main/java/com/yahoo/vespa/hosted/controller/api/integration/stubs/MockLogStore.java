@@ -13,21 +13,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MockLogStore implements LogStore {
 
-    private final Map<RunId, Map<String, byte[]>> logs = new ConcurrentHashMap<>();
+    private final Map<RunId, byte[]> logs = new ConcurrentHashMap<>();
 
     @Override
-    public byte[] get(RunId id, String step) {
-        return logs.getOrDefault(id, Collections.emptyMap()).getOrDefault(step, new byte[0]);
+    public byte[] get(RunId id) {
+        return logs.getOrDefault(id, new byte[0]);
     }
 
     @Override
-    public void append(RunId id, String step, byte[] log) {
-        logs.putIfAbsent(id, new ConcurrentHashMap<>());
-        byte[] old = get(id, step);
-        byte[] union = new byte[old.length + log.length];
-        System.arraycopy(old, 0, union, 0, old.length);
-        System.arraycopy(log, 0, union, old.length, log.length);
-        logs.get(id).put(step, union);
+    public void put(RunId id, byte[] log) {
+        logs.put(id, log);
     }
 
     @Override
