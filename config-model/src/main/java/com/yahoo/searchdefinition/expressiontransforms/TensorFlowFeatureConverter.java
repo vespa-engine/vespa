@@ -2,10 +2,6 @@
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.path.Path;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.searchdefinition.RankProfile;
-import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
-import com.yahoo.searchlib.rankingexpression.integration.ml.OnnxImporter;
 import com.yahoo.searchlib.rankingexpression.integration.ml.TensorFlowImporter;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
@@ -14,8 +10,6 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
 import java.io.UncheckedIOException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Replaces instances of the tensorflow(model-path, signature, output)
