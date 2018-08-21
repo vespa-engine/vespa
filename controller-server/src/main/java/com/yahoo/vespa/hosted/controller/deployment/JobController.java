@@ -6,7 +6,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.LogStore;
+import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -51,12 +51,12 @@ public class JobController {
 
     private final Controller controller;
     private final CuratorDb curator;
-    private final LogStore logs;
+    private final RunDataStore logs;
 
-    public JobController(Controller controller, LogStore logStore) {
+    public JobController(Controller controller, RunDataStore runDataStore) {
         this.controller = controller;
         this.curator = controller.curator();
-        this.logs = logStore;
+        this.logs = runDataStore;
 
     }
 

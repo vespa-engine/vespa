@@ -7,7 +7,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockLogStore;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
@@ -90,7 +90,7 @@ public class JobControllerApiHandlerHelperTest {
     @Test
     public void runDetailsResponse() {
         ControllerTester tester = new ControllerTester();
-        MockLogStore logStore = new MockLogStore();
+        MockRunDataStore logStore = new MockRunDataStore();
         JobController jobController = new JobController(tester.controller(), logStore);
         RunId runId = new RunId(appId, JobType.systemTest, 42);
         tester.curator().writeHistoricRuns(
@@ -112,7 +112,7 @@ public class JobControllerApiHandlerHelperTest {
         tester.createTenant("tenant", "domain", 1L);
         tester.createApplication(TenantName.from("tenant"), "application", "default", 1L);
 
-        JobController jobController = new JobController(tester.controller(), new MockLogStore());
+        JobController jobController = new JobController(tester.controller(), new MockRunDataStore());
 
         HttpResponse response = JobControllerApiHandlerHelper.submitResponse(
                 jobController, "tenant", "application", new SourceRevision("repository", "branch", "commit"), new byte[0], new byte[0]);

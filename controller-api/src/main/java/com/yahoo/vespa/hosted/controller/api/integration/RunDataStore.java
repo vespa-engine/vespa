@@ -5,7 +5,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 /**
  * @author jonmv
  */
-public interface LogStore {
+public interface RunDataStore {
 
     /** Returns the log of the given deployment job, or an empty byte array if non-existent. */
     byte[] get(RunId id);

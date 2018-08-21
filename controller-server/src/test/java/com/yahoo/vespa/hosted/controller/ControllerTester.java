@@ -26,7 +26,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrgani
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockLogStore;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
@@ -301,7 +301,7 @@ public final class ControllerTester {
                                                artifactRepository,
                                                applicationStore,
                                                buildService,
-                                               new MockLogStore(),
+                                               new MockRunDataStore(),
                                                () -> "test-controller");
         // Calculate initial versions
         controller.updateVersionStatus(VersionStatus.compute(controller));
