@@ -1,12 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.component.ComponentId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
@@ -29,11 +26,17 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     private final Duration maintenanceInterval;
     private final JobControl jobControl;
     private final ScheduledExecutorService service;
+    private final String name;
 
     public Maintainer(Controller controller, Duration interval, JobControl jobControl) {
+        this(controller, interval, jobControl, null);
+    }
+
+    public Maintainer(Controller controller, Duration interval, JobControl jobControl, String name) {
         this.controller = controller;
         this.maintenanceInterval = interval;
         this.jobControl = jobControl;
+        this.name = name;
 
         service = new ScheduledThreadPoolExecutor(1);
         service.scheduleAtFixedRate(this, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
@@ -69,7 +72,9 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
 
     public Duration maintenanceInterval() { return maintenanceInterval; }
     
-    public String name() { return this.getClass().getSimpleName(); }
+    public final String name() {
+        return name == null ? this.getClass().getSimpleName() : name;
+    }
     
     /** Returns the name of this */
     @Override

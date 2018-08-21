@@ -26,7 +26,7 @@ public class SystemUpgrader extends InfrastructureUpgrader {
     private static final Set<Node.State> upgradableNodeStates = ImmutableSet.of(Node.State.active, Node.State.reserved);
 
     public SystemUpgrader(Controller controller, Duration interval, JobControl jobControl) {
-        super(controller, interval, jobControl, controller.zoneRegistry().upgradePolicy());
+        super(controller, interval, jobControl, controller.zoneRegistry().upgradePolicy(), null);
     }
 
     @Override
@@ -44,7 +44,7 @@ public class SystemUpgrader extends InfrastructureUpgrader {
     }
 
     @Override
-    protected boolean requireUpgradeOf(Node node, SystemApplication application) {
+    protected boolean requireUpgradeOf(Node node, SystemApplication application, ZoneId zone) {
         return eligibleForUpgrade(node);
     }
 

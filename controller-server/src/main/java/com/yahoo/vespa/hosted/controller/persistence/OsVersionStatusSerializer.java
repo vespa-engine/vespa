@@ -15,6 +15,9 @@ import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 
 /**
  * Serializer for OS version status.
@@ -30,11 +33,21 @@ public class OsVersionStatusSerializer {
     private static final String regionField = "region";
     private static final String environmentField = "environment";
 
+    private final OsVersionSerializer osVersionSerializer;
+
+    public OsVersionStatusSerializer(OsVersionSerializer osVersionSerializer) {
+        this.osVersionSerializer = Objects.requireNonNull(osVersionSerializer, "osVersionSerializer must be non-null");
+    }
+
     public Slime toSlime(OsVersionStatus status) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         Cursor versions = root.setArray(versionsField);
-        status.versions().forEach(version -> osVersionToSlime(version, versions.addObject()));
+        status.versions().forEach((version, nodes) -> {
+            Cursor object = versions.addObject();
+            osVersionSerializer.toSlime(version, object);
+            nodesToSlime(nodes, object.setArray(nodesField));
+        });
         return slime;
     }
 
@@ -42,43 +55,35 @@ public class OsVersionStatusSerializer {
         return new OsVersionStatus(osVersionsFromSlime(slime.get().field(versionsField)));
     }
 
-    private void osVersionToSlime(OsVersion version, Cursor object) {
-        object.setString(versionField, version.version().toFullString());
-        nodesToSlime(version.nodes(), object.setArray(nodesField));
-    }
-
-    private void nodesToSlime(List<OsVersion.Node> nodes, Cursor array) {
+    private void nodesToSlime(List<OsVersionStatus.Node> nodes, Cursor array) {
         nodes.forEach(node -> nodeToSlime(node, array.addObject()));
     }
 
-    private void nodeToSlime(OsVersion.Node node, Cursor object) {
+    private void nodeToSlime(OsVersionStatus.Node node, Cursor object) {
         object.setString(hostnameField, node.hostname().value());
         object.setString(versionField, node.version().toFullString());
         object.setString(regionField, node.region().value());
         object.setString(environmentField, node.environment().value());
     }
 
-    private List<OsVersion> osVersionsFromSlime(Inspector array) {
-        List<OsVersion> versions = new ArrayList<>();
-        array.traverse((ArrayTraverser) (i, object) -> versions.add(osVersionFromSlime(object)));
-        return Collections.unmodifiableList(versions);
+    private Map<OsVersion, List<OsVersionStatus.Node>> osVersionsFromSlime(Inspector array) {
+        Map<OsVersion, List<OsVersionStatus.Node>> versions = new TreeMap<>();
+        array.traverse((ArrayTraverser) (i, object) -> {
+            OsVersion osVersion = osVersionSerializer.fromSlime(object);
+            List<OsVersionStatus.Node> nodes = nodesFromSlime(object.field(nodesField));
+            versions.put(osVersion, nodes);
+        });
+        return Collections.unmodifiableMap(versions);
     }
 
-    private OsVersion osVersionFromSlime(Inspector object) {
-        return new OsVersion(
-                Version.fromString(object.field(versionField).asString()),
-                nodesFromSlime(object.field(nodesField))
-        );
-    }
-
-    private List<OsVersion.Node> nodesFromSlime(Inspector array) {
-        List<OsVersion.Node> nodes = new ArrayList<>();
+    private List<OsVersionStatus.Node> nodesFromSlime(Inspector array) {
+        List<OsVersionStatus.Node> nodes = new ArrayList<>();
         array.traverse((ArrayTraverser) (i, object) -> nodes.add(nodeFromSlime(object)));
         return Collections.unmodifiableList(nodes);
     }
 
-    private OsVersion.Node nodeFromSlime(Inspector object) {
-        return new OsVersion.Node(
+    private OsVersionStatus.Node nodeFromSlime(Inspector object) {
+        return new OsVersionStatus.Node(
                 HostName.from(object.field(hostnameField).asString()),
                 Version.fromString(object.field(versionField).asString()),
                 Environment.from(object.field(environmentField).asString()),

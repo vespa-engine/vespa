@@ -10,11 +10,15 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Maintenance jobs of the controller.
@@ -40,7 +44,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ApplicationOwnershipConfirmer applicationOwnershipConfirmer;
     private final DnsMaintainer dnsMaintainer;
     private final SystemUpgrader systemUpgrader;
-    private final OsUpgrader osUpgrader;
+    private final List<OsUpgrader> osUpgraders;
     private final OsVersionStatusUpdater osVersionStatusUpdater;
     private final JobRunner jobRunner;
 
@@ -65,7 +69,7 @@ public class ControllerMaintenance extends AbstractComponent {
         dnsMaintainer = new DnsMaintainer(controller, Duration.ofHours(12), jobControl, nameService);
         systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1), jobControl);
         jobRunner = new JobRunner(controller, Duration.ofSeconds(30), jobControl, new InternalStepRunner(controller, testerCloud));
-        osUpgrader = new OsUpgrader(controller, Duration.ofMinutes(1), jobControl);
+        osUpgraders = osUpgraders(controller, jobControl);
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
     }
 
@@ -89,9 +93,19 @@ public class ControllerMaintenance extends AbstractComponent {
         applicationOwnershipConfirmer.deconstruct();
         dnsMaintainer.deconstruct();
         systemUpgrader.deconstruct();
-        osUpgrader.deconstruct();
+        osUpgraders.forEach(Maintainer::deconstruct);
         osVersionStatusUpdater.deconstruct();
         jobRunner.deconstruct();
+    }
+
+    /** Create one OS upgrader per cloud found in the zone registry of controller */
+    private static List<OsUpgrader> osUpgraders(Controller controller, JobControl jobControl) {
+        return controller.zoneRegistry().zones().controllerUpgraded().ids().stream()
+                         .map(ZoneId::cloud)
+                         .distinct()
+                         .sorted()
+                         .map(cloud -> new OsUpgrader(controller, Duration.ofMinutes(1), jobControl, cloud))
+                         .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
 }

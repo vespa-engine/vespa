@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
+import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -71,7 +72,8 @@ public class CuratorDb {
     private final TenantSerializer tenantSerializer = new TenantSerializer();
     private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
-    private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer();
+    private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
+    private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
 
     private final Curator curator;
 
@@ -151,7 +153,7 @@ public class CuratorDb {
         return lock(lockRoot.append("openStackServerPoolLock"), Duration.ofSeconds(1));
     }
 
-    public Lock lockOsTargetVersion() {
+    public Lock lockOsVersions() {
         return lock(lockRoot.append("osTargetVersion"), defaultLockTimeout);
     }
 
@@ -247,12 +249,12 @@ public class CuratorDb {
 
     // Infrastructure upgrades
 
-    public void writeOsTargetVersion(Version version) {
-        curator.set(osTargetVersionPath(), asJson(versionSerializer.toSlime(version)));
+    public void writeOsVersions(Set<OsVersion> versions) {
+        curator.set(osTargetVersionPath(), asJson(osVersionSerializer.toSlime(versions)));
     }
 
-    public Optional<Version> readOsTargetVersion() {
-        return readSlime(osTargetVersionPath()).map(versionSerializer::fromSlime);
+    public Set<OsVersion> readOsVersions() {
+        return readSlime(osTargetVersionPath()).map(osVersionSerializer::fromSlime).orElseGet(Collections::emptySet);
     }
 
     public void writeOsVersionStatus(OsVersionStatus status) {

@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * This represents a system-level application in hosted Vespa. E.g. the zone-application.
@@ -59,7 +60,7 @@ public enum SystemApplication {
 
     /** Returns whether this system application has an application package */
     public boolean hasApplicationPackage() {
-        return nodeTypes.contains(NodeType.proxy);
+        return this == zone;
     }
 
     /** Returns whether config for this application has converged in given zone */
@@ -78,11 +79,7 @@ public enum SystemApplication {
 
     /** Returns the node types of this that should receive OS upgrades */
     public Set<NodeType> nodeTypesWithUpgradableOs() {
-        // TODO: Change this to include all node types that are Docker hosts
-        if (this != zone) {
-            return Collections.emptySet();
-        }
-        return Collections.singleton(NodeType.host);
+        return nodeTypes().stream().filter(NodeType::isDockerHost).collect(Collectors.toSet());
     }
 
     /** All known system applications */

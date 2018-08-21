@@ -21,9 +21,9 @@ public class ZoneId {
     private final CloudName cloud;
 
     private ZoneId(Environment environment, RegionName region, CloudName cloud) {
-        this.environment = Objects.requireNonNull(environment);
-        this.region = Objects.requireNonNull(region);
-        this.cloud = cloud;
+        this.environment = Objects.requireNonNull(environment, "environment must be non-null");
+        this.region = Objects.requireNonNull(region, "region must be non-null");
+        this.cloud = Objects.requireNonNull(cloud, "cloud must be non-null");
     }
 
     private ZoneId(Environment environment, RegionName region) {
@@ -80,13 +80,12 @@ public class ZoneId {
         if (o == null || getClass() != o.getClass()) return false;
         ZoneId zoneId = (ZoneId) o;
         return environment == zoneId.environment &&
-               Objects.equals(region, zoneId.region) &&
-               Objects.equals(cloud, zoneId.cloud);
+               Objects.equals(region, zoneId.region);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(environment, region, cloud);
+        return Objects.hash(environment, region);
     }
 
 }
