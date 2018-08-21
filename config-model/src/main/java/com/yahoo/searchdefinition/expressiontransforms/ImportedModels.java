@@ -29,8 +29,7 @@ class ImportedModels {
      * @throws IllegalArgumentException if the model cannot be loaded
      */
     public ImportedModel imported(String modelName, File modelDir) {
-        return modelImporter.importModel(modelName, modelDir);
-        // return importedModels.computeIfAbsent(modelName, __ -> modelImporter.importModel(modelName, modelDir)); // TODO
+        return importedModels.computeIfAbsent(modelName, __ -> modelImporter.importModel(modelName, modelDir));
     }
 
 }

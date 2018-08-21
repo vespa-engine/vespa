@@ -70,7 +70,10 @@ public class ImportedModel {
      */
     public Map<String, RankingExpression> expressions() { return Collections.unmodifiableMap(expressions); }
 
-    /** Returns an immutable map of macros that are part of this model */
+    /**
+     * Returns an immutable map of macros that are part of this model.
+     * Note that the macros themselves are *not* copies and *not* immutable - they must be copied before modification.
+     */
     public Map<String, RankingExpression> macros() { return Collections.unmodifiableMap(macros); }
 
     /** Returns an immutable map of the macros that must be provided by the environment running this model */

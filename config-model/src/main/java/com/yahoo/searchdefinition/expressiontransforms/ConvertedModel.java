@@ -189,7 +189,10 @@ public class ConvertedModel {
         }
 
         // Transform and save macro - must come after reading expressions due to optimization transforms
-        model.macros().forEach((k, v) -> transformGeneratedMacro(store, constantsReplacedByMacros, k, v));
+        // and must use the macro expression added to the profile, which may differ from the one saved in the model,
+        // after rewrite
+        model.macros().forEach((k, v) -> transformGeneratedMacro(store, constantsReplacedByMacros, k,
+                                                                 profile.getMacros().get(k).getRankingExpression()));
 
         return expressions;
     }
@@ -259,7 +262,8 @@ public class ConvertedModel {
 
     private void transformGeneratedMacro(ModelStore store,
                                          Set<String> constantsReplacedByMacros,
-                                         String macroName, RankingExpression expression) {
+                                         String macroName,
+                                         RankingExpression expression) {
 
         expression = replaceConstantsByMacros(expression, constantsReplacedByMacros);
         store.writeMacro(macroName, expression);
@@ -322,7 +326,7 @@ public class ConvertedModel {
      * Add the generated macros to the rank profile
      */
     private void addGeneratedMacros(ImportedModel model, RankProfile profile) {
-        model.macros().forEach((k, v) -> addGeneratedMacroToProfile(profile, k, v));
+        model.macros().forEach((k, v) -> addGeneratedMacroToProfile(profile, k, v.copy()));
     }
 
     /**
@@ -339,9 +343,8 @@ public class ConvertedModel {
         Set<String> macroNames = new HashSet<>();
         addMacroNamesIn(expression.getRoot(), macroNames, model);
         for (String macroName : macroNames) {
-            if ( ! model.macros().containsKey(macroName)) {
-                continue;
-            }
+            if ( ! model.macros().containsKey(macroName)) continue;
+
             RankProfile.Macro macro = profile.getMacros().get(macroName);
             if (macro == null) {
                 throw new IllegalArgumentException("Model refers to generated macro '" + macroName +
