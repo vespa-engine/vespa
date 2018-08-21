@@ -67,7 +67,7 @@ public class Model implements Cloneable {
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     /** The name of the query property used for generating hit count estimate queries. */
-    public static final CompoundName ESTIMATE = new CompoundName("hitcountestimate");
+    public static final CompoundName ESTIMATE = new CompoundName("hitcountestimate"); // TODO:Cleanup
 
     private String encoding = null;
     private String queryString = "";
