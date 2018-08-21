@@ -291,6 +291,34 @@ public class InternalStepRunnerTest {
     }
 
     @Test
+    public void installationFailsIfDeploymentExpires() {
+        newRun(JobType.systemTest);
+        runner.run();
+        tester.configServer().convergeServices(appId, JobType.systemTest.zone(tester.controller().system()));
+        runner.run();
+        assertEquals(succeeded, jobs.last(appId, JobType.systemTest).get().steps().get(Step.installReal));
+
+        tester.applications().deactivate(appId, JobType.systemTest.zone(tester.controller().system()));
+        runner.run();
+        assertEquals(failed, jobs.last(appId, JobType.systemTest).get().steps().get(Step.installTester));
+        assertTrue(jobs.last(appId, JobType.systemTest).get().hasEnded());
+        assertTrue(jobs.last(appId, JobType.systemTest).get().hasFailed());
+    }
+
+    @Test
+    public void startTestsFailsIfDeploymentExpires() {
+        newRun(JobType.systemTest);
+        runner.run();
+        tester.configServer().convergeServices(appId, JobType.systemTest.zone(tester.controller().system()));
+        tester.configServer().convergeServices(testerOf(appId), JobType.systemTest.zone(tester.controller().system()));
+        runner.run();
+
+        tester.applications().deactivate(appId, JobType.systemTest.zone(tester.controller().system()));
+        runner.run();
+        assertEquals(failed, jobs.last(appId, JobType.systemTest).get().steps().get(Step.startTests));
+    }
+
+    @Test
     public void testsFailIfEndpointsAreGone() {
         RunId id = startSystemTestTests();
         cloud.set(new byte[0], TesterCloud.Status.NOT_STARTED);
