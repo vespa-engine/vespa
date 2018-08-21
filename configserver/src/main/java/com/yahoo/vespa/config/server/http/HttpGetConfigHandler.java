@@ -46,4 +46,5 @@ public class HttpGetConfigHandler extends HttpHandler {
         if (config == null) HttpConfigRequest.throwModelNotReady();
         return config;
     }
+
 }
