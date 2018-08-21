@@ -40,7 +40,7 @@ public enum Step {
     deployTester,
 
     /** See that tester is done deploying, and is ready to serve. */
-    installTester(deployTester),
+    installTester(deployReal, deployTester),
 
     /** Ask the tester to run its tests. */
     startTests(installReal, installTester),

@@ -51,6 +51,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Con
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.APPLICATION_LOCK_FAILURE;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.OUT_OF_CAPACITY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
+import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.failed;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
@@ -227,6 +228,11 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> installReal(RunId id, boolean setTheStage, ByteArrayLogger logger) {
+        if (expired(id.application(), id.type())) {
+            logger.log(INFO, "Deployment expired before installation was successful.");
+            return Optional.of(installationFailed);
+        }
+
         Versions versions = controller.jobController().run(id).get().versions();
         Version platform = setTheStage ? versions.sourcePlatform().orElse(versions.targetPlatform()) : versions.targetPlatform();
         ApplicationVersion application = setTheStage ? versions.sourceApplication().orElse(versions.targetApplication()) : versions.targetApplication();
@@ -248,6 +254,10 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> installTester(RunId id, ByteArrayLogger logger) {
         logger.log("Checking installation of tester container ...");
+        if (expired(id.application(), id.type())) {
+            logger.log(INFO, "Deployment expired before tester was installed.");
+            return Optional.of(installationFailed);
+        }
 
         if (servicesConverged(testerOf(id.application()), id.type())) {
             logger.log("Tester container successfully installed!");
@@ -289,6 +299,11 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> startTests(RunId id, ByteArrayLogger logger) {
         logger.log("Attempting to find endpoints ...");
+        if (expired(id.application(), id.type())) {
+            logger.log(INFO, "Deployment expired before tests could start.");
+            return Optional.of(installationFailed);
+        }
+
         Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id.application());
         logger.log("Found endpoints:\n" +
                          endpoints.entrySet().stream()
@@ -376,6 +391,11 @@ public class InternalStepRunner implements StepRunner {
     /** Returns whether the time elapsed since the last real deployment in the given zone is more than the given timeout. */
     private boolean timedOut(ApplicationId id, JobType type, Duration timeout) {
         return application(id).deployments().get(type.zone(controller.system())).at().isBefore(controller.clock().instant().minus(timeout));
+    }
+
+    /** Returns whether the real deployment for the given job type has expired, i.e., no longer exists. */
+    private boolean expired(ApplicationId id, JobType type) {
+        return ! application(id).deployments().containsKey(type.zone(controller.system()));
     }
 
     /** Returns a generated job report for the given run. */
