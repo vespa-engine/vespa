@@ -697,16 +697,22 @@ public class ConvertedModel {
         /** Returns relative path to this model below the "models/" dir in the application package */
         public Path modelPath() { return modelPath; }
 
-        public Path storedModelPath() {
+        /** Files stored below this path will be replicated in zookeeper */
+        public Path storedModelReplicatedPath() {
             return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR.append(modelPath());
         }
 
+        /** Files stored below this path will not be replicated */
+        public Path storedModelPath() {
+            return ApplicationPackage.MODELS_GENERATED_DIR.append(modelPath());
+        }
+
         public Path expressionPath(String name) {
-            return storedModelPath().append("expressions").append(name);
+            return expressionsPath().append(name);
         }
 
         public Path expressionsPath() {
-            return storedModelPath().append("expressions");
+            return storedModelReplicatedPath().append("expressions");
         }
 
         public Path smallConstantsPath() {
@@ -715,12 +721,12 @@ public class ConvertedModel {
 
         /** Path to the large (ranking) constants directory */
         public Path largeConstantsPath() {
-            return storedModelPath().append("constants");
+            return storedModelReplicatedPath().append("constants");
         }
 
         /** Path to the macros file */
         public Path macrosPath() {
-            return storedModelPath().append("macros.txt");
+            return storedModelReplicatedPath().append("macros.txt");
         }
 
     }
