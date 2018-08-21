@@ -6,6 +6,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -93,8 +94,13 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public UpgradePolicy osUpgradePolicy() {
-        return upgradePolicy;
+    public UpgradePolicy osUpgradePolicy(CloudName cloud) {
+        return upgradePolicy();
+    }
+
+    @Override
+    public List<UpgradePolicy> osUpgradePolicies() {
+        return Collections.singletonList(upgradePolicy());
     }
 
     @Override
