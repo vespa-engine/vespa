@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
@@ -28,6 +30,12 @@ public class OsVersionStatusUpdaterTest {
         ControllerTester tester = new ControllerTester();
         OsVersionStatusUpdater statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1),
                                                                           new JobControl(new MockCuratorDb()));
+        // Add all zones to upgrade policy
+        UpgradePolicy upgradePolicy = UpgradePolicy.create();
+        for (ZoneId zone : tester.zoneRegistry().zones().controllerUpgraded().ids()) {
+            upgradePolicy = upgradePolicy.upgrade(zone);
+        }
+        tester.zoneRegistry().setUpgradePolicy(upgradePolicy);
 
         // Initially empty
         assertSame(OsVersionStatus.empty, tester.controller().osVersionStatus());

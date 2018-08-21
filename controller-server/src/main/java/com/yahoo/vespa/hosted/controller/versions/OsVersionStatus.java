@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.maintenance.OsUpgrader;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -62,7 +63,7 @@ public class OsVersionStatus {
             if (application.nodeTypesWithUpgradableOs().isEmpty()) {
                 continue; // Avoid querying applications that do not contain nodes with upgradable OS
             }
-            for (ZoneId zone : controller.zoneRegistry().zones().controllerUpgraded().ids()) {
+            for (ZoneId zone : zonesToUpgrade(controller)) {
                 controller.configServer().nodeRepository().list(zone, application.id()).stream()
                           .filter(node -> OsUpgrader.eligibleForUpgrade(node, application))
                           .map(node -> new Node(node.hostname(), node.currentOsVersion(), zone.environment(), zone.region()))
@@ -77,6 +78,13 @@ public class OsVersionStatus {
         }
 
         return new OsVersionStatus(versions);
+    }
+
+    private static List<ZoneId> zonesToUpgrade(Controller controller) {
+        return controller.zoneRegistry().osUpgradePolicies().stream()
+                         .flatMap(upgradePolicy -> upgradePolicy.asList().stream())
+                         .flatMap(Collection::stream)
+                         .collect(Collectors.toList());
     }
 
     /** A node in this system and its current OS version */

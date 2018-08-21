@@ -80,13 +80,12 @@ public class ZoneId {
         if (o == null || getClass() != o.getClass()) return false;
         ZoneId zoneId = (ZoneId) o;
         return environment == zoneId.environment &&
-               Objects.equals(region, zoneId.region) &&
-               Objects.equals(cloud, zoneId.cloud);
+               Objects.equals(region, zoneId.region);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(environment, region, cloud);
+        return Objects.hash(environment, region);
     }
 
 }
