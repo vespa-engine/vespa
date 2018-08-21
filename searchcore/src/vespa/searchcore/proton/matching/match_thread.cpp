@@ -2,15 +2,17 @@
 
 #include "match_thread.h"
 #include "document_scorer.h"
+#include "attribute_operation.h"
+#include <vespa/searchcore/proton/attribute/i_attribute_functor.h>
+#include <vespa/searchcore/grouping/groupingmanager.h>
+#include <vespa/searchcore/grouping/groupingcontext.h>
+#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/thread_bundle.h>
-#include <vespa/searchcore/grouping/groupingmanager.h>
-#include <vespa/searchcore/grouping/groupingcontext.h>
-#include <vespa/searchlib/common/bitvector.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_thread");
@@ -247,8 +249,6 @@ MatchThread::match_loop_helper(MatchTools &tools, HitCollector &hits)
     }
 }
 
-//-----------------------------------------------------------------------------
-
 search::ResultSet::UP
 MatchThread::findMatches(MatchTools &tools)
 {
@@ -267,7 +267,8 @@ MatchThread::findMatches(MatchTools &tools)
             tools.setup_second_phase();
             DocidRange docid_range = scheduler.total_span(thread_id);
             tools.search().initRange(docid_range.begin, docid_range.end);
-            auto sorted_hit_seq = matchToolsFactory.should_diversify()
+            const MatchToolsFactory & mtf = matchToolsFactory;
+            auto sorted_hit_seq = mtf.should_diversify()
                                   ? hits.getSortedHitSequence(matchParams.arraySize)
                                   : hits.getSortedHitSequence(matchParams.heapSize);
             WaitTimer select_best_timer(wait_time_s);
@@ -278,6 +279,10 @@ MatchThread::findMatches(MatchTools &tools)
                 kept_hits.clear();
             }
             uint32_t reRanked = hits.reRank(scorer, std::move(kept_hits));
+            if (mtf.hasOnReRankOperation()) {
+                mtf.runOnReRankOperation(AttributeOperation::create(mtf.getOnReRankAttributeType(),
+                                                                    mtf.getOnReRankOperation(), hits.getReRankedHits()));
+            }
             thread_stats.docsReRanked(reRanked);
         }
         { // rank scaling
@@ -343,6 +348,11 @@ MatchThread::processResult(const Doom & hardDoom,
                 pr.add(search::RankedHit(bitId));
             }
         }
+    }
+    const MatchToolsFactory & mtf = matchToolsFactory;
+    if (mtf.hasOnMatchOperation() ) {
+        mtf.runOnMatchOperation(AttributeOperation::create(mtf.getOnMatchAttributeType(),
+                                                           mtf.getOnMatchOperation(), std::move(result)));
     }
     if (hasGrouping) {
         context.grouping->setDistributionKey(_distributionKey);

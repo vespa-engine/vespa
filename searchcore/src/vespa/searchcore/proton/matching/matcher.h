@@ -8,6 +8,7 @@
 #include "search_session.h"
 #include "viewresolver.h"
 #include <vespa/searchcore/proton/matching/querylimiter.h>
+#include <vespa/searchcore/proton/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
@@ -57,7 +58,7 @@ private:
     search::FeatureSet::SP
     getFeatureSet(const search::engine::DocsumRequest & req, ISearchContext & searchCtx,
                   search::attribute::IAttributeContext & attrCtx,
-                  SessionManager &sessionMgr, bool summaryFeatures);
+                  const IAttributeExecutor & attrExec, SessionManager &sessionMgr, bool summaryFeatures);
     std::unique_ptr<search::engine::SearchReply>
     handleGroupingSession(SessionManager &sessionMgr,
                           search::grouping::GroupingContext & groupingContext,
@@ -104,6 +105,7 @@ public:
     std::unique_ptr<MatchToolsFactory>
     create_match_tools_factory(const search::engine::Request &request, ISearchContext &searchContext,
                                search::attribute::IAttributeContext &attrContext,
+                               const IAttributeExecutor & attrExec,
                                const search::IDocumentMetaStore &metaStore,
                                const search::fef::Properties &feature_overrides) const;
 
@@ -121,7 +123,7 @@ public:
     std::unique_ptr<search::engine::SearchReply>
     match(const search::engine::SearchRequest &request, vespalib::ThreadBundle &threadBundle,
           ISearchContext &searchContext, search::attribute::IAttributeContext &attrContext,
-          SessionManager &sessionManager, const search::IDocumentMetaStore &metaStore,
+          const IAttributeExecutor & attrExec, SessionManager &sessionManager, const search::IDocumentMetaStore &metaStore,
           SearchSession::OwnershipBundle &&owned_objects);
 
     /**
@@ -136,7 +138,8 @@ public:
      **/
     search::FeatureSet::SP
     getSummaryFeatures(const search::engine::DocsumRequest & req, ISearchContext & searchCtx,
-                       search::attribute::IAttributeContext & attrCtx, SessionManager &sessionManager);
+                       search::attribute::IAttributeContext & attrCtx,
+                       const IAttributeExecutor & attrExec, SessionManager &sessionManager);
 
     /**
      * Perform matching for the documents in the given docsum request
@@ -150,7 +153,8 @@ public:
      **/
     search::FeatureSet::SP
     getRankFeatures(const search::engine::DocsumRequest & req, ISearchContext & searchCtx,
-                    search::attribute::IAttributeContext & attrCtx, SessionManager &sessionManager);
+                    search::attribute::IAttributeContext & attrCtx,
+                    const IAttributeExecutor & attrExec, SessionManager &sessionManager);
 
     /**
      * @return true if this rankprofile has summary-features enabled

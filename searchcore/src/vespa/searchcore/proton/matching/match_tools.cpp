@@ -16,6 +16,7 @@ using search::attribute::diversity::DiversityFilter;
 using namespace search::fef;
 using namespace search::fef::indexproperties::matchphase;
 using namespace search::fef::indexproperties::matching;
+using namespace search::fef::indexproperties;
 using search::IDocumentMetaStore;
 
 namespace proton::matching {
@@ -150,6 +151,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   vespalib::stringref          queryStack,
                   const vespalib::string     & location,
                   const ViewResolver         & viewResolver,
+                  const IAttributeExecutor   & attrExec,
                   const IDocumentMetaStore   & metaStore,
                   const IIndexEnvironment    & indexEnv,
                   const RankSetup            & rankSetup,
@@ -162,6 +164,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _match_limiter(),
       _queryEnv(indexEnv, attributeContext, rankProperties),
       _mdl(),
+      _attrExec(attrExec),
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),
       _diversityParams(),
@@ -199,7 +202,8 @@ MatchToolsFactory::createMatchTools() const
                                         *_match_limiter, _queryEnv, _mdl, _rankSetup, _featureOverrides);
 }
 
-std::unique_ptr<IDiversifier> MatchToolsFactory::createDiversifier() const
+std::unique_ptr<IDiversifier>
+MatchToolsFactory::createDiversifier() const
 {
     if ( !_diversityParams.enabled() ) {
         return std::unique_ptr<IDiversifier>();
@@ -212,6 +216,72 @@ std::unique_ptr<IDiversifier> MatchToolsFactory::createDiversifier() const
     size_t max_per_group = _rankSetup.getHeapSize()/_diversityParams.min_groups;
     return DiversityFilter::create(*attr, _rankSetup.getHeapSize(), max_per_group, _diversityParams.min_groups,
                                    _diversityParams.cutoff_strategy == DiversityParams::CutoffStrategy::STRICT);
+}
+
+bool
+MatchToolsFactory::hasOnMatchOperation() const {
+    return ! execute::onmatch::Attribute::lookup(_queryEnv.getProperties()).empty() &&
+           ! execute::onmatch::Operation::lookup(_queryEnv.getProperties()).empty();
+}
+
+vespalib::string
+MatchToolsFactory::getOnMatchOperation() const {
+    return execute::onmatch::Operation::lookup(_queryEnv.getProperties());
+}
+
+void
+MatchToolsFactory::runOnMatchOperation(std::shared_ptr<IAttributeFunctor> count) const {
+    _attrExec.asyncForAttribute(execute::onmatch::Attribute::lookup(_queryEnv.getProperties()), std::move(count));
+}
+
+search::attribute::BasicType
+MatchToolsFactory::getOnMatchAttributeType() const {
+    auto attr = _requestContext.getAttribute(execute::onmatch::Attribute::lookup(_queryEnv.getProperties()));
+    return attr ? attr->getBasicType() : BasicType::NONE;
+}
+
+bool
+MatchToolsFactory::hasOnReRankOperation() const {
+    return ! execute::onrerank::Attribute::lookup(_queryEnv.getProperties()).empty() &&
+           ! execute::onrerank::Operation::lookup(_queryEnv.getProperties()).empty();
+}
+
+vespalib::string
+MatchToolsFactory::getOnReRankOperation() const {
+    return execute::onrerank::Operation::lookup(_queryEnv.getProperties());
+}
+
+void
+MatchToolsFactory::runOnReRankOperation(std::shared_ptr<IAttributeFunctor> count) const {
+    _attrExec.asyncForAttribute(execute::onrerank::Attribute::lookup(_queryEnv.getProperties()), std::move(count));
+}
+
+search::attribute::BasicType
+MatchToolsFactory::getOnReRankAttributeType() const {
+    auto attr = _requestContext.getAttribute(execute::onrerank::Attribute::lookup(_queryEnv.getProperties()));
+    return attr ? attr->getBasicType() : BasicType::NONE;
+}
+
+bool
+MatchToolsFactory::hasOnSummaryOperation() const {
+    return ! execute::onsummary::Attribute::lookup(_queryEnv.getProperties()).empty() &&
+           ! execute::onsummary::Operation::lookup(_queryEnv.getProperties()).empty();
+}
+
+vespalib::string
+MatchToolsFactory::getOnSummaryOperation() const {
+    return execute::onsummary::Operation::lookup(_queryEnv.getProperties());
+}
+
+void
+MatchToolsFactory::runOnSummaryOperation(std::shared_ptr<IAttributeFunctor> count) const {
+    _attrExec.asyncForAttribute(execute::onsummary::Attribute::lookup(_queryEnv.getProperties()), std::move(count));
+}
+
+search::attribute::BasicType
+MatchToolsFactory::getOnSummaryAttributeType() const {
+    auto attr = _requestContext.getAttribute(execute::onsummary::Attribute::lookup(_queryEnv.getProperties()));
+    return attr ? attr->getBasicType() : BasicType::NONE;
 }
 
 }
