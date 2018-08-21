@@ -8,6 +8,7 @@ import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -15,8 +16,10 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
+import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
+import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Clock;
@@ -166,6 +169,8 @@ public class NodeFailer extends Maintainer {
         for (Node node : nodeRepository().getNodes(Node.State.active)) {
             if (node.history().hasEventBefore(History.Event.Type.down, graceTimeEnd) && ! applicationSuspended(node)) {
                 nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
+            } else if (node.status().hardwareFailureDescription().isPresent() && nodeSuspended(node)) {
+                nodesByFailureReason.put(node, "Node has hardware failure");
             }
         }
         return nodesByFailureReason;
@@ -193,6 +198,15 @@ public class NodeFailer extends Maintainer {
                    == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN;
         } catch (ApplicationIdNotFoundException e) {
             //Treat it as not suspended and allow to fail the node anyway
+            return false;
+        }
+    }
+
+    private boolean nodeSuspended(Node node) {
+        try {
+            return orchestrator.getNodeStatus(new HostName(node.hostname())) == HostStatus.ALLOWED_TO_BE_DOWN;
+        } catch (HostNameNotFoundException e) {
+            // Treat it as not suspended
             return false;
         }
     }
