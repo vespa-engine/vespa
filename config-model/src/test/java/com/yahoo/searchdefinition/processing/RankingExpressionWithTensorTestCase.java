@@ -25,6 +25,7 @@ public class RankingExpressionWithTensorTestCase {
                 "      }\n" +
                 "    }\n" +
                 "  }");
+        f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
         f.assertRankProperty("{{x:1,y:2}:1.0,{x:2,y:1}:2.0}", "constant(my_tensor).value", "my_profile");
         f.assertRankProperty("tensor(x{},y{})", "constant(my_tensor).type", "my_profile");
@@ -47,6 +48,7 @@ public class RankingExpressionWithTensorTestCase {
                 "      }\n" +
                 "    }\n" +
                 "  }");
+        f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
         f.assertRankProperty("{{x:1,y:2}:1.0,{x:2,y:1}:2.0}", "constant(my_tensor).value", "my_profile");
         f.assertRankProperty("tensor(x{},y{})", "constant(my_tensor).type", "my_profile");
@@ -65,6 +67,7 @@ public class RankingExpressionWithTensorTestCase {
                 "      }\n" +
                 "    }\n" +
                 "  }");
+        f.compileRankProfile("my_profile");
         f.assertSecondPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
         f.assertRankProperty("{{x:1}:1.0}", "constant(my_tensor).value", "my_profile");
         f.assertRankProperty("tensor(x{})", "constant(my_tensor).type", "my_profile");
@@ -85,6 +88,7 @@ public class RankingExpressionWithTensorTestCase {
                 "      expression: sum(my_tensor)\n" +
                 "    }\n" +
                 "  }");
+        f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
         f.assertRankProperty("{{x:1}:1.0}", "constant(my_tensor).value", "my_profile");
         f.assertRankProperty("tensor(x{})", "constant(my_tensor).type", "my_profile");
@@ -106,6 +110,7 @@ public class RankingExpressionWithTensorTestCase {
                 "      }\n" +
                 "    }\n" +
                 "  }");
+        f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("5.0 + my_macro", "my_profile");
         f.assertMacro("reduce(constant(my_tensor), sum)", "my_macro", "my_profile");
         f.assertRankProperty("{{x:1}:1.0}", "constant(my_tensor).value", "my_profile");
@@ -127,6 +132,7 @@ public class RankingExpressionWithTensorTestCase {
                 "      my_number_2: 5.0\n" +
                 "    }\n" +
                 "  }");
+        f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("3.0 + reduce(constant(my_tensor), sum) + 5.0", "my_profile");
         f.assertRankProperty("{{x:1}:1.0}", "constant(my_tensor).value", "my_profile");
         f.assertRankProperty("tensor(x{})", "constant(my_tensor).type", "my_profile");
@@ -139,7 +145,7 @@ public class RankingExpressionWithTensorTestCase {
     public void requireThatInvalidTensorTypeSpecThrowsException() throws ParseException {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("For constant tensor 'my_tensor' in rank profile 'my_profile': Illegal tensor type spec: Failed parsing element 'x' in type spec 'tensor(x)'");
-        new RankProfileSearchFixture(
+        RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile my_profile {\n" +
                 "    constants {\n" +
                 "      my_tensor {\n" +
@@ -148,6 +154,7 @@ public class RankingExpressionWithTensorTestCase {
                 "      }\n" +
                 "    }\n" +
                 "  }");
+        f.compileRankProfile("my_profile");
     }
 
 }

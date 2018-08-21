@@ -28,7 +28,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
     private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
 
     /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
-    private final Map<Path, ImportedModel> importedModels = new HashMap<>();
+    private final Map<Path, ConvertedModel> convertedModels = new HashMap<>();
 
     @Override
     public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
@@ -44,9 +44,9 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         if ( ! feature.getName().equals("tensorflow")) return feature;
 
         try {
-            ConvertedModel convertedModel = new ConvertedModel(asFeatureArguments(feature.getArguments()),
-                                                               context, tensorFlowImporter, importedModels);
-            return convertedModel.expression();
+            Path modelPath = Path.fromString(ConvertedModel.FeatureArguments.asString(feature.getArguments().expressions().get(0)));
+            ConvertedModel convertedModel = convertedModels.computeIfAbsent(modelPath, path -> new ConvertedModel(path, context, tensorFlowImporter, new ConvertedModel.FeatureArguments(feature.getArguments())));
+            return convertedModel.expression(asFeatureArguments(feature.getArguments()));
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use tensorflow model from " + feature, e);
