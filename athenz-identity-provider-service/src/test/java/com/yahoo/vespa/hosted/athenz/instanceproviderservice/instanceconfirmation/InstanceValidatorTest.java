@@ -13,8 +13,13 @@ import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
+import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
+import com.yahoo.vespa.athenz.identityprovider.client.IdentityDocumentSigner;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
@@ -36,6 +41,7 @@ import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconf
 import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation.InstanceValidator.SERVICE_PROPERTIES_SERVICE_KEY;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -53,9 +59,8 @@ public class InstanceValidatorTest {
     @Test
     public void application_does_not_exist() {
         SuperModelProvider superModelProvider = mockSuperModelProvider();
-        InstanceValidator instanceValidator = new InstanceValidator(null, superModelProvider, null);
-
-        assertFalse(instanceValidator.isSameIdentityAsInServicesXml(applicationId, domain, service));
+        InstanceValidator instanceValidator = new InstanceValidator(null, superModelProvider, null, null);
+        assertFalse(instanceValidator.isValidInstance(createRegisterInstanceConfirmation(applicationId, domain, service)));
     }
 
     @Test
@@ -64,7 +69,7 @@ public class InstanceValidatorTest {
                 mockApplicationInfo(applicationId, 5, Collections.emptyList()));
         InstanceValidator instanceValidator = new InstanceValidator(null, superModelProvider, null);
 
-        assertFalse(instanceValidator.isSameIdentityAsInServicesXml(applicationId, domain, service));
+        assertFalse(instanceValidator.isValidInstance(createRegisterInstanceConfirmation(applicationId, domain, service)));
     }
 
     @Test
@@ -74,9 +79,9 @@ public class InstanceValidatorTest {
 
         SuperModelProvider superModelProvider = mockSuperModelProvider(
                 mockApplicationInfo(applicationId, 5, Collections.singletonList(serviceInfo)));
-        InstanceValidator instanceValidator = new InstanceValidator(null, superModelProvider, null);
+        InstanceValidator instanceValidator = new InstanceValidator(null, superModelProvider, null, null);
 
-        assertFalse(instanceValidator.isSameIdentityAsInServicesXml(applicationId, domain, service));
+        assertFalse(instanceValidator.isValidInstance(createRegisterInstanceConfirmation(applicationId, domain, service)));
     }
 
     @Test
@@ -90,9 +95,21 @@ public class InstanceValidatorTest {
 
         SuperModelProvider superModelProvider = mockSuperModelProvider(
                 mockApplicationInfo(applicationId, 5, Collections.singletonList(serviceInfo)));
-        InstanceValidator instanceValidator = new InstanceValidator(null, superModelProvider, null);
+        IdentityDocumentSigner signer = mock(IdentityDocumentSigner.class);
+        when(signer.hasValidSignature(any(), any())).thenReturn(true);
+        InstanceValidator instanceValidator = new InstanceValidator(mock(KeyProvider.class), superModelProvider, null, signer);
 
-        assertTrue(instanceValidator.isSameIdentityAsInServicesXml(applicationId, domain, service));
+        assertTrue(instanceValidator.isValidInstance(createRegisterInstanceConfirmation(applicationId, domain, service)));
+    }
+
+    @Test
+    public void rejects_invalid_provider_unique_id_in_csr() {
+        SuperModelProvider superModelProvider = mockSuperModelProvider();
+        InstanceValidator instanceValidator = new InstanceValidator(null, superModelProvider, null, null);
+        InstanceConfirmation instanceConfirmation = createRegisterInstanceConfirmation(applicationId, domain, service);
+        VespaUniqueInstanceId tamperedId = new VespaUniqueInstanceId(0, "default", "instance", "app", "tenant", "us-north-1", "dev", IdentityType.NODE);
+        instanceConfirmation.set("sanDNS", tamperedId.asDottedString() + ".instanceid.athenz.dev-us-north-1.vespa.yahoo.cloud");
+        assertFalse(instanceValidator.isValidInstance(instanceConfirmation));
     }
 
     @Test
@@ -105,7 +122,7 @@ public class InstanceValidatorTest {
         nodeList = allocateNode(nodeList, node, applicationId);
         when(nodeRepository.getNodes()).thenReturn(nodeList);
         String nodeIp = node.ipAddresses().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
-        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(ImmutableList.of(nodeIp), applicationId);
+        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of(nodeIp));
 
         assertTrue(instanceValidator.isValidRefresh(instanceConfirmation));
     }
@@ -122,7 +139,7 @@ public class InstanceValidatorTest {
         String nodeIp = node.ipAddresses().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
 
         // Add invalid ip to list of ip addresses
-        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(ImmutableList.of(nodeIp, "::ff"), applicationId);
+        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of(nodeIp, "::ff"));
 
         assertFalse(instanceValidator.isValidRefresh(instanceConfirmation));
     }
@@ -134,21 +151,42 @@ public class InstanceValidatorTest {
 
         List<Node> nodeList = createNodes(10);
         when(nodeRepository.getNodes()).thenReturn(nodeList);
-        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(ImmutableList.of("::11"), applicationId);
+        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of("::11"));
 
         assertFalse(instanceValidator.isValidRefresh(instanceConfirmation));
 
     }
 
-    private InstanceConfirmation createRefreshInstanceConfirmation(List<String> ips, ApplicationId applicationId) {
+    private InstanceConfirmation createRegisterInstanceConfirmation(ApplicationId applicationId, String domain, String service) {
+        VespaUniqueInstanceId vespaUniqueInstanceId = new VespaUniqueInstanceId(0, "default", applicationId.instance().value(), applicationId.application().value(), applicationId.tenant().value(), "us-north-1", "dev", IdentityType.NODE);
+        SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(null,
+                                                                                   0,
+                                                                                   vespaUniqueInstanceId,
+                                                                                   new AthenzService(domain, service),
+                                                                                   0,
+                                                                                   "localhost",
+                                                                                   "localhost",
+                                                                                   Instant.now(),
+                                                                                   Collections.emptySet(),
+                                                                                   IdentityType.NODE);
+        return createInstanceConfirmation(vespaUniqueInstanceId, domain, service, signedIdentityDocument);
+    }
+
+    private InstanceConfirmation createRefreshInstanceConfirmation(ApplicationId applicationId, String domain, String service, List<String> ips) {
+        VespaUniqueInstanceId vespaUniqueInstanceId = new VespaUniqueInstanceId(0, "default", applicationId.instance().value(), applicationId.application().value(), applicationId.tenant().value(), "us-north-1", "dev", IdentityType.NODE);
+        InstanceConfirmation instanceConfirmation = createInstanceConfirmation(vespaUniqueInstanceId, domain, service, null);
+        instanceConfirmation.set("sanIP", String.join(",", ips));
+        return instanceConfirmation;
+    }
+
+    private InstanceConfirmation createInstanceConfirmation(VespaUniqueInstanceId vespaUniqueInstanceId, String domain, String service, SignedIdentityDocument identityDocument) {
         InstanceConfirmation instanceConfirmation = new InstanceConfirmation(
                 "vespa.vespa.cd.provider_dev_us-north-1",
-                "vespa.vespa.cd",
-                "tenant",
-                null);
-
-        instanceConfirmation.set("sanIP", String.join(",", ips));
-        VespaUniqueInstanceId vespaUniqueInstanceId = new VespaUniqueInstanceId(0, "default", applicationId.instance().value(), applicationId.application().value(), applicationId.tenant().value(), "us-north-1", "dev", IdentityType.NODE);
+                domain,
+                service,
+                Optional.ofNullable(identityDocument)
+                        .map(EntityBindingsMapper::toSignedIdentityDocumentEntity)
+                        .orElse(null));
         instanceConfirmation.set("sanDNS", vespaUniqueInstanceId.asDottedString() + ".instanceid.athenz.dev-us-north-1.vespa.yahoo.cloud");
         return instanceConfirmation;
     }

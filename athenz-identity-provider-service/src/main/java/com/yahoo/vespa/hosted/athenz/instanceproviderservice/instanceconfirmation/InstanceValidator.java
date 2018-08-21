@@ -30,6 +30,7 @@ import java.util.stream.Stream;
  * Verifies that the instance's identity document is valid
  *
  * @author bjorncs
+ * @author mortent
  */
 public class InstanceValidator {
 
@@ -39,7 +40,7 @@ public class InstanceValidator {
     static final String SERVICE_PROPERTIES_SERVICE_KEY = "identity.service";
     static final String INSTANCE_ID_DELIMITER = ".instanceid.athenz.";
 
-    private final IdentityDocumentSigner signer = new IdentityDocumentSigner();
+    private final IdentityDocumentSigner signer;
     private final KeyProvider keyProvider;
     private final SuperModelProvider superModelProvider;
     private final NodeRepository nodeRepository;
@@ -48,9 +49,17 @@ public class InstanceValidator {
     public InstanceValidator(KeyProvider keyProvider,
                              SuperModelProvider superModelProvider,
                              NodeRepository nodeRepository) {
+        this(keyProvider, superModelProvider, nodeRepository, new IdentityDocumentSigner());
+    }
+
+    public InstanceValidator(KeyProvider keyProvider,
+                             SuperModelProvider superModelProvider,
+                             NodeRepository nodeRepository,
+                             IdentityDocumentSigner identityDocumentSigner){
         this.keyProvider = keyProvider;
         this.superModelProvider = superModelProvider;
         this.nodeRepository = nodeRepository;
+        this.signer = identityDocumentSigner;
     }
 
     public boolean isValidInstance(InstanceConfirmation instanceConfirmation) {
@@ -58,6 +67,12 @@ public class InstanceValidator {
         VespaUniqueInstanceId providerUniqueId = signedIdentityDocument.providerUniqueId();
         ApplicationId applicationId = ApplicationId.from(
                 providerUniqueId.tenant(), providerUniqueId.application(), providerUniqueId.instance());
+
+        VespaUniqueInstanceId csrProviderUniqueId = getVespaUniqueInstanceId(instanceConfirmation);
+        if(! providerUniqueId.equals(csrProviderUniqueId)) {
+            log.log(LogLevel.WARNING, String.format("Instance %s has invalid provider unique ID in CSR (%s)", providerUniqueId, csrProviderUniqueId));
+            return false;
+        }
 
         if (! isSameIdentityAsInServicesXml(applicationId, instanceConfirmation.domain, instanceConfirmation.service)) {
             return false;
@@ -83,28 +98,31 @@ public class InstanceValidator {
                                                    confirmation.provider,
                                                    confirmation.attributes.get("sanDNS")));
         try {
-            return validateAttributes(confirmation);
+            return validateAttributes(confirmation, getVespaUniqueInstanceId(confirmation));
         } catch (Exception e) {
-            log.log(LogLevel.INFO, "Encountered exception while refreshing certificate for confirmation: " + confirmation, e);
-            return true;
+            log.log(LogLevel.WARNING, "Encountered exception while refreshing certificate for confirmation: " + confirmation, e);
+            return false;
         }
     }
 
-    private boolean validateAttributes(InstanceConfirmation confirmation) {
+    private VespaUniqueInstanceId getVespaUniqueInstanceId(InstanceConfirmation instanceConfirmation) {
         // Find a list of SAN DNS
-        List<String> sanDNS = Optional.ofNullable(confirmation.attributes.get("sanDNS"))
+        List<String> sanDNS = Optional.ofNullable(instanceConfirmation.attributes.get("sanDNS"))
                 .map(s -> s.split(","))
                 .map(Arrays::asList)
                 .map(List::stream)
                 .orElse(Stream.empty())
                 .collect(Collectors.toList());
 
-        VespaUniqueInstanceId vespaUniqueInstanceId = sanDNS.stream()
+        return sanDNS.stream()
                 .filter(dns -> dns.contains(INSTANCE_ID_DELIMITER))
                 .findFirst()
                 .map(s -> s.replaceAll(INSTANCE_ID_DELIMITER + ".*", ""))
                 .map(VespaUniqueInstanceId::fromDottedString)
                 .orElse(null);
+    }
+
+    private boolean validateAttributes(InstanceConfirmation confirmation, VespaUniqueInstanceId vespaUniqueInstanceId) {
         if(vespaUniqueInstanceId == null) {
             log.log(LogLevel.WARNING, "Unabe to find unique instance ID in refresh request: " + confirmation.toString());
             return false;
@@ -135,7 +153,12 @@ public class InstanceValidator {
                 .collect(Collectors.toList());
 
         // Validate that ipaddresses in request are valid for node
-        return nodeIpAddresses.containsAll(ips);
+
+        if(! nodeIpAddresses.containsAll(ips)) {
+            log.log(LogLevel.WARNING, "Invalid InstanceConfirmation, wrong ip in : " + vespaUniqueInstanceId);
+            return false;
+        }
+        return true;
     }
 
     private boolean nodeMatchesVespaUniqueId(Node node, VespaUniqueInstanceId vespaUniqueInstanceId) {
