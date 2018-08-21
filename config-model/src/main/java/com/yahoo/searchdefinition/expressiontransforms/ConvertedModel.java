@@ -54,7 +54,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * A machine learned model imported from the models/ directory in the application package.
+ * A machine learned model imported from the models/ directory in the application package, for a single rank profile.
  * This encapsulates the difference between reading a model
  * - from a file application package, where it is represented by an ImportedModel, and
  * - from a ZK application package, where the models/ directory is unavailable and models are read from
@@ -74,25 +74,29 @@ public class ConvertedModel {
      */
     private final Map<String, RankingExpression> expressions;
 
+    /**
+     * Create a converted model for a rank profile given from either an imported model,
+     * or (if unavailable) from stored application package data.
+     */
     public ConvertedModel(Path modelPath,
                           RankProfileTransformContext context,
-                          ModelImporter modelImporter,
+                          ImportedModels importedModels,
                           FeatureArguments arguments) { // TODO: Remove
         this.modelPath = modelPath;
         this.modelName = toModelName(modelPath);
         ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), modelPath);
-        if ( store.hasSourceModel()) // not converted yet - access from models/ directory
-            expressions = importModel(store, context.rankProfile(), context.queryProfiles(), modelImporter, arguments);
+        if ( store.hasSourceModel())
+            expressions = convertModel(store, context.rankProfile(), context.queryProfiles(), importedModels, arguments);
         else
             expressions = transformFromStoredModel(store, context.rankProfile());
     }
 
-    private Map<String, RankingExpression> importModel(ModelStore store,
-                                                       RankProfile profile,
-                                                       QueryProfileRegistry queryProfiles,
-                                                       ModelImporter modelImporter,
-                                                       FeatureArguments arguments) {
-        ImportedModel model = modelImporter.importModel(store.modelFiles.modelName(), store.sourceModelDir());
+    private Map<String, RankingExpression> convertModel(ModelStore store,
+                                                        RankProfile profile,
+                                                        QueryProfileRegistry queryProfiles,
+                                                        ImportedModels importedModels,
+                                                        FeatureArguments arguments) {
+        ImportedModel model = importedModels.imported(store.modelFiles.modelName(), store.sourceModelDir());
         return transformFromImportedModel(model, store, profile, queryProfiles, arguments);
     }
 
@@ -262,9 +266,12 @@ public class ConvertedModel {
     }
 
     private void addGeneratedMacroToProfile(RankProfile profile, String macroName, RankingExpression expression) {
-        if (profile.getMacros().containsKey(macroName))
-            throw new IllegalArgumentException("Generated macro '" + macroName + "' already exists.");
-
+        if (profile.getMacros().containsKey(macroName)) {
+            if ( ! profile.getMacros().get(macroName).getRankingExpression().equals(expression))
+                throw new IllegalArgumentException("Generated macro '" + macroName + "' already exists in " + profile +
+                                                   " - with a different definition");
+            return;
+        }
         profile.addMacro(macroName, false);  // todo: inline if only used once
         RankProfile.Macro macro = profile.getMacros().get(macroName);
         macro.setRankingExpression(expression);

@@ -5,6 +5,7 @@ import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
+import com.yahoo.searchlib.rankingexpression.integration.ml.OnnxImporter;
 import com.yahoo.searchlib.rankingexpression.integration.ml.TensorFlowImporter;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
@@ -25,10 +26,7 @@ import java.util.Map;
  */
 public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext>  {
 
-    private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
-
-    /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
-    private final Map<Path, ConvertedModel> convertedModels = new HashMap<>();
+    private final ImportedModels importedModels = new ImportedModels(new TensorFlowImporter());
 
     @Override
     public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
@@ -45,7 +43,8 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
         try {
             Path modelPath = Path.fromString(ConvertedModel.FeatureArguments.asString(feature.getArguments().expressions().get(0)));
-            ConvertedModel convertedModel = convertedModels.computeIfAbsent(modelPath, path -> new ConvertedModel(path, context, tensorFlowImporter, new ConvertedModel.FeatureArguments(feature.getArguments())));
+            // TODO: Increase scope of this instance to a rank profile:
+            ConvertedModel convertedModel = new ConvertedModel(modelPath, context, importedModels, new ConvertedModel.FeatureArguments(feature.getArguments()));
             return convertedModel.expression(asFeatureArguments(feature.getArguments()));
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
