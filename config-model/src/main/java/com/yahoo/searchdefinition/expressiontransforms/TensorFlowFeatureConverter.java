@@ -38,7 +38,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         try {
             Path modelPath = Path.fromString(ConvertedModel.FeatureArguments.asString(feature.getArguments().expressions().get(0)));
             // TODO: Increase scope of this instance to a rank profile:
-            ConvertedModel convertedModel = new ConvertedModel(modelPath, context, importedModels, new ConvertedModel.FeatureArguments(feature.getArguments()));
+            ConvertedModel convertedModel = new ConvertedModel(modelPath, context, importedModels);
             return convertedModel.expression(asFeatureArguments(feature.getArguments()));
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
