@@ -60,7 +60,7 @@ public enum SystemApplication {
 
     /** Returns whether this system application has an application package */
     public boolean hasApplicationPackage() {
-        return nodeTypes.contains(NodeType.proxy);
+        return this == zone;
     }
 
     /** Returns whether config for this application has converged in given zone */
