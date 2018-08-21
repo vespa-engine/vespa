@@ -5,7 +5,6 @@ import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.io.IOUtils;
-import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.FeatureNames;
@@ -82,7 +81,7 @@ public class ConvertedModel {
         this.modelPath = modelPath;
         this.modelName = toModelName(modelPath);
         ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), modelPath);
-        if ( ! store.hasStoredModel()) // not converted yet - access from models/ directory
+        if ( store.hasSourceModel()) // not converted yet - access from models/ directory
             expressions = importModel(store, context.rankProfile(), context.queryProfiles(), modelImporter, arguments);
         else
             expressions = transformFromStoredModel(store, context.rankProfile());
@@ -93,7 +92,7 @@ public class ConvertedModel {
                                                        QueryProfileRegistry queryProfiles,
                                                        ModelImporter modelImporter,
                                                        FeatureArguments arguments) {
-        ImportedModel model = modelImporter.importModel(store.modelFiles.modelName(), store.modelDir());
+        ImportedModel model = modelImporter.importModel(store.modelFiles.modelName(), store.sourceModelDir());
         return transformFromImportedModel(model, store, profile, queryProfiles, arguments);
     }
 
@@ -501,19 +500,14 @@ public class ConvertedModel {
             this.modelFiles = new ModelFiles(modelPath);
         }
 
-        public boolean hasStoredModel() {
-            try {
-                return application.getFileReference(modelFiles.storedModelPath()).exists();
-            }
-            catch (UnsupportedOperationException e) {
-                return false;
-            }
+        public boolean hasSourceModel() {
+            return sourceModelDir().exists();
         }
 
         /**
          * Returns the directory which contains the source model to use for these arguments
          */
-        public File modelDir() {
+        public File sourceModelDir() {
             return application.getFileReference(ApplicationPackage.MODELS_DIR.append(modelFiles.modelPath()));
         }
 

@@ -39,7 +39,7 @@ public class XgboostFeatureConverter extends ExpressionTransformer<RankProfileTr
             ConvertedModel.FeatureArguments arguments = asFeatureArguments(feature.getArguments());
             ConvertedModel.ModelStore store = new ConvertedModel.ModelStore(context.rankProfile().getSearch().sourceApplication(),
                                                                             arguments.modelPath());
-            RankingExpression expression = xgboostImporter.parseModel(store.modelDir().toString());
+            RankingExpression expression = xgboostImporter.parseModel(store.sourceModelDir().toString());
             return expression.getRoot();
         } catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use XGBoost model from " + feature, e);
