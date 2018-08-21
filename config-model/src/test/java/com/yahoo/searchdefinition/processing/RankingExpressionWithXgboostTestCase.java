@@ -36,7 +36,7 @@ public class RankingExpressionWithXgboostTestCase {
                                                  String field,
                                                  RankingExpressionWithTensorFlowTestCase.StoringApplicationPackage application) {
         try {
-            return new RankProfileSearchFixture(
+            RankProfileSearchFixture fixture = new RankProfileSearchFixture(
                     application,
                     application.getQueryProfiles(),
                     "  rank-profile my_profile {\n" +
@@ -46,6 +46,8 @@ public class RankingExpressionWithXgboostTestCase {
                             "  }",
                     constant,
                     field);
+            fixture.compileRankProfile("my_profile");
+            return fixture;
         } catch (ParseException e) {
             throw new IllegalArgumentException(e);
         }

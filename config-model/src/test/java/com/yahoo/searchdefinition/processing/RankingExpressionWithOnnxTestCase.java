@@ -123,6 +123,7 @@ public class RankingExpressionWithOnnxTestCase {
                             "      expression: onnx('mnist_softmax.onnx')" +
                             "    }\n" +
                             "  }");
+            search.compileRankProfile("my_profile");
             search.assertFirstPhaseExpression(vespaExpression, "my_profile");
             fail("Expecting exception");
         }
@@ -164,7 +165,8 @@ public class RankingExpressionWithOnnxTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
                             "onnx('mnist_softmax.onnx','y'): " +
-                            "Model does not have the specified signature 'y'",
+                         "No expressions available in model 'mnist_softmax.onnx'",
+//                            "No expressions named 'y' in model 'mnist_softmax.onnx'. Available expressions: mnist_softmax.onnx.default.add",
                     Exceptions.toMessageString(expected));
         }
     }
@@ -220,7 +222,8 @@ public class RankingExpressionWithOnnxTestCase {
 
         String vespaExpressionWithoutConstant =
                 "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), mnist_softmax_onnx_Variable, f(a,b)(a * b)), sum, d2), constant(mnist_softmax_onnx_Variable_1), f(a,b)(a + b))";
-        RankProfileSearchFixture search = fixtureWith(rankProfile, new StoringApplicationPackage(applicationDir));
+        RankProfileSearchFixture search = uncompiledFixtureWith(rankProfile, new StoringApplicationPackage(applicationDir));
+        search.compileRankProfile("my_profile");
         search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
 
         assertNull("Constant overridden by macro is not added",
@@ -234,7 +237,8 @@ public class RankingExpressionWithOnnxTestCase {
             IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                     storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
-            RankProfileSearchFixture searchFromStored = fixtureWith(rankProfile, storedApplication);
+            RankProfileSearchFixture searchFromStored = uncompiledFixtureWith(rankProfile, storedApplication);
+            searchFromStored.compileRankProfile("my_profile");
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
             assertNull("Constant overridden by macro is not added",
                     searchFromStored.search().getRankingConstants().get("mnist_softmax_onnx_Variable"));
@@ -271,19 +275,19 @@ public class RankingExpressionWithOnnxTestCase {
 
     private RankProfileSearchFixture fixtureWith(String placeholderExpression, String firstPhaseExpression) {
         return fixtureWith(placeholderExpression, firstPhaseExpression, null, null, "Placeholder",
-                new StoringApplicationPackage(applicationDir));
+                           new StoringApplicationPackage(applicationDir));
     }
 
     private RankProfileSearchFixture fixtureWith(String placeholderExpression, String firstPhaseExpression,
                                                  String constant, String field) {
         return fixtureWith(placeholderExpression, firstPhaseExpression, constant, field, "Placeholder",
-                new StoringApplicationPackage(applicationDir));
+                           new StoringApplicationPackage(applicationDir));
     }
 
-    private RankProfileSearchFixture fixtureWith(String rankProfile, StoringApplicationPackage application) {
+    private RankProfileSearchFixture uncompiledFixtureWith(String rankProfile, StoringApplicationPackage application) {
         try {
             return new RankProfileSearchFixture(application, application.getQueryProfiles(),
-                    rankProfile, null, null);
+                                                rankProfile, null, null);
         }
         catch (ParseException e) {
             throw new IllegalArgumentException(e);
@@ -297,7 +301,7 @@ public class RankingExpressionWithOnnxTestCase {
                                                  String macroName,
                                                  StoringApplicationPackage application) {
         try {
-            return new RankProfileSearchFixture(
+            RankProfileSearchFixture fixture = new RankProfileSearchFixture(
                     application,
                     application.getQueryProfiles(),
                     "  rank-profile my_profile {\n" +
@@ -310,6 +314,8 @@ public class RankingExpressionWithOnnxTestCase {
                             "  }",
                     constant,
                     field);
+            fixture.compileRankProfile("my_profile");
+            return fixture;
         }
         catch (ParseException e) {
             throw new IllegalArgumentException(e);

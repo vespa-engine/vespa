@@ -69,7 +69,8 @@ public class ZKLiveApp {
                         log.finer("ZKApplicationPackage: Skipped '" + child + "' (did not match suffix " + fileNameSuffix + ")");
                 }
                 if (recursive)
-                    result.addAll(getAllDataFromDirectory(path + "/" + child, namePrefix + child + "/", fileNameSuffix, recursive));
+                    result.addAll(getAllDataFromDirectory(path + "/" + child,
+                                                          namePrefix + child + "/", fileNameSuffix, recursive));
             }
             if (log.isLoggable(Level.FINE))
                 log.fine("ZKApplicationPackage: Found '" + result.size() + "' files in " + fullPath);
@@ -80,14 +81,15 @@ public class ZKLiveApp {
     }
 
     /**
-     * Retrieves a node relative to the node of the live application, e.g. /vespa/config/apps/$lt;app_id&gt;/&lt;path&gt;/&lt;node&gt;
+     * Retrieves a node relative to the node of the live application,
+     * e.g. /vespa/config/apps/$lt;app_id&gt;/&lt;path&gt;/&lt;node&gt;
      *
      * @param path a path relative to the currently active application
      * @param node a path relative to the path above
      * @return a Reader that can be used to get the data
      */
     public Reader getDataReader(String path, String node) {
-        final String data = getData(path, node);
+        String data = getData(path, node);
         if (data == null) {
             throw new IllegalArgumentException("No node for " + getFullPath(path) + "/" + node + " exists");
         }
@@ -98,7 +100,8 @@ public class ZKLiveApp {
         try {
             return zk.getData(getFullPath(path), node);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Could not retrieve node '" + getFullPath(path) + "/" + node + "' in zookeeper", e);
+            throw new IllegalArgumentException("Could not retrieve node '" +
+                                               getFullPath(path) + "/" + node + "' in zookeeper", e);
         }
     }
 
@@ -205,5 +208,6 @@ public class ZKLiveApp {
         }
         return reader(data);
     }
+
 }
 

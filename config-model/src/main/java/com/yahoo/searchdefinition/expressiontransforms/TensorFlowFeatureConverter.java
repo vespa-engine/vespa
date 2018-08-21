@@ -2,9 +2,6 @@
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.path.Path;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.searchdefinition.RankProfile;
-import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
 import com.yahoo.searchlib.rankingexpression.integration.ml.TensorFlowImporter;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
@@ -13,8 +10,6 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
 import java.io.UncheckedIOException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Replaces instances of the tensorflow(model-path, signature, output)
@@ -25,10 +20,7 @@ import java.util.Map;
  */
 public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext>  {
 
-    private final TensorFlowImporter tensorFlowImporter = new TensorFlowImporter();
-
-    /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
-    private final Map<Path, ImportedModel> importedModels = new HashMap<>();
+    private final ImportedModels importedModels = new ImportedModels(new TensorFlowImporter());
 
     @Override
     public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
@@ -44,9 +36,10 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         if ( ! feature.getName().equals("tensorflow")) return feature;
 
         try {
-            ConvertedModel convertedModel = new ConvertedModel(asFeatureArguments(feature.getArguments()),
-                                                               context, tensorFlowImporter, importedModels);
-            return convertedModel.expression();
+            Path modelPath = Path.fromString(ConvertedModel.FeatureArguments.asString(feature.getArguments().expressions().get(0)));
+            // TODO: Increase scope of this instance to a rank profile:
+            ConvertedModel convertedModel = new ConvertedModel(modelPath, context, importedModels, new ConvertedModel.FeatureArguments(feature.getArguments()));
+            return convertedModel.expression(asFeatureArguments(feature.getArguments()));
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use tensorflow model from " + feature, e);

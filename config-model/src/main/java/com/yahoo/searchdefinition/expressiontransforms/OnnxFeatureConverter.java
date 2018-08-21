@@ -3,9 +3,6 @@
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.path.Path;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.searchdefinition.RankProfile;
-import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
 import com.yahoo.searchlib.rankingexpression.integration.ml.OnnxImporter;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
@@ -16,7 +13,6 @@ import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Replaces instances of the onnx(model-path, output)
@@ -28,10 +24,10 @@ import java.util.Optional;
  */
 public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
-    private final OnnxImporter onnxImporter = new OnnxImporter();
-
     /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
-    private final Map<Path, ImportedModel> importedModels = new HashMap<>();
+    private final Map<Path, ConvertedModel> convertedModels = new HashMap<>();
+
+    private final ImportedModels importedModels = new ImportedModels(new OnnxImporter());
 
     @Override
     public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
@@ -47,9 +43,10 @@ public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTrans
         if ( ! feature.getName().equals("onnx")) return feature;
 
         try {
-            ConvertedModel convertedModel = new ConvertedModel(asFeatureArguments(feature.getArguments()),
-                                                               context, onnxImporter, importedModels);
-            return convertedModel.expression();
+            Path modelPath = Path.fromString(ConvertedModel.FeatureArguments.asString(feature.getArguments().expressions().get(0)));
+            // TODO: Increase scope of this instance to a rank profile:
+            ConvertedModel convertedModel = new ConvertedModel(modelPath, context, importedModels, new ConvertedModel.FeatureArguments(feature.getArguments()));
+            return convertedModel.expression(asFeatureArguments(feature.getArguments()));
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use Onnx model from " + feature, e);

@@ -37,8 +37,9 @@ public class XgboostFeatureConverter extends ExpressionTransformer<RankProfileTr
 
         try {
             ConvertedModel.FeatureArguments arguments = asFeatureArguments(feature.getArguments());
-            ConvertedModel.ModelStore store = new ConvertedModel.ModelStore(context.rankProfile().getSearch().sourceApplication(), arguments);
-            RankingExpression expression = xgboostImporter.parseModel(store.modelDir().toString());
+            ConvertedModel.ModelStore store = new ConvertedModel.ModelStore(context.rankProfile().getSearch().sourceApplication(),
+                                                                            arguments.modelPath());
+            RankingExpression expression = xgboostImporter.parseModel(store.sourceModelDir().toString());
             return expression.getRoot();
         } catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use XGBoost model from " + feature, e);
@@ -48,7 +49,7 @@ public class XgboostFeatureConverter extends ExpressionTransformer<RankProfileTr
     private ConvertedModel.FeatureArguments asFeatureArguments(Arguments arguments) {
         if (arguments.isEmpty())
             throw new IllegalArgumentException("An xgboost node must take an argument pointing to " +
-                    "the xgboost model directory under [application]/models");
+                                               "the xgboost model directory under [application]/models");
         if (arguments.expressions().size() > 1)
             throw new IllegalArgumentException("An xgboost feature can have at most 1 argument");
 

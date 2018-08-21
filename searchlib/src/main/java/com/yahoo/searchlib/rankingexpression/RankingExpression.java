@@ -182,6 +182,16 @@ public class RankingExpression implements Serializable {
         }
     }
 
+    /** Returns a deep copy of this expression */
+    public RankingExpression copy() {
+        try {
+            return new RankingExpression(name, root.toString());
+        }
+        catch (ParseException e) {
+            throw new RuntimeException("Programming error: Could not parse serialized expression", e);
+        }
+    }
+
     /**
      * Returns the name of this ranking expression, or "" if no name is set.
      *
