@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -14,7 +13,6 @@ import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -99,10 +97,7 @@ public class RetiredExpirer extends Maintainer {
                     .allMatch(child -> child.state() == Node.State.parked || child.state() == Node.State.failed);
         }
 
-        Optional<Instant> timeOfRetiredEvent = node.history().event(History.Event.Type.retired).map(History.Event::at);
-        Optional<Instant> retireAfter = timeOfRetiredEvent.map(retiredEvent -> retiredEvent.plus(retiredExpiry));
-        boolean shouldRetireNowBecauseExpired = retireAfter.map(time -> time.isBefore(clock.instant())).orElse(false);
-        if (shouldRetireNowBecauseExpired) {
+        if (node.history().hasEventBefore(History.Event.Type.retired, clock.instant().minus(retiredExpiry))) {
             return true;
         }
 

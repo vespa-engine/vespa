@@ -95,8 +95,8 @@ public class NodeFailer extends Maintainer {
 
         // Active nodes
         for (Node node : determineActiveNodeDownStatus()) {
-            Instant graceTimeEnd = node.history().event(History.Event.Type.down).get().at().plus(downTimeLimit);
-            if (graceTimeEnd.isBefore(clock.instant()) && ! applicationSuspended(node) && failAllowedFor(node.type()))
+            Instant graceTimeEnd = clock.instant().minus(downTimeLimit);
+            if (node.history().hasEventBefore(History.Event.Type.down, graceTimeEnd) && ! applicationSuspended(node) && failAllowedFor(node.type()))
                 if (!throttle(node)) failActive(node, "Node has been down longer than " + downTimeLimit);
         }
     }
@@ -108,11 +108,9 @@ public class NodeFailer extends Maintainer {
             Optional<Instant> lastLocalRequest = hostLivenessTracker.lastRequestFrom(node.hostname());
             if ( ! lastLocalRequest.isPresent()) continue;
 
-            Optional<History.Event> recordedRequest = node.history().event(History.Event.Type.requested);
-            if ( ! recordedRequest.isPresent() || recordedRequest.get().at().isBefore(lastLocalRequest.get())) {
-                History updatedHistory = node.history().with(new History.Event(History.Event.Type.requested,
-                        Agent.system,
-                        lastLocalRequest.get()));
+            if (! node.history().hasEventAfter(History.Event.Type.requested, lastLocalRequest.get())) {
+                History updatedHistory = node.history()
+                        .with(new History.Event(History.Event.Type.requested, Agent.system, lastLocalRequest.get()));
                 nodeRepository().write(node.with(updatedHistory));
             }
         }
@@ -150,13 +148,11 @@ public class NodeFailer extends Maintainer {
     }
 
     private boolean wasMadeReadyBefore(Node node, Instant instant) {
-        Optional<History.Event> readiedEvent = node.history().event(History.Event.Type.readied);
-        return readiedEvent.map(event -> event.at().isBefore(instant)).orElse(false);
+        return node.history().hasEventBefore(History.Event.Type.readied, instant);
     }
 
     private boolean hasRecordedRequestAfter(Node node, Instant instant) {
-        Optional<History.Event> lastRequest = node.history().event(History.Event.Type.requested);
-        return lastRequest.map(event -> event.at().isAfter(instant)).orElse(false);
+        return node.history().hasEventAfter(History.Event.Type.requested, instant);
     }
 
     private boolean applicationSuspended(Node node) {
@@ -289,10 +285,7 @@ public class NodeFailer extends Maintainer {
         Instant startOfThrottleWindow = clock.instant().minus(throttlePolicy.throttleWindow);
         List<Node> nodes = nodeRepository().getNodes();
         long recentlyFailedNodes = nodes.stream()
-                .map(n -> n.history().event(History.Event.Type.failed))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .filter(failedEvent -> failedEvent.at().isAfter(startOfThrottleWindow))
+                .filter(n -> n.history().hasEventAfter(History.Event.Type.failed, startOfThrottleWindow))
                 .count();
         int allowedFailedNodes = (int) Math.max(nodes.size() * throttlePolicy.fractionAllowedToFail,
                                                 throttlePolicy.minimumAllowedToFail);

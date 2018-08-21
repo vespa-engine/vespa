@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 
 /**
@@ -47,8 +46,7 @@ public class NodeRebooter extends Maintainer {
     }
     
     private boolean shouldReboot(Node node) {
-        Optional<History.Event> lastReboot = node.history().event(History.Event.Type.rebooted);
-        if (lastReboot.isPresent() && lastReboot.get().at().plus(rebootInterval).isAfter(clock.instant()))
+        if (node.history().hasEventAfter(History.Event.Type.rebooted, clock.instant().minus(rebootInterval)))
             return false;
         else // schedule with a probability such that reboots of nodes are spread roughly over the reboot interval
             return random.nextDouble() < (double) interval().getSeconds() / (double)rebootInterval.getSeconds();
