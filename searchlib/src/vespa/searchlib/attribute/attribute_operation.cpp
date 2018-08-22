@@ -9,9 +9,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.attribute_operation");
 
-using search::attribute::BasicType;
 
-namespace proton::matching {
+namespace search::attribute {
 
 namespace {
 

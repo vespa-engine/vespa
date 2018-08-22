@@ -4,7 +4,6 @@
 #include "attribute_directory.h"
 #include "attributedisklayout.h"
 #include "attributemanager.h"
-#include "i_attribute_functor.h"
 #include "imported_attributes_context.h"
 #include "imported_attributes_repo.h"
 #include "sequential_attributes_initializer.h"
@@ -12,6 +11,7 @@
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
+#include <vespa/searchlib/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/searchlib/common/threaded_compactable_lid_space.h>

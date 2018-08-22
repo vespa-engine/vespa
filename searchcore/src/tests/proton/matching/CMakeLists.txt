@@ -60,10 +60,3 @@ vespa_add_executable(searchcore_querynodes_test_app TEST
     searchcore_matching
 )
 vespa_add_test(NAME searchcore_querynodes_test_app COMMAND searchcore_querynodes_test_app)
-vespa_add_executable(searchcore_attribute_operation_test_app TEST
-    SOURCES
-    attribute_operation_test.cpp
-    DEPENDS
-    searchcore_matching
-)
-vespa_add_test(NAME searchcore_attribute_operation_test_app COMMAND searchcore_attribute_operation_test_app)

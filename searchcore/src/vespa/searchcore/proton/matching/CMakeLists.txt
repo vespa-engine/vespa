@@ -2,7 +2,6 @@
 vespa_add_library(searchcore_matching STATIC
     SOURCES
     attribute_limiter.cpp
-    attribute_operation.cpp
     blueprintbuilder.cpp
     constant_value_repo.cpp
     docid_range_scheduler.cpp

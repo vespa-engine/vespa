@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/attribute/i_attribute_functor.h>
+#include "i_attribute_functor.h"
 #include <vespa/searchlib/common/rankedhit.h>
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/vespalib/util/array.h>
@@ -10,7 +10,7 @@
 
 namespace search { class BitVector; }
 
-namespace proton::matching {
+namespace search::attribute {
 
 class AttributeOperation : public IAttributeFunctor {
 public:

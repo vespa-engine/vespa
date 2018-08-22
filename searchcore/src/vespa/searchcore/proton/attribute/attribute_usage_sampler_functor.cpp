@@ -14,13 +14,10 @@ AttributeUsageSamplerFunctor::AttributeUsageSamplerFunctor(
 {
 }
 
-AttributeUsageSamplerFunctor::~AttributeUsageSamplerFunctor()
-{
-}
+AttributeUsageSamplerFunctor::~AttributeUsageSamplerFunctor() = default;
 
 void
-AttributeUsageSamplerFunctor::operator()(const search::AttributeVector &
-                                         attributeVector)
+AttributeUsageSamplerFunctor::operator()(const search::AttributeVector & attributeVector)
 {
     // Executed by attribute writer thread
     search::AddressSpaceUsage usage = attributeVector.getAddressSpaceUsage();

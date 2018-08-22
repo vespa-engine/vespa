@@ -4,7 +4,7 @@
 
 namespace search { class AttributeVector; }
 
-namespace proton {
+namespace search::attribute {
 
 /*
  * Interface class for access attribute in correct attribute write
@@ -18,5 +18,4 @@ public:
     virtual ~IAttributeFunctor() { }
 };
 
-} // namespace proton
-
+}
