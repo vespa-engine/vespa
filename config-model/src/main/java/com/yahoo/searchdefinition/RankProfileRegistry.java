@@ -25,8 +25,6 @@ public class RankProfileRegistry {
     private final Map<RankProfile, Search> rankProfileToSearch = new LinkedHashMap<>();
     private final Map<Search, Map<String, RankProfile>> rankProfiles = new LinkedHashMap<>();
 
-    private final ExpressionTransforms expressionTransforms = new ExpressionTransforms();
-
     /* These rank profiles can be overridden: 'default' rank profile, as that is documented to work. And 'unranked'. */
     static final Set<String> overridableRankProfileNames = new HashSet<>(Arrays.asList("default", "unranked"));
 
@@ -93,12 +91,5 @@ public class RankProfileRegistry {
         }
         return mapping.values();
     }
-
-    /**
-     * Returns the ranking expression transforms that should be performed on all expressions in this.
-     * This instance (and hence the instances of individual transformers) has the lifetime of a single
-     * application package deployment.
-     */
-    public ExpressionTransforms expressionTransforms() { return expressionTransforms; }
 
 }

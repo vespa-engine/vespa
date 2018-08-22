@@ -24,10 +24,10 @@ import java.util.Map;
  */
 public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
-    /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
-    private final Map<Path, ConvertedModel> convertedModels = new HashMap<>();
+    private final ImportedModels importedOnnxModels = new ImportedModels(new OnnxImporter());
 
-    private final ImportedModels importedModels = new ImportedModels(new OnnxImporter());
+    /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
+    private final Map<Path, ConvertedModel> convertedOnnxModels = new HashMap<>();
 
     @Override
     public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
@@ -44,8 +44,8 @@ public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTrans
 
         try {
             Path modelPath = Path.fromString(ConvertedModel.FeatureArguments.asString(feature.getArguments().expressions().get(0)));
-            // TODO: Increase scope of this instance to a rank profile:
-            ConvertedModel convertedModel = new ConvertedModel(modelPath, context, importedModels);
+            ConvertedModel convertedModel =
+                    convertedOnnxModels.computeIfAbsent(modelPath, __ -> new ConvertedModel(modelPath, context, importedOnnxModels));
             return convertedModel.expression(asFeatureArguments(feature.getArguments()));
         }
         catch (IllegalArgumentException | UncheckedIOException e) {

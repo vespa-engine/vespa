@@ -9,7 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Superclass of expression transformers
+ * Superclass of expression transformers. The scope (lifetime) of a transformer instance is a single compilation
+ * of alle the expressions in one rank profile.
  *
  * @author bratseth
  */
