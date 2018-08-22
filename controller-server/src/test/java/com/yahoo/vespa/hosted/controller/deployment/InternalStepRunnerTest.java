@@ -87,7 +87,7 @@ public class InternalStepRunnerTest {
         // Get deployment job logs to stderr.
         Logger.getLogger(InternalStepRunner.class.getName()).setLevel(DEBUG);
         Logger.getLogger("").setLevel(DEBUG);
-        Logger.getLogger("").getHandlers()[0].setLevel(DEBUG);
+        tester.controllerTester().configureDefaultLogHandler(handler -> handler.setLevel(DEBUG));
     }
 
     @Test

@@ -35,19 +35,22 @@ import com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock;
 import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
+import com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
-import com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Handler;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertNotNull;
@@ -128,11 +131,19 @@ public final class ControllerTester {
                                            metricsService, routingGenerator);
 
         // Make root logger use time from manual clock
-        Logger.getLogger("").getHandlers()[0].setFilter(
+        configureDefaultLogHandler(handler -> handler.setFilter(
                 record -> {
                     record.setMillis(clock.millis());
                     return true;
-                });
+                }));
+    }
+
+    public void configureDefaultLogHandler(Consumer<Handler> configureFunc) {
+        Arrays.stream(Logger.getLogger("").getHandlers())
+              // Do not mess with log configuration if a custom one has been set
+              .filter(ignored -> System.getProperty("java.util.logging.config.file") == null)
+              .findFirst()
+              .ifPresent(configureFunc);
     }
 
     public static BuildService.BuildJob buildJob(Application application, JobType jobType) {
