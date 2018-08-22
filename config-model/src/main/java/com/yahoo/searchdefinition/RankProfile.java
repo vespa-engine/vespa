@@ -7,6 +7,7 @@ import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.searchdefinition.expressiontransforms.ExpressionTransforms;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
@@ -695,15 +696,16 @@ public class RankProfile implements Serializable, Cloneable {
     private void compileThis(QueryProfileRegistry queryProfiles) {
         parseExpressions();
         checkNameCollisions(getMacros(), getConstants());
+        ExpressionTransforms expressionTransforms = new ExpressionTransforms();
 
         // Macro compiling first pass: compile inline macros without resolving other macros
-        Map<String, Macro> inlineMacros = compileMacros(getInlineMacros(), queryProfiles, Collections.emptyMap());
+        Map<String, Macro> inlineMacros = compileMacros(getInlineMacros(), queryProfiles, Collections.emptyMap(), expressionTransforms);
 
         // Macro compiling second pass: compile all macros and insert previously compiled inline macros
-        macros = compileMacros(getMacros(), queryProfiles, inlineMacros);
+        macros = compileMacros(getMacros(), queryProfiles, inlineMacros, expressionTransforms);
 
-        firstPhaseRanking = compile(this.getFirstPhaseRanking(), queryProfiles, getConstants(), inlineMacros);
-        secondPhaseRanking = compile(this.getSecondPhaseRanking(), queryProfiles, getConstants(), inlineMacros);
+        firstPhaseRanking = compile(this.getFirstPhaseRanking(), queryProfiles, getConstants(), inlineMacros, expressionTransforms);
+        secondPhaseRanking = compile(this.getSecondPhaseRanking(), queryProfiles, getConstants(), inlineMacros, expressionTransforms);
     }
 
     private void checkNameCollisions(Map<String, Macro> macros, Map<String, Value> constants) {
@@ -721,11 +723,12 @@ public class RankProfile implements Serializable, Cloneable {
 
     private Map<String, Macro> compileMacros(Map<String, Macro> macros,
                                              QueryProfileRegistry queryProfiles,
-                                             Map<String, Macro> inlineMacros) {
+                                             Map<String, Macro> inlineMacros,
+                                             ExpressionTransforms expressionTransforms) {
         Map<String, Macro> compiledMacros = new LinkedHashMap<>();
         for (Map.Entry<String, Macro> entry : macros.entrySet()) {
             Macro macro = entry.getValue().clone();
-            RankingExpression exp = compile(macro.getRankingExpression(), queryProfiles, getConstants(), inlineMacros);
+            RankingExpression exp = compile(macro.getRankingExpression(), queryProfiles, getConstants(), inlineMacros, expressionTransforms);
             macro.setRankingExpression(exp);
             compiledMacros.put(entry.getKey(), macro);
         }
@@ -735,7 +738,8 @@ public class RankProfile implements Serializable, Cloneable {
     private RankingExpression compile(RankingExpression expression,
                                       QueryProfileRegistry queryProfiles,
                                       Map<String, Value> constants,
-                                      Map<String, Macro> inlineMacros) {
+                                      Map<String, Macro> inlineMacros,
+                                      ExpressionTransforms expressionTransforms) {
         if (expression == null) return null;
         Map<String, String> rankPropertiesOutput = new HashMap<>();
 
@@ -744,7 +748,7 @@ public class RankProfile implements Serializable, Cloneable {
                                                                               constants,
                                                                               inlineMacros,
                                                                               rankPropertiesOutput);
-        expression = rankProfileRegistry.expressionTransforms().transform(expression, context);
+        expression = expressionTransforms.transform(expression, context);
         for (Map.Entry<String, String> rankProperty : rankPropertiesOutput.entrySet()) {
             addRankProperty(rankProperty.getKey(), rankProperty.getValue());
         }

@@ -13,22 +13,26 @@ import java.util.List;
  * The transformations done on ranking expressions done at config time before passing them on to the Vespa
  * engine for execution.
  *
- * An instance of this class has scope of one complete deployment.
+ * An instance of this class has scope of a compilation of a single rank profile.
  *
  * @author bratseth
  */
 public class ExpressionTransforms {
 
-    private final List<ExpressionTransformer> transforms =
-            ImmutableList.of(new TensorFlowFeatureConverter(),
-                             new OnnxFeatureConverter(),
-                             new XgboostFeatureConverter(),
-                             new ConstantDereferencer(),
-                             new ConstantTensorTransformer(),
-                             new MacroInliner(),
-                             new MacroShadower(),
-                             new TensorTransformer(),
-                             new Simplifier());
+    private final List<ExpressionTransformer> transforms;
+
+    public ExpressionTransforms() {
+        transforms =
+                ImmutableList.of(new TensorFlowFeatureConverter(),
+                                 new OnnxFeatureConverter(),
+                                 new XgboostFeatureConverter(),
+                                 new ConstantDereferencer(),
+                                 new ConstantTensorTransformer(),
+                                 new MacroInliner(),
+                                 new MacroShadower(),
+                                 new TensorTransformer(),
+                                 new Simplifier());
+    }
 
     public RankingExpression transform(RankingExpression expression, RankProfileTransformContext context) {
         for (ExpressionTransformer transformer : transforms)
