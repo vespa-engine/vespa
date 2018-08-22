@@ -210,7 +210,7 @@ public class OsUpgraderTest {
         tester.controllerTester().zoneRegistry()
               .setZones(zone1, zone2, zone3, zone4, zone5)
               .setSystemName(system)
-              .setUpgradePolicy(upgradePolicy);
+              .setOsUpgradePolicy(CloudName.defaultName(), upgradePolicy);
         return new OsUpgrader(tester.controller(), Duration.ofDays(1),
                               new JobControl(tester.controllerTester().curator()), CloudName.defaultName());
     }

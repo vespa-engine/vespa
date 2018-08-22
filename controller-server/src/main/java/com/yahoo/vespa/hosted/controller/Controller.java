@@ -232,8 +232,16 @@ public class Controller extends AbstractComponent {
 
     /** Set the target OS version for infrastructure on cloud in this system */
     public void upgradeOsIn(CloudName cloud, Version version) {
+        if (version.isEmpty()) {
+            throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
+        }
         try (Lock lock = curator.lockOsVersions()) {
             Set<OsVersion> versions = new TreeSet<>(curator.readOsVersions());
+            if (versions.stream().anyMatch(osVersion -> osVersion.cloud().equals(cloud) &&
+                                                        osVersion.version().isAfter(version))) {
+                throw new IllegalArgumentException("Cannot downgrade cloud '" + cloud.value() + "' to version " +
+                                                   version.toFullString());
+            }
             versions.removeIf(osVersion -> osVersion.cloud().equals(cloud)); // Only allow a single target per cloud
             versions.add(new OsVersion(version, cloud));
             curator.writeOsVersions(versions);

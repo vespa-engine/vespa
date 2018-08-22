@@ -31,7 +31,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class ControllerContainerTest {
 
-    public static final AthenzUser USER = AthenzUser.fromUserId("bob");
+    private static final AthenzUser defaultUser = AthenzUser.fromUserId("bob");
+
     protected JDisc container;
 
     @Before
@@ -92,6 +93,9 @@ public class ControllerContainerTest {
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.controller.ControllerApiHandler'>\n" +
             "    <binding>http://*/controller/v1/*</binding>\n" +
             "  </handler>\n" +
+            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.os.OsApiHandler'>\n" +
+            "    <binding>http://*/os/v1/*</binding>\n" +
+            "  </handler>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.screwdriver.ScrewdriverApiHandler'>\n" +
             "    <binding>http://*/screwdriver/v1/*</binding>\n" +
             "  </handler>\n" +
@@ -127,11 +131,11 @@ public class ControllerContainerTest {
     }
 
     protected static Request authenticatedRequest(String uri) {
-        return addIdentityToRequest(new Request(uri), USER);
+        return addIdentityToRequest(new Request(uri), defaultUser);
     }
 
     protected static Request authenticatedRequest(String uri, byte[] body, Request.Method method) {
-        return addIdentityToRequest(new Request(uri, body, method), USER);
+        return addIdentityToRequest(new Request(uri, body, method), defaultUser);
     }
 
     protected static Request addIdentityToRequest(Request request, AthenzIdentity identity) {

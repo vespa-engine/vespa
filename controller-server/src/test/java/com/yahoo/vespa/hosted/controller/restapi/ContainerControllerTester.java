@@ -8,7 +8,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TestIdentities;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
@@ -21,18 +20,18 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
+import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 
 import java.io.File;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
 
@@ -96,11 +95,11 @@ public class ContainerControllerTester {
 
     // ---- Delegators:
     
-    public void assertResponse(Request request, File expectedResponse) throws IOException {
+    public void assertResponse(Request request, File expectedResponse) {
         containerTester.assertResponse(request, expectedResponse);
     }
 
-    public void assertResponse(Request request, String expectedResponse, int expectedStatusCode) throws IOException {
+    public void assertResponse(Request request, String expectedResponse, int expectedStatusCode) {
         containerTester.assertResponse(request, expectedResponse, expectedStatusCode);
     }
 
