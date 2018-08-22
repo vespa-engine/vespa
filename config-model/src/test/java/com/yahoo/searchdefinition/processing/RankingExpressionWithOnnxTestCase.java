@@ -29,7 +29,11 @@ import static org.junit.Assert.fail;
 public class RankingExpressionWithOnnxTestCase {
 
     private final Path applicationDir = Path.fromString("src/test/integration/onnx/");
-    private final static String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(mnist_softmax_onnx_Variable), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_onnx_Variable_1), f(a,b)(a + b))";
+
+    /** The model name - an artifact of the fact that the model here is not placed in the expected directory (models) */
+    private final static String name = "test_integration_onnx_models_mnist_softmax_onnx";
+
+    private final static String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(" + name + "_Variable), f(a,b)(a * b)), sum, d2), constant(" + name + "_Variable_1), f(a,b)(a + b))";
 
     @After
     public void removeGeneratedConstantTensorFiles() {
@@ -43,8 +47,8 @@ public class RankingExpressionWithOnnxTestCase {
                 "constant mytensor { file: ignored\ntype: tensor(d0[7],d1[784]) }",
                 null);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("mnist_softmax_onnx_Variable_1", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_onnx_Variable", search, Optional.of(7840L));
+        assertLargeConstant(name + "_Variable_1", search, Optional.of(10L));
+        assertLargeConstant(name + "_Variable", search, Optional.of(7840L));
     }
 
     @Test
@@ -63,8 +67,8 @@ public class RankingExpressionWithOnnxTestCase {
                 "Placeholder",
                 application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("mnist_softmax_onnx_Variable_1", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_onnx_Variable", search, Optional.of(7840L));
+        assertLargeConstant(name + "_Variable_1", search, Optional.of(10L));
+        assertLargeConstant(name + "_Variable", search, Optional.of(7840L));
     }
 
     @Test
@@ -77,8 +81,8 @@ public class RankingExpressionWithOnnxTestCase {
                 "Placeholder",
                 application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("mnist_softmax_onnx_Variable_1", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_onnx_Variable", search, Optional.of(7840L));
+        assertLargeConstant( name + "_Variable_1", search, Optional.of(10L));
+        assertLargeConstant( name + "_Variable", search, Optional.of(7840L));
     }
 
 
@@ -98,8 +102,8 @@ public class RankingExpressionWithOnnxTestCase {
                 "Placeholder",
                 application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("mnist_softmax_onnx_Variable_1", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_onnx_Variable", search, Optional.of(7840L));
+        assertLargeConstant( name + "_Variable_1", search, Optional.of(10L));
+        assertLargeConstant( name + "_Variable", search, Optional.of(7840L));
     }
 
 
@@ -108,8 +112,8 @@ public class RankingExpressionWithOnnxTestCase {
         RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                 "5 + sum(onnx('mnist_softmax.onnx'))");
         search.assertFirstPhaseExpression("5 + reduce(" + vespaExpression + ", sum)", "my_profile");
-        assertLargeConstant("mnist_softmax_onnx_Variable_1", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_onnx_Variable", search, Optional.of(7840L));
+        assertLargeConstant( name + "_Variable_1", search, Optional.of(10L));
+        assertLargeConstant( name + "_Variable", search, Optional.of(7840L));
     }
 
     @Test
@@ -176,8 +180,8 @@ public class RankingExpressionWithOnnxTestCase {
                 "onnx('mnist_softmax.onnx')");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
 
-        assertLargeConstant("mnist_softmax_onnx_Variable_1", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_onnx_Variable", search, Optional.of(7840L));
+        assertLargeConstant( name + "_Variable_1", search, Optional.of(10L));
+        assertLargeConstant( name + "_Variable", search, Optional.of(7840L));
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
         Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
@@ -195,8 +199,8 @@ public class RankingExpressionWithOnnxTestCase {
             searchFromStored.assertFirstPhaseExpression(vespaExpression, "my_profile");
             // Verify that the constants exists, but don't verify the content as we are not
             // simulating file distribution in this test
-            assertLargeConstant("mnist_softmax_onnx_Variable_1", searchFromStored, Optional.empty());
-            assertLargeConstant("mnist_softmax_onnx_Variable", searchFromStored, Optional.empty());
+            assertLargeConstant( name + "_Variable_1", searchFromStored, Optional.empty());
+            assertLargeConstant( name + "_Variable", searchFromStored, Optional.empty());
         }
         finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
@@ -210,7 +214,7 @@ public class RankingExpressionWithOnnxTestCase {
                         "    macro Placeholder() {\n" +
                         "      expression: tensor(d0[2],d1[784])(0.0)\n" +
                         "    }\n" +
-                        "    macro mnist_softmax_onnx_Variable() {\n" +
+                        "    macro " + name + "_Variable() {\n" +
                         "      expression: tensor(d1[10],d2[784])(0.0)\n" +
                         "    }\n" +
                         "    first-phase {\n" +
@@ -220,14 +224,14 @@ public class RankingExpressionWithOnnxTestCase {
 
 
         String vespaExpressionWithoutConstant =
-                "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), mnist_softmax_onnx_Variable, f(a,b)(a * b)), sum, d2), constant(mnist_softmax_onnx_Variable_1), f(a,b)(a + b))";
+                "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), " + name + "_Variable, f(a,b)(a * b)), sum, d2), constant(" + name + "_Variable_1), f(a,b)(a + b))";
         RankProfileSearchFixture search = uncompiledFixtureWith(rankProfile, new StoringApplicationPackage(applicationDir));
         search.compileRankProfile("my_profile");
         search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
 
         assertNull("Constant overridden by macro is not added",
-                search.search().getRankingConstants().get("mnist_softmax_onnx_Variable"));
-        assertLargeConstant("mnist_softmax_onnx_Variable_1", search, Optional.of(10L));
+                search.search().getRankingConstants().get( name + "_Variable"));
+        assertLargeConstant( name + "_Variable_1", search, Optional.of(10L));
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
         Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
@@ -240,8 +244,8 @@ public class RankingExpressionWithOnnxTestCase {
             searchFromStored.compileRankProfile("my_profile");
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
             assertNull("Constant overridden by macro is not added",
-                    searchFromStored.search().getRankingConstants().get("mnist_softmax_onnx_Variable"));
-            assertLargeConstant("mnist_softmax_onnx_Variable_1", searchFromStored, Optional.of(10L));
+                    searchFromStored.search().getRankingConstants().get( name + "_Variable"));
+            assertLargeConstant( name + "_Variable_1", searchFromStored, Optional.of(10L));
         } finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
         }

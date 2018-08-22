@@ -93,7 +93,7 @@ public class ConvertedModel {
                                                         RankProfile profile,
                                                         QueryProfileRegistry queryProfiles,
                                                         ImportedModels importedModels) {
-        ImportedModel model = importedModels.imported(store.modelFiles.modelName(), store.sourceModelDir());
+        ImportedModel model = importedModels.get(store.sourceModelFile());
         return transformFromImportedModel(model, store, profile, queryProfiles);
     }
 
@@ -497,13 +497,13 @@ public class ConvertedModel {
         }
 
         public boolean hasSourceModel() {
-            return sourceModelDir().exists();
+            return sourceModelFile().exists();
         }
 
         /**
          * Returns the directory which contains the source model to use for these arguments
          */
-        public File sourceModelDir() {
+        public File sourceModelFile() {
             return application.getFileReference(ApplicationPackage.MODELS_DIR.append(modelFiles.modelPath()));
         }
 
