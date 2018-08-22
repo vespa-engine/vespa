@@ -66,7 +66,8 @@ public:
     typedef SequentialReadModifyWriteInterface<LoadedNumericValueT> LoadedVector;
     virtual uint32_t getRawValues(DocId doc, const multivalue::Value<T> * & values) const;
     virtual uint32_t getRawValues(DocId doc, const multivalue::WeightedValue<T> * & values) const;
-
+    virtual T get(DocId doc) const = 0;
+    virtual T getFromEnum(EnumHandle e) const = 0;
 protected:
     FloatingPointAttributeTemplate(const vespalib::string & name);
     FloatingPointAttributeTemplate(const vespalib::string & name, const Config & c);
@@ -83,8 +84,6 @@ private:
     bool findEnum(const char *value, EnumHandle &e) const override;
     std::vector<EnumHandle> findFoldedEnums(const char *value) const override;
     bool isUndefined(DocId doc) const override;
-    virtual T get(DocId doc) const = 0;
-    virtual T getFromEnum(EnumHandle e) const = 0;
 
     double getFloatFromEnum(EnumHandle e) const override;
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;

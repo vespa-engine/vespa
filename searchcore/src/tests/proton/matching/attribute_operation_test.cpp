@@ -44,9 +44,10 @@ TEST("test illegal operations on float attribute") {
 }
 
 AttributeVector::SP
-createAttribute(BasicType basicType, const vespalib::string &fieldName)
+createAttribute(BasicType basicType, const vespalib::string &fieldName, bool fastSearch = false)
 {
     Config cfg(basicType, CollectionType::SINGLE);
+    cfg.setFastSearch(fastSearch);
     auto av = search::AttributeFactory::createAttribute(fieldName, cfg);
     while (20 >= av->getNumDocs()) {
         AttributeVector::DocId checkDocId(0u);
@@ -57,13 +58,15 @@ createAttribute(BasicType basicType, const vespalib::string &fieldName)
 }
 
 template <typename T, typename A>
-void verify(vespalib::stringref operation, AttributeVector & attr, T initial, T expected) {
+void verify(BasicType type, vespalib::stringref operation, AttributeVector & attr, T initial, T expected) {
+    (void) expected;
     auto & attrT = dynamic_cast<A &>(attr);
     for (uint32_t docid(0); docid < attr.getNumDocs(); docid++) {
-        attrT.set(docid, initial);
+        attrT.update(docid, initial);
     }
+    attr.commit();
     std::vector<uint32_t> docs = {1,7,9,10,17,19};
-    auto op = AttributeOperation::create(attr.getBasicType(), operation, docs);
+    auto op = AttributeOperation::create(type, operation, docs);
     EXPECT_TRUE(op);
     op->operator()(attr);
     for (uint32_t docid(0); docid < attr.getNumDocs(); docid++) {
@@ -76,20 +79,30 @@ void verify(vespalib::stringref operation, AttributeVector & attr, T initial, T 
     }
 }
 
-template <typename T>
+template <typename T, typename A>
 void verify(vespalib::stringref operation, AttributeVector & attr, T initial, T expected) {
+    verify<T, A>(attr.getBasicType(), operation, attr, initial, expected);
+}
+
+template <typename T>
+void verify(BasicType typeClaimed, vespalib::stringref operation, AttributeVector & attr, T initial, T expected) {
     BasicType::Type type = attr.getBasicType();
     if (type == BasicType::INT64) {
-        verify<int64_t, search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int64_t>>>(operation, attr, initial, expected);
+        verify<int64_t, search::IntegerAttributeTemplate<int64_t>>(typeClaimed, operation, attr, initial, expected);
     } else if (type == BasicType::INT32) {
-        verify<int32_t, search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int32_t>>>(operation, attr, initial, expected);
+        verify<int32_t, search::IntegerAttributeTemplate<int32_t>>(typeClaimed, operation, attr, initial, expected);
     } else if (type == BasicType::DOUBLE) {
-        verify<double , search::SingleValueNumericAttribute<search::FloatingPointAttributeTemplate<double >>>(operation, attr, initial, expected);
+        verify<double , search::FloatingPointAttributeTemplate<double >>(typeClaimed, operation, attr, initial, expected);
     } else if (type == BasicType::FLOAT) {
-        verify<float , search::SingleValueNumericAttribute<search::FloatingPointAttributeTemplate<float >>>(operation, attr, initial, expected);
+        verify<float , search::FloatingPointAttributeTemplate<float >>(typeClaimed, operation, attr, initial, expected);
     } else {
         ASSERT_TRUE(false);
     }
+}
+
+template <typename T>
+void verify(vespalib::stringref operation, AttributeVector & attr, T initial, T expected) {
+    verify<T>(attr.getBasicType(), operation, attr, initial, expected);
 }
 
 TEST("test all integer operations") {
@@ -109,6 +122,20 @@ TEST("test all float operations") {
     };
     for (auto operation : expectedOperation) {
         TEST_DO(verify<double>(operation.first, *attr, 7, operation.second));
+    }
+}
+
+TEST("test that even slightly mismatching type will fail to update") {
+    auto attr = createAttribute(BasicType::INT32, "ai");
+    for (auto operation : {"++", "--", "+=7", "-=9", "*=3", "/=3", "%=3"}) {
+        TEST_DO(verify<int64_t>(BasicType::INT64, operation, *attr, 7, 7));
+    }
+}
+
+TEST("test that fastsearch attributes will fail to update") {
+    auto attr = createAttribute(BasicType::INT64, "ai", true);
+    for (auto operation : {"++", "--", "+=7", "-=9", "*=3", "/=3", "%=3"}) {
+        TEST_DO(verify<int64_t>(BasicType::INT64, operation, *attr, 7, 7));
     }
 }
 
