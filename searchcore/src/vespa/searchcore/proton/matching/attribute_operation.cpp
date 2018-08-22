@@ -2,7 +2,6 @@
 
 #include "attribute_operation.h"
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -102,7 +101,7 @@ struct UpdateFast {
 template <typename OP>
 class OperateOverResultSet : public AttributeOperation {
 public:
-    OperateOverResultSet(std::unique_ptr<search::ResultSet> result, typename OP::F::V operand)
+    OperateOverResultSet(FullResult && result, typename OP::F::V operand)
         : _operand(operand),
           _result(std::move(result))
     {}
@@ -110,17 +109,17 @@ public:
     void operator()(const search::AttributeVector &attributeVector) override {
         OP op(const_cast<search::AttributeVector &>(attributeVector), _operand);
         if (op.valid()) {
-            search::RankedHit *hits      = _result->getArray();
-            size_t             numHits   = _result->getArrayUsed();
+            const search::RankedHit *hits = &_result.second[0];
+            size_t numHits   = _result.second.size();
             std::for_each(hits, hits+numHits,  [&op](search::RankedHit hit) { op(hit.getDocId()); });
-            if (_result->getBitOverflow()) {
-                _result->getBitOverflow()->foreach_truebit([&op](uint32_t docId) { op(docId); });
+            if (_result.first) {
+                _result.first->foreach_truebit([&op](uint32_t docId) { op(docId); });
             }
         }
     }
 private:
     typename OP::F::V _operand;
-    std::unique_ptr<search::ResultSet> _result;
+    FullResult _result;
 };
 
 template<typename OP>
@@ -224,7 +223,7 @@ createOperation(std::vector<AttributeOperation::Hit> vector, T operand) {
 
 template<typename T, typename OP>
 std::unique_ptr<AttributeOperation>
-createOperation(std::unique_ptr<search::ResultSet> result, T operand) {
+createOperation(AttributeOperation::FullResult && result, T operand) {
     return std::make_unique<OperateOverResultSet<OP>>(std::move(result), operand);
 }
 
@@ -325,22 +324,19 @@ Operation::create(BasicType type, V hits) const {
 std::unique_ptr<AttributeOperation>
 AttributeOperation::create(BasicType type, const vespalib::string & operation, std::vector<uint32_t> docs) {
     Operation op = Operation::create(operation);
-    using R = std::vector<uint32_t>;
-    return op.create<R>(type, std::move(docs));
+    return op.create<std::vector<uint32_t>>(type, std::move(docs));
 }
 
 std::unique_ptr<AttributeOperation>
 AttributeOperation::create(BasicType type, const vespalib::string & operation, std::vector<Hit> docs) {
     Operation op = Operation::create(operation);
-    using R = std::vector<Hit>;
-    return op.create<R>(type, std::move(docs));
+    return op.create<std::vector<Hit>>(type, std::move(docs));
 }
 
 std::unique_ptr<AttributeOperation>
-AttributeOperation::create(BasicType type, const vespalib::string & operation, std::unique_ptr<search::ResultSet> docs) {
+AttributeOperation::create(BasicType type, const vespalib::string & operation, FullResult && docs) {
     Operation op = Operation::create(operation);
-    using R = std::unique_ptr<search::ResultSet>;
-    return op.create<R>(type, std::move(docs));
+    return op.create<FullResult>(type, std::move(docs));
 }
 
 }

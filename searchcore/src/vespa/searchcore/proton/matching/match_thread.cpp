@@ -303,7 +303,7 @@ MatchThread::processResult(const Doom & hardDoom,
     }
     if (hardDoom.doom()) return;
     size_t             totalHits = result->getNumHits();
-    search::RankedHit *hits      = result->getArray();
+    const search::RankedHit *hits = result->getArray();
     size_t             numHits   = result->getArrayUsed();
     search::BitVector *bits  = result->getBitOverflow();
     if (bits != nullptr && hits != nullptr) {
@@ -316,7 +316,7 @@ MatchThread::processResult(const Doom & hardDoom,
     }
     if (hardDoom.doom()) return;
     size_t sortLimit = hasGrouping ? numHits : context.result->maxSize();
-    context.sort->sorter->sortResults(hits, numHits, sortLimit);
+    result->sort(*context.sort->sorter, sortLimit);
     if (hardDoom.doom()) return;
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
