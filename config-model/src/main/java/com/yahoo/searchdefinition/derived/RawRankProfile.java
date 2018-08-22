@@ -9,6 +9,7 @@ import com.yahoo.searchdefinition.document.RankType;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
@@ -47,9 +48,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     /**
      * Creates a raw rank profile from the given rank profile
      */
-    public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, AttributeFields attributeFields) {
+    public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedModels importedModels, AttributeFields attributeFields) {
         this.name = rankProfile.getName();
-        compressedProperties = compress(removePartFromKeys(new Deriver(rankProfile, queryProfiles, attributeFields).derive()));
+        compressedProperties = compress(removePartFromKeys(new Deriver(rankProfile, queryProfiles, importedModels, attributeFields).derive()));
     }
     
     private List<Pair<String, String>> removePartFromKeys(Map<String, String> map) {
@@ -155,8 +156,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         /**
          * Creates a raw rank profile from the given rank profile
          */
-        public Deriver(RankProfile rankProfile, QueryProfileRegistry queryProfiles, AttributeFields attributeFields) {
-            RankProfile compiled = rankProfile.compile(queryProfiles);
+        public Deriver(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedModels importedModels, AttributeFields attributeFields) {
+            RankProfile compiled = rankProfile.compile(queryProfiles, importedModels);
             attributeTypes = compiled.getAttributeTypes();
             queryFeatureTypes = compiled.getQueryFeatureTypes();
             deriveRankingFeatures(compiled);

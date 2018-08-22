@@ -8,6 +8,7 @@ import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -39,6 +40,7 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
 
         List<Pair<String, String>> rankProperties = new RawRankProfile(macrosRankProfile,
                                                                        new QueryProfileRegistry(),
+                                                                       new ImportedModels(),
                                                                        new AttributeFields(search)).configProperties();
         assertEquals(6, rankProperties.size());
 
@@ -64,7 +66,7 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
         Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressioninfile",
                                                           registry,
                                                           new QueryProfileRegistry()).getSearch();
-        new DerivedConfiguration(search, registry, new QueryProfileRegistry()); // rank profile parsing happens during deriving
+        new DerivedConfiguration(search, registry, new QueryProfileRegistry(), new ImportedModels()); // rank profile parsing happens during deriving
     }
 
 }

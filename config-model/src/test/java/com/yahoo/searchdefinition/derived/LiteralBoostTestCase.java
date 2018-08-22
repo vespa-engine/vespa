@@ -11,6 +11,7 @@ import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.processing.Processing;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
 
@@ -41,7 +42,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
         Processing.process(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(), true);
-        DerivedConfiguration derived=new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry());
+        DerivedConfiguration derived=new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry(), new ImportedModels());
 
         // Check attribute fields
         derived.getAttributeFields(); // TODO: assert content
@@ -72,7 +73,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
         search = SearchBuilder.buildFromRawSearch(search, rankProfileRegistry, new QueryProfileRegistry());
-        DerivedConfiguration derived = new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry());
+        DerivedConfiguration derived = new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry(),new ImportedModels());
 
         // Check il script addition
         assertIndexing(Arrays.asList("clear_state | guard { input a | tokenize normalize stem:\"SHORTEST\" | index a; }",
@@ -99,7 +100,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         field2.setLiteralBoost(20);
 
         search = SearchBuilder.buildFromRawSearch(search, rankProfileRegistry, new QueryProfileRegistry());
-        new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry());
+        new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry(), new ImportedModels());
         assertIndexing(Arrays.asList("clear_state | guard { input title | tokenize normalize stem:\"SHORTEST\" | summary title | index title; }",
                                      "clear_state | guard { input body | tokenize normalize stem:\"SHORTEST\" | summary body | index body; }",
                                      "clear_state | guard { input title | tokenize | index title_literal; }",

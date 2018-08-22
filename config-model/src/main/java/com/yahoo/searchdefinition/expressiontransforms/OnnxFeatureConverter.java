@@ -3,13 +3,13 @@
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.path.Path;
-import com.yahoo.searchlib.rankingexpression.integration.ml.OnnxImporter;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
+import java.io.File;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,8 +23,6 @@ import java.util.Map;
  * @author lesters
  */
 public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
-
-    private final ImportedModels importedOnnxModels = new ImportedModels(new OnnxImporter());
 
     /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
     private final Map<Path, ConvertedModel> convertedOnnxModels = new HashMap<>();
@@ -45,7 +43,7 @@ public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTrans
         try {
             Path modelPath = Path.fromString(ConvertedModel.FeatureArguments.asString(feature.getArguments().expressions().get(0)));
             ConvertedModel convertedModel =
-                    convertedOnnxModels.computeIfAbsent(modelPath, __ -> new ConvertedModel(modelPath, context, importedOnnxModels));
+                    convertedOnnxModels.computeIfAbsent(modelPath, __ -> new ConvertedModel(modelPath, context));
             return convertedModel.expression(asFeatureArguments(feature.getArguments()));
         }
         catch (IllegalArgumentException | UncheckedIOException e) {

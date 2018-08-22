@@ -10,6 +10,7 @@ import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.processing.Processing;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
 
@@ -33,7 +34,7 @@ public class TypeConversionTestCase extends SearchDefinitionTestCase {
         document.addField(a);
 
         Processing.process(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(), true);
-        DerivedConfiguration derived = new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry());
+        DerivedConfiguration derived = new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry(), new ImportedModels());
         IndexInfo indexInfo = derived.getIndexInfo();
         assertFalse(indexInfo.hasCommand("default", "compact-to-term"));
     }

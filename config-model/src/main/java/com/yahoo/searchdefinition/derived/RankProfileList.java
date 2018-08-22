@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.Search;
@@ -26,24 +27,27 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     public RankProfileList(Search search,
                            AttributeFields attributeFields,
                            RankProfileRegistry rankProfileRegistry,
-                           QueryProfileRegistry queryProfiles) {
+                           QueryProfileRegistry queryProfiles,
+                           ImportedModels importedModels) {
         setName(search.getName());
-        deriveRankProfiles(rankProfileRegistry, queryProfiles, search, attributeFields);
+        deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, search, attributeFields);
     }
 
     private void deriveRankProfiles(RankProfileRegistry rankProfileRegistry,
                                     QueryProfileRegistry queryProfiles,
+                                    ImportedModels importedModels,
                                     Search search,
                                     AttributeFields attributeFields) {
         RawRankProfile defaultProfile = new RawRankProfile(rankProfileRegistry.getRankProfile(search, "default"),
                                                            queryProfiles,
+                                                           importedModels,
                                                            attributeFields);
         rankProfiles.put(defaultProfile.getName(), defaultProfile);
 
         for (RankProfile rank : rankProfileRegistry.localRankProfiles(search)) {
             if ("default".equals(rank.getName())) continue;
 
-            RawRankProfile rawRank = new RawRankProfile(rank, queryProfiles, attributeFields);
+            RawRankProfile rawRank = new RawRankProfile(rank, queryProfiles, importedModels, attributeFields);
             rankProfiles.put(rawRank.getName(), rawRank);
         }
     }

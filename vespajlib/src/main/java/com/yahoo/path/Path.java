@@ -73,7 +73,8 @@ public final class Path {
     /**
      * Appends a path to another path, thereby creating a new path with the provided path
      * appended to this.
-     * @param path The path to append.
+     *
+     * @param path the path to append.
      * @return a new path with argument appended to it.
      */
     public Path append(Path path) {
@@ -82,20 +83,13 @@ public final class Path {
         return new Path(newElements, delimiter);
     }
 
-    /**
-     * Get the name of this path element, typically the last element in the path string.
-     *
-     * @return the name
-     */
+    /** Returns the name of this path element, typically the last element in the path string */
     public String getName() {
         if (elements.isEmpty()) return "";
         return elements.get(elements.size() - 1);
     }
 
-    /**
-     * Get a string representation of the path represented by this.
-     * @return a path string.
-     */
+    /** Returns a string representation of the path represented by this */
     public String getRelative() {
         if (elements.isEmpty()) {
             return "";
@@ -109,10 +103,7 @@ public final class Path {
         return sb.toString();
     }
 
-    /**
-     * Get the parent path (all elements except last).
-     * @return the parent path.
-     */
+    /** Returns the parent path: A path containing all elements of this except the last */
     public Path getParentPath() {
         ArrayList<String> parentElements = new ArrayList<>();
         if (elements.size() > 1) {
@@ -123,10 +114,18 @@ public final class Path {
         return new Path(parentElements, delimiter);
     }
 
-    /**
-     * Get string representation of path represented from the root node.
-     * @return string representation of path
-     */
+    /** Returns the child path: A path containing all elements of this except the first */
+    public Path getChildPath() {
+        ArrayList<String> childElements = new ArrayList<>();
+        if (elements.size() > 1) {
+            for (int i = 1; i < elements.size(); i++) {
+                childElements.add(elements.get(i));
+            }
+        }
+        return new Path(childElements, delimiter);
+    }
+
+    /** Returns a string representation of this path where the delimiter is prepended */
     public String getAbsolute() {
         return delimiter + getRelative();
     }
@@ -140,24 +139,18 @@ public final class Path {
     /** Returns an immutable list of the elements of this path in order */
     public List<String> elements() { return elements; }
 
-    /**
-     * Convert to string.
-     *
-     * @return string representation of relative path
-     */
+    /** Returns this as a string */
     @Override
     public String toString() {
-        // TODO: This and the relative/absolute thing is wrong. The Path either *is* relative or absolute
-        //       and should return accordingly here. getAbsolute/relative should be replaced by an asRelative/absolute
-        //       returning another Path
         return getRelative();
     }
 
     /**
-     * Create a path from a string. The string is treated as a relative path, and all redundant '/'-characters are
+     * Creates a path from a string. The string is treated as a relative path, and all redundant '/'-characters are
      * stripped.
-     * @param path the relative path that this path should represent.
-     * @return a path object that may be used with the application package.
+     *
+     * @param path the relative path that this path should represent
+     * @return a path object that may be used with the application package
      */
     public static Path fromString(String path) {
         return fromString(path, "/");
@@ -166,8 +159,9 @@ public final class Path {
     /**
      * Create a path from a string. The string is treated as a relative path, and all redundant delimiter-characters are
      * stripped.
-     * @param path the relative path that this path should represent.
-     * @return a path object that may be used with the application package.
+     *
+     * @param path the relative path that this path should represent
+     * @return a path object that may be used with the application package
      */
     public static Path fromString(String path, String delimiter) {
         return new Path(elementsOf(path, delimiter), delimiter);
@@ -205,4 +199,5 @@ public final class Path {
         }
         return false;
     }
+
 }

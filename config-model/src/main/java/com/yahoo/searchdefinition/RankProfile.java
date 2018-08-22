@@ -16,6 +16,7 @@ import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -682,10 +683,10 @@ public class RankProfile implements Serializable, Cloneable {
      * Returns a copy of this where the content is optimized for execution.
      * Compiled profiles should never be modified.
      */
-    public RankProfile compile(QueryProfileRegistry queryProfiles) {
+    public RankProfile compile(QueryProfileRegistry queryProfiles, ImportedModels importedModels) {
         try {
             RankProfile compiled = this.clone();
-            compiled.compileThis(queryProfiles);
+            compiled.compileThis(queryProfiles, importedModels);
             return compiled;
         }
         catch (IllegalArgumentException e) {
@@ -693,19 +694,19 @@ public class RankProfile implements Serializable, Cloneable {
         }
     }
 
-    private void compileThis(QueryProfileRegistry queryProfiles) {
+    private void compileThis(QueryProfileRegistry queryProfiles, ImportedModels importedModels) {
         parseExpressions();
         checkNameCollisions(getMacros(), getConstants());
         ExpressionTransforms expressionTransforms = new ExpressionTransforms();
 
         // Macro compiling first pass: compile inline macros without resolving other macros
-        Map<String, Macro> inlineMacros = compileMacros(getInlineMacros(), queryProfiles, Collections.emptyMap(), expressionTransforms);
+        Map<String, Macro> inlineMacros = compileMacros(getInlineMacros(), queryProfiles, importedModels, Collections.emptyMap(), expressionTransforms);
 
         // Macro compiling second pass: compile all macros and insert previously compiled inline macros
-        macros = compileMacros(getMacros(), queryProfiles, inlineMacros, expressionTransforms);
+        macros = compileMacros(getMacros(), queryProfiles, importedModels, inlineMacros, expressionTransforms);
 
-        firstPhaseRanking = compile(this.getFirstPhaseRanking(), queryProfiles, getConstants(), inlineMacros, expressionTransforms);
-        secondPhaseRanking = compile(this.getSecondPhaseRanking(), queryProfiles, getConstants(), inlineMacros, expressionTransforms);
+        firstPhaseRanking = compile(this.getFirstPhaseRanking(), queryProfiles, importedModels, getConstants(), inlineMacros, expressionTransforms);
+        secondPhaseRanking = compile(this.getSecondPhaseRanking(), queryProfiles, importedModels, getConstants(), inlineMacros, expressionTransforms);
     }
 
     private void checkNameCollisions(Map<String, Macro> macros, Map<String, Value> constants) {
@@ -723,12 +724,13 @@ public class RankProfile implements Serializable, Cloneable {
 
     private Map<String, Macro> compileMacros(Map<String, Macro> macros,
                                              QueryProfileRegistry queryProfiles,
+                                             ImportedModels importedModels,
                                              Map<String, Macro> inlineMacros,
                                              ExpressionTransforms expressionTransforms) {
         Map<String, Macro> compiledMacros = new LinkedHashMap<>();
         for (Map.Entry<String, Macro> entry : macros.entrySet()) {
             Macro macro = entry.getValue().clone();
-            RankingExpression exp = compile(macro.getRankingExpression(), queryProfiles, getConstants(), inlineMacros, expressionTransforms);
+            RankingExpression exp = compile(macro.getRankingExpression(), queryProfiles, importedModels, getConstants(), inlineMacros, expressionTransforms);
             macro.setRankingExpression(exp);
             compiledMacros.put(entry.getKey(), macro);
         }
@@ -737,6 +739,7 @@ public class RankProfile implements Serializable, Cloneable {
 
     private RankingExpression compile(RankingExpression expression,
                                       QueryProfileRegistry queryProfiles,
+                                      ImportedModels importedModels,
                                       Map<String, Value> constants,
                                       Map<String, Macro> inlineMacros,
                                       ExpressionTransforms expressionTransforms) {
@@ -745,6 +748,7 @@ public class RankProfile implements Serializable, Cloneable {
 
         RankProfileTransformContext context = new RankProfileTransformContext(this,
                                                                               queryProfiles,
+                                                                              importedModels,
                                                                               constants,
                                                                               inlineMacros,
                                                                               rankPropertiesOutput);

@@ -38,8 +38,7 @@ public class ImportedModel {
      */
     public ImportedModel(String name) {
         if ( ! nameRegexp.matcher(name).matches())
-            throw new IllegalArgumentException("An imported model name can only contain [A-Za-z0-9_], but is '" +
-                    name + "'");
+            throw new IllegalArgumentException("An imported model name can only contain [A-Za-z0-9_], but is '" + name + "'");
         this.name = name;
     }
 

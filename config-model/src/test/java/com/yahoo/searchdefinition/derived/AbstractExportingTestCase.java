@@ -8,6 +8,7 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
 
@@ -80,14 +81,16 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
     protected DerivedConfiguration derive(String dirName, String searchDefinitionName, SearchBuilder builder) throws IOException {
         DerivedConfiguration config = new DerivedConfiguration(builder.getSearch(searchDefinitionName),
                                                                builder.getRankProfileRegistry(),
-                                                               builder.getQueryProfileRegistry());
+                                                               builder.getQueryProfileRegistry(),
+                                                               new ImportedModels());
         return export(dirName, builder, config);
     }
 
     protected DerivedConfiguration derive(String dirName, SearchBuilder builder, Search search) throws IOException {
         DerivedConfiguration config = new DerivedConfiguration(search,
                                                                builder.getRankProfileRegistry(),
-                                                               builder.getQueryProfileRegistry());
+                                                               builder.getQueryProfileRegistry(),
+                                                               new ImportedModels());
         return export(dirName, builder, config);
     }
 

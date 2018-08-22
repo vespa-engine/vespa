@@ -17,6 +17,7 @@ import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import org.junit.Test;
 
 import java.util.List;
@@ -199,9 +200,10 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
                 "}\n");
         builder.build(true, new BaseDeployLogger());
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(queryProfiles);
+        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(queryProfiles, new ImportedModels());
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
                                                                            queryProfiles,
+                                                                           new ImportedModels(),
                                                                            new AttributeFields(s)).configProperties();
         return testRankProperties;
     }

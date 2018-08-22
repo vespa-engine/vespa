@@ -16,6 +16,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
@@ -77,14 +78,12 @@ public class ConvertedModel {
      * Create a converted model for a rank profile given from either an imported model,
      * or (if unavailable) from stored application package data.
      */
-    public ConvertedModel(Path modelPath,
-                          RankProfileTransformContext context,
-                          ImportedModels importedModels) {
+    public ConvertedModel(Path modelPath, RankProfileTransformContext context) {
         this.modelPath = modelPath;
         this.modelName = toModelName(modelPath);
         ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), modelPath);
         if ( store.hasSourceModel())
-            expressions = convertModel(store, context.rankProfile(), context.queryProfiles(), importedModels);
+            expressions = convertModel(store, context.rankProfile(), context.queryProfiles(), context.importedModels());
         else
             expressions = transformFromStoredModel(store, context.rankProfile());
     }
@@ -93,7 +92,7 @@ public class ConvertedModel {
                                                         RankProfile profile,
                                                         QueryProfileRegistry queryProfiles,
                                                         ImportedModels importedModels) {
-        ImportedModel model = importedModels.imported(store.modelFiles.modelName(), store.sourceModelDir());
+        ImportedModel model = importedModels.get(store.sourceModelFile());
         return transformFromImportedModel(model, store, profile, queryProfiles);
     }
 
@@ -497,13 +496,13 @@ public class ConvertedModel {
         }
 
         public boolean hasSourceModel() {
-            return sourceModelDir().exists();
+            return sourceModelFile().exists();
         }
 
         /**
          * Returns the directory which contains the source model to use for these arguments
          */
-        public File sourceModelDir() {
+        public File sourceModelFile() {
             return application.getFileReference(ApplicationPackage.MODELS_DIR.append(modelFiles.modelPath()));
         }
 

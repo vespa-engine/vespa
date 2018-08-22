@@ -231,9 +231,8 @@ public interface ApplicationPackage {
      */
     ApplicationMetaData getMetaData();
 
-    default File getFileReference(Path pathRelativeToAppDir) {
-        throw new UnsupportedOperationException("This application package cannot return file references");
-    }
+    File getFileReference(Path pathRelativeToAppDir);
+
     default void validateXML() throws IOException {
         throw new UnsupportedOperationException("This application package cannot validate XML");
     }
