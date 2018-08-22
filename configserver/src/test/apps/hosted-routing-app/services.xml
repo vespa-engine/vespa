@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<services version="1.0">
+
+  <admin version="3.0">
+    <nodes count='1'/>
+  </admin>
+
+  <jdisc version="1.0">
+    <http>
+      <filtering>
+        <access-control domain="foo" write="true" />
+      </filtering>
+      <server id="foo" port="4080" />
+    </http>
+    <search/>
+    <nodes type='host'/>
+  </jdisc>
+
+
+</services>

@@ -168,8 +168,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
 
         // Make sure we build wanted version if we are building models for this major version and we are on hosted vespa
         // If not on hosted vespa, we do not want to try to build this version, since we have only one version (the latest)
+        // Also handle the case where there are no allocated hosts in the zone, so versions is empty
         Version wanted = Version.fromIntValues(wantedVersion.getMajor(), wantedVersion.getMinor(), wantedVersion.getMicro());
-        if (hosted && wantedVersion.getMajor() == findLatest(versions).getMajor())
+        if (hosted && (versions.isEmpty() || wantedVersion.getMajor() == findLatest(versions).getMajor()))
             versions.add(wanted);
 
         return versions;
