@@ -165,14 +165,14 @@ private:
 };
 
 struct Operation {
-    enum Type { INC, DEC, ADD, SUB, MUL, DIV, MOD, SET, BAD };
+    enum class Type { INC, DEC, ADD, SUB, MUL, DIV, MOD, SET, BAD };
     Operation(Type operation_in, vespalib::stringref operand_in) : operation(operation_in), operand(operand_in) { }
     template <typename V>
     std::unique_ptr<AttributeOperation> create(search::attribute::BasicType type, V vector) const;
     template <typename IT, typename V>
     std::unique_ptr<AttributeOperation> create(V vector) const;
-    bool valid() const { return operation != BAD; }
-    bool hasArgument() const { return valid() && (operation != INC) && (operation != DEC); }
+    bool valid() const { return operation != Type::BAD; }
+    bool hasArgument() const { return valid() && (operation != Type::INC) && (operation != Type::DEC); }
     Type operation;
     vespalib::stringref operand;
     static Operation create(vespalib::stringref s);
@@ -181,28 +181,28 @@ struct Operation {
 Operation
 Operation::create(vespalib::stringref s)
 {
-    Type op = BAD;
+    Type op = Type::BAD;
     if (s.size() >= 2) {
         if ((s[0] == '+') && (s[1] == '+')) {
-            op = INC;
+            op = Type::INC;
         } else if ((s[0] == '-') && (s[1] == '-')) {
-            op = DEC;
+            op = Type::DEC;
         } else if ((s[0] == '+') && (s[1] == '=')) {
-            op = ADD;
+            op = Type::ADD;
         } else if ((s[0] == '-') && (s[1] == '=')) {
-            op = SUB;
+            op = Type::SUB;
         } else if ((s[0] == '*') && (s[1] == '=')) {
-            op = MUL;
+            op = Type::MUL;
         } else if ((s[0] == '/') && (s[1] == '=')) {
-            op = DIV;
+            op = Type::DIV;
         } else if ((s[0] == '%') && (s[1] == '=')) {
-            op = MOD;
+            op = Type::MOD;
         } else if (s[0] == '=') {
-            op = SET;
+            op = Type::SET;
         }
-        if (op == SET) {
+        if (op == Type::SET) {
             s = s.substr(1);
-        } else if (op == BAD) {
+        } else if (op == Type::BAD) {
         } else {
             s = s.substr(2);
         }
@@ -241,33 +241,33 @@ Operation::create(V vector) const {
             is >> value;
             if (!is.empty()) {
                 LOG(warning, "Invalid operand, unable to consume all of (%s). (%s) is unconsumed.", operand.data(), is.c_str());
-                validOp = BAD;
+                validOp = Type::BAD;
             }
-            if (((validOp == DIV) || (validOp == MOD)) && (value == 0)) {
+            if (((validOp == Type::DIV) || (validOp == Type::MOD)) && (value == 0)) {
                 LOG(warning, "Division by zero is not acceptable (%s).", operand.data());
-                validOp = BAD;
+                validOp = Type::BAD;
             }
         } catch (vespalib::IllegalArgumentException & e) {
             LOG(warning, "Invalid operand, ignoring : %s", e.what());
-            validOp = BAD;
+            validOp = Type::BAD;
         }
     }
     switch (validOp) {
-        case INC:
+        case Type::INC:
             return createOperation<T, UpdateFast<A, Inc<T>>>(std::move(vector), value);
-        case DEC:
+        case Type::DEC:
             return createOperation<T, UpdateFast<A, Dec<T>>>(std::move(vector), value);
-        case ADD:
+        case Type::ADD:
             return createOperation<T, UpdateFast<A, Add<T>>>(std::move(vector), value);
-        case SUB:
+        case Type::SUB:
             return createOperation<T, UpdateFast<A, Add<T>>>(std::move(vector), -value);
-        case MUL:
+        case Type::MUL:
             return createOperation<T, UpdateFast<A, Mul<T>>>(std::move(vector), value);
-        case DIV:
+        case Type::DIV:
             return createOperation<T, UpdateFast<A, Div<T>>>(std::move(vector), value);
-        case MOD:
+        case Type::MOD:
             return createOperation<T, UpdateFast<A, Mod<T>>>(std::move(vector), value);
-        case SET:
+        case Type::SET:
             return createOperation<T, UpdateFast<A, Set<T>>>(std::move(vector), value);
         default:
             return std::unique_ptr<AttributeOperation>();
