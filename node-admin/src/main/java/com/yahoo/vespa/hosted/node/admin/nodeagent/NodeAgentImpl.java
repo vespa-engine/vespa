@@ -526,8 +526,8 @@ public class NodeAgentImpl implements NodeAgent {
             case dirty:
                 removeContainerIfNeededUpdateContainerState(node, container);
                 logger.info("State is " + node.getState() + ", will delete application storage and mark node as ready");
-                storageMaintainer.cleanupNodeStorage(containerName, node);
                 athenzCredentialsMaintainer.clearCredentials();
+                storageMaintainer.cleanupNodeStorage(containerName, node);
                 updateNodeRepoWithCurrentAttributes(node);
                 nodeRepository.setNodeState(hostname, Node.State.ready);
                 expectNodeNotInNodeRepo = true;
