@@ -1,9 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.expressiontransforms;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.path.Path;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ModelImporter;
+import com.yahoo.searchlib.rankingexpression.integration.ml.OnnxImporter;
+import com.yahoo.searchlib.rankingexpression.integration.ml.TensorFlowImporter;
 
 import java.io.File;
 import java.util.HashMap;
@@ -16,13 +20,12 @@ import java.util.Map;
  */
 class ImportedModels {
 
-    private final ModelImporter modelImporter;
-
     /** The cache of already imported models */
     private final Map<String, ImportedModel> importedModels = new HashMap<>();
 
-    ImportedModels(ModelImporter modelImporter) {
-        this.modelImporter = modelImporter;
+    private final ImmutableList<ModelImporter> importers = ImmutableList.of(new TensorFlowImporter(), new OnnxImporter());
+
+    ImportedModels() {
     }
 
     /**
@@ -34,7 +37,8 @@ class ImportedModels {
      */
     public ImportedModel get(File modelPath) {
         String modelName = toName(modelPath);
-        return importedModels.computeIfAbsent(modelName, __ -> modelImporter.importModel(modelName, modelPath));
+        ModelImporter importer = importers.stream().filter(item -> item.canImport(modelPath.toString())).findFirst().get();
+        return importedModels.computeIfAbsent(modelName, __ -> importer.importModel(modelName, modelPath));
     }
 
     private static String toName(File modelPath) {

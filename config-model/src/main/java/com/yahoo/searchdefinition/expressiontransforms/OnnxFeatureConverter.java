@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public class OnnxFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
-    private final ImportedModels importedOnnxModels = new ImportedModels(new OnnxImporter());
+    private final ImportedModels importedOnnxModels = new ImportedModels();
 
     /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
     private final Map<Path, ConvertedModel> convertedOnnxModels = new HashMap<>();

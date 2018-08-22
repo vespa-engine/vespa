@@ -22,7 +22,7 @@ import java.util.Map;
  */
 public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext>  {
 
-    private final ImportedModels importedTensorFlowModels = new ImportedModels(new TensorFlowImporter());
+    private final ImportedModels importedTensorFlowModels = new ImportedModels();
 
     /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
     private final Map<Path, ConvertedModel> convertedTensorFlowModels = new HashMap<>();

@@ -6,6 +6,7 @@ import com.yahoo.searchlib.rankingexpression.integration.ml.importer.Intermediat
 import com.yahoo.searchlib.rankingexpression.integration.ml.importer.onnx.GraphImporter;
 import onnx.Onnx;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
@@ -15,6 +16,14 @@ import java.io.IOException;
  * @author lesters
  */
 public class OnnxImporter extends ModelImporter {
+
+    @Override
+    public boolean canImport(String modelPath) {
+        File modelFile = new File(modelPath);
+        if ( ! modelFile.isFile()) return false;
+
+        return modelFile.toString().endsWith(".onnx");
+    }
 
     @Override
     public ImportedModel importModel(String modelName, String modelPath) {
