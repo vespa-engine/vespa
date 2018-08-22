@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/array.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.attribute_operation");
