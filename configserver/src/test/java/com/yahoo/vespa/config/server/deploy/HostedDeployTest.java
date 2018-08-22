@@ -120,6 +120,29 @@ public class HostedDeployTest {
         assertTrue("Newest is always included", factory720.creationCount() > 0);
     }
 
+    /**
+     * Test that deploying an application works when there are no allocated hosts in the system
+     * (the bootstrap a new zone case, so deploying the routing app since that is the first deployment
+     * that will be done)
+     **/
+    @Test
+    public void testCreateOnlyNeededModelVersionsWhenNoHostsAllocated() {
+        List<Host> hosts = Collections.singletonList(createHost("host1"));
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
+        ManualClock clock = new ManualClock("2016-10-09T00:00:00");
+
+        CountingModelFactory factory700 = DeployTester.createModelFactory(Version.fromString("7.0.0"), clock);
+        CountingModelFactory factory720 = DeployTester.createModelFactory(Version.fromString("7.2.0"), clock);
+        List<ModelFactory> modelFactories = new ArrayList<>();
+        modelFactories.add(factory700);
+        modelFactories.add(factory720);
+
+        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(),
+                                               clock, new Zone(Environment.dev, RegionName.defaultName()), provisioner);
+        tester.deployApp("src/test/apps/hosted-routing-app/", "myApp", "7.2.0", Instant.now());
+        assertTrue("Newest is always included", factory720.creationCount() > 0);
+    }
+
     @Test
     public void testAccessControlIsOnlyCheckedWhenNoProdDeploymentExists() {
         // Provisioner does not reuse hosts, so need twice as many hosts as app requires
@@ -193,6 +216,10 @@ public class HostedDeployTest {
 
     private Host createHost(String hostname, String version) {
         return new Host(hostname, Collections.emptyList(), Optional.empty(), Optional.of(com.yahoo.component.Version.fromString(version)));
+    }
+
+    private Host createHost(String hostname) {
+        return new Host(hostname, Collections.emptyList(), Optional.empty(), Optional.empty());
     }
 
 }
