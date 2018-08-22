@@ -3,12 +3,14 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 
 import java.util.HashMap;
 import java.util.List;
@@ -76,7 +78,11 @@ class RankProfileSearchFixture {
     }
 
     public RankProfile compileRankProfile(String rankProfile) {
-        RankProfile compiled = rankProfileRegistry.getRankProfile(search, rankProfile).compile(queryProfileRegistry);
+        return compileRankProfile(rankProfile, Path.fromString("nonexistinng"));
+    }
+
+    public RankProfile compileRankProfile(String rankProfile, Path applicationDir) {
+        RankProfile compiled = rankProfileRegistry.getRankProfile(search, rankProfile).compile(queryProfileRegistry, new ImportedModels(applicationDir.toFile()));
         compiledRankProfiles.put(rankProfile, compiled);
         return compiled;
     }

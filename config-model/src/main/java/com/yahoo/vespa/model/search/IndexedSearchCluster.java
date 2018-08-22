@@ -289,9 +289,12 @@ public class IndexedSearchCluster extends SearchCluster
             if ( ! (search instanceof UnproperSearch)) {
                 DocumentDatabase db = new DocumentDatabase(this,
                                                            search.getName(),
-                                                           new DerivedConfiguration(search, globalSearches, deployLogger(),
+                                                           new DerivedConfiguration(search,
+                                                                                    globalSearches,
+                                                                                    deployLogger(),
                                                                                     getRoot().getDeployState().rankProfileRegistry(),
-                                                                                    getRoot().getDeployState().getQueryProfiles().getRegistry()));
+                                                                                    getRoot().getDeployState().getQueryProfiles().getRegistry(),
+                                                                                    getRoot().getDeployState().getImportedModels()));
                 // TODO: remove explicit adding of user configs when the complete content model is built using builders.
                 db.mergeUserConfigs(spec.getUserConfigs());
                 documentDbs.add(db);

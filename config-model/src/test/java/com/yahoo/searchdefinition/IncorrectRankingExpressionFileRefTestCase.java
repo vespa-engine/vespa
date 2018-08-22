@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -23,7 +24,7 @@ public class IncorrectRankingExpressionFileRefTestCase extends SearchDefinitionT
             Search search = SearchBuilder.buildFromFile("src/test/examples/incorrectrankingexpressionfileref.sd",
                                                         registry,
                                                         new QueryProfileRegistry());
-            new DerivedConfiguration(search, registry, new QueryProfileRegistry()); // cause rank profile parsing
+            new DerivedConfiguration(search, registry, new QueryProfileRegistry(), new ImportedModels()); // cause rank profile parsing
             fail("parsing should have failed");
         } catch (IllegalArgumentException e) {
             e.printStackTrace();

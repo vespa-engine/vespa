@@ -127,7 +127,7 @@ public class RankingExpressionWithOnnxTestCase {
                             "      expression: onnx('mnist_softmax.onnx')" +
                             "    }\n" +
                             "  }");
-            search.compileRankProfile("my_profile");
+            search.compileRankProfile("my_profile", applicationDir.append("models"));
             search.assertFirstPhaseExpression(vespaExpression, "my_profile");
             fail("Expecting exception");
         }
@@ -226,7 +226,7 @@ public class RankingExpressionWithOnnxTestCase {
         String vespaExpressionWithoutConstant =
                 "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), " + name + "_Variable, f(a,b)(a * b)), sum, d2), constant(" + name + "_Variable_1), f(a,b)(a + b))";
         RankProfileSearchFixture search = uncompiledFixtureWith(rankProfile, new StoringApplicationPackage(applicationDir));
-        search.compileRankProfile("my_profile");
+        search.compileRankProfile("my_profile", applicationDir.append("models"));
         search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
 
         assertNull("Constant overridden by macro is not added",
@@ -241,7 +241,7 @@ public class RankingExpressionWithOnnxTestCase {
                     storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
             RankProfileSearchFixture searchFromStored = uncompiledFixtureWith(rankProfile, storedApplication);
-            searchFromStored.compileRankProfile("my_profile");
+            searchFromStored.compileRankProfile("my_profile", applicationDir.append("models"));
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
             assertNull("Constant overridden by macro is not added",
                     searchFromStored.search().getRankingConstants().get( name + "_Variable"));
@@ -317,7 +317,7 @@ public class RankingExpressionWithOnnxTestCase {
                             "  }",
                     constant,
                     field);
-            fixture.compileRankProfile("my_profile");
+            fixture.compileRankProfile("my_profile", applicationDir.append("models"));
             return fixture;
         }
         catch (ParseException e) {

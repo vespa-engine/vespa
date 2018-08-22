@@ -12,6 +12,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.derived.validation.Validation;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -46,8 +47,11 @@ public class DerivedConfiguration {
      *               modified.
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
      */
-    public DerivedConfiguration(Search search, RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfiles) {
-        this(search, null, new BaseDeployLogger(), rankProfileRegistry, queryProfiles);
+    public DerivedConfiguration(Search search,
+                                RankProfileRegistry rankProfileRegistry,
+                                QueryProfileRegistry queryProfiles,
+                                ImportedModels importedModels) {
+        this(search, null, new BaseDeployLogger(), rankProfileRegistry, queryProfiles, importedModels);
     }
 
     /**
@@ -63,10 +67,12 @@ public class DerivedConfiguration {
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
      * @param queryProfiles      the query profiles of this application
      */
-    public DerivedConfiguration(Search search, List<Search> abstractSearchList,
+    public DerivedConfiguration(Search search,
+                                List<Search> abstractSearchList,
                                 DeployLogger deployLogger,
                                 RankProfileRegistry rankProfileRegistry,
-                                QueryProfileRegistry queryProfiles) {
+                                QueryProfileRegistry queryProfiles,
+                                ImportedModels importedModels) {
         Validator.ensureNotNull("Search definition", search);
         if ( ! search.isProcessed()) {
             throw new IllegalArgumentException("Search '" + search.getName() + "' not processed.");
@@ -88,7 +94,7 @@ public class DerivedConfiguration {
             summaries = new Summaries(search, deployLogger);
             summaryMap = new SummaryMap(search, summaries);
             juniperrc = new Juniperrc(search);
-            rankProfileList = new RankProfileList(search, attributeFields, rankProfileRegistry, queryProfiles);
+            rankProfileList = new RankProfileList(search, attributeFields, rankProfileRegistry, queryProfiles, importedModels);
             indexingScript = new IndexingScript(search);
             indexInfo = new IndexInfo(search);
             indexSchema = new IndexSchema(search);

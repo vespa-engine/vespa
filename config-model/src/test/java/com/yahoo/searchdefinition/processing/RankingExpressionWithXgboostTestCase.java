@@ -46,7 +46,7 @@ public class RankingExpressionWithXgboostTestCase {
                             "  }",
                     constant,
                     field);
-            fixture.compileRankProfile("my_profile");
+            fixture.compileRankProfile("my_profile", applicationDir);
             return fixture;
         } catch (ParseException e) {
             throw new IllegalArgumentException(e);

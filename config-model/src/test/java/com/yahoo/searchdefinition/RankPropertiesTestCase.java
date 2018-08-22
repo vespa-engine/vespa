@@ -7,6 +7,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -60,7 +61,7 @@ public class RankPropertiesTestCase extends SearchDefinitionTestCase {
             assertEquals("query(a) = 1500", parent.getRankProperties().get(0).toString());
 
             // Check derived model
-            RawRankProfile rawParent = new RawRankProfile(parent, new QueryProfileRegistry(), attributeFields);
+            RawRankProfile rawParent = new RawRankProfile(parent, new QueryProfileRegistry(), new ImportedModels(), attributeFields);
             assertEquals("(query(a),1500)", rawParent.configProperties().get(0).toString());
         }
 
@@ -72,6 +73,7 @@ public class RankPropertiesTestCase extends SearchDefinitionTestCase {
             // Check derived model
             RawRankProfile rawChild = new RawRankProfile(rankProfileRegistry.getRankProfile(search, "child"),
                                                          new QueryProfileRegistry(),
+                                                         new ImportedModels(),
                                                          attributeFields);
             assertEquals("(query(a),2000)", rawChild.configProperties().get(0).toString());
         }

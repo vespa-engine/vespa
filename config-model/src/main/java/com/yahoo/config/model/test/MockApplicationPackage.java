@@ -32,6 +32,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     public static final String MUSIC_SEARCHDEFINITION = createSearchDefinition("music", "foo");
     public static final String BOOK_SEARCHDEFINITION = createSearchDefinition("book", "bar");
 
+    private final File root;
     private final String hostsS;
     private final String servicesS;
     private final List<String> searchDefinitions;
@@ -42,9 +43,11 @@ public class MockApplicationPackage implements ApplicationPackage {
     private final QueryProfileRegistry queryProfileRegistry;
     private final ApplicationMetaData applicationMetaData;
 
-    protected MockApplicationPackage(String hosts, String services, List<String> searchDefinitions, String searchDefinitionDir,
+    protected MockApplicationPackage(File root, String hosts, String services, List<String> searchDefinitions,
+                                     String searchDefinitionDir,
                                      String deploymentSpec, String validationOverrides, boolean failOnValidateXml,
                                      String queryProfile, String queryProfileType) {
+        this.root = root;
         this.hostsS = hosts;
         this.servicesS = services;
         this.searchDefinitions = searchDefinitions;
@@ -56,6 +59,9 @@ public class MockApplicationPackage implements ApplicationPackage {
                                                                 asNamedReaderList(queryProfile));
         applicationMetaData = new ApplicationMetaData("user", "dir", 0L, false, "application", "checksum", 0L, 0L);
     }
+
+    /** Returns the root of this application package relative to the current dir */
+    protected File root() { return root; }
 
     @Override
     public String getApplicationName() {
@@ -111,6 +117,11 @@ public class MockApplicationPackage implements ApplicationPackage {
     }
 
     @Override
+    public File getFileReference(Path path) {
+        return Path.fromString(root.toString()).append(path).toFile();
+    }
+
+    @Override
     public String getHostSource() {
         return "mock source";
     }
@@ -163,6 +174,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     public static class Builder {
 
+        private File root = new File("nonexisting");
         private String hosts = null;
         private String services = null;
         private List<String> searchDefinitions = Collections.emptyList();
@@ -174,6 +186,11 @@ public class MockApplicationPackage implements ApplicationPackage {
         private String queryProfileType = null;
 
         public Builder() {
+        }
+
+        public Builder withRoot(File root) {
+            this.root = root;
+            return this;
         }
 
         public Builder withEmptyHosts() {
@@ -235,7 +252,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         }
 
         public ApplicationPackage build() {
-                return new MockApplicationPackage(hosts, services, searchDefinitions, searchDefinitionDir,
+                return new MockApplicationPackage(root, hosts, services, searchDefinitions, searchDefinitionDir,
                                                   deploymentSpec, validationOverrides, failOnValidateXml,
                                                   queryProfile, queryProfileType);
         }

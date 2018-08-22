@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -24,7 +25,7 @@ public class RankingExpressionValidationTestCase extends SearchDefinitionTestCas
         try {
             RankProfileRegistry registry = new RankProfileRegistry();
             Search search = importWithExpression(expression, registry);
-            new DerivedConfiguration(search, registry, new QueryProfileRegistry()); // cause rank profile parsing
+            new DerivedConfiguration(search, registry, new QueryProfileRegistry(), new ImportedModels()); // cause rank profile parsing
             fail("No exception on incorrect ranking expression " + expression);
         } catch (IllegalArgumentException e) {
             // Success

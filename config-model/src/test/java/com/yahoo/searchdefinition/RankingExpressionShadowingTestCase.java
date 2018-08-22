@@ -9,6 +9,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -44,9 +45,10 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry());
+        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry(), new ImportedModels());
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
                                                                            new QueryProfileRegistry(),
+                                                                           new ImportedModels(),
                                                                            new AttributeFields(s)).configProperties();
         assertEquals("(rankingExpression(sin).rankingScript,x * x)",
                      testRankProperties.get(0).toString());
@@ -87,9 +89,10 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry());
+        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry(), new ImportedModels());
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
                                                                            new QueryProfileRegistry(),
+                                                                           new ImportedModels(),
                                                                            new AttributeFields(s)).configProperties();
         assertEquals("(rankingExpression(tan).rankingScript,x * x)",
                      testRankProperties.get(0).toString());
@@ -136,9 +139,10 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry());
+        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry(), new ImportedModels());
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
                                                                            new QueryProfileRegistry(),
+                                                                           new ImportedModels(),
                                                                            new AttributeFields(s)).configProperties();
         assertEquals("(rankingExpression(sin).rankingScript,x * x)",
                      testRankProperties.get(0).toString());
@@ -199,9 +203,10 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(queryProfiles);
+        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(queryProfiles, new ImportedModels());
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
                                                                            queryProfiles,
+                                                                           new ImportedModels(),
                                                                            new AttributeFields(s)).configProperties();
         assertEquals("(rankingExpression(relu).rankingScript,max(1.0,x))",
                      testRankProperties.get(0).toString());

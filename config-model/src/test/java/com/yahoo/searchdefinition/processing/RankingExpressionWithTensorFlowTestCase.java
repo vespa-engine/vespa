@@ -163,7 +163,7 @@ public class RankingExpressionWithTensorFlowTestCase {
                     "      expression: tensorflow('mnist_softmax/saved')" +
                     "    }\n" +
                     "  }");
-            search.compileRankProfile("my_profile");
+            search.compileRankProfile("my_profile", applicationDir.append("models"));
             search.assertFirstPhaseExpression(vespaExpression, "my_profile");
             fail("Expecting exception");
         }
@@ -280,8 +280,8 @@ public class RankingExpressionWithTensorFlowTestCase {
         String vespaExpressionWithoutConstant =
                 "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), " + name + "_layer_Variable_read, f(a,b)(a * b)), sum, d2), constant(" + name + "_layer_Variable_1_read), f(a,b)(a + b))";
         RankProfileSearchFixture search = fixtureWithUncompiled(rankProfiles, new StoringApplicationPackage(applicationDir));
-        search.compileRankProfile("my_profile");
-        search.compileRankProfile("my_profile_child");
+        search.compileRankProfile("my_profile", applicationDir.append("models"));
+        search.compileRankProfile("my_profile_child", applicationDir.append("models"));
         search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
         search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile_child");
 
@@ -297,8 +297,8 @@ public class RankingExpressionWithTensorFlowTestCase {
                                   storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
             RankProfileSearchFixture searchFromStored = fixtureWithUncompiled(rankProfiles, storedApplication);
-            searchFromStored.compileRankProfile("my_profile");
-            searchFromStored.compileRankProfile("my_profile_child");
+            searchFromStored.compileRankProfile("my_profile", applicationDir.append("models"));
+            searchFromStored.compileRankProfile("my_profile_child", applicationDir.append("models"));
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile_child");
             assertNull("Constant overridden by macro is not added",
@@ -358,8 +358,8 @@ public class RankingExpressionWithTensorFlowTestCase {
         final String macroExpression2 = "join(reduce(join(join(join(imported_ml_macro_" + name + "_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), imported_ml_macro_" + name + "_dnn_hidden1_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(" + name + "_dnn_hidden2_bias_read), f(a,b)(a + b))";
 
         RankProfileSearchFixture search = fixtureWithUncompiled(rankProfiles, new StoringApplicationPackage(applicationDir));
-        search.compileRankProfile("my_profile");
-        search.compileRankProfile("my_profile_child");
+        search.compileRankProfile("my_profile", applicationDir.append("models"));
+        search.compileRankProfile("my_profile_child", applicationDir.append("models"));
         search.assertFirstPhaseExpression(expression, "my_profile");
         search.assertFirstPhaseExpression(expression, "my_profile_child");
         assertSmallConstant(name + "_dnn_hidden1_mul_x", TensorType.fromSpec("tensor()"), search);
@@ -376,8 +376,8 @@ public class RankingExpressionWithTensorFlowTestCase {
                     storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
             RankProfileSearchFixture searchFromStored = fixtureWithUncompiled(rankProfiles, storedApplication);
-            searchFromStored.compileRankProfile("my_profile");
-            searchFromStored.compileRankProfile("my_profile_child");
+            searchFromStored.compileRankProfile("my_profile", applicationDir.append("models"));
+            searchFromStored.compileRankProfile("my_profile_child", applicationDir.append("models"));
             searchFromStored.assertFirstPhaseExpression(expression, "my_profile");
             searchFromStored.assertFirstPhaseExpression(expression, "my_profile_child");
             assertSmallConstant(name + "_dnn_hidden1_mul_x", TensorType.fromSpec("tensor()"), search);
@@ -453,7 +453,7 @@ public class RankingExpressionWithTensorFlowTestCase {
                     "  }",
                     constant,
                     field);
-            fixture.compileRankProfile("my_profile");
+            fixture.compileRankProfile("my_profile", applicationDir.append("models"));
             return fixture;
         }
         catch (ParseException e) {
@@ -473,26 +473,19 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     static class StoringApplicationPackage extends MockApplicationPackage {
 
-        private final File root;
-
         StoringApplicationPackage(Path applicationPackageWritableRoot) {
             this(applicationPackageWritableRoot, null, null);
         }
 
         StoringApplicationPackage(Path applicationPackageWritableRoot, String queryProfile, String queryProfileType) {
-            super(null, null, Collections.emptyList(), null,
+            super(new File(applicationPackageWritableRoot.toString()),
+                  null, null, Collections.emptyList(), null,
                   null, null, false, queryProfile, queryProfileType);
-            this.root = new File(applicationPackageWritableRoot.toString());
-        }
-
-        @Override
-        public File getFileReference(Path path) {
-            return Path.fromString(root.toString()).append(path).toFile();
         }
 
         @Override
         public ApplicationFile getFile(Path file) {
-            return new StoringApplicationPackageFile(file, Path.fromString(root.toString()));
+            return new StoringApplicationPackageFile(file, Path.fromString(root().toString()));
         }
 
         @Override

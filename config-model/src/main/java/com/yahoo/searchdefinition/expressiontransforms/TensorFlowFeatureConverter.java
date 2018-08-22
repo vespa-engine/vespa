@@ -2,13 +2,13 @@
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.path.Path;
-import com.yahoo.searchlib.rankingexpression.integration.ml.TensorFlowImporter;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
+import java.io.File;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,8 +21,6 @@ import java.util.Map;
  * @author bratseth
  */
 public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext>  {
-
-    private final ImportedModels importedTensorFlowModels = new ImportedModels();
 
     /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
     private final Map<Path, ConvertedModel> convertedTensorFlowModels = new HashMap<>();
@@ -43,7 +41,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         try {
             Path modelPath = Path.fromString(ConvertedModel.FeatureArguments.asString(feature.getArguments().expressions().get(0)));
             ConvertedModel convertedModel =
-                    convertedTensorFlowModels.computeIfAbsent(modelPath, __ -> new ConvertedModel(modelPath, context, importedTensorFlowModels));
+                    convertedTensorFlowModels.computeIfAbsent(modelPath, __ -> new ConvertedModel(modelPath, context));
             return convertedModel.expression(asFeatureArguments(feature.getArguments()));
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
