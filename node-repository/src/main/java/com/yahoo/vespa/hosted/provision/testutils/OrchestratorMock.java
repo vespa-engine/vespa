@@ -3,17 +3,9 @@ package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
-import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
-import com.yahoo.vespa.orchestrator.BatchHostNameNotFoundException;
-import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
 import com.yahoo.vespa.orchestrator.Host;
-import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
-import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.model.NodeGroup;
-import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
-import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
@@ -27,32 +19,39 @@ import java.util.Set;
  */
 public class OrchestratorMock implements Orchestrator {
 
-    Set<ApplicationId> suspendedApplications = new HashSet<>();
+    private final Set<HostName> suspendedHosts = new HashSet<>();
+    private final Set<ApplicationId> suspendedApplications = new HashSet<>();
 
     @Override
-    public Host getHost(HostName hostName) throws HostNameNotFoundException {
+    public Host getHost(HostName hostName) {
         return null;
     }
 
     @Override
-    public HostStatus getNodeStatus(HostName hostName) throws HostNameNotFoundException {
-        return null;
+    public HostStatus getNodeStatus(HostName hostName) {
+        return suspendedHosts.contains(hostName) ? HostStatus.ALLOWED_TO_BE_DOWN : HostStatus.NO_REMARKS;
     }
 
     @Override
-    public void setNodeStatus(HostName hostName, HostStatus state) throws OrchestrationException {}
+    public void setNodeStatus(HostName hostName, HostStatus state) {}
 
     @Override
-    public void resume(HostName hostName) throws HostStateChangeDeniedException, HostNameNotFoundException {}
+    public void resume(HostName hostName) {
+        suspendedHosts.remove(hostName);
+    }
 
     @Override
-    public void suspend(HostName hostName) throws HostStateChangeDeniedException, HostNameNotFoundException {}
+    public void suspend(HostName hostName) {
+        suspendedHosts.add(hostName);
+    }
 
     @Override
-    public void suspendGroup(NodeGroup nodeGroup) throws HostStateChangeDeniedException, HostNameNotFoundException {}
+    public void suspendGroup(NodeGroup nodeGroup) {
+        nodeGroup.getHostNames().forEach(this::suspend);
+    }
 
     @Override
-    public ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationId appId) throws ApplicationIdNotFoundException {
+    public ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationId appId) {
         return suspendedApplications.contains(appId)
                ? ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN : ApplicationInstanceStatus.NO_REMARKS;
     }
@@ -63,20 +62,20 @@ public class OrchestratorMock implements Orchestrator {
     }
 
     @Override
-    public void resume(ApplicationId appId) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException {
+    public void resume(ApplicationId appId) {
         suspendedApplications.remove(appId);
     }
 
     @Override
-    public void suspend(ApplicationId appId) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException {
+    public void suspend(ApplicationId appId) {
         suspendedApplications.add(appId);
     }
 
     @Override
-    public void acquirePermissionToRemove(HostName hostName) throws OrchestrationException {}
+    public void acquirePermissionToRemove(HostName hostName) {}
 
     @Override
-    public void suspendAll(HostName parentHostname, List<HostName> hostNames) throws BatchInternalErrorException, BatchHostStateChangeDeniedException, BatchHostNameNotFoundException {
-        throw new UnsupportedOperationException("Not implemented");
+    public void suspendAll(HostName parentHostname, List<HostName> hostNames) {
+        hostNames.forEach(this::suspend);
     }
 }

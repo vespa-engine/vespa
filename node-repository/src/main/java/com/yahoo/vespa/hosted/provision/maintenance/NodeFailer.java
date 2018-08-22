@@ -8,6 +8,7 @@ import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -15,14 +16,15 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
+import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
+import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,11 +96,12 @@ public class NodeFailer extends Maintainer {
         }
 
         // Active nodes
-        for (Node node : determineActiveNodeDownStatus()) {
-            Instant graceTimeEnd = node.history().event(History.Event.Type.down).get().at().plus(downTimeLimit);
-            if (graceTimeEnd.isBefore(clock.instant()) && ! applicationSuspended(node) && failAllowedFor(node.type()))
-                if (!throttle(node)) failActive(node, "Node has been down longer than " + downTimeLimit);
-        }
+        updateNodeDownState();
+        getActiveNodesByFailureReason().forEach((node, reason) -> {
+            if (failAllowedFor(node.type()) && !throttle(node)) {
+                failActive(node, reason);
+            }
+        });
     }
 
     private void updateNodeLivenessEventsForReadyNodes() {
@@ -108,11 +111,9 @@ public class NodeFailer extends Maintainer {
             Optional<Instant> lastLocalRequest = hostLivenessTracker.lastRequestFrom(node.hostname());
             if ( ! lastLocalRequest.isPresent()) continue;
 
-            Optional<History.Event> recordedRequest = node.history().event(History.Event.Type.requested);
-            if ( ! recordedRequest.isPresent() || recordedRequest.get().at().isBefore(lastLocalRequest.get())) {
-                History updatedHistory = node.history().with(new History.Event(History.Event.Type.requested,
-                        Agent.system,
-                        lastLocalRequest.get()));
+            if (! node.history().hasEventAfter(History.Event.Type.requested, lastLocalRequest.get())) {
+                History updatedHistory = node.history()
+                        .with(new History.Event(History.Event.Type.requested, Agent.system, lastLocalRequest.get()));
                 nodeRepository().write(node.with(updatedHistory));
             }
         }
@@ -141,6 +142,40 @@ public class NodeFailer extends Maintainer {
         return nodesByFailureReason;
     }
 
+    /**
+     * If the node is down (see {@link #badNode}), and there is no "down" history record, we add it.
+     * Otherwise we remove any "down" history record.
+     */
+    private void updateNodeDownState() {
+        Map<String, Node> activeNodesByHostname = nodeRepository().getNodes(Node.State.active).stream()
+                .collect(Collectors.toMap(Node::hostname, node -> node));
+
+        serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName()
+                .forEach((hostName, serviceInstances) -> {
+                    Node node = activeNodesByHostname.get(hostName.s());
+                    if (node == null) return;
+
+                    if (badNode(serviceInstances)) {
+                        recordAsDown(node);
+                    } else {
+                        clearDownRecord(node);
+                    }
+                });
+    }
+
+    private Map<Node, String> getActiveNodesByFailureReason() {
+        Instant graceTimeEnd = clock.instant().minus(downTimeLimit);
+        Map<Node, String> nodesByFailureReason = new HashMap<>();
+        for (Node node : nodeRepository().getNodes(Node.State.active)) {
+            if (node.history().hasEventBefore(History.Event.Type.down, graceTimeEnd) && ! applicationSuspended(node)) {
+                nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
+            } else if (node.status().hardwareFailureDescription().isPresent() && nodeSuspended(node)) {
+                nodesByFailureReason.put(node, "Node has hardware failure");
+            }
+        }
+        return nodesByFailureReason;
+    }
+
     private boolean expectConfigRequests(Node node) {
         return !node.type().isDockerHost() || configserverConfig.nodeAdminInContainer();
     }
@@ -150,13 +185,11 @@ public class NodeFailer extends Maintainer {
     }
 
     private boolean wasMadeReadyBefore(Node node, Instant instant) {
-        Optional<History.Event> readiedEvent = node.history().event(History.Event.Type.readied);
-        return readiedEvent.map(event -> event.at().isBefore(instant)).orElse(false);
+        return node.history().hasEventBefore(History.Event.Type.readied, instant);
     }
 
     private boolean hasRecordedRequestAfter(Node node, Instant instant) {
-        Optional<History.Event> lastRequest = node.history().event(History.Event.Type.requested);
-        return lastRequest.map(event -> event.at().isAfter(instant)).orElse(false);
+        return node.history().hasEventAfter(History.Event.Type.requested, instant);
     }
 
     private boolean applicationSuspended(Node node) {
@@ -165,6 +198,15 @@ public class NodeFailer extends Maintainer {
                    == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN;
         } catch (ApplicationIdNotFoundException e) {
             //Treat it as not suspended and allow to fail the node anyway
+            return false;
+        }
+    }
+
+    private boolean nodeSuspended(Node node) {
+        try {
+            return orchestrator.getNodeStatus(new HostName(node.hostname())) == HostStatus.ALLOWED_TO_BE_DOWN;
+        } catch (HostNameNotFoundException e) {
+            // Treat it as not suspended
             return false;
         }
     }
@@ -190,31 +232,6 @@ public class NodeFailer extends Maintainer {
 
         return countsByStatus.getOrDefault(ServiceStatus.UP, 0L) <= 0L &&
                 countsByStatus.getOrDefault(ServiceStatus.DOWN, 0L) > 0L;
-    }
-
-    /**
-     * If the node is down (see badNode()), and there is no "down" history record, we add it.
-     * Otherwise we remove any "down" history record.
-     *
-     * @return a list of all nodes that should be considered as down
-     */
-    private List<Node> determineActiveNodeDownStatus() {
-        List<Node> downNodes = new ArrayList<>();
-        serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName()
-                .entrySet().stream().forEach(
-                        entry -> {
-                            Optional<Node> node = nodeRepository().getNode(entry.getKey().s(), Node.State.active);
-                            if (node.isPresent()) {
-                                if (badNode(entry.getValue())) {
-                                    downNodes.add(recordAsDown(node.get()));
-                                } else {
-                                    clearDownRecord(node.get());
-                                }
-                            }
-                        }
-        );
-
-        return downNodes;
     }
 
     /**
@@ -289,10 +306,7 @@ public class NodeFailer extends Maintainer {
         Instant startOfThrottleWindow = clock.instant().minus(throttlePolicy.throttleWindow);
         List<Node> nodes = nodeRepository().getNodes();
         long recentlyFailedNodes = nodes.stream()
-                .map(n -> n.history().event(History.Event.Type.failed))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .filter(failedEvent -> failedEvent.at().isAfter(startOfThrottleWindow))
+                .filter(n -> n.history().hasEventAfter(History.Event.Type.failed, startOfThrottleWindow))
                 .count();
         int allowedFailedNodes = (int) Math.max(nodes.size() * throttlePolicy.fractionAllowedToFail,
                                                 throttlePolicy.minimumAllowedToFail);

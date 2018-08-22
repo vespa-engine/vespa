@@ -9,7 +9,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
@@ -45,8 +44,7 @@ public abstract class Expirer extends Maintainer {
     protected void maintain() {
         List<Node> expired = new ArrayList<>();
         for (Node node : nodeRepository().getNodes(fromState)) {
-            Optional<History.Event> event = node.history().event(eventType);
-            if (event.isPresent() && event.get().at().plus(expiryTime).isBefore(clock.instant()))
+            if (node.history().hasEventBefore(eventType, clock.instant().minus(expiryTime)))
                 expired.add(node);
         }
         if ( ! expired.isEmpty())

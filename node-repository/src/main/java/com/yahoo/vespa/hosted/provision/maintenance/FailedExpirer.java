@@ -86,9 +86,8 @@ public class FailedExpirer extends Maintainer {
     /** Get failed nodes that have expired according to given expiry */
     private List<Node> getExpiredNodes(Duration expiry) {
         return nodeRepository.getNodes(Node.State.failed).stream()
-                             .filter(node -> node.history().event(History.Event.Type.failed)
-                                                 .map(event -> event.at().plus(expiry).isBefore(clock.instant()))
-                                                 .orElse(false))
+                             .filter(node -> node.history()
+                                     .hasEventBefore(History.Event.Type.failed, clock.instant().minus(expiry)))
                              .collect(Collectors.toList());
     }
 
