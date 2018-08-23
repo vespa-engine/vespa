@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.jdisc.Metric;
@@ -11,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNode;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNodeResult;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
 
@@ -34,6 +36,7 @@ public class MetricsReporter extends Maintainer {
     public static final String convergeMetric = "seconds.since.last.chef.convergence";
     public static final String deploymentFailMetric = "deployment.failurePercentage";
     public static final String deploymentAverageDuration = "deployment.averageDuration";
+    public static final String deploymentFailingUpgrades = "deployment.failingUpgrades";
     public static final String remainingRotations = "remaining_rotations";
 
     private final Metric metric;
@@ -113,38 +116,46 @@ public class MetricsReporter extends Maintainer {
     }
 
     private void reportDeploymentMetrics() {
-        metric.set(deploymentFailMetric, deploymentFailRatio() * 100, metric.createContext(Collections.emptyMap()));
-        for (Map.Entry<ApplicationId, Duration> entry : averageDeploymentDurations().entrySet()) {
-            Map<String, String> dimensions = new HashMap<>();
-            dimensions.put("tenant", entry.getKey().tenant().value());
-            dimensions.put("app", entry.getKey().application().value() + "." + entry.getKey().instance().value());
-            metric.set(deploymentAverageDuration, entry.getValue().getSeconds(), metric.createContext(dimensions));
-        }
+        ApplicationList applications = ApplicationList.from(controller().applications().asList())
+                                                      .notPullRequest()
+                                                      .hasProductionDeployment();
+
+        metric.set(deploymentFailMetric, deploymentFailRatio(applications) * 100, metric.createContext(Collections.emptyMap()));
+
+        averageDeploymentDurations(applications, clock.instant()).forEach((application, duration) -> {
+            metric.set(deploymentAverageDuration, duration.getSeconds(), metric.createContext(dimensions(application)));
+        });
+
+        deploymentsFailingUpgrade(applications).forEach((application, failingJobs) -> {
+            metric.set(deploymentFailingUpgrades, failingJobs, metric.createContext(dimensions(application)));
+        });
     }
     
-    private double deploymentFailRatio() {
-        List<Application> applications = ApplicationList.from(controller().applications().asList())
-                                                        .notPullRequest()
-                                                        .hasProductionDeployment()               
-                                                        .asList();
+    private static double deploymentFailRatio(ApplicationList applicationList) {
+        List<Application> applications = applicationList.asList();
         if (applications.isEmpty()) return 0;
 
         return (double) applications.stream().filter(a -> a.deploymentJobs().hasFailures()).count() /
                (double) applications.size();
     }
 
-    private Map<ApplicationId, Duration> averageDeploymentDurations() {
-        Instant now = clock.instant();
-        return ApplicationList.from(controller().applications().asList())
-                              .notPullRequest()
-                              .hasProductionDeployment()
-                              .asList()
-                              .stream()
-                              .collect(Collectors.toMap(Application::id,
-                                                        application -> averageDeploymentDuration(application, now)));
+    private static Map<ApplicationId, Duration> averageDeploymentDurations(ApplicationList applications, Instant now) {
+        return applications.asList().stream()
+                           .collect(Collectors.toMap(Application::id,
+                                                     application -> averageDeploymentDuration(application, now)));
     }
 
-    private Duration averageDeploymentDuration(Application application, Instant now) {
+    private static Map<ApplicationId, Integer> deploymentsFailingUpgrade(ApplicationList applications) {
+        return applications.asList()
+                           .stream()
+                           .collect(Collectors.toMap(Application::id, MetricsReporter::deploymentsFailingUpgrade));
+    }
+
+    private static int deploymentsFailingUpgrade(Application application) {
+        return JobList.from(application).upgrading().failing().size();
+    }
+
+    private static Duration averageDeploymentDuration(Application application, Instant now) {
         List<Duration> jobDurations = application.deploymentJobs().jobStatus().values().stream()
                                                  .filter(status -> status.lastTriggered().isPresent())
                                                  .map(status -> {
@@ -162,8 +173,15 @@ public class MetricsReporter extends Maintainer {
                            .orElse(Duration.ZERO);
     }
     
-    private void keepNodesWithSystem(PartialNodeResult nodeResult, SystemName system) {
+    private static void keepNodesWithSystem(PartialNodeResult nodeResult, SystemName system) {
         nodeResult.rows.removeIf(node -> !system.name().equals(node.getValue("system").orElse("main")));
+    }
+
+    private static Map<String, String> dimensions(ApplicationId application) {
+        return ImmutableMap.of(
+                "tenant", application.tenant().value(),
+                "app",application.application().value() + "." + application.instance().value()
+        );
     }
 
 }
