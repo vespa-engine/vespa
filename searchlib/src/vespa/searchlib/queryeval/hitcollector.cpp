@@ -213,15 +213,15 @@ namespace {
 void
 mergeHitsIntoResultSet(const std::vector<HitCollector::Hit> &hits, ResultSet &result)
 {
-    RankedHit *rhIter = result.getArray();
-    RankedHit *rhEnd = rhIter + result.getArrayUsed();
+    uint32_t rhCur(0);
+    uint32_t rhEnd(result.getArrayUsed());
     for (const auto &hit : hits) {
-        while (rhIter != rhEnd && rhIter->_docId != hit.first) {
+        while (rhCur != rhEnd && result[rhCur]._docId != hit.first) {
             // just set the iterators right
-            ++rhIter;
+            ++rhCur;
         }
-        assert(rhIter != rhEnd); // the hits should be a subset of the hits in ranked hit array.
-        rhIter->_rankValue = hit.second;
+        assert(rhCur != rhEnd); // the hits should be a subset of the hits in ranked hit array.
+        result[rhCur]._rankValue = hit.second;
     }
 }
 
@@ -248,23 +248,19 @@ HitCollector::getResultSet(HitRank default_value)
     // destroys the heap property or score sort order
     sortHitsByDocId();
 
-    std::unique_ptr<ResultSet> rs(new ResultSet());
+    auto rs = std::make_unique<ResultSet>();
     if ( ! _collector->isDocIdCollector() ) {
         unsigned int iSize = _hits.size();
         rs->allocArray(iSize);
-        RankedHit * rh = rs->getArray();
         if (_needReScore) {
             for (uint32_t i = 0; i < iSize; ++i) {
-                rh[i]._docId = _hits[i].first;
-                rh[i]._rankValue = getReScore(_hits[i].second);
+                rs->push_back(RankedHit(_hits[i].first, getReScore(_hits[i].second)));
             }
         } else {
             for (uint32_t i = 0; i < iSize; ++i) {
-                rh[i]._docId = _hits[i].first;
-                rh[i]._rankValue = _hits[i].second;
+                rs->push_back(RankedHit(_hits[i].first, _hits[i].second));
             }
         }
-        rs->setArrayUsed(iSize);
     } else {
         if (_unordered) {
             std::sort(_docIdVector.begin(), _docIdVector.end());
@@ -272,39 +268,35 @@ HitCollector::getResultSet(HitRank default_value)
         unsigned int iSize = _hits.size();
         unsigned int jSize = _docIdVector.size();
         rs->allocArray(jSize);
-        RankedHit * rh = rs->getArray();
         uint32_t i = 0;
         if (_needReScore) {
             for (uint32_t j = 0; j < jSize; ++j) {
                 uint32_t docId = _docIdVector[j];
-                rh[j]._docId = docId;
                 if (i < iSize && docId == _hits[i].first) {
-                    rh[j]._rankValue = getReScore(_hits[i].second);
+                    rs->push_back(RankedHit(docId, getReScore(_hits[i].second)));
                     ++i;
                 } else {
-                    rh[j]._rankValue = default_value;
+                    rs->push_back(RankedHit(docId, default_value));
                 }
             }
         } else {
             for (uint32_t j = 0; j < jSize; ++j) {
                 uint32_t docId = _docIdVector[j];
-                rh[j]._docId = docId;
                 if (i < iSize && docId == _hits[i].first) {
-                    rh[j]._rankValue = _hits[i].second;
+                    rs->push_back(RankedHit(docId, _hits[i].second));
                     ++i;
                 } else {
-                    rh[j]._rankValue = default_value;
+                    rs->push_back(RankedHit(docId, default_value));
                 }
             }
         }
-        rs->setArrayUsed(jSize);
     }
 
     if (_hasReRanked) {
-        mergeHitsIntoResultSet(_reRankedHits, *rs.get());
+        mergeHitsIntoResultSet(_reRankedHits, *rs);
     }
 
-    if (_bitVector != NULL) {
+    if (_bitVector) {
         rs->setBitOverflow(std::move(_bitVector));
     }
 

@@ -9,7 +9,6 @@
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/doom.h>
 
-#define PREFETCH 64
 #define INSERT_SORT_LEVEL 80
 
 namespace search {
@@ -36,11 +35,6 @@ struct FastS_IResultSorter {
     virtual ~FastS_IResultSorter() {}
 
     /**
-     * @return should bitvector hits also be sorted?
-     **/
-    virtual bool completeSort() const = 0;
-
-    /**
      * Sort the given array of results.
      *
      * @param a the array of hits
@@ -59,24 +53,8 @@ private:
 
 public:
     static FastS_DefaultResultSorter *instance() { return &__instance; }
-    bool completeSort() const override { return false; }
     void sortResults(search::RankedHit a[], uint32_t n, uint32_t ntop) override {
         return FastS_SortResults(a, n, ntop);
-    }
-};
-
-//-----------------------------------------------------------------------------
-
-class FastS_DocIdResultSorter : public FastS_IResultSorter
-{
-private:
-    static FastS_DocIdResultSorter __instance;
-
-public:
-    static FastS_DocIdResultSorter *Instance() { return &__instance; }
-    bool completeSort() const override { return true; }
-    void sortResults(search::RankedHit[], uint32_t, uint32_t) override {
-        // already sorted on docid
     }
 };
 
@@ -144,12 +122,10 @@ public:
                                                _sortDataArray[i]._len);
     }
     bool Init(const vespalib::string & sortSpec, search::attribute::IAttributeContext & vecMan);
-    bool completeSort() const override { return true; }
     void sortResults(search::RankedHit a[], uint32_t n, uint32_t topn) override;
     uint32_t getSortDataSize(uint32_t offset, uint32_t n);
     void copySortData(uint32_t offset, uint32_t n, uint32_t *idx, char *buf);
     void freeSortData();
-    bool hasSortData() const;
     void initWithoutSorting(const search::RankedHit * hits, uint32_t hitCnt);
     static int Compare(const FastS_SortSpec *self, const SortData &a, const SortData &b);
 };

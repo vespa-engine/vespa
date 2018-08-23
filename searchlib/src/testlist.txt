@@ -5,6 +5,7 @@ tests/alignment
 tests/attribute
 tests/attribute/attributefilewriter
 tests/attribute/attributemanager
+tests/attribute/attribute_operation
 tests/attribute/bitvector
 tests/attribute/comparator
 tests/attribute/document_weight_iterator

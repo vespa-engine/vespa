@@ -166,10 +166,6 @@ FastS_DefaultResultSorter FastS_DefaultResultSorter::__instance;
 
 //-----------------------------------------------------------------------------
 
-FastS_DocIdResultSorter FastS_DocIdResultSorter::__instance;
-
-//-----------------------------------------------------------------------------
-
 bool
 FastS_SortSpec::Add(IAttributeContext & vecMan, const SortInfo & sInfo)
 {
@@ -372,12 +368,6 @@ FastS_SortSpec::freeSortData()
         SortDataArray tmp;
         _sortDataArray.swap(tmp);
     }
-}
-
-bool
-FastS_SortSpec::hasSortData() const
-{
-    return ! _binarySortData.empty() && ! _sortDataArray.empty();
 }
 
 void

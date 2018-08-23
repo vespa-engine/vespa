@@ -10,13 +10,13 @@
 #include <vespa/searchlib/common/serialnum.h>
 
 namespace search {
-class IDestructorCallback;
-class ISequencedTaskExecutor;
+    class IDestructorCallback;
+    class ISequencedTaskExecutor;
 }
+namespace search::attribute { class IAttributeFunctor; }
 
 namespace proton {
 
-class IAttributeFunctor;
 class ImportedAttributesRepo;
 
 /**
@@ -27,11 +27,9 @@ class ImportedAttributesRepo;
  */
 struct IAttributeManager : public search::IAttributeManager
 {
-    typedef std::shared_ptr<IAttributeManager> SP;
-
+    using SP = std::shared_ptr<IAttributeManager>;
     using OnWriteDoneType = const std::shared_ptr<search::IDestructorCallback> &;
-
-    virtual ~IAttributeManager() {}
+    using IAttributeFunctor = search::attribute::IAttributeFunctor;
 
     /**
      * Create a new attribute manager based on the content of the current one and

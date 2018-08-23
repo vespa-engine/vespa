@@ -8,7 +8,6 @@
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/exclusive_attribute_read_accessor.h>
-#include <vespa/searchcore/proton/attribute/i_attribute_functor.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
@@ -20,6 +19,7 @@
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcore/proton/test/attribute_vectors.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
@@ -79,7 +79,7 @@ namespace {
 
 const uint64_t createSerialNum = 42u;
 
-class MyAttributeFunctor : public proton::IAttributeFunctor
+class MyAttributeFunctor : public search::attribute::IAttributeFunctor
 {
     std::vector<vespalib::string> _names;
 

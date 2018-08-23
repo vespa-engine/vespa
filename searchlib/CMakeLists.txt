@@ -71,6 +71,7 @@ vespa_define_module(
     src/tests/attribute
     src/tests/attribute/attributefilewriter
     src/tests/attribute/attributemanager
+    src/tests/attribute/attribute_operation
     src/tests/attribute/benchmark
     src/tests/attribute/bitvector
     src/tests/attribute/bitvector_search_cache

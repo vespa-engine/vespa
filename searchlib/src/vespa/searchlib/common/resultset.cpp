@@ -2,6 +2,7 @@
 
 #include "resultset.h"
 #include "bitvector.h"
+#include "sortresults.h"
 #include <cstring>
 
 using vespalib::alloc::Alloc;
@@ -12,10 +13,8 @@ namespace search {
 constexpr size_t MMAP_LIMIT = 0x2000000;
 
 ResultSet::ResultSet()
-    : _elemsUsedInRankedHitsArray(0u),
-      _rankedHitsArrayAllocElements(0u),
-      _bitOverflow(),
-      _rankedHitsArray()
+    : _bitOverflow(),
+      _rankedHitsArray(Alloc::alloc(0, MMAP_LIMIT))
 {}
 
 ResultSet::~ResultSet() = default;
@@ -25,22 +24,11 @@ void
 ResultSet::allocArray(unsigned int arrayAllocated)
 {
     if (arrayAllocated > 0) {
-        Alloc::alloc(arrayAllocated * sizeof(RankedHit), MMAP_LIMIT).swap(_rankedHitsArray);
+        _rankedHitsArray.reserve(arrayAllocated);
     } else {
-        Alloc().swap(_rankedHitsArray);
+        _rankedHitsArray.clear();
     }
-    _rankedHitsArrayAllocElements = arrayAllocated;
-    _elemsUsedInRankedHitsArray = 0;
 }
-
-
-void
-ResultSet::setArrayUsed(unsigned int arrayUsed)
-{
-    assert(arrayUsed <= _rankedHitsArrayAllocElements);
-    _elemsUsedInRankedHitsArray = arrayUsed;
-}
-
 
 void
 ResultSet::setBitOverflow(BitVector::UP newBitOverflow)
@@ -55,7 +43,7 @@ ResultSet::setBitOverflow(BitVector::UP newBitOverflow)
 unsigned int
 ResultSet::getNumHits() const
 {
-    return (_bitOverflow) ? _bitOverflow->countTrueBits() : _elemsUsedInRankedHitsArray;
+    return (_bitOverflow) ? _bitOverflow->countTrueBits() : _rankedHitsArray.size();
 }
 
 
@@ -69,15 +57,12 @@ ResultSet::mergeWithBitOverflow(HitRank default_value)
     const BitVector *bitVector = _bitOverflow.get();
 
     const RankedHit *oldA     = getArray();
-    const RankedHit *oldAEnd  = oldA + _elemsUsedInRankedHitsArray;
+    const RankedHit *oldAEnd  = oldA + getArrayUsed();
     uint32_t        bidx     = bitVector->getFirstTrueBit();
 
     uint32_t  actualHits = getNumHits();
-    Alloc newHitsAlloc = Alloc::alloc(actualHits*sizeof(RankedHit), MMAP_LIMIT);
-    RankedHit *newHitsArray = static_cast<RankedHit *>(newHitsAlloc.get());
-
-    RankedHit * tgtA    = newHitsArray;
-    RankedHit * tgtAEnd = newHitsArray + actualHits;
+    vespalib::Array<RankedHit>  newHits(Alloc::alloc(0, MMAP_LIMIT));
+    newHits.reserve(actualHits);
 
     if (oldAEnd > oldA) { // we have array hits
         uint32_t firstArrayHit = oldA->_docId;
@@ -85,38 +70,40 @@ ResultSet::mergeWithBitOverflow(HitRank default_value)
 
         // bitvector hits before array hits
         while (bidx < firstArrayHit) {
-            tgtA->_docId = bidx;
-            tgtA->_rankValue = default_value;
-            tgtA++;
+            newHits.push_back_fast(RankedHit(bidx, default_value));
             bidx = bitVector->getNextTrueBit(bidx + 1);
         }
 
         // merge bitvector and array hits
         while (bidx <= lastArrayHit) {
-            tgtA->_docId = bidx;
             if (bidx == oldA->_docId) {
-                tgtA->_rankValue = oldA->_rankValue;
+                newHits.push_back_fast(RankedHit(bidx, oldA->_rankValue));
                 oldA++;
             } else {
-                tgtA->_rankValue = default_value;
+                newHits.push_back_fast(RankedHit(bidx, default_value));
             }
-            tgtA++;
             bidx = bitVector->getNextTrueBit(bidx + 1);
         }
     }
     assert(oldA == oldAEnd);
 
     // bitvector hits after array hits
-    while (tgtA < tgtAEnd) {
-        tgtA->_docId = bidx;
-        tgtA->_rankValue = default_value;
-        tgtA++;
+    while (newHits.size() < actualHits) {
+        newHits.push_back_fast(RankedHit(bidx, default_value));
         bidx = bitVector->getNextTrueBit(bidx + 1);
     }
-    _rankedHitsArrayAllocElements =  actualHits;
-    _elemsUsedInRankedHitsArray =  actualHits;
-    _rankedHitsArray.swap(newHitsAlloc);
+    _rankedHitsArray.swap(newHits);
     setBitOverflow(nullptr);
+}
+
+void
+ResultSet::sort(FastS_IResultSorter & sorter, unsigned int ntop) {
+    sorter.sortResults(&_rankedHitsArray[0], _rankedHitsArray.size(), ntop);
+}
+
+std::pair<std::unique_ptr<BitVector>, vespalib::Array<RankedHit>>
+ResultSet::stealResult(ResultSet && rhs) {
+    return std::make_pair(std::move(rhs._bitOverflow), std::move(rhs._rankedHitsArray));
 }
 
 } // namespace search

@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "filter_attribute_manager.h"
-#include "i_attribute_functor.h"
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 
 using search::AttributeGuard;
