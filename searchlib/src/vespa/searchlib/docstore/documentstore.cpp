@@ -555,7 +555,7 @@ DocumentStore::getFileChunkStats() const
 CacheStats DocumentStore::getCacheStats() const {
     CacheStats visitStats = _visitCache->getCacheStats();
     CacheStats singleStats(_cache->getHit(), _cache->getMiss() + _uncached_lookups,
-                           _cache->size(), _cache->sizeBytes());
+                           _cache->size(), _cache->sizeBytes(), _cache->getInvalidate());
     singleStats += visitStats;
     return singleStats;
 }
