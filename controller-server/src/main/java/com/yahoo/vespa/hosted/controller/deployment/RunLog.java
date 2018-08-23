@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 
 import java.util.Collections;
 import java.util.List;

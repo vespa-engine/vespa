@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
@@ -39,18 +40,17 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.log.LogLevel.DEBUG;
+import static com.yahoo.log.LogLevel.ERROR;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.testerOf;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
+import static java.util.logging.Level.INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -212,7 +212,7 @@ public class InternalStepRunnerTest {
         assertEquals(Step.Status.succeeded, jobs.active(run.id()).get().steps().get(Step.startTests));
 
         assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.endTests));
-        cloud.set("Awesome!".getBytes(), TesterCloud.Status.SUCCESS);
+        cloud.set(TesterCloud.Status.SUCCESS);
         runner.run();
         assertTrue(jobs.run(run.id()).get().hasEnded());
         assertFalse(jobs.run(run.id()).get().hasFailed());
@@ -321,9 +321,17 @@ public class InternalStepRunnerTest {
     }
 
     @Test
-    public void testsFailIfEndpointsAreGone() {
+    public void testsFailIfTesterEndpointsVanish() {
         RunId id = startSystemTestTests();
-        cloud.set(new byte[0], TesterCloud.Status.NOT_STARTED);
+        routing.removeEndpoints(new DeploymentId(testerOf(appId), JobType.systemTest.zone(tester.controller().system())));
+        runner.run();
+        assertEquals(failed, jobs.run(id).get().steps().get(Step.endTests));
+    }
+
+    @Test
+    public void testsFailIfTesterRestarts() {
+        RunId id = startSystemTestTests();
+        cloud.set(TesterCloud.Status.NOT_STARTED);
         runner.run();
         assertEquals(failed, jobs.run(id).get().steps().get(Step.endTests));
     }
@@ -331,19 +339,29 @@ public class InternalStepRunnerTest {
     @Test
     public void testsFailIfTestsFailRemotely() {
         RunId id = startSystemTestTests();
-        cloud.set("Failure!".getBytes(), TesterCloud.Status.FAILURE);
+        cloud.add(new LogEntry(123, 321, ERROR, "Failure!"));
+        cloud.set(TesterCloud.Status.FAILURE);
+
+        long lastId = jobs.details(id).get().lastId().getAsLong();
         runner.run();
+        assertTestLogEntries(id, Step.endTests,
+                             new LogEntry(lastId + 1, 321, ERROR, "Failure!"),
+                             new LogEntry(lastId + 2, tester.clock().millis(), DEBUG, "Tests failed."));
         assertEquals(failed, jobs.run(id).get().steps().get(Step.endTests));
-        assertLogMessages(id, Step.endTests, "Tests failed.", "Failure!");
     }
 
     @Test
     public void testsFailIfTestsErr() {
         RunId id = startSystemTestTests();
-        cloud.set("Error!".getBytes(), TesterCloud.Status.ERROR);
+        cloud.add(new LogEntry(0, 123, ERROR, "Error!"));
+        cloud.set(TesterCloud.Status.ERROR);
+
+        long lastId = jobs.details(id).get().lastId().getAsLong();
         runner.run();
         assertEquals(failed, jobs.run(id).get().steps().get(Step.endTests));
-        assertLogMessages(id, Step.endTests, "Tester failed running its tests!", "Error!");
+        assertTestLogEntries(id, Step.endTests,
+                             new LogEntry(lastId + 1, 123, ERROR, "Error!"),
+                             new LogEntry(lastId + 2, tester.clock().millis(), INFO, "Tester failed running its tests!"));
     }
 
     @Test
@@ -362,17 +380,31 @@ public class InternalStepRunnerTest {
         configObject.field("endpoints").field(JobType.systemTest.zone(tester.controller().system()).value()).traverse((ArrayTraverser) (__, endpoint) ->
                 assertEquals(routing.endpoints(new DeploymentId(appId, JobType.systemTest.zone(tester.controller().system()))).get(0).getEndpoint(), endpoint.asString()));
 
-        cloud.set("Success!".getBytes(), TesterCloud.Status.SUCCESS);
+        long lastId = jobs.details(id).get().lastId().getAsLong();
+        cloud.add(new LogEntry(0, 123, INFO, "Ready!"));
         runner.run();
+        assertTestLogEntries(id, Step.endTests,
+                             new LogEntry(lastId + 1, 123, INFO, "Ready!"));
+
+        cloud.add(new LogEntry(1, 1234, INFO, "Steady!"));
+        runner.run();
+        assertTestLogEntries(id, Step.endTests,
+                             new LogEntry(lastId + 1, 123, INFO, "Ready!"),
+                             new LogEntry(lastId + 2, 1234, INFO, "Steady!"));
+
+        cloud.add(new LogEntry(12, 12345, INFO, "Success!"));
+        cloud.set(TesterCloud.Status.SUCCESS);
+        runner.run();
+        assertTestLogEntries(id, Step.endTests,
+                             new LogEntry(lastId + 1, 123, INFO, "Ready!"),
+                             new LogEntry(lastId + 2, 1234, INFO, "Steady!"),
+                             new LogEntry(lastId + 3, 12345, INFO, "Success!"),
+                             new LogEntry(lastId + 4, tester.clock().millis(), DEBUG, "Tests completed successfully."));
         assertEquals(succeeded, jobs.run(id).get().steps().get(Step.endTests));
-        assertLogMessages(id, Step.endTests, "Tests completed successfully.", "Success!");
     }
 
-    private void assertLogMessages(RunId id, Step step, String... messages) {
-        assertEquals(Arrays.asList(messages),
-                     jobs.details(id).get().get(step).get().stream()
-                         .map(LogEntry::message)
-                         .collect(Collectors.toList()));
+    private void assertTestLogEntries(RunId id, Step step, LogEntry... entries) {
+        assertEquals(Arrays.asList(entries), jobs.details(id).get().get(step).get());
     }
 
     private RunId startSystemTestTests() {

@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.controller.deployment.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import org.junit.Test;
 

@@ -337,6 +337,9 @@ public class InternalStepRunner implements StepRunner {
         URI testerEndpoint = testerEndpoint(id)
                 .orElseThrow(() -> new NoSuchElementException("Endpoint for tester vanished again before tests were complete!"));
 
+        JobController jobs = controller.jobController();
+        jobs.logTestEntries(id, testerCloud.getLog(testerEndpoint, jobs.run(id).get().lastTestLogEntry()));
+
         RunStatus status;
         switch (testerCloud.getStatus(testerEndpoint)) {
             case NOT_STARTED:
@@ -355,7 +358,6 @@ public class InternalStepRunner implements StepRunner {
             default:
                 throw new AssertionError("Unknown status!");
         }
-        logger.log(new String(testerCloud.getLogs(testerEndpoint))); // TODO jvenstad: Replace with something less hopeless!
         return Optional.of(status);
     }
 

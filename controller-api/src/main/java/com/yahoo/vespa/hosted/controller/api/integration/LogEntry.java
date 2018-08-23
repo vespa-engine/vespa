@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.deployment;
+package com.yahoo.vespa.hosted.controller.api.integration;
 
 import com.yahoo.log.LogLevel;
 

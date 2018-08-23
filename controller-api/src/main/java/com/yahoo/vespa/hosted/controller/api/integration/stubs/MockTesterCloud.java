@@ -1,16 +1,21 @@
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
+import com.google.common.collect.ImmutableList;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 
 import java.net.URI;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.NOT_STARTED;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.RUNNING;
 
 public class MockTesterCloud implements TesterCloud {
 
-    private byte[] logs = new byte[0];
+    private List<LogEntry> log = new ArrayList<>();
     private Status status = NOT_STARTED;
     private byte[] config;
     private URI testerUrl;
@@ -23,8 +28,8 @@ public class MockTesterCloud implements TesterCloud {
     }
 
     @Override
-    public byte[] getLogs(URI testerUrl) {
-        return Arrays.copyOf(logs, logs.length);
+    public List<LogEntry> getLog(URI testerUrl, long after) {
+        return log.stream().filter(entry -> entry.id() > after).collect(Collectors.toList());
     }
 
     @Override
@@ -32,8 +37,11 @@ public class MockTesterCloud implements TesterCloud {
         return status;
     }
 
-    public void set(byte[] logs, Status status) {
-        this.logs = Arrays.copyOf(logs, logs.length);
+    public void add(LogEntry entry) {
+        log.add(entry);
+    }
+
+    public void set(Status status) {
         this.status = status;
     }
 
