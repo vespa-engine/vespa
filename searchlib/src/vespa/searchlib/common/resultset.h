@@ -37,7 +37,7 @@ public:
     void mergeWithBitOverflow(HitRank default_value = default_rank_value);
     void sort(FastS_IResultSorter & sorter, unsigned int ntop);
     static std::pair<std::unique_ptr<BitVector>, vespalib::Array<RankedHit>>
-    move(ResultSet && rhs);
+    stealResult(ResultSet && rhs);
 };
 
 } // namespace search
