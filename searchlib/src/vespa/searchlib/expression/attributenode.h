@@ -146,9 +146,9 @@ private:
         mutable std::vector<search::attribute::IAttributeVector::WeightedEnum> _wVector;
     };
 
-    mutable AttributeResult::UP _scratchResult;
-    mutable bool                _hasMultiValue;
-    mutable bool                _useEnumOptimization;
+    AttributeResult::UP         _scratchResult;
+    bool                        _hasMultiValue;
+    bool                        _useEnumOptimization;
     std::unique_ptr<Handler>    _handler;
     vespalib::string            _attributeName;
 };
