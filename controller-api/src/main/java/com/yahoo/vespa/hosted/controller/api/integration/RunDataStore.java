@@ -1,19 +1,22 @@
 package com.yahoo.vespa.hosted.controller.api.integration;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+
+import java.util.Optional;
 
 /**
  * @author jonmv
  */
 public interface RunDataStore {
 
-    /** Returns the log of the given deployment job, or an empty byte array if non-existent. */
-    byte[] get(RunId id);
+    /** Returns the run logs of the given deployment job, if existent. */
+    Optional<byte[]> get(RunId id);
 
     /** Stores the given log for the given deployment job. */
     void put(RunId id, byte[] log);
 
-    /** Deletes all data associated with the given deployment job */
-    void delete(RunId id);
+    /** Deletes all data associated with the given application. */
+    void delete(ApplicationId id);
 
 }
