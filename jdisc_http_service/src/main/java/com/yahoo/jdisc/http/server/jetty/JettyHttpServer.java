@@ -65,6 +65,7 @@ import java.util.stream.Collectors;
  * @author bjorncs
  */
 @Beta
+// TODO Vespa 7: Remove unused Manhattan metrics
 public class JettyHttpServer extends AbstractServerProvider {
 
     public interface Metrics {
