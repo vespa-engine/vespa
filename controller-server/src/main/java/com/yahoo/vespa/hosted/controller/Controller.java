@@ -235,6 +235,9 @@ public class Controller extends AbstractComponent {
         if (version.isEmpty()) {
             throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
         }
+        if (zoneRegistry.zones().all().ids().stream().noneMatch(zone -> cloud.equals(zone.cloud()))) {
+            throw new IllegalArgumentException("Cloud '" + cloud.value() + "' does not exist in this system");
+        }
         try (Lock lock = curator.lockOsVersions()) {
             Set<OsVersion> versions = new TreeSet<>(curator.readOsVersions());
             if (versions.stream().anyMatch(osVersion -> osVersion.cloud().equals(cloud) &&

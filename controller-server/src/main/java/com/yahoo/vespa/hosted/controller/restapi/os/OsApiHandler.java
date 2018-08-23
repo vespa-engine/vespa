@@ -78,10 +78,6 @@ public class OsApiHandler extends LoggingRequestHandler {
         }
 
         CloudName cloud = CloudName.from(cloudField.asString());
-        if (controller.zoneRegistry().zones().all().ids().stream().noneMatch(zone -> cloud.equals(zone.cloud()))) {
-            throw new IllegalArgumentException("Cloud '" + cloud.value() + "' does not exist in this system");
-        }
-
         Version target;
         try {
             target = Version.fromString(versionField.asString());
