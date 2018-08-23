@@ -2,8 +2,7 @@
 
 #include "rcuvector.hpp"
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 template class RcuVectorBase<uint8_t>;
 template class RcuVectorBase<uint16_t>;
@@ -35,5 +34,4 @@ template class RcuVectorHeld<int64_t>;
 template class RcuVectorHeld<float>;
 template class RcuVectorHeld<double>;
 
-}
 }
