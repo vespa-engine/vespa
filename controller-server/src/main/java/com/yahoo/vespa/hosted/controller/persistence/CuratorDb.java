@@ -45,6 +45,12 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.reducing;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Curator backed database for storing the persistence state of controllers. This maps controller specific operations
@@ -52,6 +58,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  * @author mpolden
+ * @author jonmv
  */
 public class CuratorDb {
 
@@ -296,7 +303,7 @@ public class CuratorDb {
                       .map(this::readTenant)
                       .filter(Optional::isPresent)
                       .map(Optional::get)
-                      .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                      .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
     public void removeTenant(TenantName name) {
@@ -328,7 +335,7 @@ public class CuratorDb {
                       .map(this::readApplication)
                       .filter(Optional::isPresent)
                       .map(Optional::get)
-                      .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                      .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
     public void removeApplication(ApplicationId application) {
@@ -342,7 +349,7 @@ public class CuratorDb {
     }
 
     public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<Run> runs) {
-        curator.set(jobPath(id, type), asJson(runSerializer.toSlime(runs)));
+        curator.set(runsPath(id, type), asJson(runSerializer.toSlime(runs)));
     }
 
     public Optional<Run> readLastRun(ApplicationId id, JobType type) {
@@ -351,15 +358,15 @@ public class CuratorDb {
 
     public Map<RunId, Run> readHistoricRuns(ApplicationId id, JobType type) {
         // TODO jvenstad: Add, somewhere, a retention filter based on age or count.
-        return readSlime(jobPath(id, type)).map(runSerializer::runsFromSlime).orElse(new LinkedHashMap<>());
+        return readSlime(runsPath(id, type)).map(runSerializer::runsFromSlime).orElse(new LinkedHashMap<>());
     }
 
-    public void deleteJobData(ApplicationId id, JobType type) {
-        curator.delete(jobPath(id, type));
+    public void deleteRunData(ApplicationId id, JobType type) {
+        curator.delete(runsPath(id, type));
         curator.delete(lastRunPath(id, type));
     }
 
-    public void deleteJobData(ApplicationId id) {
+    public void deleteRunData(ApplicationId id) {
         curator.delete(jobRoot.append(id.serializedForm()));
     }
 
@@ -367,6 +374,33 @@ public class CuratorDb {
         return curator.getChildren(jobRoot).stream()
                       .map(ApplicationId::fromSerializedForm)
                       .collect(Collectors.toList());
+    }
+
+
+    public Optional<byte[]> readLog(ApplicationId id, JobType type, long chunkId) {
+        return curator.getData(logPath(id, type, chunkId));
+    }
+
+    public void writeLog(ApplicationId id, JobType type, long chunkId, byte[] log) {
+        curator.set(logPath(id, type, chunkId), log);
+    }
+
+    public void deleteLog(ApplicationId id, JobType type) {
+        curator.delete(runsPath(id, type).append("logs"));
+    }
+
+    public Optional<Long> readLastLogEntryId(ApplicationId id, JobType type) {
+        return curator.getData(lastLogPath(id, type))
+                      .map(String::new).map(Long::parseLong);
+    }
+
+    public void writeLastLogEntryId(ApplicationId id, JobType type, long lastId) {
+        curator.set(lastLogPath(id, type), Long.toString(lastId).getBytes());
+    }
+
+    public LongStream getLogChunkIds(ApplicationId id, JobType type) {
+        return curator.getChildren(runsPath(id, type).append("logs")).stream()
+                      .mapToLong(Long::parseLong);
     }
 
     // -------------- Provisioning (called by internal code) ------------------
@@ -501,12 +535,20 @@ public class CuratorDb {
         return applicationRoot.append(application.serializedForm());
     }
 
-    private static Path jobPath(ApplicationId id, JobType type) {
+    private static Path runsPath(ApplicationId id, JobType type) {
         return jobRoot.append(id.serializedForm()).append(type.jobName());
     }
 
     private static Path lastRunPath(ApplicationId id, JobType type) {
-        return jobPath(id, type).append("last");
+        return runsPath(id, type).append("last");
+    }
+
+    private static Path logPath(ApplicationId id, JobType type, long first) {
+        return runsPath(id, type).append("logs").append(Long.toString(first));
+    }
+
+    private static Path lastLogPath(ApplicationId id, JobType type) {
+        return runsPath(id, type).append("logs");
     }
 
     private static Path controllerPath(String hostname) {

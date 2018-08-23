@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.log.LogLevel;
 
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -43,6 +44,32 @@ public class LogEntry {
 
     public String message() {
         return message;
+    }
+
+    @Override
+    public String toString() {
+        return "LogEntry{" +
+               "id=" + id +
+               ", at=" + at +
+               ", level=" + level +
+               ", message='" + message + '\'' +
+               '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof LogEntry)) return false;
+        LogEntry entry = (LogEntry) o;
+        return id == entry.id &&
+               at == entry.at &&
+               Objects.equals(level, entry.level) &&
+               Objects.equals(message, entry.message);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, at, level, message);
     }
 
 }

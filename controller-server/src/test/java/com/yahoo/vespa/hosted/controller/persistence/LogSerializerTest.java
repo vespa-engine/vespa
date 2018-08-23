@@ -1,9 +1,7 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.deployment.LogEntry;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import org.junit.Test;
 
@@ -11,10 +9,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
@@ -25,41 +24,38 @@ import static org.junit.Assert.assertEquals;
  */
 public class LogSerializerTest {
 
-    private static final LogRecordSerializer serializer = new LogRecordSerializer();
+    private static final LogSerializer serializer = new LogSerializer();
     private static final Path logsFile = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/logs.json");
 
     @Test
     public void testSerialization() throws IOException {
-        // Local, because it's not supposed to be used for anything else than verifying equality here!
-        class EgalitarianLogRecord extends LogRecord {
-            private EgalitarianLogRecord(Level level, String msg) {
-                super(level, msg);
-            }
-            @Override
-            public boolean equals(Object o) {
-                if ( ! (o instanceof LogRecord)) return false;
-                LogRecord record = (LogRecord) o;
-                return    getSequenceNumber() == record.getSequenceNumber()
-                          && getLevel() == record.getLevel()
-                          && getMillis() == record.getMillis()
-                          && getMessage().equals(record.getMessage());
-            }
-            @Override
-            public int hashCode() { throw new AssertionError(); }
-        }
+        byte[] logJson = Files.readAllBytes(logsFile);
 
-        LogRecord  first = new EgalitarianLogRecord(LogLevel.INFO,     "First");   first.setMillis(   0);   first.setSequenceNumber(1);
-        LogRecord second = new EgalitarianLogRecord(LogLevel.INFO,    "Second");  second.setMillis(   0);  second.setSequenceNumber(2);
-        LogRecord  third = new EgalitarianLogRecord(LogLevel.DEBUG,    "Third");   third.setMillis(1000);   third.setSequenceNumber(3);
-        LogRecord fourth = new EgalitarianLogRecord(LogLevel.WARNING, "Fourth");  fourth.setMillis(2000);  fourth.setSequenceNumber(4);
+        LogEntry  first = new LogEntry(0, 0, LogLevel.INFO,     "First");
+        LogEntry second = new LogEntry(1, 0, LogLevel.INFO,    "Second");
+        LogEntry  third = new LogEntry(2, 1000, LogLevel.DEBUG,    "Third");
+        LogEntry fourth = new LogEntry(3, 2000, LogLevel.WARNING, "Fourth");
 
-        Map<Step, List<LogRecord>> expected = ImmutableMap.of(deployReal, ImmutableList.of(first, third),
-                                                              deployTester, ImmutableList.of(second, fourth));
+        Map<Step, List<LogEntry>> expected = new HashMap<>();
+        expected.put(deployReal, new ArrayList<>());
+        expected.get(deployReal).add(third);
+        expected.put(deployTester, new ArrayList<>());
+        expected.get(deployTester).add(fourth);
 
-        Map<Step, List<LogRecord>> stepRecords = serializer.recordsFromSlime(SlimeUtils.jsonToSlime(Files.readAllBytes(logsFile)));
-        assertEquals(expected, stepRecords);
+        assertEquals(expected, serializer.fromJson(logJson, 1));
 
-        assertEquals(expected, serializer.recordsFromSlime(serializer.recordsToSlime(stepRecords)));
+        expected.get(deployReal).add(0, first);
+        expected.get(deployTester).add(0, second);
+        assertEquals(expected, serializer.fromJson(logJson, -1));
+
+        assertEquals(expected, serializer.fromJson(serializer.toJson(expected), -1));
+
+        expected.get(deployReal).add(first);
+        expected.get(deployReal).add(third);
+        expected.get(deployTester).add(second);
+        expected.get(deployTester).add(fourth);
+
+        assertEquals(expected, serializer.fromJson(Arrays.asList(logJson, logJson), -1));
     }
 
 }

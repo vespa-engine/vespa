@@ -1,5 +1,19 @@
 {
-  "deployTester":"INFO\t1234567890\tSUCCESS",
-  "installTester":"INFO\t1234598760\tSUCCESS",
-  "deactivateTester":"INFO\t1234678901\tERROR: Something went wrong"
+  "active":false,
+  "lastId":2,
+  "deployTester":[],
+  "installTester":[
+    {
+      "at":12,
+      "level":"DEBUG",
+      "message":"SUCCESS"
+    }
+  ],
+  "deactivateTester":[
+    {
+      "at":123,
+      "level":"WARNING",
+      "message":"ERROR"
+    }
+  ]
 }
