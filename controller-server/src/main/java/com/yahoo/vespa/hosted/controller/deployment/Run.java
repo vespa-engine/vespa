@@ -78,6 +78,13 @@ public class Run {
         return new Run(id, new EnumMap<>(steps), versions, start, end, aborted, lastTestRecord);
     }
 
+    public Run with(long lastTestRecord) {
+        if (hasEnded())
+            throw new AssertionError("This run ended at " + end.get() + " -- it can't be further modified!");
+
+        return new Run(id, new EnumMap<>(steps), versions, start, end, status, lastTestRecord);
+    }
+
     /** Returns the id of this run. */
     public RunId id() {
         return id;

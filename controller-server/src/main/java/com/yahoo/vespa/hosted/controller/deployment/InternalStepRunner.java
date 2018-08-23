@@ -27,19 +27,14 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.yolean.Exceptions;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.TimeZone;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -51,7 +46,6 @@ import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Con
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.APPLICATION_LOCK_FAILURE;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.OUT_OF_CAPACITY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
-import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.failed;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
@@ -73,6 +67,8 @@ import static java.util.logging.Level.WARNING;
  */
 public class InternalStepRunner implements StepRunner {
 
+    private static final Logger logger = Logger.getLogger(InternalStepRunner.class.getName());
+
     static final Duration endpointTimeout = Duration.ofMinutes(15);
     static final Duration installationTimeout = Duration.ofMinutes(150);
 
@@ -93,7 +89,7 @@ public class InternalStepRunner implements StepRunner {
 
     @Override
     public Optional<RunStatus> run(LockedStep step, RunId id) {
-        ByteArrayLogger logger = ByteArrayLogger.of(id.application(), id.type(), step.get());
+        DualLogger logger = new DualLogger(id, step.get());
         try {
             switch (step.get()) {
                 case deployInitialReal: return deployInitialReal(id, logger);
@@ -122,12 +118,9 @@ public class InternalStepRunner implements StepRunner {
             }
             return Optional.of(error);
         }
-        finally {
-            controller.jobController().log(id, step.get(), logger.getLog());
-        }
     }
 
-    private Optional<RunStatus> deployInitialReal(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> deployInitialReal(RunId id, DualLogger logger) {
         Versions versions = controller.jobController().run(id).get().versions();
         logger.log("Deploying platform version " +
                    versions.sourcePlatform().orElse(versions.targetPlatform()) +
@@ -136,14 +129,14 @@ public class InternalStepRunner implements StepRunner {
         return deployReal(id, true, logger);
     }
 
-    private Optional<RunStatus> deployReal(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> deployReal(RunId id, DualLogger logger) {
         Versions versions = controller.jobController().run(id).get().versions();
         logger.log("Deploying platform version " + versions.targetPlatform() +
                          " and application version " + versions.targetApplication().id() + " ...");
         return deployReal(id, false, logger);
     }
 
-    private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, ByteArrayLogger logger) {
+    private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, DualLogger logger) {
         return deploy(id.application(),
                       id.type(),
                       () -> controller.applications().deploy(id.application(),
@@ -156,7 +149,7 @@ public class InternalStepRunner implements StepRunner {
                       logger);
     }
 
-    private Optional<RunStatus> deployTester(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> deployTester(RunId id, DualLogger logger) {
         // TODO jvenstad: Consider deploying old version of tester for initial staging feeding?
         logger.log("Deploying the tester container ...");
         return deploy(testerOf(id.application()),
@@ -171,7 +164,7 @@ public class InternalStepRunner implements StepRunner {
                       logger);
     }
 
-    private Optional<RunStatus> deploy(ApplicationId id, JobType type, Supplier<ActivateResult> deployment, ByteArrayLogger logger) {
+    private Optional<RunStatus> deploy(ApplicationId id, JobType type, Supplier<ActivateResult> deployment, DualLogger logger) {
         try {
             PrepareResponse prepareResponse = deployment.get().prepareResponse();
             if ( ! prepareResponse.configChangeActions.refeedActions.stream().allMatch(action -> action.allowed)) {
@@ -219,15 +212,15 @@ public class InternalStepRunner implements StepRunner {
         }
     }
 
-    private Optional<RunStatus> installInitialReal(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> installInitialReal(RunId id, DualLogger logger) {
         return installReal(id, true, logger);
     }
 
-    private Optional<RunStatus> installReal(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> installReal(RunId id, DualLogger logger) {
         return installReal(id, false, logger);
     }
 
-    private Optional<RunStatus> installReal(RunId id, boolean setTheStage, ByteArrayLogger logger) {
+    private Optional<RunStatus> installReal(RunId id, boolean setTheStage, DualLogger logger) {
         if (expired(id.application(), id.type())) {
             logger.log(INFO, "Deployment expired before installation was successful.");
             return Optional.of(installationFailed);
@@ -252,7 +245,7 @@ public class InternalStepRunner implements StepRunner {
         return Optional.empty();
     }
 
-    private Optional<RunStatus> installTester(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> installTester(RunId id, DualLogger logger) {
         logger.log("Checking installation of tester container ...");
         if (expired(id.application(), id.type())) {
             logger.log(INFO, "Deployment expired before tester was installed.");
@@ -273,7 +266,7 @@ public class InternalStepRunner implements StepRunner {
         return Optional.empty();
     }
 
-    private boolean nodesConverged(ApplicationId id, JobType type, Version target, ByteArrayLogger logger) {
+    private boolean nodesConverged(ApplicationId id, JobType type, Version target, DualLogger logger) {
         List<Node> nodes = controller.configServer().nodeRepository().list(type.zone(controller.system()), id, ImmutableSet.of(active, reserved));
         for (Node node : nodes)
             logger.log(String.format("%70s: %-16s%-25s%-32s%s",
@@ -297,7 +290,7 @@ public class InternalStepRunner implements StepRunner {
                          .orElse(false);
     }
 
-    private Optional<RunStatus> startTests(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> startTests(RunId id, DualLogger logger) {
         logger.log("Attempting to find endpoints ...");
         if (expired(id.application(), id.type())) {
             logger.log(INFO, "Deployment expired before tests could start.");
@@ -340,7 +333,7 @@ public class InternalStepRunner implements StepRunner {
         return Optional.empty();
     }
 
-    private Optional<RunStatus> endTests(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> endTests(RunId id, DualLogger logger) {
         URI testerEndpoint = testerEndpoint(id)
                 .orElseThrow(() -> new NoSuchElementException("Endpoint for tester vanished again before tests were complete!"));
 
@@ -366,13 +359,13 @@ public class InternalStepRunner implements StepRunner {
         return Optional.of(status);
     }
 
-    private Optional<RunStatus> deactivateReal(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> deactivateReal(RunId id, DualLogger logger) {
         logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
         controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
         return Optional.of(running);
     }
 
-    private Optional<RunStatus> deactivateTester(RunId id, ByteArrayLogger logger) {
+    private Optional<RunStatus> deactivateTester(RunId id, DualLogger logger) {
         logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
         controller.jobController().deactivateTester(id.application(), id.type());
         return Optional.of(running);
@@ -516,53 +509,32 @@ public class InternalStepRunner implements StepRunner {
         }
     }
 
-    /** Logger which logs all records to a private byte array, as well as to its parent. */
-    static class ByteArrayLogger extends Logger {
+    /** Logger which logs to a {@link JobController}, as well as to the parent class' {@link Logger}. */
+    private class DualLogger {
 
-        private static final Logger parent = Logger.getLogger(InternalStepRunner.class.getName());
-        private static final SimpleDateFormat timestampFormat = new SimpleDateFormat("[HH:mm:ss.SSS] ");
-        static { timestampFormat.setTimeZone(TimeZone.getTimeZone("UTC")); }
+        private final RunId id;
+        private final Step step;
+        private final String prefix;
 
-        private final ByteArrayOutputStream bytes;
-        private final PrintStream out;
-
-        private ByteArrayLogger(Logger parent, String suffix) {
-            super(parent.getName() + suffix, null);
-            setParent(parent);
-
-            bytes = new ByteArrayOutputStream();
-            out = new PrintStream(bytes);
+        private DualLogger(RunId id, Step step) {
+            this.id = id;
+            this.step = step;
+            this.prefix = step + " of " + id;
         }
 
-        static ByteArrayLogger of(ApplicationId id, JobType type, Step step) {
-            return new ByteArrayLogger(parent, String.format(".%s.%s.%s", id.toString(), type.jobName(), step));
-        }
-
-        @Override
-        public void log(LogRecord record) {
-            // TODO jvenstad: Store log records in a serialised format.
-            String timestamp = timestampFormat.format(new Date(record.getMillis()));
-            for (String line : record.getMessage().split("\n"))
-                out.println(timestamp + ": " + line);
-            if (record.getThrown() != null)
-                record.getThrown().printStackTrace(out);
-
-            record.setSourceClassName(null); // Makes the root logger's ConsoleHandler use the logger name instead, when printing.
-            getParent().log(record);
-        }
-
-        public void log(String message) {
+        private void log(String message) {
             log(DEBUG, message);
         }
 
-        @Override
-        public boolean isLoggable(Level __) {
-            return true;
+        private void log(Level level, String message) {
+            log(level, message, null);
         }
 
-        public byte[] getLog() {
-            out.flush();
-            return bytes.toByteArray();
+        private void log(Level level, String message, Throwable thrown) {
+            LogRecord record = new LogRecord(level, message);
+            record.setThrown(thrown);
+            logger.log(record);
+            controller.jobController().log(id, step, record);
         }
 
     }

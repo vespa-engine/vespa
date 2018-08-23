@@ -37,7 +37,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -367,12 +369,10 @@ public class InternalStepRunnerTest {
     }
 
     private void assertLogMessages(RunId id, Step step, String... messages) {
-        String pattern = Stream.of(messages)
-                               .map(message -> "\\[[^]]*] : " + message + "\n")
-                               .collect(Collectors.joining());
-        String logs = new String(jobs.details(id).get().get(step).get());
-        if ( ! logs.matches(pattern))
-            throw new AssertionError("Expected a match for\n'''\n" + pattern + "\n'''\nbut got\n'''\n" + logs + "\n'''");
+        assertEquals(Arrays.asList(messages),
+                     jobs.details(id).get().get(step).get().stream()
+                         .map(LogEntry::message)
+                         .collect(Collectors.toList()));
     }
 
     private RunId startSystemTestTests() {

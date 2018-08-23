@@ -6,7 +6,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.LogStore;
+import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -16,23 +16,27 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
+import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+import java.util.logging.LogRecord;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.testerOf;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 
 /**
  * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
@@ -51,12 +55,12 @@ public class JobController {
 
     private final Controller controller;
     private final CuratorDb curator;
-    private final LogStore logs;
+    private final BufferedLogStore logs;
 
-    public JobController(Controller controller, LogStore logStore) {
+    public JobController(Controller controller, RunDataStore runDataStore) {
         this.controller = controller;
         this.curator = controller.curator();
-        this.logs = logStore;
+        this.logs = new BufferedLogStore(curator, runDataStore);
 
     }
 
@@ -70,26 +74,42 @@ public class JobController {
             }
     }
 
-    /** Returns the details currently logged for the given run, if known. */
-    public Optional<RunDetails> details(RunId id) {
-        Run run = runs(id.application(), id.type()).get(id);
-        if (run == null)
-            return Optional.empty();
-
-        Map<Step, byte[]> details = new HashMap<>();
-        for (Step step : run.steps().keySet()) {
-            byte[] log = logs.get(id, step.name());
-            if (log.length > 0)
-                details.put(step, log);
-        }
-        return Optional.of(new RunDetails(details));
+    /** Returns all entries currently logged for the given run. */
+    public Optional<RunLog> details(RunId id) {
+        return details(id, -1);
     }
 
-    /** Appends the given log bytes to the currently stored bytes for the given run and step. */
-    public void log(RunId id, Step step, byte[] log) {
+    /** Returns the logged entries for the given run, which are after the given id threshold. */
+    public Optional<RunLog> details(RunId id, long after) {
         try (Lock __ = curator.lock(id.application(), id.type())) {
-            logs.append(id, step.name(), log);
+            Run run = runs(id.application(), id.type()).get(id);
+            if (run == null)
+                return Optional.empty();
+
+            return active(id).isPresent()
+                    ? Optional.of(logs.readActive(id.application(), id.type(), after))
+                    : logs.readFinished(id, after);
         }
+    }
+
+    /** Stores the given log record for the given run and step. */
+    public void log(RunId id, Step step, LogRecord record) {
+        locked(id, __ -> {
+            logs.append(id.application(), id.type(), step, Collections.singletonList(LogEntry.of(record)));
+            return __;
+        });
+    }
+
+    /** Stores the given test log records, and records the id of the last of these, for continuation. */
+    public void logTestRecords(RunId id, List<LogEntry> entries) {
+        if (entries.isEmpty())
+            return;
+
+        locked(id, run -> {
+            long lastTestRecord = entries.stream().mapToLong(LogEntry::id).max().getAsLong();
+            logs.append(id.application(), id.type(), endTests, entries);
+            return run.with(lastTestRecord);
+        });
     }
 
     /** Returns a list of all application which have registered. */
@@ -153,6 +173,7 @@ public class JobController {
         locked(id, run -> { // Store the modified run after it has been written to the collection, in case the latter fails.
             Run finishedRun = run.finished(controller.clock().instant());
             locked(id.application(), id.type(), runs -> runs.put(run.id(), finishedRun));
+            logs.flush(id);
             return finishedRun;
         });
     }
@@ -238,14 +259,15 @@ public class JobController {
                            locked(id, type, deactivateTester, __ -> {
                                try (Lock ___ = curator.lock(id, type)) {
                                    deactivateTester(id, type);
-                                   curator.deleteJobData(id, type);
+                                   curator.deleteRunData(id, type);
+                                   logs.delete(id);
                                }
                            });
                    }
                    catch (TimeoutException e) {
                        return; // Don't remove the data if we couldn't deactivate all testers.
                    }
-                   curator.deleteJobData(id);
+                   curator.deleteRunData(id);
                });
     }
 

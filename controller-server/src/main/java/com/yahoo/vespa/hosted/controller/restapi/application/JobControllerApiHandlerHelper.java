@@ -10,7 +10,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
-import com.yahoo.vespa.hosted.controller.deployment.RunDetails;
+import com.yahoo.vespa.hosted.controller.deployment.LogEntry;
+import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
@@ -101,19 +102,33 @@ class JobControllerApiHandlerHelper {
     /**
      * @return Response with logs from a single run
      */
-    static HttpResponse runDetailsResponse(JobController jobController, RunId runId) {
+    static HttpResponse runDetailsResponse(JobController jobController, RunId runId, String after) {
         Slime slime = new Slime();
         Cursor logsObject = slime.setObject();
 
-        RunDetails runDetails = jobController.details(runId).orElseThrow(() ->
-                new NotExistsException(String.format(
+        logsObject.setBool("active", jobController.active(runId).isPresent());
+
+        RunLog runLog = (after == null ? jobController.details(runId) : jobController.details(runId, Long.parseLong(after)))
+                .orElseThrow(() -> new NotExistsException(String.format(
                         "No run details exist for application: %s, job type: %s, number: %d",
                         runId.application().toShortString(), runId.type().jobName(), runId.number())));
+
         for (Step step : Step.values()) {
-            runDetails.get(step).ifPresent(stepLog -> logsObject.setString(step.name(), stepLog));
+            runLog.get(step).ifPresent(entries -> toSlime(logsObject.setArray(step.name()), entries));
         }
+        runLog.lastId().ifPresent(id -> logsObject.setLong("lastId", id));
 
         return new SlimeJsonResponse(slime);
+    }
+
+    private static void toSlime(Cursor entryArray, List<LogEntry> entries) {
+        entries.forEach(entry -> toSlime(entryArray.addObject(), entry));
+    }
+
+    private static void toSlime(Cursor entryObject, LogEntry entry) {
+        entryObject.setLong("at", entry.at());
+        entryObject.setString("level", entry.level().getName());
+        entryObject.setString("message", entry.message());
     }
 
     /**
