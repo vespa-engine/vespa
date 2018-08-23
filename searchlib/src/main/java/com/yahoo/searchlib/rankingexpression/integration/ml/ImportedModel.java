@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * The result of importing a model (TensorFlow or ONNX) into Vespa.
+ * The result of importing an ML model into Vespa.
  *
  * @author bratseth
  */
