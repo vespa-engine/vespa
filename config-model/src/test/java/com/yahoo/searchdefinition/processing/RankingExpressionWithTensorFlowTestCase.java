@@ -51,7 +51,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     private final String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(" + name + "_layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_layer_Variable_1_read), f(a,b)(a + b))";
 
     @After
-    public void removeGeneratedConstantTensorFiles() {
+    public void removeGeneratedModelFiles() {
         IOUtils.recursiveDeleteDir(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
     }
 

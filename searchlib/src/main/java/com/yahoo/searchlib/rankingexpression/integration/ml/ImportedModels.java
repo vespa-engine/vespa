@@ -18,7 +18,8 @@ public class ImportedModels {
     /** All imported models, indexed by their names */
     private final ImmutableMap<String, ImportedModel> importedModels;
 
-    private static final ImmutableList<ModelImporter> importers = ImmutableList.of(new TensorFlowImporter(), new OnnxImporter());
+    private static final ImmutableList<ModelImporter> importers =
+            ImmutableList.of(new TensorFlowImporter(), new OnnxImporter(), new XGBoostImporter());
 
     /** Create a null imported models */
     public ImportedModels() {

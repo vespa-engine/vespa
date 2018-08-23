@@ -1,8 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.expressiontransforms;
 
+import com.yahoo.path.Path;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.integration.ml.XgboostImporter;
+import com.yahoo.searchlib.rankingexpression.integration.ml.XGBoostImporter;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
@@ -10,6 +11,8 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
 import java.io.UncheckedIOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Replaces instances of the xgboost(model-path)
@@ -17,10 +20,12 @@ import java.io.UncheckedIOException;
  * the same computation.
  *
  * @author grace-lam
+ * @author bratseth
  */
 public class XgboostFeatureConverter extends ExpressionTransformer<RankProfileTransformContext> {
 
-    private final XgboostImporter xgboostImporter = new XgboostImporter();
+    /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
+    private final Map<Path, ConvertedModel> convertedXGBoostModels = new HashMap<>();
 
     @Override
     public ExpressionNode transform(ExpressionNode node, RankProfileTransformContext context) {
@@ -33,26 +38,22 @@ public class XgboostFeatureConverter extends ExpressionTransformer<RankProfileTr
     }
 
     private ExpressionNode transformFeature(ReferenceNode feature, RankProfileTransformContext context) {
-        if (!feature.getName().equals("xgboost")) return feature;
+        if ( ! feature.getName().equals("xgboost")) return feature;
 
         try {
-            ConvertedModel.FeatureArguments arguments = asFeatureArguments(feature.getArguments());
-            ConvertedModel.ModelStore store = new ConvertedModel.ModelStore(context.rankProfile().getSearch().sourceApplication(),
-                                                                            arguments.modelPath());
-            RankingExpression expression = xgboostImporter.parseModel(store.sourceModelFile().toString());
-            return expression.getRoot();
+            Path modelPath = Path.fromString(ConvertedModel.FeatureArguments.asString(feature.getArguments().expressions().get(0)));
+            ConvertedModel convertedModel =
+                    convertedXGBoostModels.computeIfAbsent(modelPath, __ -> new ConvertedModel(modelPath, context));
+            return convertedModel.expression(asFeatureArguments(feature.getArguments()));
         } catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use XGBoost model from " + feature, e);
         }
     }
 
     private ConvertedModel.FeatureArguments asFeatureArguments(Arguments arguments) {
-        if (arguments.isEmpty())
-            throw new IllegalArgumentException("An xgboost node must take an argument pointing to " +
+        if (arguments.size() != 1)
+            throw new IllegalArgumentException("An xgboost node must take a single argument pointing to " +
                                                "the xgboost model directory under [application]/models");
-        if (arguments.expressions().size() > 1)
-            throw new IllegalArgumentException("An xgboost feature can have at most 1 argument");
-
         return new ConvertedModel.FeatureArguments(arguments);
     }
 
