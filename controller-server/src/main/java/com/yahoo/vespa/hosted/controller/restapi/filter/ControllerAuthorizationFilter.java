@@ -117,10 +117,11 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     private static boolean isHostedOperatorOperation(Path path, Method method) {
         if (isWhiteListedOperation(path, method)) return false;
         return path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying") ||
-                path.matches("/controller/v1/{*}") ||
-                path.matches("/provision/v2/{*}") ||
-                path.matches("/screwdriver/v1/trigger/tenant/{*}") ||
-                path.matches("/zone/v2/{*}");
+               path.matches("/controller/v1/{*}") ||
+               path.matches("/provision/v2/{*}") ||
+               path.matches("/screwdriver/v1/trigger/tenant/{*}") ||
+               path.matches("/os/v1/{*}") ||
+               path.matches("/zone/v2/{*}");
     }
 
     private static boolean isTenantAdminOperation(Path path, Method method) {

@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,21 +52,10 @@ public interface ZoneRegistry {
     /** Returns the Vespa upgrade policy to use for zones in this registry */
     UpgradePolicy upgradePolicy();
 
-    /** Returns the OS upgrade policy to use for zones in this registry */
-    // TODO: Remove
-    default UpgradePolicy osUpgradePolicy() {
-        return upgradePolicy();
-    }
-
-    // TODO: Remove default implementation
-    /** Returns all OS upgrade policies */
-    default List<UpgradePolicy> osUpgradePolicies() {
-        return Collections.singletonList(upgradePolicy());
-    }
-
     /** Returns the OS upgrade policy to use for zones belonging to given cloud, in this registry */
-    default UpgradePolicy osUpgradePolicy(CloudName cloud) {
-        return osUpgradePolicy(); // TODO: Remove default implementation
-    }
+    UpgradePolicy osUpgradePolicy(CloudName cloud);
+
+    /** Returns all OS upgrade policies */
+    List<UpgradePolicy> osUpgradePolicies();
 
 }

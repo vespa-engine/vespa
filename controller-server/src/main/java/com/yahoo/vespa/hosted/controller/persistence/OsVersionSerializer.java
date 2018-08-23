@@ -47,16 +47,8 @@ public class OsVersionSerializer {
     public OsVersion fromSlime(Inspector object) {
         return new OsVersion(
                 Version.fromString(object.field(versionField).asString()),
-                cloudFrom(object.field(cloudField))
+                CloudName.from(object.field(cloudField).asString())
         );
-    }
-
-    // TODO: Simplify and inline after 2018-09-01
-    private static CloudName cloudFrom(Inspector field) {
-        if (!field.valid()) {
-            return CloudName.defaultName();
-        }
-        return CloudName.from(field.asString());
     }
 
 }

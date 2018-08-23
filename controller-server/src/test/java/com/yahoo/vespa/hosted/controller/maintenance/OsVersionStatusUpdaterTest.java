@@ -35,7 +35,7 @@ public class OsVersionStatusUpdaterTest {
         for (ZoneId zone : tester.zoneRegistry().zones().controllerUpgraded().ids()) {
             upgradePolicy = upgradePolicy.upgrade(zone);
         }
-        tester.zoneRegistry().setUpgradePolicy(upgradePolicy);
+        tester.zoneRegistry().setOsUpgradePolicy(CloudName.defaultName(), upgradePolicy);
 
         // Initially empty
         assertSame(OsVersionStatus.empty, tester.controller().osVersionStatus());
