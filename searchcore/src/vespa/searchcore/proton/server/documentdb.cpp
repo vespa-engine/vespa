@@ -1166,6 +1166,26 @@ updateMatchingMetrics(DocumentDBMetricsCollection &metrics, const IDocumentSubDB
 }
 
 void
+updateDocumentStoreCacheHitRate(const CacheStats &current, const CacheStats &last,
+                                metrics::LongAverageMetric &cacheHitRate)
+{
+    if (current.lookups() < last.lookups() || current.hits < last.hits) {
+        LOG(warning, "Not adding document store cache hit rate metrics as values calculated "
+                "are corrupt. current.lookups=%" PRIu64 ", last.lookups=%" PRIu64 ", current.hits=%" PRIu64 ", last.hits=%" PRIu64 ".",
+            current.lookups(), last.lookups(), current.hits, last.hits);
+    } else {
+        if ((current.lookups() - last.lookups()) > 0xffffffffull
+            || (current.hits - last.hits) > 0xffffffffull)
+        {
+            LOG(warning, "Document store cache hit rate metrics to add are suspiciously high."
+                    " lookups diff=%" PRIu64 ", hits diff=%" PRIu64 ".",
+                current.lookups() - last.lookups(), current.hits - last.hits);
+        }
+        cacheHitRate.addTotalValueWithCount(current.hits - last.hits, current.lookups() - last.lookups());
+    }
+}
+
+void
 updateDocstoreMetrics(LegacyDocumentDBMetrics::DocstoreMetrics &metrics,
                       const DocumentSubDBCollection &sub_dbs,
                       CacheStats &lastCacheStats)
@@ -1180,26 +1200,8 @@ updateDocstoreMetrics(LegacyDocumentDBMetrics::DocstoreMetrics &metrics,
         }
     }
     metrics.memoryUsage.set(memoryUsage);
-    size_t lookups = cache_stats.hits + cache_stats.misses;
-    metrics.cacheLookups.set(lookups);
-    size_t last_count = lastCacheStats.hits + lastCacheStats.misses;
-        // For the above code to add sane values to the metric, the following
-        // must be true
-    if (lookups < last_count || cache_stats.hits < lastCacheStats.hits) {
-        LOG(warning, "Not adding document db metrics as values calculated "
-                     "are corrupt. %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", %" PRIu64 ".",
-            lookups, last_count, cache_stats.hits, lastCacheStats.hits);
-    } else {
-        if (lookups - last_count > 0xffffffffull
-            || cache_stats.hits - lastCacheStats.hits > 0xffffffffull)
-        {
-            LOG(warning, "Document db metrics to add are suspiciously high."
-                         " %" PRIu64 ", %" PRIu64 ".",
-                lookups - last_count, cache_stats.hits - lastCacheStats.hits);
-        }
-        metrics.cacheHitRate.addTotalValueWithCount(
-                cache_stats.hits - lastCacheStats.hits, lookups - last_count);
-    }
+    metrics.cacheLookups.set(cache_stats.lookups());
+    updateDocumentStoreCacheHitRate(cache_stats, lastCacheStats, metrics.cacheHitRate);
     metrics.hits = cache_stats.hits;
     metrics.cacheElements.set(cache_stats.elements);
     metrics.cacheMemoryUsed.set(cache_stats.memory_used);
@@ -1207,9 +1209,9 @@ updateDocstoreMetrics(LegacyDocumentDBMetrics::DocstoreMetrics &metrics,
 }
 
 void
-updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::
-                           DocumentStoreMetrics &metrics,
-                           IDocumentSubDB *subDb)
+updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics &metrics,
+                           IDocumentSubDB *subDb,
+                           CacheStats &lastCacheStats)
 {
     const ISummaryManager::SP &summaryMgr = subDb->getSummaryManager();
     search::IDocumentStore &backingStore = summaryMgr->getBackingStore();
@@ -1218,6 +1220,14 @@ updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::
     metrics.diskBloat.set(storageStats.diskBloat());
     metrics.maxBucketSpread.set(storageStats.maxBucketSpread());
     metrics.memoryUsage.update(backingStore.getMemoryUsage());
+
+    search::CacheStats cacheStats = backingStore.getCacheStats();
+    metrics.cache.memoryUsage.set(cacheStats.memory_used);
+    metrics.cache.elements.set(cacheStats.elements);
+    updateDocumentStoreCacheHitRate(cacheStats, lastCacheStats, metrics.cache.hitRate);
+    metrics.cache.lookups.set(cacheStats.lookups());
+    metrics.cache.invalidations.set(cacheStats.invalidations);
+    lastCacheStats = cacheStats;
 }
 
 template <typename MetricSetType>
@@ -1257,7 +1267,7 @@ DocumentDB::updateLegacyMetrics(LegacyDocumentDBMetrics &metrics, const Executor
     metrics.summaryExecutor.update(threadingServiceStats.getSummaryExecutorStats());
     metrics.indexExecutor.update(threadingServiceStats.getIndexExecutorStats());
     metrics.sessionManager.update(_sessionManager->getGroupingStats());
-    updateDocstoreMetrics(metrics.docstore, _subDBs, _lastDocStoreCacheStats);
+    updateDocstoreMetrics(metrics.docstore, _subDBs, _lastDocStoreCacheStats.total);
     metrics.numDocs.set(getNumDocs());
 
     DocumentMetaStoreReadGuards dmss(_subDBs);
@@ -1295,9 +1305,9 @@ DocumentDB::updateMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThread
     _jobTrackers.updateMetrics(metrics.job);
 
     updateMetrics(metrics.attribute);
-    updateDocumentStoreMetrics(metrics.ready.documentStore, _subDBs.getReadySubDB());
-    updateDocumentStoreMetrics(metrics.removed.documentStore, _subDBs.getRemSubDB());
-    updateDocumentStoreMetrics(metrics.notReady.documentStore, _subDBs.getNotReadySubDB());
+    updateDocumentStoreMetrics(metrics.ready.documentStore, _subDBs.getReadySubDB(), _lastDocStoreCacheStats.readySubDb);
+    updateDocumentStoreMetrics(metrics.removed.documentStore, _subDBs.getRemSubDB(), _lastDocStoreCacheStats.removedSubDb);
+    updateDocumentStoreMetrics(metrics.notReady.documentStore, _subDBs.getNotReadySubDB(), _lastDocStoreCacheStats.notReadySubDb);
     DocumentMetaStoreReadGuards dmss(_subDBs);
     updateLidSpaceMetrics(metrics.ready.lidSpace, dmss.readydms->get());
     updateLidSpaceMetrics(metrics.notReady.lidSpace, dmss.notreadydms->get());

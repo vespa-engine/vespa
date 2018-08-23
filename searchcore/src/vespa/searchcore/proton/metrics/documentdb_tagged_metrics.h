@@ -49,10 +49,23 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
 
         struct DocumentStoreMetrics : metrics::MetricSet
         {
+            struct CacheMetrics : metrics::MetricSet
+            {
+                metrics::LongValueMetric memoryUsage;
+                metrics::LongValueMetric elements;
+                metrics::LongAverageMetric hitRate;
+                metrics::LongCountMetric lookups;
+                metrics::LongCountMetric invalidations;
+
+                CacheMetrics(metrics::MetricSet *parent);
+                ~CacheMetrics();
+            };
+
             metrics::LongValueMetric diskUsage;
             metrics::LongValueMetric diskBloat;
             metrics::DoubleValueMetric maxBucketSpread;
             MemoryUsageMetrics memoryUsage;
+            CacheMetrics cache;
 
             DocumentStoreMetrics(metrics::MetricSet *parent);
             ~DocumentStoreMetrics();

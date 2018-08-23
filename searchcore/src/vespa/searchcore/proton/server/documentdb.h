@@ -73,6 +73,13 @@ private:
         DocumentDBMetricsCollection &getMetrics() { return _metrics; }
     };
 
+    struct DocumentStoreCacheStats {
+        search::CacheStats total;
+        search::CacheStats readySubDb;
+        search::CacheStats notReadySubDb;
+        search::CacheStats removedSubDb;
+        DocumentStoreCacheStats() : total(), readySubDb(), notReadySubDb(), removedSubDb() {}
+    };
 
     using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
@@ -129,8 +136,8 @@ private:
     ILidSpaceCompactionHandler::Vector _lidSpaceCompactionHandlers;
     DocumentDBJobTrackers         _jobTrackers;
 
-    // Last updated cache statistics. Necessary due to metrics implementation is upside down.
-    search::CacheStats            _lastDocStoreCacheStats;
+    // Last updated document store cache statistics. Necessary due to metrics implementation is upside down.
+    DocumentStoreCacheStats       _lastDocStoreCacheStats;
     IBucketStateCalculator::SP    _calc;
 
     void registerReference();

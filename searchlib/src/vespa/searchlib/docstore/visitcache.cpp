@@ -221,7 +221,7 @@ VisitCache::remove(uint32_t key) {
 
 CacheStats
 VisitCache::getCacheStats() const {
-    return CacheStats(_cache->getHit(), _cache->getMiss(), _cache->size(), _cache->sizeBytes());
+    return CacheStats(_cache->getHit(), _cache->getMiss(), _cache->size(), _cache->sizeBytes(), _cache->getInvalidate());
 }
 
 VisitCache::Cache::Cache(BackingStore & b, size_t maxBytes) :
