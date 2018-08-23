@@ -1,14 +1,15 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcore/proton/matching/attribute_operation.h>
+#include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
+#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_operation_test");
 
-using proton::matching::AttributeOperation;
+using search::attribute::AttributeOperation;
 using search::attribute::BasicType;
 using search::AttributeVector;
 using search::AttributeFactory;
@@ -57,16 +58,15 @@ createAttribute(BasicType basicType, const vespalib::string &fieldName, bool fas
     return av;
 }
 
-template <typename T, typename A>
-void verify(BasicType type, vespalib::stringref operation, AttributeVector & attr, T initial, T expected) {
-    (void) expected;
+template <typename T, typename A, typename R>
+void verify(BasicType type, vespalib::stringref operation, AttributeVector & attr, T initial, T expected, std::vector<uint32_t> docs, R result)
+{
     auto & attrT = dynamic_cast<A &>(attr);
     for (uint32_t docid(0); docid < attr.getNumDocs(); docid++) {
         attrT.update(docid, initial);
     }
     attr.commit();
-    std::vector<uint32_t> docs = {1,7,9,10,17,19};
-    auto op = AttributeOperation::create(type, operation, docs);
+    auto op = AttributeOperation::create(type, operation, std::move(result));
     EXPECT_TRUE(op);
     op->operator()(attr);
     for (uint32_t docid(0); docid < attr.getNumDocs(); docid++) {
@@ -79,24 +79,61 @@ void verify(BasicType type, vespalib::stringref operation, AttributeVector & att
     }
 }
 
-template <typename T, typename A>
-void verify(vespalib::stringref operation, AttributeVector & attr, T initial, T expected) {
-    verify<T, A>(attr.getBasicType(), operation, attr, initial, expected);
+template <typename T, typename R>
+void verify2(BasicType typeClaimed, vespalib::stringref operation, AttributeVector & attr, T initial, T expected, std::vector<uint32_t> docs, R result) {
+    BasicType::Type type = attr.getBasicType();
+    if (type == BasicType::INT64) {
+        verify<int64_t, search::IntegerAttributeTemplate<int64_t>, R>(typeClaimed, operation, attr, initial, expected, docs, std::move(result));
+    } else if (type == BasicType::INT32) {
+        verify<int32_t, search::IntegerAttributeTemplate<int32_t>, R>(typeClaimed, operation, attr, initial, expected, docs, std::move(result));
+    } else if (type == BasicType::DOUBLE) {
+        verify<double , search::FloatingPointAttributeTemplate<double>, R>(typeClaimed, operation, attr, initial, expected, docs, std::move(result));
+    } else if (type == BasicType::FLOAT) {
+        verify<float , search::FloatingPointAttributeTemplate<float>, R>(typeClaimed, operation, attr, initial, expected, docs, std::move(result));
+    } else {
+        ASSERT_TRUE(false);
+    }
 }
 
 template <typename T>
 void verify(BasicType typeClaimed, vespalib::stringref operation, AttributeVector & attr, T initial, T expected) {
-    BasicType::Type type = attr.getBasicType();
-    if (type == BasicType::INT64) {
-        verify<int64_t, search::IntegerAttributeTemplate<int64_t>>(typeClaimed, operation, attr, initial, expected);
-    } else if (type == BasicType::INT32) {
-        verify<int32_t, search::IntegerAttributeTemplate<int32_t>>(typeClaimed, operation, attr, initial, expected);
-    } else if (type == BasicType::DOUBLE) {
-        verify<double , search::FloatingPointAttributeTemplate<double >>(typeClaimed, operation, attr, initial, expected);
-    } else if (type == BasicType::FLOAT) {
-        verify<float , search::FloatingPointAttributeTemplate<float >>(typeClaimed, operation, attr, initial, expected);
-    } else {
-        ASSERT_TRUE(false);
+    std::vector<uint32_t> docs = {1,4,7,9,10,17,19};
+    {
+        verify2<T, std::vector<uint32_t>>(typeClaimed, operation, attr, initial, expected, docs, docs);
+    }
+    {
+        std::vector<AttributeOperation::Hit> hits;
+        std::for_each(docs.begin(), docs.end(), [&hits](uint32_t docId) { hits.emplace_back(docId, 0.0); });
+        verify2<T, std::vector<AttributeOperation::Hit>>(typeClaimed, operation, attr, initial, expected, docs, hits);
+    }
+    {
+        // Only Array hits
+        AttributeOperation::FullResult hits;
+        std::for_each(docs.begin(), docs.end(), [&hits](uint32_t docId) {
+                                                    hits.second.push_back(search::RankedHit(docId, 0.0));
+                                                });
+        verify2<T, AttributeOperation::FullResult>(typeClaimed, operation, attr, initial, expected, docs, std::move(hits));
+    }
+    {
+        // Only BitVector
+        AttributeOperation::FullResult hits;
+        hits.first = search::BitVector::create(docs.back() + 1);
+        std::for_each(docs.begin(), docs.end(), [&hits](uint32_t docId) {
+            hits.first->setBit(docId);
+        });
+        verify2<T, AttributeOperation::FullResult>(typeClaimed, operation, attr, initial, expected, docs, std::move(hits));
+    }
+    {
+        // And a nice mix
+        AttributeOperation::FullResult hits;
+        hits.first = search::BitVector::create(docs.back() + 1);
+        std::for_each(docs.begin(), docs.end(), [&hits](uint32_t docId) {
+            if ((docId%2) == 0) hits.first->setBit(docId);
+        });
+        std::for_each(docs.begin(), docs.end(), [&hits](uint32_t docId) {
+            if ((docId%2) != 0) hits.second.push_back(search::RankedHit(docId, 0.0));
+        });
+        verify2<T, AttributeOperation::FullResult>(typeClaimed, operation, attr, initial, expected, docs, std::move(hits));
     }
 }
 

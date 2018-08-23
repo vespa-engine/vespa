@@ -10,7 +10,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.attribute_operation");
 
-
 namespace search::attribute {
 
 namespace {
@@ -340,3 +339,5 @@ AttributeOperation::create(BasicType type, const vespalib::string & operation, F
 }
 
 }
+
+template class vespalib::Array<search::RankedHit>;

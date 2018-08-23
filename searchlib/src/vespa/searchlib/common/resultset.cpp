@@ -3,7 +3,6 @@
 #include "resultset.h"
 #include "bitvector.h"
 #include "sortresults.h"
-#include <vespa/vespalib/util/array.hpp>
 #include <cstring>
 
 using vespalib::alloc::Alloc;
