@@ -35,11 +35,11 @@ private:
 
 IMPLEMENT_RESULTNODE(EnumAttributeResult, AttributeResult);
 
-AttributeResult::UP createResult(const IAttributeVector * attribute)
+std::unique_ptr<AttributeResult> createResult(const IAttributeVector * attribute)
 {
     return (dynamic_cast<const SingleValueEnumAttributeBase *>(attribute) != NULL)
-        ? AttributeResult::UP(new EnumAttributeResult(attribute, 0))
-        : AttributeResult::UP(new AttributeResult(attribute, 0));
+        ? std::make_unique<EnumAttributeResult>(attribute, 0)
+        : std::make_unique<AttributeResult>(attribute, 0);
 }
 
 }
@@ -106,69 +106,69 @@ void AttributeNode::onPrepare(bool preserveAccurateTypes)
                 if (preserveAccurateTypes) {
                     switch (basicType) {
                       case BasicType::INT8:
-                        setResultType(std::unique_ptr<ResultNode>(new Int8ResultNodeVector()));
+                        setResultType(std::make_unique<Int8ResultNodeVector>());
                         break;
                       case BasicType::INT16:
-                        setResultType(std::unique_ptr<ResultNode>(new Int16ResultNodeVector()));
+                        setResultType(std::make_unique<Int16ResultNodeVector>());
                         break;
                       case BasicType::INT32:
-                        setResultType(std::unique_ptr<ResultNode>(new Int32ResultNodeVector()));
+                        setResultType(std::make_unique<Int32ResultNodeVector>());
                         break;
                       case BasicType::INT64:
-                        setResultType(std::unique_ptr<ResultNode>(new Int64ResultNodeVector()));
+                        setResultType(std::make_unique<Int64ResultNodeVector>());
                         break;
                       default:
                         throw std::runtime_error("This is no valid integer attribute " + attribute->getName());
                         break;
                     }
                 } else {
-                    setResultType(std::unique_ptr<ResultNode>(new IntegerResultNodeVector()));
+                    setResultType(std::make_unique<IntegerResultNodeVector>());
                 }
-               _handler.reset(new IntegerHandler(updateResult()));
+                _handler = std::make_unique<IntegerHandler>(updateResult());
             } else {
                 if (preserveAccurateTypes) {
                     switch (basicType) {
                       case BasicType::INT8:
-                        setResultType(std::unique_ptr<ResultNode>(new Int8ResultNode()));
+                        setResultType(std::make_unique<Int8ResultNode>());
                         break;
                       case BasicType::INT16:
-                        setResultType(std::unique_ptr<ResultNode>(new Int16ResultNode()));
+                        setResultType(std::make_unique<Int16ResultNode>());
                         break;
                       case BasicType::INT32:
-                        setResultType(std::unique_ptr<ResultNode>(new Int32ResultNode()));
+                        setResultType(std::make_unique<Int32ResultNode>());
                         break;
                       case BasicType::INT64:
-                        setResultType(std::unique_ptr<ResultNode>(new Int64ResultNode()));
+                        setResultType(std::make_unique<Int64ResultNode>());
                         break;
                       default:
                         throw std::runtime_error("This is no valid integer attribute " + attribute->getName());
                         break;
                     }
                 } else {
-                    setResultType(std::unique_ptr<ResultNode>(new Int64ResultNode()));
+                    setResultType(std::make_unique<Int64ResultNode>());
                 }
             }
         } else if (attribute->isFloatingPointType()) {
             if (_hasMultiValue) {
-                setResultType(std::unique_ptr<ResultNode>(new FloatResultNodeVector()));
-               _handler.reset(new FloatHandler(updateResult()));
+                setResultType(std::make_unique<FloatResultNodeVector>());
+                _handler = std::make_unique<FloatHandler>(updateResult());
             } else {
-                setResultType(std::unique_ptr<ResultNode>(new FloatResultNode()));
+                setResultType(std::make_unique<FloatResultNode>());
             }
         } else if (attribute->isStringType()) {
             if (_hasMultiValue) {
                 if (_useEnumOptimization) {
-                    setResultType(std::unique_ptr<ResultNode>(new EnumResultNodeVector()));
-                    _handler.reset(new EnumHandler(updateResult()));
+                    setResultType(std::make_unique<EnumResultNodeVector>());
+                    _handler = std::make_unique<EnumHandler>(updateResult());
                 } else {
-                    setResultType(std::unique_ptr<ResultNode>(new StringResultNodeVector()));
-                   _handler.reset(new StringHandler(updateResult()));
+                    setResultType(std::make_unique<StringResultNodeVector>());
+                    _handler = std::make_unique<StringHandler>(updateResult());
                 }
             } else {
                 if (_useEnumOptimization) {
-                    setResultType(std::unique_ptr<ResultNode>(new EnumResultNode()));
+                    setResultType(std::make_unique<EnumResultNode>());
                 } else {
-                    setResultType(std::unique_ptr<ResultNode>(new StringResultNode()));
+                    setResultType(std::make_unique<StringResultNode>());
                 }
             }
         } else {
