@@ -33,6 +33,11 @@ public class NodeRepositoryClientMock implements NodeRepositoryClientInterface {
     }
 
     @Override
+    public boolean hasNode(ZoneId zone, String hostname)  {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public NodeList listNodes(ZoneId zone, boolean recursive) {
         throw new UnsupportedOperationException();
     }
