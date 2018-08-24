@@ -149,8 +149,7 @@ SearchView::getDocsumsInternal(const DocsumRequest & req)
     MatchContext::UP mctx = _matchView->createContext();
     auto ctx = std::make_unique<DocsumContext>(req, _summarySetup->getDocsumWriter(), *store, matcher,
                                                mctx->getSearchContext(), mctx->getAttributeContext(),
-                                               *_summarySetup->getAttributeManager(), *_matchView->getAttributeManager(),
-                                               *getSessionManager());
+                                               *_summarySetup->getAttributeManager(), *getSessionManager());
     SearchView::InternalDocsumReply reply(ctx->getDocsums(), true);
     uint64_t endGeneration = readGuard->get().getCurrentGeneration();
     if (startGeneration != endGeneration) {

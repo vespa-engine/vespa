@@ -13,7 +13,7 @@ namespace attribute { class AttributeReadGuard; }
 /**
  * This is an interface used to access all registered attribute vectors.
  **/
-class IAttributeManager {
+class IAttributeManager : public attribute::IAttributeExecutor {
 public:
     IAttributeManager(const IAttributeManager &) = delete;
     IAttributeManager & operator = (const IAttributeManager &) = delete;

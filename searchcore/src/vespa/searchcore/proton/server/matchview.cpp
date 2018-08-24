@@ -77,7 +77,7 @@ MatchView::match(const ISearchHandler::SP &searchHandler, const SearchRequest &r
     MatchContext *ctx = owned_objects.context.get();
     const search::IDocumentMetaStore & dms = owned_objects.readGuard->get();
     return matcher->match(req, threadBundle, ctx->getSearchContext(), ctx->getAttributeContext(),
-                          *_attrMgr, *_sessionMgr, dms, std::move(owned_objects));
+                          *_sessionMgr, dms, std::move(owned_objects));
 }
 
 

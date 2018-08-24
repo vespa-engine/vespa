@@ -16,28 +16,30 @@ namespace search {
 class AttributeContext : public attribute::IAttributeContext
 {
 private:
-    typedef vespalib::hash_map<string, std::unique_ptr<attribute::AttributeReadGuard>> AttributeMap;
+    using AttributeMap = vespalib::hash_map<string, std::unique_ptr<attribute::AttributeReadGuard>>;
+    using IAttributeVector = attribute::IAttributeVector;
+    using IAttributeFunctor = attribute::IAttributeFunctor;
 
-    const search::IAttributeManager & _manager;
+    const IAttributeManager & _manager;
     mutable AttributeMap              _attributes;
     mutable AttributeMap              _enumAttributes;
     mutable std::mutex                _cacheLock;
 
-    const attribute::IAttributeVector *
-        getAttribute(AttributeMap & map, const string & name, bool stableEnum) const;
+    const IAttributeVector *getAttribute(AttributeMap & map, const string & name, bool stableEnum) const;
 
 public:
-    AttributeContext(const search::IAttributeManager & manager);
+    AttributeContext(const IAttributeManager & manager);
     ~AttributeContext();
 
     // Implements IAttributeContext
     const attribute::IAttributeVector * getAttribute(const string & name) const override;
+    void asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const override;
     const attribute::IAttributeVector * getAttributeStableEnum(const string & name) const override;
-    void getAttributeList(std::vector<const attribute::IAttributeVector *> & list) const override;
+    void getAttributeList(std::vector<const IAttributeVector *> & list) const override;
     void releaseEnumGuards() override;
 
     // Give acces to the underlying manager
-    const search::IAttributeManager & getManager() const { return _manager; }
+    const IAttributeManager & getManager() const { return _manager; }
 };
 
 } // namespace search

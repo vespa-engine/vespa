@@ -5,7 +5,7 @@
 #include "attribute_collection_spec.h"
 #include "exclusive_attribute_read_accessor.h"
 #include "i_attribute_factory.h"
-#include <vespa/searchlib/attribute/i_attribute_functor.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/serialnum.h>
@@ -26,7 +26,7 @@ class ImportedAttributesRepo;
  * The attribute manager should handle initialization and loading of attribute vectors,
  * and then provide access to the attributes for feeding, searching and flushing.
  */
-struct IAttributeManager : public search::IAttributeManager, public search::attribute::IAttributeExecutor
+struct IAttributeManager : public search::IAttributeManager
 {
     using SP = std::shared_ptr<IAttributeManager>;
     using OnWriteDoneType = const std::shared_ptr<search::IDestructorCallback> &;

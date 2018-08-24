@@ -7,14 +7,19 @@
 
 namespace proton {
 
-class RequestContext : public search::queryeval::IRequestContext
+class RequestContext : public search::queryeval::IRequestContext,
+                       public search::attribute::IAttributeExecutor
 {
 public:
     using IAttributeContext = search::attribute::IAttributeContext;
+    using IAttributeFunctor = search::attribute::IAttributeFunctor;
     using Doom = vespalib::Doom;
     RequestContext(const Doom & softDoom, IAttributeContext & attributeContext);
     const Doom & getSoftDoom() const override { return _softDoom; }
     const search::attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override;
+
+    void asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const override;
+
     const search::attribute::IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const override;
 private:
     const Doom          _softDoom;

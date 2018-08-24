@@ -4,7 +4,7 @@
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/i_attribute_functor.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 
 using search::AttributeGuard;

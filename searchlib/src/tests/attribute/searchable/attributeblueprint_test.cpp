@@ -48,13 +48,11 @@ const int32_t weight = 1;
 
 class MyAttributeManager : public IAttributeManager {
     AttributeVector::SP _attribute_vector;
-    AttributeVector::DocId _docid;
 
 public:
     MyAttributeManager(MyAttributeManager && rhs) :
         IAttributeManager(),
-        _attribute_vector(std::move(rhs._attribute_vector)),
-        _docid(std::move(rhs._docid))
+        _attribute_vector(std::move(rhs._attribute_vector))
     {
     }
     MyAttributeManager(AttributeVector *attr)
@@ -64,7 +62,8 @@ public:
         return AttributeGuard::UP(new AttributeGuard(_attribute_vector));
     }
 
-    virtual std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &, bool stableEnumGuard) const override {
+    std::unique_ptr<attribute::AttributeReadGuard>
+    getAttributeReadGuard(const string &, bool stableEnumGuard) const override {
         if (_attribute_vector) {
             return _attribute_vector->makeReadGuard(stableEnumGuard);
         } else {
@@ -77,6 +76,10 @@ public:
     IAttributeContext::UP createContext() const override {
         assert(!"Not implemented");
         return IAttributeContext::UP();
+    }
+
+    void asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor>) const override {
+        assert(!"Not implemented");
     }
 };
 

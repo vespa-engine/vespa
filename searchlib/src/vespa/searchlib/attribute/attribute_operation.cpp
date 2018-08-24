@@ -84,12 +84,12 @@ struct Set {
 
 template <typename T, typename OP>
 struct UpdateFast {
-    using A = search::SingleValueNumericAttribute<T>;
+    using A = SingleValueNumericAttribute<T>;
     using F = OP;
     A * attr;
     F op;
     typedef typename T::LoadedValueType ValueType;
-    UpdateFast(search::attribute::IAttributeVector &attr_in, typename F::V operand)
+    UpdateFast(IAttributeVector &attr_in, typename F::V operand)
         : attr(dynamic_cast<A *>(&attr_in)),
           op(operand)
     {}
@@ -105,12 +105,12 @@ public:
           _result(std::move(result))
     {}
 
-    void operator()(const search::AttributeVector &attributeVector) override {
-        OP op(const_cast<search::AttributeVector &>(attributeVector), _operand);
+    void operator()(const IAttributeVector &attributeVector) override {
+        OP op(const_cast<IAttributeVector &>(attributeVector), _operand);
         if (op.valid()) {
-            const search::RankedHit *hits = &_result.second[0];
+            const RankedHit *hits = &_result.second[0];
             size_t numHits   = _result.second.size();
-            std::for_each(hits, hits+numHits,  [&op](search::RankedHit hit) { op(hit.getDocId()); });
+            std::for_each(hits, hits+numHits,  [&op](RankedHit hit) { op(hit.getDocId()); });
             if (_result.first) {
                 _result.first->foreach_truebit([&op](uint32_t docId) { op(docId); });
             }
@@ -130,11 +130,10 @@ public:
           _reRanked(std::move(reRanked))
     {}
 
-    void operator()(const search::AttributeVector &attributeVector) override {
-        OP op(const_cast<search::AttributeVector &>(attributeVector), _operand);
+    void operator()(const IAttributeVector &attributeVector) override {
+        OP op(const_cast<IAttributeVector &>(attributeVector), _operand);
         if (op.valid()) {
-            std::for_each(_reRanked.begin(), _reRanked.end(),
-                          [&op](Hit hit) { op(hit.first); });
+            std::for_each(_reRanked.begin(), _reRanked.end(), [&op](Hit hit) { op(hit.first); });
         }
     }
 private:
@@ -150,11 +149,10 @@ public:
           _docIds(std::move(docIds))
     {}
 
-    void operator()(const search::AttributeVector &attributeVector) override {
-        OP op(const_cast<search::AttributeVector &>(attributeVector), _operand);
+    void operator()(const IAttributeVector &attributeVector) override {
+        OP op(const_cast<IAttributeVector &>(attributeVector), _operand);
         if (op.valid()) {
-            std::for_each(_docIds.begin(), _docIds.end(),
-                          [&op](uint32_t docId) { op(docId); });
+            std::for_each(_docIds.begin(), _docIds.end(), [&op](uint32_t docId) { op(docId); });
         }
     }
 private:
@@ -166,7 +164,7 @@ struct Operation {
     enum class Type { INC, DEC, ADD, SUB, MUL, DIV, MOD, SET, BAD };
     Operation(Type operation_in, vespalib::stringref operand_in) : operation(operation_in), operand(operand_in) { }
     template <typename V>
-    std::unique_ptr<AttributeOperation> create(search::attribute::BasicType type, V vector) const;
+    std::unique_ptr<AttributeOperation> create(BasicType type, V vector) const;
     template <typename IT, typename V>
     std::unique_ptr<AttributeOperation> create(V vector) const;
     bool valid() const { return operation != Type::BAD; }
@@ -274,26 +272,26 @@ Operation::create(V vector) const {
 
 struct Int64T {
     using T = int64_t;
-    using A = search::IntegerAttributeTemplate<int64_t>;
+    using A = IntegerAttributeTemplate<int64_t>;
 };
 
 struct Int32T {
     using T = int64_t;
-    using A = search::IntegerAttributeTemplate<int32_t>;
+    using A = IntegerAttributeTemplate<int32_t>;
 };
 
 struct Int8T {
     using T = int64_t;
-    using A = search::IntegerAttributeTemplate<int8_t>;
+    using A = IntegerAttributeTemplate<int8_t>;
 };
 
 struct DoubleT {
     using T = double;
-    using A = search::FloatingPointAttributeTemplate<double>;
+    using A = FloatingPointAttributeTemplate<double>;
 };
 struct FloatT {
     using T = double;
-    using A = search::FloatingPointAttributeTemplate<float>;
+    using A = FloatingPointAttributeTemplate<float>;
 };
 
 template <typename V>

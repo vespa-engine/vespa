@@ -139,9 +139,10 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &mtf,
             LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. Skipping hit", docs[i]);
         }
     }
-    if (mtf.hasOnReRankOperation()) {
-        mtf.runOnReRankOperation(AttributeOperation::create(mtf.getOnSummaryAttributeType(),
-                                                            mtf.getOnSummaryOperation(), docs));
+    auto onSummaryTask = mtf.createOnSummaryTask();
+    if (onSummaryTask) {
+        onSummaryTask->run(AttributeOperation::create(onSummaryTask->getAttributeType(),
+                                                      onSummaryTask->getOperation(), docs));
     }
     return retval;
 }

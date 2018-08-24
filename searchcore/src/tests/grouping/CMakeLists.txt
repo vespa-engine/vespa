@@ -5,5 +5,6 @@ vespa_add_executable(searchcore_grouping_test_app TEST
     DEPENDS
     searchcore_grouping
     searchcore_matching
+    searchlib_test
 )
 vespa_add_test(NAME searchcore_grouping_test_app COMMAND searchcore_grouping_test_app)

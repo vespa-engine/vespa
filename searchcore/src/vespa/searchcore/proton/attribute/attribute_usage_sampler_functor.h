@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/i_attribute_functor.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <memory>
 
 namespace proton {
@@ -21,7 +21,7 @@ public:
     AttributeUsageSamplerFunctor(std::shared_ptr<AttributeUsageSamplerContext> samplerContext,
                                  const std::string &subDbname);
     ~AttributeUsageSamplerFunctor() override;
-    void operator()(const search::AttributeVector &attributeVector) override;
+    void operator()(const search::attribute::IAttributeVector &attributeVector) override;
 };
 
 } // namespace proton

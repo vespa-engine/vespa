@@ -259,5 +259,10 @@ AttributeManager::addVector(const string & name, const Config & config)
     return retval;
 }
 
+void
+AttributeManager::asyncForAttribute(const vespalib::string &, std::shared_ptr<attribute::IAttributeFunctor>) const {
+    throw std::runtime_error("search::AttributeManager::asyncForAttribute should never be called.");
+}
+
 
 }

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "i_attribute_functor.h"
 #include "iattributevector.h"
 
 namespace search::attribute {
@@ -9,7 +10,7 @@ namespace search::attribute {
 /**
  * This is an interface used to access all registered attribute vectors.
  **/
-class IAttributeContext {
+class IAttributeContext : public IAttributeExecutor {
 public:
     typedef vespalib::string string;
     /** Convenience typedefs **/

@@ -19,7 +19,7 @@
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchcore/proton/test/attribute_vectors.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/i_attribute_functor.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
@@ -85,7 +85,7 @@ class MyAttributeFunctor : public search::attribute::IAttributeFunctor
 
 public:
     void
-    operator()(const search::AttributeVector &attributeVector) override {
+    operator()(const search::attribute::IAttributeVector &attributeVector) override {
         _names.push_back(attributeVector.getName());
     }
 

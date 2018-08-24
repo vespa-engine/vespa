@@ -23,7 +23,6 @@ private:
     matching::ISearchContext             & _searchCtx;
     search::attribute::IAttributeContext & _attrCtx;
     search::IAttributeManager            & _attrMgr;
-    const search::attribute::IAttributeExecutor & _attrExec;
     search::docsummary::GetDocsumsState    _docsumState;
     matching::SessionManager             & _sessionMgr;
 
@@ -41,7 +40,6 @@ public:
                   matching::ISearchContext & searchCtx,
                   search::attribute::IAttributeContext & attrCtx,
                   search::IAttributeManager & attrMgr,
-                  const search::attribute::IAttributeExecutor & attrExec,
                   matching::SessionManager & sessionMgr);
 
     search::engine::DocsumReply::UP getDocsums();

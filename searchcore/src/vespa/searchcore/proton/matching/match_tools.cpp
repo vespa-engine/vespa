@@ -12,6 +12,7 @@ using search::attribute::IAttributeContext;
 using search::queryeval::IRequestContext;
 using search::queryeval::IDiversifier;
 using search::attribute::diversity::DiversityFilter;
+using search::attribute::BasicType;
 
 using namespace search::fef;
 using namespace search::fef::indexproperties::matchphase;
@@ -151,7 +152,6 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   vespalib::stringref          queryStack,
                   const vespalib::string     & location,
                   const ViewResolver         & viewResolver,
-                  const IAttributeExecutor   & attrExec,
                   const IDocumentMetaStore   & metaStore,
                   const IIndexEnvironment    & indexEnv,
                   const RankSetup            & rankSetup,
@@ -164,7 +164,6 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _match_limiter(),
       _queryEnv(indexEnv, attributeContext, rankProperties),
       _mdl(),
-      _attrExec(attrExec),
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),
       _diversityParams(),
@@ -218,70 +217,45 @@ MatchToolsFactory::createDiversifier() const
                                    _diversityParams.cutoff_strategy == DiversityParams::CutoffStrategy::STRICT);
 }
 
-bool
-MatchToolsFactory::hasOnMatchOperation() const {
-    return ! execute::onmatch::Attribute::lookup(_queryEnv.getProperties()).empty() &&
-           ! execute::onmatch::Operation::lookup(_queryEnv.getProperties()).empty();
+std::unique_ptr<AttributeOperationTask>
+MatchToolsFactory::createTask(vespalib::stringref attribute, vespalib::stringref operation) const {
+    return (!attribute.empty() && ! operation.empty())
+           ? std::make_unique<AttributeOperationTask>(_requestContext, attribute, operation)
+           : std::unique_ptr<AttributeOperationTask>();
+}
+std::unique_ptr<AttributeOperationTask>
+MatchToolsFactory::createOnMatchTask() const {
+    return createTask(execute::onmatch::Attribute::lookup(_queryEnv.getProperties()),
+                      execute::onmatch::Operation::lookup(_queryEnv.getProperties()));
+}
+std::unique_ptr<AttributeOperationTask>
+MatchToolsFactory::createOnReRankTask() const {
+    return createTask(execute::onrerank::Attribute::lookup(_queryEnv.getProperties()),
+                      execute::onrerank::Operation::lookup(_queryEnv.getProperties()));
+}
+std::unique_ptr<AttributeOperationTask>
+MatchToolsFactory::createOnSummaryTask() const {
+    return createTask(execute::onsummary::Attribute::lookup(_queryEnv.getProperties()),
+                      execute::onsummary::Operation::lookup(_queryEnv.getProperties()));
 }
 
-vespalib::string
-MatchToolsFactory::getOnMatchOperation() const {
-    return execute::onmatch::Operation::lookup(_queryEnv.getProperties());
-}
-
-void
-MatchToolsFactory::runOnMatchOperation(std::shared_ptr<IAttributeFunctor> count) const {
-    _attrExec.asyncForAttribute(execute::onmatch::Attribute::lookup(_queryEnv.getProperties()), std::move(count));
-}
-
-search::attribute::BasicType
-MatchToolsFactory::getOnMatchAttributeType() const {
-    auto attr = _requestContext.getAttribute(execute::onmatch::Attribute::lookup(_queryEnv.getProperties()));
-    return attr ? attr->getBasicType() : BasicType::NONE;
-}
-
-bool
-MatchToolsFactory::hasOnReRankOperation() const {
-    return ! execute::onrerank::Attribute::lookup(_queryEnv.getProperties()).empty() &&
-           ! execute::onrerank::Operation::lookup(_queryEnv.getProperties()).empty();
-}
-
-vespalib::string
-MatchToolsFactory::getOnReRankOperation() const {
-    return execute::onrerank::Operation::lookup(_queryEnv.getProperties());
-}
-
-void
-MatchToolsFactory::runOnReRankOperation(std::shared_ptr<IAttributeFunctor> count) const {
-    _attrExec.asyncForAttribute(execute::onrerank::Attribute::lookup(_queryEnv.getProperties()), std::move(count));
+AttributeOperationTask::AttributeOperationTask(const RequestContext & requestContext,
+                                               vespalib::stringref attribute, vespalib::stringref operation)
+    : _requestContext(requestContext),
+      _attribute(attribute),
+      _operation(operation)
+{
 }
 
 search::attribute::BasicType
-MatchToolsFactory::getOnReRankAttributeType() const {
-    auto attr = _requestContext.getAttribute(execute::onrerank::Attribute::lookup(_queryEnv.getProperties()));
+AttributeOperationTask::getAttributeType() const {
+    auto attr = _requestContext.getAttribute(_attribute);
     return attr ? attr->getBasicType() : BasicType::NONE;
-}
-
-bool
-MatchToolsFactory::hasOnSummaryOperation() const {
-    return ! execute::onsummary::Attribute::lookup(_queryEnv.getProperties()).empty() &&
-           ! execute::onsummary::Operation::lookup(_queryEnv.getProperties()).empty();
-}
-
-vespalib::string
-MatchToolsFactory::getOnSummaryOperation() const {
-    return execute::onsummary::Operation::lookup(_queryEnv.getProperties());
 }
 
 void
-MatchToolsFactory::runOnSummaryOperation(std::shared_ptr<IAttributeFunctor> count) const {
-    _attrExec.asyncForAttribute(execute::onsummary::Attribute::lookup(_queryEnv.getProperties()), std::move(count));
-}
-
-search::attribute::BasicType
-MatchToolsFactory::getOnSummaryAttributeType() const {
-    auto attr = _requestContext.getAttribute(execute::onsummary::Attribute::lookup(_queryEnv.getProperties()));
-    return attr ? attr->getBasicType() : BasicType::NONE;
+AttributeOperationTask::run(std::shared_ptr<IAttributeFunctor> func) const {
+    _requestContext.asyncForAttribute(_attribute, std::move(func));
 }
 
 }

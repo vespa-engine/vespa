@@ -137,8 +137,7 @@ DocsumContext::createSlimeReply()
 DocsumContext::DocsumContext(const DocsumRequest & request, IDocsumWriter & docsumWriter,
                              IDocsumStore & docsumStore, const Matcher::SP & matcher,
                              ISearchContext & searchCtx, IAttributeContext & attrCtx,
-                             IAttributeManager & attrMgr, const IAttributeExecutor & attrExec,
-                             SessionManager & sessionMgr) :
+                             IAttributeManager & attrMgr, SessionManager & sessionMgr) :
     _request(request),
     _docsumWriter(docsumWriter),
     _docsumStore(docsumStore),
@@ -146,7 +145,6 @@ DocsumContext::DocsumContext(const DocsumRequest & request, IDocsumWriter & docs
     _searchCtx(searchCtx),
     _attrCtx(attrCtx),
     _attrMgr(attrMgr),
-    _attrExec(attrExec),
     _docsumState(*this),
     _sessionMgr(sessionMgr)
 {
@@ -167,7 +165,7 @@ DocsumContext::FillSummaryFeatures(search::docsummary::GetDocsumsState * state, 
 {
     assert(&_docsumState == state);
     if (_matcher->canProduceSummaryFeatures()) {
-        state->_summaryFeatures = _matcher->getSummaryFeatures(_request, _searchCtx, _attrCtx, _attrExec, _sessionMgr);
+        state->_summaryFeatures = _matcher->getSummaryFeatures(_request, _searchCtx, _attrCtx, _sessionMgr);
     }
     state->_summaryFeaturesCached = false;
 }
@@ -180,7 +178,7 @@ DocsumContext::FillRankFeatures(search::docsummary::GetDocsumsState * state, sea
     if ((state->_args.GetQueryFlags() & search::fs4transport::QFLAG_DUMP_FEATURES) == 0) {
         return;
     }
-    state->_rankFeatures = _matcher->getRankFeatures(_request, _searchCtx, _attrCtx, _attrExec, _sessionMgr);
+    state->_rankFeatures = _matcher->getRankFeatures(_request, _searchCtx, _attrCtx, _sessionMgr);
 }
 
 namespace {

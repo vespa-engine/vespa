@@ -6,9 +6,7 @@
 
 #pragma once
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 class AttributeMap;
 
@@ -33,8 +31,9 @@ public:
     const IAttributeVector * getAttribute(const string & name) const override;
     const IAttributeVector * getAttributeStableEnum(const string & name) const override;
     void getAttributeList(std::vector<const IAttributeVector *> & list) const override;
+
+    void
+    asyncForAttribute(const vespalib::string &name, std::shared_ptr<attribute::IAttributeFunctor> func) const override;
 };
 
-} // test
-} // fef
-} // search
+}

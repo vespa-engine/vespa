@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "i_attribute_functor.h"
+#include "vespa/searchcommon/attribute/i_attribute_functor.h"
 #include <vespa/searchlib/common/rankedhit.h>
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/vespalib/util/array.h>

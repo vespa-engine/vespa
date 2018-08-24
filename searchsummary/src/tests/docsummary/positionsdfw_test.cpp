@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for positionsdfw.
 
-#include <vespa/log/log.h>
-LOG_SETUP("positionsdfw_test");
-
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchsummary/docsummary/docsumfieldwriter.h>
@@ -15,11 +12,15 @@ LOG_SETUP("positionsdfw_test");
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/juniper/rpinterface.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP("positionsdfw_test");
+
 using search::RawBuf;
 using search::IAttributeManager;
 using search::SingleInt64ExtAttribute;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
+using search::attribute::IAttributeFunctor;
 using vespalib::string;
 using std::vector;
 
@@ -50,22 +51,29 @@ struct MyEnvironment : IDocsumEnvironment {
 
     MyEnvironment() : attribute_man(0) {}
 
-    virtual IAttributeManager *getAttributeManager() override { return attribute_man; }
-    virtual string lookupIndex(const string &s) const override { return s; }
-    virtual juniper::Juniper *getJuniper() override { return 0; }
+    IAttributeManager *getAttributeManager() override { return attribute_man; }
+    string lookupIndex(const string &s) const override { return s; }
+    juniper::Juniper *getJuniper() override { return 0; }
 };
 
 class MyAttributeContext : public IAttributeContext {
     const IAttributeVector &_attr;
 public:
     MyAttributeContext(const IAttributeVector &attr) : _attr(attr) {}
-    virtual const IAttributeVector *getAttribute(const string &) const override {
+     const IAttributeVector *getAttribute(const string &) const override {
         return &_attr;
     }
-    virtual const IAttributeVector *
-    getAttributeStableEnum(const string &) const override { LOG_ABORT("should not be reached"); }
-    virtual void getAttributeList(vector<const IAttributeVector *> &) const override
-    { LOG_ABORT("should not be reached"); }
+    const IAttributeVector *getAttributeStableEnum(const string &) const override {
+        LOG_ABORT("should not be reached");
+    }
+    void getAttributeList(vector<const IAttributeVector *> &) const override {
+        LOG_ABORT("should not be reached");
+    }
+
+    void
+    asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor>) const override {
+
+    }
 };
 
 class MyAttributeManager : public IAttributeManager {
@@ -73,16 +81,22 @@ class MyAttributeManager : public IAttributeManager {
 public:
 
     MyAttributeManager(const IAttributeVector &attr) : _attr(attr) {}
-    virtual AttributeGuard::UP getAttribute(const string &) const override {
+    AttributeGuard::UP getAttribute(const string &) const override {
         LOG_ABORT("should not be reached");
     }
-    virtual std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &, bool) const override {
+    std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &, bool) const override {
         LOG_ABORT("should not be reached");
     }
-    virtual void getAttributeList(vector<AttributeGuard> &) const override {
+    void getAttributeList(vector<AttributeGuard> &) const override {
         LOG_ABORT("should not be reached");
     }
-    virtual IAttributeContext::UP createContext() const override {
+
+    void
+    asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor>) const override {
+        LOG_ABORT("should not be reached");
+    }
+
+    IAttributeContext::UP createContext() const override {
         return IAttributeContext::UP(new MyAttributeContext(_attr));
     }
 };

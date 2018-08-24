@@ -3,7 +3,7 @@
 #include "match_thread.h"
 #include "document_scorer.h"
 #include <vespa/searchlib/attribute/attribute_operation.h>
-#include <vespa/searchlib/attribute/i_attribute_functor.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
 #include <vespa/searchlib/common/bitvector.h>
@@ -280,9 +280,10 @@ MatchThread::findMatches(MatchTools &tools)
                 kept_hits.clear();
             }
             uint32_t reRanked = hits.reRank(scorer, std::move(kept_hits));
-            if (mtf.hasOnReRankOperation()) {
-                mtf.runOnReRankOperation(AttributeOperation::create(mtf.getOnReRankAttributeType(),
-                                                                    mtf.getOnReRankOperation(), hits.getReRankedHits()));
+            auto onReRankTask = mtf.createOnReRankTask();
+            if (onReRankTask) {
+                onReRankTask->run(AttributeOperation::create(onReRankTask->getAttributeType(),
+                                                             onReRankTask->getOperation(), hits.getReRankedHits()));
             }
             thread_stats.docsReRanked(reRanked);
         }
@@ -351,8 +352,9 @@ MatchThread::processResult(const Doom & hardDoom,
         }
     }
     const MatchToolsFactory & mtf = matchToolsFactory;
-    if (mtf.hasOnMatchOperation() ) {
-        mtf.runOnMatchOperation(AttributeOperation::create(mtf.getOnMatchAttributeType(), mtf.getOnMatchOperation(),
+    auto onMatchTask = mtf.createOnMatchTask();
+    if (onMatchTask ) {
+        onMatchTask->run(AttributeOperation::create(onMatchTask->getAttributeType(), onMatchTask->getOperation(),
                                                            search::ResultSet::stealResult(std::move(*result))));
     }
     if (hasGrouping) {

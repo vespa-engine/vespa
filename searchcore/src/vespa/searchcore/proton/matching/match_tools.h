@@ -10,7 +10,7 @@
 #include "match_phase_limiter.h"
 #include "handlerecorder.h"
 #include "requestcontext.h"
-#include <vespa/searchlib/attribute/i_attribute_functor.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
@@ -69,10 +69,23 @@ public:
     void setup_dump();
 };
 
+class AttributeOperationTask {
+public:
+    using IAttributeFunctor = search::attribute::IAttributeFunctor;
+    AttributeOperationTask(const RequestContext & requestContext,
+                           vespalib::stringref attribute, vespalib::stringref operation);
+    void run(std::shared_ptr<IAttributeFunctor> func) const;
+    search::attribute::BasicType getAttributeType() const;
+    const vespalib::string & getOperation() const { return _operation; }
+private:
+    const RequestContext & _requestContext;
+    vespalib::string _attribute;
+    vespalib::string _operation;
+};
+
 class MatchToolsFactory : public vespalib::noncopyable
 {
 private:
-    using IAttributeExecutor = search::attribute::IAttributeExecutor;
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     QueryLimiter                    & _queryLimiter;
     RequestContext                    _requestContext;
@@ -81,11 +94,13 @@ private:
     MaybeMatchPhaseLimiter::UP        _match_limiter;
     QueryEnvironment                  _queryEnv;
     search::fef::MatchDataLayout      _mdl;
-    const IAttributeExecutor  & _attrExec;
     const search::fef::RankSetup    & _rankSetup;
     const search::fef::Properties   & _featureOverrides;
     DiversityParams                   _diversityParams;
     bool                              _valid;
+
+    std::unique_ptr<AttributeOperationTask>
+    createTask(vespalib::stringref attribute, vespalib::stringref operation) const;
 public:
     using UP = std::unique_ptr<MatchToolsFactory>;
     using BasicType = search::attribute::BasicType;
@@ -98,7 +113,6 @@ public:
                       vespalib::stringref queryStack,
                       const vespalib::string &location,
                       const ViewResolver &viewResolver,
-                      const IAttributeExecutor & attrExec,
                       const search::IDocumentMetaStore &metaStore,
                       const search::fef::IIndexEnvironment &indexEnv,
                       const search::fef::RankSetup &rankSetup,
@@ -112,18 +126,10 @@ public:
     std::unique_ptr<search::queryeval::IDiversifier> createDiversifier() const;
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
     bool has_first_phase_rank() const { return !_rankSetup.getFirstPhaseRank().empty(); }
-    bool hasOnMatchOperation() const;
-    BasicType getOnMatchAttributeType() const;
-    vespalib::string getOnMatchOperation() const;
-    void runOnMatchOperation(std::shared_ptr<IAttributeFunctor> count) const;
-    bool hasOnReRankOperation() const;
-    BasicType getOnReRankAttributeType() const;
-    vespalib::string getOnReRankOperation() const;
-    void runOnReRankOperation(std::shared_ptr<IAttributeFunctor> count) const;
-    bool hasOnSummaryOperation() const;
-    BasicType getOnSummaryAttributeType() const;
-    vespalib::string getOnSummaryOperation() const;
-    void runOnSummaryOperation(std::shared_ptr<IAttributeFunctor> count) const;
+    std::unique_ptr<AttributeOperationTask> createOnMatchTask() const;
+    std::unique_ptr<AttributeOperationTask> createOnReRankTask() const;
+    std::unique_ptr<AttributeOperationTask> createOnSummaryTask() const;
+
     const RequestContext & requestContext() const { return _requestContext; }
 };
 

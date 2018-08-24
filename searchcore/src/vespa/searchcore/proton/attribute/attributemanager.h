@@ -36,6 +36,7 @@ private:
     using ShrinkerSP = std::shared_ptr<ShrinkLidSpaceFlushTarget>;
     using IFlushTargetSP = std::shared_ptr<searchcorespi::IFlushTarget>;
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
+    using AttributeReadGuard = search::attribute::AttributeReadGuard;
 
     class AttributeWrap
     {
@@ -80,9 +81,7 @@ private:
     HwInfo _hwInfo;
     std::unique_ptr<ImportedAttributesRepo> _importedAttributes;
 
-    AttributeVectorSP internalAddAttribute(const AttributeSpec &spec,
-                                                     uint64_t serialNum,
-                                                     const IAttributeFactory &factory);
+    AttributeVectorSP internalAddAttribute(const AttributeSpec &spec, uint64_t serialNum, const IAttributeFactory &factory);
 
     void addAttribute(const AttributeWrap &attribute, const ShrinkerSP &shrinker);
 
@@ -90,12 +89,9 @@ private:
 
     const FlushableWrap *findFlushable(const vespalib::string &name) const;
 
-    void transferExistingAttributes(const AttributeManager &currMgr,
-                                    const Spec &newSpec,
-                                    Spec::AttributeList &toBeAdded);
+    void transferExistingAttributes(const AttributeManager &currMgr, const Spec &newSpec, Spec::AttributeList &toBeAdded);
 
-    void addNewAttributes(const Spec &newSpec,
-                          const Spec::AttributeList &toBeAdded,
+    void addNewAttributes(const Spec &newSpec, const Spec::AttributeList &toBeAdded,
                           IAttributeInitializerRegistry &initializerRegistry);
 
     void transferExtraAttributes(const AttributeManager &currMgr);
@@ -118,8 +114,7 @@ public:
                      const IAttributeFactory::SP &factory,
                      const HwInfo &hwInfo);
 
-    AttributeManager(const AttributeManager &currMgr,
-                     const Spec &newSpec,
+    AttributeManager(const AttributeManager &currMgr, const Spec &newSpec,
                      IAttributeInitializerRegistry &initializerRegistry);
     ~AttributeManager() override;
 
@@ -141,7 +136,7 @@ public:
 
     // Implements search::IAttributeManager
     search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override;
-    std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const override;
+    std::unique_ptr<AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const override;
 
     /**
      * Fills all regular registered attributes (not extra attributes)

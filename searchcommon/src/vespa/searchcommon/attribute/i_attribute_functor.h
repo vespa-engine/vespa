@@ -4,9 +4,9 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search { class AttributeVector; }
-
 namespace search::attribute {
+
+class IAttributeVector;
 
 /*
  * Interface class for access attribute in correct attribute write
@@ -16,7 +16,7 @@ namespace search::attribute {
 class IAttributeFunctor
 {
 public:
-    virtual void operator()(const search::AttributeVector &attributeVector) = 0;
+    virtual void operator()(const IAttributeVector &attributeVector) = 0;
     virtual ~IAttributeFunctor() { }
 };
 
