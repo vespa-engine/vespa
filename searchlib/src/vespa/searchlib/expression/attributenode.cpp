@@ -224,7 +224,7 @@ void AttributeNode::EnumHandler::handle(const AttributeResult & r)
 
 bool AttributeNode::onExecute() const
 {
-    if (_hasMultiValue) {
+    if (_handler) {
         _handler->handle(*_scratchResult);
     } else {
         updateResult().set(*_scratchResult);
