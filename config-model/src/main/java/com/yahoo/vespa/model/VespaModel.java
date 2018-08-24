@@ -27,7 +27,10 @@ import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.log.LogLevel;
 import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstants;
+import com.yahoo.searchdefinition.derived.AttributeFields;
+import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
@@ -106,7 +109,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private List<ServiceCluster> serviceClusters = new ArrayList<>();
 
     /** The global rank profiles of this model */
-    private final ImmutableList<RankProfile> rankProfiles;
+    private final RankProfileList rankProfileList;
 
     /** The global ranking constants of this model */
     private final RankingConstants rankingConstants = new RankingConstants();
@@ -159,10 +162,17 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         this.applicationPackage = deployState.getApplicationPackage();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
         if (complete) { // create a a completed, frozen model
-            configModelRepo.readConfigModels(deployState, builder, root, configModelRegistry);
+            configModelRepo.readConfigModels(deployState, this, builder, root, configModelRegistry);
             addServiceClusters(deployState.getApplicationPackage(), builder);
-            this.rankProfiles = createGlobalRankProfiles(deployState.getImportedModels());
             this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs()); // must happen after the two lines above
+
+            createGlobalRankProfiles(deployState.getImportedModels(), deployState.rankProfileRegistry());
+            this.rankProfileList = new RankProfileList(null, // null search -> global
+                                                       AttributeFields.empty,
+                                                       deployState.rankProfileRegistry(),
+                                                       deployState.getQueryProfiles().getRegistry(),
+                                                       deployState.getImportedModels());
+
             setupRouting();
             this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
             getAdmin().addPerHostServices(getHostSystem().getHosts(), deployState);
@@ -175,7 +185,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         else { // create a model with no services instantiated and the given file distributor
             this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs());
             this.fileDistributor = fileDistributor;
-            this.rankProfiles = ImmutableList.of();
+            this.rankProfileList = RankProfileList.empty;
         }
     }
 
@@ -209,10 +219,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /**
      * Creates a rank profile not attached to any search definition, for each imported model in the application package
      */
-    private ImmutableList<RankProfile> createGlobalRankProfiles(ImportedModels importedModels) {
+    private ImmutableList<RankProfile> createGlobalRankProfiles(ImportedModels importedModels,
+                                                                RankProfileRegistry rankProfileRegistry) {
         List<RankProfile> profiles = new ArrayList<>();
         for (ImportedModel model : importedModels.all()) {
-            RankProfile profile = new RankProfile(model.name(), this, deployState.rankProfileRegistry());
+            RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry);
             for (Pair<String, RankingExpression> entry : model.outputExpressions(model.name())) {
                 profile.addMacro(entry.getFirst(), false).setRankingExpression(entry.getSecond());
             }
@@ -220,8 +231,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         return ImmutableList.copyOf(profiles);
     }
 
+    /** Returns the global rank profiles as a rank profile list */
+    public RankProfileList rankProfileList() { return rankProfileList; }
+
     private void setupRouting() {
-        root.setupRouting(configModelRepo);
+        root.setupRouting(this, configModelRepo);
     }
 
     /** Returns the one and only HostSystem of this VespaModel */

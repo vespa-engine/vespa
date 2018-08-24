@@ -14,6 +14,7 @@ import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.log.LogLevel;
+import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.model.*;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.container.Container;
@@ -298,7 +299,7 @@ public class Content extends ConfigModel {
             AbstractConfigProducer parent = root.getChildren().get(ContainerModel.DOCPROC_RESERVED_NAME);
             if (parent == null)
                 parent = new SimpleConfigProducer(root, ContainerModel.DOCPROC_RESERVED_NAME);
-            ContainerCluster indexingCluster = new ContainerCluster(parent, "cluster." + indexerName, indexerName);
+            ContainerCluster indexingCluster = new ContainerCluster(parent, "cluster." + indexerName, indexerName, RankProfileList.empty);
             ContainerModel indexingClusterModel = new ContainerModel(modelContext.withParent(parent).withId(indexingCluster.getSubId()));
             indexingClusterModel.setCluster(indexingCluster);
             modelContext.getConfigModelRepoAdder().add(indexingClusterModel);

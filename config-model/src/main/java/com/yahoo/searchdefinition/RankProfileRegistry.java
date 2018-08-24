@@ -66,7 +66,9 @@ public class RankProfileRegistry {
      * @return the RankProfile to return.
      */
     public RankProfile get(Search search, String name) {
-        return rankProfiles.get(search).get(name);
+        Map<String, RankProfile> profiles = rankProfiles.get(search);
+        if (profiles == null) return null;
+        return profiles.get(name);
     }
 
     /**

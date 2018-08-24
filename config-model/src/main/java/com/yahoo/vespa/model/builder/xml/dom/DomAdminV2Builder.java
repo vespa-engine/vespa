@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.text.XML;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.model.SimpleConfigProducer;
@@ -89,7 +90,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         if (standaloneZooKeeper) {
             parent = new ClusterControllerCluster(parent, "standalone");
         }
-        ContainerCluster cluster = new ContainerCluster(parent, "cluster-controllers", "cluster-controllers", new ClusterControllerClusterVerifier());
+        ContainerCluster cluster = new ContainerCluster(parent, "cluster-controllers", "cluster-controllers", new ClusterControllerClusterVerifier(), RankProfileList.empty);
         ContainerModelBuilder.addDefaultHandler_legacyBuilder(cluster);
 
         List<Container> containers = new ArrayList<>();

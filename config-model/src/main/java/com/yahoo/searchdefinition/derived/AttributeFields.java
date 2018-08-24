@@ -41,8 +41,11 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     /** Whether this has any position attribute */
     private boolean hasPosition = false;
 
+    public static final AttributeFields empty = new AttributeFields(null);
+
     public AttributeFields(Search search) {
-        derive(search);
+        if (search != null)
+            derive(search);
     }
 
     /** Derives everything from a field */

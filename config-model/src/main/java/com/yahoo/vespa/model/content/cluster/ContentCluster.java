@@ -8,6 +8,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
@@ -435,8 +436,15 @@ public class ContentCluster extends AbstractConfigProducer implements
             return sortedHosts;
         }
 
-        private ContainerCluster createClusterControllers(AbstractConfigProducer parent, Collection<HostResource> hosts, String name, boolean multitenant) {
-            ContainerCluster clusterControllers = new ContainerCluster(parent, name, name, new ClusterControllerClusterVerifier());
+        private ContainerCluster createClusterControllers(AbstractConfigProducer parent,
+                                                          Collection<HostResource> hosts,
+                                                          String name,
+                                                          boolean multitenant) {
+            ContainerCluster clusterControllers = new ContainerCluster(parent,
+                                                                       name,
+                                                                       name,
+                                                                       new ClusterControllerClusterVerifier(),
+                                                                       RankProfileList.empty);
             List<Container> containers = new ArrayList<>();
             // Add a cluster controller on each config server (there is always at least one).
             if (clusterControllers.getContainers().isEmpty()) {

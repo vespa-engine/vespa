@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.vespa.model.VespaModel;
 
 import java.util.stream.Stream;
 
@@ -19,16 +20,18 @@ public final class ConfigModelContext {
     private final AbstractConfigProducer parent;
     private final String producerId;
     private final DeployState deployState;
+    private final VespaModel vespaModel;
     private final ConfigModelRepoAdder configModelRepoAdder;
     private final ApplicationType applicationType;
 
     private ConfigModelContext(ApplicationType applicationType,
                                DeployState deployState,
-                               ConfigModelRepoAdder configModelRepoAdder,
+                               VespaModel vespaModel, ConfigModelRepoAdder configModelRepoAdder,
                                AbstractConfigProducer parent,
                                String producerId) {
         this.applicationType = applicationType;
         this.deployState = deployState;
+        this.vespaModel = vespaModel;
         this.configModelRepoAdder = configModelRepoAdder;
         this.parent = parent;
         this.producerId = producerId;
@@ -40,18 +43,23 @@ public final class ConfigModelContext {
     public DeployLogger getDeployLogger() { return deployState.getDeployLogger(); }
     public DeployState getDeployState() { return deployState; }
     public ApplicationType getApplicationType() { return applicationType; }
+    public VespaModel vespaModel() { return vespaModel; }
 
     /** Returns write access to the config model repo, or null (only) if this is improperly initialized during testing */
     public ConfigModelRepoAdder getConfigModelRepoAdder() { return configModelRepoAdder; }
 
     /** Create a new context with a different parent */
     public ConfigModelContext withParent(AbstractConfigProducer newParent) {
-        return ConfigModelContext.create(deployState, configModelRepoAdder, newParent, producerId);
+        return ConfigModelContext.create(deployState, vespaModel, configModelRepoAdder, newParent, producerId);
     }
 
     /** Create a new context with a different config model producer id */
     public ConfigModelContext withId(String producerId) {
-        return ConfigModelContext.create(deployState, configModelRepoAdder, parent, producerId);
+        return ConfigModelContext.create(deployState, vespaModel, configModelRepoAdder, parent, producerId);
+    }
+
+    public ConfigModelContext with(VespaModel vespaModel) {
+        return ConfigModelContext.create(deployState, vespaModel, configModelRepoAdder, parent, producerId);
     }
 
     /**
@@ -61,9 +69,9 @@ public final class ConfigModelContext {
      * @param producerId the id to be used for the config model.
      * @return a model context that can be passed to a model.
      */
-    public static ConfigModelContext create(ConfigModelRepoAdder configModelRepoAdder,
+    public static ConfigModelContext create(VespaModel vespaModel, ConfigModelRepoAdder configModelRepoAdder,
                                             AbstractConfigProducer parent, String producerId) {
-        return create(parent.getRoot().getDeployState(), configModelRepoAdder, parent, producerId);
+        return create(parent.getRoot().getDeployState(), vespaModel, configModelRepoAdder, parent, producerId);
     }
 
     /**
@@ -74,9 +82,12 @@ public final class ConfigModelContext {
      * @param producerId the id to be used for the config model
      * @return a model context that can be passed to a model
      */
-    public static ConfigModelContext create(DeployState deployState, ConfigModelRepoAdder configModelRepoAdder,
-                                            AbstractConfigProducer parent, String producerId) {
-        return new ConfigModelContext(ApplicationType.DEFAULT, deployState, configModelRepoAdder, parent, producerId);
+    public static ConfigModelContext create(DeployState deployState,
+                                            VespaModel vespaModel,
+                                            ConfigModelRepoAdder configModelRepoAdder,
+                                            AbstractConfigProducer parent,
+                                            String producerId) {
+        return new ConfigModelContext(ApplicationType.DEFAULT, deployState, vespaModel, configModelRepoAdder, parent, producerId);
     }
 
     /**
@@ -90,10 +101,11 @@ public final class ConfigModelContext {
      */
     public static ConfigModelContext create(ApplicationType applicationType,
                                             DeployState deployState,
+                                            VespaModel vespaModel,
                                             ConfigModelRepoAdder configModelRepoAdder,
                                             AbstractConfigProducer parent,
                                             String producerId) {
-        return new ConfigModelContext(applicationType, deployState, configModelRepoAdder, parent, producerId);
+        return new ConfigModelContext(applicationType, deployState, vespaModel, configModelRepoAdder, parent, producerId);
     }
 
     public enum ApplicationType {

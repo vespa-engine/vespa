@@ -12,11 +12,16 @@ import java.util.Map;
 /**
  * The derived rank profiles of a search definition
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class RankProfileList extends Derived implements RankProfilesConfig.Producer {
 
-    private Map<String, RawRankProfile> rankProfiles = new java.util.LinkedHashMap<>();
+    private final Map<String, RawRankProfile> rankProfiles = new java.util.LinkedHashMap<>();
+
+    public static RankProfileList empty = new RankProfileList();
+
+    private RankProfileList() {
+    }
 
     /**
      * Creates a rank profile
@@ -29,7 +34,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                            RankProfileRegistry rankProfileRegistry,
                            QueryProfileRegistry queryProfiles,
                            ImportedModels importedModels) {
-        setName(search.getName());
+        setName(search == null ? "default" : search.getName());
         deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, search, attributeFields);
     }
 
@@ -38,11 +43,13 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                                     ImportedModels importedModels,
                                     Search search,
                                     AttributeFields attributeFields) {
-        RawRankProfile defaultProfile = new RawRankProfile(rankProfileRegistry.get(search, "default"),
-                                                           queryProfiles,
-                                                           importedModels,
-                                                           attributeFields);
-        rankProfiles.put(defaultProfile.getName(), defaultProfile);
+        if (search != null) { // profiles belonging to a search have a default profile
+            RawRankProfile defaultProfile = new RawRankProfile(rankProfileRegistry.get(search, "default"),
+                                                               queryProfiles,
+                                                               importedModels,
+                                                               attributeFields);
+            rankProfiles.put(defaultProfile.getName(), defaultProfile);
+        }
 
         for (RankProfile rank : rankProfileRegistry.rankProfilesOf(search)) {
             if ("default".equals(rank.getName())) continue;
@@ -70,4 +77,5 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
             rank.getConfig(builder);
         }
     }
+
 }

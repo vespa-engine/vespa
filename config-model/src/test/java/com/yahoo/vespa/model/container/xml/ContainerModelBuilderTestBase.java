@@ -5,6 +5,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.ComponentsConfig;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.component.Component;
@@ -22,7 +23,6 @@ import java.util.Collections;
  * not be done when using this class
  *
  * @author gjoranv
- * @since 5.5
  */
 public abstract class ContainerModelBuilderTestBase {
 
@@ -32,17 +32,18 @@ public abstract class ContainerModelBuilderTestBase {
             "  </nodes>";
     protected MockRoot root;
 
-    public static void createModel(MockRoot root, DeployState deployState, Element... containerElems) throws SAXException, IOException {
+    public static void createModel(MockRoot root, DeployState deployState, VespaModel vespaModel, Element... containerElems) {
         for (Element containerElem : containerElems) {
-            ContainerModel model = new ContainerModelBuilder(false, ContainerModelBuilder.Networking.enable).build(deployState, null, root, containerElem);
+            ContainerModel model = new ContainerModelBuilder(false, ContainerModelBuilder.Networking.enable)
+                                           .build(deployState, vespaModel, null, root, containerElem);
             ContainerCluster cluster = model.getCluster();
             generateDefaultSearchChains(cluster);
         }
         root.freezeModelTopology();
     }
 
-    public static void createModel(MockRoot root, Element... containerElems) throws SAXException, IOException {
-        createModel(root, DeployState.createTestState(), containerElems);
+    public static void createModel(MockRoot root, Element... containerElems) {
+        createModel(root, DeployState.createTestState(), null, containerElems);
     }
 
     private static void generateDefaultSearchChains(ContainerCluster cluster) {

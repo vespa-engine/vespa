@@ -61,8 +61,8 @@ public class ContentClusterUtils {
         Document doc = XML.getDocument(clusterXml);
         Admin admin = new Admin(root, new DefaultMonitoring("vespa", 60), new Metrics(), Collections.emptyMap(), false,
                                 new FileDistributionConfigProducer(root, new MockFileRegistry(), null));
-        ConfigModelContext context = ConfigModelContext.create(null, root.getDeployState(), null, root, null);
-        
+        ConfigModelContext context = ConfigModelContext.create(null, root.getDeployState(), null,null, root, null);
+
         return new ContentCluster.Builder(admin).build(Collections.emptyList(), context, doc.getDocumentElement());
     }
 
