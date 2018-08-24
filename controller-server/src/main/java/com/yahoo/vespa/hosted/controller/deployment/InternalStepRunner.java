@@ -523,7 +523,7 @@ public class InternalStepRunner implements StepRunner {
         private DualLogger(RunId id, Step step) {
             this.id = id;
             this.step = step;
-            this.prefix = step + " of " + id;
+            this.prefix = id + " at " + step + ":  ";
         }
 
         private void log(String message) {
@@ -535,7 +535,7 @@ public class InternalStepRunner implements StepRunner {
         }
 
         private void log(Level level, String message, Throwable thrown) {
-            LogRecord record = new LogRecord(level, message);
+            LogRecord record = new LogRecord(level, prefix + message);
             record.setThrown(thrown);
             logger.log(record);
 
