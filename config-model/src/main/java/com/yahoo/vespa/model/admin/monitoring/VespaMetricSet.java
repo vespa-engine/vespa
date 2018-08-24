@@ -297,6 +297,12 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.removed.document_store.memory_usage.dead_bytes.average"));
         metrics.add(new Metric("content.proton.documentdb.removed.document_store.memory_usage.onhold_bytes.average"));
 
+        // document store cache
+        metrics.add(new Metric("content.proton.documentdb.ready.document_store.cache.memory_usage.average"));
+        metrics.add(new Metric("content.proton.documentdb.ready.document_store.cache.hit_rate.average"));
+        metrics.add(new Metric("content.proton.documentdb.notready.document_store.cache.memory_usage.average"));
+        metrics.add(new Metric("content.proton.documentdb.notready.document_store.cache.hit_rate.average"));
+
         // attribute
         metrics.add(new Metric("content.proton.documentdb.ready.attribute.memory_usage.allocated_bytes.average"));
         metrics.add(new Metric("content.proton.documentdb.ready.attribute.memory_usage.used_bytes.average"));
