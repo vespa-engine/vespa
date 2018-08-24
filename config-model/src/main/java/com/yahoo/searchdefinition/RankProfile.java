@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Represents a rank profile - a named set of ranking settings
@@ -154,6 +155,14 @@ public class RankProfile implements Serializable, Cloneable {
     /** Returns the rankinng constants of the owner of this */
     public RankingConstants rankingConstants() {
         return search != null ? search.rankingConstants() : model.rankingConstants();
+    }
+
+    private Stream<ImmutableSDField> allFields() {
+        return search != null ? search.allFields() : Stream.empty();
+    }
+
+    private Stream<ImmutableSDField> allImportedFields() {
+        return search != null ? search.allImportedFields() : Stream.empty();
     }
 
     /**
@@ -782,11 +791,11 @@ public class RankProfile implements Serializable, Cloneable {
 
         // Add small and large constants, respectively
         getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));
-        getSearch().rankingConstants().asMap().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.getTensorType()));
+        rankingConstants().asMap().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.getTensorType()));
 
         // Add attributes
-        getSearch().allFields().forEach(field -> addAttributeFeatureTypes(field, context));
-        getSearch().allImportedFields().forEach(field -> addAttributeFeatureTypes(field, context));
+        allFields().forEach(field -> addAttributeFeatureTypes(field, context));
+        allImportedFields().forEach(field -> addAttributeFeatureTypes(field, context));
 
         // Add query features from rank profile types reached from the "default" profile
         for (QueryProfileType queryProfileType : queryProfiles.getTypeRegistry().allComponents()) {
