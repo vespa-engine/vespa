@@ -330,6 +330,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .recursive("true"),
                               new File("application1-recursive.json"));
 
+        // GET logs
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application//application1/environment/prod/region/corp-us-east-1/instance/default/logs", GET).userIdentity(USER_ID), new File("logs.json"));
+
         // DELETE (cancel) ongoing change
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", DELETE)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),

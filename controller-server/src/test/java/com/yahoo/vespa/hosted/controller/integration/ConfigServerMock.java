@@ -7,6 +7,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
@@ -25,7 +26,11 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -290,6 +295,17 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public EndpointStatus getGlobalRotationStatus(DeploymentId deployment, String endpoint) {
         EndpointStatus result = new EndpointStatus(EndpointStatus.Status.in, "", "", 1497618757L);
         return endpoints.getOrDefault(endpoint, result);
+    }
+
+    @Override
+    public HttpResponse getLogs(DeploymentId deployment) {
+        return new HttpResponse(200) {
+            @Override
+            public void render(OutputStream outputStream) throws IOException {
+                outputStream.write("{\"subfolder\":{\"log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxl\"},\"log1.log\":\"VGhpcyBpcyBvbmUgbG9nIGZpbGU=\"}".getBytes());
+            }
+        };
+
     }
 
     public static class Application {

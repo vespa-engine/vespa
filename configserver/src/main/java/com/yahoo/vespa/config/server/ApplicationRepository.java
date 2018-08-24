@@ -36,6 +36,7 @@ import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
+import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -50,6 +51,7 @@ import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.model.VespaModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -477,6 +479,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return convergeChecker.servicesToCheck(getApplication(applicationId), uri, timeout);
     }
 
+    // ---------------- Logs ----------------------------------------------------------------
+
+    public HttpResponse getLogs(ApplicationId applicationId) {
+        String logServerHostName = getLogServerHostname(applicationId);
+        return LogRetriever.getLogs(logServerHostName);
+    }
+
     // ---------------- Session operations ----------------------------------------------------------------
 
     /**
@@ -688,6 +697,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                        "Change(s) between active and new application that may require re-feed:\n" +
                                refeedActions.format());
         }
+    }
+
+    private String getLogServerHostname(ApplicationId applicationId) {
+        Application application = getApplication(applicationId);
+        VespaModel model = (VespaModel) application.getModel();
+        String logServerHostname = model.getAdmin().getLogserver().getHostName();
+        return logServerHostname;
     }
 
     /** Returns version to use when deploying application in given environment */
