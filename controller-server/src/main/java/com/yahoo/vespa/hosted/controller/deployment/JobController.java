@@ -30,6 +30,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Stream;
 
@@ -93,9 +94,10 @@ public class JobController {
     }
 
     /** Stores the given log record for the given run and step. */
-    public void log(RunId id, Step step, LogRecord record) {
+    public void log(RunId id, Step step, Level level, String message) {
         locked(id, __ -> {
-            logs.append(id.application(), id.type(), step, Collections.singletonList(LogEntry.of(record)));
+            LogEntry entry = new LogEntry(0, controller.clock().millis(), level, message);
+            logs.append(id.application(), id.type(), step, Collections.singletonList(entry));
             return __;
         });
     }

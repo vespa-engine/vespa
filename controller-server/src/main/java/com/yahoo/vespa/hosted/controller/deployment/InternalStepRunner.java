@@ -27,7 +27,9 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.yolean.Exceptions;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
@@ -536,7 +538,14 @@ public class InternalStepRunner implements StepRunner {
             LogRecord record = new LogRecord(level, message);
             record.setThrown(thrown);
             logger.log(record);
-            controller.jobController().log(id, step, record);
+
+            if (thrown != null) {
+                ByteArrayOutputStream traceBuffer = new ByteArrayOutputStream();
+                thrown.printStackTrace(new PrintStream(traceBuffer));
+                message += "\n" + traceBuffer;
+            }
+
+            controller.jobController().log(id, step, level, message);
         }
 
     }

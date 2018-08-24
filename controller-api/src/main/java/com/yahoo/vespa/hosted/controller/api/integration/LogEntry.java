@@ -26,10 +26,6 @@ public class LogEntry {
         this.message = requireNonNull(message);
     }
 
-    public static LogEntry of(LogRecord record) {
-        return new LogEntry(record.getSequenceNumber(), record.getMillis(), record.getLevel(), record.getMessage());
-    }
-
     public long id() {
         return id;
     }
