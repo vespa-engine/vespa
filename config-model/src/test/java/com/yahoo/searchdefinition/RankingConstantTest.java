@@ -44,7 +44,7 @@ public class RankingConstantTest {
         searchBuilder.build();
         Search search = searchBuilder.getSearch();
 
-        Iterator<RankingConstant> constantIterator = search.getRankingConstants().values().iterator();
+        Iterator<RankingConstant> constantIterator = search.rankingConstants().asMap().values().iterator();
         RankingConstant constant = constantIterator.next();
         assertEquals(TENSOR_NAME, constant.getName());
         assertEquals(TENSOR_FILE, constant.getFileName());
@@ -101,7 +101,7 @@ public class RankingConstantTest {
         ));
         searchBuilder.build();
         Search search = searchBuilder.getSearch();
-        RankingConstant constant = search.getRankingConstants().values().iterator().next();
+        RankingConstant constant = search.rankingConstants().asMap().values().iterator().next();
         assertEquals("simplename", constant.getFileName());
     }
 
@@ -120,7 +120,7 @@ public class RankingConstantTest {
         ));
         searchBuilder.build();
         Search search = searchBuilder.getSearch();
-        RankingConstant constant = search.getRankingConstants().values().iterator().next();
+        RankingConstant constant = search.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
         assertEquals("http://somewhere.far.away/in/another-galaxy", constant.getUri());
     }
@@ -140,7 +140,7 @@ public class RankingConstantTest {
         ));
         searchBuilder.build();
         Search search = searchBuilder.getSearch();
-        RankingConstant constant = search.getRankingConstants().values().iterator().next();
+        RankingConstant constant = search.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
         assertEquals("https://somewhere.far.away:4443/in/another-galaxy", constant.getUri());
     }
@@ -160,7 +160,7 @@ public class RankingConstantTest {
         ));
         searchBuilder.build();
         Search search = searchBuilder.getSearch();
-        RankingConstant constant = search.getRankingConstants().values().iterator().next();
+        RankingConstant constant = search.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
         assertEquals("http://somewhere.far.away:4080/in/another-galaxy", constant.getUri());
     }
@@ -180,7 +180,7 @@ public class RankingConstantTest {
         ));
         searchBuilder.build();
         Search search = searchBuilder.getSearch();
-        RankingConstant constant = search.getRankingConstants().values().iterator().next();
+        RankingConstant constant = search.rankingConstants().asMap().values().iterator().next();
         assertEquals(RankingConstant.PathType.URI, constant.getPathType());
         assertEquals("http:somewhere.far.away/in/another-galaxy", constant.getUri());
     }

@@ -230,7 +230,7 @@ public class RankingExpressionWithOnnxTestCase {
         search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
 
         assertNull("Constant overridden by macro is not added",
-                search.search().getRankingConstants().get( name + "_Variable"));
+                search.search().rankingConstants().get( name + "_Variable"));
         assertLargeConstant( name + "_Variable_1", search, Optional.of(10L));
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
@@ -244,7 +244,7 @@ public class RankingExpressionWithOnnxTestCase {
             searchFromStored.compileRankProfile("my_profile", applicationDir.append("models"));
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
             assertNull("Constant overridden by macro is not added",
-                    searchFromStored.search().getRankingConstants().get( name + "_Variable"));
+                    searchFromStored.search().rankingConstants().get( name + "_Variable"));
             assertLargeConstant( name + "_Variable_1", searchFromStored, Optional.of(10L));
         } finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
@@ -258,7 +258,7 @@ public class RankingExpressionWithOnnxTestCase {
     private void assertLargeConstant(String name, RankProfileSearchFixture search, Optional<Long> expectedSize) {
         try {
             Path constantApplicationPackagePath = Path.fromString("models.generated/mnist_softmax.onnx/constants").append(name + ".tbf");
-            RankingConstant rankingConstant = search.search().getRankingConstants().get(name);
+            RankingConstant rankingConstant = search.search().rankingConstants().get(name);
             assertEquals(name, rankingConstant.getName());
             assertTrue(rankingConstant.getFileName().endsWith(constantApplicationPackagePath.toString()));
 

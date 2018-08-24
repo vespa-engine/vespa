@@ -103,6 +103,8 @@ public class ImportedModel {
      * if signatures are used, or the expression name if signatures are not used and there are multiple
      * expressions, and the third is the output name if signature names are used.
      */
+    // TODO: Get rids of name argument, which is needed to get the right name in unit tests using a mock package
+    //       with a non-standard application package layout
     public List<Pair<String, RankingExpression>> outputExpressions(String modelName) {
         List<Pair<String, RankingExpression>> names = new ArrayList<>();
         for (Map.Entry<String, Signature> signatureEntry : signatures().entrySet()) {

@@ -286,7 +286,7 @@ public class RankingExpressionWithTensorFlowTestCase {
         search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile_child");
 
         assertNull("Constant overridden by macro is not added",
-                   search.search().getRankingConstants().get("mnist_softmax_saved_layer_Variable_read"));
+                   search.search().rankingConstants().get("mnist_softmax_saved_layer_Variable_read"));
         assertLargeConstant(name + "_layer_Variable_1_read", search, Optional.of(10L));
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
@@ -302,7 +302,7 @@ public class RankingExpressionWithTensorFlowTestCase {
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile_child");
             assertNull("Constant overridden by macro is not added",
-                       searchFromStored.search().getRankingConstants().get("mnist_softmax_saved_layer_Variable_read"));
+                       searchFromStored.search().rankingConstants().get("mnist_softmax_saved_layer_Variable_read"));
             assertLargeConstant(name + "_layer_Variable_1_read", searchFromStored, Optional.of(10L));
         }
         finally {
@@ -404,7 +404,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     private void assertLargeConstant(String name, RankProfileSearchFixture search, Optional<Long> expectedSize) {
         try {
             Path constantApplicationPackagePath = Path.fromString("models.generated/mnist_softmax/saved/constants").append(name + ".tbf");
-            RankingConstant rankingConstant = search.search().getRankingConstants().get(name);
+            RankingConstant rankingConstant = search.search().rankingConstants().get(name);
             assertEquals(name, rankingConstant.getName());
             assertTrue(rankingConstant.getFileName().endsWith(constantApplicationPackagePath.toString()));
 

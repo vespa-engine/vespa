@@ -81,7 +81,7 @@ public class ConvertedModel {
     public ConvertedModel(Path modelPath, RankProfileTransformContext context) {
         this.modelPath = modelPath;
         this.modelName = toModelName(modelPath);
-        ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), modelPath);
+        ModelStore store = new ModelStore(context.rankProfile().applicationPackage(), modelPath);
         if ( store.hasSourceModel())
             expressions = convertModel(store, context.rankProfile(), context.queryProfiles(), context.importedModels());
         else
@@ -181,8 +181,8 @@ public class ConvertedModel {
             profile.addConstant(constant.getFirst(), asValue(constant.getSecond()));
 
         for (RankingConstant constant : store.readLargeConstants()) {
-            if ( ! profile.getSearch().getRankingConstants().containsKey(constant.getName()))
-                profile.getSearch().addRankingConstant(constant);
+            if ( ! profile.getSearch().rankingConstants().asMap().containsKey(constant.getName()))
+                profile.getSearch().rankingConstants().add(constant);
         }
 
         for (Pair<String, RankingExpression> macro : store.readMacros()) {
@@ -210,9 +210,9 @@ public class ConvertedModel {
         }
         else {
             Path constantPath = store.writeLargeConstant(constantName, constantValue);
-            if ( ! profile.getSearch().getRankingConstants().containsKey(constantName)) {
-                profile.getSearch().addRankingConstant(new RankingConstant(constantName, constantValue.type(),
-                                                                           constantPath.toString()));
+            if ( ! profile.getSearch().rankingConstants().asMap().containsKey(constantName)) {
+                profile.getSearch().rankingConstants().add(new RankingConstant(constantName, constantValue.type(),
+                                                           constantPath.toString()));
             }
         }
     }

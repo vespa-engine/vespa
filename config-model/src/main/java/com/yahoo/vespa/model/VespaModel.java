@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.collections.Pair;
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
@@ -19,7 +20,6 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
-import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -196,7 +196,13 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * Creates a rank profile not attached to any search definition, for each imported model in the application package
      */
     private ImmutableList<RankProfile> createGlobalRankProfiles(ImportedModels importedModels) {
-        return ImmutableList.of();
+        List<RankProfile> profiles = new ArrayList<>();
+        for (ImportedModel model : importedModels.all()) {
+            for (Pair<String, RankingExpression> entry : model.outputExpressions(model.name())) {
+                //RankProfile profile = new RankProfile(entry.getFirst());
+            }
+        }
+        return ImmutableList.copyOf(profiles);
     }
 
     private void setupRouting() {
