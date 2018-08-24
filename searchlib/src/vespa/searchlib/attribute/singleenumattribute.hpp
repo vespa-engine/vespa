@@ -137,19 +137,21 @@ template <typename B>
 void
 SingleValueEnumAttribute<B>::reEnumerate()
 {
+    auto newIndexes = std::make_unique<vespalib::Array<EnumIndex>>();
+    newIndexes->reserve(_enumIndices.capacity());
+    for (uint32_t i = 0; i < _enumIndices.size(); ++i) {
+        EnumIndex oldIdx = _enumIndices[i];
+        EnumIndex newIdx;
+        if (oldIdx.valid()) {
+            this->_enumStore.getCurrentIndex(oldIdx, newIdx);
+        }
+        newIndexes->push_back_fast(newIdx);
+    }
     this->logEnumStoreEvent("compactfixup", "drain");
     {
         EnumModifier enumGuard(this->getEnumModifier());
         this->logEnumStoreEvent("compactfixup", "start");
-        for (uint32_t i = 0; i < _enumIndices.size(); ++i) {
-            EnumIndex oldIdx = _enumIndices[i];
-            if (oldIdx.valid()) {
-                EnumIndex newIdx;
-                this->_enumStore.getCurrentIndex(oldIdx, newIdx);
-                std::atomic_thread_fence(std::memory_order_release);
-                _enumIndices[i] = newIdx;
-            }
-        }
+        _enumIndices.replaceVector(std::move(newIndexes));
     }
     this->logEnumStoreEvent("compactfixup", "complete");
 }
