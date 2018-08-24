@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
@@ -25,6 +26,10 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.log.LogLevel;
+import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -94,10 +99,10 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     private ApplicationConfigProducerRoot root = null;
 
-    /**
-     * Generic service instances - service clusters which have no specific model
-     */
+    /** Generic service instances - service clusters which have no specific model */
     private List<ServiceCluster> serviceClusters = new ArrayList<>();
+
+    private final ImmutableList<RankProfile> globalRankProfiles;
 
     private DeployState deployState;
 
@@ -148,6 +153,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         if (complete) { // create a a completed, frozen model
             configModelRepo.readConfigModels(deployState, builder, root, configModelRegistry);
             addServiceClusters(deployState.getApplicationPackage(), builder);
+            this.globalRankProfiles = createGlobalRankProfiles(deployState.getImportedModels());
             this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs()); // must happen after the two lines above
             setupRouting();
             this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
@@ -161,6 +167,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         else { // create a model with no services instantiated and the given file distributor
             this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs());
             this.fileDistributor = fileDistributor;
+            this.globalRankProfiles = ImmutableList.of();
         }
     }
 
@@ -183,6 +190,13 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private void addServiceClusters(ApplicationPackage app, VespaModelBuilder builder) {
         for (ServiceCluster sc : builder.getClusters(app, this))
             serviceClusters.add(sc);
+    }
+
+    /**
+     * Creates a rank profile not attached to any search definition, for each imported model in the application package
+     */
+    private ImmutableList<RankProfile> createGlobalRankProfiles(ImportedModels importedModels) {
+        return ImmutableList.of();
     }
 
     private void setupRouting() {

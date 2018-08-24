@@ -6,6 +6,9 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.path.Path;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -61,6 +64,11 @@ public class ImportedModels {
      */
     public ImportedModel get(File modelPath) {
         return importedModels.get(toName(modelPath));
+    }
+
+    /** Returns an immutable collection of all the imported models */
+    public Collection<ImportedModel> all() {
+        return importedModels.values();
     }
 
     private static String toName(File modelPath) {

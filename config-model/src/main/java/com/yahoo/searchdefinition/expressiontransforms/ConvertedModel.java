@@ -145,39 +145,11 @@ public class ConvertedModel {
 
         // Add expressions
         Map<String, RankingExpression> expressions = new HashMap<>();
-        for (Map.Entry<String, ImportedModel.Signature> signatureEntry : model.signatures().entrySet()) {
-            for (Map.Entry<String, String> outputEntry : signatureEntry.getValue().outputs().entrySet()) {
-                addExpression(model.expressions().get(outputEntry.getValue()),
-                              modelName + "." + signatureEntry.getKey() + "." + outputEntry.getKey(),
-                              constantsReplacedByMacros,
-                              model, store, profile, queryProfiles,
-                              expressions);
-            }
-            if (signatureEntry.getValue().outputs().isEmpty()) { // fallback: Signature without outputs
-                addExpression(model.expressions().get(signatureEntry.getKey()),
-                              modelName + "." + signatureEntry.getKey(),
-                              constantsReplacedByMacros,
-                              model, store, profile, queryProfiles,
-                              expressions);
-            }
-        }
-        if (model.signatures().isEmpty()) { // fallback: Model without signatures
-            if (model.expressions().size() == 1) { // Use just model name
-                addExpression(model.expressions().values().iterator().next(),
-                              modelName,
-                              constantsReplacedByMacros,
-                              model, store, profile, queryProfiles,
-                              expressions);
-            }
-            else {
-                for (Map.Entry<String, RankingExpression> expressionEntry : model.expressions().entrySet()) {
-                    addExpression(expressionEntry.getValue(),
-                                  modelName + "." + expressionEntry.getKey(),
-                                  constantsReplacedByMacros,
-                                  model, store, profile, queryProfiles,
-                                  expressions);
-                }
-            }
+        for (Pair<String, RankingExpression> output : model.outputExpressions(modelName)) {
+            addExpression(output.getSecond(), output.getFirst(),
+                          constantsReplacedByMacros,
+                          model, store, profile, queryProfiles,
+                          expressions);
         }
 
         // Transform and save macro - must come after reading expressions due to optimization transforms
