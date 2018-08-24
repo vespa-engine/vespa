@@ -65,6 +65,19 @@ public class HttpResponseStatisticsCollectorTest {
     }
 
     @Test
+    public void statistics_include_grouped_and_single_statuscodes() throws Exception {
+        testRequest(401, "GET");
+        testRequest(404, "GET");
+        testRequest(403, "GET");
+
+        Map<String, Map<String, Long>> stats = collector.takeStatisticsByMethod();
+        assertThat(stats.get("GET").get(Metrics.RESPONSES_4XX), equalTo(3L));
+        assertThat(stats.get("GET").get(Metrics.RESPONSES_401), equalTo(1L));
+        assertThat(stats.get("GET").get(Metrics.RESPONSES_403), equalTo(1L));
+
+    }
+
+    @Test
     public void retrieving_statistics_resets_the_counters() throws Exception {
         testRequest(200, "GET");
         testRequest(200, "GET");
