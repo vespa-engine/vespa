@@ -1,4 +1,4 @@
-package com.yahoo.vespa.hosted.controller.deployment;
+package com.yahoo.vespa.hosted.controller.api.integration;
 
 import com.yahoo.log.LogLevel;
 
@@ -24,10 +24,6 @@ public class LogEntry {
         this.at = at;
         this.level = LogLevel.getVespaLogLevel(requireNonNull(level));
         this.message = requireNonNull(message);
-    }
-
-    public static LogEntry of(LogRecord record) {
-        return new LogEntry(record.getSequenceNumber(), record.getMillis(), record.getLevel(), record.getMessage());
     }
 
     public long id() {

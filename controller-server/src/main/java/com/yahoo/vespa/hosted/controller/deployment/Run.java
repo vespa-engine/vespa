@@ -125,7 +125,7 @@ public class Run {
     }
 
     /** Returns the sequence id of the last test record received from the tester, for the test logs of this run. */
-    public long lastTestRecord() {
+    public long lastTestLogEntry() {
         return lastTestRecord;
     }
 

@@ -140,7 +140,7 @@ class RunSerializer {
         runObject.setLong(startField, run.start().toEpochMilli());
         run.end().ifPresent(end -> runObject.setLong(endField, end.toEpochMilli()));
         runObject.setString(statusField, valueOf(run.status()));
-        runObject.setLong(lastTestRecordField, run.lastTestRecord());
+        runObject.setLong(lastTestRecordField, run.lastTestLogEntry());
 
         Cursor stepsObject = runObject.setObject(stepsField);
         run.steps().forEach((step, status) -> stepsObject.setString(valueOf(step), valueOf(status)));

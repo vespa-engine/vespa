@@ -6,6 +6,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -23,13 +24,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Stream;
 
@@ -93,15 +94,16 @@ public class JobController {
     }
 
     /** Stores the given log record for the given run and step. */
-    public void log(RunId id, Step step, LogRecord record) {
+    public void log(RunId id, Step step, Level level, String message) {
         locked(id, __ -> {
-            logs.append(id.application(), id.type(), step, Collections.singletonList(LogEntry.of(record)));
+            LogEntry entry = new LogEntry(0, controller.clock().millis(), level, message);
+            logs.append(id.application(), id.type(), step, Collections.singletonList(entry));
             return __;
         });
     }
 
     /** Stores the given test log records, and records the id of the last of these, for continuation. */
-    public void logTestRecords(RunId id, List<LogEntry> entries) {
+    public void logTestEntries(RunId id, List<LogEntry> entries) {
         if (entries.isEmpty())
             return;
 

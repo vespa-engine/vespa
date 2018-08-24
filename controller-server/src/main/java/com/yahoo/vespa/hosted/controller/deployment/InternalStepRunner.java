@@ -27,7 +27,9 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.yolean.Exceptions;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
@@ -111,7 +113,7 @@ public class InternalStepRunner implements StepRunner {
             return Optional.empty();
         }
         catch (RuntimeException e) {
-            logger.log(INFO, "Unexpected exception running " + id, e);
+            logger.log(WARNING, "Unexpected exception running " + id, e);
             if (JobProfile.of(id.type()).alwaysRun().contains(step.get())) {
                 logger.log("Will keep trying, as this is a cleanup step.");
                 return Optional.empty();
@@ -337,6 +339,9 @@ public class InternalStepRunner implements StepRunner {
         URI testerEndpoint = testerEndpoint(id)
                 .orElseThrow(() -> new NoSuchElementException("Endpoint for tester vanished again before tests were complete!"));
 
+        JobController jobs = controller.jobController();
+        jobs.logTestEntries(id, testerCloud.getLog(testerEndpoint, jobs.run(id).get().lastTestLogEntry()));
+
         RunStatus status;
         switch (testerCloud.getStatus(testerEndpoint)) {
             case NOT_STARTED:
@@ -355,7 +360,6 @@ public class InternalStepRunner implements StepRunner {
             default:
                 throw new AssertionError("Unknown status!");
         }
-        logger.log(new String(testerCloud.getLogs(testerEndpoint))); // TODO jvenstad: Replace with something less hopeless!
         return Optional.of(status);
     }
 
@@ -519,7 +523,7 @@ public class InternalStepRunner implements StepRunner {
         private DualLogger(RunId id, Step step) {
             this.id = id;
             this.step = step;
-            this.prefix = step + " of " + id;
+            this.prefix = id + " at " + step + ":  ";
         }
 
         private void log(String message) {
@@ -531,10 +535,17 @@ public class InternalStepRunner implements StepRunner {
         }
 
         private void log(Level level, String message, Throwable thrown) {
-            LogRecord record = new LogRecord(level, message);
+            LogRecord record = new LogRecord(level, prefix + message);
             record.setThrown(thrown);
             logger.log(record);
-            controller.jobController().log(id, step, record);
+
+            if (thrown != null) {
+                ByteArrayOutputStream traceBuffer = new ByteArrayOutputStream();
+                thrown.printStackTrace(new PrintStream(traceBuffer));
+                message += "\n" + traceBuffer;
+            }
+
+            controller.jobController().log(id, step, level, message);
         }
 
     }
