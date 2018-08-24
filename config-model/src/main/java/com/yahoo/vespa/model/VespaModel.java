@@ -27,6 +27,7 @@ import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.log.LogLevel;
 import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchdefinition.RankingConstants;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
@@ -97,12 +98,18 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      */
     public static final String ROOT_CONFIGID = "";
 
-    private ApplicationConfigProducerRoot root = null;
+    private ApplicationConfigProducerRoot root;
+
+    private final ApplicationPackage applicationPackage;
 
     /** Generic service instances - service clusters which have no specific model */
     private List<ServiceCluster> serviceClusters = new ArrayList<>();
 
-    private final ImmutableList<RankProfile> globalRankProfiles;
+    /** The global rank profiles of this model */
+    private final ImmutableList<RankProfile> rankProfiles;
+
+    /** The global ranking constants of this model */
+    private final RankingConstants rankingConstants = new RankingConstants();
 
     private DeployState deployState;
 
@@ -149,11 +156,12 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         this.validationOverrides = deployState.validationOverrides();
         configModelRegistry = new VespaConfigModelRegistry(configModelRegistry);
         VespaModelBuilder builder = new VespaDomBuilder();
+        this.applicationPackage = deployState.getApplicationPackage();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
         if (complete) { // create a a completed, frozen model
             configModelRepo.readConfigModels(deployState, builder, root, configModelRegistry);
             addServiceClusters(deployState.getApplicationPackage(), builder);
-            this.globalRankProfiles = createGlobalRankProfiles(deployState.getImportedModels());
+            this.rankProfiles = createGlobalRankProfiles(deployState.getImportedModels());
             this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs()); // must happen after the two lines above
             setupRouting();
             this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
@@ -167,9 +175,15 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         else { // create a model with no services instantiated and the given file distributor
             this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs());
             this.fileDistributor = fileDistributor;
-            this.globalRankProfiles = ImmutableList.of();
+            this.rankProfiles = ImmutableList.of();
         }
     }
+
+    /** Returns the application package owning this */
+    public ApplicationPackage applicationPackage() { return applicationPackage; }
+
+    /** Returns the global ranking constants of this */
+    public RankingConstants rankingConstants() { return rankingConstants; }
 
     /** Creates a mutable model with no services instantiated */
     public static VespaModel createIncomplete(DeployState deployState) throws IOException, SAXException {

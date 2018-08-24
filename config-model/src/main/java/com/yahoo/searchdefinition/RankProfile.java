@@ -20,6 +20,7 @@ import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.vespa.model.VespaModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,11 +51,11 @@ public class RankProfile implements Serializable, Cloneable {
     /** The search definition-unique name of this rank profile */
     private final String name;
 
-    /** The search definition owning this profile, or null if none */
+    /** The search definition owning this profile, or null if global (owned by a model) */
     private final Search search;
 
-    /** The application package owning this */
-    private final ApplicationPackage applicationPackage;
+    /** The model owning this profile if it is global, or null if it is owned by a search definition */
+    private final VespaModel model;
 
     /** The name of the rank profile inherited by this */
     private String inheritedName = null;
@@ -121,9 +122,9 @@ public class RankProfile implements Serializable, Cloneable {
      *                            and looking up rank profiles.
      */
     public RankProfile(String name, Search search, RankProfileRegistry rankProfileRegistry) {
-        this.name = name;
-        this.search = search;
-        this.applicationPackage = search.applicationPackage();
+        this.name = Objects.requireNonNull(name, "name cannot be null");
+        this.search = Objects.requireNonNull(search, "search cannot be null");
+        this.model = null;
         this.rankProfileRegistry = rankProfileRegistry;
     }
 
@@ -131,12 +132,12 @@ public class RankProfile implements Serializable, Cloneable {
      * Creates a global rank profile
      *
      * @param name   the name of the new profile
-     * @param applicationPackage the application package owning this profile
+     * @param model the model owning this profile
      */
-    public RankProfile(String name, ApplicationPackage applicationPackage, RankProfileRegistry rankProfileRegistry) {
-        this.name = name;
+    public RankProfile(String name, VespaModel model, RankProfileRegistry rankProfileRegistry) {
+        this.name = Objects.requireNonNull(name, "name cannot be null");
         this.search = null;
-        this.applicationPackage = applicationPackage;
+        this.model = Objects.requireNonNull(model, "model cannot be null");
         this.rankProfileRegistry = rankProfileRegistry;
     }
 
@@ -146,7 +147,14 @@ public class RankProfile implements Serializable, Cloneable {
     public Search getSearch() { return search; }
 
     /** Returns the application this is part of */
-    public ApplicationPackage applicationPackage() { return applicationPackage; }
+    public ApplicationPackage applicationPackage() {
+        return search != null ? search.applicationPackage() : model.applicationPackage();
+    }
+
+    /** Returns the rankinng constants of the owner of this */
+    public RankingConstants rankingConstants() {
+        return search != null ? search.rankingConstants() : model.rankingConstants();
+    }
 
     /**
      * Sets the name of the rank profile this inherits. Both rank profiles must be present in the same search

@@ -181,8 +181,8 @@ public class ConvertedModel {
             profile.addConstant(constant.getFirst(), asValue(constant.getSecond()));
 
         for (RankingConstant constant : store.readLargeConstants()) {
-            if ( ! profile.getSearch().rankingConstants().asMap().containsKey(constant.getName()))
-                profile.getSearch().rankingConstants().add(constant);
+            if ( ! profile.rankingConstants().asMap().containsKey(constant.getName()))
+                profile.rankingConstants().add(constant);
         }
 
         for (Pair<String, RankingExpression> macro : store.readMacros()) {
@@ -210,8 +210,8 @@ public class ConvertedModel {
         }
         else {
             Path constantPath = store.writeLargeConstant(constantName, constantValue);
-            if ( ! profile.getSearch().rankingConstants().asMap().containsKey(constantName)) {
-                profile.getSearch().rankingConstants().add(new RankingConstant(constantName, constantValue.type(),
+            if ( ! profile.rankingConstants().asMap().containsKey(constantName)) {
+                profile.rankingConstants().add(new RankingConstant(constantName, constantValue.type(),
                                                            constantPath.toString()));
             }
         }
