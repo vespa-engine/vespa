@@ -15,7 +15,10 @@ public enum SystemName {
     cd,
 
     /** Production system */
-    main;
+    main,
+
+    /** System accessible for the public */
+    Public;
 
     public static SystemName defaultSystem() {
         return main;
@@ -26,6 +29,8 @@ public enum SystemName {
             case "dev": return dev;
             case "cd": return cd;
             case "main": return main;
+            case "public": return Public;
+            case "Public": return Public;
             default: throw new IllegalArgumentException(String.format("'%s' is not a valid system", value));
         }
     }
