@@ -133,10 +133,9 @@
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <attachBundleToArtifact>true</attachBundleToArtifact>
+                </configuration>
             </plugin>
         </plugins>
     </build>
