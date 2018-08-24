@@ -52,7 +52,7 @@ public class AssembleContainerPluginMojo extends AbstractMojo {
     private boolean useCommonAssemblyIds = false;
 
     @Parameter(alias = "AttachBundle", defaultValue = "false")
-    private boolean attachBundleToArtifact;
+    private boolean attachBundleArtifact;
 
     @Parameter(alias = "BundleClassifier", defaultValue = "bundle")
     private String bundleClassifierName;
@@ -88,7 +88,7 @@ public class AssembleContainerPluginMojo extends AbstractMojo {
         addDependencies(jarWithDependencies);
         createArchive(jarFiles.get(Dependencies.WITH), jarWithDependencies);
 
-        if (attachBundleToArtifact) {
+        if (attachBundleArtifact) {
             projectHelper.attachArtifact(project,
                                          project.getArtifact().getType(),
                                          bundleClassifierName,

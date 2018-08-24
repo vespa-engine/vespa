@@ -216,7 +216,7 @@
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>
                 <configuration>
-                    <attachBundleToArtifact>true</attachBundleToArtifact>
+                    <attachBundleArtifact>true</attachBundleArtifact>
                     <bundleClassifierName>deploy</bundleClassifierName>
                     <useCommonAssemblyIds>false</useCommonAssemblyIds>
                     <WebInfUrl>/WEB-INF/web.xml</WebInfUrl>
