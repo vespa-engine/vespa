@@ -38,13 +38,13 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                                     ImportedModels importedModels,
                                     Search search,
                                     AttributeFields attributeFields) {
-        RawRankProfile defaultProfile = new RawRankProfile(rankProfileRegistry.getRankProfile(search, "default"),
+        RawRankProfile defaultProfile = new RawRankProfile(rankProfileRegistry.get(search, "default"),
                                                            queryProfiles,
                                                            importedModels,
                                                            attributeFields);
         rankProfiles.put(defaultProfile.getName(), defaultProfile);
 
-        for (RankProfile rank : rankProfileRegistry.localRankProfiles(search)) {
+        for (RankProfile rank : rankProfileRegistry.rankProfilesOf(search)) {
             if ("default".equals(rank.getName())) continue;
 
             RawRankProfile rawRank = new RawRankProfile(rank, queryProfiles, importedModels, attributeFields);

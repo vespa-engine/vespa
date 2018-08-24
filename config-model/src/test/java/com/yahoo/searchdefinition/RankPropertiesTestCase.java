@@ -1,18 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import com.yahoo.collections.Pair;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -57,7 +51,7 @@ public class RankPropertiesTestCase extends SearchDefinitionTestCase {
 
         {
             // Check declared model
-            RankProfile parent = rankProfileRegistry.getRankProfile(search, "parent");
+            RankProfile parent = rankProfileRegistry.get(search, "parent");
             assertEquals("query(a) = 1500", parent.getRankProperties().get(0).toString());
 
             // Check derived model
@@ -67,11 +61,11 @@ public class RankPropertiesTestCase extends SearchDefinitionTestCase {
 
         {
             // Check declared model
-            RankProfile parent = rankProfileRegistry.getRankProfile(search, "child");
+            RankProfile parent = rankProfileRegistry.get(search, "child");
             assertEquals("query(a) = 2000", parent.getRankProperties().get(0).toString());
 
             // Check derived model
-            RawRankProfile rawChild = new RawRankProfile(rankProfileRegistry.getRankProfile(search, "child"),
+            RawRankProfile rawChild = new RawRankProfile(rankProfileRegistry.get(search, "child"),
                                                          new QueryProfileRegistry(),
                                                          new ImportedModels(),
                                                          attributeFields);

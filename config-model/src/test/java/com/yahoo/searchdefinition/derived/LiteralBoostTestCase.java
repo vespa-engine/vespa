@@ -38,7 +38,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         field1.parseIndexingScript("{ index }");
         field1.setLiteralBoost(20);
         RankProfile other=new RankProfile("other", search, rankProfileRegistry);
-        rankProfileRegistry.addRankProfile(other);
+        rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
         Processing.process(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(), true);
@@ -69,7 +69,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         SDField field1= document.addField("a", DataType.STRING);
         field1.parseIndexingScript("{ index }");
         RankProfile other=new RankProfile("other", search, rankProfileRegistry);
-        rankProfileRegistry.addRankProfile(other);
+        rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
         search = SearchBuilder.buildFromRawSearch(search, rankProfileRegistry, new QueryProfileRegistry());

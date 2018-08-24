@@ -33,7 +33,7 @@ public class FilterFieldNames extends Processor {
             }
         }
 
-        for (RankProfile profile : rankProfileRegistry.localRankProfiles(search)) {
+        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(search)) {
             Set<String> filterFields = new LinkedHashSet<>();
             findFilterFields(search, profile, filterFields);
             for (Iterator<String> itr = filterFields.iterator(); itr.hasNext(); ) {
@@ -45,7 +45,7 @@ public class FilterFieldNames extends Processor {
     }
 
     private void filterField(String f) {
-        for (RankProfile rp : rankProfileRegistry.localRankProfiles(search)) {
+        for (RankProfile rp : rankProfileRegistry.rankProfilesOf(search)) {
             rp.filterFields().add(f);
         }
     }

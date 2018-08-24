@@ -12,7 +12,6 @@ import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +25,7 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
         Search search = SearchBuilder.createFromDirectory("src/test/examples/rankingexpressionfunction",
                                                           rankProfileRegistry,
                                                           new QueryProfileRegistry()).getSearch();
-        final RankProfile macrosRankProfile = rankProfileRegistry.getRankProfile(search, "macros");
+        final RankProfile macrosRankProfile = rankProfileRegistry.get(search, "macros");
         macrosRankProfile.parseExpressions();
         final Map<String, RankProfile.Macro> macros = macrosRankProfile.getMacros();
         assertEquals(2, macros.get("titlematch$").getFormalParams().size());

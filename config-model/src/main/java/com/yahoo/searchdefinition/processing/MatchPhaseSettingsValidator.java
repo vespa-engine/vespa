@@ -23,7 +23,7 @@ public class MatchPhaseSettingsValidator extends Processor {
     public void process(boolean validate) {
         if ( ! validate) return;
 
-        for (RankProfile rankProfile : rankProfileRegistry.localRankProfiles(search)) {
+        for (RankProfile rankProfile : rankProfileRegistry.rankProfilesOf(search)) {
             RankProfile.MatchPhaseSettings settings = rankProfile.getMatchPhaseSettings();
             if (settings != null) {
                 validateMatchPhaseSettings(rankProfile, settings);

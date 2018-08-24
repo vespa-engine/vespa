@@ -152,7 +152,7 @@ public class RankProfile implements Serializable, Cloneable {
         return search != null ? search.applicationPackage() : model.applicationPackage();
     }
 
-    /** Returns the rankinng constants of the owner of this */
+    /** Returns the ranking constants of the owner of this */
     public RankingConstants rankingConstants() {
         return search != null ? search.rankingConstants() : model.rankingConstants();
     }
@@ -182,13 +182,13 @@ public class RankProfile implements Serializable, Cloneable {
     public RankProfile getInherited() {
         if (getSearch() == null) return getInheritedFromRegistry(inheritedName);
 
-        RankProfile inheritedInThisSearch = rankProfileRegistry.getRankProfile(search, inheritedName);
+        RankProfile inheritedInThisSearch = rankProfileRegistry.get(search, inheritedName);
         if (inheritedInThisSearch != null) return inheritedInThisSearch;
         return getInheritedFromRegistry(inheritedName);
     }
 
     private RankProfile getInheritedFromRegistry(String inheritedName) {
-        for (RankProfile r : rankProfileRegistry.allRankProfiles()) {
+        for (RankProfile r : rankProfileRegistry.all()) {
             if (r.getName().equals(inheritedName)) {
                 return r;
             }

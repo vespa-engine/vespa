@@ -3,12 +3,10 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Map;
@@ -137,7 +135,7 @@ public class RankingExpressionTypeValidatorTestCase {
         ));
         builder.build();
         RankProfile profile =
-                builder.getRankProfileRegistry().getRankProfile(builder.getSearch(), "my_rank_profile");
+                builder.getRankProfileRegistry().get(builder.getSearch(), "my_rank_profile");
         assertEquals(TensorType.fromSpec("tensor(x[],y[])"),
                      summaryFeatures(profile).get("macro1(a)").type(profile.typeContext(builder.getQueryProfileRegistry())));
         assertEquals(TensorType.fromSpec("tensor(z[10])"),
@@ -179,7 +177,7 @@ public class RankingExpressionTypeValidatorTestCase {
         ));
         builder.build();
         RankProfile profile =
-                builder.getRankProfileRegistry().getRankProfile(builder.getSearch(), "my_rank_profile");
+                builder.getRankProfileRegistry().get(builder.getSearch(), "my_rank_profile");
         assertEquals(TensorType.fromSpec("tensor(x[],y[])"),
                      summaryFeatures(profile).get("return_a").type(profile.typeContext(builder.getQueryProfileRegistry())));
         assertEquals(TensorType.fromSpec("tensor(z[10])"),

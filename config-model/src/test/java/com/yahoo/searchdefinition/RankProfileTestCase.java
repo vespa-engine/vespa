@@ -17,7 +17,6 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
-import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
 
 import java.util.Iterator;
@@ -46,7 +45,7 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
         search.addDocument(document);
         RankProfile child = new RankProfile("child", search, rankProfileRegistry);
         child.setInherited("default");
-        rankProfileRegistry.addRankProfile(child);
+        rankProfileRegistry.add(child);
 
         Iterator<RankProfile.RankSetting> i = child.rankSettingIterator();
 
@@ -83,8 +82,8 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
         builder.build();
         Search search = builder.getSearch();
         AttributeFields attributeFields = new AttributeFields(search);
-        verifyRankProfile(rankProfileRegistry.getRankProfile(search, "parent"), attributeFields);
-        verifyRankProfile(rankProfileRegistry.getRankProfile(search, "child"), attributeFields);
+        verifyRankProfile(rankProfileRegistry.get(search, "parent"), attributeFields);
+        verifyRankProfile(rankProfileRegistry.get(search, "child"), attributeFields);
     }
 
     private void verifyRankProfile(RankProfile rankProfile, AttributeFields attributeFields) {
@@ -119,11 +118,11 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
         builder.build();
         Search search = builder.getSearch();
 
-        assertEquals(4, registry.allRankProfiles().size());
-        assertAttributeTypeSettings(registry.getRankProfile(search, "default"), search);
-        assertAttributeTypeSettings(registry.getRankProfile(search, "unranked"), search);
-        assertAttributeTypeSettings(registry.getRankProfile(search, "p1"), search);
-        assertAttributeTypeSettings(registry.getRankProfile(search, "p2"), search);
+        assertEquals(4, registry.all().size());
+        assertAttributeTypeSettings(registry.get(search, "default"), search);
+        assertAttributeTypeSettings(registry.get(search, "unranked"), search);
+        assertAttributeTypeSettings(registry.get(search, "p1"), search);
+        assertAttributeTypeSettings(registry.get(search, "p2"), search);
     }
 
     private static void assertAttributeTypeSettings(RankProfile profile, Search search) {
@@ -145,11 +144,11 @@ public class RankProfileTestCase extends SearchDefinitionTestCase {
         builder.build(true, new BaseDeployLogger());
         Search search = builder.getSearch();
 
-        assertEquals(4, registry.allRankProfiles().size());
-        assertQueryFeatureTypeSettings(registry.getRankProfile(search, "default"), search);
-        assertQueryFeatureTypeSettings(registry.getRankProfile(search, "unranked"), search);
-        assertQueryFeatureTypeSettings(registry.getRankProfile(search, "p1"), search);
-        assertQueryFeatureTypeSettings(registry.getRankProfile(search, "p2"), search);
+        assertEquals(4, registry.all().size());
+        assertQueryFeatureTypeSettings(registry.get(search, "default"), search);
+        assertQueryFeatureTypeSettings(registry.get(search, "unranked"), search);
+        assertQueryFeatureTypeSettings(registry.get(search, "p1"), search);
+        assertQueryFeatureTypeSettings(registry.get(search, "p2"), search);
     }
 
     private static QueryProfileRegistry setupQueryProfileTypes() {

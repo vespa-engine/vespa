@@ -36,7 +36,7 @@ public class RankingExpressionTypeValidator extends Processor {
     public void process(boolean validate) {
         if ( ! validate) return;
 
-        for (RankProfile profile : rankProfileRegistry.localRankProfiles(search)) {
+        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(search)) {
             try {
                 validate(profile);
             }
