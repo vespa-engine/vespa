@@ -548,8 +548,11 @@ public class RankProfile implements Serializable, Cloneable {
         return null;
     }
 
-    public void addMacro(String name, boolean inline) {
-        macros.put(name, new Macro(name, inline));
+    /** Creates a new (empty) macro and returns it */
+    public Macro addMacro(String name, boolean inline) {
+        Macro macro = new Macro(name, inline);
+        macros.put(name, macro);
+        return macro;
     }
 
     /** Returns an unmodifiable view of the macros in this */

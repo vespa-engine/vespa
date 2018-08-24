@@ -212,8 +212,9 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private ImmutableList<RankProfile> createGlobalRankProfiles(ImportedModels importedModels) {
         List<RankProfile> profiles = new ArrayList<>();
         for (ImportedModel model : importedModels.all()) {
+            RankProfile profile = new RankProfile(model.name(), this, deployState.rankProfileRegistry());
             for (Pair<String, RankingExpression> entry : model.outputExpressions(model.name())) {
-                //RankProfile profile = new RankProfile(entry.getFirst());
+                profile.addMacro(entry.getFirst(), false).setRankingExpression(entry.getSecond());
             }
         }
         return ImmutableList.copyOf(profiles);
