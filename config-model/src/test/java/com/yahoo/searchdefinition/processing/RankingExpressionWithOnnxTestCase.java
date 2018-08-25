@@ -30,8 +30,8 @@ public class RankingExpressionWithOnnxTestCase {
 
     private final Path applicationDir = Path.fromString("src/test/integration/onnx/");
 
-    /** The model name - an artifact of the fact that the model here is not placed in the expected directory (models) */
-    private final static String name = "test_integration_onnx_models_mnist_softmax_onnx";
+    /** The model name */
+    private final static String name = "mnist_softmax_onnx";
 
     private final static String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(" + name + "_Variable), f(a,b)(a * b)), sum, d2), constant(" + name + "_Variable_1), f(a,b)(a + b))";
 
@@ -168,9 +168,9 @@ public class RankingExpressionWithOnnxTestCase {
         }
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
-                            "onnx('mnist_softmax.onnx','y'): " +
-                            "No expressions named 'y' in model 'mnist_softmax.onnx'. Available expressions: mnist_softmax.onnx.default.add",
-                    Exceptions.toMessageString(expected));
+                         "onnx('mnist_softmax.onnx','y'): " +
+                         "No expressions named 'y' in model 'mnist_softmax.onnx'. Available expressions: mnist_softmax_onnx.default.add",
+                         Exceptions.toMessageString(expected));
         }
     }
 

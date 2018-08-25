@@ -45,8 +45,8 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     private final Path applicationDir = Path.fromString("src/test/integration/tensorflow/");
 
-    /** The model name - an artifact of the fact that the model here is not placed in the expected directory (models) */
-    private final String name = "test_integration_tensorflow_models_mnist_softmax_saved";
+    /** The model name */
+    private final String name = "mnist_softmax_saved";
 
     private final String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(" + name + "_layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_layer_Variable_1_read), f(a,b)(a + b))";
 
@@ -322,7 +322,7 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @Test
     public void testMacroGeneration() {
-        final String name = "test_integration_tensorflow_models_mnist_saved";
+        final String name = "mnist_saved";
         final String expression = "join(join(reduce(join(join(join(imported_ml_macro_" + name + "_dnn_hidden2_add, reduce(constant(" + name + "_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), imported_ml_macro_" + name + "_dnn_hidden2_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
         final String macroExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(" + name + "_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(" + name + "_dnn_hidden1_bias_read), f(a,b)(a + b))";
         final String macroExpression2 = "join(reduce(join(join(join(imported_ml_macro_" + name + "_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), imported_ml_macro_" + name + "_dnn_hidden1_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(" + name + "_dnn_hidden2_bias_read), f(a,b)(a + b))";
@@ -340,7 +340,7 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @Test
     public void testImportingFromStoredExpressionsWithSmallConstantsAndInheritance() throws IOException {
-        final String name = "test_integration_tensorflow_models_mnist_saved";
+        final String name = "mnist_saved";
         final String rankProfiles =
                 "  rank-profile my_profile {\n" +
                 "    macro input() {\n" +

@@ -224,7 +224,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         List<RankProfile> profiles = new ArrayList<>();
         for (ImportedModel model : importedModels.all()) {
             RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry);
-            for (Pair<String, RankingExpression> entry : model.outputExpressions(model.name())) {
+            for (Pair<String, RankingExpression> entry : model.outputExpressions()) {
                 profile.addMacro(entry.getFirst(), false).setRankingExpression(entry.getSecond());
             }
             rankProfileRegistry.add(profile);

@@ -145,7 +145,7 @@ public class ConvertedModel {
 
         // Add expressions
         Map<String, RankingExpression> expressions = new HashMap<>();
-        for (Pair<String, RankingExpression> output : model.outputExpressions(modelName)) {
+        for (Pair<String, RankingExpression> output : model.outputExpressions()) {
             addExpression(output.getSecond(), output.getFirst(),
                           constantsReplacedByMacros,
                           model, store, profile, queryProfiles,
