@@ -407,8 +407,8 @@ Search rootSearch(String dir) :
                                          deployLogger.log(Level.WARNING, name + " can not be used in YQL+ expressions.");
                                      }
                                      search = new Search(name, app);
-                                     rankProfileRegistry.addRankProfile(new DefaultRankProfile(search, rankProfileRegistry));
-                                     rankProfileRegistry.addRankProfile(new UnrankedRankProfile(search, rankProfileRegistry));}
+                                     rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry));
+                                     rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry));}
       lbrace() (rootSearchItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
     { return search; }
 }
@@ -1857,7 +1857,7 @@ void rankProfile(Search search) :
     ( <RANKPROFILE> name = identifier()
         {
             if ("default".equals(name)) {
-                profile = rankProfileRegistry.getRankProfile(search, "default");
+                profile = rankProfileRegistry.get(search, "default");
             } else {
                 profile = new RankProfile(name, search, rankProfileRegistry);
             }
@@ -1865,7 +1865,7 @@ void rankProfile(Search search) :
       [inheritsRankProfile(profile)]
       lbrace() (rankProfileItem(profile) (<NL>)*)* <RBRACE> )
     {
-        rankProfileRegistry.addRankProfile(profile);
+        rankProfileRegistry.add(profile);
     }
 }
 
