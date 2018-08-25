@@ -9,10 +9,9 @@ import org.junit.Test;
 
 import java.io.File;
 
-import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author Ulf Lilleengen
@@ -25,8 +24,8 @@ public class RankProfileRegistryTest {
         TestRoot root = new TestDriver().buildModel(FilesApplicationPackage.fromFile(new File(TESTDIR)));
         RankProfilesConfig left = root.getConfig(RankProfilesConfig.class, "inherit/search/cluster.inherit/left");
         RankProfilesConfig right = root.getConfig(RankProfilesConfig.class, "inherit/search/cluster.inherit/right");
-        assertThat(left.rankprofile().size(), is(3));
-        assertThat(right.rankprofile().size(), is(2));
+        assertEquals(3, left.rankprofile().size());
+        assertEquals(2, right.rankprofile().size());
     }
 
     @Test(expected = IllegalArgumentException.class)

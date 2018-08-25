@@ -236,7 +236,7 @@ public final class ContainerCluster
         componentGroup = new ComponentGroup<>(this, "component");
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
-        this.rankProfileList = rankProfileList;
+        this.rankProfileList = Objects.requireNonNull(rankProfileList, "rankProfileList cannot be null");
 
         addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);

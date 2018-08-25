@@ -72,8 +72,18 @@ public class ImportedModels {
     }
 
     private static String toName(File modelPath) {
-        Path localPath = Path.fromString(modelPath.toString()).getChildPath();
-        return localPath.toString().replace("/", "_").replace('.', '_');
+        String localPath = concatenateAfterModelsDirectory(Path.fromString(modelPath.toString()));
+        return localPath.replace('.', '_');
+    }
+
+    private static String concatenateAfterModelsDirectory(Path path) {
+        boolean afterModels = false;
+        StringBuilder result = new StringBuilder();
+        for (String element : path.elements()) {
+            if (afterModels) result.append(element).append("_");
+            if (element.equals("models")) afterModels = true;
+        }
+        return result.substring(0, result.length()-1);
     }
 
 }

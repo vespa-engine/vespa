@@ -52,7 +52,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         }
 
         for (RankProfile rank : rankProfileRegistry.rankProfilesOf(search)) {
-            if ("default".equals(rank.getName())) continue;
+            if (search != null && "default".equals(rank.getName())) continue;
 
             RawRankProfile rawRank = new RawRankProfile(rank, queryProfiles, importedModels, attributeFields);
             rankProfiles.put(rawRank.getName(), rawRank);
