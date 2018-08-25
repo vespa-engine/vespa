@@ -38,7 +38,7 @@ public class FilterBindingsTest extends DomBuilderTest {
 
 
     private void buildContainerCluster(Element containerElem) throws SAXException, IOException {
-        ContainerModel model = new ContainerModelBuilder(true, Networking.enable).build(DeployState.createTestState(), null, root, containerElem);
+        ContainerModel model = new ContainerModelBuilder(true, Networking.enable).build(DeployState.createTestState(), null, null, root, containerElem);
         root.freezeModelTopology();
     }
 

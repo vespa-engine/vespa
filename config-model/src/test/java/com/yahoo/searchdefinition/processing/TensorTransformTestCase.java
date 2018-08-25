@@ -200,7 +200,7 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
                 "}\n");
         builder.build(true, new BaseDeployLogger());
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(queryProfiles, new ImportedModels());
+        RankProfile test = rankProfileRegistry.get(s, "test").compile(queryProfiles, new ImportedModels());
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
                                                                            queryProfiles,
                                                                            new ImportedModels(),

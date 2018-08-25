@@ -131,20 +131,20 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
         assertEquals(Attribute.CollectionType.ARRAY, attribute.getCollectionType());
 
         // Rank Profiles
-        RankProfile profile=rankProfileRegistry.getRankProfile(search, "default");
+        RankProfile profile=rankProfileRegistry.get(search, "default");
         assertNotNull(profile);
         assertNull(profile.getInheritedName());
         assertEquals(null,profile.getDeclaredRankSetting("measurement",
                           RankProfile.RankSetting.Type.RANKTYPE));
         assertEquals(RankType.EMPTY,
                      profile.getRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE).getValue());
-        profile=rankProfileRegistry.getRankProfile(search, "experimental");
+        profile=rankProfileRegistry.get(search, "experimental");
         assertNotNull(profile);
         assertEquals("default",profile.getInheritedName());
         assertEquals(RankType.IDENTITY,
                      profile.getDeclaredRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE).getValue());
 
-        profile=rankProfileRegistry.getRankProfile(search, "other");
+        profile=rankProfileRegistry.get(search, "other");
         assertNotNull(profile);
         assertEquals("experimental",profile.getInheritedName());
 

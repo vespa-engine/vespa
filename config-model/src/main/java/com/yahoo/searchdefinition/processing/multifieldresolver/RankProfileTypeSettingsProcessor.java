@@ -66,7 +66,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void addAttributeTypeToRankProfiles(String attributeName, String attributeType) {
-        for (RankProfile profile : rankProfileRegistry.allRankProfiles()) {
+        for (RankProfile profile : rankProfileRegistry.all()) {
             profile.addAttributeType(attributeName, attributeType);
         }
     }
@@ -90,7 +90,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void addQueryFeatureTypeToRankProfiles(String queryFeature, String queryFeatureType) {
-        for (RankProfile profile : rankProfileRegistry.allRankProfiles()) {
+        for (RankProfile profile : rankProfileRegistry.all()) {
             profile.addQueryFeatureType(queryFeature, queryFeatureType);
         }
     }

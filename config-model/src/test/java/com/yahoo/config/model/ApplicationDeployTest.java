@@ -18,7 +18,9 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.UnproperSearch;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
+import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.search.SearchDefinition;
 import org.junit.After;
 import org.junit.Rule;
@@ -35,9 +37,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -118,6 +122,21 @@ public class ApplicationDeployTest {
     }
 
     @Test
+    public void testMl_ServingApplication() throws SAXException, IOException {
+        FilesApplicationPackage app = createAppPkg(TESTDIR + "ml_serving");
+        VespaModel model = new VespaModel(app);
+        ContainerCluster cluster = model.getContainerClusters().get("container");
+        RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
+        cluster.getConfig(b);
+        RankProfilesConfig config = new RankProfilesConfig(b);
+        assertEquals(3, config.rankprofile().size());
+        Set<String> modelNames = config.rankprofile().stream().map(v -> v.name()).collect(Collectors.toSet());
+        assertTrue(modelNames.contains("xgboost_2_2_json"));
+        assertTrue(modelNames.contains("mnist_softmax_onnx"));
+        assertTrue(modelNames.contains("mnist_softmax_saved"));
+    }
+
+    @Test
     public void testGetFile() throws IOException {
         FilesApplicationPackage app = createAppPkg(TESTDIR + "app1");
         try (Reader foo = app.getFile(Path.fromString("files/foo.json")).createReader()) {
@@ -179,8 +198,9 @@ public class ApplicationDeployTest {
     @Test
     public void non_existent_include_dir_is_not_allowed() throws Exception {
         File appDir = tmpFolder.newFolder("non-existent-include");
-        String services = "<services version='1.0'>" +
-                "<include dir='non-existent' />" +
+        String services =
+                "<services version='1.0'>" +
+                "    <include dir='non-existent' />" +
                 "</services>\n";
 
         IOUtils.writeFile(new File(appDir, "services.xml"), services, false);
@@ -197,11 +217,11 @@ public class ApplicationDeployTest {
         File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "app1"), tmpDir);
         FilesApplicationPackage app = createAppPkg(tmpDir.getAbsolutePath());
-        assertThat(getSearchDefinitions(app).size(), is(5));
+        assertEquals(5, getSearchDefinitions(app).size());
         File sdDir = new File(tmpDir, "searchdefinitions");
         File sd = new File(sdDir, "testfoo.sd");
         IOUtils.writeFile(sd, "search testfoo { document testfoo { field bar type string { } } }", false);
-        assertThat(getSearchDefinitions(app).size(), is(6));
+        assertEquals(6, getSearchDefinitions(app).size());
     }
 
     @Test
@@ -293,7 +313,7 @@ public class ApplicationDeployTest {
         String appName = "src/test/cfg//application/app1";
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(new File(appName), false);
         Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs = app.getAllExistingConfigDefs();
-        assertThat(defs.size(), is(5));
+        assertEquals(5, defs.size());
     }
 
     @Test

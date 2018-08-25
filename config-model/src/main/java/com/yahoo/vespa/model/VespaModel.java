@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
+import com.google.common.collect.ImmutableList;
+import com.yahoo.collections.Pair;
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
@@ -18,13 +20,20 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
-import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.log.LogLevel;
+import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchdefinition.RankingConstants;
+import com.yahoo.searchdefinition.derived.AttributeFields;
+import com.yahoo.searchdefinition.derived.RankProfileList;
+import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -92,12 +101,18 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      */
     public static final String ROOT_CONFIGID = "";
 
-    private ApplicationConfigProducerRoot root = null;
+    private ApplicationConfigProducerRoot root;
 
-    /**
-     * Generic service instances - service clusters which have no specific model
-     */
+    private final ApplicationPackage applicationPackage;
+
+    /** Generic service instances - service clusters which have no specific model */
     private List<ServiceCluster> serviceClusters = new ArrayList<>();
+
+    /** The global rank profiles of this model */
+    private final RankProfileList rankProfileList;
+
+    /** The global ranking constants of this model */
+    private final RankingConstants rankingConstants = new RankingConstants();
 
     private DeployState deployState;
 
@@ -144,11 +159,21 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         this.validationOverrides = deployState.validationOverrides();
         configModelRegistry = new VespaConfigModelRegistry(configModelRegistry);
         VespaModelBuilder builder = new VespaDomBuilder();
+        this.applicationPackage = deployState.getApplicationPackage();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
+
+        createGlobalRankProfiles(deployState.getImportedModels(), deployState.rankProfileRegistry());
+        this.rankProfileList = new RankProfileList(null, // null search -> global
+                                                   AttributeFields.empty,
+                                                   deployState.rankProfileRegistry(),
+                                                   deployState.getQueryProfiles().getRegistry(),
+                                                   deployState.getImportedModels());
+
         if (complete) { // create a a completed, frozen model
-            configModelRepo.readConfigModels(deployState, builder, root, configModelRegistry);
+            configModelRepo.readConfigModels(deployState, this, builder, root, configModelRegistry);
             addServiceClusters(deployState.getApplicationPackage(), builder);
             this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs()); // must happen after the two lines above
+
             setupRouting();
             this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
             getAdmin().addPerHostServices(getHostSystem().getHosts(), deployState);
@@ -163,6 +188,12 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             this.fileDistributor = fileDistributor;
         }
     }
+
+    /** Returns the application package owning this */
+    public ApplicationPackage applicationPackage() { return applicationPackage; }
+
+    /** Returns the global ranking constants of this */
+    public RankingConstants rankingConstants() { return rankingConstants; }
 
     /** Creates a mutable model with no services instantiated */
     public static VespaModel createIncomplete(DeployState deployState) throws IOException, SAXException {
@@ -185,8 +216,27 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             serviceClusters.add(sc);
     }
 
+    /**
+     * Creates a rank profile not attached to any search definition, for each imported model in the application package
+     */
+    private ImmutableList<RankProfile> createGlobalRankProfiles(ImportedModels importedModels,
+                                                                RankProfileRegistry rankProfileRegistry) {
+        List<RankProfile> profiles = new ArrayList<>();
+        for (ImportedModel model : importedModels.all()) {
+            RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry);
+            for (Pair<String, RankingExpression> entry : model.outputExpressions()) {
+                profile.addMacro(entry.getFirst(), false).setRankingExpression(entry.getSecond());
+            }
+            rankProfileRegistry.add(profile);
+        }
+        return ImmutableList.copyOf(profiles);
+    }
+
+    /** Returns the global rank profiles as a rank profile list */
+    public RankProfileList rankProfileList() { return rankProfileList; }
+
     private void setupRouting() {
-        root.setupRouting(configModelRepo);
+        root.setupRouting(this, configModelRepo);
     }
 
     /** Returns the one and only HostSystem of this VespaModel */

@@ -21,7 +21,7 @@ public class DiversitySettingsValidator extends Processor {
     public void process(boolean validate) {
         if ( ! validate) return;
 
-        for (RankProfile rankProfile : rankProfileRegistry.localRankProfiles(search)) {
+        for (RankProfile rankProfile : rankProfileRegistry.rankProfilesOf(search)) {
             if (rankProfile.getMatchPhaseSettings() != null && rankProfile.getMatchPhaseSettings().getDiversity() != null) {
                 validate(rankProfile, rankProfile.getMatchPhaseSettings().getDiversity());
             }

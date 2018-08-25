@@ -32,7 +32,7 @@ public class GenericServicesModelTest {
     @Test
     public void test_generic_services_model() {
         MockRoot root = new MockRoot();
-        GenericServicesModel model = new GenericServicesModel(ConfigModelContext.create(null, root, "foo"));
+        GenericServicesModel model = new GenericServicesModel(ConfigModelContext.create(null, null, root, "foo"));
         assertThat(model.serviceClusters().size(), is(0));
         model.addCluster(new ServiceCluster(root, "mycluster", "/bin/foo"));
         assertThat(model.serviceClusters().size(), is(1));

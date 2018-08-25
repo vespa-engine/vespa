@@ -82,16 +82,16 @@ public class Search implements Serializable, ImmutableSearch {
     private Map<String, Index> indices = new LinkedHashMap<>();
 
     // The explicitly defined summaries of this search definition.
-    private Map<String, DocumentSummary> summaries = new LinkedHashMap<>();
     // _Must_ preserve order
+    private Map<String, DocumentSummary> summaries = new LinkedHashMap<>();
 
-    // Ranking constants defined inside this s.d.
-    private Map<String, RankingConstant> rankingConstants = new HashMap<>();
+    // Ranking constants of this
+    private RankingConstants rankingConstants = new RankingConstants();
 
     private Optional<TemporaryImportedFields> temporaryImportedFields = Optional.of(new TemporaryImportedFields());
     private Optional<ImportedFields> importedFields = Optional.empty();
 
-    private ApplicationPackage sourceApplication;
+    private ApplicationPackage applicationPackage;
 
     /**
      * Creates a search definition which just holds a set of documents which should not (here, directly) be searchable
@@ -103,10 +103,10 @@ public class Search implements Serializable, ImmutableSearch {
     /**
      * Creates a proper search definition
      * @param name of the the searchdefinition
-     * @param sourceApplication the application containing this
+     * @param applicationPackage the application containing this
      */
-    public Search(String name, ApplicationPackage sourceApplication) {
-        this.sourceApplication = sourceApplication;
+    public Search(String name, ApplicationPackage applicationPackage) {
+        this.applicationPackage = applicationPackage;
         this.name = name;
     }
 
@@ -162,18 +162,7 @@ public class Search implements Serializable, ImmutableSearch {
         docType = document;
     }
 
-    public void addRankingConstant(RankingConstant constant) {
-        constant.validate();
-        String name = constant.getName();
-        if (rankingConstants.containsKey(name))
-            throw new IllegalArgumentException("Ranking constant '" + name + "' defined twice");
-        rankingConstants.put(name, constant);
-    }
-
-    /** Returns a read-only map of the ranking constants in this indexed by name */
-    public Map<String, RankingConstant> getRankingConstants() {
-        return Collections.unmodifiableMap(rankingConstants);
-    }
+    public RankingConstants rankingConstants() { return rankingConstants; }
 
     public Optional<TemporaryImportedFields> temporaryImportedFields() {
         return temporaryImportedFields;
@@ -260,10 +249,10 @@ public class Search implements Serializable, ImmutableSearch {
      * Returns the content of a ranking expression file
      */
     public Reader getRankingExpression(String fileName) {
-        return sourceApplication.getRankingExpression(fileName);
+        return applicationPackage.getRankingExpression(fileName);
     }
 
-    public ApplicationPackage sourceApplication() { return sourceApplication; }
+    public ApplicationPackage applicationPackage() { return applicationPackage; }
 
     /**
      * Returns a field defined in this search definition or one if its documents. Fields in this search definition takes

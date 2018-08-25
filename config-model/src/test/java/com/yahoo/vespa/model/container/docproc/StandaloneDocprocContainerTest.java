@@ -18,14 +18,13 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.1.14
+ * @author Einar M R Rosenvinge
  */
 public class StandaloneDocprocContainerTest extends DomBuilderTest {
 
     public ContainerCluster setupCluster(boolean standalone) {
         ContainerModelBuilder builder = new ContainerModelBuilder(standalone, Networking.disable);
-        ContainerModel model = builder.build(DeployState.createTestState(), null, root, servicesXml());
+        ContainerModel model = builder.build(DeployState.createTestState(), null, null, root, servicesXml());
 
         if (!standalone)
             model.getCluster().getDocproc().getChains().addServersAndClientsForChains();

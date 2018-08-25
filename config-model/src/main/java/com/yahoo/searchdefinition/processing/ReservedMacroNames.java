@@ -9,7 +9,6 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParserConstants;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -31,7 +30,7 @@ public class ReservedMacroNames extends Processor {
     public void process(boolean validate) {
         if ( ! validate) return;
 
-        for (RankProfile rp : rankProfileRegistry.allRankProfiles()) {
+        for (RankProfile rp : rankProfileRegistry.all()) {
             for (String macroName : rp.getMacros().keySet()) {
                 if (reservedNames.contains(macroName)) {
                     deployLogger.log(Level.WARNING, "Macro \"" + macroName + "\" " +

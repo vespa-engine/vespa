@@ -5,7 +5,7 @@ package com.yahoo.config.model;
  * An interface which provides addition of new config models.
  * This exists because some models need to add additional models during the build phase so *write* access
  * to the config model repo is needed. *Read* access, on the other hand needs to happen through config model dependency
- * inkection to avoid circular dependencies or undeclared dependencies working by accident.
+ * injection to avoid circular dependencies or undeclared dependencies working by accident.
  *
  * @author bratseth
  */

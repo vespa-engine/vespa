@@ -25,12 +25,12 @@ public class RankPropertyVariablesTestCase extends SearchDefinitionTestCase {
                                                     new BaseDeployLogger(),
                                                     rankProfileRegistry,
                                                     new QueryProfileRegistry());
-        assertRankPropEquals(rankProfileRegistry.getRankProfile(search, "other").getRankProperties(), "$testvar1", "foo");
-        assertRankPropEquals(rankProfileRegistry.getRankProfile(search, "other").getRankProperties(), "$testvar_2", "bar");
-        assertRankPropEquals(rankProfileRegistry.getRankProfile(search, "other").getRankProperties(), "$testvarOne23", "baz");
-        assertRankPropEquals(rankProfileRegistry.getRankProfile(search, "another").getRankProperties(), "$Testvar1", "1");
-        assertRankPropEquals(rankProfileRegistry.getRankProfile(search, "another").getRankProperties(), "$Testvar_4", "4");
-        assertRankPropEquals(rankProfileRegistry.getRankProfile(search, "another").getRankProperties(), "$testvarFour23", "234234.234");
+        assertRankPropEquals(rankProfileRegistry.get(search, "other").getRankProperties(), "$testvar1", "foo");
+        assertRankPropEquals(rankProfileRegistry.get(search, "other").getRankProperties(), "$testvar_2", "bar");
+        assertRankPropEquals(rankProfileRegistry.get(search, "other").getRankProperties(), "$testvarOne23", "baz");
+        assertRankPropEquals(rankProfileRegistry.get(search, "another").getRankProperties(), "$Testvar1", "1");
+        assertRankPropEquals(rankProfileRegistry.get(search, "another").getRankProperties(), "$Testvar_4", "4");
+        assertRankPropEquals(rankProfileRegistry.get(search, "another").getRankProperties(), "$testvarFour23", "234234.234");
     }
 
     private void assertRankPropEquals(List<RankProperty> props, String key, String val) {

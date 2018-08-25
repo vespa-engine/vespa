@@ -6,6 +6,9 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.path.Path;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -63,9 +66,24 @@ public class ImportedModels {
         return importedModels.get(toName(modelPath));
     }
 
+    /** Returns an immutable collection of all the imported models */
+    public Collection<ImportedModel> all() {
+        return importedModels.values();
+    }
+
     private static String toName(File modelPath) {
-        Path localPath = Path.fromString(modelPath.toString()).getChildPath();
-        return localPath.toString().replace("/", "_").replace('.', '_');
+        String localPath = concatenateAfterModelsDirectory(Path.fromString(modelPath.toString()));
+        return localPath.replace('.', '_');
+    }
+
+    private static String concatenateAfterModelsDirectory(Path path) {
+        boolean afterModels = false;
+        StringBuilder result = new StringBuilder();
+        for (String element : path.elements()) {
+            if (afterModels) result.append(element).append("_");
+            if (element.equals("models")) afterModels = true;
+        }
+        return result.substring(0, result.length()-1);
     }
 
 }

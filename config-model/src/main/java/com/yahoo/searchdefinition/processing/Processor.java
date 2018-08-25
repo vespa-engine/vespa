@@ -100,7 +100,7 @@ public abstract class Processor {
     {
         List<RankProfile.RankSetting> someRankSettings = new java.util.ArrayList<>();
 
-        for (RankProfile profile : rankProfileRegistry.localRankProfiles(search)) {
+        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(search)) {
             for (Iterator j = profile.declaredRankSettingIterator(); j.hasNext(); ) {
                 RankProfile.RankSetting setting = (RankProfile.RankSetting)j.next();
                 if (setting.getType().equals(type)) {

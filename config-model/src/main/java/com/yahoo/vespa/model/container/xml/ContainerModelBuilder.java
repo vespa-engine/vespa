@@ -25,6 +25,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.rendering.RendererRegistry;
+import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
@@ -143,11 +144,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private ContainerCluster createContainerCluster(Element spec, final ConfigModelContext modelContext) {
+    private ContainerCluster createContainerCluster(Element spec, ConfigModelContext modelContext) {
         return new VespaDomBuilder.DomConfigProducerBuilder<ContainerCluster>() {
             @Override
             protected ContainerCluster doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
-                return new ContainerCluster(ancestor, modelContext.getProducerId(), modelContext.getProducerId());
+                return new ContainerCluster(ancestor,
+                                            modelContext.getProducerId(),
+                                            modelContext.getProducerId(),
+                                            modelContext.vespaModel() != null ? modelContext.vespaModel().rankProfileList()
+                                                                              : RankProfileList.empty);
             }
         }.build(modelContext.getParentProducer(), spec);
     }

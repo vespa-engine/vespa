@@ -81,7 +81,7 @@ public class ConvertedModel {
     public ConvertedModel(Path modelPath, RankProfileTransformContext context) {
         this.modelPath = modelPath;
         this.modelName = toModelName(modelPath);
-        ModelStore store = new ModelStore(context.rankProfile().getSearch().sourceApplication(), modelPath);
+        ModelStore store = new ModelStore(context.rankProfile().applicationPackage(), modelPath);
         if ( store.hasSourceModel())
             expressions = convertModel(store, context.rankProfile(), context.queryProfiles(), context.importedModels());
         else
@@ -145,39 +145,11 @@ public class ConvertedModel {
 
         // Add expressions
         Map<String, RankingExpression> expressions = new HashMap<>();
-        for (Map.Entry<String, ImportedModel.Signature> signatureEntry : model.signatures().entrySet()) {
-            for (Map.Entry<String, String> outputEntry : signatureEntry.getValue().outputs().entrySet()) {
-                addExpression(model.expressions().get(outputEntry.getValue()),
-                              modelName + "." + signatureEntry.getKey() + "." + outputEntry.getKey(),
-                              constantsReplacedByMacros,
-                              model, store, profile, queryProfiles,
-                              expressions);
-            }
-            if (signatureEntry.getValue().outputs().isEmpty()) { // fallback: Signature without outputs
-                addExpression(model.expressions().get(signatureEntry.getKey()),
-                              modelName + "." + signatureEntry.getKey(),
-                              constantsReplacedByMacros,
-                              model, store, profile, queryProfiles,
-                              expressions);
-            }
-        }
-        if (model.signatures().isEmpty()) { // fallback: Model without signatures
-            if (model.expressions().size() == 1) { // Use just model name
-                addExpression(model.expressions().values().iterator().next(),
-                              modelName,
-                              constantsReplacedByMacros,
-                              model, store, profile, queryProfiles,
-                              expressions);
-            }
-            else {
-                for (Map.Entry<String, RankingExpression> expressionEntry : model.expressions().entrySet()) {
-                    addExpression(expressionEntry.getValue(),
-                                  modelName + "." + expressionEntry.getKey(),
-                                  constantsReplacedByMacros,
-                                  model, store, profile, queryProfiles,
-                                  expressions);
-                }
-            }
+        for (Pair<String, RankingExpression> output : model.outputExpressions()) {
+            addExpression(output.getSecond(), output.getFirst(),
+                          constantsReplacedByMacros,
+                          model, store, profile, queryProfiles,
+                          expressions);
         }
 
         // Transform and save macro - must come after reading expressions due to optimization transforms
@@ -209,8 +181,8 @@ public class ConvertedModel {
             profile.addConstant(constant.getFirst(), asValue(constant.getSecond()));
 
         for (RankingConstant constant : store.readLargeConstants()) {
-            if ( ! profile.getSearch().getRankingConstants().containsKey(constant.getName()))
-                profile.getSearch().addRankingConstant(constant);
+            if ( ! profile.rankingConstants().asMap().containsKey(constant.getName()))
+                profile.rankingConstants().add(constant);
         }
 
         for (Pair<String, RankingExpression> macro : store.readMacros()) {
@@ -238,9 +210,9 @@ public class ConvertedModel {
         }
         else {
             Path constantPath = store.writeLargeConstant(constantName, constantValue);
-            if ( ! profile.getSearch().getRankingConstants().containsKey(constantName)) {
-                profile.getSearch().addRankingConstant(new RankingConstant(constantName, constantValue.type(),
-                                                                           constantPath.toString()));
+            if ( ! profile.rankingConstants().asMap().containsKey(constantName)) {
+                profile.rankingConstants().add(new RankingConstant(constantName, constantValue.type(),
+                                                           constantPath.toString()));
             }
         }
     }

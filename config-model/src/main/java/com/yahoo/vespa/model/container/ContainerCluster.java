@@ -40,6 +40,10 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
+import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchdefinition.derived.AttributeFields;
+import com.yahoo.searchdefinition.derived.RankProfileList;
+import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
@@ -65,6 +69,7 @@ import com.yahoo.vespa.model.container.jersey.JerseyHandler;
 import com.yahoo.vespa.model.container.jersey.RestApi;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
+import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
@@ -122,7 +127,9 @@ public final class ContainerCluster
         ServletPathsConfig.Producer,
         RoutingProviderConfig.Producer,
         ConfigserverConfig.Producer,
-        ThreadpoolConfig.Producer
+        ThreadpoolConfig.Producer,
+        RankProfilesConfig.Producer
+
 {
 
     /**
@@ -169,6 +176,9 @@ public final class ContainerCluster
     private final ContainerClusterVerifier clusterVerifier;
     private final boolean isHostedVespa;
 
+    /** Global rank profiles, aka models */
+    private final RankProfileList rankProfileList;
+
     private Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
     private MetricDefaultsConfig.Factory.Enum defaultMetricConsumerFactory;
 
@@ -193,11 +203,30 @@ public final class ContainerCluster
         }
     }
 
-    public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name) {
-        this(parent, subId, name, new AcceptAllVerifier());
+    /**
+     * Creates a container cluster
+     *
+     * @param rankProfileList the list ofd global rank profiles containing models that should be available in
+     *                        container clusters
+     */
+    public ContainerCluster(AbstractConfigProducer<?> parent,
+                            String subId,
+                            String name,
+                            RankProfileList rankProfileList) {
+        this(parent, subId, name, new AcceptAllVerifier(), rankProfileList);
     }
 
-    public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, ContainerClusterVerifier verifier) {
+    /**
+     * Creates a container cluster
+     *
+     * @param rankProfileList the list ofd global rank profiles containing models that should be available in
+     *                        container clusters
+     */
+    public ContainerCluster(AbstractConfigProducer<?> parent,
+                            String subId,
+                            String name,
+                            ContainerClusterVerifier verifier,
+                            RankProfileList rankProfileList) {
         super(parent, subId);
         this.clusterVerifier = verifier;
         this.name = name;
@@ -207,6 +236,7 @@ public final class ContainerCluster
         componentGroup = new ComponentGroup<>(this, "component");
         restApiGroup = new ConfigProducerGroup<>(this, "rest-api");
         servletGroup = new ConfigProducerGroup<>(this, "servlet");
+        this.rankProfileList = Objects.requireNonNull(rankProfileList, "rankProfileList cannot be null");
 
         addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);
@@ -692,6 +722,11 @@ public final class ContainerCluster
         }
         if (containerDocproc != null)
             containerDocproc.getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(RankProfilesConfig.Builder builder) {
+        rankProfileList.getConfig(builder);
     }
 
     public void setMbusParams(MbusParams mbusParams) {

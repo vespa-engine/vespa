@@ -1,5 +1,6 @@
 package com.yahoo.searchlib.rankingexpression.integration.ml;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -95,6 +96,37 @@ public class ImportedModel {
     void expression(String name, RankingExpression expression) { expressions.put(name, expression); }
     void macro(String name, RankingExpression expression) { macros.put(name, expression); }
     void requiredMacro(String name, TensorType type) { requiredMacros.put(name, type); }
+
+    /**
+     * Returns all the outputs of this by name. The names consist of one to three parts
+     * separated by dot, where the first part is the model name, the second is the signature name
+     * if signatures are used, or the expression name if signatures are not used and there are multiple
+     * expressions, and the third is the output name if signature names are used.
+     */
+    public List<Pair<String, RankingExpression>> outputExpressions() {
+        List<Pair<String, RankingExpression>> names = new ArrayList<>();
+        for (Map.Entry<String, Signature> signatureEntry : signatures().entrySet()) {
+            for (Map.Entry<String, String> outputEntry : signatureEntry.getValue().outputs().entrySet())
+                names.add(new Pair<>(name + "." + signatureEntry.getKey() + "." + outputEntry.getKey(),
+                                     expressions().get(outputEntry.getValue())));
+            if (signatureEntry.getValue().outputs().isEmpty()) // fallback: Signature without outputs
+                names.add(new Pair<>(name + "." + signatureEntry.getKey(),
+                                     expressions().get(signatureEntry.getKey())));
+        }
+        if (signatures().isEmpty()) { // fallback for models without signatures
+            if (expressions().size() == 1) {// Use just model name
+                names.add(new Pair<>(name,
+                                     expressions().values().iterator().next()));
+            }
+            else {
+                for (Map.Entry<String, RankingExpression> expressionEntry : expressions().entrySet()) {
+                    names.add(new Pair<>(name + "." + expressionEntry.getKey(),
+                                         expressionEntry.getValue()));
+                }
+            }
+        }
+        return names;
+    }
 
     /**
      * A signature is a set of named inputs and outputs, where the inputs maps to argument

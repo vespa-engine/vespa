@@ -27,7 +27,7 @@ public class LegacyConfigModelBuilderTest {
         String services = "<foo><config name=\"bar\"><key>value</key></config></foo>";
         ModelBuilder builder = new ModelBuilder();
         Model model = builder.build(DeployState.createTestState(new MockApplicationPackage.Builder().withServices(services).build()),
-                                    null, new MockRoot(), XML.getDocument(services).getDocumentElement());
+                                    null, null, new MockRoot(), XML.getDocument(services).getDocumentElement());
         assertThat(model.getContext().getParentProducer().getUserConfigs().size(), is(1));
     }
 

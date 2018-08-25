@@ -20,6 +20,7 @@ import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.vespa.model.VespaModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,6 +40,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Represents a rank profile - a named set of ranking settings
@@ -50,8 +52,11 @@ public class RankProfile implements Serializable, Cloneable {
     /** The search definition-unique name of this rank profile */
     private final String name;
 
-    /** The search definition owning this profile, or null if none */
-    private Search search = null;
+    /** The search definition owning this profile, or null if global (owned by a model) */
+    private final Search search;
+
+    /** The model owning this profile if it is global, or null if it is owned by a search definition */
+    private final VespaModel model;
 
     /** The name of the rank profile inherited by this */
     private String inheritedName = null;
@@ -110,63 +115,80 @@ public class RankProfile implements Serializable, Cloneable {
     private final TypeSettings queryFeatureTypes = new TypeSettings();
 
     /**
-     * Creates a new rank profile
+     * Creates a new rank profile for a particular search definition
      *
      * @param name   the name of the new profile
      * @param search the search definition owning this profile
-     * @param rankProfileRegistry The {@link com.yahoo.searchdefinition.RankProfileRegistry} to use for storing
+     * @param rankProfileRegistry the {@link com.yahoo.searchdefinition.RankProfileRegistry} to use for storing
      *                            and looking up rank profiles.
      */
     public RankProfile(String name, Search search, RankProfileRegistry rankProfileRegistry) {
-        this.name = name;
-        this.search = search;
+        this.name = Objects.requireNonNull(name, "name cannot be null");
+        this.search = Objects.requireNonNull(search, "search cannot be null");
+        this.model = null;
+        this.rankProfileRegistry = rankProfileRegistry;
+    }
+
+    /**
+     * Creates a global rank profile
+     *
+     * @param name   the name of the new profile
+     * @param model the model owning this profile
+     */
+    public RankProfile(String name, VespaModel model, RankProfileRegistry rankProfileRegistry) {
+        this.name = Objects.requireNonNull(name, "name cannot be null");
+        this.search = null;
+        this.model = Objects.requireNonNull(model, "model cannot be null");
         this.rankProfileRegistry = rankProfileRegistry;
     }
 
     public String getName() { return name; }
 
-    /**
-     * Returns the search definition owning this, or null if none
-     *
-     * @return The search definition.
-     */
-    public Search getSearch() {
-        return search;
+    /** Returns the search definition owning this, or null if it is global */
+    public Search getSearch() { return search; }
+
+    /** Returns the application this is part of */
+    public ApplicationPackage applicationPackage() {
+        return search != null ? search.applicationPackage() : model.applicationPackage();
+    }
+
+    /** Returns the ranking constants of the owner of this */
+    public RankingConstants rankingConstants() {
+        return search != null ? search.rankingConstants() : model.rankingConstants();
+    }
+
+    private Stream<ImmutableSDField> allFields() {
+        return search != null ? search.allFields() : Stream.empty();
+    }
+
+    private Stream<ImmutableSDField> allImportedFields() {
+        return search != null ? search.allImportedFields() : Stream.empty();
     }
 
     /**
      * Sets the name of the rank profile this inherits. Both rank profiles must be present in the same search
      * definition
-     *
-     * @param inheritedName The name of the profile that this inherits from.
      */
     public void setInherited(String inheritedName) {
         this.inheritedName = inheritedName;
     }
 
-    /**
-     * Returns the name of the profile this one inherits, or null if none is inherited
-     *
-     * @return The inherited name.
-     */
+    /** Returns the name of the profile this one inherits, or null if none is inherited */
     public String getInheritedName() {
         return inheritedName;
     }
 
-    /**
-     * Returns the inherited rank profile, or null if there is none
-     *
-     * @return The inherited profile.
-     */
+    /** Returns the inherited rank profile, or null if there is none */
     public RankProfile getInherited() {
-        if (getSearch()==null) return getInheritedFromRegistry(inheritedName);
-        RankProfile inheritedInThisSearch = rankProfileRegistry.getRankProfile(search, inheritedName);
-        if (inheritedInThisSearch!=null) return inheritedInThisSearch;
+        if (getSearch() == null) return getInheritedFromRegistry(inheritedName);
+
+        RankProfile inheritedInThisSearch = rankProfileRegistry.get(search, inheritedName);
+        if (inheritedInThisSearch != null) return inheritedInThisSearch;
         return getInheritedFromRegistry(inheritedName);
     }
 
     private RankProfile getInheritedFromRegistry(String inheritedName) {
-        for (RankProfile r : rankProfileRegistry.allRankProfiles()) {
+        for (RankProfile r : rankProfileRegistry.all()) {
             if (r.getName().equals(inheritedName)) {
                 return r;
             }
@@ -177,8 +199,8 @@ public class RankProfile implements Serializable, Cloneable {
     /**
      * Returns whether this profile inherits (directly or indirectly) the given profile
      *
-     * @param name The profile name to compare this to.
-     * @return Whether or not this inherits from the named profile.
+     * @param name the profile name to compare this to.
+     * @return whether or not this inherits from the named profile.
      */
     public boolean inherits(String name) {
         RankProfile parent = getInherited();
@@ -190,10 +212,6 @@ public class RankProfile implements Serializable, Cloneable {
         return false;
     }
 
-    /**
-     * change match settings
-     * @param settings The new match settings
-     **/
     public void setMatchPhaseSettings(MatchPhaseSettings settings) {
         settings.checkValid();
         this.matchPhaseSettings = settings;
@@ -219,7 +237,7 @@ public class RankProfile implements Serializable, Cloneable {
      *
      * @param field The field whose settings to return.
      * @param type  The type that the field is required to be.
-     * @return The rank setting found, or null.
+     * @return the rank setting found, or null.
      */
     public RankSetting getDeclaredRankSetting(String field, RankSetting.Type type) {
         for (Iterator<RankSetting> i = declaredRankSettingIterator(); i.hasNext();) {
@@ -236,9 +254,9 @@ public class RankProfile implements Serializable, Cloneable {
      * Returns a rank setting of field or index, or null if there is no such rank setting in this profile or one it
      * inherits
      *
-     * @param field The field whose settings to return.
-     * @param type  The type that the field is required to be.
-     * @return The rank setting found, or null.
+     * @param field the field whose settings to return
+     * @param type  the type that the field is required to be
+     * @return the rank setting found, or null
      */
     public RankSetting getRankSetting(String field, RankSetting.Type type) {
         RankSetting rankSetting = getDeclaredRankSetting(field, type);
@@ -252,7 +270,7 @@ public class RankProfile implements Serializable, Cloneable {
     /**
      * Returns the rank settings in this rank profile
      *
-     * @return An iterator for the declared rank setting.
+     * @return an iterator for the declared rank setting
      */
     public Iterator<RankSetting> declaredRankSettingIterator() {
         return Collections.unmodifiableSet(rankSettings).iterator();
@@ -261,14 +279,14 @@ public class RankProfile implements Serializable, Cloneable {
     /**
      * Returns all settings in this profile or any profile it inherits
      *
-     * @return An iterator for all rank settings of this.
+     * @return an iterator for all rank settings of this
      */
     public Iterator<RankSetting> rankSettingIterator() {
         return rankSettings().iterator();
     }
 
     /**
-     * Returns a snapshot of the rank settings of this and everything it inherits
+     * Returns a snapshot of the rank settings of this and everything it inherits.
      * Changes to the returned set will not be reflected in this rank profile.
      */
     public Set<RankSetting> rankSettings() {
@@ -346,6 +364,7 @@ public class RankProfile implements Serializable, Cloneable {
 
     /**
      * Called by parser to store the expression string, for delayed evaluation
+     *
      * @param exp ranking expression for second phase
      */
     public void setSecondPhaseRankingString(String exp) {
@@ -354,6 +373,7 @@ public class RankProfile implements Serializable, Cloneable {
 
     /**
      * Called by parser to store the expression string, for delayed evaluation
+     *
      * @param exp ranking expression for first phase
      */
     public void setFirstPhaseRankingString(String exp) {
@@ -528,8 +548,11 @@ public class RankProfile implements Serializable, Cloneable {
         return null;
     }
 
-    public void addMacro(String name, boolean inline) {
-        macros.put(name, new Macro(name, inline));
+    /** Creates a new (empty) macro and returns it */
+    public Macro addMacro(String name, boolean inline) {
+        Macro macro = new Macro(name, inline);
+        macros.put(name, macro);
+        return macro;
     }
 
     /** Returns an unmodifiable view of the macros in this */
@@ -571,6 +594,7 @@ public class RankProfile implements Serializable, Cloneable {
 
     /**
      * Returns all filter fields in this profile and any profile it inherits.
+     *
      * @return the set of all filter fields
      */
     public Set<String> allFilterFields() {
@@ -770,11 +794,11 @@ public class RankProfile implements Serializable, Cloneable {
 
         // Add small and large constants, respectively
         getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));
-        getSearch().getRankingConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.getTensorType()));
+        rankingConstants().asMap().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.getTensorType()));
 
         // Add attributes
-        getSearch().allFields().forEach(field -> addAttributeFeatureTypes(field, context));
-        getSearch().allImportedFields().forEach(field -> addAttributeFeatureTypes(field, context));
+        allFields().forEach(field -> addAttributeFeatureTypes(field, context));
+        allImportedFields().forEach(field -> addAttributeFeatureTypes(field, context));
 
         // Add query features from rank profile types reached from the "default" profile
         for (QueryProfileType queryProfileType : queryProfiles.getTypeRegistry().allComponents()) {
@@ -868,7 +892,7 @@ public class RankProfile implements Serializable, Cloneable {
 
         public Object getValue() { return value; }
 
-        /** @return The value as an int, or a negative value if it is not an integer */
+        /** Returns the value as an int, or a negative value if it is not an integer */
         public int getIntValue() {
             if (value instanceof Integer) {
                 return ((Integer)value);
@@ -934,8 +958,6 @@ public class RankProfile implements Serializable, Cloneable {
 
     /**
      * Represents a declared macro in the profile. It is, after parsing, transformed into ExpressionMacro
-     *
-     * @author vegardh
      */
     public static class Macro implements Serializable, Cloneable {
 
@@ -1021,6 +1043,7 @@ public class RankProfile implements Serializable, Cloneable {
         public int getMinGroups() { return minGroups; }
         public double getCutoffFactor() { return cutoffFactor; }
         public Diversity.CutoffStrategy getCutoffStrategy() { return cutoffStrategy; }
+
         public void checkValid() {
             if (attribute == null || attribute.isEmpty()) {
                 throw new IllegalArgumentException("'diversity' did not set non-empty diversity attribute name.");
@@ -1035,6 +1058,7 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     public static class MatchPhaseSettings {
+
         private String attribute = null;
         private boolean ascending = false;
         private int maxHits = 0; // try to get this many hits before degrading the match phase
@@ -1047,6 +1071,7 @@ public class RankProfile implements Serializable, Cloneable {
             value.checkValid();
             diversity = value;
         }
+
         public void setAscending(boolean value) { ascending = value; }
         public void setAttribute(String value) { attribute = value; }
         public void setMaxHits(int value) { maxHits = value; }

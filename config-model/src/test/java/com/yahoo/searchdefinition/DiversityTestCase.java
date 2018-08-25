@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
@@ -45,7 +44,7 @@ public class DiversityTestCase {
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile.MatchPhaseSettings matchPhase = rankProfileRegistry.getRankProfile(s, "parent").getMatchPhaseSettings();
+        RankProfile.MatchPhaseSettings matchPhase = rankProfileRegistry.get(s, "parent").getMatchPhaseSettings();
         RankProfile.DiversitySettings diversity = matchPhase.getDiversity();
         assertEquals("b", diversity.getAttribute());
         assertEquals(74, diversity.getMinGroups());
