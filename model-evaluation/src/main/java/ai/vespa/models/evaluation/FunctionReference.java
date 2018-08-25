@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 class FunctionReference {
 
     private static final Pattern referencePattern =
-            Pattern.compile("rankingExpression\\(([a-zA-Z0-9_]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)(\\.rankingScript)?");
+            Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)(\\.rankingScript)?");
 
     /** The name of the function referenced */
     private final String name;
