@@ -2,7 +2,6 @@
 package com.yahoo.config.model;
 
 import com.google.common.io.Files;
-import com.yahoo.component.Version;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
@@ -18,9 +17,7 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.UnproperSearch;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
-import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.search.SearchDefinition;
 import org.junit.After;
 import org.junit.Rule;
@@ -37,11 +34,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -63,10 +58,10 @@ public class ApplicationDeployTest {
 
     @Test
     public void testVespaModel() throws SAXException, IOException {
-        FilesApplicationPackage app = createAppPkg(TESTDIR + "app1");
-        assertThat(app.getApplicationName(), is("app1"));
-        VespaModel model = new VespaModel(app);
-        List<SearchDefinition> searchDefinitions = getSearchDefinitions(app);
+        ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "app1");
+        assertThat(tester.app().getApplicationName(), is("app1"));
+        VespaModel model = new VespaModel(tester.app());
+        List<SearchDefinition> searchDefinitions = tester.getSearchDefinitions();
         assertEquals(searchDefinitions.size(), 5);
         for (SearchDefinition searchDefinition : searchDefinitions) {
             Search s = searchDefinition.getSearch();
@@ -90,11 +85,11 @@ public class ApplicationDeployTest {
                 new File(TESTSDDIR + "product.sd"),
                 new File(TESTSDDIR + "sock.sd")};
         Arrays.sort(truth);
-        List<File> appSdFiles = app.getSearchDefinitionFiles();
+        List<File> appSdFiles = tester.app().getSearchDefinitionFiles();
         Collections.sort(appSdFiles);
         assertEquals(appSdFiles, Arrays.asList(truth));
 
-        List<FilesApplicationPackage.Component> components = app.getComponents();
+        List<FilesApplicationPackage.Component> components = tester.app().getComponents();
         assertEquals(1, components.size());
         Map<String, Bundle.DefEntry> defEntriesByName =
                 defEntries2map(components.get(0).getDefEntries());
@@ -122,42 +117,24 @@ public class ApplicationDeployTest {
     }
 
     @Test
-    public void testMl_ServingApplication() throws SAXException, IOException {
-        FilesApplicationPackage app = createAppPkg(TESTDIR + "ml_serving");
-        VespaModel model = new VespaModel(app);
-        ContainerCluster cluster = model.getContainerClusters().get("container");
-        RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
-        cluster.getConfig(b);
-        RankProfilesConfig config = new RankProfilesConfig(b);
-        assertEquals(3, config.rankprofile().size());
-        Set<String> modelNames = config.rankprofile().stream().map(v -> v.name()).collect(Collectors.toSet());
-        assertTrue(modelNames.contains("xgboost_2_2_json"));
-        assertTrue(modelNames.contains("mnist_softmax_onnx"));
-        assertTrue(modelNames.contains("mnist_softmax_saved"));
-    }
-
-    @Test
     public void testGetFile() throws IOException {
-        FilesApplicationPackage app = createAppPkg(TESTDIR + "app1");
-        try (Reader foo = app.getFile(Path.fromString("files/foo.json")).createReader()) {
+        ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "app1");
+        try (Reader foo = tester.app().getFile(Path.fromString("files/foo.json")).createReader()) {
             assertEquals(IOUtils.readAll(foo), "foo : foo\n");
         }
-        try (Reader bar = app.getFile(Path.fromString("files/sub/bar.json")).createReader()) {
+        try (Reader bar = tester.app().getFile(Path.fromString("files/sub/bar.json")).createReader()) {
             assertEquals(IOUtils.readAll(bar), "bar : bar\n");
         }
-        assertTrue(app.getFile(Path.createRoot()).exists());
-        assertTrue(app.getFile(Path.createRoot()).isDirectory());
+        assertTrue(tester.app().getFile(Path.createRoot()).exists());
+        assertTrue(tester.app().getFile(Path.createRoot()).isDirectory());
     }
 
     /*
      * Put a list of def entries to a map, with the name as key. This is done because the order
      * of the def entries in the list cannot be guaranteed.
      */
-    private Map<String, Bundle.DefEntry> defEntries2map
-    (List<Bundle.DefEntry> defEntries) {
-        Map<String, Bundle.DefEntry> ret =
-                new HashMap<>();
-
+    private Map<String, Bundle.DefEntry> defEntries2map(List<Bundle.DefEntry> defEntries) {
+        Map<String, Bundle.DefEntry> ret = new HashMap<>();
         for (Bundle.DefEntry def : defEntries)
             ret.put(def.defName, def);
         return ret;
@@ -166,8 +143,8 @@ public class ApplicationDeployTest {
     @Test
     public void testSdFromDocprocBundle() throws IOException, SAXException {
         String appDir = "src/test/cfg/application/app_sdbundles";
-        FilesApplicationPackage app = createAppPkg(appDir);
-        VespaModel model = new VespaModel(app);
+        ApplicationPackageTester tester = ApplicationPackageTester.create(appDir);
+        VespaModel model = new VespaModel(tester.app());
         // Check that the resulting documentmanager config contains those types
         DocumentmanagerConfig.Builder b = new DocumentmanagerConfig.Builder();
         model.getConfig(b, VespaModel.ROOT_CONFIGID);
@@ -188,10 +165,10 @@ public class ApplicationDeployTest {
     }
 
     @Test
-    public void include_dirs_are_included() throws Exception {
-        FilesApplicationPackage app = createAppPkg(TESTDIR + "include_dirs");
+    public void include_dirs_are_included() {
+        ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "include_dirs");
 
-        List<String> includeDirs = app.getUserIncludeDirs();
+        List<String> includeDirs = tester.app().getUserIncludeDirs();
         assertThat(includeDirs, contains("jdisc_dir", "dir1", "dir2", "empty_dir"));
     }
 
@@ -216,33 +193,33 @@ public class ApplicationDeployTest {
     public void testThatModelIsRebuiltWhenSearchDefinitionIsAdded() throws IOException {
         File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "app1"), tmpDir);
-        FilesApplicationPackage app = createAppPkg(tmpDir.getAbsolutePath());
-        assertEquals(5, getSearchDefinitions(app).size());
+        ApplicationPackageTester tester = ApplicationPackageTester.create(tmpDir.getAbsolutePath());
+        assertEquals(5, tester.getSearchDefinitions().size());
         File sdDir = new File(tmpDir, "searchdefinitions");
         File sd = new File(sdDir, "testfoo.sd");
         IOUtils.writeFile(sd, "search testfoo { document testfoo { field bar type string { } } }", false);
-        assertEquals(6, getSearchDefinitions(app).size());
+        assertEquals(6, tester.getSearchDefinitions().size());
     }
 
     @Test
     public void testThatAppWithDeploymentXmlIsValid() throws IOException {
         File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "app1"), tmpDir);
-        createAppPkg(tmpDir.getAbsolutePath());
+        ApplicationPackageTester.create(tmpDir.getAbsolutePath());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testThatAppWithIllegalDeploymentXmlIsNotValid() throws IOException {
         File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "app_invalid_deployment_xml"), tmpDir);
-        createAppPkg(tmpDir.getAbsolutePath());
+        ApplicationPackageTester.create(tmpDir.getAbsolutePath());
     }
 
     @Test
     public void testThatAppWithIllegalEmptyProdRegion() throws IOException {
         File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "empty_prod_region_in_deployment_xml"), tmpDir);
-        createAppPkg(tmpDir.getAbsolutePath());
+        ApplicationPackageTester.create(tmpDir.getAbsolutePath());
     }
 
     @Test
@@ -250,46 +227,11 @@ public class ApplicationDeployTest {
         File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "invalid_parallel_deployment_xml"), tmpDir);
         try {
-            createAppPkg(tmpDir.getAbsolutePath());
+            ApplicationPackageTester.create(tmpDir.getAbsolutePath());
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), containsString("element \"delay\" not allowed here"));
         }
-    }
-
-    private List<SearchDefinition> getSearchDefinitions(FilesApplicationPackage app) {
-        return new DeployState.Builder().applicationPackage(app).build().getSearchDefinitions();
-    }
-
-    public FilesApplicationPackage createAppPkg(String appPkg) throws IOException {
-        return createAppPkg(appPkg, true);
-    }
-
-    public FilesApplicationPackage createAppPkgDoNotValidateXml(String appPkg) throws IOException {
-        return createAppPkg(appPkg, false);
-    }
-
-    public FilesApplicationPackage createAppPkg(String appPkg, boolean validateXml) throws IOException {
-        final FilesApplicationPackage filesApplicationPackage = FilesApplicationPackage.fromFile(new File(appPkg));
-        if (validateXml) {
-            ApplicationPackageXmlFilesValidator validator =
-                    ApplicationPackageXmlFilesValidator.create(new File(appPkg), new Version(6));
-            validator.checkApplication();
-            validator.checkIncludedDirs(filesApplicationPackage);
-        }
-        return filesApplicationPackage;
-    }
-
-    @Test
-    public void testThatNewServicesFileNameWorks() throws IOException {
-    	String appPkg = TESTDIR + "newfilenames";
-        assertEquals(appPkg + "/services.xml", createAppPkgDoNotValidateXml(appPkg).getServicesSource());
-    }
-
-    @Test
-    public void testThatNewHostsFileNameWorks() throws IOException {
-    	String appPkg = TESTDIR + "newfilenames";
-        assertEquals(appPkg + "/hosts.xml", createAppPkgDoNotValidateXml(appPkg).getHostSource());
     }
 
     @Test
@@ -412,9 +354,9 @@ public class ApplicationDeployTest {
     }
 
     @Test(expected=IllegalArgumentException.class)
-    public void testDifferentNameOfSdFileAndSearchName() throws IOException {
-        FilesApplicationPackage app = createAppPkg(TESTDIR + "sdfilenametest");
-        new DeployState.Builder().applicationPackage(app).build();
+    public void testDifferentNameOfSdFileAndSearchName() {
+        ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "sdfilenametest");
+        new DeployState.Builder().applicationPackage(tester.app()).build();
     }
 
 }

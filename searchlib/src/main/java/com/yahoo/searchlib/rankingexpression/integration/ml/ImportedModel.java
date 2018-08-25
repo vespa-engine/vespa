@@ -107,21 +107,20 @@ public class ImportedModel {
         List<Pair<String, RankingExpression>> names = new ArrayList<>();
         for (Map.Entry<String, Signature> signatureEntry : signatures().entrySet()) {
             for (Map.Entry<String, String> outputEntry : signatureEntry.getValue().outputs().entrySet())
-                names.add(new Pair<>(name + "." + signatureEntry.getKey() + "." + outputEntry.getKey(),
+                names.add(new Pair<>(signatureEntry.getKey() + "." + outputEntry.getKey(),
                                      expressions().get(outputEntry.getValue())));
             if (signatureEntry.getValue().outputs().isEmpty()) // fallback: Signature without outputs
-                names.add(new Pair<>(name + "." + signatureEntry.getKey(),
+                names.add(new Pair<>(signatureEntry.getKey(),
                                      expressions().get(signatureEntry.getKey())));
         }
         if (signatures().isEmpty()) { // fallback for models without signatures
-            if (expressions().size() == 1) {// Use just model name
-                names.add(new Pair<>(name,
-                                     expressions().values().iterator().next()));
+            if (expressions().size() == 1) {
+                Map.Entry<String, RankingExpression> singleEntry = expressions.entrySet().iterator().next();
+                names.add(new Pair<>(singleEntry.getKey(), singleEntry.getValue()));
             }
             else {
                 for (Map.Entry<String, RankingExpression> expressionEntry : expressions().entrySet()) {
-                    names.add(new Pair<>(name + "." + expressionEntry.getKey(),
-                                         expressionEntry.getValue()));
+                    names.add(new Pair<>(expressionEntry.getKey(), expressionEntry.getValue()));
                 }
             }
         }

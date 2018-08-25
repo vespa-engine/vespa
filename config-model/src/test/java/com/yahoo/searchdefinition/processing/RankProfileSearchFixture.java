@@ -82,7 +82,8 @@ class RankProfileSearchFixture {
     }
 
     public RankProfile compileRankProfile(String rankProfile, Path applicationDir) {
-        RankProfile compiled = rankProfileRegistry.get(search, rankProfile).compile(queryProfileRegistry, new ImportedModels(applicationDir.toFile()));
+        RankProfile compiled = rankProfileRegistry.get(search, rankProfile)
+                                                  .compile(queryProfileRegistry, new ImportedModels(applicationDir.toFile()));
         compiledRankProfiles.put(rankProfile, compiled);
         return compiled;
     }

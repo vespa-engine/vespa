@@ -112,7 +112,7 @@ public class ConvertedModel {
 
         if ( ! arguments.output().isPresent()) {
             List<Map.Entry<String, RankingExpression>> entriesWithTheRightPrefix =
-                    expressions.entrySet().stream().filter(entry -> entry.getKey().startsWith(modelName + "." + arguments.signature().get() + ".")).collect(Collectors.toList());
+                    expressions.entrySet().stream().filter(entry -> entry.getKey().startsWith(arguments.signature().get() + ".")).collect(Collectors.toList());
             if (entriesWithTheRightPrefix.size() < 1)
                 throw new IllegalArgumentException("No expressions named '" + arguments.signature().get() +
                                                    missingExpressionMessageSuffix());
@@ -720,8 +720,7 @@ public class ConvertedModel {
         public Optional<String> output() { return output; }
 
         public String toName() {
-            return modelName +
-                   (signature.isPresent() ? "." + signature.get() : "") +
+            return (signature.isPresent() ? signature.get() : "") +
                    (output.isPresent() ? "." + output.get() : "");
         }
 
