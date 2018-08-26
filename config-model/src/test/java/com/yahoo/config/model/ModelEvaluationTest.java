@@ -32,35 +32,31 @@ public class ModelEvaluationTest {
         RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
         cluster.getConfig(b);
         RankProfilesConfig config = new RankProfilesConfig(b);
-        System.out.println(config.rankprofile(2).toString());
         assertEquals(3, config.rankprofile().size());
         Set<String> modelNames = config.rankprofile().stream().map(v -> v.name()).collect(Collectors.toSet());
-        assertTrue(modelNames.contains("xgboost_2_2_json"));
-        assertTrue(modelNames.contains("mnist_softmax_onnx"));
+        assertTrue(modelNames.contains("xgboost_2_2"));
+        assertTrue(modelNames.contains("mnist_softmax"));
         assertTrue(modelNames.contains("mnist_softmax_saved"));
 
         ModelsEvaluator evaluator = new ModelsEvaluator(config);
 
         assertEquals(3, evaluator.models().size());
-        Model xgboost = evaluator.models().get("xgboost_2_2_json");
+        Model xgboost = evaluator.models().get("xgboost_2_2");
         assertNotNull(xgboost);
         assertNotNull(xgboost.evaluatorOf());
-        assertNotNull(xgboost.evaluatorOf("xgboost_2_2_json"));
-        System.out.println("xgboost functions: " + xgboost.functions().stream().map(f -> f.getName()).collect(Collectors.joining(", ")));
+        assertNotNull(xgboost.evaluatorOf("xgboost_2_2"));
 
-        Model onnx = evaluator.models().get("mnist_softmax_onnx");
+        Model onnx = evaluator.models().get("mnist_softmax");
         assertNotNull(onnx);
         assertNotNull(onnx.evaluatorOf());
         assertNotNull(onnx.evaluatorOf("default"));
         assertNotNull(onnx.evaluatorOf("default", "add"));
-        System.out.println("onnx functions: " + onnx.functions().stream().map(f -> f.getName()).collect(Collectors.joining(", ")));
 
         Model tensorflow = evaluator.models().get("mnist_softmax_saved");
         assertNotNull(tensorflow);
         assertNotNull(tensorflow.evaluatorOf());
         assertNotNull(tensorflow.evaluatorOf("serving_default"));
         assertNotNull(tensorflow.evaluatorOf("serving_default", "y"));
-        System.out.println("tensorflow functions: " + tensorflow.functions().stream().map(f -> f.getName()).collect(Collectors.joining(", ")));
     }
 
 }

@@ -6,9 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.path.Path;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -71,9 +69,18 @@ public class ImportedModels {
         return importedModels.values();
     }
 
-    private static String toName(File modelPath) {
-        String localPath = concatenateAfterModelsDirectory(Path.fromString(modelPath.toString()));
+    private static String toName(File modelFile) {
+        Path modelPath = Path.fromString(modelFile.toString());
+        if (modelFile.isFile())
+            modelPath = stripFileEnding(modelPath);
+        String localPath = concatenateAfterModelsDirectory(modelPath);
         return localPath.replace('.', '_');
+    }
+
+    private static Path stripFileEnding(Path path) {
+        int dotIndex = path.last().lastIndexOf(".");
+        if (dotIndex <= 0) return path;
+        return path.withLast(path.last().substring(0, dotIndex));
     }
 
     private static String concatenateAfterModelsDirectory(Path path) {
