@@ -31,7 +31,7 @@ public class RankingExpressionWithOnnxTestCase {
     private final Path applicationDir = Path.fromString("src/test/integration/onnx/");
 
     /** The model name */
-    private final static String name = "mnist_softmax_onnx";
+    private final static String name = "mnist_softmax";
 
     private final static String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(" + name + "_Variable), f(a,b)(a * b)), sum, d2), constant(" + name + "_Variable_1), f(a,b)(a + b))";
 
@@ -54,7 +54,8 @@ public class RankingExpressionWithOnnxTestCase {
     @Test
     public void testOnnxReferenceWithQueryFeature() {
         String queryProfile = "<query-profile id='default' type='root'/>";
-        String queryProfileType = "<query-profile-type id='root'>" +
+        String queryProfileType =
+                "<query-profile-type id='root'>" +
                 "  <field name='query(mytensor)' type='tensor(d0[3],d1[784])'/>" +
                 "</query-profile-type>";
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir,
@@ -89,7 +90,8 @@ public class RankingExpressionWithOnnxTestCase {
     @Test
     public void testOnnxReferenceWithFeatureCombination() {
         String queryProfile = "<query-profile id='default' type='root'/>";
-        String queryProfileType = "<query-profile-type id='root'>" +
+        String queryProfileType =
+                "<query-profile-type id='root'>" +
                 "  <field name='query(mytensor)' type='tensor(d0[3],d1[784],d2[10])'/>" +
                 "</query-profile-type>";
         StoringApplicationPackage application = new StoringApplicationPackage(applicationDir,

@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
  * Represents a path represented by a list of elements. Immutable
  *
  * @author Ulf Lilleengen
+ * @author bratseth
  */
 @Beta
 public final class Path {
@@ -22,23 +23,23 @@ public final class Path {
     private final String delimiter;
     private final ImmutableList<String> elements;
 
-    /**
-     * Create an empty path.
-     */
+    /** Creates an empty path */
     private Path(String delimiter) {
         this(new ArrayList<>(), delimiter);
     }
 
     /**
-     * Create a new path as a copy of the provided path.
-     * @param rhs the path to copy.
+     * Create a new path as a copy of the provided path
+     *
+     * @param path the path to copy
      */
-    private Path(Path rhs) {
-        this(rhs.elements, rhs.delimiter);
+    private Path(Path path) {
+        this(path.elements, path.delimiter);
     }
 
     /**
-     * Create path with given elements.
+     * Create path with given elements
+     *
      * @param elements a list of path elements
      */
     private Path(List<String> elements, String delimiter) {
@@ -74,8 +75,8 @@ public final class Path {
      * Appends a path to another path, thereby creating a new path with the provided path
      * appended to this.
      *
-     * @param path the path to append.
-     * @return a new path with argument appended to it.
+     * @param path the path to append
+     * @return a new path with argument appended to it
      */
     public Path append(Path path) {
         List<String> newElements = new ArrayList<>(this.elements);
@@ -123,6 +124,24 @@ public final class Path {
             }
         }
         return new Path(childElements, delimiter);
+    }
+
+    /** Returns the last element in this, or the empty string if this path is empty */
+    public String last() {
+        if (elements.isEmpty()) return "";
+        return elements.get(elements.size() - 1);
+    }
+
+    /**
+     * Returns a new path with the last element replaced by the given element.
+     *
+     * @throws IllegalStateException if this path is empty
+     */
+    public Path withLast(String element) {
+        if (element.isEmpty()) throw new IllegalStateException("Cannot set the last element of an empty path");
+        List<String> newElements = new ArrayList<>(elements);
+        newElements.set(newElements.size() -1, element);
+        return new Path(newElements, delimiter);
     }
 
     /** Returns a string representation of this path where the delimiter is prepended */
