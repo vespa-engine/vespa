@@ -156,7 +156,7 @@ public abstract class ModelImporter {
     private static void importRankingExpression(IntermediateOperation operation, ImportedModel model) {
         if (operation.function().isPresent()) {
             String name = operation.name();
-            if (!model.expressions().containsKey(name)) {
+            if ( ! model.expressions().containsKey(name)) {
                 TensorFunction function = operation.function().get();
 
                 if (isSignatureOutput(model, operation)) {

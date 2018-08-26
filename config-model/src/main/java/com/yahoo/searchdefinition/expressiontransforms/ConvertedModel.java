@@ -494,12 +494,12 @@ public class ConvertedModel {
             ApplicationFile expressionPath = application.getFile(modelFiles.expressionsPath());
             if ( ! expressionPath.exists() || ! expressionPath.isDirectory()) return Collections.emptyMap();
             for (ApplicationFile expressionFile : expressionPath.listFiles()) {
-                try {
+                try (Reader reader = new BufferedReader(expressionFile.createReader())){
                     String name = expressionFile.getPath().getName();
-                    expressions.put(name, new RankingExpression(name, expressionFile.createReader()));
+                    expressions.put(name, new RankingExpression(name, reader));
                 }
-                catch (FileNotFoundException e) {
-                    throw new IllegalStateException("Expression file removed while reading: " + expressionFile, e);
+                catch (IOException e) {
+                    throw new UncheckedIOException("Failed reading " + expressionFile.getPath(), e);
                 }
                 catch (ParseException e) {
                     throw new IllegalStateException("Invalid stored expression in " + expressionFile, e);
