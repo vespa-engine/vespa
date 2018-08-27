@@ -318,7 +318,7 @@ public class InternalStepRunnerTest {
 
         tester.applications().deactivate(appId, JobType.systemTest.zone(tester.controller().system()));
         runner.run();
-        assertEquals(failed, jobs.last(appId, JobType.systemTest).get().steps().get(Step.startTests));
+        assertEquals(unfinished, jobs.last(appId, JobType.systemTest).get().steps().get(Step.startTests));
     }
 
     @Test
