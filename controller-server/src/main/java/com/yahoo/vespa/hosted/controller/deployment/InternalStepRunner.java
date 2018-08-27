@@ -74,19 +74,10 @@ public class InternalStepRunner implements StepRunner {
     static final Duration endpointTimeout = Duration.ofMinutes(15);
     static final Duration installationTimeout = Duration.ofMinutes(150);
 
-    // TODO jvenstad: Move this tester logic to the application controller, perhaps?
-    public static ApplicationId testerOf(ApplicationId id) {
-        return ApplicationId.from(id.tenant().value(),
-                                  id.application().value(),
-                                  id.instance().value() + "-t");
-    }
-
     private final Controller controller;
-    private final TesterCloud testerCloud;
 
-    public InternalStepRunner(Controller controller, TesterCloud testerCloud) {
+    public InternalStepRunner(Controller controller) {
         this.controller = controller;
-        this.testerCloud = testerCloud;
     }
 
     @Override
@@ -154,9 +145,9 @@ public class InternalStepRunner implements StepRunner {
     private Optional<RunStatus> deployTester(RunId id, DualLogger logger) {
         // TODO jvenstad: Consider deploying old version of tester for initial staging feeding?
         logger.log("Deploying the tester container ...");
-        return deploy(testerOf(id.application()),
+        return deploy(JobController.testerOf(id.application()),
                       id.type(),
-                      () -> controller.applications().deployTester(testerOf(id.application()),
+                      () -> controller.applications().deployTester(JobController.testerOf(id.application()),
                                                                    testerPackage(id),
                                                                    id.type().zone(controller.system()),
                                                                    new DeployOptions(true,
@@ -255,7 +246,7 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(installationFailed);
         }
 
-        if (servicesConverged(testerOf(id.application()), id.type())) {
+        if (servicesConverged(JobController.testerOf(id.application()), id.type())) {
             logger.log("Tester container successfully installed!");
             return Optional.of(running);
         }
@@ -318,12 +309,12 @@ public class InternalStepRunner implements StepRunner {
             return Optional.empty();
         }
 
-        Optional<URI> testerEndpoint = testerEndpoint(id);
+        Optional<URI> testerEndpoint = JobController.testerEndpoint(controller, id);
         if (testerEndpoint.isPresent()) {
             logger.log("Starting tests ...");
-            testerCloud.startTests(testerEndpoint.get(),
-                                   TesterCloud.Suite.of(id.type()),
-                                   testConfig(id.application(), id.type().zone(controller.system()), controller.system(), endpoints));
+            controller.jobController().cloud().startTests(testerEndpoint.get(),
+                                                          TesterCloud.Suite.of(id.type()),
+                                                          testConfig(id.application(), id.type().zone(controller.system()), controller.system(), endpoints));
             return Optional.of(running);
         }
 
@@ -337,14 +328,13 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> endTests(RunId id, DualLogger logger) {
-        URI testerEndpoint = testerEndpoint(id)
-                .orElseThrow(() -> new NoSuchElementException("Endpoint for tester vanished again before tests were complete!"));
+        URI testerEndpoint = JobController.testerEndpoint(controller, id)
+                                          .orElseThrow(() -> new NoSuchElementException("Endpoint for tester vanished again before tests were complete!"));
 
-        JobController jobs = controller.jobController();
-        jobs.logTestEntries(id, testerCloud.getLog(testerEndpoint, jobs.run(id).get().lastTestLogEntry()));
+        controller.jobController().updateTestLog(id);
 
         RunStatus status;
-        switch (testerCloud.getStatus(testerEndpoint)) {
+        switch (controller.jobController().cloud().getStatus(testerEndpoint)) {
             case NOT_STARTED:
                 throw new IllegalStateException("Tester reports tests not started, even though they should have!");
             case RUNNING:
@@ -359,7 +349,7 @@ public class InternalStepRunner implements StepRunner {
                 logger.log("Tests completed successfully.");
                 status = running; break;
             default:
-                throw new AssertionError("Unknown status!");
+                throw new IllegalArgumentException("Unknown status!");
         }
         return Optional.of(status);
     }
@@ -410,7 +400,7 @@ public class InternalStepRunner implements StepRunner {
     private ApplicationPackage testerPackage(RunId id) {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
 
-        byte[] testPackage = controller.applications().applicationStore().getTesterPackage(testerOf(id.application()), version.id());
+        byte[] testPackage = controller.applications().applicationStore().getTesterPackage(JobController.testerOf(id.application()), version.id());
         byte[] servicesXml = servicesXml(controller.system());
 
         try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
@@ -429,18 +419,6 @@ public class InternalStepRunner implements StepRunner {
                                              .filter(endpoints -> ! endpoints.isEmpty())
                                              .ifPresent(endpoints -> deployments.put(zone, endpoints)));
         return deployments.build();
-    }
-
-    /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
-    private Optional<URI> testerEndpoint(RunId id) {
-        ApplicationId tester = testerOf(id.application());
-        return controller.applications().getDeploymentEndpoints(new DeploymentId(tester, id.type().zone(controller.system())))
-                         .flatMap(uris -> uris.stream()
-                                              .filter(uri -> uri.getHost().contains(String.format("%s--%s--%s.",
-                                                                                                  tester.instance().value(),
-                                                                                                  tester.application().value(),
-                                                                                                  tester.tenant().value())))
-                                              .findAny());
     }
 
     /** Returns the generated services.xml content for the tester application. */

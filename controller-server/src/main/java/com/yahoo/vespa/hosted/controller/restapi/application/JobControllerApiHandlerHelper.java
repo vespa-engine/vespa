@@ -106,7 +106,13 @@ class JobControllerApiHandlerHelper {
         Slime slime = new Slime();
         Cursor logsObject = slime.setObject();
 
-        logsObject.setBool("active", jobController.active(runId).isPresent());
+        try { // Try to fetch new logs, if the run is still active.
+            jobController.updateTestLog(runId);
+            logsObject.setBool("active", true);
+        } // If it isn't, it fails like so.
+        catch (IllegalArgumentException e) {
+            logsObject.setBool("active", jobController.active(runId).isPresent());
+        }
 
         RunLog runLog = (after == null ? jobController.details(runId) : jobController.details(runId, Long.parseLong(after)))
                 .orElseThrow(() -> new NotExistsException(String.format(

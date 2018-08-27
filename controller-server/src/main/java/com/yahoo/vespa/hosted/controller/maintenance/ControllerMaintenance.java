@@ -50,7 +50,7 @@ public class ControllerMaintenance extends AbstractComponent {
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, Controller controller, CuratorDb curator,
-                                 JobControl jobControl, Metric metric, Chef chefClient, TesterCloud testerCloud,
+                                 JobControl jobControl, Metric metric, Chef chefClient,
                                  DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues,
                                  NameService nameService, NodeRepositoryClientInterface nodeRepositoryClient) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
@@ -68,7 +68,7 @@ public class ControllerMaintenance extends AbstractComponent {
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
         dnsMaintainer = new DnsMaintainer(controller, Duration.ofHours(12), jobControl, nameService);
         systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1), jobControl);
-        jobRunner = new JobRunner(controller, Duration.ofSeconds(30), jobControl, new InternalStepRunner(controller, testerCloud));
+        jobRunner = new JobRunner(controller, Duration.ofSeconds(30), jobControl);
         osUpgraders = osUpgraders(controller, jobControl);
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
     }
