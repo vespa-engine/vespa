@@ -14,6 +14,8 @@ public class FastCharStream {
     private final char[] inputArr;
     private int tokenPos = 0;
     private int readPos = 0;
+    private int tabSize = 1;
+    private boolean trackLineColumn = true;
 
     public FastCharStream(String input) {
         this.inputStr = input;
@@ -74,6 +76,14 @@ public class FastCharStream {
     public void Done() {
 
     }
+
+    public void setTabSize(int i) { tabSize = i; }
+
+    public int getTabSize() { return tabSize; }
+
+    public void setTrackLineColumn(boolean tlc) { trackLineColumn = tlc; }
+
+    public boolean getTrackLineColumn() { return trackLineColumn; }
 
     public String formatException(String parseException) {
         int errPos = findErrPos(parseException);
