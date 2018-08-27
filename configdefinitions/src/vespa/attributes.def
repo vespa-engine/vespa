@@ -8,6 +8,7 @@ attribute[].removeifzero        bool default=false
 attribute[].createifnonexistent bool default=false
 attribute[].fastsearch          bool default=false
 attribute[].huge                bool default=false
+attribute[].ismutable           bool default=false
 attribute[].sortascending       bool default=true
 attribute[].sortfunction        enum { RAW, LOWERCASE, UCA } default=UCA
 attribute[].sortstrength        enum { PRIMARY, SECONDARY, TERTIARY, QUATERNARY, IDENTICAL } default=PRIMARY
