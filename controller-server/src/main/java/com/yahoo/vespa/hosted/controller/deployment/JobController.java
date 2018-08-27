@@ -109,19 +109,20 @@ public class JobController {
 
     /** Fetches any new test log entries, and records the id of the last of these, for continuation. */
     public void updateTestLog(RunId id) {
-        locked(id, run -> {
-            Optional<URI> testerEndpoint = testerEndpoint(controller, id);
-            if ( ! testerEndpoint.isPresent())
-                return run;
+        try (Lock __ = curator.lock(id.application(), id.type())) {
+            active(id).ifPresent(run -> {
+                Optional<URI> testerEndpoint = testerEndpoint(id);
+                if ( ! testerEndpoint.isPresent())
+                    return;
 
-            List<LogEntry> entries = cloud.getLog(testerEndpoint.get(), run(id).get().lastTestLogEntry());
-            if (entries.isEmpty())
-                return run;
+                List<LogEntry> entries = cloud.getLog(testerEndpoint.get(), run.lastTestLogEntry());
+                if (entries.isEmpty())
+                    return;
 
-            long lastTestRecord = entries.stream().mapToLong(LogEntry::id).max().getAsLong();
-            logs.append(id.application(), id.type(), endTests, entries);
-            return run.with(lastTestRecord);
-        });
+                logs.append(id.application(), id.type(), endTests, entries);
+                curator.writeLastRun(run.with(entries.stream().mapToLong(LogEntry::id).max().getAsLong()));
+            });
+        }
     }
 
     /** Returns a list of all application which have registered. */
