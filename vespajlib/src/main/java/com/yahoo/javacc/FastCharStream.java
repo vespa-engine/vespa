@@ -29,16 +29,6 @@ public class FastCharStream {
         return inputArr[readPos++];
     }
 
-    @Deprecated
-    public int getColumn() {
-        return getEndColumn();
-    }
-
-    @Deprecated
-    public int getLine() {
-        return getEndLine();
-    }
-
     public int getEndColumn() {
         return readPos + 1;
     }
