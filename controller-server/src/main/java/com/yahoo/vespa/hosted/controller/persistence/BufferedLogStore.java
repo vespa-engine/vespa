@@ -52,7 +52,7 @@ public class BufferedLogStore {
         Map<Step, List<LogEntry>> log = logSerializer.fromJson(lastChunk, -1);
         List<LogEntry> stepEntries = log.computeIfAbsent(step, __ -> new ArrayList<>());
         for (LogEntry entry : entries)
-            stepEntries.add(new LogEntry(++lastEntryId, entry.at(), entry.level(), entry.message()));
+            stepEntries.add(new LogEntry(++lastEntryId, entry.at(), entry.type(), entry.message()));
 
         buffer.writeLog(id, type, lastChunkId, logSerializer.toJson(log));
         buffer.writeLastLogEntryId(id, type, lastEntryId);
