@@ -5,7 +5,6 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 
 import static java.lang.Long.min;
-import static java.lang.Integer.max;
 
 /**
  * Tuning of proton config for a search node based on the node flavor of that node.
@@ -16,6 +15,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
 
     static long MB = 1024 * 1024;
     static long GB = MB * 1024;
+    private static long MIN_MEMORY_HEADROOM_PER_NODE_GB = 2;
     private final Flavor nodeFlavor;
 
     public NodeFlavorTuning(Flavor nodeFlavor) {
@@ -25,6 +25,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         setHwInfo(builder);
+        tuneMemoryResourceLimit(builder);
         tuneDiskWriteSpeed(builder);
         tuneDocumentStoreMaxFileSize(builder.summary.log);
         tuneFlushStrategyMemoryLimits(builder.flush.memory);
@@ -33,16 +34,22 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         tuneSummaryCache(builder.summary.cache);
     }
 
-    private void tuneSummaryCache(ProtonConfig.Summary.Cache.Builder builder) {
-        long memoryLimitBytes = (long) ((nodeFlavor.getMinMainMemoryAvailableGb() * 0.05) * GB);
-        builder.maxbytes(memoryLimitBytes);
-    }
-
     private void setHwInfo(ProtonConfig.Builder builder) {
         builder.hwinfo.disk.size((long)nodeFlavor.getMinDiskAvailableGb() * GB);
         builder.hwinfo.disk.shared(nodeFlavor.getType().equals(Flavor.Type.DOCKER_CONTAINER));
         builder.hwinfo.memory.size((long)nodeFlavor.getMinMainMemoryAvailableGb() * GB);
         builder.hwinfo.cpu.cores((int)nodeFlavor.getMinCpuCores());
+    }
+
+    private void tuneMemoryResourceLimit(ProtonConfig.Builder builder) {
+        if ((nodeFlavor.getMinMainMemoryAvailableGb() * (1.0 - defaultMemoryResourceLimit())) < MIN_MEMORY_HEADROOM_PER_NODE_GB) {
+            double adjustedMemoryResourceLimit = (1.0 - (MIN_MEMORY_HEADROOM_PER_NODE_GB / nodeFlavor.getMinMainMemoryAvailableGb()));
+            builder.writefilter.memorylimit(adjustedMemoryResourceLimit);
+        }
+    }
+
+    private static double defaultMemoryResourceLimit() {
+        return new ProtonConfig.Writefilter(new ProtonConfig.Writefilter.Builder()).memorylimit();
     }
 
     private void tuneDiskWriteSpeed(ProtonConfig.Builder builder) {
@@ -80,6 +87,11 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         if (nodeFlavor.hasFastDisk()) {
             builder.io(ProtonConfig.Summary.Read.Io.DIRECTIO);
         }
+    }
+
+    private void tuneSummaryCache(ProtonConfig.Summary.Cache.Builder builder) {
+        long memoryLimitBytes = (long) ((nodeFlavor.getMinMainMemoryAvailableGb() * 0.05) * GB);
+        builder.maxbytes(memoryLimitBytes);
     }
 
 }

@@ -15,6 +15,7 @@ import static com.yahoo.vespa.model.search.NodeFlavorTuning.GB;
  */
 public class NodeFlavorTuningTest {
 
+
     @Test
     public void require_that_hwinfo_disk_size_is_set() {
         ProtonConfig cfg = configFromDiskSetting(100);
@@ -98,6 +99,14 @@ public class NodeFlavorTuningTest {
         assertSharedDisk(false, false);
     }
 
+    @Test
+    public void require_that_memory_resource_limit_is_tuned_to_get_at_least_2gb_memory_headroom() {
+        assertMemoryResourceLimit(0.6666667, configFromMemorySetting(6));
+        assertMemoryResourceLimit(0.75, configFromMemorySetting(8));
+        assertMemoryResourceLimit(0.8, configFromMemorySetting(10));
+        assertMemoryResourceLimit(0.8, configFromMemorySetting(12));
+    }
+
     private static void assertDocumentStoreMaxFileSize(long expFileSizeBytes, int memoryGb) {
         assertEquals(expFileSizeBytes, configFromMemorySetting(memoryGb).summary().log().maxfilesize());
     }
@@ -117,6 +126,10 @@ public class NodeFlavorTuningTest {
 
     private static void assertSharedDisk(boolean sharedDisk, boolean docker) {
         assertEquals(sharedDisk, configFromEnvironmentType(docker).hwinfo().disk().shared());
+    }
+
+    private static void assertMemoryResourceLimit(double expResourceLimit, ProtonConfig cfg) {
+        assertEquals(expResourceLimit, cfg.writefilter().memorylimit(), 0.000001);
     }
 
     private static ProtonConfig configFromDiskSetting(boolean fastDisk) {
