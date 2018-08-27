@@ -127,7 +127,7 @@ class JobControllerApiHandlerHelper {
 
     private static void toSlime(Cursor entryObject, LogEntry entry) {
         entryObject.setLong("at", entry.at());
-        entryObject.setString("level", entry.level().getName());
+        entryObject.setString("type", entry.type().name());
         entryObject.setString("message", entry.message());
     }
 

@@ -223,6 +223,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> installReal(RunId id, boolean setTheStage, DualLogger logger) {
+        // TODO jvenstad: Check for expiry after installation, before timeout, startTests, endTests ...
         if (expired(id.application(), id.type())) {
             logger.log(INFO, "Deployment expired before installation was successful.");
             return Optional.of(installationFailed);

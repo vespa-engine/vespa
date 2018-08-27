@@ -102,9 +102,9 @@ public class JobControllerApiHandlerHelperTest {
                 runId.type(),
                 Collections.singleton(createRun(JobType.systemTest, 42, 44, lastStep, Optional.of(RunStatus.running))));
 
-        logStore.append(appId, JobType.systemTest, Step.deployTester, Collections.singletonList(new LogEntry(0, 1, Level.INFO, "SUCCESS")));
-        logStore.append(appId, JobType.systemTest, Step.installTester, Collections.singletonList(new LogEntry(0, 12, Level.FINE, "SUCCESS")));
-        logStore.append(appId, JobType.systemTest, Step.deactivateTester, Collections.singletonList(new LogEntry(0, 123, Level.WARNING, "ERROR")));
+        logStore.append(appId, JobType.systemTest, Step.deployTester, Collections.singletonList(new LogEntry(0, 1, LogEntry.Type.info, "SUCCESS")));
+        logStore.append(appId, JobType.systemTest, Step.installTester, Collections.singletonList(new LogEntry(0, 12, LogEntry.Type.debug, "SUCCESS")));
+        logStore.append(appId, JobType.systemTest, Step.deactivateTester, Collections.singletonList(new LogEntry(0, 123, LogEntry.Type.warning, "ERROR")));
         logStore.flush(runId);
 
         HttpResponse response = JobControllerApiHandlerHelper.runDetailsResponse(jobController, runId,"0");

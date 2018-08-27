@@ -13,7 +13,6 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
-import java.util.logging.Level;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -31,12 +30,12 @@ public class BufferedLogStoreTest {
 
         byte[] manyBytes = new byte[BufferedLogStore.chunkSize / 2 + 1]; // One fits, and two (over-)fills.
         Arrays.fill(manyBytes, (byte) 'O');
-        LogEntry entry = new LogEntry(0, 123, Level.WARNING, new String(manyBytes));
+        LogEntry entry = new LogEntry(0, 123, LogEntry.Type.warning, new String(manyBytes));
 
         // Log entries are re-sequenced by the log store, by enumeration.
-        LogEntry entry0 = new LogEntry(0, entry.at(), entry.level(), entry.message());
-        LogEntry entry1 = new LogEntry(1, entry.at(), entry.level(), entry.message());
-        LogEntry entry2 = new LogEntry(2, entry.at(), entry.level(), entry.message());
+        LogEntry entry0 = new LogEntry(0, entry.at(), entry.type(), entry.message());
+        LogEntry entry1 = new LogEntry(1, entry.at(), entry.type(), entry.message());
+        LogEntry entry2 = new LogEntry(2, entry.at(), entry.type(), entry.message());
 
         assertEquals(Optional.empty(), logs.readFinished(id, -1));
         assertEquals(RunLog.empty(), logs.readActive(id.application(), id.type(), -1));

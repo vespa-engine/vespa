@@ -5,14 +5,14 @@
   "installTester":[
     {
       "at":12,
-      "level":"DEBUG",
+      "type":"debug",
       "message":"SUCCESS"
     }
   ],
   "deactivateTester":[
     {
       "at":123,
-      "level":"WARNING",
+      "type":"warning",
       "message":"ERROR"
     }
   ]

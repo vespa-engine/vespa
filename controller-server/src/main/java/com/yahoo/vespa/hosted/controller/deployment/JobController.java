@@ -96,7 +96,7 @@ public class JobController {
     /** Stores the given log record for the given run and step. */
     public void log(RunId id, Step step, Level level, String message) {
         locked(id, __ -> {
-            LogEntry entry = new LogEntry(0, controller.clock().millis(), level, message);
+            LogEntry entry = new LogEntry(0, controller.clock().millis(), LogEntry.typeOf(level), message);
             logs.append(id.application(), id.type(), step, Collections.singletonList(entry));
             return __;
         });
