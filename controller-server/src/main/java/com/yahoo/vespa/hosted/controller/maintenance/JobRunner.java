@@ -1,7 +1,9 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.google.inject.Inject;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -33,8 +35,9 @@ public class JobRunner extends Maintainer {
     private final ExecutorService executors;
     private final StepRunner runner;
 
-    public JobRunner(Controller controller, Duration duration, JobControl jobControl, StepRunner runner) {
-        this(controller, duration, jobControl, Executors.newFixedThreadPool(32), runner);
+    @Inject
+    public JobRunner(Controller controller, Duration duration, JobControl jobControl) {
+        this(controller, duration, jobControl, Executors.newFixedThreadPool(32), new InternalStepRunner(controller));
     }
 
     @TestOnly

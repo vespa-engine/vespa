@@ -107,6 +107,7 @@ class JobControllerApiHandlerHelper {
         Cursor logsObject = slime.setObject();
 
         logsObject.setBool("active", jobController.active(runId).isPresent());
+        jobController.updateTestLog(runId);
 
         RunLog runLog = (after == null ? jobController.details(runId) : jobController.details(runId, Long.parseLong(after)))
                 .orElseThrow(() -> new NotExistsException(String.format(

@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -20,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -31,12 +33,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.testerOf;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 
 /**
@@ -57,12 +57,17 @@ public class JobController {
     private final Controller controller;
     private final CuratorDb curator;
     private final BufferedLogStore logs;
+    private final TesterCloud cloud;
 
-    public JobController(Controller controller, RunDataStore runDataStore) {
+    public JobController(Controller controller, RunDataStore runDataStore, TesterCloud testerCloud) {
         this.controller = controller;
         this.curator = controller.curator();
         this.logs = new BufferedLogStore(curator, runDataStore);
+        this.cloud = testerCloud;
+    }
 
+    public TesterCloud cloud() {
+        return cloud;
     }
 
     /** Rewrite all job data with the newest format. */
@@ -102,16 +107,22 @@ public class JobController {
         });
     }
 
-    /** Stores the given test log records, and records the id of the last of these, for continuation. */
-    public void logTestEntries(RunId id, List<LogEntry> entries) {
-        if (entries.isEmpty())
-            return;
+    /** Fetches any new test log entries, and records the id of the last of these, for continuation. */
+    public void updateTestLog(RunId id) {
+        try (Lock __ = curator.lock(id.application(), id.type())) {
+            active(id).ifPresent(run -> {
+                Optional<URI> testerEndpoint = testerEndpoint(id);
+                if ( ! testerEndpoint.isPresent())
+                    return;
 
-        locked(id, run -> {
-            long lastTestRecord = entries.stream().mapToLong(LogEntry::id).max().getAsLong();
-            logs.append(id.application(), id.type(), endTests, entries);
-            return run.with(lastTestRecord);
-        });
+                List<LogEntry> entries = cloud.getLog(testerEndpoint.get(), run.lastTestLogEntry());
+                if (entries.isEmpty())
+                    return;
+
+                logs.append(id.application(), id.type(), endTests, entries);
+                curator.writeLastRun(run.with(entries.stream().mapToLong(LogEntry::id).max().getAsLong()));
+            });
+        }
     }
 
     /** Returns a list of all application which have registered. */
@@ -198,9 +209,9 @@ public class JobController {
             controller.applications().applicationStore().putApplicationPackage(id,
                     version.get().id(),
                     applicationPackage);
-            controller.applications().applicationStore().putTesterPackage(InternalStepRunner.testerOf(id),
-                    version.get().id(),
-                    applicationTestPackage);
+            controller.applications().applicationStore().putTesterPackage(testerOf(id),
+                                                                          version.get().id(),
+                                                                          applicationTestPackage);
 
             if (!application.get().deploymentJobs().builtInternally()) {
                 // Copy all current packages to the new application store
@@ -280,6 +291,25 @@ public class JobController {
         catch (NoInstanceException ignored) {
             // Already gone -- great!
         }
+    }
+
+    /** Returns the application id of the tester application for the real application with the given id. */
+    static ApplicationId testerOf(ApplicationId id) {
+        return ApplicationId.from(id.tenant().value(),
+                                  id.application().value(),
+                                  id.instance().value() + "-t");
+    }
+
+    /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
+    static Optional<URI> testerEndpoint(Controller controller, RunId id) {
+        ApplicationId tester = testerOf(id.application());
+        return controller.applications().getDeploymentEndpoints(new DeploymentId(tester, id.type().zone(controller.system())))
+                         .flatMap(uris -> uris.stream()
+                                              .filter(uri -> uri.getHost().contains(String.format("%s--%s--%s.",
+                                                                                                  tester.instance().value(),
+                                                                                                  tester.application().value(),
+                                                                                                  tester.tenant().value())))
+                                              .findAny());
     }
 
     // TODO jvenstad: Find a more appropriate way of doing this, at least when this is the only build service.

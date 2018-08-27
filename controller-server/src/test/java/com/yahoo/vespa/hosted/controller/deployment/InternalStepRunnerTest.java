@@ -44,16 +44,14 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import static com.yahoo.log.LogLevel.DEBUG;
-import static com.yahoo.log.LogLevel.ERROR;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.debug;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.error;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.info;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.testerOf;
+import static com.yahoo.vespa.hosted.controller.deployment.JobController.testerOf;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
-import static java.util.logging.Level.INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -84,9 +82,9 @@ public class InternalStepRunnerTest {
         tester.createApplication(appId.application().value(), appId.tenant().value(), 1, 1L);
         jobs = tester.controller().jobController();
         routing = tester.controllerTester().routingGenerator();
-        cloud = new MockTesterCloud();
+        cloud = (MockTesterCloud) tester.controller().jobController().cloud();
         runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                               JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller(), cloud));
+                               JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller()));
         routing.putEndpoints(new DeploymentId(null, null), Collections.emptyList()); // Turn off default behaviour for the mock.
 
         // Get deployment job logs to stderr.
