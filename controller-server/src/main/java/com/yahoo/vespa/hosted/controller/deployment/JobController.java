@@ -301,7 +301,7 @@ public class JobController {
     }
 
     /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
-    static Optional<URI> testerEndpoint(Controller controller, RunId id) {
+    Optional<URI> testerEndpoint(RunId id) {
         ApplicationId tester = testerOf(id.application());
         return controller.applications().getDeploymentEndpoints(new DeploymentId(tester, id.type().zone(controller.system())))
                          .flatMap(uris -> uris.stream()

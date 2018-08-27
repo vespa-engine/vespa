@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.yolean.Exceptions;
 
@@ -49,6 +50,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Con
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.OUT_OF_CAPACITY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
@@ -214,8 +216,8 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> installReal(RunId id, boolean setTheStage, DualLogger logger) {
-        // TODO jvenstad: Check for expiry after installation, before timeout, startTests, endTests ...
-        if (expired(id.application(), id.type())) {
+        Optional<Deployment> deployment = deployment(id.application(), id.type());
+        if ( ! deployment.isPresent()) {
             logger.log(INFO, "Deployment expired before installation was successful.");
             return Optional.of(installationFailed);
         }
@@ -230,7 +232,7 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(running);
         }
 
-        if (timedOut(id.application(), id.type(), installationTimeout)) {
+        if (timedOut(deployment.get(), installationTimeout)) {
             logger.log(INFO, "Installation failed to complete within " + installationTimeout.toMinutes() + " minutes!");
             return Optional.of(installationFailed);
         }
@@ -240,18 +242,19 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> installTester(RunId id, DualLogger logger) {
-        logger.log("Checking installation of tester container ...");
-        if (expired(id.application(), id.type())) {
-            logger.log(INFO, "Deployment expired before tester was installed.");
-            return Optional.of(installationFailed);
+        Optional<Deployment> deployment = deployment(id.application(), id.type());
+        if ( ! deployment.isPresent()) {
+            logger.log(WARNING, "Deployment expired before installation of tester was successful.");
+            return Optional.of(error);
         }
 
+        logger.log("Checking installation of tester container ...");
         if (servicesConverged(JobController.testerOf(id.application()), id.type())) {
             logger.log("Tester container successfully installed!");
             return Optional.of(running);
         }
 
-        if (timedOut(id.application(), id.type(), installationTimeout)) {
+        if (timedOut(deployment.get(), installationTimeout)) {
             logger.log(WARNING, "Installation of tester failed to complete within " + installationTimeout.toMinutes() + " minutes of real deployment!");
             return Optional.of(error);
         }
@@ -285,12 +288,13 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> startTests(RunId id, DualLogger logger) {
-        logger.log("Attempting to find endpoints ...");
-        if (expired(id.application(), id.type())) {
+        Optional<Deployment> deployment = deployment(id.application(), id.type());
+        if ( ! deployment.isPresent()) {
             logger.log(INFO, "Deployment expired before tests could start.");
-            return Optional.of(installationFailed);
+            return Optional.of(aborted);
         }
 
+        logger.log("Attempting to find endpoints ...");
         Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id.application());
         logger.log("Found endpoints:\n" +
                          endpoints.entrySet().stream()
@@ -300,7 +304,7 @@ public class InternalStepRunner implements StepRunner {
                                                                      .collect(Collectors.joining("\n")))
                                   .collect(Collectors.joining("\n")));
         if ( ! endpoints.containsKey(id.type().zone(controller.system()))) {
-            if (timedOut(id.application(), id.type(), endpointTimeout)) {
+            if (timedOut(deployment.get(), endpointTimeout)) {
                 logger.log(WARNING, "Endpoints failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
                 return Optional.of(error);
             }
@@ -309,7 +313,7 @@ public class InternalStepRunner implements StepRunner {
             return Optional.empty();
         }
 
-        Optional<URI> testerEndpoint = JobController.testerEndpoint(controller, id);
+        Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
         if (testerEndpoint.isPresent()) {
             logger.log("Starting tests ...");
             controller.jobController().cloud().startTests(testerEndpoint.get(),
@@ -318,7 +322,7 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(running);
         }
 
-        if (timedOut(id.application(), id.type(), endpointTimeout)) {
+        if (timedOut(deployment.get(), endpointTimeout)) {
             logger.log(WARNING, "Endpoint for tester failed to show up within " + endpointTimeout.toMinutes() + " minutes of real deployment!");
             return Optional.of(error);
         }
@@ -328,8 +332,13 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> endTests(RunId id, DualLogger logger) {
-        URI testerEndpoint = JobController.testerEndpoint(controller, id)
-                                          .orElseThrow(() -> new NoSuchElementException("Endpoint for tester vanished again before tests were complete!"));
+        if ( ! deployment(id.application(), id.type()).isPresent()) {
+            logger.log(INFO, "Deployment expired before tests could complete.");
+            return Optional.of(aborted);
+        }
+
+        URI testerEndpoint = controller.jobController().testerEndpoint(id)
+                                       .orElseThrow(() -> new NoSuchElementException("Endpoint for tester vanished again before tests were complete!"));
 
         controller.jobController().updateTestLog(id);
 
@@ -372,19 +381,19 @@ public class InternalStepRunner implements StepRunner {
         return Optional.of(running);
     }
 
+    /** Returns the deployment of the real application in the zone of the given job, if it exists. */
+    private Optional<Deployment> deployment(ApplicationId id, JobType type) {
+        return Optional.ofNullable(application(id).deployments().get(type.zone(controller.system())));
+    }
+
     /** Returns the real application with the given id. */
     private Application application(ApplicationId id) {
         return controller.applications().require(id);
     }
 
     /** Returns whether the time elapsed since the last real deployment in the given zone is more than the given timeout. */
-    private boolean timedOut(ApplicationId id, JobType type, Duration timeout) {
-        return application(id).deployments().get(type.zone(controller.system())).at().isBefore(controller.clock().instant().minus(timeout));
-    }
-
-    /** Returns whether the real deployment for the given job type has expired, i.e., no longer exists. */
-    private boolean expired(ApplicationId id, JobType type) {
-        return ! application(id).deployments().containsKey(type.zone(controller.system()));
+    private boolean timedOut(Deployment deployment, Duration timeout) {
+        return deployment.at().isBefore(controller.clock().instant().minus(timeout));
     }
 
     /** Returns a generated job report for the given run. */
@@ -416,7 +425,7 @@ public class InternalStepRunner implements StepRunner {
     private Map<ZoneId, List<URI>> deploymentEndpoints(ApplicationId id) {
         ImmutableMap.Builder<ZoneId, List<URI>> deployments = ImmutableMap.builder();
         application(id).deployments().keySet()
-                  .forEach(zone -> controller.applications().getDeploymentEndpoints(new DeploymentId(id, zone))
+                      .forEach(zone -> controller.applications().getDeploymentEndpoints(new DeploymentId(id, zone))
                                              .filter(endpoints -> ! endpoints.isEmpty())
                                              .ifPresent(endpoints -> deployments.put(zone, endpoints)));
         return deployments.build();
