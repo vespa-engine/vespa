@@ -320,23 +320,21 @@ Operation::create(BasicType type, V hits) const {
 
 }
 
+template <typename Hits>
 std::unique_ptr<AttributeOperation>
-AttributeOperation::create(BasicType type, const vespalib::string & operation, std::vector<uint32_t> docs) {
+AttributeOperation::create(BasicType type, const vespalib::string & operation, Hits docs) {
     Operation op = Operation::create(operation);
-    return op.create<std::vector<uint32_t>>(type, std::move(docs));
+    return op.create<Hits>(type, std::move(docs));
 }
 
-std::unique_ptr<AttributeOperation>
-AttributeOperation::create(BasicType type, const vespalib::string & operation, std::vector<Hit> docs) {
-    Operation op = Operation::create(operation);
-    return op.create<std::vector<Hit>>(type, std::move(docs));
-}
+template std::unique_ptr<AttributeOperation>
+AttributeOperation::create(BasicType, const vespalib::string &, std::vector<uint32_t>);
 
-std::unique_ptr<AttributeOperation>
-AttributeOperation::create(BasicType type, const vespalib::string & operation, FullResult && docs) {
-    Operation op = Operation::create(operation);
-    return op.create<FullResult>(type, std::move(docs));
-}
+template std::unique_ptr<AttributeOperation>
+AttributeOperation::create(BasicType, const vespalib::string &, std::vector<Hit>);
+
+template std::unique_ptr<AttributeOperation>
+AttributeOperation::create(BasicType, const vespalib::string &, FullResult);
 
 }
 

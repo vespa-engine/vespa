@@ -74,10 +74,11 @@ public:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     AttributeOperationTask(const RequestContext & requestContext,
                            vespalib::stringref attribute, vespalib::stringref operation);
-    void run(std::shared_ptr<IAttributeFunctor> func) const;
+    template<typename Hits>
+    void run(Hits hits) const;
+private:
     search::attribute::BasicType getAttributeType() const;
     const vespalib::string & getOperation() const { return _operation; }
-private:
     const RequestContext & _requestContext;
     vespalib::string _attribute;
     vespalib::string _operation;

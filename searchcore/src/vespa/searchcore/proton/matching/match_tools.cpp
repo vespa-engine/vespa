@@ -4,6 +4,8 @@
 #include "querynodes.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/attribute/diversity.h>
+#include <vespa/searchlib/attribute/attribute_operation.h>
+#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_tools");
 #include <vespa/searchlib/query/tree/querytreecreator.h>
@@ -253,9 +255,16 @@ AttributeOperationTask::getAttributeType() const {
     return attr ? attr->getBasicType() : BasicType::NONE;
 }
 
+using search::attribute::AttributeOperation;
+
+template <typename Hits>
 void
-AttributeOperationTask::run(std::shared_ptr<IAttributeFunctor> func) const {
-    _requestContext.asyncForAttribute(_attribute, std::move(func));
+AttributeOperationTask::run(Hits docs) const {
+    _requestContext.asyncForAttribute(_attribute, AttributeOperation::create(getAttributeType(), getOperation(), std::move(docs)));
 }
+
+template void AttributeOperationTask::run(std::vector<AttributeOperation::Hit>) const;
+template void AttributeOperationTask::run(std::vector<uint32_t >) const;
+template void AttributeOperationTask::run(AttributeOperation::FullResult) const;
 
 }

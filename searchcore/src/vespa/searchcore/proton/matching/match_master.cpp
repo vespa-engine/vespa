@@ -123,7 +123,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &mtf,
     if (docs.empty()) {
         return retval;
     }
-    FeatureSet &fs = *retval.get();
+    FeatureSet &fs = *retval;
 
     SearchIterator &search = matchTools->search();
     search.initRange(docs.front(), docs.back()+1);
@@ -141,8 +141,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &mtf,
     }
     auto onSummaryTask = mtf.createOnSummaryTask();
     if (onSummaryTask) {
-        onSummaryTask->run(AttributeOperation::create(onSummaryTask->getAttributeType(),
-                                                      onSummaryTask->getOperation(), docs));
+        onSummaryTask->run(docs);
     }
     return retval;
 }
