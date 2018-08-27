@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.ChildProcessFailureException;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
-import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -19,7 +19,7 @@ public class YumTest {
     private final TestTerminal terminal = new TestTerminal();
     private final Yum yum = new Yum(terminal);
 
-    @Before
+    @After
     public void tearDown() {
         terminal.verifyAllCommandsExecuted();
     }
@@ -83,6 +83,65 @@ public class YumTest {
         assertTrue(yum
                 .install("package-1", "package-2")
                 .enableRepo("repo-name")
+                .converge(taskContext));
+    }
+
+    @Test
+    public void testWithVersionLock() {
+        terminal.expectCommand("yum --quiet versionlock list 2>&1",
+                0,
+                "Repository chef_rpms-release is listed more than once in the configuration\n" +
+                        "0:chef-12.21.1-1.el7.*\n");
+        terminal.expectCommand(
+                "yum install --assumeyes \"0:package-1-0.10-654.el7.*\" 2>&1",
+                0,
+                "installing");
+        terminal.expectCommand("yum versionlock add \"0:package-1-0.10-654.el7.*\" 2>&1");
+
+        assertTrue(yum
+                .install("0:package-1-0.10-654.el7.*")
+                .lockVersion()
+                .converge(taskContext));
+    }
+
+    @Test
+    public void testWithDifferentVersionLock() {
+        terminal.expectCommand("yum --quiet versionlock list 2>&1",
+                0,
+                "Repository chef_rpms-release is listed more than once in the configuration\n" +
+                        "0:chef-12.21.1-1.el7.*\n" +
+                        "0:package-1-0.1-8.el7.*\n");
+
+        terminal.expectCommand("yum versionlock delete \"0:package-1-0.1-8.el7.*\" 2>&1");
+
+        terminal.expectCommand(
+                "yum install --assumeyes \"0:package-1-0.10-654.el7.*\" 2>&1",
+                0,
+                "Nothing to do\n");
+
+        terminal.expectCommand("yum versionlock add \"0:package-1-0.10-654.el7.*\" 2>&1");
+
+        assertTrue(yum
+                .install("0:package-1-0.10-654.el7.*")
+                .lockVersion()
+                .converge(taskContext));
+    }
+
+    @Test
+    public void testWithExistingVersionLock() {
+        terminal.expectCommand("yum --quiet versionlock list 2>&1",
+                0,
+                "Repository chef_rpms-release is listed more than once in the configuration\n" +
+                        "0:chef-12.21.1-1.el7.*\n" +
+                        "0:package-1-0.10-654.el7.*\n");
+        terminal.expectCommand(
+                "yum install --assumeyes \"0:package-1-0.10-654.el7.*\" 2>&1",
+                0,
+                "Nothing to do\n");
+
+        assertFalse(yum
+                .install("0:package-1-0.10-654.el7.*")
+                .lockVersion()
                 .converge(taskContext));
     }
 
