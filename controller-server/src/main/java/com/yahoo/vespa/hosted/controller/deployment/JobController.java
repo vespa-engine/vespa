@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
@@ -65,25 +64,6 @@ public class JobController {
         this.curator = controller.curator();
         this.logs = new BufferedLogStore(curator, runDataStore);
         this.cloud = testerCloud;
-    }
-
-    // TODO jvenstad: Move this tester logic to the application controller, perhaps?
-    public static ApplicationId testerOf(ApplicationId id) {
-        return ApplicationId.from(id.tenant().value(),
-                                  id.application().value(),
-                                  id.instance().value() + "-t");
-    }
-
-    /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
-    static Optional<URI> testerEndpoint(Controller controller, RunId id) {
-        ApplicationId tester = testerOf(id.application());
-        return controller.applications().getDeploymentEndpoints(new DeploymentId(tester, id.type().zone(controller.system())))
-                         .flatMap(uris -> uris.stream()
-                                              .filter(uri -> uri.getHost().contains(String.format("%s--%s--%s.",
-                                                                                                  tester.instance().value(),
-                                                                                                  tester.application().value(),
-                                                                                                  tester.tenant().value())))
-                                              .findAny());
     }
 
     public TesterCloud cloud() {
@@ -310,6 +290,25 @@ public class JobController {
         catch (NoInstanceException ignored) {
             // Already gone -- great!
         }
+    }
+
+    /** Returns the application id of the tester application for the real application with the given id. */
+    static ApplicationId testerOf(ApplicationId id) {
+        return ApplicationId.from(id.tenant().value(),
+                                  id.application().value(),
+                                  id.instance().value() + "-t");
+    }
+
+    /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
+    static Optional<URI> testerEndpoint(Controller controller, RunId id) {
+        ApplicationId tester = testerOf(id.application());
+        return controller.applications().getDeploymentEndpoints(new DeploymentId(tester, id.type().zone(controller.system())))
+                         .flatMap(uris -> uris.stream()
+                                              .filter(uri -> uri.getHost().contains(String.format("%s--%s--%s.",
+                                                                                                  tester.instance().value(),
+                                                                                                  tester.application().value(),
+                                                                                                  tester.tenant().value())))
+                                              .findAny());
     }
 
     // TODO jvenstad: Find a more appropriate way of doing this, at least when this is the only build service.
