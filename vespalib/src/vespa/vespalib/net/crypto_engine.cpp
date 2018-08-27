@@ -155,9 +155,28 @@ public:
     }
 };
 
+CryptoEngine::SP create_default_crypto_engine() {
+    // TODO: check VESPA_TLS_CONFIG_FILE here
+    // return std::make_shared<XorCryptoEngine>();
+    return std::make_shared<NullCryptoEngine>();
 }
 
+} // namespace vespalib::<unnamed>
+
+std::mutex CryptoEngine::_shared_lock;
+CryptoEngine::SP CryptoEngine::_shared_default(nullptr);
+
 CryptoEngine::~CryptoEngine() = default;
+
+CryptoEngine::SP
+CryptoEngine::get_default()
+{
+    std::lock_guard<std::mutex> guard(_shared_lock);
+    if (!_shared_default) {
+        _shared_default = create_default_crypto_engine();
+    }
+    return _shared_default;
+}
 
 CryptoSocket::UP
 NullCryptoEngine::create_crypto_socket(SocketHandle socket, bool)
