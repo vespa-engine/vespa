@@ -64,15 +64,15 @@ public:
         return &_attr;
     }
     const IAttributeVector *getAttributeStableEnum(const string &) const override {
-        LOG_ABORT("should not be reached");
+        LOG_ABORT("MyAttributeContext::getAttributeStableEnum should not be reached");
     }
     void getAttributeList(vector<const IAttributeVector *> &) const override {
-        LOG_ABORT("should not be reached");
+        LOG_ABORT("MyAttributeContext::getAttributeList should not be reached");
     }
 
     void
     asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor>) const override {
-
+        LOG_ABORT("MyAttributeContext::asyncForAttribute should not be reached");
     }
 };
 

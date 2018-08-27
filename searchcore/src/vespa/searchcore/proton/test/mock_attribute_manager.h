@@ -75,7 +75,9 @@ public:
     const ImportedAttributesRepo *getImportedAttributes() const override {
         return _importedAttributes.get();
     }
-    void asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor>) const override { }
+    void asyncForAttribute(const vespalib::string & name, std::shared_ptr<IAttributeFunctor> func) const override {
+        _mock.asyncForAttribute(name, std::move(func));
+    }
 };
 
 }
