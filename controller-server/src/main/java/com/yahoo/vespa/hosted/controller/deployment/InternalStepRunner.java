@@ -3,7 +3,10 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
@@ -33,6 +36,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -413,9 +417,14 @@ public class InternalStepRunner implements StepRunner {
         byte[] testPackage = controller.applications().applicationStore().getTesterPackage(JobController.testerOf(id.application()), version.id());
         byte[] servicesXml = servicesXml(controller.system());
 
+        DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
+        ZoneId zone = id.type().zone(controller.system());
+        byte[] deploymentXml = deploymentXml(spec.athenzDomain().get(), spec.athenzService(zone.environment(), zone.region()).get());
+
         try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
             zipBuilder.add(testPackage);
             zipBuilder.add("services.xml", servicesXml);
+            zipBuilder.add("deployment.xml", deploymentXml);
             zipBuilder.close();
             return new ApplicationPackage(zipBuilder.toByteArray());
         }
@@ -435,7 +444,8 @@ public class InternalStepRunner implements StepRunner {
     static byte[] servicesXml(SystemName systemName) {
         String domain = systemName == SystemName.main ? "vespa.vespa" : "vespa.vespa.cd";
 
-        String servicesXml = "<?xml version='1.0' encoding='UTF-8'?>\n" +
+        String servicesXml =
+                "<?xml version='1.0' encoding='UTF-8'?>\n" +
                 "<services xmlns:deploy='vespa' version='1.0'>\n" +
                 "    <container version='1.0' id='default'>\n" +
                 "\n" +
@@ -479,6 +489,14 @@ public class InternalStepRunner implements StepRunner {
                 "</services>\n";
 
         return servicesXml.getBytes();
+    }
+
+    /** Returns a dummy deployment xml which sets up the service identity for the tester. */
+    static byte[] deploymentXml(AthenzDomain domain, AthenzService service) {
+        String deploymentSpec =
+                "<?xml version='1.0' encoding='UTF-8'?>\n" +
+                "<deployment version=\"1.0\" athenz-domain=\"" + domain.value() + "\" athenz-service=\"" + service.value() + "\" />";
+        return deploymentSpec.getBytes(StandardCharsets.UTF_8);
     }
 
     /** Returns the config for the tests to run for the given job. */

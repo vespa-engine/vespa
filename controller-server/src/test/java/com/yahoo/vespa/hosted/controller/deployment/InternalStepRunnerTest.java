@@ -2,7 +2,10 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
@@ -451,6 +454,16 @@ public class InternalStepRunnerTest {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Test
+    public void deploymentSpecIsValid() {
+        AthenzDomain domain = AthenzDomain.from("domain");
+        AthenzService service = AthenzService.from("service");
+        DeploymentSpec spec = DeploymentSpec.fromXml(new String(InternalStepRunner.deploymentXml(domain, service)));
+        assertEquals(domain, spec.athenzDomain().get());
+        ZoneId zone = JobType.systemTest.zone(tester.controller().system());
+        assertEquals(service, spec.athenzService(zone.environment(), zone.region()).get());
     }
 
 }
