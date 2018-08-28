@@ -20,7 +20,7 @@ MockAttributeContext::getAttributeList(std::vector<const IAttributeVector *> & l
 }
 
 void
-MockAttributeContext::asyncForAttribute(const vespalib::string &, std::shared_ptr<attribute::IAttributeFunctor>) const {
+MockAttributeContext::asyncForAttribute(const vespalib::string &, std::unique_ptr<attribute::IAttributeFunctor>) const {
 }
 
 }

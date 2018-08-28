@@ -41,7 +41,7 @@ MockAttributeContext::add(IAttributeVector *attr) {
 }
 
 void
-MockAttributeContext::asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor>) const {
+MockAttributeContext::asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const {
     throw std::runtime_error("MockAttributeContext::asyncForAttribute is not implemented and should not be reached");
 }
 

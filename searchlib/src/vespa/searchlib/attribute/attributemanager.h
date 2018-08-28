@@ -38,7 +38,7 @@ public:
 
     AttributeGuard::UP getAttribute(const string & name) const override;
     std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const override;
-    void asyncForAttribute(const vespalib::string &name, std::shared_ptr<attribute::IAttributeFunctor> func) const override;
+    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<attribute::IAttributeFunctor> func) const override;
 
     /**
      * This will load attributes in the most memory economical way by loading largest first.
@@ -55,7 +55,6 @@ public:
     bool hasReaders() const;
     uint64_t getMemoryFootprint() const;
 
-
 protected:
     typedef vespalib::hash_map<string, VectorHolder> AttributeMap;
     AttributeMap   _attributes;
@@ -69,4 +68,3 @@ private:
 };
 
 }
-

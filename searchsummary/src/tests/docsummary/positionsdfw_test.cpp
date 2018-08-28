@@ -71,7 +71,7 @@ public:
     }
 
     void
-    asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor>) const override {
+    asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const override {
         LOG_ABORT("MyAttributeContext::asyncForAttribute should not be reached");
     }
 };
@@ -92,7 +92,7 @@ public:
     }
 
     void
-    asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor>) const override {
+    asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const override {
         LOG_ABORT("should not be reached");
     }
 

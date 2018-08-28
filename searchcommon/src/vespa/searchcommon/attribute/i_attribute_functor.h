@@ -23,7 +23,7 @@ public:
 class IAttributeExecutor {
 public:
     virtual ~IAttributeExecutor() { }
-    virtual void asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const = 0;
+    virtual void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const = 0;
 };
 
 }

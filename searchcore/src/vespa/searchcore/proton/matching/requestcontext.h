@@ -18,7 +18,7 @@ public:
     const Doom & getSoftDoom() const override { return _softDoom; }
     const search::attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override;
 
-    void asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const override;
+    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
 
     const search::attribute::IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const override;
 private:

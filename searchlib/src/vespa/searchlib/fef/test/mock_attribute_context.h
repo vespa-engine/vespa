@@ -33,7 +33,7 @@ public:
     void getAttributeList(std::vector<const IAttributeVector *> & list) const override;
 
     void
-    asyncForAttribute(const vespalib::string &name, std::shared_ptr<attribute::IAttributeFunctor> func) const override;
+    asyncForAttribute(const vespalib::string &name, std::unique_ptr<attribute::IAttributeFunctor> func) const override;
 };
 
 }

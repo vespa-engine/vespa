@@ -72,7 +72,7 @@ ImportedAttributesContext::releaseEnumGuards()
 }
 
 void
-ImportedAttributesContext::asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor> ) const {
+ImportedAttributesContext::asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor> ) const {
     throw std::runtime_error("proton::ImportedAttributesContext::asyncForAttribute should never be called.");
 }
 

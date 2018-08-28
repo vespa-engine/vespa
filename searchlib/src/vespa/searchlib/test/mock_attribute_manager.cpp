@@ -24,7 +24,7 @@ MockAttributeManager::getAttribute(const vespalib::string &name) const {
 }
 
 void
-MockAttributeManager::asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor>) const {
+MockAttributeManager::asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const {
     throw std::runtime_error("search::MockAttributeManager::asyncForAttribute not implemented.");
 }
 

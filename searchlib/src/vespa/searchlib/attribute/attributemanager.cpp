@@ -203,7 +203,7 @@ AttributeManager::getAttributeList(AttributeList & list) const
 IAttributeContext::UP
 AttributeManager::createContext() const
 {
-    return IAttributeContext::UP(new AttributeContext(*this));
+    return std::make_unique<AttributeContext>(*this);
 }
 
 string
@@ -260,7 +260,7 @@ AttributeManager::addVector(const string & name, const Config & config)
 }
 
 void
-AttributeManager::asyncForAttribute(const vespalib::string &, std::shared_ptr<attribute::IAttributeFunctor>) const {
+AttributeManager::asyncForAttribute(const vespalib::string &, std::unique_ptr<attribute::IAttributeFunctor>) const {
     throw std::runtime_error("search::AttributeManager::asyncForAttribute should never be called.");
 }
 

@@ -122,7 +122,7 @@ public:
         return IAttributeContext::UP();
     }
 
-    void asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const override;
+    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
 };
 
 struct Result {
@@ -180,7 +180,7 @@ MyAttributeManager::MyAttributeManager(AttributeVector::SP attr)
 MyAttributeManager::~MyAttributeManager() = default;
 
 void
-MyAttributeManager::asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor>) const {
+MyAttributeManager::asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const {
 
 }
 

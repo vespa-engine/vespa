@@ -55,7 +55,7 @@ public:
     void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> attributes) override;
     const ImportedAttributesRepo *getImportedAttributes() const override;
 
-    void asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const override;
+    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
 };
 
 } // namespace proton

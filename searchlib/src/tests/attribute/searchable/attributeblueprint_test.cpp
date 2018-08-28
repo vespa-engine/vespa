@@ -78,7 +78,7 @@ public:
         return IAttributeContext::UP();
     }
 
-    void asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor>) const override {
+    void asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const override {
         assert(!"Not implemented");
     }
 };

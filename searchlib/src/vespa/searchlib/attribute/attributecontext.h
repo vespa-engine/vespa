@@ -29,11 +29,11 @@ private:
 
 public:
     AttributeContext(const IAttributeManager & manager);
-    ~AttributeContext();
+    ~AttributeContext() override;
 
     // Implements IAttributeContext
     const attribute::IAttributeVector * getAttribute(const string & name) const override;
-    void asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const override;
+    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
     const attribute::IAttributeVector * getAttributeStableEnum(const string & name) const override;
     void getAttributeList(std::vector<const IAttributeVector *> & list) const override;
     void releaseEnumGuards() override;

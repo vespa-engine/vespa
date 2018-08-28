@@ -23,7 +23,7 @@ RequestContext::getAttributeStableEnum(const vespalib::string &name) const
     return _attributeContext.getAttributeStableEnum(name);
 }
 
-void RequestContext::asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const {
+void RequestContext::asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const {
     _attributeContext.asyncForAttribute(name, std::move(func));
 }
 

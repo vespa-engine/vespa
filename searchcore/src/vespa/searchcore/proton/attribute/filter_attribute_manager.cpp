@@ -201,7 +201,7 @@ FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>
 }
 
 void
-FilterAttributeManager::asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const {
+FilterAttributeManager::asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const {
     AttributeGuard::UP attr = _mgr->getAttribute(name);
     if (!attr) { return; }
     search::ISequencedTaskExecutor &attributeFieldWriter = getAttributeFieldWriter();

@@ -456,7 +456,7 @@ public:
         _ctx.releaseEnumGuards();
         _importedCtx.releaseEnumGuards();
     }
-    void asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const override {
+    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override {
         _ctx.asyncForAttribute(name, std::move(func));
     }
 };
@@ -586,7 +586,7 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func)
 }
 
 void
-AttributeManager::asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const {
+AttributeManager::asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const {
     AttributeMap::const_iterator itr = _attributes.find(name);
     if (itr == _attributes.end() || itr->second.isExtra() || !func) {
         return;

@@ -21,8 +21,7 @@ public:
     const IAttributeVector * getAttribute(const string &name) const override;
     const IAttributeVector * getAttributeStableEnum(const string &name) const override;
     void getAttributeList(std::vector<const IAttributeVector *> & list) const override;
-    void asyncForAttribute(const vespalib::string &, std::shared_ptr<IAttributeFunctor>) const override;
-
+    void asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const override;
 };
 
 }
