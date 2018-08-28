@@ -7,7 +7,7 @@
 %define _prefix /opt/vespa
 
 Name:           vespa
-Version:        VESPA_VERSION
+Version:        _VESPA_VERSION_
 Release:        1%{?dist}
 Summary:        Vespa - The open big data serving engine
 Group:          Applications/Databases
@@ -145,6 +145,7 @@ source %{_devtoolset_enable} || true
 %if 0%{?_rhmaven35_enable:1}
 source %{_rhmaven35_enable} || true
 %endif
+export FACTORY_VESPA_VERSION=%{version}
 sh bootstrap.sh java
 mvn --batch-mode -nsu -T 1  install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
