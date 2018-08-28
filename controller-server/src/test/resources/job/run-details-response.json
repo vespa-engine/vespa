@@ -1,19 +1,21 @@
 {
   "active":false,
   "lastId":2,
-  "deployTester":[],
-  "installTester":[
-    {
-      "at":12,
-      "type":"debug",
-      "message":"SUCCESS"
-    }
-  ],
-  "deactivateTester":[
-    {
-      "at":123,
-      "type":"warning",
-      "message":"ERROR"
-    }
-  ]
+  "log": {
+    "deployTester":[],
+    "installTester": [
+      {
+        "at": 12,
+        "type": "debug",
+        "message": "SUCCESS"
+      }
+    ],
+    "deactivateTester": [
+      {
+        "at": 123,
+        "type": "warning",
+        "message": "ERROR"
+      }
+    ]
+  }
 }
