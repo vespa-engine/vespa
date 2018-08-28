@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
@@ -159,7 +160,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             this.prepareException = null;
             throw prepareException;
         }
-        applications.put(deployment.applicationId(), new Application(deployment.applicationId(), lastPrepareVersion));
+        applications.put(deployment.applicationId(), new Application(deployment.applicationId(), lastPrepareVersion, new ApplicationPackage(content)));
 
         if (nodeRepository().list(deployment.zoneId(), deployment.applicationId()).isEmpty())
             provision(deployment.zoneId(), deployment.applicationId());
@@ -275,10 +276,12 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         private final ApplicationId id;
         private final Version version;
         private boolean activated;
+        private final ApplicationPackage applicationPackage;
 
-        private Application(ApplicationId id, Version version) {
+        private Application(ApplicationId id, Version version, ApplicationPackage applicationPackage) {
             this.id = id;
             this.version = version;
+            this.applicationPackage = applicationPackage;
         }
 
         public ApplicationId id() {
@@ -291,6 +294,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
         public boolean activated() {
             return activated;
+        }
+
+        public ApplicationPackage applicationPackage() {
+            return applicationPackage;
         }
 
         private void activate() {
