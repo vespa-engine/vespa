@@ -280,8 +280,7 @@ MatchThread::findMatches(MatchTools &tools)
                 kept_hits.clear();
             }
             uint32_t reRanked = hits.reRank(scorer, std::move(kept_hits));
-            auto onReRankTask = mtf.createOnReRankTask();
-            if (onReRankTask) {
+            if (auto onReRankTask = mtf.createOnReRankTask()) {
                 onReRankTask->run(hits.getReRankedHits());
             }
             thread_stats.docsReRanked(reRanked);
@@ -351,8 +350,7 @@ MatchThread::processResult(const Doom & hardDoom,
         }
     }
     const MatchToolsFactory & mtf = matchToolsFactory;
-    auto onMatchTask = mtf.createOnMatchTask();
-    if (onMatchTask ) {
+    if (auto onMatchTask = mtf.createOnMatchTask()) {
         onMatchTask->run(search::ResultSet::stealResult(std::move(*result)));
     }
     if (hasGrouping) {

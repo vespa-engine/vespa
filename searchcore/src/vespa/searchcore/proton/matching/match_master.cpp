@@ -139,8 +139,7 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &mtf,
             LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. Skipping hit", docs[i]);
         }
     }
-    auto onSummaryTask = mtf.createOnSummaryTask();
-    if (onSummaryTask) {
+    if (auto onSummaryTask = mtf.createOnSummaryTask()) {
         onSummaryTask->run(docs);
     }
     return retval;
