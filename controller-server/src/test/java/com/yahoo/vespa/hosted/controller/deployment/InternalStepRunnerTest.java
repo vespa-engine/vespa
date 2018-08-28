@@ -66,10 +66,11 @@ import static org.junit.Assert.assertTrue;
 public class InternalStepRunnerTest {
 
     private static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .upgradePolicy("default")
-                .environment(Environment.prod)
-                .region("us-west-1")
-                .build();
+            .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
+            .upgradePolicy("default")
+            .environment(Environment.prod)
+            .region("us-west-1")
+            .build();
     private static final ApplicationId appId = ApplicationId.from("tenant", "application", "default");
 
     private DeploymentTester tester;
@@ -226,6 +227,16 @@ public class InternalStepRunnerTest {
         if ( ! app().deployments().containsKey(zone))
             routing.removeEndpoints(deployment);
         routing.removeEndpoints(new DeploymentId(testerOf(appId), zone));
+    }
+
+    @Test
+    public void testerHasAthenzIdentity() {
+        RunId id = newRun(JobType.stagingTest);
+        runner.run();
+        DeploymentSpec spec = tester.configServer().application(testerOf(appId)).get().applicationPackage().deploymentSpec();
+        assertEquals("domain", spec.athenzDomain().get().value());
+        ZoneId zone = JobType.stagingTest.zone(tester.controller().system());
+        assertEquals("service", spec.athenzService(zone.environment(), zone.region()).get().value());
     }
 
     @Test
@@ -423,6 +434,7 @@ public class InternalStepRunnerTest {
         return id;
     }
 
+    /** Creates and submits a new application, and then starts the job of the given type. */
     private RunId newRun(JobType type) {
         assertFalse(app().deploymentJobs().builtInternally()); // Use this only once per test.
         newSubmission(appId);
@@ -454,16 +466,6 @@ public class InternalStepRunnerTest {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    @Test
-    public void deploymentSpecIsValid() {
-        AthenzDomain domain = AthenzDomain.from("domain");
-        AthenzService service = AthenzService.from("service");
-        DeploymentSpec spec = DeploymentSpec.fromXml(new String(InternalStepRunner.deploymentXml(domain, service)));
-        assertEquals(domain, spec.athenzDomain().get());
-        ZoneId zone = JobType.systemTest.zone(tester.controller().system());
-        assertEquals(service, spec.athenzService(zone.environment(), zone.region()).get());
     }
 
 }
