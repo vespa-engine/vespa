@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition;
 import com.yahoo.io.IOUtils;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 
@@ -18,13 +19,23 @@ public abstract class SearchDefinitionTestCase {
     }
 
     public static void assertConfigFiles(String expectedFile, String cfgFile) throws IOException {
+        assertConfigFiles(expectedFile, cfgFile, false);
+    }
+
+    public static void assertConfigFiles(String expectedFile, String cfgFile, boolean updateOnAssert) throws IOException {
         try {
             assertSerializedConfigEquals(readAndCensorIndexes(expectedFile), readAndCensorIndexes(cfgFile));
         } catch (AssertionError e) {
+            if (updateOnAssert) {
+                BufferedWriter writer = IOUtils.createWriter(expectedFile, false);
+                writer.write(readAndCensorIndexes(cfgFile));
+                writer.newLine();
+                writer.flush();
+                writer.close();
+            }
             throw new AssertionError(e.getMessage() + " [not equal files: >>>"+expectedFile+"<<< and >>>"+cfgFile+"<<< in assertConfigFiles]", e);
         }
     }
-
     /**
      * This is to avoid having to keep those pesky array index numbers in the config format up to date
      * as new entries are added and removed.
