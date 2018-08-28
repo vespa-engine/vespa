@@ -20,9 +20,6 @@ import java.util.Set;
  */
 public class DockerHostCapacity {
 
-    /** Tenant name for headroom nodes - only used internally */
-    public static final String HEADROOM_TENANT = "-__!@#$$%THISisHEADroom";
-
     /**
      * An immutable list of nodes
      */
