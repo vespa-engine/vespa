@@ -592,7 +592,8 @@ AttributeManager::asyncForAttribute(const vespalib::string &name, std::shared_pt
         return;
     }
     AttributeVector::SP attrsp = itr->second.getAttribute();
-    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(attrsp->getNamePrefix()),
+    vespalib::string attrName = attrsp->getNamePrefix();
+    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(attrName),
                                   [attr=std::move(attrsp), func=std::move(func)]() { (*func)(*attr); });
 }
 

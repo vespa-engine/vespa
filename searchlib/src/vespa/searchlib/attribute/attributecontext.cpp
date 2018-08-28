@@ -70,7 +70,7 @@ AttributeContext::getAttributeList(std::vector<const IAttributeVector *> & list)
 
 void
 AttributeContext::asyncForAttribute(const vespalib::string &name, std::shared_ptr<IAttributeFunctor> func) const {
-    _manager.asyncForAttribute(name, func);
+    _manager.asyncForAttribute(name, std::move(func));
 }
 
 } // namespace search

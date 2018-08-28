@@ -205,9 +205,10 @@ FilterAttributeManager::asyncForAttribute(const vespalib::string &name, std::sha
     AttributeGuard::UP attr = _mgr->getAttribute(name);
     if (!attr) { return; }
     search::ISequencedTaskExecutor &attributeFieldWriter = getAttributeFieldWriter();
-    attributeFieldWriter.execute(attributeFieldWriter.getExecutorId((*attr)->getNamePrefix()),
+    vespalib::string attrName = (*attr)->getNamePrefix();
+    attributeFieldWriter.execute(attributeFieldWriter.getExecutorId(attrName),
                                   [attr=std::move(attr), func=std::move(func)]() mutable {
-                                      (*func)(dynamic_cast<const search::AttributeVector&>(*attr));
+                                      (*func)(dynamic_cast<const search::AttributeVector&>(**attr));
                                   });
 
 }
