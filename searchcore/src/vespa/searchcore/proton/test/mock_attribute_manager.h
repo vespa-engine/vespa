@@ -64,7 +64,7 @@ public:
     const std::vector<search::AttributeVector *> &getWritableAttributes() const override {
         HDR_ABORT("should not be reached");
     }
-    void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>) const override {
+    void asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor>) const override {
     }
     ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &) const override {
         return ExclusiveAttributeReadAccessor::UP();

@@ -13,10 +13,17 @@ class IAttributeVector;
  * thread as async callback from asyncForEachAttribute() call on
  * attribute manager.
  */
-class IAttributeFunctor
+class IConstAttributeFunctor
 {
 public:
     virtual void operator()(const IAttributeVector &attributeVector) = 0;
+    virtual ~IConstAttributeFunctor() { }
+};
+
+class IAttributeFunctor
+{
+public:
+    virtual void operator()(IAttributeVector &attributeVector) = 0;
     virtual ~IAttributeFunctor() { }
 };
 

@@ -79,7 +79,7 @@ namespace {
 
 const uint64_t createSerialNum = 42u;
 
-class MyAttributeFunctor : public search::attribute::IAttributeFunctor
+class MyAttributeFunctor : public search::attribute::IConstAttributeFunctor
 {
     std::vector<vespalib::string> _names;
 

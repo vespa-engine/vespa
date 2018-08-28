@@ -107,8 +107,8 @@ public:
           _result(std::move(result))
     {}
 
-    void operator()(const IAttributeVector &attributeVector) override {
-        OP op(const_cast<IAttributeVector &>(attributeVector), _operand);
+    void operator()(IAttributeVector &attributeVector) override {
+        OP op(attributeVector, _operand);
         if (op.valid()) {
             const RankedHit *hits = &_result.second[0];
             size_t numHits   = _result.second.size();
@@ -132,8 +132,8 @@ public:
           _reRanked(std::move(reRanked))
     {}
 
-    void operator()(const IAttributeVector &attributeVector) override {
-        OP op(const_cast<IAttributeVector &>(attributeVector), _operand);
+    void operator()(IAttributeVector &attributeVector) override {
+        OP op(attributeVector, _operand);
         if (op.valid()) {
             std::for_each(_reRanked.begin(), _reRanked.end(), [&op](Hit hit) { op(hit.first); });
         }
@@ -151,8 +151,8 @@ public:
           _docIds(std::move(docIds))
     {}
 
-    void operator()(const IAttributeVector &attributeVector) override {
-        OP op(const_cast<IAttributeVector &>(attributeVector), _operand);
+    void operator()(IAttributeVector &attributeVector) override {
+        OP op(attributeVector, _operand);
         if (op.valid()) {
             std::for_each(_docIds.begin(), _docIds.end(), [&op](uint32_t docId) { op(docId); });
         }

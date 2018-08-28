@@ -13,7 +13,7 @@ class AttributeUsageSamplerContext;
  * Functor for sampling attribute usage and passing it on to sampler
  * context.
  */
-class AttributeUsageSamplerFunctor : public search::attribute::IAttributeFunctor
+class AttributeUsageSamplerFunctor : public search::attribute::IConstAttributeFunctor
 {
     std::shared_ptr<AttributeUsageSamplerContext> _samplerContext;
     std::string _subDbName;

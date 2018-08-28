@@ -185,7 +185,7 @@ FilterAttributeManager::getWritableAttributes() const
 }
 
 void
-FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const
+FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const
 {
     // Run by document db master thread
     std::vector<AttributeGuard> completeList;
@@ -208,7 +208,7 @@ FilterAttributeManager::asyncForAttribute(const vespalib::string &name, std::uni
     vespalib::string attrName = (*attr)->getNamePrefix();
     attributeFieldWriter.execute(attributeFieldWriter.getExecutorId(attrName),
                                   [attr=std::move(attr), func=std::move(func)]() mutable {
-                                      (*func)(dynamic_cast<const search::AttributeVector&>(**attr));
+                                      (*func)(**attr);
                                   });
 
 }
@@ -216,11 +216,7 @@ FilterAttributeManager::asyncForAttribute(const vespalib::string &name, std::uni
 ExclusiveAttributeReadAccessor::UP
 FilterAttributeManager::getExclusiveReadAccessor(const vespalib::string &name) const
 {
-    if (acceptAttribute(name)) {
-        return _mgr->getExclusiveReadAccessor(name);
-    } else {
-        return ExclusiveAttributeReadAccessor::UP();
-    }
+    return (acceptAttribute(name)) ? _mgr->getExclusiveReadAccessor(name) : ExclusiveAttributeReadAccessor::UP();
 }
 
 void
