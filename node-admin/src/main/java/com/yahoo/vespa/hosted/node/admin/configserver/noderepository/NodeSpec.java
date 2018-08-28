@@ -26,6 +26,9 @@ public class NodeSpec {
     private final Optional<String> wantedVespaVersion;
     private final Optional<String> vespaVersion;
 
+    private final Optional<String> wantedOsVersion;
+    private final Optional<String> currentOsVersion;
+
     private final Optional<Long> wantedRestartGeneration;
     private final Optional<Long> currentRestartGeneration;
 
@@ -58,6 +61,8 @@ public class NodeSpec {
             final String canonicalFlavor,
             final Optional<String> wantedVespaVersion,
             final Optional<String> vespaVersion,
+            final Optional<String> wantedOsVersion,
+            final Optional<String> currentOsVersion,
             final Optional<Boolean> allowedToBeDown,
             final Optional<Boolean> wantToDeprovision,
             final Optional<Owner> owner,
@@ -83,6 +88,8 @@ public class NodeSpec {
         this.canonicalFlavor = canonicalFlavor;
         this.wantedVespaVersion = Objects.requireNonNull(wantedVespaVersion);
         this.vespaVersion = Objects.requireNonNull(vespaVersion);
+        this.wantedOsVersion = Objects.requireNonNull(wantedOsVersion);
+        this.currentOsVersion = Objects.requireNonNull(currentOsVersion);
         this.allowedToBeDown = Objects.requireNonNull(allowedToBeDown);
         this.wantToDeprovision = Objects.requireNonNull(wantToDeprovision);
         this.owner = Objects.requireNonNull(owner);
@@ -135,6 +142,14 @@ public class NodeSpec {
 
     public Optional<String> getVespaVersion() {
         return vespaVersion;
+    }
+
+    public Optional<String> getCurrentOsVersion() {
+        return currentOsVersion;
+    }
+
+    public Optional<String> getWantedOsVersion() {
+        return wantedOsVersion;
     }
 
     public Optional<Long> getWantedRestartGeneration() {
@@ -217,6 +232,8 @@ public class NodeSpec {
                 Objects.equals(canonicalFlavor, that.canonicalFlavor) &&
                 Objects.equals(wantedVespaVersion, that.wantedVespaVersion) &&
                 Objects.equals(vespaVersion, that.vespaVersion) &&
+                Objects.equals(wantedOsVersion, that.wantedOsVersion) &&
+                Objects.equals(currentOsVersion, that.currentOsVersion) &&
                 Objects.equals(allowedToBeDown, that.allowedToBeDown) &&
                 Objects.equals(wantToDeprovision, that.wantToDeprovision) &&
                 Objects.equals(owner, that.owner) &&
@@ -247,6 +264,8 @@ public class NodeSpec {
                 canonicalFlavor,
                 wantedVespaVersion,
                 vespaVersion,
+                wantedOsVersion,
+                currentOsVersion,
                 allowedToBeDown,
                 wantToDeprovision,
                 owner,
@@ -277,6 +296,8 @@ public class NodeSpec {
                 + " canonicalFlavor=" + canonicalFlavor
                 + " wantedVespaVersion=" + wantedVespaVersion
                 + " vespaVersion=" + vespaVersion
+                + " wantedOsVersion=" + wantedOsVersion
+                + " currentOsVersion=" + currentOsVersion
                 + " allowedToBeDown=" + allowedToBeDown
                 + " wantToDeprovision=" + wantToDeprovision
                 + " owner=" + owner
@@ -431,6 +452,8 @@ public class NodeSpec {
         private String canonicalFlavor;
         private Optional<String> wantedVespaVersion = Optional.empty();
         private Optional<String> vespaVersion = Optional.empty();
+        private Optional<String> wantedOsVersion = Optional.empty();
+        private Optional<String> currentOsVersion = Optional.empty();
         private Optional<Boolean> allowedToBeDown = Optional.empty();
         private Optional<Boolean> wantToDeprovision = Optional.empty();
         private Optional<Owner> owner = Optional.empty();
@@ -468,6 +491,8 @@ public class NodeSpec {
             node.currentDockerImage.ifPresent(this::currentDockerImage);
             node.wantedVespaVersion.ifPresent(this::wantedVespaVersion);
             node.vespaVersion.ifPresent(this::vespaVersion);
+            node.wantedOsVersion.ifPresent(this::wantedOsVersion);
+            node.currentOsVersion.ifPresent(this::currentOsVersion);
             node.allowedToBeDown.ifPresent(this::allowedToBeDown);
             node.wantToDeprovision.ifPresent(this::wantToDeprovision);
             node.owner.ifPresent(this::owner);
@@ -521,6 +546,16 @@ public class NodeSpec {
 
         public Builder vespaVersion(String vespaVersion) {
             this.vespaVersion = Optional.of(vespaVersion);
+            return this;
+        }
+
+        public Builder wantedOsVersion(String wantedOsVersion) {
+            this.wantedOsVersion = Optional.of(wantedOsVersion);
+            return this;
+        }
+
+        public Builder currentOsVersion(String currentOsVersion) {
+            this.currentOsVersion = Optional.of(currentOsVersion);
             return this;
         }
 
@@ -650,6 +685,14 @@ public class NodeSpec {
             return vespaVersion;
         }
 
+        public Optional<String> getWantedOsVersion() {
+            return wantedOsVersion;
+        }
+
+        public Optional<String> getCurrentOsVersion() {
+            return currentOsVersion;
+        }
+
         public Optional<Boolean> getAllowedToBeDown() {
             return allowedToBeDown;
         }
@@ -717,7 +760,7 @@ public class NodeSpec {
         public NodeSpec build() {
             return new NodeSpec(hostname, wantedDockerImage, currentDockerImage, state, nodeType,
                     flavor, canonicalFlavor,
-                    wantedVespaVersion, vespaVersion, allowedToBeDown, wantToDeprovision,
+                    wantedVespaVersion, vespaVersion, wantedOsVersion, currentOsVersion, allowedToBeDown, wantToDeprovision,
                     owner, membership,
                     wantedRestartGeneration, currentRestartGeneration,
                     wantedRebootGeneration, currentRebootGeneration,

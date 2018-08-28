@@ -44,6 +44,10 @@ public class NodeRepositoryNode {
     public String vespaVersion;
     @JsonProperty("wantedVespaVersion")
     public String wantedVespaVersion;
+    @JsonProperty("currentOsVersion")
+    public String currentOsVersion;
+    @JsonProperty("wantedOsVersion")
+    public String wantedOsVersion;
     @JsonProperty("failCount")
     public Integer failCount;
     @JsonProperty("fastDisk")
@@ -95,6 +99,8 @@ public class NodeRepositoryNode {
                 ", currentRebootGeneration=" + currentRebootGeneration +
                 ", vespaVersion='" + vespaVersion + '\'' +
                 ", wantedVespaVersion='" + wantedVespaVersion + '\'' +
+                ", currentOsVersion='" + currentOsVersion + '\'' +
+                ", wantedOsVersion='" + wantedOsVersion + '\'' +
                 ", failCount=" + failCount +
                 ", hardwareFailure=" + hardwareFailure +
                 ", hardwareFailureDescription='" + hardwareFailureDescription + '\'' +
