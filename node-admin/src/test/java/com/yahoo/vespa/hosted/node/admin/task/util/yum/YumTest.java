@@ -191,18 +191,4 @@ public class YumTest {
 
         yum.upgrade().converge(taskContext);
     }
-
-    @Test
-    public void parsePackageName() {
-        Yum.PackageName packageName = Yum.PackageName.fromString("docker-engine-selinux-1.12.6-1.el7");
-        assertEquals("docker-engine-selinux", packageName.getName());
-        assertEquals("1.12.6", packageName.getVersion().get());
-        assertEquals("1.el7", packageName.getRelease().get());
-        assertEquals("0:docker-engine-selinux-1.12.6-1.el7.*", packageName.toFullName());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void failParsingOfPackageName() {
-        Yum.PackageName.fromString("docker-engine-selinux");
-    }
 }
