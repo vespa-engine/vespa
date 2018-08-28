@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
@@ -93,13 +94,13 @@ public class Controller extends AbstractComponent {
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, AthenzClientFactory athenzClientFactory,
-                      ArtifactRepository artifactRepository, ApplicationStore applicationStore,
+                      ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore) {
         this(curator, rotationsConfig,
              gitHub, entityService, organization, globalRoutingService, zoneRegistry,
              configServer, metricsService, nameService, routingGenerator, chef,
-             Clock.systemUTC(), athenzClientFactory, artifactRepository, applicationStore, buildService,
-             runDataStore, com.yahoo.net.HostName::getLocalhost);
+             Clock.systemUTC(), athenzClientFactory, artifactRepository, applicationStore, testerCloud,
+             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
@@ -109,7 +110,7 @@ public class Controller extends AbstractComponent {
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
                       AthenzClientFactory athenzClientFactory, ArtifactRepository artifactRepository,
-                      ApplicationStore applicationStore,
+                      ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
@@ -125,7 +126,7 @@ public class Controller extends AbstractComponent {
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
         this.athenzClientFactory = Objects.requireNonNull(athenzClientFactory, "AthenzClientFactory cannot be null");
 
-        jobController = new JobController(this, runDataStore);
+        jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
         applicationController = new ApplicationController(this, curator, athenzClientFactory,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
                                                           Objects.requireNonNull(nameService, "NameService cannot be null"),

@@ -2,7 +2,7 @@
 package com.yahoo.search.grouping.request;
 
 import com.yahoo.search.grouping.request.parser.ParseException;
-import com.yahoo.search.grouping.request.parser.TokenMgrError;
+import com.yahoo.search.grouping.request.parser.TokenMgrException;
 import org.junit.Test;
 
 import java.util.List;
@@ -130,7 +130,7 @@ public class GroupingOperationTestCase {
             GroupingOperation.fromString("all(foo)");
             fail();
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().startsWith("Encountered \"foo\" at line 1, column 5.\n"));
+            assertTrue(e.getMessage().startsWith("Encountered \" <IDENTIFIER> \"foo \"\" at line 1, column 5.\n"));
             assertTrue(e.getCause() instanceof ParseException);
         }
     }
@@ -142,7 +142,7 @@ public class GroupingOperationTestCase {
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().startsWith("Lexical error at line 1, column 6."));
-            assertTrue(e.getCause() instanceof TokenMgrError);
+            assertTrue(e.getCause() instanceof TokenMgrException);
         }
     }
 }

@@ -68,7 +68,7 @@ public class HttpHandler extends LoggingRequestHandler {
     }
 
     protected static Duration getRequestTimeout(HttpRequest request, Duration defaultTimeout) {
-        if (!request.hasProperty("timeout")) {
+        if ( ! request.hasProperty("timeout")) {
             return defaultTimeout;
         }
         try {

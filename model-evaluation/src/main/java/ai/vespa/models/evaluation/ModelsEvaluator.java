@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
+@Beta
 public class ModelsEvaluator {
 
     private final ImmutableMap<String, Model> models;

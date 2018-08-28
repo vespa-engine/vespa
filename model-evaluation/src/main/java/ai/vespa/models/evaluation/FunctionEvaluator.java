@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import com.google.common.annotations.Beta;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.Tensor;
@@ -11,6 +12,7 @@ import com.yahoo.tensor.TensorType;
  *
  * @author bratseth
  */
+@Beta
 // This wraps all access to the context and the ranking expression to avoid incorrect usage
 public class FunctionEvaluator {
 

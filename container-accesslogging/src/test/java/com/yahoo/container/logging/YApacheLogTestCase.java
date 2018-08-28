@@ -82,7 +82,7 @@ public class YApacheLogTestCase {
         entry.setTimeStamp(920880005L*1000);
         entry.setDurationBetweenRequestResponse(122);
         entry.setReturnedContentSize(9875);
-        entry.setURI(new URI("/Business/Companies/Financial_Services/Investment_Services/Mutual_Funds/"));
+        entry.setRawPath("/Business/Companies/Financial_Services/Investment_Services/Mutual_Funds/");
         entry.setRemotePort(12345);
     }
 
@@ -165,7 +165,7 @@ public class YApacheLogTestCase {
     public void testThatQueryWithEncodedCharactersIsLoggedInEncodedForm() {
         final String query = "%5E%3B%22";
         final AccessLogEntry entry = new AccessLogEntry();
-        entry.setURI(newQueryUri(query));
+        entry.setRawPath(newQueryPath(query));
         assertThat(new YApacheFormatter(entry).format(), containsString(query));
     }
 
@@ -174,7 +174,7 @@ public class YApacheLogTestCase {
         entry.setIpV4Address("0.0.0.0");
         entry.setUser("user");
         entry.setHttpMethod("GET");
-        entry.setURI(newQueryUri(query));
+        entry.setRawPath(newQueryPath(query));
         entry.setHttpVersion("HTTP/1.1");
         entry.setReferer(EMPTY_REFERRER);
         entry.setUserAgent(EMPTY_USERAGENT);
@@ -303,8 +303,8 @@ public class YApacheLogTestCase {
         }
     }
 
-    private static URI newQueryUri(final String query) {
-        return URI.create("http://localhost?query=" + query);
+    private static String newQueryPath(final String query) {
+        return "http://localhost?query=" + query;
     }
 
 }

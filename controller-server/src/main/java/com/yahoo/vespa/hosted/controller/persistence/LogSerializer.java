@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -8,6 +7,7 @@ import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 
 import java.io.IOException;
@@ -28,6 +28,7 @@ class LogSerializer {
 
     private static final String idField = "id";
     private static final String levelField = "level";
+    private static final String typeField = "type";
     private static final String timestampField = "at";
     private static final String messageField = "message";
 
@@ -53,7 +54,8 @@ class LogSerializer {
     private void toSlime(LogEntry entry, Cursor entryObject) {
         entryObject.setLong(idField, entry.id());
         entryObject.setLong(timestampField, entry.at());
-        entryObject.setString(levelField, entry.level().getName());
+        entryObject.setString(levelField, valueOf(entry.type())); // TODO jvenstad: Remove after one deployment.
+        entryObject.setString(typeField, valueOf(entry.type()));
         entryObject.setString(messageField, entry.message());
     }
 
@@ -85,8 +87,32 @@ class LogSerializer {
     private LogEntry fromSlime(Inspector entryObject) {
         return new LogEntry(entryObject.field(idField).asLong(),
                             entryObject.field(timestampField).asLong(),
-                            LogLevel.parse(entryObject.field(levelField).asString()),
+                            entryObject.field(typeField).valid() // TODO jvenstad: Remove after one deployment.
+                                    ? typeOf(entryObject.field(typeField).asString())
+                                    : typeOf(entryObject.field(levelField).asString()),
                             entryObject.field(messageField).asString());
+    }
+
+    static String valueOf(Type type) {
+        switch (type) {
+            case debug: return "debug";
+            case info: return "info";
+            case warning: return "warning";
+            case error: return "error";
+            case html: return "html";
+            default: throw new AssertionError("Unexpected log entry type '" + type + "'!");
+        }
+    }
+
+    static Type typeOf(String type) {
+        switch (type.toLowerCase()) { // TODO jvenstad: Remove lowercasing after this has been deployed.
+            case "debug": return Type.debug;
+            case "info": return Type.info;
+            case "warning": return Type.warning;
+            case "error": return Type.error;
+            case "html": return Type.html;
+            default: throw new IllegalArgumentException("Unknown log entry type '" + type + "'!");
+        }
     }
 
 }

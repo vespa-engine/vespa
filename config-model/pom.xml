@@ -498,19 +498,17 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>javacc-maven-plugin</artifactId>
+        <groupId>com.helger.maven</groupId>
+        <artifactId>ph-javacc-maven-plugin</artifactId>
+        <version>4.0.3</version>
         <executions>
           <execution>
-            <id>javacc</id>
+            <phase>generate-sources</phase>
             <goals>
               <goal>javacc</goal>
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <sourceDirectory>src/main/javacc</sourceDirectory>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

@@ -2,7 +2,7 @@
 package com.yahoo.vespa.streamingvisitors;
 
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.document.select.parser.TokenMgrError;
+import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.document.select.parser.ParseException;
@@ -55,7 +55,7 @@ public class VdsStreamingSearcherTestCase {
             if (queryString.compareTo("parseexception") == 0) {
                 throw new ParseException("Parsing failed");
             } else if (queryString.compareTo("tokenizeexception") == 0) {
-                throw new TokenMgrError("Tokenization failed", 0);
+                throw new TokenMgrException("Tokenization failed", 0);
             } else if (queryString.compareTo("interruptedexception") == 0) {
                 throw new InterruptedException("Interrupted");
             } else if (queryString.compareTo("timeoutexception") == 0) {

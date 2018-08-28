@@ -7,8 +7,8 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Type;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.config.SlimeUtils;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.io.IOException;
@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Maintainer {
 
     private static final CoreCollector coreCollector = new CoreCollector(new ProcessExecuter());
-    private static final HttpClient httpClient = createHttpClient(Duration.ofSeconds(5));
 
     public static void main(String[] args) {
         LogSetup.initVespaLogging("node-maintainer");
@@ -145,7 +144,7 @@ public class Maintainer {
         Optional<Path> installStatePath = SlimeUtils.optionalString(arguments.field("installStatePath")).map(Paths::get);
         String feedEndpoint = getFieldOrFail(arguments, "feedEndpoint").asString();
 
-        try {
+        try (CloseableHttpClient httpClient = createHttpClient(Duration.ofSeconds(5))) {
             CoredumpHandler coredumpHandler = new CoredumpHandler(httpClient, coreCollector, coredumpsPath,
                                                                   doneCoredumpsPath, attributesMap, installStatePath,
                                                                   feedEndpoint);
@@ -187,7 +186,7 @@ public class Maintainer {
         return out;
     }
 
-    private static HttpClient createHttpClient(Duration timeout) {
+    private static CloseableHttpClient createHttpClient(Duration timeout) {
         int timeoutInMillis = (int) timeout.toMillis();
         return HttpClientBuilder.create()
                 .setUserAgent("node-maintainer")

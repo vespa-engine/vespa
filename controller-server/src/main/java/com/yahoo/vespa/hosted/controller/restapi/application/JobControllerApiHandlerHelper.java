@@ -104,19 +104,21 @@ class JobControllerApiHandlerHelper {
      */
     static HttpResponse runDetailsResponse(JobController jobController, RunId runId, String after) {
         Slime slime = new Slime();
-        Cursor logsObject = slime.setObject();
+        Cursor detailsObject = slime.setObject();
 
-        logsObject.setBool("active", jobController.active(runId).isPresent());
+        detailsObject.setBool("active", jobController.active(runId).isPresent());
+        jobController.updateTestLog(runId);
 
         RunLog runLog = (after == null ? jobController.details(runId) : jobController.details(runId, Long.parseLong(after)))
                 .orElseThrow(() -> new NotExistsException(String.format(
                         "No run details exist for application: %s, job type: %s, number: %d",
                         runId.application().toShortString(), runId.type().jobName(), runId.number())));
 
+        Cursor logObject = detailsObject.setObject("log");
         for (Step step : Step.values()) {
-            runLog.get(step).ifPresent(entries -> toSlime(logsObject.setArray(step.name()), entries));
+            runLog.get(step).ifPresent(entries -> toSlime(logObject.setArray(step.name()), entries));
         }
-        runLog.lastId().ifPresent(id -> logsObject.setLong("lastId", id));
+        runLog.lastId().ifPresent(id -> detailsObject.setLong("lastId", id));
 
         return new SlimeJsonResponse(slime);
     }
@@ -127,7 +129,7 @@ class JobControllerApiHandlerHelper {
 
     private static void toSlime(Cursor entryObject, LogEntry entry) {
         entryObject.setLong("at", entry.at());
-        entryObject.setString("level", entry.level().getName());
+        entryObject.setString("type", entry.type().name());
         entryObject.setString("message", entry.message());
     }
 

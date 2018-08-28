@@ -10,10 +10,10 @@ import java.util.List;
 /**
  * Handles a timeout logic by providing higher level abstraction for asking if there is time left.
  *
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class TimeoutBudget {
+
     private final Clock clock;
     private final Instant startTime;
     private final List<Instant> measurements = new ArrayList<>();
