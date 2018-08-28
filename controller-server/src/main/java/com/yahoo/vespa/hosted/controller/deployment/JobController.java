@@ -111,6 +111,9 @@ public class JobController {
     public void updateTestLog(RunId id) {
         try (Lock __ = curator.lock(id.application(), id.type())) {
             active(id).ifPresent(run -> {
+                if ( ! run.readySteps().contains(endTests))
+                    return;
+
                 Optional<URI> testerEndpoint = testerEndpoint(id);
                 if ( ! testerEndpoint.isPresent())
                     return;
