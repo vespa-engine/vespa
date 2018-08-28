@@ -38,7 +38,7 @@ public class YApacheFormatter {
         setStatusCode(accessLogEntry.getStatusCode());
         setRemoteAddress(accessLogEntry.getRemoteAddress());
         setRemotePort(accessLogEntry.getRemotePort());
-        setURI(accessLogEntry.getURI());
+        setURI(URI.create(accessLogEntry.getRawPath()));
         setCookie(accessLogEntry.getCookieType(), accessLogEntry.getCookie());
         setWeekOfRegistration(accessLogEntry.getWeekOfRegistration());
         setProfile(accessLogEntry.getProfile());
