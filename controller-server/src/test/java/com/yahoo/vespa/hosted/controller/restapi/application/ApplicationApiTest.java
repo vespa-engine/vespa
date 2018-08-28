@@ -5,6 +5,7 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -18,6 +19,7 @@ import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
@@ -368,6 +370,35 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default", DELETE)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "Deactivated tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default");
+
+        // POST an application package and a test jar, submitting a new application for internal pipeline deployment.
+        // First attempt does not have an Athenz service definition in deployment spec, and fails.
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID)
+                                      .data(createApplicationSubmissionData(applicationPackage)),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Application must define an Athenz service in deployment.xml!\"}", 400);
+
+        // Second attempt has a service under a different domain than the tenant of the application, and fails as well.
+        ApplicationPackage packageWithServiceForWrongDomain = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from(ATHENZ_TENANT_DOMAIN_2.getName()), AthenzService.from("service"))
+                .region("us-west-1")
+                .build();
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID)
+                                      .data(createApplicationSubmissionData(packageWithServiceForWrongDomain)),
+                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Athenz domain in deployment.xml: [domain2] must match tenant domain: [domain1]\"}", 403);
+
+        // Third attempt finally has a service under the domain of the tenant, and succeeds.
+        ApplicationPackage packageWithService = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from(ATHENZ_TENANT_DOMAIN.getName()), AthenzService.from("service"))
+                .region("us-west-1")
+                .build();
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID)
+                                      .data(createApplicationSubmissionData(packageWithService)),
+                              "{\"version\":\"1.0.43-d00d\"}");
 
         // PUT (create) the authenticated user
         byte[] data = new byte[0];
@@ -1000,6 +1031,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
         builder.addTextBody("deployOptions", deployOptions(deployDirectly), ContentType.APPLICATION_JSON);
         applicationPackage.ifPresent(ap -> builder.addBinaryBody("applicationZip", ap.zippedContent()));
+        return builder.build();
+    }
+
+    private HttpEntity createApplicationSubmissionData(ApplicationPackage applicationPackage) {
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+        builder.addTextBody(EnvironmentResource.SUBMIT_OPTIONS,
+                            "{\"repository\":\"repo\",\"branch\":\"master\",\"commit\":\"d00d\"}",
+                            ContentType.APPLICATION_JSON);
+        builder.addBinaryBody(EnvironmentResource.APPLICATION_ZIP, applicationPackage.zippedContent());
+        builder.addBinaryBody(EnvironmentResource.APPLICATION_TEST_ZIP, "content".getBytes());
         return builder.build();
     }
     

@@ -1250,9 +1250,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         SourceRevision sourceRevision = toSourceRevision(submitOptions).orElseThrow(() ->
                 new IllegalArgumentException("Must specify 'repository', 'branch', and 'commit'"));
 
+        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
+        if ( ! applicationPackage.deploymentSpec().athenzDomain().isPresent())
+            throw new IllegalArgumentException("Application must define an Athenz service in deployment.xml!");
+        verifyApplicationIdentityConfiguration(tenant, Optional.of(applicationPackage));
+
         return JobControllerApiHandlerHelper.submitResponse(controller.jobController(), tenant, application,
                 sourceRevision,
-                dataParts.get(EnvironmentResource.APPLICATION_ZIP),
+                applicationPackage.zippedContent(),
                 dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
     }
 }
