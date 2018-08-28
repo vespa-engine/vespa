@@ -57,7 +57,7 @@ public class AccessLogSamplerTest {
     private AccessLogEntry createLogEntry(int statusCode, String uri) {
         AccessLogEntry accessLogEntry = new AccessLogEntry();
         accessLogEntry.setStatusCode(statusCode);
-        accessLogEntry.setURI(URI.create(uri));
+        accessLogEntry.setRawPath(uri);
         return accessLogEntry;
     }
 }
