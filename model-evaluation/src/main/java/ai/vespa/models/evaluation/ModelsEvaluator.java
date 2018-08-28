@@ -3,6 +3,7 @@ package ai.vespa.models.evaluation;
 
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
 import java.util.Map;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 @Beta
-public class ModelsEvaluator {
+public class ModelsEvaluator extends AbstractComponent {
 
     private final ImmutableMap<String, Model> models;
 
