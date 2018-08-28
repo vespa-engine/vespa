@@ -65,9 +65,10 @@ class NodeIdentifier {
         } else if (subjectCommonName.equals(ZTS_ON_PREM_IDENTITY) || subjectCommonName.equals(ZTS_AWS_IDENTITY)) {
             // ZTS treated as a node principal even though its not a Vespa node
             return NodePrincipal.withLegacyIdentity(subjectCommonName, certificateChain);
-        } else { // self-signed where common name is hostname
-            // TODO Remove this branch once self-signed certificates are gone
-            return NodePrincipal.withLegacyIdentity(subjectCommonName, certificateChain);
+        } else {
+            throw new NodeIdentifierException(String.format("Unknown certificate (subject=%s, issuer=%s)",
+                                                            subjectCommonName,
+                                                            X509CertificateUtils.getIssuerCommonNames(clientCertificate)));
         }
     }
 

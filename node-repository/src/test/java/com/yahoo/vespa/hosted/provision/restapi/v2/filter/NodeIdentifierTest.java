@@ -21,7 +21,9 @@ import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
@@ -49,6 +51,9 @@ import static org.junit.Assert.assertTrue;
  */
 public class NodeIdentifierTest {
 
+    @Rule
+    public final ExpectedException expectedException = ExpectedException.none();
+
     private static final String CONTROLLER_IDENTITY = "vespa.vespa.hosting";
 
     private static final String HOSTNAME = "myhostname";
@@ -64,17 +69,16 @@ public class NodeIdentifierTest {
     private static final X509Certificate ATHENZ_AWS_CA_CERT = createDummyCaCertificate("Athenz AWS CA");
 
     @Test
-    public void accepts_configserver_selfsigned_cert() {
+    public void rejects_unknown_cert() {
         NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
         X509Certificate certificate = X509CertificateBuilder
                 .fromKeypair(
                         KEYPAIR, new X500Principal("CN=" + HOSTNAME), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), SHA256_WITH_RSA, 1)
                 .build();
         NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
-        NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
-        assertTrue(identity.getHostname().isPresent());
-        assertEquals(HOSTNAME, identity.getHostname().get());
-        assertEquals(HOSTNAME, identity.getHostIdentityName());
+        expectedException.expect(NodeIdentifier.NodeIdentifierException.class);
+        expectedException.expectMessage("(subject=myhostname, issuer=[myhostname])");
+        identifier.resolveNode(singletonList(certificate));
     }
 
     @Test
