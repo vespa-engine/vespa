@@ -54,6 +54,7 @@ declare -a modules=(
   jdisc-security-filters
   jdisc_core
   jdisc_http_service
+  model-evaluation
   simplemetrics
   standalone-container
   vespa-athenz

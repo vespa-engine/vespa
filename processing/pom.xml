@@ -49,6 +49,7 @@
               <arg>-Xlint:all</arg>
               <arg>-Xlint:-rawtypes</arg>
               <arg>-Xlint:-serial</arg>
+              <arg>-Xlint:-options</arg> <!-- TODO: Remove when on a version above Java 8 -->
               <arg>-Werror</arg>
             </compilerArgs>
          </configuration>
