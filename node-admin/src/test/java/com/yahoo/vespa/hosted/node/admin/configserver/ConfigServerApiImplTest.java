@@ -7,6 +7,7 @@ import org.apache.http.HttpVersion;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.entity.BasicHttpEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicStatusLine;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,7 +55,7 @@ public class ConfigServerApiImplTest {
 
     @Before
     public void initExecutor() throws IOException {
-        SelfCloseableHttpClient httpMock = mock(SelfCloseableHttpClient.class);
+        CloseableHttpClient httpMock = mock(CloseableHttpClient.class);
         when(httpMock.execute(any())).thenAnswer(invocationOnMock -> {
             HttpGet get = (HttpGet) invocationOnMock.getArguments()[0];
             mockLog.append(get.getMethod()).append(" ").append(get.getURI()).append("  ");

@@ -2,12 +2,11 @@
 package com.yahoo.vespa.hosted.node.maintainer;
 
 import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.DefaultHttpResponseFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicStatusLine;
 import org.junit.Before;
 import org.junit.Rule;
@@ -45,7 +44,7 @@ import static org.mockito.Mockito.when;
  */
 public class CoredumpHandlerTest {
 
-    private final HttpClient httpClient = mock(HttpClient.class);
+    private final CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
     private final CoreCollector coreCollector = mock(CoreCollector.class);
     private static final Map<String, Object> attributes = new LinkedHashMap<>();
     private static final Map<String, Object> metadata = new LinkedHashMap<>();
@@ -228,12 +227,11 @@ public class CoredumpHandlerTest {
     }
 
     private void setNextHttpResponse(int code, Optional<String> message) throws IOException {
-        DefaultHttpResponseFactory responseFactory = new DefaultHttpResponseFactory();
-        HttpResponse httpResponse = responseFactory.newHttpResponse(
-                new BasicStatusLine(HttpVersion.HTTP_1_1, code, null), null);
-        if (message.isPresent()) httpResponse.setEntity(new StringEntity(message.get()));
+        CloseableHttpResponse response = mock(CloseableHttpResponse.class);
+                when(response.getStatusLine()).thenReturn(new BasicStatusLine(HttpVersion.HTTP_1_1, code, null));
+        if (message.isPresent()) when(response.getEntity()).thenReturn(new StringEntity(message.get()));
 
-        when(httpClient.execute(any())).thenReturn(httpResponse);
+        when(httpClient.execute(any())).thenReturn(response);
     }
 
     private void validateNextHttpPost(String documentId, String expectedBody) throws IOException, URISyntaxException {

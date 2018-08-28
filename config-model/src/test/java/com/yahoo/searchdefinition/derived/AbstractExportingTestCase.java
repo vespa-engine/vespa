@@ -174,7 +174,8 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
                 return;
             }
         }
-        assertConfigFiles(correctFileName, checkFileName);
+        // Set updateOnAssert to true if you want update the files with correct answer.
+        assertConfigFiles(correctFileName, checkFileName, false);
     }
 
     protected void deleteContent(File dir) {

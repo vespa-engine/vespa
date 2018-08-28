@@ -23,8 +23,7 @@ public class SessionHandler extends HttpHandler {
 
     protected final ApplicationRepository applicationRepository;
 
-    public SessionHandler(HttpHandler.Context ctx, ApplicationRepository applicationRepository)
-    {
+    public SessionHandler(HttpHandler.Context ctx, ApplicationRepository applicationRepository) {
         super(ctx);
         this.applicationRepository = applicationRepository;
     }

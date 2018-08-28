@@ -44,13 +44,14 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import static com.yahoo.log.LogLevel.DEBUG;
-import static com.yahoo.log.LogLevel.ERROR;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.testerOf;
+import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.debug;
+import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.error;
+import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.info;
+import static com.yahoo.vespa.hosted.controller.deployment.JobController.testerOf;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
-import static java.util.logging.Level.INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -81,9 +82,9 @@ public class InternalStepRunnerTest {
         tester.createApplication(appId.application().value(), appId.tenant().value(), 1, 1L);
         jobs = tester.controller().jobController();
         routing = tester.controllerTester().routingGenerator();
-        cloud = new MockTesterCloud();
+        cloud = (MockTesterCloud) tester.controller().jobController().cloud();
         runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
-                               JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller(), cloud));
+                               JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller()));
         routing.putEndpoints(new DeploymentId(null, null), Collections.emptyList()); // Turn off default behaviour for the mock.
 
         // Get deployment job logs to stderr.
@@ -317,7 +318,7 @@ public class InternalStepRunnerTest {
 
         tester.applications().deactivate(appId, JobType.systemTest.zone(tester.controller().system()));
         runner.run();
-        assertEquals(failed, jobs.last(appId, JobType.systemTest).get().steps().get(Step.startTests));
+        assertEquals(unfinished, jobs.last(appId, JobType.systemTest).get().steps().get(Step.startTests));
     }
 
     @Test
@@ -339,29 +340,29 @@ public class InternalStepRunnerTest {
     @Test
     public void testsFailIfTestsFailRemotely() {
         RunId id = startSystemTestTests();
-        cloud.add(new LogEntry(123, 321, ERROR, "Failure!"));
+        cloud.add(new LogEntry(123, 321, error, "Failure!"));
         cloud.set(TesterCloud.Status.FAILURE);
 
         long lastId = jobs.details(id).get().lastId().getAsLong();
         runner.run();
         assertTestLogEntries(id, Step.endTests,
-                             new LogEntry(lastId + 1, 321, ERROR, "Failure!"),
-                             new LogEntry(lastId + 2, tester.clock().millis(), DEBUG, "Tests failed."));
+                             new LogEntry(lastId + 1, 321, error, "Failure!"),
+                             new LogEntry(lastId + 2, tester.clock().millis(), debug, "Tests failed."));
         assertEquals(failed, jobs.run(id).get().steps().get(Step.endTests));
     }
 
     @Test
     public void testsFailIfTestsErr() {
         RunId id = startSystemTestTests();
-        cloud.add(new LogEntry(0, 123, ERROR, "Error!"));
+        cloud.add(new LogEntry(0, 123, error, "Error!"));
         cloud.set(TesterCloud.Status.ERROR);
 
         long lastId = jobs.details(id).get().lastId().getAsLong();
         runner.run();
         assertEquals(failed, jobs.run(id).get().steps().get(Step.endTests));
         assertTestLogEntries(id, Step.endTests,
-                             new LogEntry(lastId + 1, 123, ERROR, "Error!"),
-                             new LogEntry(lastId + 2, tester.clock().millis(), INFO, "Tester failed running its tests!"));
+                             new LogEntry(lastId + 1, 123, error, "Error!"),
+                             new LogEntry(lastId + 2, tester.clock().millis(), info, "Tester failed running its tests!"));
     }
 
     @Test
@@ -381,25 +382,25 @@ public class InternalStepRunnerTest {
                 assertEquals(routing.endpoints(new DeploymentId(appId, JobType.systemTest.zone(tester.controller().system()))).get(0).getEndpoint(), endpoint.asString()));
 
         long lastId = jobs.details(id).get().lastId().getAsLong();
-        cloud.add(new LogEntry(0, 123, INFO, "Ready!"));
+        cloud.add(new LogEntry(0, 123, info, "Ready!"));
         runner.run();
         assertTestLogEntries(id, Step.endTests,
-                             new LogEntry(lastId + 1, 123, INFO, "Ready!"));
+                             new LogEntry(lastId + 1, 123, info, "Ready!"));
 
-        cloud.add(new LogEntry(1, 1234, INFO, "Steady!"));
+        cloud.add(new LogEntry(1, 1234, info, "Steady!"));
         runner.run();
         assertTestLogEntries(id, Step.endTests,
-                             new LogEntry(lastId + 1, 123, INFO, "Ready!"),
-                             new LogEntry(lastId + 2, 1234, INFO, "Steady!"));
+                             new LogEntry(lastId + 1, 123, info, "Ready!"),
+                             new LogEntry(lastId + 2, 1234, info, "Steady!"));
 
-        cloud.add(new LogEntry(12, 12345, INFO, "Success!"));
+        cloud.add(new LogEntry(12, 12345, info, "Success!"));
         cloud.set(TesterCloud.Status.SUCCESS);
         runner.run();
         assertTestLogEntries(id, Step.endTests,
-                             new LogEntry(lastId + 1, 123, INFO, "Ready!"),
-                             new LogEntry(lastId + 2, 1234, INFO, "Steady!"),
-                             new LogEntry(lastId + 3, 12345, INFO, "Success!"),
-                             new LogEntry(lastId + 4, tester.clock().millis(), DEBUG, "Tests completed successfully."));
+                             new LogEntry(lastId + 1, 123, info, "Ready!"),
+                             new LogEntry(lastId + 2, 1234, info, "Steady!"),
+                             new LogEntry(lastId + 3, 12345, info, "Success!"),
+                             new LogEntry(lastId + 4, tester.clock().millis(), debug, "Tests completed successfully."));
         assertEquals(succeeded, jobs.run(id).get().steps().get(Step.endTests));
     }
 

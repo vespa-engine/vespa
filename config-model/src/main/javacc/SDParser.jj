@@ -1772,7 +1772,7 @@ Object indexBody(IndexOperation index) :
       | <ALIAS> <COLON> str = identifier()       { index.addAlias(str); }
       | <STEMMING> <COLON> str = identifier()    { index.setStemming(str); }
       | <RISE> {
-              throw new ParseException("'index:rise' is no longer an option. Use 'indexing:attribute' instead. " +
+              if (true) throw new ParseException("'index:rise' is no longer an option. Use 'indexing:attribute' instead. " +
                                        "If it is a weighted set field you should also add 'attribute:fast-search'." +
                                        "This change will require refeeding.");
           }

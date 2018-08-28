@@ -4,7 +4,6 @@ import com.yahoo.log.LogLevel;
 
 import java.util.Objects;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
 import static java.util.Objects.requireNonNull;
 
@@ -13,16 +12,16 @@ public class LogEntry {
 
     private final long id;
     private final long at;
-    private final Level level;
+    private final Type type;
     private final String message;
 
-    public LogEntry(long id, long at, Level level, String message) {
+    public LogEntry(long id, long at, Type type, String message) {
         if (id < 0)
             throw new IllegalArgumentException("Id must be non-negative, but was " + id + ".");
 
         this.id = id;
         this.at = at;
-        this.level = LogLevel.getVespaLogLevel(requireNonNull(level));
+        this.type = requireNonNull(type);
         this.message = requireNonNull(message);
     }
 
@@ -34,8 +33,8 @@ public class LogEntry {
         return at;
     }
 
-    public Level level() {
-        return level;
+    public Type type() {
+        return type;
     }
 
     public String message() {
@@ -47,7 +46,7 @@ public class LogEntry {
         return "LogEntry{" +
                "id=" + id +
                ", at=" + at +
-               ", level=" + level +
+               ", type=" + type +
                ", message='" + message + '\'' +
                '}';
     }
@@ -59,13 +58,25 @@ public class LogEntry {
         LogEntry entry = (LogEntry) o;
         return id == entry.id &&
                at == entry.at &&
-               Objects.equals(level, entry.level) &&
+               type == entry.type &&
                Objects.equals(message, entry.message);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, at, level, message);
+        return Objects.hash(id, at, type, message);
+    }
+
+    public static Type typeOf(Level level) {
+        return    level.intValue() < LogLevel.INFO.intValue() ? Type.debug
+                : level.intValue() < LogLevel.WARNING.intValue() ? Type.info
+                : level.intValue() < LogLevel.ERROR.intValue() ? Type.warning
+                : Type.error;
+    }
+
+    /** The type of entry, used for rendering. */
+    public enum Type {
+        debug, info, warning, error, html;
     }
 
 }

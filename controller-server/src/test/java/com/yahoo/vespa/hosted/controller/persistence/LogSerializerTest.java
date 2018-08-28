@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import org.junit.Test;
@@ -29,12 +28,15 @@ public class LogSerializerTest {
 
     @Test
     public void testSerialization() throws IOException {
+        for (LogEntry.Type type : LogEntry.Type.values())
+            assertEquals(type, LogSerializer.typeOf(LogSerializer.valueOf(type)));
+
         byte[] logJson = Files.readAllBytes(logsFile);
 
-        LogEntry  first = new LogEntry(0, 0, LogLevel.INFO,     "First");
-        LogEntry second = new LogEntry(1, 0, LogLevel.INFO,    "Second");
-        LogEntry  third = new LogEntry(2, 1000, LogLevel.DEBUG,    "Third");
-        LogEntry fourth = new LogEntry(3, 2000, LogLevel.WARNING, "Fourth");
+        LogEntry  first = new LogEntry(0, 0, LogEntry.Type.info, "First");
+        LogEntry second = new LogEntry(1, 0, LogEntry.Type.info, "Second");
+        LogEntry  third = new LogEntry(2, 1000, LogEntry.Type.debug, "Third");
+        LogEntry fourth = new LogEntry(3, 2000, LogEntry.Type.warning, "Fourth");
 
         Map<Step, List<LogEntry>> expected = new HashMap<>();
         expected.put(deployReal, new ArrayList<>());

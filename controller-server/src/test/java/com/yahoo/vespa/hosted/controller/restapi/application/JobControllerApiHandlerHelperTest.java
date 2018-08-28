@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
@@ -94,7 +95,7 @@ public class JobControllerApiHandlerHelperTest {
     public void runDetailsResponse() {
         ControllerTester tester = new ControllerTester();
         MockRunDataStore dataStore = new MockRunDataStore();
-        JobController jobController = new JobController(tester.controller(), dataStore);
+        JobController jobController = new JobController(tester.controller(), dataStore, new MockTesterCloud());
         BufferedLogStore logStore = new BufferedLogStore(tester.curator(), dataStore);
         RunId runId = new RunId(appId, JobType.systemTest, 42);
         tester.curator().writeHistoricRuns(
@@ -102,9 +103,9 @@ public class JobControllerApiHandlerHelperTest {
                 runId.type(),
                 Collections.singleton(createRun(JobType.systemTest, 42, 44, lastStep, Optional.of(RunStatus.running))));
 
-        logStore.append(appId, JobType.systemTest, Step.deployTester, Collections.singletonList(new LogEntry(0, 1, Level.INFO, "SUCCESS")));
-        logStore.append(appId, JobType.systemTest, Step.installTester, Collections.singletonList(new LogEntry(0, 12, Level.FINE, "SUCCESS")));
-        logStore.append(appId, JobType.systemTest, Step.deactivateTester, Collections.singletonList(new LogEntry(0, 123, Level.WARNING, "ERROR")));
+        logStore.append(appId, JobType.systemTest, Step.deployTester, Collections.singletonList(new LogEntry(0, 1, LogEntry.Type.info, "SUCCESS")));
+        logStore.append(appId, JobType.systemTest, Step.installTester, Collections.singletonList(new LogEntry(0, 12, LogEntry.Type.debug, "SUCCESS")));
+        logStore.append(appId, JobType.systemTest, Step.deactivateTester, Collections.singletonList(new LogEntry(0, 123, LogEntry.Type.warning, "ERROR")));
         logStore.flush(runId);
 
         HttpResponse response = JobControllerApiHandlerHelper.runDetailsResponse(jobController, runId,"0");
@@ -117,7 +118,7 @@ public class JobControllerApiHandlerHelperTest {
         tester.createTenant("tenant", "domain", 1L);
         tester.createApplication(TenantName.from("tenant"), "application", "default", 1L);
 
-        JobController jobController = new JobController(tester.controller(), new MockRunDataStore());
+        JobController jobController = new JobController(tester.controller(), new MockRunDataStore(), new MockTesterCloud());
 
         HttpResponse response = JobControllerApiHandlerHelper.submitResponse(
                 jobController, "tenant", "application", new SourceRevision("repository", "branch", "commit"), new byte[0], new byte[0]);
