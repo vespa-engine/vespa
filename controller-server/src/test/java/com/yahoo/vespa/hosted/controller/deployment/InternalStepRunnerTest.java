@@ -231,7 +231,7 @@ public class InternalStepRunnerTest {
 
     @Test
     public void testerHasAthenzIdentity() {
-        RunId id = newRun(JobType.stagingTest);
+        newRun(JobType.stagingTest);
         runner.run();
         DeploymentSpec spec = tester.configServer().application(testerOf(appId)).get().applicationPackage().deploymentSpec();
         assertEquals("domain", spec.athenzDomain().get().value());
