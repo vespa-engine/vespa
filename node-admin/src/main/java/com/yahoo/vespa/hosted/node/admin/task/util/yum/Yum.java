@@ -175,9 +175,9 @@ public class Yum {
     }
 
     /** YUM package name. */
-    private static class PackageName {
+    static class PackageName {
         private static final Pattern ARCHITECTURE_PATTERN = Pattern.compile("\\.(noarch|x86_64|i686|i386|\\*)$");
-        private static final Pattern NAME_VER_REL_PATTERN = Pattern.compile("^(.+)-([^-]+)-([^-]+)$");
+        private static final Pattern NAME_VER_REL_PATTERN = Pattern.compile("^(.+)-([^-]*[0-9][^-]*)-([^-]*[0-9][^-]*)$");
 
         public final Optional<String> epoch;
         public final String name;
@@ -197,13 +197,6 @@ public class Yum {
             this.architecture = architecture;
         }
 
-        public static PackageName fromComponents(String name, String version, String release) {
-            if (name.isEmpty()) throw new IllegalArgumentException("Name is empty");
-            if (version.isEmpty()) throw new IllegalArgumentException("Version is empty");
-            if (release.isEmpty()) throw new IllegalArgumentException("Release is empty");
-            return new PackageName(Optional.empty(), name, Optional.of(version), Optional.of(release), Optional.empty());
-        }
-
         /**
          * Parse the string specification of a YUM package.
          *
@@ -215,7 +208,8 @@ public class Yum {
          *     <li>If specified, arch MUST be one of "noarch", "i686", "x86_64", or "*". The wildcard
          *     is equivalent to not specifying arch.
          *     <li>rel cannot end in something that would be mistaken for the '.arch' suffix.
-         *     <li>ver and rel are assumed to not contain any '-' to uniquely identify name.
+         *     <li>ver and rel are assumed to not contain any '-' to uniquely identify name,
+         *     and must contain a digit.
          * </ul>
          *
          * @param spec A package name of the form epoch:name-ver-rel.arch, name-ver-rel.arch, or name-ver-rel.
