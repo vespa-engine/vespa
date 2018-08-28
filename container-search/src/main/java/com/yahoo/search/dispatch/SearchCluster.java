@@ -191,8 +191,9 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         node.setWorking(false);
 
         // Take ourselves out if we usually dispatch only to our own host
-        if (usesDirectDispatchTo(node))
+        if (usesDirectDispatchTo(node)) {
             vipStatus.removeFromRotation(this);
+        }
     }
 
     private void updateSufficientCoverage(Group group, boolean sufficientCoverage) {

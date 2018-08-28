@@ -46,6 +46,55 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
     static final String OK_MESSAGE = "<title>OK</title>\n";
     static final byte[] VIP_OK = Utf8.toBytes(OK_MESSAGE);
 
+    /**
+     * Create this with a dedicated thread pool to avoid returning an error to VIPs when the regular thread pool is 
+     * out of capacity. This is the default behavior.
+     */
+    @Inject
+    public VipStatusHandler(VipStatusConfig vipConfig, Metric metric, VipStatus vipStatus) {
+        // One thread should be enough for status handling - otherwise something else is completely wrong,
+        // in which case this will eventually start returning a 503 (due to work rejection) as the bounded
+        // queue will fill up
+        this(new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>(100)),
+             vipConfig, metric, vipStatus);
+    }
+
+    public VipStatusHandler(Executor executor, VipStatusConfig vipConfig, Metric metric) {
+        this(executor, vipConfig, metric, null);
+    }
+
+    public VipStatusHandler(Executor executor, VipStatusConfig vipConfig, Metric metric, VipStatus vipStatus) {
+        super(executor, metric);
+        this.accessDisk = vipConfig.accessdisk();
+        this.statusFile = new File(Defaults.getDefaults().underVespaHome(vipConfig.statusfile()));
+        this.noSearchBackendsImpliesOutOfService = vipConfig.noSearchBackendsImpliesOutOfService();
+        this.vipStatus = vipStatus;
+    }
+
+    @Override
+    public HttpResponse handle(HttpRequest request) {
+        if (metric != null)
+            metric.add(NUM_REQUESTS_METRIC, 1, null);
+        if (noSearchBackendsImpliesOutOfService) {
+            updateAndLogRotationState();
+        }
+        return new StatusResponse();
+    }
+
+    private void updateAndLogRotationState() {
+        final boolean currentlyInRotation = vipStatus.isInRotation();
+        final boolean previousRotationAnswer = previouslyInRotation;
+        previouslyInRotation = currentlyInRotation;
+
+        if (previousRotationAnswer != currentlyInRotation) {
+            if (currentlyInRotation) {
+                log.log(LogLevel.INFO, "Putting container back into rotation by serving status.html again.");
+            } else {
+                log.log(LogLevel.WARNING, "Removing container from rotation by no longer serving status.html.");
+            }
+        }
+    }
+
     class StatusResponse extends HttpResponse {
 
         static final String COULD_NOT_FIND_STATUS_FILE = "Could not find status file.\n";
@@ -155,55 +204,6 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
         @Override
         public String getCharacterEncoding() {
             return null;
-        }
-    }
-
-    /**
-     * Create this with a dedicated thread pool to avoid returning an error to VIPs when the regular thread pool is 
-     * out of capacity. This is the default behavior.
-     */
-    @Inject
-    public VipStatusHandler(VipStatusConfig vipConfig, Metric metric, VipStatus vipStatus) {
-        // One thread should be enough for status handling - otherwise something else is completely wrong,
-        // in which case this will eventually start returning a 503 (due to work rejection) as the bounded
-        // queue will fill up
-        this(new ThreadPoolExecutor(1, 1, 0, TimeUnit.SECONDS, new LinkedBlockingQueue<>(100)),
-             vipConfig, metric, vipStatus);
-    }
-
-    public VipStatusHandler(Executor executor, VipStatusConfig vipConfig, Metric metric) {
-        this(executor, vipConfig, metric, null);
-    }
-
-    public VipStatusHandler(Executor executor, VipStatusConfig vipConfig, Metric metric, VipStatus vipStatus) {
-        super(executor, metric);
-        this.accessDisk = vipConfig.accessdisk();
-        this.statusFile = new File(Defaults.getDefaults().underVespaHome(vipConfig.statusfile()));
-        this.noSearchBackendsImpliesOutOfService = vipConfig.noSearchBackendsImpliesOutOfService();
-        this.vipStatus = vipStatus;
-    }
-
-    @Override
-    public HttpResponse handle(HttpRequest request) {
-        if (metric != null)
-            metric.add(NUM_REQUESTS_METRIC, 1, null);
-        if (noSearchBackendsImpliesOutOfService) {
-            updateAndLogRotationState();
-        }
-        return new StatusResponse();
-    }
-
-    private void updateAndLogRotationState() {
-        final boolean currentlyInRotation = vipStatus.isInRotation();
-        final boolean previousRotationAnswer = previouslyInRotation;
-        previouslyInRotation = currentlyInRotation;
-
-        if (previousRotationAnswer != currentlyInRotation) {
-            if (currentlyInRotation) {
-                log.log(LogLevel.INFO, "Putting container back into rotation by serving status.html again.");
-            } else {
-                log.log(LogLevel.WARNING, "Removing container from rotation by no longer serving status.html.");
-            }
         }
     }
 

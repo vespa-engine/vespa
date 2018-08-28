@@ -102,7 +102,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     public void run() {
         if (versionState.isUpgraded()) {
             log.log(LogLevel.INFO, "Configserver upgrading from " + versionState.storedVersion() + " to "
-                    + versionState.currentVersion() + ". Redeploying all applications");
+                                   + versionState.currentVersion() + ". Redeploying all applications");
             try {
                 if ( ! redeployAllApplications()) {
                     redeployingApplicationsFailed();

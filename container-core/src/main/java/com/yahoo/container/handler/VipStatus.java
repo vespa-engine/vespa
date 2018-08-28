@@ -15,7 +15,7 @@ import com.yahoo.container.core.VipStatusConfig;
  */
 public class VipStatus {
 
-    private final Map<Object, Boolean> clusters = new IdentityHashMap<>();
+    private final Map<Object, Boolean> clusterStatus = new IdentityHashMap<>();
     private final VipStatusConfig vipStatusConfig;
 
     public VipStatus() {
@@ -42,8 +42,8 @@ public class VipStatus {
      *            cluster or service
      */
     public void addToRotation(Object clusterIdentifier) {
-        synchronized (clusters) {
-            clusters.put(clusterIdentifier, Boolean.TRUE);
+        synchronized (clusterStatus) {
+            clusterStatus.put(clusterIdentifier, Boolean.TRUE);
         }
     }
 
@@ -55,8 +55,8 @@ public class VipStatus {
      *            cluster or service
      */
     public void removeFromRotation(Object clusterIdentifier) {
-        synchronized (clusters) {
-            clusters.put(clusterIdentifier, Boolean.FALSE);
+        synchronized (clusterStatus) {
+            clusterStatus.put(clusterIdentifier, Boolean.FALSE);
         }
     }
 
@@ -67,12 +67,12 @@ public class VipStatus {
      *         are registered (yet)
      */
     public boolean isInRotation() {
-        synchronized (clusters) {
+        synchronized (clusterStatus) {
             // if no stored state, use config to decide whether to serve or not
-            if (clusters.size() == 0) {
+            if (clusterStatus.size() == 0) {
                 return vipStatusConfig.initiallyInRotation();
             }
-            for (Boolean inRotation : clusters.values()) {
+            for (Boolean inRotation : clusterStatus.values()) {
                 if (inRotation) {
                     return true;
                 }

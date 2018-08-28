@@ -36,10 +36,13 @@ public class NodeMonitor {
     /** Whether it is assumed the node has documents available to serve */
     private boolean searchNodesOnline = false;
 
+    // Whether or not dispatch has ever responded successfully
+    private boolean statusIsKnown = false;
+
     /**
      * Creates a new node monitor for a node
      */
-    public NodeMonitor(final VespaBackEndSearcher node) {
+    public NodeMonitor(VespaBackEndSearcher node) {
         this.node = node;
     }
 
@@ -50,9 +53,6 @@ public class NodeMonitor {
     public boolean isWorking() {
         return isWorking;
     }
-
-    // Whether or not dispatch has ever responded successfully
-    private boolean statusIsKnown = false;
 
     public VespaBackEndSearcher getNode() {
         return node;
@@ -65,6 +65,7 @@ public class NodeMonitor {
      */
     public void failed(ErrorMessage error) {
         long respondedAt = System.currentTimeMillis();
+        statusIsKnown = true;
 
         if (error.getCode() == NO_ANSWER_WHEN_PINGING_NODE.code) {
             // Only count not being able to talk to backend at all
@@ -87,9 +88,9 @@ public class NodeMonitor {
     public void responded(boolean searchNodesOnline) {
         succeededAt = System.currentTimeMillis();
         this.searchNodesOnline = searchNodesOnline;
+        statusIsKnown = true;
         if (! isWorking)
             setWorking(true, "Responds correctly");
-        statusIsKnown = true;
     }
 
     /** Changes the state of this node if required */
