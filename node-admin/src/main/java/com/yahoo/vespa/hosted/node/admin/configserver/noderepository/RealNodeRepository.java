@@ -174,6 +174,8 @@ public class RealNodeRepository implements NodeRepository {
                 node.canonicalFlavor,
                 Optional.ofNullable(node.wantedVespaVersion),
                 Optional.ofNullable(node.vespaVersion),
+                Optional.ofNullable(node.wantedOsVersion),
+                Optional.ofNullable(node.currentOsVersion),
                 Optional.ofNullable(node.allowedToBeDown),
                 Optional.ofNullable(node.wantToDeprovision),
                 Optional.ofNullable(owner),
@@ -210,6 +212,7 @@ public class RealNodeRepository implements NodeRepository {
         node.currentRestartGeneration = nodeAttributes.getRestartGeneration().orElse(null);
         node.currentRebootGeneration = nodeAttributes.getRebootGeneration().orElse(null);
         node.vespaVersion = nodeAttributes.getVespaVersion().orElse(null);
+        node.currentOsVersion = nodeAttributes.getCurrentOsVersion().orElse(null);
         node.hardwareDivergence = nodeAttributes.getHardwareDivergence().orElse(null);
         node.hardwareFailureDescription = nodeAttributes.getHardwareFailureDescription().orElse(null);
         node.wantToDeprovision = nodeAttributes.getWantToDeprovision().orElse(null);
