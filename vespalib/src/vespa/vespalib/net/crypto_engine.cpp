@@ -171,7 +171,7 @@ CryptoEngine::~CryptoEngine() = default;
 CryptoEngine::SP
 CryptoEngine::get_default()
 {
-    std::lock_guard<std::mutex> guard(_shared_lock);
+    std::lock_guard guard(_shared_lock);
     if (!_shared_default) {
         _shared_default = create_default_crypto_engine();
     }

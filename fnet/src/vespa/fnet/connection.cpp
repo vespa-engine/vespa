@@ -390,7 +390,7 @@ FNET_Connection::Write(bool direct)
         ++my_write_work;
     }
 
-    if ((res >= 0) && !broken) { // flush output pipeline
+    if (res >= 0) { // flush output pipeline
         res = _socket->flush();
         while (res > 0) {
             res = _socket->flush();
