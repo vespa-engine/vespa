@@ -581,13 +581,6 @@ public class RestApiTest {
                        400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Setting target OS version for config nodes is unsupported\"}");
 
-        // Setting empty osVersion fails
-        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
-                                   Utf8.toBytes("{\"osVersion\": null}"),
-                                   Request.Method.PATCH),
-                       400,
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid target version: 0.0.0\"}");
-
         // Attempt to downgrade OS
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
                                    Utf8.toBytes("{\"osVersion\": \"7.4.2\"}"),
@@ -600,6 +593,13 @@ public class RestApiTest {
                                    Utf8.toBytes("{\"osVersion\": \"7.4.2\", \"force\": true}"),
                                    Request.Method.PATCH),
                        "{\"message\":\"Set osVersion to 7.4.2 for nodes of type confighost\"}");
+
+        // Current target is considered bad, remove it
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
+                                   Utf8.toBytes("{\"osVersion\": null}"),
+                                   Request.Method.PATCH),
+                       200,
+                       "{\"message\":\"Set osVersion to null for nodes of type confighost\"}");
     }
 
     @Test
