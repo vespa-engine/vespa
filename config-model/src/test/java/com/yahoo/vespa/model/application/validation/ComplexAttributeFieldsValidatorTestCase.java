@@ -31,18 +31,42 @@ public class ComplexAttributeFieldsValidatorTestCase {
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage("For cluster 'mycluster', search 'test': " +
                 "The following complex fields do not support using struct field attributes: " +
-                "struct_array (struct_array.s1), struct_map (struct_map.key, struct_map.value.s1). " +
+                "struct_array (struct_array.f1), struct_map (struct_map.key, struct_map.value.f1). " +
                 "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types");
 
         createModelAndValidate(joinLines("search test {",
                 "  document test {",
-                "    struct s { field s1 type array<int> {} }",
+                "    struct s { field f1 type array<int> {} }",
                 "    field struct_array type array<s> {",
-                "      struct-field s1 { indexing: attribute }",
+                "      struct-field f1 { indexing: attribute }",
                 "    }",
                 "    field struct_map type map<string,s> {",
                 "      struct-field key { indexing: attribute }",
-                "      struct-field value.s1 { indexing: attribute }",
+                "      struct-field value.f1 { indexing: attribute }",
+                "    }",
+                "  }",
+                "}"));
+    }
+
+    @Test
+    public void validation_passes_when_only_supported_struct_field_attributes_are_used() throws IOException, SAXException {
+        createModelAndValidate(joinLines("search test {",
+                "  document test {",
+                "    struct s1 {",
+                "      field f1 type string {}",
+                "      field f2 type int {}",
+                "    }",
+                "    struct s2 {",
+                "      field f3 type string {}",
+                "      field f4 type array<int> {}",
+                "      field f5 type array<s1> {}",
+                "    }",
+                "    field struct_array type array<s2> {",
+                "      struct-field f3 { indexing: attribute }",
+                "    }",
+                "    field struct_map type map<string,s2> {",
+                "      struct-field key { indexing: attribute }",
+                "      struct-field value.f3 { indexing: attribute }",
                 "    }",
                 "  }",
                 "}"));
