@@ -114,6 +114,4 @@ public interface Docker {
      * @return exitcodes, stdout and stderr in the ProcessResult
      */
     ProcessResult executeInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... command);
-
-    String getGlobalIPv6Address(ContainerName name);
 }

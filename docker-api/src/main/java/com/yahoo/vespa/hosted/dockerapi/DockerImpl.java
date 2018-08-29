@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.dockerapi;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.command.ExecStartCmd;
-import com.github.dockerjava.api.command.InspectContainerCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.InspectImageResponse;
@@ -27,7 +26,6 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 
-import javax.annotation.concurrent.GuardedBy;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Inet6Address;
@@ -64,7 +62,6 @@ public class DockerImpl implements Docker {
     private boolean started = false;
 
     private final Object monitor = new Object();
-    @GuardedBy("monitor")
     private final Set<DockerImage> scheduledPulls = new HashSet<>();
 
     private DockerClient dockerClient;
@@ -360,12 +357,6 @@ public class DockerImpl implements Docker {
     @Override
     public Optional<Container> getContainer(ContainerName containerName) {
         return asContainer(containerName.asString()).findFirst();
-    }
-
-    @Override
-    public String getGlobalIPv6Address(ContainerName name) {
-        InspectContainerCmd cmd = dockerClient.inspectContainerCmd(name.asString());
-        return cmd.exec().getNetworkSettings().getGlobalIPv6Address();
     }
 
     private Stream<Container> asContainer(String container) {
