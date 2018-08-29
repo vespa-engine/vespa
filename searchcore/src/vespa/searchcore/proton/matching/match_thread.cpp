@@ -268,8 +268,7 @@ MatchThread::findMatches(MatchTools &tools)
             tools.setup_second_phase();
             DocidRange docid_range = scheduler.total_span(thread_id);
             tools.search().initRange(docid_range.begin, docid_range.end);
-            const MatchToolsFactory & mtf = matchToolsFactory;
-            auto sorted_hit_seq = mtf.should_diversify()
+            auto sorted_hit_seq = matchToolsFactory.should_diversify()
                                   ? hits.getSortedHitSequence(matchParams.arraySize)
                                   : hits.getSortedHitSequence(matchParams.heapSize);
             WaitTimer select_best_timer(wait_time_s);
@@ -280,7 +279,7 @@ MatchThread::findMatches(MatchTools &tools)
                 kept_hits.clear();
             }
             uint32_t reRanked = hits.reRank(scorer, std::move(kept_hits));
-            if (auto onReRankTask = mtf.createOnReRankTask()) {
+            if (auto onReRankTask = matchToolsFactory.createOnReRankTask()) {
                 onReRankTask->run(hits.getReRankedHits());
             }
             thread_stats.docsReRanked(reRanked);
@@ -349,8 +348,7 @@ MatchThread::processResult(const Doom & hardDoom,
             }
         }
     }
-    const MatchToolsFactory & mtf = matchToolsFactory;
-    if (auto onMatchTask = mtf.createOnMatchTask()) {
+    if (auto onMatchTask = matchToolsFactory.createOnMatchTask()) {
         onMatchTask->run(search::ResultSet::stealResult(std::move(*result)));
     }
     if (hasGrouping) {

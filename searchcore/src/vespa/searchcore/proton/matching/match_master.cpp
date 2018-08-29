@@ -56,7 +56,7 @@ createScheduler(uint32_t numThreads, uint32_t numSearchPartitions, uint32_t numD
 ResultProcessor::Result::UP
 MatchMaster::match(const MatchParams &params,
                    vespalib::ThreadBundle &threadBundle,
-                   const MatchToolsFactory &matchToolsFactory,
+                   const MatchToolsFactory &mtf,
                    ResultProcessor &resultProcessor,
                    uint32_t distributionKey,
                    uint32_t numSearchPartitions)
@@ -64,7 +64,7 @@ MatchMaster::match(const MatchParams &params,
     fastos::StopWatch query_latency_time;
     query_latency_time.start();
     vespalib::DualMergeDirector mergeDirector(threadBundle.size());
-    MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize, matchToolsFactory.createDiversifier());
+    MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize, mtf.createDiversifier());
     TimedMatchLoopCommunicator timedCommunicator(communicator);
     DocidRangeScheduler::UP scheduler = createScheduler(threadBundle.size(), numSearchPartitions, params.numDocs);
 
@@ -74,9 +74,8 @@ MatchMaster::match(const MatchParams &params,
         IMatchLoopCommunicator &com = (i == 0)
                 ? static_cast<IMatchLoopCommunicator&>(timedCommunicator)
                 : static_cast<IMatchLoopCommunicator&>(communicator);
-        threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(),
-                        params, matchToolsFactory, com, *scheduler,
-                        resultProcessor, mergeDirector, distributionKey));
+        threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(), params, mtf, com, *scheduler,
+                                                               resultProcessor, mergeDirector, distributionKey));
         targets.push_back(threadState.back().get());
     }
     resultProcessor.prepareThreadContextCreation(threadBundle.size());
@@ -95,7 +94,7 @@ MatchMaster::match(const MatchParams &params,
     _stats.rerankTime(rerank_time_s);
     _stats.groupingTime(query_time_s - match_time_s);
     _stats.queries(1);
-    if (matchToolsFactory.match_limiter().was_limited()) {
+    if (mtf.match_limiter().was_limited()) {
         _stats.limited_queries(1);        
     }
     return reply;
