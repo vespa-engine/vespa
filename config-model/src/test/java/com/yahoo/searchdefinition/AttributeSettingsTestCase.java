@@ -4,10 +4,11 @@ package com.yahoo.searchdefinition;
 import com.yahoo.document.StructDataType;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.searchdefinition.document.Sorting;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.tensor.TensorType;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -21,6 +22,9 @@ import static org.junit.Assert.*;
  * @author  bratseth
  */
 public class AttributeSettingsTestCase extends SearchDefinitionTestCase {
+
+    @Rule
+    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void testAttributeSettings() throws IOException, ParseException {
@@ -90,6 +94,59 @@ public class AttributeSettingsTestCase extends SearchDefinitionTestCase {
         assertTrue(field.getAttributes().size() == 1);
         Attribute attr = field.getAttributes().get(field.getName());
         assertTrue(attr.isFastAccess());
+    }
+
+    private Attribute getAttributeF(String sd) throws ParseException {
+        SearchBuilder builder = new SearchBuilder();
+        builder.importString(sd);
+        builder.build();
+        Search search = builder.getSearch();
+        SDField field = (SDField) search.getDocument().getField("f");
+        return field.getAttributes().get(field.getName());
+    }
+    @Test
+    public void requireThatMutableIsDefaultOff() throws ParseException {
+        Attribute attr = getAttributeF(
+                "search test {\n" +
+                "  document test { \n" +
+                "    field f type int { \n" +
+                "      indexing: attribute \n" +
+                "    }\n" +
+                "  }\n" +
+                "}\n");
+        assertFalse(attr.isMutable());
+    }
+
+    @Test
+    public void requireThatMutableCanNotbeSetInDocument() throws ParseException {
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage("Field field 'f' in 'test' can not be marked mutable as it inside the document.");
+        Attribute attr = getAttributeF(
+                "search test {\n" +
+                    "  document test {\n" +
+                    "    field f type int {\n" +
+                    "      indexing: attribute\n" +
+                    "      attribute: mutable\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "}\n");
+    }
+
+    @Test
+    public void requireThatMutableExtraFieldCanBeSet() throws IOException, ParseException {
+        Attribute attr = getAttributeF(
+                "search test {\n" +
+                        "  document test { \n" +
+                        "    field a type int { \n" +
+                        "      indexing: attribute \n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "  field f type long {\n" +
+                        "    indexing: 0 | to_long | attribute\n" +
+                        "    attribute: mutable\n" +
+                        "  }\n" +
+                        "}\n");
+        assertTrue(attr.isMutable());
     }
 
     @Test

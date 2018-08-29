@@ -281,6 +281,7 @@ TOKEN :
 | < ENABLEBITVECTORS: "enable-bit-vectors" >
 | < ENABLEONLYBITVECTOR: "enable-only-bit-vector" >
 | < FASTACCESS: "fast-access" >
+| < MUTABLE: "mutable" >
 | < FASTSEARCH: "fast-search" >
 | < HUGE: "huge" >
 | < PREFETCH: "prefetch" >
@@ -1190,16 +1191,18 @@ Object attributeSetting(FieldOperationContainer field, AttributeOperation attrib
 }
 {
     (
-        <HUGE>               { attribute.setHuge(true); }
-      | <FASTSEARCH>         { attribute.setFastSearch(true); }
-      | <FASTACCESS>         { attribute.setFastAccess(true); }
-      | <ENABLEBITVECTORS>   { attribute.setEnableBitVectors(true); }
+        <HUGE>                { attribute.setHuge(true); }
+      | <FASTSEARCH>          { attribute.setFastSearch(true); }
+      | <FASTACCESS>          { attribute.setFastAccess(true); }
+      | <MUTABLE>             { attribute.setMutable(true); }
+      | <ENABLEBITVECTORS>    { attribute.setEnableBitVectors(true); }
       | <ENABLEONLYBITVECTOR> { attribute.setEnableOnlyBitVector(true); }
-      | <NOPREFETCH>         {
+
+      | <NOPREFETCH> {
           deployLogger.log(Level.WARNING, field + ": 'attribute : no-prefetch' is deprecated and has no effect.");
           attribute.setPrefetch(false);
       }
-      | <PREFETCH>           {
+      | <PREFETCH> {
           deployLogger.log(Level.WARNING, field + ": 'attribute : prefetch' is deprecated and has no effect.");
           attribute.setPrefetch(true);
       }
@@ -2515,6 +2518,7 @@ String identifier() : { }
       | <MAXFILTERCOVERAGE>
       | <MAXHITS>
       | <MTOKEN>
+      | <MUTABLE>
       | <NEVER>
       | <NONE>
       | <NOPREFETCH>

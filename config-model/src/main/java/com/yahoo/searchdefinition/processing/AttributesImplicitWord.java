@@ -38,7 +38,7 @@ public class AttributesImplicitWord extends Processor {
             return false;
         }
         return (field.getIndexToCount() == 0
-                && field.getAttributes().size() > 0
+                && !field.getAttributes().isEmpty()
                 && field.getIndices().isEmpty()
                 && !field.getMatching().isTypeUserSet());
     }
