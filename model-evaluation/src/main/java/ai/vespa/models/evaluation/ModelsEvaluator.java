@@ -41,8 +41,8 @@ public class ModelsEvaluator extends AbstractComponent {
     Model requireModel(String name) {
         Model model = models.get(name);
         if (model == null)
-            throw new IllegalArgumentException("No model named '" + name + ". Available models: " +
-                                               models.keySet().stream().collect(Collectors.joining(", ")));
+            throw new IllegalArgumentException("No model named '" + name + "'. Available models: " +
+                                               String.join(", ", models.keySet()));
         return model;
     }
 
