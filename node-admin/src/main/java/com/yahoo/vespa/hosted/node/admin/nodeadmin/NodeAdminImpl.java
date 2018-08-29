@@ -230,12 +230,5 @@ public class NodeAdminImpl implements NodeAdmin {
         NodeAgent agent = nodeAgentFactory.apply(hostname);
         agent.start();
         nodeAgentsByHostname.put(hostname, agent);
-
-        // Sleep between starting NodeAgents to reduce simultaneous load against docker daemon when node-admin starts
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            logger.info("Interrupted while waiting between starting node-agents");
-        }
     }
 }
