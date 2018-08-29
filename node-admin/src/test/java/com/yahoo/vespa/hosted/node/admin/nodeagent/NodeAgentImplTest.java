@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeReposit
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer;
-import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
 import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
@@ -90,7 +89,6 @@ public class NodeAgentImplTest {
             .region("us-east-1")
             .system("main")
             .parentHostHostname("parent.host.name.yahoo.com")
-            .inetAddressResolver(new InetAddressResolver())
             .pathResolver(pathResolver)
             .cloud("mycloud")
             .build();

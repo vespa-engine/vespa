@@ -100,8 +100,7 @@ public class DockerAdminComponent implements AdminComponent {
         DockerOperations dockerOperations = new DockerOperationsImpl(
                 docker,
                 environment.get(),
-                processExecuter,
-                new IPAddressesImpl());
+                processExecuter);
 
         StorageMaintainer storageMaintainer = new StorageMaintainer(
                 dockerOperations,

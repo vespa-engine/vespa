@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
-import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -43,9 +42,8 @@ public class DockerOperationsImplTest {
             .build();
     private final Docker docker = mock(Docker.class);
     private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
-    private final IPAddressesMock addressesMock = new IPAddressesMock();
     private final DockerOperationsImpl dockerOperations
-            = new DockerOperationsImpl(docker, environment, processExecuter, addressesMock);
+            = new DockerOperationsImpl(docker, environment, processExecuter);
 
     @Test
     public void processResultFromNodeProgramWhenSuccess() {
@@ -112,8 +110,7 @@ public class DockerOperationsImplTest {
         DockerOperationsImpl dockerOperations = new DockerOperationsImpl(
                 docker,
                 environment,
-                processExecuter,
-                addressesMock);
+                processExecuter);
         dockerOperations.addEtcHosts(containerData, hostname, Optional.empty(), ipV6Local);
 
         verify(containerData, times(1)).addFile(

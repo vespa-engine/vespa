@@ -19,7 +19,7 @@ public class IPAddressesMock implements IPAddresses {
         try {
             addresses.add(InetAddress.getByName(ip));
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         otherAddresses.put(hostname, addresses);
         return this;

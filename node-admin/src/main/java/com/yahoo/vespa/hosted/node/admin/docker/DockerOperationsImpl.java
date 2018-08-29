@@ -51,24 +51,25 @@ public class DockerOperationsImpl implements DockerOperations {
     private final ProcessExecuter processExecuter;
     private final String nodeProgram;
     private final Map<Path, Boolean> directoriesToMount;
-    private final IPAddresses retriever;
 
-    public DockerOperationsImpl(Docker docker, Environment environment, ProcessExecuter processExecuter, IPAddresses retriever) {
+    public DockerOperationsImpl(Docker docker, Environment environment, ProcessExecuter processExecuter) {
         this.docker = docker;
         this.environment = environment;
         this.processExecuter = processExecuter;
-        this.retriever = retriever;
 
         this.nodeProgram = environment.pathInNodeUnderVespaHome("bin/vespa-nodectl").toString();
         this.directoriesToMount = getDirectoriesToMount(environment);
     }
 
     @Override
-    public void createContainer(ContainerName containerName, final NodeSpec node, ContainerData containerData) {
+    public void createContainer(ContainerName containerName, NodeSpec node, ContainerData containerData) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         logger.info("Creating container " + containerName);
         try {
-            InetAddress nodeInetAddress = environment.getInetAddressForHost(node.getHostname());
+            // IPv6 - Assume always valid
+            Inet6Address ipV6Address = environment.getIpAddresses().getIPv6Address(node.getHostname()).orElseThrow(
+                    () -> new RuntimeException("Unable to find a valid IPv6 address for " + node.getHostname() +
+                            ". Missing an AAAA DNS entry?"));
 
             String configServers = String.join(",", environment.getConfigServerHostNames());
 
@@ -105,19 +106,16 @@ public class DockerOperationsImpl implements DockerOperations {
             }
 
             if (!docker.networkNATed()) {
-                command.withIpAddress(nodeInetAddress);
+                command.withIpAddress(ipV6Address);
                 command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
                 command.withVolume("/etc/hosts", "/etc/hosts");
             } else {
-                // IPv6 - Assume always valid
-                Inet6Address ipV6Address = this.retriever.getIPv6Address(node.getHostname()).orElseThrow(
-                        () -> new RuntimeException("Unable to find a valid IPv6 address. Missing an AAAA DNS entry?"));
                 InetAddress ipV6Prefix = InetAddress.getByName(IPV6_NPT_PREFIX);
                 InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 8);
                 command.withIpAddress(ipV6Local);
 
                 // IPv4 - Only present for some containers
-                Optional<InetAddress> ipV4Local = this.retriever.getIPv4Address(node.getHostname())
+                Optional<InetAddress> ipV4Local = environment.getIpAddresses().getIPv4Address(node.getHostname())
                         .map(ipV4Address -> {
                             InetAddress ipV4Prefix = uncheck(() -> InetAddress.getByName(IPV4_NPT_PREFIX));
                             return IPAddresses.prefixTranslate(ipV4Address, ipV4Prefix, 2);
