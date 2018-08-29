@@ -10,7 +10,9 @@ import java.util.Collection;
 import java.util.Optional;
 
 /**
- * All models imported from the models/ directory in the application package
+ * All models imported from the models/ directory in the application package.
+ * If this is empty it may be due to either not having any models in the application package,
+ * or this being created for a ZooKeeper application package, which does not have imported models.
  *
  * @author bratseth
  */
@@ -54,14 +56,20 @@ public class ImportedModels {
     }
 
     /**
-     * Returns the model at the given location in the application package (lazily loaded),
+     * Returns the model at the given location in the application package.
      *
-     * @param modelPath the full path to this model (file or directory, depending on model type)
-     *                  under the application package
-     * @throws IllegalArgumentException if the model cannot be loaded
+     * @param modelPath the path to this model (file or directory, depending on model type)
+     *                  under the application package, both from the root or relative to the
+     *                  models directory works
+     * @return the model at this path or null if none
      */
     public ImportedModel get(File modelPath) {
+        System.out.println("Name from " + modelPath + ": " + toName(modelPath));
         return importedModels.get(toName(modelPath));
+    }
+
+    public ImportedModel get(String modelName) {
+        return importedModels.get(modelName);
     }
 
     /** Returns an immutable collection of all the imported models */
