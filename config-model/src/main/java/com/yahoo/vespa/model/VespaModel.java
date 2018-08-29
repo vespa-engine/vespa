@@ -8,7 +8,6 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.FileReference;
-import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.ValidationId;
@@ -27,13 +26,11 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.log.LogLevel;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstants;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RankProfileList;
-import com.yahoo.searchdefinition.expressiontransforms.ConvertedModel;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
@@ -165,9 +162,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         this.applicationPackage = deployState.getApplicationPackage();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
 
-        createGlobalRankProfiles(deployState.getImportedModels(),
-                                 deployState.rankProfileRegistry(),
-                                 deployState.getQueryProfiles().getRegistry());
+        createGlobalRankProfiles(deployState.getImportedModels(), deployState.rankProfileRegistry());
         this.rankProfileList = new RankProfileList(null, // null search -> global
                                                    AttributeFields.empty,
                                                    deployState.rankProfileRegistry(),
@@ -225,30 +220,14 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * Creates a rank profile not attached to any search definition, for each imported model in the application package
      */
     private ImmutableList<RankProfile> createGlobalRankProfiles(ImportedModels importedModels,
-                                                                RankProfileRegistry rankProfileRegistry,
-                                                                QueryProfileRegistry queryProfiles) {
+                                                                RankProfileRegistry rankProfileRegistry) {
         List<RankProfile> profiles = new ArrayList<>();
-        if ( ! importedModels.all().isEmpty()) { // models/ directory is available
-            for (ImportedModel model : importedModels.all()) {
-                RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry);
-                rankProfileRegistry.add(profile);
-                ConvertedModel convertedModel = ConvertedModel.fromSource(model.name(), model.name(), profile, queryProfiles, model);
-                for (Map.Entry<String, RankingExpression> entry : convertedModel.expressions().entrySet()) {
-                    profile.addMacro(entry.getKey(), false).setRankingExpression(entry.getValue());
-                }
+        for (ImportedModel model : importedModels.all()) {
+            RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry);
+            for (Pair<String, RankingExpression> entry : model.outputExpressions()) {
+                profile.addMacro(entry.getFirst(), false).setRankingExpression(entry.getSecond());
             }
-        }
-        else { // generated and saved model information may be available instead
-            ApplicationFile generatedModelsDir = applicationPackage.getFile(ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR);
-            for (ApplicationFile generatedModelDir : generatedModelsDir.listFiles()) {
-                String modelName = generatedModelDir.getPath().last();
-                RankProfile profile = new RankProfile(modelName, this, rankProfileRegistry);
-                rankProfileRegistry.add(profile);
-                ConvertedModel convertedModel = ConvertedModel.fromStore(modelName, modelName, profile);
-                for (Map.Entry<String, RankingExpression> entry : convertedModel.expressions().entrySet()) {
-                    profile.addMacro(entry.getKey(), false).setRankingExpression(entry.getValue());
-                }
-            }
+            rankProfileRegistry.add(profile);
         }
         return ImmutableList.copyOf(profiles);
     }
