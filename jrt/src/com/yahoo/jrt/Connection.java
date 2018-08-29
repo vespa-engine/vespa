@@ -223,11 +223,6 @@ class Connection extends Target {
             while (socket.drain(input.getChannelWritable(readSize)) > 0) {
                 handlePackets();
             }
-            if (socket.flush() == CryptoSocket.FlushResult.NEED_WRITE) {
-                synchronized (this) {
-                    writeWork++;
-                }
-            }
             setState(CONNECTED);
             break;
         case NEED_READ:
