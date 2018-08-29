@@ -10,17 +10,20 @@ using namespace search::expression;
 
 namespace search::aggregation {
 
-bool Attribute2DocumentAccessor::check(const vespalib::Identifiable &obj) const
+bool AttributeNodeReplacer::check(const vespalib::Identifiable &obj) const
 {
     return obj.getClass().inherits(GroupingLevel::classId) || obj.getClass().inherits(AggregationResult::classId) || obj.getClass().inherits(MultiArgFunctionNode::classId);
 }
 
-void Attribute2DocumentAccessor::execute(vespalib::Identifiable &obj)
+void AttributeNodeReplacer::execute(vespalib::Identifiable &obj)
 {
     if (obj.getClass().inherits(GroupingLevel::classId)) {
         GroupingLevel & g(static_cast<GroupingLevel &>(obj));
         if (g.getExpression().getRoot()->inherits(AttributeNode::classId)) {
-            g.setExpression(std::make_unique<DocumentFieldNode>(static_cast<const AttributeNode &>(*g.getExpression().getRoot()).getAttributeName()));
+            auto replacementNode = getReplacementNode(static_cast<const AttributeNode &>(*g.getExpression().getRoot()));
+            if (replacementNode) {
+                g.setExpression(std::move(replacementNode));
+            }
         } else {
             g.getExpression().getRoot()->select(*this, *this);
         }
@@ -30,7 +33,10 @@ void Attribute2DocumentAccessor::execute(vespalib::Identifiable &obj)
         ExpressionNode * e(a.getExpression());
         if (e) {
             if (e->inherits(AttributeNode::classId)) {
-                a.setExpression(std::make_unique<DocumentFieldNode>(static_cast<const AttributeNode &>(*e).getAttributeName()));
+                auto replacementNode = getReplacementNode(static_cast<const AttributeNode &>(*e));
+                if (replacementNode) {
+                    a.setExpression(std::move(replacementNode));
+                }
             } else {
                 e->select(*this, *this);
             }
@@ -40,12 +46,21 @@ void Attribute2DocumentAccessor::execute(vespalib::Identifiable &obj)
         for(size_t i(0), m(v.size()); i < m; i++) {
             ExpressionNode::CP & e(v[i]);
             if (e->inherits(AttributeNode::classId)) {
-                e.reset(new DocumentFieldNode(static_cast<const AttributeNode &>(*e).getAttributeName()));
+                auto replacementNode = getReplacementNode(static_cast<const AttributeNode &>(*e));
+                if (replacementNode) {
+                    e.reset(replacementNode.release());
+                }
             } else {
                 e->select(*this, *this);
             }
         }
     }
+}
+
+std::unique_ptr<ExpressionNode>
+Attribute2DocumentAccessor::getReplacementNode(const AttributeNode &attributeNode)
+{
+    return std::make_unique<DocumentFieldNode>(attributeNode.getAttributeName());
 }
 
 }
