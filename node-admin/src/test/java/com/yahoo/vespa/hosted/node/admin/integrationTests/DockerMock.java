@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.dockerapi.DockerRegistryCredentialsSupplier;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 
 import java.net.InetAddress;
@@ -162,11 +161,6 @@ public class DockerMock implements Docker {
     @Override
     public String getGlobalIPv6Address(ContainerName name) {
         return "2001:db8:1:2:0:242:ac13:2";
-    }
-
-    @Override
-    public void setDockerRegistryCredentialsSupplier(DockerRegistryCredentialsSupplier dockerRegistryCredentialsSupplier) {
-
     }
 
     public static class StartContainerCommandMock implements CreateContainerCommand {
