@@ -31,6 +31,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import javax.net.ssl.HostnameVerifier;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -39,7 +40,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
 import static java.util.Collections.singleton;
 
 /**
@@ -174,7 +174,14 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
     @Override
     public void close() {
-        uncheck(client::close);
+        // Need to do try and catch, using e.g. uncheck(client::close) might fail because
+        // components are deconstructed in random order and if the bundle containing uncheck has been
+        // unloaded it will fail with NoClassDefFoundError
+        try {
+            client.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private void setContentTypeToApplicationJson(HttpRequestBase request) {
