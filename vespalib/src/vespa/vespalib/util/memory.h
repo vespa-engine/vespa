@@ -349,12 +349,26 @@ public:
         }
     }
 
+    /** @brief move constructor, takes over ownership */
+    CloneablePtr(std::unique_ptr<T> &&rhs)
+        : _p(rhs.release())
+    {
+    }
+
     /** @brief assignment operator, does deep copy using clone() */
     CloneablePtr & operator = (const CloneablePtr & rhs) {
         if (this != &rhs) {
             CloneablePtr tmp(rhs);
             swap(tmp);
         }
+        return *this;
+    }
+
+    /** @brief move assignment operator, takes over ownership */
+    CloneablePtr &operator=(std::unique_ptr<T> &&rhs)
+    {
+        cleanup();
+        _p = rhs.release();
         return *this;
     }
 
