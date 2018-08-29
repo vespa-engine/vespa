@@ -98,7 +98,7 @@ public class StructFieldAttributeChangeValidator {
             }
             if (isArrayOfStructType(dataType())) {
                 StructDataType nestedType = (StructDataType)((ArrayDataType)dataType()).getNestedType();
-                if (hasLastFieldNameInStructType(fieldNames, nestedType)) {
+                if (structTypeContainsLastFieldNameComponent(nestedType, fieldNames)) {
                     return true;
                 }
             } else if (isMapOfStructType(dataType())) {
@@ -107,7 +107,7 @@ public class StructFieldAttributeChangeValidator {
                 String subFieldName = fieldNames.nextToken();
                 if (subFieldName.equals("key") && !fieldNames.hasMoreTokens()) {
                     return true;
-                } else if (subFieldName.equals("value") && hasLastFieldNameInStructType(fieldNames, valueType)) {
+                } else if (subFieldName.equals("value") && structTypeContainsLastFieldNameComponent(valueType, fieldNames)) {
                     return true;
                 }
             } else if (isMapOfPrimitiveType(dataType())) {
@@ -153,7 +153,7 @@ public class StructFieldAttributeChangeValidator {
             return (type instanceof StructDataType);
         }
 
-        private static boolean hasLastFieldNameInStructType(StringTokenizer fieldNames, StructDataType structType) {
+        private static boolean structTypeContainsLastFieldNameComponent(StructDataType structType, StringTokenizer fieldNames) {
             return structType.getField(fieldNames.nextToken()) != null && !fieldNames.hasMoreTokens();
         }
     }
