@@ -2,14 +2,10 @@ package com.yahoo.config.model;
 
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.io.IOUtils;
-import com.yahoo.path.Path;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import org.junit.After;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
@@ -26,16 +22,11 @@ import static org.junit.Assert.assertTrue;
  */
 public class ModelEvaluationTest {
 
-    private static final String appDir = "src/test/cfg/application/ml_serving";
-
-    @After
-    public void removeGeneratedModelFiles() {
-        IOUtils.recursiveDeleteDir(Path.fromString(appDir).append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-    }
+    private static final String TESTDIR = "src/test/cfg/application/";
 
     @Test
     public void testMl_ServingApplication() throws SAXException, IOException {
-        ApplicationPackageTester tester = ApplicationPackageTester.create(appDir);
+        ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "ml_serving");
         VespaModel model = new VespaModel(tester.app());
         ContainerCluster cluster = model.getContainerClusters().get("container");
         RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
