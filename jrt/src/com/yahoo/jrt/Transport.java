@@ -5,6 +5,7 @@ package com.yahoo.jrt;
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,6 +68,7 @@ public class Transport {
     private static Logger log = Logger.getLogger(Transport.class.getName());
 
     private FatalErrorHandler fatalHandler; // NB: this must be set first
+    private CryptoEngine      cryptoEngine;
     private Thread            thread;
     private Queue             queue;
     private Queue             myQueue;
@@ -136,7 +138,7 @@ public class Transport {
         }
         if (key.isReadable()) {
             try {
-                conn.read();
+                conn.handleReadEvent();
             } catch (IOException e) {
                 conn.setLostReason(e);
                 return false;
@@ -144,7 +146,7 @@ public class Transport {
         }
         if (key.isWritable()) {
             try {
-                conn.write();
+                conn.handleWriteEvent();
             } catch (IOException e) {
                 conn.setLostReason(e);
                 return false;
@@ -154,14 +156,19 @@ public class Transport {
     }
 
     /**
-     * Create a new Transport object with the given fatal error handler.
+     * Create a new Transport object with the given fatal error
+     * handler and CryptoEngine. If a fatal error occurs when no fatal
+     * error handler is registered, the default action is to log the
+     * error and exit with exit code 1.
      *
      * @param fatalHandler fatal error handler
+     * @param cryptoEngine crypto engine to use
      **/
-    public Transport(FatalErrorHandler fatalHandler) {
+    public Transport(FatalErrorHandler fatalHandler, CryptoEngine cryptoEngine) {
         synchronized (this) {
             this.fatalHandler = fatalHandler; // NB: this must be set first
         }
+        this.cryptoEngine = cryptoEngine;
         thread    = new Thread(new Run(), "<transport>");
         queue     = new Queue();
         myQueue   = new Queue();
@@ -177,15 +184,19 @@ public class Transport {
         thread.setDaemon(true);
         thread.start();
     }
+    public Transport(CryptoEngine cryptoEngine) { this(null, cryptoEngine); }
+    public Transport(FatalErrorHandler fatalHandler) { this(fatalHandler, CryptoEngine.createDefault()); }
+    public Transport() { this(null, CryptoEngine.createDefault()); }
 
     /**
-     * Create a Transport object with no fatal error handler. If a
-     * fatal error occurs when no fatal error handler is registered,
-     * the default action is to log the error and exit with exit code
-     * 1.
+     * Use the underlying CryptoEngine to create a CryptoSocket.
+     *
+     * @return CryptoSocket handling appropriate encryption
+     * @param channel low-level socket channel to be wrapped by the CryptoSocket
+     * @param isServer flag indicating which end of the connection we are
      **/
-    public Transport() {
-        this(null);
+    CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer) {
+        return cryptoEngine.createCryptoSocket(channel, isServer);
     }
 
     /**
