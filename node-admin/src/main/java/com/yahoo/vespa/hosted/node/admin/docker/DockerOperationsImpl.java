@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
+import com.google.common.net.InetAddresses;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.system.ProcessExecuter;
@@ -65,88 +66,85 @@ public class DockerOperationsImpl implements DockerOperations {
     public void createContainer(ContainerName containerName, NodeSpec node, ContainerData containerData) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         logger.info("Creating container " + containerName);
-        try {
-            // IPv6 - Assume always valid
-            Inet6Address ipV6Address = environment.getIpAddresses().getIPv6Address(node.getHostname()).orElseThrow(
-                    () -> new RuntimeException("Unable to find a valid IPv6 address for " + node.getHostname() +
-                            ". Missing an AAAA DNS entry?"));
 
-            String configServers = String.join(",", environment.getConfigServerHostNames());
+        // IPv6 - Assume always valid
+        Inet6Address ipV6Address = environment.getIpAddresses().getIPv6Address(node.getHostname()).orElseThrow(
+                () -> new RuntimeException("Unable to find a valid IPv6 address for " + node.getHostname() +
+                        ". Missing an AAAA DNS entry?"));
 
-            Docker.CreateContainerCommand command = docker.createContainerCommand(
-                    node.getWantedDockerImage().get(),
-                    ContainerResources.from(node.getMinCpuCores(), node.getMinMainMemoryAvailableGb()),
-                    containerName,
-                    node.getHostname())
-                    .withManagedBy(MANAGER_NAME)
-                    .withEnvironment("VESPA_CONFIGSERVERS", configServers)
-                    .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS",
-                                     environment.getContainerEnvironmentResolver().createSettings(environment, node))
-                    .withUlimit("nofile", 262_144, 262_144)
-                    .withUlimit("nproc", 32_768, 409_600)
-                    .withUlimit("core", -1, -1)
-                    .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
-                    .withAddCapability("SYS_ADMIN"); // Needed for perf
+        String configServers = String.join(",", environment.getConfigServerHostNames());
 
-            if (environment.getNodeType() == NodeType.confighost ||
-                    environment.getNodeType() == NodeType.proxyhost) {
-                command.withVolume("/var/lib/sia", "/var/lib/sia");
-            }
+        Docker.CreateContainerCommand command = docker.createContainerCommand(
+                node.getWantedDockerImage().get(),
+                ContainerResources.from(node.getMinCpuCores(), node.getMinMainMemoryAvailableGb()),
+                containerName,
+                node.getHostname())
+                .withManagedBy(MANAGER_NAME)
+                .withEnvironment("VESPA_CONFIGSERVERS", configServers)
+                .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS",
+                                 environment.getContainerEnvironmentResolver().createSettings(environment, node))
+                .withUlimit("nofile", 262_144, 262_144)
+                .withUlimit("nproc", 32_768, 409_600)
+                .withUlimit("core", -1, -1)
+                .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
+                .withAddCapability("SYS_ADMIN"); // Needed for perf
 
-            // TODO When rolling out host-admin on-prem: Always map in /var/zpe from host + make sure zpu is configured on host
-            if (environment.getCloud().equalsIgnoreCase("yahoo")) {
-                Path pathInNode = environment.pathInNodeUnderVespaHome("var/zpe");
-                command.withVolume(environment.pathInHostFromPathInNode(containerName, pathInNode).toString(), pathInNode.toString());
-            } else if (environment.getNodeType() == NodeType.host) {
-                command.withVolume("/var/zpe", environment.pathInNodeUnderVespaHome("var/zpe").toString());
-            }
-
-            if (environment.getNodeType() == NodeType.proxyhost) {
-                command.withVolume("/opt/yahoo/share/ssl/certs/", "/opt/yahoo/share/ssl/certs/");
-            }
-
-            if (!docker.networkNATed()) {
-                command.withIpAddress(ipV6Address);
-                command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
-                command.withVolume("/etc/hosts", "/etc/hosts");
-            } else {
-                InetAddress ipV6Prefix = InetAddress.getByName(IPV6_NPT_PREFIX);
-                InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 8);
-                command.withIpAddress(ipV6Local);
-
-                // IPv4 - Only present for some containers
-                Optional<InetAddress> ipV4Local = environment.getIpAddresses().getIPv4Address(node.getHostname())
-                        .map(ipV4Address -> {
-                            InetAddress ipV4Prefix = uncheck(() -> InetAddress.getByName(IPV4_NPT_PREFIX));
-                            return IPAddresses.prefixTranslate(ipV4Address, ipV4Prefix, 2);
-                        });
-                ipV4Local.ifPresent(command::withIpAddress);
-
-                addEtcHosts(containerData, node.getHostname(), ipV4Local, ipV6Local);
-
-                command.withNetworkMode(DOCKER_CUSTOM_BRIDGE_NETWORK_NAME);
-            }
-
-            for (Path pathInNode : directoriesToMount.keySet()) {
-                String pathInHost = environment.pathInHostFromPathInNode(containerName, pathInNode).toString();
-                command.withVolume(pathInHost, pathInNode.toString());
-            }
-
-            // TODO: Enforce disk constraints
-            long minMainMemoryAvailableMb = (long) (node.getMinMainMemoryAvailableGb() * 1024);
-            if (minMainMemoryAvailableMb > 0) {
-                // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
-                // only has this much physical memory (overrides total memory reported by `free -m`).
-                command.withEnvironment("VESPA_TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
-            }
-
-            logger.info("Creating new container with args: " + command);
-            command.create();
-
-            docker.createContainer(command);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create container " + containerName.asString(), e);
+        if (environment.getNodeType() == NodeType.confighost ||
+                environment.getNodeType() == NodeType.proxyhost) {
+            command.withVolume("/var/lib/sia", "/var/lib/sia");
         }
+
+        // TODO When rolling out host-admin on-prem: Always map in /var/zpe from host + make sure zpu is configured on host
+        if (environment.getCloud().equalsIgnoreCase("yahoo")) {
+            Path pathInNode = environment.pathInNodeUnderVespaHome("var/zpe");
+            command.withVolume(environment.pathInHostFromPathInNode(containerName, pathInNode).toString(), pathInNode.toString());
+        } else if (environment.getNodeType() == NodeType.host) {
+            command.withVolume("/var/zpe", environment.pathInNodeUnderVespaHome("var/zpe").toString());
+        }
+
+        if (environment.getNodeType() == NodeType.proxyhost) {
+            command.withVolume("/opt/yahoo/share/ssl/certs/", "/opt/yahoo/share/ssl/certs/");
+        }
+
+        if (!docker.networkNATed()) {
+            command.withIpAddress(ipV6Address);
+            command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
+            command.withVolume("/etc/hosts", "/etc/hosts");
+        } else {
+            InetAddress ipV6Prefix = InetAddresses.forString(IPV6_NPT_PREFIX);
+            InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 8);
+            command.withIpAddress(ipV6Local);
+
+            // IPv4 - Only present for some containers
+            Optional<InetAddress> ipV4Local = environment.getIpAddresses().getIPv4Address(node.getHostname())
+                    .map(ipV4Address -> {
+                        InetAddress ipV4Prefix = InetAddresses.forString(IPV4_NPT_PREFIX);
+                        return IPAddresses.prefixTranslate(ipV4Address, ipV4Prefix, 2);
+                    });
+            ipV4Local.ifPresent(command::withIpAddress);
+
+            addEtcHosts(containerData, node.getHostname(), ipV4Local, ipV6Local);
+
+            command.withNetworkMode(DOCKER_CUSTOM_BRIDGE_NETWORK_NAME);
+        }
+
+        for (Path pathInNode : directoriesToMount.keySet()) {
+            String pathInHost = environment.pathInHostFromPathInNode(containerName, pathInNode).toString();
+            command.withVolume(pathInHost, pathInNode.toString());
+        }
+
+        // TODO: Enforce disk constraints
+        long minMainMemoryAvailableMb = (long) (node.getMinMainMemoryAvailableGb() * 1024);
+        if (minMainMemoryAvailableMb > 0) {
+            // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
+            // only has this much physical memory (overrides total memory reported by `free -m`).
+            command.withEnvironment("VESPA_TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
+        }
+
+        logger.info("Creating new container with args: " + command);
+        command.create();
+
+        docker.createContainer(command);
     }
 
     void addEtcHosts(ContainerData containerData,

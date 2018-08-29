@@ -1,7 +1,8 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.network;
 
+import com.google.common.net.InetAddresses;
+
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,11 +17,7 @@ public class IPAddressesMock implements IPAddresses {
 
     public IPAddressesMock addAddress(String hostname, String ip) {
         List<InetAddress> addresses = otherAddresses.getOrDefault(hostname, new ArrayList<>());
-        try {
-            addresses.add(InetAddress.getByName(ip));
-        } catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        }
+        addresses.add(InetAddresses.forString(ip));
         otherAddresses.put(hostname, addresses);
         return this;
     }

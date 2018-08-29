@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
+import com.google.common.net.InetAddresses;
 import com.yahoo.collections.Pair;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
@@ -16,7 +17,6 @@ import org.mockito.InOrder;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.util.Optional;
 
@@ -101,11 +101,11 @@ public class DockerOperationsImplTest {
     }
 
     @Test
-    public void verifyEtcHosts() throws UnknownHostException {
+    public void verifyEtcHosts() {
         ContainerData containerData = mock(ContainerData.class);
         String hostname = "hostname";
-        InetAddress ipV6Local = InetAddress.getByName("::1");
-        InetAddress ipV4Local = InetAddress.getByName("127.0.0.1");
+        InetAddress ipV6Local = InetAddresses.forString("::1");
+        InetAddress ipV4Local = InetAddresses.forString("127.0.0.1");
 
         DockerOperationsImpl dockerOperations = new DockerOperationsImpl(
                 docker,
