@@ -6,18 +6,17 @@
 #include "isearchcontext.h"
 #include "query.h"
 #include "viewresolver.h"
-#include <vespa/vespalib/util/doom.h>
 #include "querylimiter.h"
 #include "match_phase_limiter.h"
 #include "handlerecorder.h"
 #include "requestcontext.h"
-
-#include <vespa/vespalib/util/clock.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/queryeval/idiversifier.h>
-
+#include <vespa/vespalib/util/doom.h>
+#include <vespa/vespalib/util/clock.h>
 
 namespace proton::matching {
 
@@ -70,9 +69,25 @@ public:
     void setup_dump();
 };
 
+class AttributeOperationTask {
+public:
+    using IAttributeFunctor = search::attribute::IAttributeFunctor;
+    AttributeOperationTask(const RequestContext & requestContext,
+                           vespalib::stringref attribute, vespalib::stringref operation);
+    template<typename Hits>
+    void run(Hits hits) const;
+private:
+    search::attribute::BasicType getAttributeType() const;
+    const vespalib::string & getOperation() const { return _operation; }
+    const RequestContext & _requestContext;
+    vespalib::string _attribute;
+    vespalib::string _operation;
+};
+
 class MatchToolsFactory : public vespalib::noncopyable
 {
 private:
+    using IAttributeFunctor = search::attribute::IAttributeFunctor;
     QueryLimiter                    & _queryLimiter;
     RequestContext                    _requestContext;
     const vespalib::Doom              _hardDoom;
@@ -84,8 +99,12 @@ private:
     const search::fef::Properties   & _featureOverrides;
     DiversityParams                   _diversityParams;
     bool                              _valid;
+
+    std::unique_ptr<AttributeOperationTask>
+    createTask(vespalib::stringref attribute, vespalib::stringref operation) const;
 public:
-    typedef std::unique_ptr<MatchToolsFactory> UP;
+    using UP = std::unique_ptr<MatchToolsFactory>;
+    using BasicType = search::attribute::BasicType;
 
     MatchToolsFactory(QueryLimiter & queryLimiter,
                       const vespalib::Doom & softDoom,
@@ -108,6 +127,11 @@ public:
     std::unique_ptr<search::queryeval::IDiversifier> createDiversifier() const;
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
     bool has_first_phase_rank() const { return !_rankSetup.getFirstPhaseRank().empty(); }
+    std::unique_ptr<AttributeOperationTask> createOnMatchTask() const;
+    std::unique_ptr<AttributeOperationTask> createOnReRankTask() const;
+    std::unique_ptr<AttributeOperationTask> createOnSummaryTask() const;
+
+    const RequestContext & requestContext() const { return _requestContext; }
 };
 
 }

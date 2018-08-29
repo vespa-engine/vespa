@@ -24,6 +24,7 @@
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/searchreply.h>
+#include <vespa/searchlib/test/mock_attribute_context.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
@@ -49,6 +50,7 @@ using namespace search::query;
 using namespace search::queryeval;
 using namespace search;
 
+using search::attribute::test::MockAttributeContext;
 using search::index::schema::DataType;
 using storage::spi::Timestamp;
 
@@ -93,52 +95,6 @@ vespalib::string make_same_element_stack_dump(const vespalib::string &a1_term, c
 
 const uint32_t NUM_DOCS = 1000;
 
-//-----------------------------------------------------------------------------
-
-class MyAttributeContext : public IAttributeContext
-{
-private:
-    typedef std::map<string, IAttributeVector *> Map;
-    Map _vectors;
-
-public:
-    const IAttributeVector *get(const string &name) const {
-        if (_vectors.find(name) == _vectors.end()) {
-            return 0;
-        }
-        return _vectors.find(name)->second;
-    }
-    const IAttributeVector *
-    getAttribute(const string &name) const override {
-        return get(name);
-    }
-    const IAttributeVector *
-    getAttributeStableEnum(const string &name) const override {
-        return get(name);
-    }
-    void
-    getAttributeList(std::vector<const IAttributeVector *> & list) const override {
-        Map::const_iterator pos = _vectors.begin();
-        Map::const_iterator end = _vectors.end();
-        for (; pos != end; ++pos) {
-            list.push_back(pos->second);
-        }
-    }
-    ~MyAttributeContext() override {
-        Map::iterator pos = _vectors.begin();
-        Map::iterator end = _vectors.end();
-        for (; pos != end; ++pos) {
-            delete pos->second;
-        }
-    }
-
-    //-------------------------------------------------------------------------
-
-    void add(IAttributeVector *attr) {
-        _vectors[attr->getName()] = attr;
-    }
-};
-
 struct EmptyConstantValueRepo : public proton::matching::IConstantValueRepo {
     virtual vespalib::eval::ConstantValue::UP getConstant(const vespalib::string &) const override {
         return std::make_unique<proton::matching::ErrorConstantValue>();
@@ -151,7 +107,7 @@ struct MyWorld {
     Schema                  schema;
     Properties              config;
     FakeSearchContext       searchContext;
-    MyAttributeContext      attributeContext;
+    MockAttributeContext    attributeContext;
     SessionManager::SP      sessionManager;
     DocumentMetaStore       metaStore;
     MatchingStats           matchingStats;
@@ -349,9 +305,9 @@ struct MyWorld {
     SearchReply::UP performSearch(SearchRequest::SP req, size_t threads) {
         Matcher::SP matcher = createMatcher();
         SearchSession::OwnershipBundle owned_objects;
-        owned_objects.search_handler.reset(new MySearchHandler(matcher));
-        owned_objects.context.reset(new MatchContext(std::make_unique<MyAttributeContext>(),
-                                                     std::make_unique<FakeSearchContext>()));
+        owned_objects.search_handler = std::make_shared<MySearchHandler>(matcher);
+        owned_objects.context = std::make_unique<MatchContext>(std::make_unique<MockAttributeContext>(),
+                                                               std::make_unique<FakeSearchContext>());
         vespalib::SimpleThreadBundle threadBundle(threads);
         SearchReply::UP reply = matcher->match(*req, threadBundle, searchContext, attributeContext,
                                                *sessionManager, metaStore, std::move(owned_objects));

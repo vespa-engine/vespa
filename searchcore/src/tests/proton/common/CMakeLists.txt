@@ -4,6 +4,7 @@ vespa_add_executable(searchcore_selectpruner_test_app TEST
     selectpruner_test.cpp
     DEPENDS
     searchcore_pcommon
+    searchlib_test
 )
 vespa_add_test(NAME searchcore_selectpruner_test_app COMMAND searchcore_selectpruner_test_app)
 vespa_add_executable(searchcore_cachedselect_test_app TEST
@@ -11,5 +12,6 @@ vespa_add_executable(searchcore_cachedselect_test_app TEST
     cachedselect_test.cpp
     DEPENDS
     searchcore_pcommon
+    searchlib_test
 )
 vespa_add_test(NAME searchcore_cachedselect_test_app COMMAND searchcore_cachedselect_test_app)

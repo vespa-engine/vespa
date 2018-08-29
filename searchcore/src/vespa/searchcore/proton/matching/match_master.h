@@ -25,7 +25,7 @@ public:
     const MatchingStats & getStats() const { return _stats; }
     ResultProcessor::Result::UP match(const MatchParams &params,
                                       vespalib::ThreadBundle &threadBundle,
-                                      const MatchToolsFactory &matchToolsFactory,
+                                      const MatchToolsFactory &mtf,
                                       ResultProcessor &resultProcessor,
                                       uint32_t distributionKey,
                                       uint32_t numSearchPartitions);

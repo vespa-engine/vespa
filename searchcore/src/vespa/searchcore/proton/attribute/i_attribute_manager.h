@@ -5,6 +5,7 @@
 #include "attribute_collection_spec.h"
 #include "exclusive_attribute_read_accessor.h"
 #include "i_attribute_factory.h"
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchcorespi/flush/iflushtarget.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/serialnum.h>
@@ -30,6 +31,7 @@ struct IAttributeManager : public search::IAttributeManager
     using SP = std::shared_ptr<IAttributeManager>;
     using OnWriteDoneType = const std::shared_ptr<search::IDestructorCallback> &;
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
+    using IConstAttributeFunctor = search::attribute::IConstAttributeFunctor;
 
     /**
      * Create a new attribute manager based on the content of the current one and
@@ -91,7 +93,7 @@ struct IAttributeManager : public search::IAttributeManager
      */
     virtual const std::vector<search::AttributeVector *> &getWritableAttributes() const = 0;
 
-    virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const = 0;
+    virtual void asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const = 0;
 
     virtual ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &name) const = 0;
 

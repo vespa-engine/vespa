@@ -11,7 +11,7 @@
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
-#include <vespa/searchlib/attribute/i_attribute_functor.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/searchlib/common/threaded_compactable_lid_space.h>
@@ -423,6 +423,7 @@ namespace {
 
 class CombinedAttributeContext : public IAttributeContext {
 private:
+    using IAttributeFunctor = search::attribute::IAttributeFunctor;
     AttributeContext _ctx;
     ImportedAttributesContext _importedCtx;
 
@@ -433,27 +434,30 @@ public:
           _importedCtx(importedAttributes)
     {
     }
-    virtual const IAttributeVector *getAttribute(const vespalib::string &name) const override {
+    const IAttributeVector *getAttribute(const vespalib::string &name) const override {
         const IAttributeVector *result = _ctx.getAttribute(name);
         if (result == nullptr) {
             result = _importedCtx.getAttribute(name);
         }
         return result;
     }
-    virtual const IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const override {
+    const IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const override {
         const IAttributeVector *result = _ctx.getAttributeStableEnum(name);
         if (result == nullptr) {
             result = _importedCtx.getAttributeStableEnum(name);
         }
         return result;
     }
-    virtual void getAttributeList(std::vector<const IAttributeVector *> &list) const override {
+    void getAttributeList(std::vector<const IAttributeVector *> &list) const override {
         _ctx.getAttributeList(list);
         _importedCtx.getAttributeList(list);
     }
-    virtual void releaseEnumGuards() override {
+    void releaseEnumGuards() override {
         _ctx.releaseEnumGuards();
         _importedCtx.releaseEnumGuards();
+    }
+    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override {
+        _ctx.asyncForAttribute(name, std::move(func));
     }
 };
 
@@ -462,8 +466,8 @@ public:
 IAttributeContext::UP
 AttributeManager::createContext() const
 {
-    if (_importedAttributes.get() != nullptr) {
-        return std::make_unique<CombinedAttributeContext>(*this, *_importedAttributes.get());
+    if (_importedAttributes) {
+        return std::make_unique<CombinedAttributeContext>(*this, *_importedAttributes);
     }
     return std::make_unique<AttributeContext>(*this);
 }
@@ -569,7 +573,7 @@ AttributeManager::getWritableAttributes() const
 
 
 void
-AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func) const
+AttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const
 {
     for (const auto &attr : _attributes) {
         if (attr.second.isExtra()) {
@@ -579,6 +583,18 @@ AttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor> func)
         _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(attrsp->getNamePrefix()),
                                       [attrsp, func]() { (*func)(*attrsp); });
     }
+}
+
+void
+AttributeManager::asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const {
+    AttributeMap::const_iterator itr = _attributes.find(name);
+    if (itr == _attributes.end() || itr->second.isExtra() || !func) {
+        return;
+    }
+    AttributeVector::SP attrsp = itr->second.getAttribute();
+    vespalib::string attrName = attrsp->getNamePrefix();
+    _attributeFieldWriter.execute(_attributeFieldWriter.getExecutorId(attrName),
+                                  [attr=std::move(attrsp), func=std::move(func)]() { (*func)(*attr); });
 }
 
 ExclusiveAttributeReadAccessor::UP

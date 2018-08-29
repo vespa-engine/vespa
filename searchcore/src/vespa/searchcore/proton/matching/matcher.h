@@ -8,6 +8,7 @@
 #include "search_session.h"
 #include "viewresolver.h"
 #include <vespa/searchcore/proton/matching/querylimiter.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
@@ -44,6 +45,9 @@ class MatchToolsFactory;
 class Matcher
 {
 private:
+    using IAttributeContext = search::attribute::IAttributeContext;
+    using DocsumRequest = search::engine::DocsumRequest;
+    using Properties = search::fef::Properties;
     IndexEnvironment              _indexEnv;
     search::fef::BlueprintFactory _blueprintFactory;
     search::fef::RankSetup::SP    _rankSetup;
@@ -55,8 +59,7 @@ private:
     uint32_t                      _distributionKey;
 
     search::FeatureSet::SP
-    getFeatureSet(const search::engine::DocsumRequest & req, ISearchContext & searchCtx,
-                  search::attribute::IAttributeContext & attrCtx,
+    getFeatureSet(const DocsumRequest & req, ISearchContext & searchCtx, IAttributeContext & attrCtx,
                   SessionManager &sessionMgr, bool summaryFeatures);
     std::unique_ptr<search::engine::SearchReply>
     handleGroupingSession(SessionManager &sessionMgr,
@@ -64,12 +67,11 @@ private:
                           std::unique_ptr<search::grouping::GroupingSession> gs);
 
     size_t computeNumThreadsPerSearch(search::queryeval::Blueprint::HitEstimate hits,
-                                      const search::fef::Properties & rankProperties) const;
+                                      const Properties & rankProperties) const;
 public:
     /**
      * Convenience typedefs.
      */
-    typedef std::unique_ptr<Matcher> UP;
     typedef std::shared_ptr<Matcher> SP;
 
 
@@ -84,7 +86,7 @@ public:
      * @param props ranking configuration
      * @param clock used for timeout handling
      **/
-    Matcher(const search::index::Schema &schema, const search::fef::Properties &props,
+    Matcher(const search::index::Schema &schema, const Properties &props,
             const vespalib::Clock &clock, QueryLimiter &queryLimiter,
             const IConstantValueRepo &constantValueRepo, uint32_t distributionKey);
 
@@ -103,9 +105,8 @@ public:
      **/
     std::unique_ptr<MatchToolsFactory>
     create_match_tools_factory(const search::engine::Request &request, ISearchContext &searchContext,
-                               search::attribute::IAttributeContext &attrContext,
-                               const search::IDocumentMetaStore &metaStore,
-                               const search::fef::Properties &feature_overrides) const;
+                               IAttributeContext &attrContext, const search::IDocumentMetaStore &metaStore,
+                               const Properties &feature_overrides) const;
 
     /**
      * Perform a search against this matcher.
@@ -120,7 +121,7 @@ public:
      **/
     std::unique_ptr<search::engine::SearchReply>
     match(const search::engine::SearchRequest &request, vespalib::ThreadBundle &threadBundle,
-          ISearchContext &searchContext, search::attribute::IAttributeContext &attrContext,
+          ISearchContext &searchContext, IAttributeContext &attrContext,
           SessionManager &sessionManager, const search::IDocumentMetaStore &metaStore,
           SearchSession::OwnershipBundle &&owned_objects);
 
@@ -135,8 +136,8 @@ public:
      * @return calculated summary features.
      **/
     search::FeatureSet::SP
-    getSummaryFeatures(const search::engine::DocsumRequest & req, ISearchContext & searchCtx,
-                       search::attribute::IAttributeContext & attrCtx, SessionManager &sessionManager);
+    getSummaryFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
+                       IAttributeContext & attrCtx, SessionManager &sessionManager);
 
     /**
      * Perform matching for the documents in the given docsum request
@@ -149,8 +150,8 @@ public:
      * @return calculated rank features.
      **/
     search::FeatureSet::SP
-    getRankFeatures(const search::engine::DocsumRequest & req, ISearchContext & searchCtx,
-                    search::attribute::IAttributeContext & attrCtx, SessionManager &sessionManager);
+    getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
+                    IAttributeContext & attrCtx, SessionManager &sessionManager);
 
     /**
      * @return true if this rankprofile has summary-features enabled

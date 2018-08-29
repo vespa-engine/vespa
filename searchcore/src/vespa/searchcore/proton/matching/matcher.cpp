@@ -204,9 +204,8 @@ Matcher::computeNumThreadsPerSearch(Blueprint::HitEstimate hits, const Propertie
 
 SearchReply::UP
 Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundle,
-               ISearchContext &searchContext, IAttributeContext &attrContext,
-               SessionManager &sessionMgr, const search::IDocumentMetaStore &metaStore,
-               SearchSession::OwnershipBundle &&owned_objects)
+               ISearchContext &searchContext, IAttributeContext &attrContext, SessionManager &sessionMgr,
+               const search::IDocumentMetaStore &metaStore, SearchSession::OwnershipBundle &&owned_objects)
 {
     fastos::StopWatch total_matching_time;
     total_matching_time.start();

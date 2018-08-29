@@ -2,15 +2,17 @@
 
 #include "match_thread.h"
 #include "document_scorer.h"
+#include <vespa/searchlib/attribute/attribute_operation.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
+#include <vespa/searchcore/grouping/groupingmanager.h>
+#include <vespa/searchcore/grouping/groupingcontext.h>
+#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/thread_bundle.h>
-#include <vespa/searchcore/grouping/groupingmanager.h>
-#include <vespa/searchcore/grouping/groupingcontext.h>
-#include <vespa/searchlib/common/bitvector.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_thread");
@@ -25,6 +27,7 @@ using search::fef::FeatureResolver;
 using search::fef::LazyValue;
 using search::queryeval::HitCollector;
 using search::queryeval::SortedHitSequence;
+using search::attribute::AttributeOperation;
 
 namespace {
 
@@ -247,8 +250,6 @@ MatchThread::match_loop_helper(MatchTools &tools, HitCollector &hits)
     }
 }
 
-//-----------------------------------------------------------------------------
-
 search::ResultSet::UP
 MatchThread::findMatches(MatchTools &tools)
 {
@@ -278,6 +279,9 @@ MatchThread::findMatches(MatchTools &tools)
                 kept_hits.clear();
             }
             uint32_t reRanked = hits.reRank(scorer, std::move(kept_hits));
+            if (auto onReRankTask = matchToolsFactory.createOnReRankTask()) {
+                onReRankTask->run(hits.getReRankedHits());
+            }
             thread_stats.docsReRanked(reRanked);
         }
         { // rank scaling
@@ -343,6 +347,9 @@ MatchThread::processResult(const Doom & hardDoom,
                 pr.add(search::RankedHit(bitId));
             }
         }
+    }
+    if (auto onMatchTask = matchToolsFactory.createOnMatchTask()) {
+        onMatchTask->run(search::ResultSet::stealResult(std::move(*result)));
     }
     if (hasGrouping) {
         context.grouping->setDistributionKey(_distributionKey);

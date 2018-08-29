@@ -14,6 +14,7 @@ vespa_add_executable(searchcore_matching_test_app TEST
     searchcore_grouping
     searchcore_util
     searchlib_searchlib_uca
+    searchlib_test
 )
 vespa_add_test(NAME searchcore_matching_test_app COMMAND searchcore_matching_test_app)
 vespa_add_executable(searchcore_sessionmanager_test_app TEST

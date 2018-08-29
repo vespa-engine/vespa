@@ -4,6 +4,8 @@
 #include "querynodes.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/attribute/diversity.h>
+#include <vespa/searchlib/attribute/attribute_operation.h>
+#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_tools");
 #include <vespa/searchlib/query/tree/querytreecreator.h>
@@ -12,10 +14,12 @@ using search::attribute::IAttributeContext;
 using search::queryeval::IRequestContext;
 using search::queryeval::IDiversifier;
 using search::attribute::diversity::DiversityFilter;
+using search::attribute::BasicType;
 
 using namespace search::fef;
 using namespace search::fef::indexproperties::matchphase;
 using namespace search::fef::indexproperties::matching;
+using namespace search::fef::indexproperties;
 using search::IDocumentMetaStore;
 
 namespace proton::matching {
@@ -199,7 +203,8 @@ MatchToolsFactory::createMatchTools() const
                                         *_match_limiter, _queryEnv, _mdl, _rankSetup, _featureOverrides);
 }
 
-std::unique_ptr<IDiversifier> MatchToolsFactory::createDiversifier() const
+std::unique_ptr<IDiversifier>
+MatchToolsFactory::createDiversifier() const
 {
     if ( !_diversityParams.enabled() ) {
         return std::unique_ptr<IDiversifier>();
@@ -213,5 +218,53 @@ std::unique_ptr<IDiversifier> MatchToolsFactory::createDiversifier() const
     return DiversityFilter::create(*attr, _rankSetup.getHeapSize(), max_per_group, _diversityParams.min_groups,
                                    _diversityParams.cutoff_strategy == DiversityParams::CutoffStrategy::STRICT);
 }
+
+std::unique_ptr<AttributeOperationTask>
+MatchToolsFactory::createTask(vespalib::stringref attribute, vespalib::stringref operation) const {
+    return (!attribute.empty() && ! operation.empty())
+           ? std::make_unique<AttributeOperationTask>(_requestContext, attribute, operation)
+           : std::unique_ptr<AttributeOperationTask>();
+}
+std::unique_ptr<AttributeOperationTask>
+MatchToolsFactory::createOnMatchTask() const {
+    return createTask(execute::onmatch::Attribute::lookup(_queryEnv.getProperties()),
+                      execute::onmatch::Operation::lookup(_queryEnv.getProperties()));
+}
+std::unique_ptr<AttributeOperationTask>
+MatchToolsFactory::createOnReRankTask() const {
+    return createTask(execute::onrerank::Attribute::lookup(_queryEnv.getProperties()),
+                      execute::onrerank::Operation::lookup(_queryEnv.getProperties()));
+}
+std::unique_ptr<AttributeOperationTask>
+MatchToolsFactory::createOnSummaryTask() const {
+    return createTask(execute::onsummary::Attribute::lookup(_queryEnv.getProperties()),
+                      execute::onsummary::Operation::lookup(_queryEnv.getProperties()));
+}
+
+AttributeOperationTask::AttributeOperationTask(const RequestContext & requestContext,
+                                               vespalib::stringref attribute, vespalib::stringref operation)
+    : _requestContext(requestContext),
+      _attribute(attribute),
+      _operation(operation)
+{
+}
+
+search::attribute::BasicType
+AttributeOperationTask::getAttributeType() const {
+    auto attr = _requestContext.getAttribute(_attribute);
+    return attr ? attr->getBasicType() : BasicType::NONE;
+}
+
+using search::attribute::AttributeOperation;
+
+template <typename Hits>
+void
+AttributeOperationTask::run(Hits docs) const {
+    _requestContext.asyncForAttribute(_attribute, AttributeOperation::create(getAttributeType(), getOperation(), std::move(docs)));
+}
+
+template void AttributeOperationTask::run(std::vector<AttributeOperation::Hit>) const;
+template void AttributeOperationTask::run(std::vector<uint32_t >) const;
+template void AttributeOperationTask::run(AttributeOperation::FullResult) const;
 
 }

@@ -13,6 +13,7 @@ Config::Config() :
     _enableOnlyBitVector(false),
     _isFilter(false),
     _fastAccess(false),
+    _mutable(false),
     _growStrategy(),
     _compactionStrategy(),
     _predicateParams(),
@@ -29,6 +30,7 @@ Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_)
       _enableOnlyBitVector(false),
       _isFilter(false),
       _fastAccess(false),
+      _mutable(false),
       _growStrategy(),
       _compactionStrategy(),
       _predicateParams(),
@@ -39,5 +41,24 @@ Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_)
 Config::Config(const Config &) = default;
 Config & Config::operator = (const Config &) = default;
 Config::~Config() = default;
+
+bool
+Config::operator==(const Config &b) const
+{
+    return _basicType == b._basicType &&
+           _type == b._type &&
+           _huge == b._huge &&
+           _fastSearch == b._fastSearch &&
+           _enableBitVectors == b._enableBitVectors &&
+           _enableOnlyBitVector == b._enableOnlyBitVector &&
+           _isFilter == b._isFilter &&
+           _fastAccess == b._fastAccess &&
+           _mutable == b._mutable &&
+           _growStrategy == b._growStrategy &&
+           _compactionStrategy == b._compactionStrategy &&
+           _predicateParams == b._predicateParams &&
+           (_basicType.type() != BasicType::Type::TENSOR ||
+            _tensorType == b._tensorType);
+}
 
 }

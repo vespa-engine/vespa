@@ -45,10 +45,11 @@ TEST("test illegal operations on float attribute") {
 }
 
 AttributeVector::SP
-createAttribute(BasicType basicType, const vespalib::string &fieldName, bool fastSearch = false)
+createAttribute(BasicType basicType, const vespalib::string &fieldName, bool fastSearch = false, bool immutable = false)
 {
     Config cfg(basicType, CollectionType::SINGLE);
-    cfg.setFastSearch(fastSearch);
+    cfg.setMutable(!immutable)
+       .setFastSearch(fastSearch);
     auto av = search::AttributeFactory::createAttribute(fieldName, cfg);
     while (20 >= av->getNumDocs()) {
         AttributeVector::DocId checkDocId(0u);
@@ -171,6 +172,13 @@ TEST("test that even slightly mismatching type will fail to update") {
 
 TEST("test that fastsearch attributes will fail to update") {
     auto attr = createAttribute(BasicType::INT64, "ai", true);
+    for (auto operation : {"++", "--", "+=7", "-=9", "*=3", "/=3", "%=3"}) {
+        TEST_DO(verify<int64_t>(BasicType::INT64, operation, *attr, 7, 7));
+    }
+}
+
+TEST("test that immutable attributes will fail to update") {
+    auto attr = createAttribute(BasicType::INT64, "ai", true, false);
     for (auto operation : {"++", "--", "+=7", "-=9", "*=3", "/=3", "%=3"}) {
         TEST_DO(verify<int64_t>(BasicType::INT64, operation, *attr, 7, 7));
     }

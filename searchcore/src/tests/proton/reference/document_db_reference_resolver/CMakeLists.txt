@@ -5,5 +5,6 @@ vespa_add_executable(searchcore_document_db_reference_resolver_test_app TEST
     DEPENDS
     searchcore_reference
     searchcore_attribute
+    searchlib_test
 )
 vespa_add_test(NAME searchcore_document_db_reference_resolver_test_app COMMAND searchcore_document_db_reference_resolver_test_app)

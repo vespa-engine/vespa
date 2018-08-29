@@ -137,7 +137,7 @@ DocsumContext::createSlimeReply()
 DocsumContext::DocsumContext(const DocsumRequest & request, IDocsumWriter & docsumWriter,
                              IDocsumStore & docsumStore, const Matcher::SP & matcher,
                              ISearchContext & searchCtx, IAttributeContext & attrCtx,
-                             search::IAttributeManager & attrMgr, SessionManager & sessionMgr) :
+                             IAttributeManager & attrMgr, SessionManager & sessionMgr) :
     _request(request),
     _docsumWriter(docsumWriter),
     _docsumStore(docsumStore),

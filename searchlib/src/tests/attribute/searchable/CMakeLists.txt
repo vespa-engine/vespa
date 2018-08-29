@@ -11,6 +11,7 @@ vespa_add_executable(searchlib_attribute_weighted_set_blueprint_test_app TEST
     attribute_weighted_set_blueprint_test.cpp
     DEPENDS
     searchlib
+    searchlib_test
 )
 vespa_add_test(NAME searchlib_attribute_weighted_set_blueprint_test_app COMMAND searchlib_attribute_weighted_set_blueprint_test_app)
 vespa_add_executable(searchlib_attribute_blueprint_test_app TEST

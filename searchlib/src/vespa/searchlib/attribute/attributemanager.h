@@ -26,7 +26,7 @@ public:
     using VectorHolder = std::shared_ptr<AttributeVector>;
     AttributeManager();
     AttributeManager(const string & base);
-    ~AttributeManager();
+    ~AttributeManager() override;
 
     /**
      * This will give you a handle to an attributevector. It
@@ -38,6 +38,8 @@ public:
 
     AttributeGuard::UP getAttribute(const string & name) const override;
     std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const override;
+    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<attribute::IAttributeFunctor> func) const override;
+
     /**
      * This will load attributes in the most memory economical way by loading largest first.
      */
@@ -52,6 +54,7 @@ public:
     void setBaseDir(const string & base);
     bool hasReaders() const;
     uint64_t getMemoryFootprint() const;
+
 protected:
     typedef vespalib::hash_map<string, VectorHolder> AttributeMap;
     AttributeMap   _attributes;
@@ -65,4 +68,3 @@ private:
 };
 
 }
-

@@ -45,9 +45,9 @@ public:
     search::engine::DocsumReply::UP getDocsums();
 
     // Implements GetDocsumsStateCallback
-    virtual void FillSummaryFeatures(search::docsummary::GetDocsumsState * state, search::docsummary::IDocsumEnvironment * env) override;
-    virtual void FillRankFeatures(search::docsummary::GetDocsumsState * state, search::docsummary::IDocsumEnvironment * env) override;
-    virtual void ParseLocation(search::docsummary::GetDocsumsState * state) override;
+    void FillSummaryFeatures(search::docsummary::GetDocsumsState * state, search::docsummary::IDocsumEnvironment * env) override;
+    void FillRankFeatures(search::docsummary::GetDocsumsState * state, search::docsummary::IDocsumEnvironment * env) override;
+    void ParseLocation(search::docsummary::GetDocsumsState * state) override;
 };
 
 } // namespace proton

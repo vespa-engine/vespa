@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "i_attribute_functor.h"
+#include "vespa/searchcommon/attribute/i_attribute_functor.h"
 #include <vespa/searchlib/common/rankedhit.h>
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/vespalib/util/array.h>
@@ -16,12 +16,10 @@ class AttributeOperation : public IAttributeFunctor {
 public:
     using Hit = std::pair<uint32_t, double>;
     using FullResult = std::pair<std::unique_ptr<search::BitVector>, vespalib::Array<search::RankedHit>>;
+
+    template <typename Hits>
     static std::unique_ptr<AttributeOperation>
-    create(search::attribute::BasicType type, const vespalib::string & operation, std::vector<uint32_t> docIds);
-    static std::unique_ptr<AttributeOperation>
-    create(search::attribute::BasicType type, const vespalib::string & operation, std::vector<Hit> hits);
-    static std::unique_ptr<AttributeOperation>
-    create(search::attribute::BasicType type, const vespalib::string & operation, FullResult && result);
+    create(search::attribute::BasicType type, const vespalib::string & operation, Hits docIds);
 };
 
 }

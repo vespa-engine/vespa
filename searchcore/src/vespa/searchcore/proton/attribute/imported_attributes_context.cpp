@@ -14,17 +14,15 @@ using LockGuard = std::lock_guard<std::mutex>;
 namespace proton {
 
 const IAttributeVector *
-ImportedAttributesContext::getOrCacheAttribute(const vespalib::string &name,
-                                               AttributeCache &attributes,
-                                               bool stableEnumGuard,
-                                               const LockGuard &) const
+ImportedAttributesContext::getOrCacheAttribute(const vespalib::string &name, AttributeCache &attributes,
+                                               bool stableEnumGuard, const LockGuard &) const
 {
     auto itr = attributes.find(name);
     if (itr != attributes.end()) {
         return itr->second->attribute();
     }
     ImportedAttributeVector::SP result = _repo.get(name);
-    if (result.get() != nullptr) {
+    if (result) {
         auto insRes = attributes.emplace(name, result->makeReadGuard(stableEnumGuard));
         return insRes.first->second->attribute();
     } else {
@@ -40,9 +38,7 @@ ImportedAttributesContext::ImportedAttributesContext(const ImportedAttributesRep
 {
 }
 
-ImportedAttributesContext::~ImportedAttributesContext()
-{
-}
+ImportedAttributesContext::~ImportedAttributesContext() = default;
 
 const IAttributeVector *
 ImportedAttributesContext::getAttribute(const vespalib::string &name) const
@@ -74,5 +70,10 @@ ImportedAttributesContext::releaseEnumGuards()
     LockGuard guard(_cacheMutex);
     _enumGuardedAttributes.clear();
 }
-    
+
+void
+ImportedAttributesContext::asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor> ) const {
+    throw std::runtime_error("proton::ImportedAttributesContext::asyncForAttribute should never be called.");
+}
+
 }
