@@ -403,7 +403,7 @@ public class RankingExpressionWithTensorFlowTestCase {
      */
     private void assertLargeConstant(String name, RankProfileSearchFixture search, Optional<Long> expectedSize) {
         try {
-            Path constantApplicationPackagePath = Path.fromString("models.generated/mnist_softmax/saved/constants").append(name + ".tbf");
+            Path constantApplicationPackagePath = Path.fromString("models.generated/mnist_softmax_saved/constants").append(name + ".tbf");
             RankingConstant rankingConstant = search.search().rankingConstants().get(name);
             assertEquals(name, rankingConstant.getName());
             assertTrue(rankingConstant.getFileName().endsWith(constantApplicationPackagePath.toString()));
@@ -485,7 +485,7 @@ public class RankingExpressionWithTensorFlowTestCase {
 
         @Override
         public ApplicationFile getFile(Path file) {
-            return new StoringApplicationPackageFile(file, Path.fromString(root().toString()));
+            return new MockApplicationFile(file, Path.fromString(root().toString()));
         }
 
         @Override
@@ -501,125 +501,6 @@ public class RankingExpressionWithTensorFlowTestCase {
                 }
             }
             return readers;
-        }
-
-    }
-
-    static class StoringApplicationPackageFile extends ApplicationFile {
-
-        /** The path to the application package root */
-        private final Path root;
-
-        /** The File pointing to the actual file represented by this */
-        private final File file;
-
-        StoringApplicationPackageFile(Path filePath, Path applicationPackagePath) {
-            super(filePath);
-            this.root = applicationPackagePath;
-            file = applicationPackagePath.append(filePath).toFile();
-        }
-
-        @Override
-        public boolean isDirectory() {
-            return file.isDirectory();
-        }
-
-        @Override
-        public boolean exists() {
-            return file.exists();
-        }
-
-        @Override
-        public Reader createReader() throws FileNotFoundException {
-            try {
-                if ( ! exists()) throw new FileNotFoundException("File '" + file + "' does not exist");
-                return IOUtils.createReader(file, "UTF-8");
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        @Override
-        public InputStream createInputStream() throws FileNotFoundException {
-            try {
-                if ( ! exists()) throw new FileNotFoundException("File '" + file + "' does not exist");
-                return new BufferedInputStream(new FileInputStream(file));
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        @Override
-        public ApplicationFile createDirectory() {
-            file.mkdirs();
-            return this;
-        }
-
-        @Override
-        public ApplicationFile writeFile(Reader input) {
-            try {
-                IOUtils.writeFile(file, IOUtils.readAll(input), false);
-                return this;
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        @Override
-        public ApplicationFile appendFile(String value) {
-            try {
-                IOUtils.writeFile(file, value, true);
-                return this;
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        @Override
-        public List<ApplicationFile> listFiles(PathFilter filter) {
-            if ( ! isDirectory()) return Collections.emptyList();
-            return Arrays.stream(file.listFiles()).filter(f -> filter.accept(Path.fromString(f.toString())))
-                                                  .map(f -> new StoringApplicationPackageFile(asApplicationRelativePath(f),
-                                                                                              root))
-                                                  .collect(Collectors.toList());
-        }
-
-        @Override
-        public ApplicationFile delete() {
-            file.delete();
-            return this;
-        }
-
-        @Override
-        public MetaData getMetaData() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int compareTo(ApplicationFile other) {
-            return this.getPath().getName().compareTo((other).getPath().getName());
-        }
-
-        /** Strips the application package root path prefix from the path of the given file */
-        private Path asApplicationRelativePath(File file) {
-            Path path = Path.fromString(file.toString());
-
-            Iterator<String> pathIterator = path.iterator();
-            // Skip the path elements this shares with the root
-            for (Iterator<String> rootIterator = root.iterator(); rootIterator.hasNext(); ) {
-                String rootElement = rootIterator.next();
-                String pathElement = pathIterator.next();
-                if ( ! rootElement.equals(pathElement)) throw new RuntimeException("Assumption broken");
-            }
-            // Build a path from the remaining
-            Path relative = Path.fromString("");
-            while (pathIterator.hasNext())
-                relative = relative.append(pathIterator.next());
-            return relative;
         }
 
     }
