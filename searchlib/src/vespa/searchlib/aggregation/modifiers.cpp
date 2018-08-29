@@ -48,7 +48,7 @@ void AttributeNodeReplacer::execute(vespalib::Identifiable &obj)
             if (e->inherits(AttributeNode::classId)) {
                 auto replacementNode = getReplacementNode(static_cast<const AttributeNode &>(*e));
                 if (replacementNode) {
-                    e.reset(replacementNode.release());
+                    e = std::move(replacementNode);
                 }
             } else {
                 e->select(*this, *this);
