@@ -258,7 +258,7 @@ public final class ContainerCluster
         addSimpleComponent("com.yahoo.container.protect.FreezeDetector");
         addSimpleComponent("com.yahoo.container.core.slobrok.SlobrokConfigurator");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
-        addSimpleComponent("com.yahoo.container.handler.ClustersStatus");
+        addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
         addJaxProviders();
     }
 
