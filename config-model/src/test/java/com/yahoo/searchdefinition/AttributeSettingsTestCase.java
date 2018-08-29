@@ -120,7 +120,7 @@ public class AttributeSettingsTestCase extends SearchDefinitionTestCase {
     @Test
     public void requireThatMutableCanNotbeSetInDocument() throws ParseException {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("Field field 'f' in 'test' can not be marked mutable as it inside the document.");
+        exceptionRule.expectMessage("Field 'f' in 'test' can not be marked mutable as it is inside the document clause.");
         Attribute attr = getAttributeF(
                 "search test {\n" +
                     "  document test {\n" +

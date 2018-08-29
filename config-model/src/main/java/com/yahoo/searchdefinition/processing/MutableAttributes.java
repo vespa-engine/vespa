@@ -19,8 +19,8 @@ public class MutableAttributes extends Processor {
         for (SDField field : search.allConcreteFields()) {
             if (!field.isExtraField() && field.getAttributes().containsKey(field.getName())) {
                 if (field.getAttributes().get(field.getName()).isMutable()) {
-                    throw new IllegalArgumentException("Field " + field + " in '" + search.getDocument().getName() +
-                            "' can not be marked mutable as it inside the document.");
+                    throw new IllegalArgumentException("Field '" + field.getName() + "' in '" + search.getDocument().getName() +
+                            "' can not be marked mutable as it is inside the document clause.");
                 }
             }
         }
