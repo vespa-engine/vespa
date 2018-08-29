@@ -4,12 +4,15 @@ package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.ChildProcessFailureException;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
+import org.hamcrest.CoreMatchers;
 import org.junit.After;
 import org.junit.Test;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -22,6 +25,25 @@ public class YumTest {
     @After
     public void tearDown() {
         terminal.verifyAllCommandsExecuted();
+    }
+
+    @Test
+    public void testArrayConversion() {
+        YumPackageName[] expected = new YumPackageName[] { new YumPackageName.Builder("1").build() };
+        assertArrayEquals(expected, Yum.toYumPackageNameArray("1"));
+
+        YumPackageName[] expected2 = new YumPackageName[] {
+                new YumPackageName.Builder("1").build(),
+                new YumPackageName.Builder("2").build()
+        };
+        assertArrayEquals(expected2, Yum.toYumPackageNameArray("1", "2"));
+
+        YumPackageName[] expected3 = new YumPackageName[] {
+                new YumPackageName.Builder("1").build(),
+                new YumPackageName.Builder("2").build(),
+                new YumPackageName.Builder("3").build()
+        };
+        assertArrayEquals(expected3, Yum.toYumPackageNameArray("1", "2", "3"));
     }
 
     @Test
@@ -143,6 +165,16 @@ public class YumTest {
                 .install("0:package-1-0.10-654.el7.*")
                 .lockVersion()
                 .converge(taskContext));
+    }
+
+    @Test
+    public void testBadPackageNameWithLock() {
+        try {
+            yum.install("package-1-0.10-654.el7").lockVersion();
+            fail();
+        } catch (IllegalStateException e) {
+            assertThat(e.getMessage(), CoreMatchers.containsStringIgnoringCase("epoch is missing"));
+        }
     }
 
     @Test(expected = ChildProcessFailureException.class)

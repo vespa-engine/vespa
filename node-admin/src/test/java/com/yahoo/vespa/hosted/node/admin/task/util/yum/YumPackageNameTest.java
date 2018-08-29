@@ -3,49 +3,124 @@ package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
 import org.junit.Test;
 
+import java.util.Optional;
+
+import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 public class YumPackageNameTest {
 
     @Test
-    public void parsePackageName() {
-        YumPackageName packageName = YumPackageName.fromString("docker-engine-selinux-1.12.6-1.el7");
-        assertFalse(packageName.getEpoch().isPresent());
-        assertEquals("docker-engine-selinux", packageName.getName());
-        assertEquals("1.12.6", packageName.getVersion().get());
-        assertEquals("1.el7", packageName.getRelease().get());
-        assertFalse(packageName.getArchitecture().isPresent());
-        assertEquals("0:docker-engine-selinux-1.12.6-1.el7.*", packageName.toFullName());
+    public void testAllValidFormats() {
+        // name
+        verifyPackageName(
+                "docker-engine-selinux",
+                null,
+                "docker-engine-selinux",
+                null,
+                null,
+                null,
+                "docker-engine-selinux",
+                null);
+
+        // name.arch
+        verifyPackageName(
+                "docker-engine-selinux.x86_64",
+                null,
+                "docker-engine-selinux",
+                null,
+                null,
+                "x86_64",
+                "docker-engine-selinux.x86_64",
+                null);
+
+        // name-ver-rel
+        verifyPackageName("docker-engine-selinux-1.12.6-1.el7",
+                null,
+                "docker-engine-selinux",
+                "1.12.6",
+                "1.el7",
+                null,
+                "docker-engine-selinux-1.12.6-1.el7",
+                null);
+
+        // name-ver-rel.arch
+        verifyPackageName("docker-engine-selinux-1.12.6-1.el7.x86_64",
+                null,
+                "docker-engine-selinux",
+                "1.12.6",
+                "1.el7",
+                "x86_64",
+                "docker-engine-selinux-1.12.6-1.el7.x86_64",
+                null);
+
+        // name-epoch:ver-rel.arch
+        verifyPackageName(
+                "docker-2:1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
+                "2",
+                "docker",
+                "1.12.6",
+                "71.git3e8e77d.el7.centos.1",
+                "x86_64",
+                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
+                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.*");
+
+        // epoch:name-ver-rel.arch
+        verifyPackageName(
+                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
+                "2",
+                "docker",
+                "1.12.6",
+                "71.git3e8e77d.el7.centos.1",
+                "x86_64",
+                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.x86_64",
+                "2:docker-1.12.6-71.git3e8e77d.el7.centos.1.*");
+    }
+
+    private void verifyPackageName(String packageName,
+                                   String epoch,
+                                   String name,
+                                   String version,
+                                   String release,
+                                   String architecture,
+                                   String toName,
+                                   String toVersionName) {
+        YumPackageName yumPackageName = YumPackageName.fromString(packageName);
+        verifyValue(epoch, yumPackageName.getEpoch());
+        verifyValue(name, Optional.of(yumPackageName.getName()));
+        verifyValue(version, yumPackageName.getVersion());
+        verifyValue(release, yumPackageName.getRelease());
+        verifyValue(architecture, yumPackageName.getArchitecture());
+        verifyValue(toName, Optional.of(yumPackageName.toName()));
+
+        if (toVersionName == null) {
+            try {
+                yumPackageName.toVersionLockName();
+                fail();
+            } catch (IllegalStateException e) {
+                assertThat(e.getMessage(), containsStringIgnoringCase("epoch is missing"));
+            }
+        } else {
+            assertEquals(toVersionName, yumPackageName.toVersionLockName());
+        }
+    }
+
+    private void verifyValue(String value, Optional<String> actual) {
+        if (value == null) {
+            assertFalse(actual.isPresent());
+        } else {
+            assertEquals(value, actual.get());
+        }
     }
 
     @Test
-    public void parsePackageNameWithArchitecture() {
-        YumPackageName packageName = YumPackageName.fromString("docker-engine-selinux-1.12.6-1.el7.x86_64");
-        assertFalse(packageName.getEpoch().isPresent());
-        assertEquals("docker-engine-selinux", packageName.getName());
-        assertEquals("1.12.6", packageName.getVersion().get());
-        assertEquals("1.el7", packageName.getRelease().get());
-        assertEquals("x86_64", packageName.getArchitecture().get());
-        assertEquals("0:docker-engine-selinux-1.12.6-1.el7.x86_64", packageName.toFullName());
-        assertEquals("0:docker-engine-selinux-1.12.6-1.el7.*", packageName.toVersionLock());
-    }
-
-    @Test
-    public void parsePackageNameWithEpochAndArchitecture() {
-        YumPackageName packageName = YumPackageName.fromString("1:docker-engine-selinux-1.12.6-1.el7.x86_64");
-        assertEquals("1", packageName.getEpoch().get());
-        assertEquals("docker-engine-selinux", packageName.getName());
-        assertEquals("1.12.6", packageName.getVersion().get());
-        assertEquals("1.el7", packageName.getRelease().get());
-        assertEquals("x86_64", packageName.getArchitecture().get());
-        assertEquals("1:docker-engine-selinux-1.12.6-1.el7.x86_64", packageName.toFullName());
-        assertEquals("1:docker-engine-selinux-1.12.6-1.el7.*", packageName.toVersionLock());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void failParsingOfPackageName() {
-        YumPackageName.fromString("docker-engine-selinux");
+    public void testArchitectures() {
+        assertEquals("x86_64", YumPackageName.fromString("docker.x86_64").getArchitecture().get());
+        assertEquals("i686", YumPackageName.fromString("docker.i686").getArchitecture().get());
+        assertEquals("noarch", YumPackageName.fromString("docker.noarch").getArchitecture().get());
     }
 
     @Test
@@ -55,8 +130,13 @@ public class YumPackageNameTest {
         assertEquals("1.el7.i486", packageName.getRelease().get());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void failParsingOfPackageNameWithEpochAndArchitecture() {
-        YumPackageName.fromString("epoch:docker-engine-selinux-1.12.6-1.el7.x86_64");
+        try {
+            YumPackageName.fromString("epoch:docker-engine-selinux-1.12.6-1.el7.x86_64");
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage(), containsStringIgnoringCase("epoch"));
+        }
     }
 }

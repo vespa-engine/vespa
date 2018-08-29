@@ -1,24 +1,81 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * YUM package name.
  *
+ * <p>From yum(8): YUM package names are used with install, update, remove, list, info etc
+ * with any of the following as well as globs of any of the following, with any of the
+ * following as well as globs of any of the following:
+ *
+ * <ol>
+ *     <li>name
+ *     <li>name.arch
+ *     <li>name-ver
+ *     <li>name-ver-rel
+ *     <li>name-ver-rel.arch
+ *     <li>name-epoch:ver-rel.arch
+ *     <li>epoch:name-ver-rel.arch
+ * </ol>
+ *
+ * <p>However this specification is terribly ambiguous. This class allows constructing
+ * a package name from its components, which is beneficial because with certain YUM
+ * commands that needs to canonicalize names (e.g. versionlock).
+ *
  * @author hakonhall
  */
 public class YumPackageName {
-    private static final Pattern ARCHITECTURE_PATTERN = Pattern.compile("\\.(noarch|x86_64|i686|i386|\\*)$");
-    private static final Pattern NAME_VER_REL_PATTERN = Pattern.compile("^(.+)-([^-]*[0-9][^-]*)-([^-]*[0-9][^-]*)$");
+    private enum Architecture { noarch, x86_64, i386, i586, i686 }
+
+    private static final String ARCHITECTURES_OR =
+            Arrays.stream(Architecture.values()).map(Architecture::name).collect(Collectors.joining("|"));
+    private static final Pattern ARCHITECTURE_PATTERN = Pattern.compile("\\.(" + ARCHITECTURES_OR + "|\\*)$");
+    private static final Pattern EPOCH_PATTERN = Pattern.compile("^((.+)-)?([0-9]+)$");
+    private static final Pattern NAME_VER_REL_PATTERN = Pattern.compile("^((.+)-)?" +
+            "([a-z0-9._]*[0-9][a-z0-9._]*)-" + // ver contains at least one digit
+            "([a-z0-9._]*[0-9][a-z0-9._]*)$"); // rel contains at least one digit
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-z0-9._-]+$");
 
     public final Optional<String> epoch;
     public final String name;
     public final Optional<String> version;
     public final Optional<String> release;
     public final Optional<String> architecture;
+
+    public static class Builder {
+        private Optional<String> epoch = Optional.empty();
+        private String name;
+        private Optional<String> version = Optional.empty();
+        private Optional<String> release = Optional.empty();
+        private Optional<String> architecture = Optional.empty();
+
+        public Builder(String name) {
+            this.name = name;
+        }
+
+        public Builder(YumPackageName packageName) {
+            epoch = packageName.epoch;
+            name = packageName.name;
+            version = packageName.version;
+            release = packageName.release;
+            architecture = packageName.architecture;
+        }
+
+        public Builder setEpoch(String epoch) { this.epoch = Optional.of(epoch); return this; }
+        public Builder setName(String name) { this.name = name; return this; }
+        public Builder setRelease(String version) { this.version = Optional.of(version); return this; }
+        public Builder setVersion(String release) { this.release = Optional.of(release); return this; }
+        public Builder setArchitecture(String architecture) { this.architecture = Optional.of(architecture); return this; }
+
+        public YumPackageName build() { return new YumPackageName(epoch, name, version, release, architecture); }
+    }
 
     /** @see Builder */
     private YumPackageName(Optional<String> epoch,
@@ -36,38 +93,53 @@ public class YumPackageName {
     /**
      * Parse the string specification of a YUM package.
      *
-     * <p>According to yum(8) a package can be specified using a variety of different
-     * and ambiguous formats. We'll use a subset:
+     * <p>The following formats are supported:
      *
-     * <ul>
-     *     <li>spec MUST be of the form name-ver-rel, name-ver-rel.arch, or epoch:name-ver-rel.arch.
-     *     <li>If specified, arch should be one of "noarch", "i686", "x86_64", or "*". The wildcard
-     *     is equivalent to not specifying arch.
-     *     <li>rel cannot end in something that would be mistaken for the '.arch' suffix.
-     *     <li>ver and rel are assumed to not contain any '-' to uniquely identify name,
-     *     and must contain a digit.
-     * </ul>
+     * <ol>
+     *     <li>name
+     *     <li>name.arch
+     *     <li>name-ver-rel
+     *     <li>name-ver-rel.arch
+     *     <li>name-epoch:ver-rel.arch
+     *     <li>epoch:name-ver-rel.arch
+     * </ol>
      *
-     * @param spec A package name of the form epoch:name-ver-rel.arch, name-ver-rel.arch, or name-ver-rel.
-     * @return The package with that name.
      * @throws IllegalArgumentException if spec does not specify a package name.
+     * @see #parseString(String)
      */
-    public static YumPackageName fromString(String spec) {
-        return parseString(spec).orElseThrow(() -> new IllegalArgumentException("Failed to decode the YUM package spec '" + spec + "'"));
-    }
-
-    /** See {@link #fromString(String)}. */
-    public static Optional<YumPackageName> parseString(String spec) {
+    public static YumPackageName fromString(final String packageSpec) {
+        String spec = packageSpec;
         Optional<String> epoch = Optional.empty();
+        String name = null;
+
+        //       packageSpec                spec
+        //  name                       name
+        //  name.arch                  name.arch
+        //  name-ver-rel               name-ver-rel
+        //  name-ver-rel.arch          name-ver-rel.arch
+        //  name-epoch:ver-rel.arch    name-epoch:ver-rel.arch
+        //  epoch:name-ver-rel.arch    epoch:name-ver-rel.arch
+
         int epochColon = spec.indexOf(':');
         if (epochColon >= 0) {
-            epoch = Optional.of(spec.substring(0, epochColon));
-            if (!epoch.get().chars().allMatch(Character::isDigit)) {
-                throw new IllegalArgumentException("Epoch is not a number: " + epoch.get());
+            Matcher epochMatcher = EPOCH_PATTERN.matcher(spec.substring(0, epochColon));
+            if (!epochMatcher.find()) {
+                throw new IllegalArgumentException("Unexpected epoch format: " + packageSpec);
             }
+
+            name = epochMatcher.group(2);
+            epoch = Optional.of(epochMatcher.group(3));
 
             spec = spec.substring(epochColon + 1);
         }
+
+        //       packageSpec                spec
+        //  name                       name
+        //  name.arch                  name.arch
+        //  name-ver-rel               name-ver-rel
+        //  name-ver-rel.arch          name-ver-rel.arch
+        //  name-epoch:ver-rel.arch    ver-rel.arch (non-null name)
+        //  epoch:name-ver-rel.arch    name-ver-rel.arch
 
         Optional<String> architecture = Optional.empty();
         Matcher architectureMatcher = ARCHITECTURE_PATTERN.matcher(spec);
@@ -76,18 +148,60 @@ public class YumPackageName {
             spec = spec.substring(0, architectureMatcher.start());
         }
 
+        //       packageSpec                spec
+        //  name                       name
+        //  name.arch                  name
+        //  name-ver-rel               name-ver-rel
+        //  name-ver-rel.arch          name-ver-rel
+        //  name-epoch:ver-rel.arch    ver-rel (non-null name)
+        //  epoch:name-ver-rel.arch    name-ver-rel
 
+        Optional<String> version = Optional.empty();
+        Optional<String> release = Optional.empty();
         Matcher matcher = NAME_VER_REL_PATTERN.matcher(spec);
         if (matcher.find()) {
-            return Optional.of(new YumPackageName(
-                    epoch,
-                    matcher.group(1),
-                    Optional.of(matcher.group(2)),
-                    Optional.of(matcher.group(3)),
-                    architecture));
+            // spec format one of:
+            //  1. name-ver-rel
+            //  2. ver-rel
+
+            spec = matcher.group(2);
+            if (spec == null) {
+                if (name == null) {
+                    throw new IllegalArgumentException("No package name was found: " + packageSpec);
+                }
+                spec = name; // makes spec hold the package name in all cases below.
+            } else if (name != null) {
+                throw new IllegalArgumentException("Ambiguous package names were found for " +
+                        packageSpec + ": '" + name + "' and '" + spec + "'");
+            }
+
+            version = Optional.of(matcher.group(3));
+            release = Optional.of(matcher.group(4));
         }
 
-        return Optional.empty();
+        //       packageSpec                spec
+        //  name                       name
+        //  name.arch                  name
+        //  name-ver-rel               name
+        //  name-ver-rel.arch          name
+        //  name-epoch:ver-rel.arch    name
+        //  epoch:name-ver-rel.arch    name
+
+        if (!NAME_PATTERN.matcher(spec).find()) {
+            throw new IllegalArgumentException("Bad package name in " + packageSpec + ": '" + spec + "'");
+        }
+        name = spec;
+
+        return new YumPackageName(epoch, name, version, release, architecture);
+    }
+
+    /** See {@link #fromString(String)}. */
+    public static Optional<YumPackageName> parseString(final String packageSpec) {
+        try {
+            return Optional.of(fromString(packageSpec));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 
     public Optional<String> getEpoch() { return epoch; }
@@ -96,53 +210,46 @@ public class YumPackageName {
     public Optional<String> getRelease() { return release; }
     public Optional<String> getArchitecture() { return architecture; }
 
-    /**
-     * Return the full name of the package in the format epoch:name-ver-rel.arch, which can
-     * be used with e.g. the YUM install and versionlock commands.
-     *
-     * <p>The package MUST have both version and release. Absent epoch defaults to "0".
-     * Absent arch defaults to "*".
-     */
-    public String toFullName() {
-        return String.format("%s:%s-%s-%s.%s",
-                epoch.orElse("0"),
-                name,
-                version.orElseThrow(() -> new IllegalStateException("Version is missing for YUM package " + name)),
-                release.orElseThrow(() -> new IllegalStateException("Release is missing for YUM package " + name)),
-                architecture.orElse("*"));
+    /** Return package name, omitting components that are not specified. */
+    public String toName() {
+        StringBuilder builder = new StringBuilder();
+        epoch.ifPresent(ep -> builder.append(ep).append(':'));
+        builder.append(name);
+        version.ifPresent(ver -> builder.append('-').append(ver));
+        release.ifPresent(rel -> builder.append('-').append(rel));
+        architecture.ifPresent(arch -> builder.append('.').append(arch));
+        return builder.toString();
     }
 
-    /** The package name output by 'yum versionlock list'. Can also be used with 'add' and 'delete'. */
-    public String toVersionLock() {
+    /**
+     * The package name output by 'yum versionlock list'. Can also be used with 'add' and 'delete'.
+     *
+     * @throws IllegalStateException if any field required for the version lock spec is missing
+     */
+    public String toVersionLockName() {
         return String.format("%s:%s-%s-%s.%s",
-                epoch.orElse("0"),
+                epoch.orElseThrow(() -> new IllegalStateException("Epoch is missing for YUM package " + name)),
                 name,
                 version.orElseThrow(() -> new IllegalStateException("Version is missing for YUM package " + name)),
                 release.orElseThrow(() -> new IllegalStateException("Release is missing for YUM package " + name)),
                 "*");
     }
 
-    public static class Builder {
-        private Optional<String> epoch;
-        private String name;
-        private Optional<String> version;
-        private Optional<String> release;
-        private Optional<String> architecture;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        YumPackageName that = (YumPackageName) o;
+        return Objects.equals(epoch, that.epoch) &&
+                Objects.equals(name, that.name) &&
+                Objects.equals(version, that.version) &&
+                Objects.equals(release, that.release) &&
+                Objects.equals(architecture, that.architecture);
+    }
 
-        public Builder(YumPackageName aPackage) {
-            epoch = aPackage.epoch;
-            name = aPackage.name;
-            version = aPackage.version;
-            release = aPackage.release;
-            architecture = aPackage.architecture;
-        }
+    @Override
+    public int hashCode() {
 
-        public Builder setEpoch(String epoch) { this.epoch = Optional.of(epoch); return this; }
-        public Builder setName(String name) { this.name = name; return this; }
-        public Builder setRelease(String version) { this.version = Optional.of(version); return this; }
-        public Builder setVersion(String release) { this.release = Optional.of(release); return this; }
-        public Builder setArchitecture(String architecture) { this.architecture = Optional.of(architecture); return this; }
-
-        public YumPackageName build() { return new YumPackageName(epoch, name, version, release, architecture); }
+        return Objects.hash(epoch, name, version, release, architecture);
     }
 }
