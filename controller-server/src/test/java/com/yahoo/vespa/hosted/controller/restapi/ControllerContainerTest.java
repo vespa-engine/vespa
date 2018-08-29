@@ -43,6 +43,9 @@ public class ControllerContainerTest {
 
     private final String controllerServicesXml =
             "<jdisc version='1.0'>\n" +
+            "  <config name=\"container.handler.threadpool\">\n" +
+            "    <maxthreads>10</maxthreads>\n" +
+            "  </config> \n" +
             "  <config name='vespa.hosted.zone.config.zone'>\n" +
             "    <system>main</system>\n" +
             "  </config>\n" +

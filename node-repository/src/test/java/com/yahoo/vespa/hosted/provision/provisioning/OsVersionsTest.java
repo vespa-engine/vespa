@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -58,6 +59,10 @@ public class OsVersionsTest {
         // Forcing downgrade succeeds
         versions.setTarget(NodeType.host, version1, true);
         assertEquals(version1, versions.targetFor(NodeType.host).get());
+
+        // Target can be removed
+        versions.removeTarget(NodeType.host);
+        assertFalse(versions.targetFor(NodeType.host).isPresent());
     }
 
 }

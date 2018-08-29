@@ -298,9 +298,15 @@ public class NodesApiHandler extends LoggingRequestHandler {
         }
 
         if (osVersionField.valid()) {
-            Version osVersion = Version.fromString(osVersionField.asString());
-            nodeRepository.osVersions().setTarget(nodeType, osVersion, force);
-            messageParts.add("osVersion to " + osVersion.toFullString());
+            String v = osVersionField.asString();
+            if (v.isEmpty()) {
+                nodeRepository.osVersions().removeTarget(nodeType);
+                messageParts.add("osVersion to null");
+            } else {
+                Version osVersion = Version.fromString(v);
+                nodeRepository.osVersions().setTarget(nodeType, osVersion, force);
+                messageParts.add("osVersion to " + osVersion.toFullString());
+            }
         }
 
         if (messageParts.isEmpty()) {

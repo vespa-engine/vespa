@@ -62,6 +62,18 @@ public class OsVersions {
         return Optional.ofNullable(targets().get(type));
     }
 
+    /** Remove OS target for given node type. Nodes of this type will stop receiving wanted OS version in their
+     * node object */
+    public void removeTarget(NodeType nodeType) {
+        try (Lock lock = db.lockOsVersions()) {
+            Map<NodeType, Version> osVersions = db.readOsVersions();
+            osVersions.remove(nodeType);
+            db.writeOsVersions(osVersions);
+            createCache(); // Throw away current cache
+            log.info("Cleared OS target version for " + nodeType);
+        }
+    }
+
     /** Set the target OS version for nodes of given type */
     public void setTarget(NodeType nodeType, Version newTarget, boolean force) {
         if (!nodeType.isDockerHost()) {
