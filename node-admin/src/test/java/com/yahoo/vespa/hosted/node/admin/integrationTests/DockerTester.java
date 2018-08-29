@@ -51,7 +51,7 @@ public class DockerTester implements AutoCloseable {
     final Docker dockerMock = new DockerMock(callOrderVerifier);
     final NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
     final NodeAdminStateUpdaterImpl nodeAdminStateUpdater;
-    final NodeAdmin nodeAdmin;
+    final NodeAdminImpl nodeAdmin;
     private final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
 
 

@@ -154,9 +154,8 @@ public class NodeAdminImpl implements NodeAdmin {
                 .forEach(NodeAgent::stopServices);
     }
 
-    @Override
-    public Set<ContainerName> getListOfHosts() {
-        return nodeAgents.keySet();
+    public int getNumberOfNodeAgents() {
+        return nodeAgents.keySet().size();
     }
 
     @Override
