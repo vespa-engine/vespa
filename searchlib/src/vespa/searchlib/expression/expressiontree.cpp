@@ -91,7 +91,7 @@ ExpressionTree::onPrepare(bool preserveAccurateTypes)
 
 ExpressionTree::ExpressionTree(ExpressionNode::UP root) :
     ExpressionNode(),
-    _root(root.release()),
+    _root(std::move(root)),
     _attributeNodes(),
     _documentAccessorNodes(),
     _relevanceNodes(),
