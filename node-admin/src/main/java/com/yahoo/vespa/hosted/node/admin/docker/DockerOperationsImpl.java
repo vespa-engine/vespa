@@ -180,36 +180,29 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void startContainer(ContainerName containerName, final NodeSpec node) {
+    public void startContainer(ContainerName containerName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         logger.info("Starting container " + containerName);
-        try {
-            InetAddress nodeInetAddress = environment.getInetAddressForHost(node.getHostname());
-            boolean isIPv6 = nodeInetAddress instanceof Inet6Address;
 
-            if (isIPv6) {
-                if (!docker.networkNATed()) {
-                    docker.connectContainerToNetwork(containerName, "bridge");
-                }
-
-                docker.startContainer(containerName);
-                setupContainerNetworkConnectivity(containerName);
-            } else {
-                docker.startContainer(containerName);
-            }
-
-            directoriesToMount.entrySet().stream()
-                    .filter(Map.Entry::getValue)
-                    .map(Map.Entry::getKey)
-                    .forEach(path ->
-                            docker.executeInContainerAsRoot(containerName, "chmod", "-R", "a+w", path.toString()));
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to start container " + containerName.asString(), e);
+        if (!docker.networkNATed()) {
+            docker.connectContainerToNetwork(containerName, "bridge");
         }
+
+        docker.startContainer(containerName);
+
+        if (!docker.networkNATed()) {
+            setupContainerNetworkConnectivity(containerName);
+        }
+
+        directoriesToMount.entrySet().stream()
+                .filter(Map.Entry::getValue)
+                .map(Map.Entry::getKey)
+                .forEach(path ->
+                        docker.executeInContainerAsRoot(containerName, "chmod", "-R", "a+w", path.toString()));
     }
 
     @Override
-    public void removeContainer(final Container existingContainer, NodeSpec node) {
+    public void removeContainer(Container existingContainer) {
         final ContainerName containerName = existingContainer.name;
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         if (existingContainer.state.isRunning()) {
@@ -252,12 +245,10 @@ public class DockerOperationsImpl implements DockerOperations {
      * Due to a bug in docker (https://github.com/docker/libnetwork/issues/1443), we need to manually set
      * IPv6 gateway in containers connected to more than one docker network
      */
-    private void setupContainerNetworkConnectivity(ContainerName containerName) throws IOException {
-        if (!docker.networkNATed()) {
-            InetAddress hostDefaultGateway = DockerNetworkCreator.getDefaultGatewayLinux(true);
-            executeCommandInNetworkNamespace(containerName,
-                    "route", "-A", "inet6", "add", "default", "gw", hostDefaultGateway.getHostAddress(), "dev", "eth1");
-        }
+    private void setupContainerNetworkConnectivity(ContainerName containerName) {
+        InetAddress hostDefaultGateway = uncheck(() -> DockerNetworkCreator.getDefaultGatewayLinux(true));
+        executeCommandInNetworkNamespace(containerName,
+                "route", "-A", "inet6", "add", "default", "gw", hostDefaultGateway.getHostAddress(), "dev", "eth1");
     }
 
     @Override

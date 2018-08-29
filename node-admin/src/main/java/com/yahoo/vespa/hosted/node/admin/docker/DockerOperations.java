@@ -16,9 +16,9 @@ public interface DockerOperations {
 
     void createContainer(ContainerName containerName, NodeSpec node, ContainerData containerData);
 
-    void startContainer(ContainerName containerName, NodeSpec node);
+    void startContainer(ContainerName containerName);
 
-    void removeContainer(Container existingContainer, NodeSpec node);
+    void removeContainer(Container existingContainer);
 
     Optional<Container> getContainer(ContainerName containerName);
 
