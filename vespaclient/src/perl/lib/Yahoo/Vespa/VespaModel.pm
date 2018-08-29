@@ -162,7 +162,7 @@ sub setModelRetrievalFunction { # (Function)
 }
 sub retrieveModelConfigDefault { # ()
     my $VESPA_HOME= $ENV{'VESPA_HOME'};
-    my $cmd = ${VESPA_HOME} . '/bin/vespa-get-config -l -n cloud.config.model -i admin/model';
+    my $cmd = ${VESPA_HOME} . '/bin/vespa-get-config -n cloud.config.model -i admin/model';
 
     if (defined $CONFIG_REQUEST_TIMEOUT) {
         $cmd .= " -w $CONFIG_REQUEST_TIMEOUT";
