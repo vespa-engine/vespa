@@ -25,20 +25,16 @@ public class ComplexAttributeFieldUtilsTestCase {
             return field;
         }
 
-        public SDDocumentType docType() {
-            return search.getDocument();
-        }
-
         public boolean isSupportedComplexField() {
-            return ComplexAttributeFieldUtils.isSupportedComplexField(field(), docType());
+            return ComplexAttributeFieldUtils.isSupportedComplexField(field());
         }
 
         public boolean isArrayOfSimpleStruct() {
-            return ComplexAttributeFieldUtils.isArrayOfSimpleStruct(field(), docType());
+            return ComplexAttributeFieldUtils.isArrayOfSimpleStruct(field());
         }
 
         public boolean isMapOfSimpleStruct() {
-            return ComplexAttributeFieldUtils.isMapOfSimpleStruct(field(), docType());
+            return ComplexAttributeFieldUtils.isMapOfSimpleStruct(field());
         }
 
         public boolean isMapOfPrimitiveType() {
@@ -46,7 +42,7 @@ public class ComplexAttributeFieldUtilsTestCase {
         }
 
         public boolean isComplexFieldWithOnlyStructFieldAttributes() {
-            return ComplexAttributeFieldUtils.isComplexFieldWithOnlyStructFieldAttributes(field(), docType());
+            return ComplexAttributeFieldUtils.isComplexFieldWithOnlyStructFieldAttributes(field());
         }
     }
 
@@ -57,7 +53,7 @@ public class ComplexAttributeFieldUtilsTestCase {
                     "  document test {",
                     "    struct elem {",
                     "      field name type string {}",
-                    "      field weight type string {}",
+                    "      field weight type int {}",
                     "    }",
                     sdFieldContent,
                     "  }",
@@ -72,7 +68,7 @@ public class ComplexAttributeFieldUtilsTestCase {
                     "  document test {",
                     "    struct elem {",
                     "      field name type string {}",
-                    "      field weight type array<string> {}",
+                    "      field weights type array<int> {}",
                     "    }",
                     sdFieldContent,
                     "  }",
@@ -194,7 +190,7 @@ public class ComplexAttributeFieldUtilsTestCase {
             ComplexFixture f = new ComplexFixture("elem_array",
                     joinLines("field elem_array type array<elem> {",
                             "  struct-field name { indexing: attribute }",
-                            "  struct-field weight { indexing: attribute }",
+                            "  struct-field weights { indexing: attribute }",
                             "}"));
             assertFalse(f.isSupportedComplexField());
             assertFalse(f.isArrayOfSimpleStruct());
@@ -207,11 +203,39 @@ public class ComplexAttributeFieldUtilsTestCase {
                     joinLines("field elem_map type map<int, elem> {",
                             "  indexing: summary",
                             "  struct-field key { indexing: attribute }",
-                            "  struct-field value.weight { indexing: attribute }",
+                            "  struct-field value.weights { indexing: attribute }",
                             "}"));
             assertFalse(f.isSupportedComplexField());
             assertFalse(f.isArrayOfSimpleStruct());
             assertFalse(f.isMapOfSimpleStruct());
+            assertFalse(f.isMapOfPrimitiveType());
+            assertFalse(f.isComplexFieldWithOnlyStructFieldAttributes());
+        }
+    }
+
+    @Test
+    public void only_struct_field_attributes_are_considered_when_tagging_a_complex_field() throws ParseException {
+        {
+            ComplexFixture f = new ComplexFixture("elem_array",
+                    joinLines("field elem_array type array<elem> {",
+                            "  struct-field name { indexing: attribute }",
+                            "}"));
+            assertTrue(f.isSupportedComplexField());
+            assertTrue(f.isArrayOfSimpleStruct());
+            assertFalse(f.isMapOfSimpleStruct());
+            assertFalse(f.isMapOfPrimitiveType());
+            assertFalse(f.isComplexFieldWithOnlyStructFieldAttributes());
+        }
+        {
+            ComplexFixture f = new ComplexFixture("elem_map",
+                    joinLines("field elem_map type map<int, elem> {",
+                            "  indexing: summary",
+                            "  struct-field key { indexing: attribute }",
+                            "  struct-field value.name { indexing: attribute }",
+                            "}"));
+            assertTrue(f.isSupportedComplexField());
+            assertFalse(f.isArrayOfSimpleStruct());
+            assertTrue(f.isMapOfSimpleStruct());
             assertFalse(f.isMapOfPrimitiveType());
             assertFalse(f.isComplexFieldWithOnlyStructFieldAttributes());
         }

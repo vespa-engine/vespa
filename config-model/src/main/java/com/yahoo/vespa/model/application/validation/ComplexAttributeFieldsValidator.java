@@ -61,7 +61,7 @@ public class ComplexAttributeFieldsValidator extends Validator {
     }
 
     private static boolean isSupportedComplexField(ImmutableSDField field) {
-        return (ComplexAttributeFieldUtils.isSupportedComplexField(field.getDataType()) ||
+        return (ComplexAttributeFieldUtils.isSupportedComplexField(field) ||
                 field.getDataType().equals(PositionDataType.INSTANCE) ||
                 field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE)));
     }
