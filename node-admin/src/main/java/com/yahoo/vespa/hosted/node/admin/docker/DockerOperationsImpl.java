@@ -336,11 +336,6 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public List<ContainerName> listAllManagedContainers() {
-        return docker.listAllContainersManagedBy(MANAGER_NAME);
-    }
-
-    @Override
     public void deleteUnusedDockerImages() {
         docker.deleteUnusedDockerImages();
     }

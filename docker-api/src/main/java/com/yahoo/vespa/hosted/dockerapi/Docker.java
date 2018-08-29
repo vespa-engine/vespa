@@ -63,8 +63,6 @@ public interface Docker {
 
     List<Container> getAllContainersManagedBy(String manager);
 
-    List<ContainerName> listAllContainersManagedBy(String manager);
-
     Optional<Container> getContainer(ContainerName containerName);
 
     /**

@@ -58,12 +58,12 @@ public class NodeAdminImpl implements NodeAdmin {
     private final GaugeWrapper numberOfContainersInLoadImageState;
     private final CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
 
-    public NodeAdminImpl(final DockerOperations dockerOperations,
-                         final Function<String, NodeAgent> nodeAgentFactory,
-                         final StorageMaintainer storageMaintainer,
-                         final Runnable aclMaintainer,
-                         final MetricReceiverWrapper metricReceiver,
-                         final Clock clock) {
+    public NodeAdminImpl(DockerOperations dockerOperations,
+                         Function<String, NodeAgent> nodeAgentFactory,
+                         StorageMaintainer storageMaintainer,
+                         Runnable aclMaintainer,
+                         MetricReceiverWrapper metricReceiver,
+                         Clock clock) {
         this.dockerOperations = dockerOperations;
         this.nodeAgentFactory = nodeAgentFactory;
         this.storageMaintainer = storageMaintainer;
@@ -80,14 +80,16 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     @Override
-    public void refreshContainersToRun(final List<NodeSpec> containersToRun) {
-        final List<ContainerName> existingContainerNames = dockerOperations.listAllManagedContainers();
-        final List<String> containersToRunHostnames = containersToRun.stream()
+    public void refreshContainersToRun(List<NodeSpec> containersToRun) {
+        final List<ContainerName> existingContainerNames = dockerOperations.getAllManagedContainers().stream()
+                .map(container -> container.name)
+                .collect(Collectors.toList());
+        final List<String> hostnamesOfContainersToRun = containersToRun.stream()
                 .map(NodeSpec::getHostname)
                 .collect(Collectors.toList());
 
         storageMaintainer.cleanNodeAdmin();
-        synchronizeNodesToNodeAgents(containersToRunHostnames, existingContainerNames);
+        synchronizeNodesToNodeAgents(hostnamesOfContainersToRun, existingContainerNames);
         dockerOperations.deleteUnusedDockerImages();
 
         updateNodeAgentMetrics();
@@ -233,7 +235,7 @@ public class NodeAdminImpl implements NodeAdmin {
                 hostnameByContainerName.keySet().stream(), containerName -> containerName,
                 existingContainers.stream(), containerName -> containerName);
 
-        final Set<ContainerName> obsoleteAgentContainerNames = diff(nodeAgents.keySet(), new HashSet<>(hostnameByContainerName.keySet()));
+        final Set<ContainerName> obsoleteAgentContainerNames = diff(nodeAgents.keySet(), hostnameByContainerName.keySet());
         obsoleteAgentContainerNames.forEach(containerName -> nodeAgents.remove(containerName).stop());
 
         nodeSpecContainerPairs.forEach(nodeSpecContainerPair -> {

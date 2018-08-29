@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Mock with some simple logic
@@ -61,13 +60,6 @@ public class DockerMock implements Docker {
     public List<Container> getAllContainersManagedBy(String manager) {
         synchronized (monitor) {
             return new ArrayList<>(containersByContainerName.values());
-        }
-    }
-
-    @Override
-    public List<ContainerName> listAllContainersManagedBy(String manager) {
-        synchronized (monitor) {
-            return getAllContainersManagedBy(manager).stream().map(container -> container.name).collect(Collectors.toList());
         }
     }
 
