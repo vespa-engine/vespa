@@ -13,17 +13,18 @@ using search::attribute::BasicType;
 
 IMPLEMENT_EXPRESSIONNODE(AttributeNode, FunctionNode);
 
+template <typename V>
 class AttributeNode::IntegerHandler : public AttributeNode::Handler
 {
 public:
     IntegerHandler(ResultNode & result) :
         Handler(),
-        _vector(((IntegerResultNodeVector &)result).getVector()),
+        _vector(((V &)result).getVector()),
         _wVector()
     { }
     void handle(const AttributeResult & r) override;
 private:
-    IntegerResultNodeVector::Vector & _vector;
+    typename V::Vector & _vector;
     std::vector<search::attribute::IAttributeVector::WeightedInt> _wVector;
 };
 
@@ -143,15 +144,19 @@ void AttributeNode::onPrepare(bool preserveAccurateTypes)
                     switch (basicType) {
                       case BasicType::INT8:
                         setResultType(std::make_unique<Int8ResultNodeVector>());
+                        _handler = std::make_unique<IntegerHandler<Int8ResultNodeVector>>(updateResult());
                         break;
                       case BasicType::INT16:
                         setResultType(std::make_unique<Int16ResultNodeVector>());
+                        _handler = std::make_unique<IntegerHandler<Int16ResultNodeVector>>(updateResult());
                         break;
                       case BasicType::INT32:
                         setResultType(std::make_unique<Int32ResultNodeVector>());
+                        _handler = std::make_unique<IntegerHandler<Int32ResultNodeVector>>(updateResult());
                         break;
                       case BasicType::INT64:
                         setResultType(std::make_unique<Int64ResultNodeVector>());
+                        _handler = std::make_unique<IntegerHandler<Int64ResultNodeVector>>(updateResult());
                         break;
                       default:
                         throw std::runtime_error("This is no valid integer attribute " + attribute->getName());
@@ -159,8 +164,8 @@ void AttributeNode::onPrepare(bool preserveAccurateTypes)
                     }
                 } else {
                     setResultType(std::make_unique<IntegerResultNodeVector>());
+                    _handler = std::make_unique<IntegerHandler<IntegerResultNodeVector>>(updateResult());
                 }
-                _handler = std::make_unique<IntegerHandler>(updateResult());
             } else {
                 if (preserveAccurateTypes) {
                     switch (basicType) {
@@ -214,7 +219,8 @@ void AttributeNode::onPrepare(bool preserveAccurateTypes)
     }
 }
 
-void AttributeNode::IntegerHandler::handle(const AttributeResult & r)
+template <typename V>
+void AttributeNode::IntegerHandler<V>::handle(const AttributeResult & r)
 {
     size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
     _vector.resize(numValues);

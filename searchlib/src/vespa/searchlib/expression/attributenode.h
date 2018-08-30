@@ -63,7 +63,7 @@ protected:
         virtual void handle(const AttributeResult & r) = 0;
     };
 private:
-    class IntegerHandler;
+    template <typename V> class IntegerHandler;
     class FloatHandler;
     class StringHandler;
     class EnumHandler;
