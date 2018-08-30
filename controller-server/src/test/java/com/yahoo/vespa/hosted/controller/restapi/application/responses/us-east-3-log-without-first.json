@@ -1,0 +1,20 @@
+{
+  "active": false,
+  "log": {
+    "deployReal": [
+      {
+        "at": 1000,
+        "type": "debug",
+        "message": "Deployment failed: ERROR!"
+      }
+    ],
+    "deactivateTester": [
+      {
+        "at": 1000,
+        "type": "debug",
+        "message": "Deactivating tester of tenant.application in zone prod.us-east-3 in default ..."
+      }
+    ]
+  },
+  "lastId": 2
+}

@@ -1,26 +1,17 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.application.SourceRevision;
-import com.yahoo.vespa.hosted.controller.deployment.JobController;
-import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
-import com.yahoo.vespa.hosted.controller.deployment.Run;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
-import com.yahoo.vespa.hosted.controller.deployment.Step;
-import com.yahoo.vespa.hosted.controller.deployment.Versions;
-import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
+import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -29,124 +20,117 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
-import static org.junit.Assert.fail;
+import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.FAILURE;
+import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
+import static com.yahoo.vespa.hosted.controller.deployment.JobController.testerOf;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
 
+/**
+ * @author jonmv
+ * @author freva
+ */
 public class JobControllerApiHandlerHelperTest {
 
-    private final ApplicationId appId = ApplicationId.from("vespa", "music", "default");
-    private final Instant start = Instant.parse("2018-06-27T10:12:35Z");
-    private static final Versions versions = new Versions(Version.fromString("1.2.3"),
-                                                  ApplicationVersion.from(new SourceRevision("repo",
-                                                                                             "branch",
-                                                                                             "bada55"),
-                                                                          321),
-                                                  Optional.empty(),
-                                                  Optional.empty());
-
-    private static Step lastStep = Step.values()[Step.values().length - 1];
-
     @Test
-    public void jobTypeResponse() {
-        ControllerTester tester = new ControllerTester();
+    public void testResponses() {
+        InternalDeploymentTester tester = new InternalDeploymentTester();
+        tester.clock().setInstant(Instant.EPOCH);
 
+        // Revision 1 gets deployed everywhere.
+        ApplicationVersion revision1 = tester.deployNewSubmission();
 
+        tester.clock().advance(Duration.ofMillis(1000));
+        // Revision 2 gets deployed everywhere except in us-east-3.
+        ApplicationVersion revision2 = tester.newSubmission();
+        tester.runJob(systemTest);
+        tester.runJob(stagingTest);
+        tester.runJob(productionUsCentral1);
 
-        URI jobUrl = URI.create("https://domain.tld/application/v4/tenant/sometenant/application/someapp/instance/usuallydefault/job");
-        HttpResponse response = JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), appId, jobUrl);
-        assertFile(response, "job/job-type-response.json");
+        tester.tester().readyJobTrigger().maintain();
+
+        // us-east-3 eats the deployment failure and fails before deployment, while us-west-1 fails after.
+        tester.configServer().throwOnNextPrepare(new ConfigServerException(URI.create("url"), "ERROR!", INVALID_APPLICATION_PACKAGE, null));
+        tester.runner().run();
+        assertEquals(deploymentFailed, tester.jobs().last(appId, productionUsEast3).get().status());
+
+        ZoneId usWest1 = productionUsWest1.zone(tester.tester().controller().system());
+        tester.configServer().convergeServices(appId, usWest1);
+        tester.configServer().convergeServices(testerOf(appId), usWest1);
+        tester.setEndpoints(appId, usWest1);
+        tester.setEndpoints(testerOf(appId), usWest1);
+        tester.runner().run();
+        tester.cloud().set(FAILURE);
+        tester.runner().run();
+        assertEquals(testFailure, tester.jobs().last(appId, productionUsWest1).get().status());
+        assertEquals(revision2, tester.app().deployments().get(productionUsCentral1.zone(tester.tester().controller().system())).applicationVersion());
+        assertEquals(revision1, tester.app().deployments().get(productionUsEast3.zone(tester.tester().controller().system())).applicationVersion());
+        assertEquals(revision2, tester.app().deployments().get(productionUsWest1.zone(tester.tester().controller().system())).applicationVersion());
+
+        tester.clock().advance(Duration.ofMillis(1000));
+
+        // Revision 3 starts.
+        ApplicationVersion revision3 = tester.newSubmission();
+        tester.runJob(systemTest);
+        tester.runJob(stagingTest);
+        tester.tester().readyJobTrigger().maintain(); // Starts a run for us-central-1.
+        tester.tester().readyJobTrigger().maintain(); // Starts a new staging test run.
+        tester.runner().run();
+        assertEquals(running, tester.jobs().last(appId, productionUsCentral1).get().status());
+        assertEquals(running, tester.jobs().last(appId, stagingTest).get().status());
+
+        // Staging is expired, and the job fails and won't be retried immediately.
+        tester.tester().controller().applications().deactivate(appId, stagingTest.zone(tester.tester().controller().system()));
+        tester.runner().run();
+        assertEquals(installationFailed, tester.jobs().last(appId, stagingTest).get().status());
+
+        tester.clock().advance(Duration.ofMillis(100_000)); // More than the minute within which there are immediate retries.
+        tester.tester().readyJobTrigger().maintain();
+        assertEquals(installationFailed, tester.jobs().last(appId, stagingTest).get().status());
+
+        // System upgrades to a new version, which won't yet start.
+        Version platform = new Version("7.1");
+        tester.tester().upgradeSystem(platform);
+
+        // us-central-1 has started, deployed, and is installing. Deployment is not yet verified.
+        // us-east-3 is pending the failed staging test, while us-east-3 is pending us-central-1.
+        // Only us-east-3 is verified, on revision1.
+        // staging-test has 4 runs: one success without sources on revision1, one success from revision1 to revision2,
+        // one success from revision2 to revision3 and one failure from revision1 to revision3.
+        assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(appId, stagingTest), URI.create("https://some.url:43/root")), "staging-runs.json");
+        assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(appId, productionUsEast3).get().id(), "0"), "us-east-3-log-without-first.json");
+        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.tester().controller(), appId, URI.create("https://some.url:43/root/")), "overview.json");
+
     }
 
-    @Test
-    public void runResponse() {
-        Map<RunId, Run> runs = new HashMap<>();
-        Run run;
+    private void compare(HttpResponse response, String expected) throws JSONException, IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        response.render(baos);
 
-        run = createRun(JobType.systemTest, 3, 30, lastStep, Optional.of(RunStatus.running));
-        runs.put(run.id(), run);
-
-        run = createRun(JobType.systemTest, 2, 56, Step.installReal, Optional.of(RunStatus.error));
-        runs.put(run.id(), run);
-
-        run = createRun(JobType.systemTest, 1, 44, lastStep, Optional.of(RunStatus.running));
-        runs.put(run.id(), run);
-
-        URI jobTypeUrl = URI.create("https://domain.tld/application/v4/tenant/sometenant/application/someapp/instance/usuallydefault/job/systemtest");
-
-        HttpResponse response = JobControllerApiHandlerHelper.runResponse(runs, jobTypeUrl);
-        assertFile(response, "job/run-status-response.json");
+        JSONObject actualJSON = new JSONObject(new String(baos.toByteArray()));
+        JSONObject expectedJSON = new JSONObject(expected);
+        assertEquals(expectedJSON.toString(), actualJSON.toString());
     }
 
-    @Test
-    public void runDetailsResponse() {
-        ControllerTester tester = new ControllerTester();
-        MockRunDataStore dataStore = new MockRunDataStore();
-        JobController jobController = new JobController(tester.controller(), dataStore, new MockTesterCloud());
-        BufferedLogStore logStore = new BufferedLogStore(tester.curator(), dataStore);
-        RunId runId = new RunId(appId, JobType.systemTest, 42);
-        tester.curator().writeHistoricRuns(
-                runId.application(),
-                runId.type(),
-                Collections.singleton(createRun(JobType.systemTest, 42, 44, lastStep, Optional.of(RunStatus.running))));
-
-        logStore.append(appId, JobType.systemTest, Step.deployTester, Collections.singletonList(new LogEntry(0, 1, LogEntry.Type.info, "SUCCESS")));
-        logStore.append(appId, JobType.systemTest, Step.installTester, Collections.singletonList(new LogEntry(0, 12, LogEntry.Type.debug, "SUCCESS")));
-        logStore.append(appId, JobType.systemTest, Step.deactivateTester, Collections.singletonList(new LogEntry(0, 123, LogEntry.Type.warning, "ERROR")));
-        logStore.flush(runId);
-
-        HttpResponse response = JobControllerApiHandlerHelper.runDetailsResponse(jobController, runId,"0");
-        assertFile(response, "job/run-details-response.json");
-    }
-
-    private Run createRun(JobType type, long runid, long duration, Step lastStep, Optional<RunStatus> lastStepStatus) {
-        RunId runId = new RunId(appId, type, runid);
-
-        Map<Step, Step.Status> stepStatusMap = new HashMap<>();
-        for (Step step : Step.values()) {
-            if (step.ordinal() < lastStep.ordinal()) {
-                stepStatusMap.put(step, Step.Status.succeeded);
-            } else if (step.equals(lastStep) && lastStepStatus.isPresent()) {
-                stepStatusMap.put(step, Step.Status.of(lastStepStatus.get()));
-            } else {
-                stepStatusMap.put(step, Step.Status.unfinished);
-            }
-        }
-
-        Optional<Instant> end = Optional.empty();
-        if (lastStepStatus.isPresent() && lastStep == JobControllerApiHandlerHelperTest.lastStep) {
-            end = Optional.of(start.plusSeconds(duration));
-        }
-
-        RunStatus status = end.isPresent() && lastStepStatus.equals(Optional.of(RunStatus.running))
-                ? RunStatus.success
-                : lastStepStatus.orElse(RunStatus.running);
-        return new Run(runId, stepStatusMap, versions, start, end, status, -1);
-    }
-
-    private void compare(HttpResponse response, String expected) {
+    private void assertResponse(HttpResponse response, String fileName) {
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            response.render(baos);
-            String actual = new String(baos.toByteArray());
-
-            JSONObject actualJSON = new JSONObject(actual);
-            JSONObject expectedJSON = new JSONObject(expected);
-            Assert.assertEquals(expectedJSON.toString(), actualJSON.toString());
-        } catch (IOException | JSONException e) {
-            fail();
-        }
-    }
-
-    private void assertFile(HttpResponse response, String resourceName) {
-        try {
-            Path path = Paths.get("src/test/resources/").resolve(resourceName);
+            Path path = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/restapi/application/responses/").resolve(fileName);
             String expected = new String(Files.readAllBytes(path));
             compare(response, expected);
         } catch (Exception e) {
