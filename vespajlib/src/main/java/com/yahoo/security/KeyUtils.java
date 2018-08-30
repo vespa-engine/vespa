@@ -40,7 +40,7 @@ public class KeyUtils {
 
     public static KeyPair generateKeypair(KeyAlgorithm algorithm, int keySize) {
         try {
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm.getAlgorithmName());
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance(algorithm.getAlgorithmName(), BouncyCastleProviderHolder.getInstance());
             if (keySize != -1) {
                 keyGen.initialize(keySize);
             }
