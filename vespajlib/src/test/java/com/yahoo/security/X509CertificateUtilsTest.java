@@ -24,7 +24,7 @@ import static org.junit.Assert.assertThat;
 public class X509CertificateUtilsTest {
     @Test
     public void can_deserialize_serialized_pem_certificate() {
-        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
+        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         X500Principal subject = new X500Principal("CN=myservice");
         X509Certificate cert = TestUtils.createCertificate(keypair, subject);
         assertEquals(subject, cert.getSubjectX500Principal());
@@ -37,7 +37,7 @@ public class X509CertificateUtilsTest {
 
     @Test
     public void can_deserialize_serialized_pem_certificate_list() {
-        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
+        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         X500Principal subject1 = new X500Principal("CN=myservice");
         X509Certificate cert1 = TestUtils.createCertificate(keypair, subject1);
         X500Principal subject2 = new X500Principal("CN=myservice");
@@ -52,7 +52,7 @@ public class X509CertificateUtilsTest {
 
     @Test
     public void can_list_subject_alternative_names() {
-        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
+        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         X500Principal subject = new X500Principal("CN=myservice");
         SubjectAlternativeName san = new SubjectAlternativeName(DNS_NAME, "dns-san");
         X509Certificate cert = X509CertificateBuilder
@@ -61,7 +61,7 @@ public class X509CertificateUtilsTest {
                         subject,
                         Instant.now(),
                         Instant.now().plus(1, ChronoUnit.DAYS),
-                        SignatureAlgorithm.SHA256_WITH_RSA,
+                        SignatureAlgorithm.SHA512_WITH_ECDSA,
                         1)
                 .addSubjectAlternativeName(san)
                 .build();

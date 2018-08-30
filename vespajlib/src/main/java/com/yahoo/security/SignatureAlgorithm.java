@@ -6,7 +6,8 @@ package com.yahoo.security;
  */
 public enum SignatureAlgorithm {
     SHA256_WITH_RSA("SHA256withRSA"),
-    SHA512_WITH_RSA("SHA512withRSA");
+    SHA512_WITH_RSA("SHA512withRSA"),
+    SHA512_WITH_ECDSA("SHA512withECDSA");
 
     private final String algorithmName;
 

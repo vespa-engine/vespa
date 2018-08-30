@@ -20,10 +20,10 @@ public class Pkcs10CsrTest {
     @Test
     public void can_read_subject_alternative_names() {
         X500Principal subject = new X500Principal("CN=subject");
-        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
+        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         SubjectAlternativeName san1 = new SubjectAlternativeName(DNS_NAME, "san1.com");
         SubjectAlternativeName san2 = new SubjectAlternativeName(DNS_NAME, "san2.com");
-        Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(subject, keypair, SignatureAlgorithm.SHA256_WITH_RSA)
+        Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(subject, keypair, SignatureAlgorithm.SHA512_WITH_ECDSA)
                 .addSubjectAlternativeName(san1)
                 .addSubjectAlternativeName(san2)
                 .build();
@@ -33,8 +33,8 @@ public class Pkcs10CsrTest {
     @Test
     public void can_read_basic_constraints() {
         X500Principal subject = new X500Principal("CN=subject");
-        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
-        Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(subject, keypair, SignatureAlgorithm.SHA256_WITH_RSA)
+        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
+        Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(subject, keypair, SignatureAlgorithm.SHA512_WITH_ECDSA)
                 .setBasicConstraints(true, true)
                 .build();
         assertTrue(csr.getBasicConstraints().isPresent());
@@ -44,8 +44,8 @@ public class Pkcs10CsrTest {
     @Test
     public void can_read_extensions() {
         X500Principal subject = new X500Principal("CN=subject");
-        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
-        Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(subject, keypair, SignatureAlgorithm.SHA256_WITH_RSA)
+        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
+        Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(subject, keypair, SignatureAlgorithm.SHA512_WITH_ECDSA)
                 .addSubjectAlternativeName("san")
                 .setBasicConstraints(true, true)
                 .build();

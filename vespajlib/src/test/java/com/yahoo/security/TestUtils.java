@@ -18,7 +18,7 @@ import static com.yahoo.security.KeyStoreUtils.writeKeyStoreToFile;
 class TestUtils {
 
     static KeyStore createKeystore(KeyStoreType type, char[] password)  {
-        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 4096);
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         return KeyStoreBuilder.withType(type)
                 .withKeyEntry("entry-name", keyPair.getPrivate(), password, createCertificate(keyPair))
                 .build();
@@ -31,7 +31,7 @@ class TestUtils {
     static X509Certificate createCertificate(KeyPair keyPair, X500Principal subject)  {
         return X509CertificateBuilder
                 .fromKeypair(
-                        keyPair, subject, Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA256_WITH_RSA, 1)
+                        keyPair, subject, Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA512_WITH_ECDSA, 1)
                 .build();
     }
 

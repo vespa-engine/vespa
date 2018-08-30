@@ -25,7 +25,7 @@ public class KeyStoreBuilderTest {
 
     @Test
     public void can_create_jks_keystore_from_privatekey_and_certificate() throws Exception {
-        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 4096);
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         X509Certificate certificate = createCertificate(keyPair);
         KeyStoreBuilder.withType(KeyStoreType.JKS)
                 .withKeyEntry("key", keyPair.getPrivate(), certificate)

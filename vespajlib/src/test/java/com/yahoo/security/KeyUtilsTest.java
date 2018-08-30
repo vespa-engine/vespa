@@ -18,8 +18,15 @@ import static org.junit.Assert.assertThat;
 public class KeyUtilsTest {
 
     @Test
-    public void can_extract_public_key_from_private() {
+    public void can_extract_public_key_from_rsa_private() {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
+        PublicKey publicKey = KeyUtils.extractPublicKey(keyPair.getPrivate());
+        assertNotNull(publicKey);
+    }
+
+    @Test
+    public void can_extract_public_key_from_ecdsa_private() {
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC);
         PublicKey publicKey = KeyUtils.extractPublicKey(keyPair.getPrivate());
         assertNotNull(publicKey);
     }

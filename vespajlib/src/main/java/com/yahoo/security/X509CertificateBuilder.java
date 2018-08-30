@@ -73,7 +73,9 @@ public class X509CertificateBuilder {
                                                  long serialNumber) {
         try {
             PKCS10CertificationRequest bcCsr = csr.getBcCsr();
-            PublicKey publicKey = new JcaPKCS10CertificationRequest(bcCsr).getPublicKey();
+            PublicKey publicKey = new JcaPKCS10CertificationRequest(bcCsr)
+                    .setProvider(BouncyCastleProviderHolder.getInstance())
+                    .getPublicKey();
             return new X509CertificateBuilder(caIssuer,
                                               new X500Principal(bcCsr.getSubject().getEncoded()),
                                               notBefore,

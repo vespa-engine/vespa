@@ -47,7 +47,7 @@ public class SslContextBuilderTest {
 
     @Test
     public void can_build_sslcontext_with_keystore_from_private_key_and_certificate() throws Exception {
-        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         X509Certificate certificate = createCertificate(keyPair);
         new SslContextBuilder()
                 .withKeyStore(keyPair.getPrivate(), certificate)
