@@ -9,6 +9,7 @@
 #include "packetqueue.h"
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/async_resolver.h>
+#include <vespa/vespalib/net/crypto_socket.h>
 
 class FNET_IPacketStreamer;
 class FNET_IServerAdapter;
@@ -89,7 +90,7 @@ private:
     FNET_IPacketStreamer    *_streamer;        // custom packet streamer
     FNET_IServerAdapter     *_serverAdapter;   // only on server side
     FNET_Channel            *_adminChannel;    // only on client side
-    vespalib::SocketHandle   _socket;          // socket for this conn
+    vespalib::CryptoSocket::UP _socket;          // socket for this conn
     ResolveHandlerSP         _resolve_handler; // async resolve callback
     FNET_Context             _context;         // connection context
     State                    _state;           // connection state
@@ -198,6 +199,22 @@ private:
      * @param chid channel id
      **/
     void HandlePacket(uint32_t plen, uint32_t pcode, uint32_t chid);
+
+    /**
+     * Handle crypto handshaking
+     *
+     * @return false if socket is broken.
+     **/
+    bool handshake();
+
+    /**
+     * Handle all packets in the input buffer, calling HandlePacket
+     * for each one.
+     *
+     * @return false if socket is broken.
+     * @param read_packets count read packets here
+     **/
+    bool handle_packets(uint32_t &read_packets);
 
     /**
      * Read incoming data from socket.

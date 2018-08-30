@@ -219,53 +219,108 @@ FNET_Connection::HandlePacket(uint32_t plen, uint32_t pcode,
     }
 }
 
+bool
+FNET_Connection::handshake()
+{
+    bool broken = false;
+    switch (_socket->handshake()) {
+    case vespalib::CryptoSocket::HandshakeResult::FAIL:
+        LOG(debug, "Connection(%s): handshake failed", GetSpec());
+        SetState(FNET_CLOSED);
+        broken = true;
+        break;
+    case vespalib::CryptoSocket::HandshakeResult::DONE: {
+        EnableReadEvent(true);
+        EnableWriteEvent(writePendingAfterConnect());
+        size_t chunk_size = std::max(size_t(FNET_READ_SIZE), _socket->min_read_buffer_size());
+        uint32_t ignore_stats = 0;
+        ssize_t res = 0;
+        do { // drain input pipeline
+            _input.EnsureFree(chunk_size);
+            res = _socket->drain(_input.GetFree(), _input.GetFreeLen());
+            if (res > 0) {
+                _input.FreeToData((uint32_t)res);
+                broken = !handle_packets(ignore_stats);
+                _input.resetIfEmpty();
+            }
+        } while ((res > 0) && !broken); }
+        break;
+    case vespalib::CryptoSocket::HandshakeResult::NEED_READ:
+        EnableReadEvent(true);
+        EnableWriteEvent(false);
+        break;
+    case vespalib::CryptoSocket::HandshakeResult::NEED_WRITE:
+        EnableReadEvent(false);
+        EnableWriteEvent(true);
+        break;
+    }
+    return !broken;
+}
+
+bool
+FNET_Connection::handle_packets(uint32_t &read_packets)
+{
+    bool broken = false;
+    for (bool done = false; !done;) { // handle each complete packet in the buffer.
+        if (!_flags._gotheader) {
+            _flags._gotheader = _streamer->GetPacketInfo(&_input, &_packetLength,
+                    &_packetCode, &_packetCHID,
+                    &broken);
+        }
+        if (_flags._gotheader && (_input.GetDataLen() >= _packetLength)) {
+            read_packets++;
+            HandlePacket(_packetLength, _packetCode, _packetCHID);
+            _flags._gotheader = false; // reset header flag.
+        } else {
+            done = true;
+        }
+    }
+    return !broken;
+}
 
 bool
 FNET_Connection::Read()
 {
+    size_t   chunk_size  = std::max(size_t(FNET_READ_SIZE), _socket->min_read_buffer_size());
     uint32_t readData    = 0;     // total data read
     uint32_t readPackets = 0;     // total packets read
     int      readCnt     = 0;     // read count
     bool     broken      = false; // is this conn broken ?
     ssize_t  res;                 // single read result
 
-    _input.EnsureFree(FNET_READ_SIZE);
-    res = _socket.read(_input.GetFree(), _input.GetFreeLen());
+    _input.EnsureFree(chunk_size);
+    res = _socket->read(_input.GetFree(), _input.GetFreeLen());
     readCnt++;
 
     while (res > 0) {
         _input.FreeToData((uint32_t)res);
         readData += (uint32_t)res;
-
-        for (;;) { // handle each complete packet in the buffer.
-
-            if (!_flags._gotheader)
-                _flags._gotheader = _streamer->GetPacketInfo(&_input, &_packetLength,
-                        &_packetCode, &_packetCHID,
-                        &broken);
-
-            if (_flags._gotheader && _input.GetDataLen() >= _packetLength) {
-                readPackets++;
-                HandlePacket(_packetLength, _packetCode, _packetCHID);
-                _flags._gotheader = false; // reset header flag.
-            } else {
-                if (broken)
-                    goto done_read;
-                break;
-            }
-        }
+        broken = !handle_packets(readPackets);
         _input.resetIfEmpty();
-
-        if (_input.GetFreeLen() > 0
-            || readCnt >= FNET_READ_REDO) // prevent starvation
+        if (broken || (_input.GetFreeLen() > 0) || (readCnt >= FNET_READ_REDO)) {
             goto done_read;
-
-        _input.EnsureFree(FNET_READ_SIZE);
-        res = _socket.read(_input.GetFree(), _input.GetFreeLen());
+        }
+        _input.EnsureFree(chunk_size);
+        res = _socket->read(_input.GetFree(), _input.GetFreeLen());
         readCnt++;
     }
 
 done_read:
+
+    while ((res > 0) && !broken) { // drain input pipeline
+        _input.EnsureFree(chunk_size);
+        res = _socket->drain(_input.GetFree(), _input.GetFreeLen());
+        readCnt++;
+        if (res > 0) {
+            _input.FreeToData((uint32_t)res);
+            readData += (uint32_t)res;
+            broken = !handle_packets(readPackets);
+            _input.resetIfEmpty();
+        } else if (res == 0) { // fully drained -> EWOULDBLOCK
+            errno = EWOULDBLOCK;
+            res = -1;
+        }
+    }
 
     if (readData > 0) {
         UpdateTimeOut();
@@ -298,6 +353,7 @@ done_read:
 bool
 FNET_Connection::Write(bool direct)
 {
+    uint32_t my_write_work  = 0;
     uint32_t writtenData    = 0;     // total data written
     uint32_t writtenPackets = 0;     // total packets written
     int      writeCnt       = 0;     // write count
@@ -330,7 +386,7 @@ FNET_Connection::Write(bool direct)
 
         // write data
 
-        res = _socket.write(_output.GetData(), _output.GetDataLen());
+        res = _socket->write(_output.GetData(), _output.GetDataLen());
         writeCnt++;
         if (res > 0) {
             _output.DataToDead((uint32_t)res);
@@ -342,6 +398,17 @@ FNET_Connection::Write(bool direct)
              !_myQueue.IsEmpty_NoLock() &&
              writeCnt < FNET_WRITE_REDO);
 
+    if ((_output.GetDataLen() > 0)) {
+        ++my_write_work;
+    }
+
+    if (res >= 0) { // flush output pipeline
+        res = _socket->flush();
+        while (res > 0) {
+            res = _socket->flush();
+        }
+    }
+
     if (writtenData > 0) {
         uint32_t maxSize = GetConfig()->_maxOutputBufferSize;
         if (maxSize > 0 && _output.GetBufSize() > maxSize) {
@@ -350,7 +417,11 @@ FNET_Connection::Write(bool direct)
     }
 
     if (res < 0) {
-        broken = ((errno != EWOULDBLOCK) && (errno != EAGAIN));
+        if ((errno == EWOULDBLOCK) || (errno == EAGAIN)) {
+            ++my_write_work; // incomplete write/flush
+        } else {
+            broken = true;
+        }
         if (broken && (errno != ECONNRESET)) {
             LOG(debug, "Connection(%s): write error: %d", GetSpec(), errno);
         }
@@ -359,7 +430,7 @@ FNET_Connection::Write(bool direct)
     std::unique_lock<std::mutex> guard(_ioc_lock);
     _writeWork = _queue.GetPacketCnt_NoLock()
                  + _myQueue.GetPacketCnt_NoLock()
-                 + ((_output.GetDataLen() > 0) ? 1 : 0);
+                 + my_write_work;
     _flags._writeLock = false;
     if (_flags._discarding) {
         _ioc_cond.notify_all();
@@ -407,10 +478,10 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _streamer(streamer),
       _serverAdapter(serverAdapter),
       _adminChannel(nullptr),
-      _socket(std::move(socket)),
+      _socket(owner->owner().create_crypto_socket(std::move(socket), true)),
       _resolve_handler(nullptr),
       _context(),
-      _state(FNET_CONNECTED), // <-- NB
+      _state(FNET_CONNECTING),
       _flags(),
       _packetLength(0),
       _packetCode(0),
@@ -425,9 +496,7 @@ FNET_Connection::FNET_Connection(FNET_TransportThread *owner,
       _callbackTarget(nullptr),
       _cleanup(nullptr)
 {
-    assert(_socket.valid());
-    LOG(debug, "Connection(%s): State transition: %s -> %s", GetSpec(),
-        GetStateString(FNET_CONNECTING), GetStateString(FNET_CONNECTED));
+    assert(_socket && (_socket->get_fd() >= 0));
 }
 
 
@@ -484,9 +553,7 @@ FNET_Connection::Init()
 {
     // set up relevant events
     EnableReadEvent(true);
-    if (IsClient()) {
-        EnableWriteEvent(true);
-    }
+    EnableWriteEvent(true);
 
     // init server admin channel
     if (CanAcceptChannels() && _adminChannel == nullptr) {
@@ -516,11 +583,11 @@ FNET_Connection::handle_add_event()
 {
     if (_resolve_handler) {
         auto tweak = [this](vespalib::SocketHandle &handle) { return Owner()->tune(handle); };
-        _socket = _resolve_handler->address.connect(tweak);
-        _ioc_socket_fd = _socket.get();
+        _socket = Owner()->owner().create_crypto_socket(_resolve_handler->address.connect(tweak), false);
+        _ioc_socket_fd = _socket->get_fd();
         _resolve_handler.reset();
     }
-    return _socket.valid();
+    return (_socket && (_socket->get_fd() >= 0));
 }
 
 
@@ -693,7 +760,8 @@ FNET_Connection::HandleReadEvent()
     bool broken = false;  // is connection broken ?
 
     switch(_state) {
-    case FNET_CONNECTING: // ignore read events while connecting
+    case FNET_CONNECTING:
+        broken = !handshake();
         break;
     case FNET_CONNECTED:
         broken = !Read();
@@ -720,22 +788,11 @@ FNET_Connection::writePendingAfterConnect()
 bool
 FNET_Connection::HandleWriteEvent()
 {
-    int  error;           // socket error code
     bool broken = false;  // is connection broken ?
 
     switch(_state) {
     case FNET_CONNECTING:
-        error = _socket.get_so_error();
-        if (error == 0) { // connect ok
-            if (!writePendingAfterConnect()) {
-                EnableWriteEvent(false);
-            }
-        } else {
-            LOG(debug, "Connection(%s): connect error: %d", GetSpec(), error);
-
-            SetState(FNET_CLOSED); // connect failed.
-            broken = true;
-        }
+        broken = !handshake();
         break;
     case FNET_CONNECTED:
         {

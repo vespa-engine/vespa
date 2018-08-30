@@ -22,8 +22,9 @@ struct HashState {
 
 } // namespace <unnamed>
 
-FNET_Transport::FNET_Transport(vespalib::AsyncResolver::SP resolver, size_t num_threads)
+FNET_Transport::FNET_Transport(vespalib::AsyncResolver::SP resolver, vespalib::CryptoEngine::SP crypto, size_t num_threads)
     : _async_resolver(std::move(resolver)),
+      _crypto_engine(std::move(crypto)),
       _threads()
 {
     assert(num_threads >= 1);
@@ -42,6 +43,12 @@ FNET_Transport::resolve_async(const vespalib::string &spec,
                               vespalib::AsyncResolver::ResultHandler::WP result_handler)
 {
     _async_resolver->resolve_async(spec, std::move(result_handler));
+}
+
+vespalib::CryptoSocket::UP
+FNET_Transport::create_crypto_socket(vespalib::SocketHandle socket, bool is_server)
+{
+    return _crypto_engine->create_crypto_socket(std::move(socket), is_server);
 }
 
 FNET_TransportThread *
