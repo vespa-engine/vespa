@@ -15,7 +15,6 @@ import com.yahoo.jrt.Values;
 import com.yahoo.prelude.fastsearch.FastHit;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A client which uses rpc request to search nodes to implement the Client API.

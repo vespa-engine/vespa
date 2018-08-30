@@ -2,7 +2,6 @@
 package com.yahoo.search.dispatch;
 
 import com.yahoo.compress.CompressionType;
-import com.yahoo.log.event.Collection;
 import com.yahoo.prelude.fastsearch.DocsumDefinition;
 import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
 import com.yahoo.prelude.fastsearch.DocsumField;

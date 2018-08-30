@@ -329,8 +329,8 @@ public class JSONStringTestCase {
             String rendered = js.renderFromInspector();
 
             assertTrue(-1 < rendered.indexOf(f1));
-            int offsetF2;
-            assertTrue(-1 < (offsetF2 = rendered.indexOf(f2)));
+            int offsetF2 = rendered.indexOf(f2);
+            assertTrue(-1 < offsetF2);
             offsetF2 += f2.length();
             assertTrue(-1 < rendered.indexOf(f2_1, offsetF2));
             assertTrue(-1 < rendered.indexOf(f2_2, offsetF2));
