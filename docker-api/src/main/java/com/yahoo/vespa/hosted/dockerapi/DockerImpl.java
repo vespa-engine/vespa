@@ -186,8 +186,7 @@ public class DockerImpl implements Docker {
     @Override
     public CreateContainerCommand createContainerCommand(DockerImage image, ContainerResources containerResources,
                                                          ContainerName name, String hostName) {
-        return new CreateContainerCommandImpl(dockerClient, image, containerResources, name, hostName)
-                .withPrivileged(config.runContainersInPrivileged());
+        return new CreateContainerCommandImpl(dockerClient, image, containerResources, name, hostName);
     }
 
     @Override

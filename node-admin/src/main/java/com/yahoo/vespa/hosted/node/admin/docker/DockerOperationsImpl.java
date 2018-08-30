@@ -87,7 +87,10 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withUlimit("nproc", 32_768, 409_600)
                 .withUlimit("core", -1, -1)
                 .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
-                .withAddCapability("SYS_ADMIN"); // Needed for perf
+                .withAddCapability("SYS_ADMIN") // Needed for perf
+
+                // TODO: Fix. Run containers as privileged in AWS because mapped directories are on another device
+                .withPrivileged(environment.getCloud().equalsIgnoreCase("aws"));
 
         if (environment.getNodeType() == NodeType.confighost ||
                 environment.getNodeType() == NodeType.proxyhost) {
