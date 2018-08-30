@@ -4,9 +4,15 @@ package com.yahoo.jrt;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized;
+
 
 import static org.junit.Assert.assertTrue;
 
+@RunWith(Parameterized.class)
 public class EchoTest {
 
     Supervisor server;
@@ -15,10 +21,15 @@ public class EchoTest {
     Target     target;
     Values     refValues;
 
+    @Parameter public CryptoEngine crypto;
+    @Parameters public static Object[] engines() {
+        return new Object[] { CryptoEngine.createDefault(), new XorCryptoEngine() };
+    }
+
     @Before
     public void setUp() throws ListenFailedException {
-        server   = new Supervisor(new Transport());
-        client   = new Supervisor(new Transport());
+        server   = new Supervisor(new Transport(crypto));
+        client   = new Supervisor(new Transport(crypto));
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()));
         server.addMethod(new Method("echo", "*", "*", this, "rpc_echo"));
