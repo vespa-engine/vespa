@@ -91,52 +91,8 @@ class JobControllerApiHandlerHelper {
         Cursor responseObject = slime.setObject();
 
         Cursor lastVersionsObject = responseObject.setObject("lastVersions");
-        Cursor lastPlatformObject = lastVersionsObject.setObject("platform");
-        VespaVersion lastVespa = controller.versionStatus().version(controller.systemVersion());
-        VespaVersion.Confidence targetConfidence = application.deploymentSpec().upgradePolicy() == defaultPolicy ? normal
-                                                 : application.deploymentSpec().upgradePolicy() == conservative ? high
-                                                 : broken;
-        for (VespaVersion version : controller.versionStatus().versions())
-            if (   ! version.versionNumber().isAfter(controller.systemVersion())
-                &&   version.confidence().equalOrHigherThan(targetConfidence))
-                lastVespa = version;
-
-        Version lastPlatform = lastVespa.versionNumber();
-        lastPlatformObject.setString("version", lastPlatform.toString());
-        lastPlatformObject.setLong("at", lastVespa.committedAt().toEpochMilli());
-        long completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), application, type)).count();
-        if (Optional.of(lastPlatform).equals(change.platform()))
-            lastPlatformObject.setString("deploying", completed + " of " + steps.productionJobs().size());
-        else if (completed == steps.productionJobs().size())
-            lastPlatformObject.setString("completed", completed + " of " + steps.productionJobs().size());
-        else if ( ! application.deploymentSpec().canUpgradeAt(controller.clock().instant())) {
-            lastPlatformObject.setString("blocked", application.deploymentSpec().changeBlocker().stream()
-                                                               .filter(blocker -> blocker.blocksVersions())
-                                                               .filter(blocker -> blocker.window().includes(controller.clock().instant()))
-                                                               .findAny().map(blocker -> blocker.window().toString()).get());
-        }
-        else
-            lastPlatformObject.setString("pending", "Waiting for current deployment to complete");
-
-        Cursor lastApplicationObject = lastVersionsObject.setObject("application");
-        ApplicationVersion lastApplication = application.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).get().application();
-        applicationVersionToSlime(lastApplicationObject.setObject("version"), lastApplication);
-        lastApplicationObject.setLong("at", application.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).get().at().toEpochMilli());
-        completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), application, type)).count();
-        if (Optional.of(lastApplication).equals(change.application()))
-            lastApplicationObject.setString("deploying", completed + " of " + steps.productionJobs().size() + " complete");
-        else if (completed == steps.productionJobs().size())
-            lastApplicationObject.setString("completed", completed + " of " + steps.productionJobs().size() + " complete");
-        else if ( ! application.deploymentSpec().canChangeRevisionAt(controller.clock().instant())) {
-            Optional<String> blocked = application.deploymentSpec().changeBlocker().stream()
-                                                  .filter(blocker -> blocker.blocksRevisions())
-                                                  .filter(blocker -> blocker.window().includes(controller.clock().instant()))
-                                                  .findAny().map(blocker -> blocker.window().toString());
-            if (blocked.isPresent())
-                lastApplicationObject.setString("blocked", blocked.get());
-            else
-                lastApplicationObject.setString("pending", "Waiting for current deployment to complete");
-        }
+        lastPlatformToSlime(lastVersionsObject.setObject("platform"), controller, application, change, steps);
+        lastApplicationToSlime(lastVersionsObject.setObject("application"), application, change, steps, controller);
 
         if (change.isPresent()) {
             Cursor deployingObject = responseObject.setObject("deploying");
@@ -173,6 +129,54 @@ class JobControllerApiHandlerHelper {
                            baseUriForJobs.resolve(baseUriForJobs.getPath() + "/" + type.jobName()).normalize());
         });
         return new SlimeJsonResponse(slime);
+    }
+
+    private static void lastPlatformToSlime(Cursor lastPlatformObject, Controller controller, Application application, Change change, DeploymentSteps steps) {
+        VespaVersion lastVespa = controller.versionStatus().version(controller.systemVersion());
+        VespaVersion.Confidence targetConfidence = application.deploymentSpec().upgradePolicy() == defaultPolicy ? normal
+                                                 : application.deploymentSpec().upgradePolicy() == conservative ? high
+                                                 : broken;
+        for (VespaVersion version : controller.versionStatus().versions())
+            if (   ! version.versionNumber().isAfter(controller.systemVersion())
+                &&   version.confidence().equalOrHigherThan(targetConfidence))
+                lastVespa = version;
+
+        Version lastPlatform = lastVespa.versionNumber();
+        lastPlatformObject.setString("version", lastPlatform.toString());
+        lastPlatformObject.setLong("at", lastVespa.committedAt().toEpochMilli());
+        long completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), application, type)).count();
+        if (Optional.of(lastPlatform).equals(change.platform()))
+            lastPlatformObject.setString("deploying", completed + " of " + steps.productionJobs().size());
+        else if (completed == steps.productionJobs().size())
+            lastPlatformObject.setString("completed", completed + " of " + steps.productionJobs().size());
+        else if ( ! application.deploymentSpec().canUpgradeAt(controller.clock().instant())) {
+            lastPlatformObject.setString("blocked", application.deploymentSpec().changeBlocker().stream()
+                                                               .filter(blocker -> blocker.blocksVersions())
+                                                               .filter(blocker -> blocker.window().includes(controller.clock().instant()))
+                                                               .findAny().map(blocker -> blocker.window().toString()).get());
+        }
+        else
+            lastPlatformObject.setString("pending", "Waiting for current deployment to complete");
+    }
+
+    private static void lastApplicationToSlime(Cursor lastApplicationObject, Application application, Change change, DeploymentSteps steps, Controller controller) {
+        long completed;
+        ApplicationVersion lastApplication = application.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).get().application();
+        applicationVersionToSlime(lastApplicationObject.setObject("version"), lastApplication);
+        lastApplicationObject.setLong("at", application.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).get().at().toEpochMilli());
+        completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), application, type)).count();
+        if (Optional.of(lastApplication).equals(change.application()))
+            lastApplicationObject.setString("deploying", completed + " of " + steps.productionJobs().size() + " complete");
+        else if (completed == steps.productionJobs().size())
+            lastApplicationObject.setString("completed", completed + " of " + steps.productionJobs().size() + " complete");
+        else if ( ! application.deploymentSpec().canChangeRevisionAt(controller.clock().instant())) {
+            lastApplicationObject.setString("blocked", application.deploymentSpec().changeBlocker().stream()
+                                                                  .filter(blocker -> blocker.blocksRevisions())
+                                                                  .filter(blocker -> blocker.window().includes(controller.clock().instant()))
+                                                                  .findAny().map(blocker -> blocker.window().toString()).get());
+        }
+        else
+            lastApplicationObject.setString("pending", "Waiting for current deployment to complete");
     }
 
     private static void deploymentToSlime(Cursor deploymentObject, Application application, Change change,
