@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
+import ai.vespa.models.evaluation.ModelsEvaluator;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
@@ -243,6 +244,7 @@ public final class ContainerCluster
         // TODO better modelling
         addSimpleComponent(ThreadPoolProvider.class);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
+        addSimpleComponent(ModelsEvaluator.class.getName(), null, "model-evaluation");
         addSimpleComponent("com.yahoo.jdisc.http.filter.SecurityFilterInvoker");
         addSimpleComponent(SIMPLE_LINGUISTICS_PROVIDER);
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");
