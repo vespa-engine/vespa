@@ -110,15 +110,13 @@ class JobControllerApiHandlerHelper {
         else if (completed == steps.productionJobs().size())
             lastPlatformObject.setString("completed", completed + " of " + steps.productionJobs().size());
         else if ( ! application.deploymentSpec().canUpgradeAt(controller.clock().instant())) {
-            Optional<String> blocked = application.deploymentSpec().changeBlocker().stream()
-                                                  .filter(blocker -> blocker.blocksVersions())
-                                                  .filter(blocker -> blocker.window().includes(controller.clock().instant()))
-                                                  .findAny().map(blocker -> blocker.window().toString());
-            if (blocked.isPresent())
-                lastPlatformObject.setString("blocked", blocked.get());
-            else
-                lastPlatformObject.setString("pending", ""); // What to put here?
+            lastPlatformObject.setString("blocked", application.deploymentSpec().changeBlocker().stream()
+                                                               .filter(blocker -> blocker.blocksVersions())
+                                                               .filter(blocker -> blocker.window().includes(controller.clock().instant()))
+                                                               .findAny().map(blocker -> blocker.window().toString()).get());
         }
+        else
+            lastPlatformObject.setString("pending", "Waiting for current deployment to complete");
 
         Cursor lastApplicationObject = lastVersionsObject.setObject("application");
         ApplicationVersion lastApplication = application.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).get().application();
@@ -172,7 +170,7 @@ class JobControllerApiHandlerHelper {
                            steps,
                            pendingProduction,
                            running,
-                           baseUriForJobs.resolve(type.jobName()));
+                           baseUriForJobs.resolve(baseUriForJobs.getPath() + "/" + type.jobName()).normalize());
         });
         return new SlimeJsonResponse(slime);
     }
@@ -300,7 +298,7 @@ class JobControllerApiHandlerHelper {
         taskStatus(Step.installReal, run).ifPresent(status -> tasksObject.setString("install", status));
         taskStatus(Step.endTests, run).ifPresent(status -> tasksObject.setString("test", status));
 
-        runObject.setString("log", baseUriForJobType.resolve("run/" + run.id().number()).toString());
+        runObject.setString("log", baseUriForJobType.resolve(baseUriForJobType.getPath() + "/run/" + run.id().number()).normalize().toString());
     }
 
     /** Returns the status of the task represented by the given step, if it has started. */

@@ -297,7 +297,7 @@ public class JobController {
     }
 
     /** Returns the application id of the tester application for the real application with the given id. */
-    static ApplicationId testerOf(ApplicationId id) {
+    public static ApplicationId testerOf(ApplicationId id) {
         return ApplicationId.from(id.tenant().value(),
                                   id.application().value(),
                                   id.instance().value() + "-t");
