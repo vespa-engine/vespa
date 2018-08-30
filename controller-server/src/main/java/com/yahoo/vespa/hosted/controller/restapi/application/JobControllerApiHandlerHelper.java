@@ -211,6 +211,9 @@ class JobControllerApiHandlerHelper {
                              .forEach((versions, types) -> pending.addFirst(types));
             for (List<JobType> productionTypes : pending) {
                 Versions versions = pendingProduction.get(productionTypes.get(0));
+                if (statusOf(controller, application.id(), type, versions).equals("running"))
+                    continue;
+
                 runs++;
                 Cursor runObject = runArray.addObject();
                 runObject.setString("status", "pending");
