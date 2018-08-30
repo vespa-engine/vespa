@@ -2,13 +2,10 @@ package com.yahoo.config.model;
 
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
-import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.io.IOUtils;
-import com.yahoo.path.Path;
+import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import org.junit.After;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
@@ -25,41 +22,17 @@ import static org.junit.Assert.assertTrue;
  */
 public class ModelEvaluationTest {
 
-    private static final Path appDir = Path.fromString("src/test/cfg/application/ml_serving");
-
-    @After
-    public void removeGeneratedModelFiles() {
-        IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-    }
+    private static final String TESTDIR = "src/test/cfg/application/";
 
     @Test
     public void testMl_ServingApplication() throws SAXException, IOException {
-        ApplicationPackageTester tester = ApplicationPackageTester.create(appDir.toString());
+        ApplicationPackageTester tester = ApplicationPackageTester.create(TESTDIR + "ml_serving");
         VespaModel model = new VespaModel(tester.app());
-        assertHasMlModels(model);
-
-        // At this point the expression is stored - copy application to another location which do not have a models dir
-        Path storedAppDir = appDir.append("copy");
-        try {
-            storedAppDir.toFile().mkdirs();
-            IOUtils.copy(appDir.append("services.xml").toString(), storedAppDir.append("services.xml").toString());
-            IOUtils.copyDirectory(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
-                                  storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-            ApplicationPackageTester storedTester = ApplicationPackageTester.create(storedAppDir.toString());
-            VespaModel storedModel = new VespaModel(storedTester.app());
-            assertHasMlModels(storedModel);
-        }
-        finally {
-            IOUtils.recursiveDeleteDir(storedAppDir.toFile());
-        }
-    }
-
-    private void assertHasMlModels(VespaModel model) {
         ContainerCluster cluster = model.getContainerClusters().get("container");
         RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
         cluster.getConfig(b);
         RankProfilesConfig config = new RankProfilesConfig(b);
-        assertEquals(4, config.rankprofile().size());
+        assertEquals(3, config.rankprofile().size());
         Set<String> modelNames = config.rankprofile().stream().map(v -> v.name()).collect(Collectors.toSet());
         assertTrue(modelNames.contains("xgboost_2_2"));
         assertTrue(modelNames.contains("mnist_softmax"));
@@ -67,7 +40,7 @@ public class ModelEvaluationTest {
 
         ModelsEvaluator evaluator = new ModelsEvaluator(config);
 
-        assertEquals(4, evaluator.models().size());
+        assertEquals(3, evaluator.models().size());
         Model xgboost = evaluator.models().get("xgboost_2_2");
         assertNotNull(xgboost);
         assertNotNull(xgboost.evaluatorOf());
