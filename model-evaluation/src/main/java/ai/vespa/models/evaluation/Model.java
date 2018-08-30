@@ -126,6 +126,8 @@ public class Model {
      * @param names the names identifying the function - this can be from 0 to 2, specifying function or "signature"
      *              name, and "output", respectively. Names which are unnecessary to determine the desired function
      *              uniquely (e.g if there is just one function or output) can be omitted.
+     *              A two-component name can alternatively be specified as a single argument with components separated
+     *              by dot.
      * @throws IllegalArgumentException if the function is not present, or not uniquely identified by the names given
      */
     public FunctionEvaluator evaluatorOf(String ... names) {  // TODO: Parameter overloading?

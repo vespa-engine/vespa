@@ -51,6 +51,9 @@ public class ModelEvaluationTest {
         assertNotNull(onnx.evaluatorOf());
         assertNotNull(onnx.evaluatorOf("default"));
         assertNotNull(onnx.evaluatorOf("default", "add"));
+        assertNotNull(onnx.evaluatorOf("default.add"));
+        assertNotNull(evaluator.evaluatorOf("mnist_softmax", "default.add"));
+        assertNotNull(evaluator.evaluatorOf("mnist_softmax", "default", "add"));
 
         Model tensorflow = evaluator.models().get("mnist_softmax_saved");
         assertNotNull(tensorflow);

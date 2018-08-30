@@ -31,14 +31,16 @@ public class ModelsEvaluator extends AbstractComponent {
     /**
      * Returns a function which can be used to evaluate the given function in the given model
      *
+     * @param modelName the name of the model
+     * @param names the 0-2 name components identifying the output to compute
      * @throws IllegalArgumentException if the function or model is not present
      */
-    public FunctionEvaluator evaluatorOf(String modelName, String functionName) {
-        return requireModel(modelName).evaluatorOf(functionName);
+    public FunctionEvaluator evaluatorOf(String modelName, String ... names) {
+        return requireModel(modelName).evaluatorOf(names);
     }
 
     /** Returns the given model, or throws a IllegalArgumentException if it does not exist */
-    Model requireModel(String name) {
+    public Model requireModel(String name) {
         Model model = models.get(name);
         if (model == null)
             throw new IllegalArgumentException("No model named '" + name + ". Available models: " +
