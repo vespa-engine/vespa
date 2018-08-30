@@ -25,7 +25,7 @@ public class MockCuratorDb extends CuratorDb {
             public String zooKeeperEnsembleConnectionSpec() {
                 return zooKeeperEnsembleConnectionSpec;
             }
-        }, Duration.ofMillis(1));
+        }, Duration.ofMillis(100));
     }
 
 }
