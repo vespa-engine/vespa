@@ -272,11 +272,12 @@ public class ConvertedModel {
         if (profile.getMacros().containsKey(macroName)) {
             if ( ! profile.getMacros().get(macroName).getRankingExpression().equals(expression))
                 throw new IllegalArgumentException("Generated macro '" + macroName + "' already exists in " + profile +
-                                                   " - with a different definition");
+                                                   " - with a different definition" +
+                                                   ": Has\n" + profile.getMacros().get(macroName).getRankingExpression() +
+                                                   "\nwant to add " + expression + "\n");
             return;
         }
-        profile.addMacro(macroName, false);  // todo: inline if only used once
-        RankProfile.Macro macro = profile.getMacros().get(macroName);
+        RankProfile.Macro macro = profile.addMacro(macroName, false);  // TODO: Inline if only used once
         macro.setRankingExpression(expression);
         macro.setTextualExpression(expression.getRoot().toString());
     }
@@ -546,7 +547,7 @@ public class ConvertedModel {
             return expressions;
         }
 
-        /** Adds this macro expression to the application package to it can be read later. */
+        /** Adds this macro expression to the application package so it can be read later. */
         void writeMacro(String name, RankingExpression expression) {
             application.getFile(modelFiles.macrosPath()).appendFile(name + "\t" +
                                                                    expression.getRoot().toString() + "\n");
@@ -556,7 +557,7 @@ public class ConvertedModel {
         List<Pair<String, RankingExpression>> readMacros() {
             try {
                 ApplicationFile file = application.getFile(modelFiles.macrosPath());
-                if (!file.exists()) return Collections.emptyList();
+                if ( ! file.exists()) return Collections.emptyList();
 
                 List<Pair<String, RankingExpression>> macros = new ArrayList<>();
                 BufferedReader reader = new BufferedReader(file.createReader());
@@ -565,7 +566,7 @@ public class ConvertedModel {
                     String[] parts = line.split("\t");
                     String name = parts[0];
                     try {
-                        RankingExpression expression = new RankingExpression(parts[1]);
+                        RankingExpression expression = new RankingExpression(parts[0], parts[1]);
                         macros.add(new Pair<>(name, expression));
                     }
                     catch (ParseException e) {

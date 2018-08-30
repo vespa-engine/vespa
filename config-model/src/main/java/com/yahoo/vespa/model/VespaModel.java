@@ -238,7 +238,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                 }
             }
         }
-        else { // generated and saved model information may be available instead
+        else { // generated and stored model information may be available instead
             ApplicationFile generatedModelsDir = applicationPackage.getFile(ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR);
             for (ApplicationFile generatedModelDir : generatedModelsDir.listFiles()) {
                 String modelName = generatedModelDir.getPath().last();
