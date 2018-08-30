@@ -142,7 +142,6 @@ public class RankingExpressionWithOnnxTestCase {
         }
     }
 
-
     @Test
     public void testOnnxReferenceWithWrongMacroType() {
         try {
