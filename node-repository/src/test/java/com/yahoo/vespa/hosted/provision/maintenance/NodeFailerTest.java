@@ -252,7 +252,9 @@ public class NodeFailerTest {
 
     @Test
     public void docker_host_failed_without_config_requests() {
-        NodeFailTester tester = NodeFailTester.withTwoApplications();
+        NodeFailTester tester = NodeFailTester.withTwoApplications(
+                new ConfigserverConfig(new ConfigserverConfig.Builder().nodeAdminInContainer(true))
+        );
 
         // For a day all nodes work so nothing happens
         for (int minutes = 0, interval = 30; minutes < 24 * 60; minutes += interval) {
