@@ -4,7 +4,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.log.LogLevel;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -41,8 +40,8 @@ public class InternalDeploymentTester {
     public static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
             .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
             .upgradePolicy("default")
-            .environment(Environment.prod)
             .region("us-west-1")
+            .region("us-east-3")
             .build();
     public static final ApplicationId appId = ApplicationId.from("tenant", "application", "default");
 
@@ -81,8 +80,8 @@ public class InternalDeploymentTester {
     /**
      * Submits a new application, and returns the version of the new submission.
      */
-    public ApplicationVersion newSubmission(ApplicationId id) {
-        ApplicationVersion version = jobs.submit(id, BuildJob.defaultSourceRevision, applicationPackage.zippedContent(), new byte[0]);
+    public ApplicationVersion newSubmission() {
+        ApplicationVersion version = jobs.submit(appId, BuildJob.defaultSourceRevision, applicationPackage.zippedContent(), new byte[0]);
         tester.applicationStore().putApplicationPackage(appId, version.id(), applicationPackage.zippedContent());
         tester.applicationStore().putTesterPackage(testerOf(appId), version.id(), new byte[0]);
         return version;
@@ -103,10 +102,10 @@ public class InternalDeploymentTester {
     }
 
     /**
-     * Completely deploys a new submission.
+     * Completely deploys a new submission and returns the new version.
      */
-    public void deployNewSubmission() {
-        ApplicationVersion applicationVersion = newSubmission(appId);
+    public ApplicationVersion deployNewSubmission() {
+        ApplicationVersion applicationVersion = newSubmission();
 
         assertFalse(app().deployments().values().stream()
                                 .anyMatch(deployment -> deployment.applicationVersion().equals(applicationVersion)));
@@ -116,6 +115,9 @@ public class InternalDeploymentTester {
         runJob(JobType.systemTest);
         runJob(JobType.stagingTest);
         runJob(JobType.productionUsWest1);
+        runJob(JobType.productionUsEast3);
+
+        return applicationVersion;
     }
 
     /**
@@ -131,10 +133,14 @@ public class InternalDeploymentTester {
         runJob(JobType.systemTest);
         runJob(JobType.stagingTest);
         runJob(JobType.productionUsWest1);
+        runJob(JobType.productionUsEast3);
         assertTrue(app().productionDeployments().values().stream()
-                               .allMatch(deployment -> deployment.version().equals(version)));
+                        .allMatch(deployment -> deployment.version().equals(version)));
         assertTrue(tester.configServer().nodeRepository()
-                                .list(JobType.productionUsWest1.zone(tester.controller().system()), appId).stream()
+                         .list(JobType.productionUsEast3.zone(tester.controller().system()), appId).stream()
+                         .allMatch(node -> node.currentVersion().equals(version)));
+        assertTrue(tester.configServer().nodeRepository()
+                                .list(JobType.productionUsEast3.zone(tester.controller().system()), appId).stream()
                                 .allMatch(node -> node.currentVersion().equals(version)));
         assertFalse(app().change().isPresent());
     }
@@ -219,7 +225,7 @@ public class InternalDeploymentTester {
      */
     public RunId newRun(JobType type) {
         assertFalse(app().deploymentJobs().builtInternally()); // Use this only once per test.
-        newSubmission(appId);
+        newSubmission();
         tester.readyJobTrigger().maintain();
 
         if (type.isProduction()) {

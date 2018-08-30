@@ -67,6 +67,7 @@ public class InternalStepRunnerTest {
         // Deploys a default application package with default build number.
         tester.tester().deployCompletely(tester.app(), InternalDeploymentTester.applicationPackage);
         tester.setEndpoints(InternalDeploymentTester.appId, JobType.productionUsWest1.zone(tester.tester().controller().system()));
+        tester.setEndpoints(InternalDeploymentTester.appId, JobType.productionUsEast3.zone(tester.tester().controller().system()));
 
         tester.deployNewSubmission();
 
