@@ -142,7 +142,6 @@ public class RankingExpressionWithOnnxTestCase {
         }
     }
 
-
     @Test
     public void testOnnxReferenceWithWrongMacroType() {
         try {
@@ -259,7 +258,7 @@ public class RankingExpressionWithOnnxTestCase {
      */
     private void assertLargeConstant(String name, RankProfileSearchFixture search, Optional<Long> expectedSize) {
         try {
-            Path constantApplicationPackagePath = Path.fromString("models.generated/mnist_softmax.onnx/constants").append(name + ".tbf");
+            Path constantApplicationPackagePath = Path.fromString("models.generated/my_profile.mnist_softmax.onnx/constants").append(name + ".tbf");
             RankingConstant rankingConstant = search.search().rankingConstants().get(name);
             assertEquals(name, rankingConstant.getName());
             assertTrue(rankingConstant.getFileName().endsWith(constantApplicationPackagePath.toString()));
