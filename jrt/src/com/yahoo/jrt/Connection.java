@@ -220,10 +220,10 @@ class Connection extends Target {
             if (socket.getMinimumReadBufferSize() > readSize) {
                 readSize = socket.getMinimumReadBufferSize();
             }
+            setState(CONNECTED);
             while (socket.drain(input.getChannelWritable(readSize)) > 0) {
                 handlePackets();
             }
-            setState(CONNECTED);
             break;
         case NEED_READ:
             enableRead();
