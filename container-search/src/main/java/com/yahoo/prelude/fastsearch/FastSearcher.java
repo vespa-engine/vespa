@@ -62,6 +62,10 @@ public class FastSearcher extends VespaBackEndSearcher {
     /** The compression method which will be used with rpc dispatch. "lz4" (default) and "none" is supported. */
     private final static CompoundName dispatchCompression = new CompoundName("dispatch.compression");
 
+    /** If enabled, the dispatcher internal to the search container will be preferred over fdispatch
+     * whenever possible */
+    private static final CompoundName dispatchInternal = new CompoundName("dispatch.internal");
+
     /** Used to dispatch directly to search nodes over RPC, replacing the old fnet communication path */
     private final Dispatcher dispatcher;
 
@@ -215,12 +219,17 @@ public class FastSearcher extends VespaBackEndSearcher {
 
     /**
      * Returns the backend object to issue a search request over.
-     * Normally this is the backend field of this instance, which connects to the dispatch node this talk to
-     * (which is why this instance was chosen by the cluster controller). However, when certain conditions obtain
-     * (see below), we will instead return a backend instance which connects directly to the local search node
-     * for efficiency.
+     * Normally this is the backend field of this instance, which connects to the dispatch node this talks to
+     * (which is why this instance was chosen by the cluster controller). However, under certain conditions
+     *  we will instead return a backend instance which connects directly to the relevant search nodes.
      */
     private Backend chooseBackend(Query query) {
+        if (query.properties().getBoolean(dispatchInternal, false)) {
+            Optional<Backend> directDispatchBackend = dispatcher.getDispatchBackend(query);
+            if(directDispatchBackend.isPresent()) {
+                return directDispatchBackend.get();
+            }
+        }
         if ( ! query.properties().getBoolean(dispatchDirect, true)) return dispatchBackend;
         if (query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE)) return dispatchBackend;
 
