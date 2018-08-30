@@ -23,9 +23,10 @@ class Connection extends Target {
     private static final int WRITE_SIZE = 8192;
     private static final int WRITE_REDO = 10;
 
-    private static final int INITIAL   = 0;
-    private static final int CONNECTED = 1;
-    private static final int CLOSED    = 2;
+    private static final int INITIAL    = 0;
+    private static final int CONNECTING = 1;
+    private static final int CONNECTED  = 2;
+    private static final int CLOSED     = 3;
 
     private int           state      = INITIAL;
     private Queue         queue      = new Queue();
@@ -41,7 +42,8 @@ class Connection extends Target {
     private Transport     parent;
     private Supervisor    owner;
     private Spec          spec;
-    private SocketChannel channel;
+    private CryptoSocket  socket;
+    private int           readSize = READ_SIZE;
     private boolean       server;
     private AtomicLong    requestId = new AtomicLong(0);
     private SelectionKey  selectionKey;
@@ -52,8 +54,8 @@ class Connection extends Target {
             log.log(Level.WARNING, "Bogus state transition: " + this.state + "->" + state);
             return;
         }
-        boolean live = (this.state == INITIAL && state == CONNECTED);
-        boolean down = (this.state != CLOSED && state == CLOSED);
+        boolean live = (state == CONNECTED);
+        boolean down = (state == CLOSED);
         boolean fini;
         boolean pendingWrite;
         synchronized (this) {
@@ -62,8 +64,11 @@ class Connection extends Target {
             pendingWrite = (writeWork > 0);
         }
         if (live) {
+            enableRead();
             if (pendingWrite) {
                 enableWrite();
+            } else {
+                disableWrite();
             }
             owner.sessionLive(this);
         }
@@ -86,7 +91,7 @@ class Connection extends Target {
 
         this.parent = parent;
         this.owner = owner;
-        this.channel = channel;
+        this.socket = parent.createCryptoSocket(channel, true);
         server = true;
         owner.sessionInit(this);
     }
@@ -162,9 +167,8 @@ class Connection extends Target {
             setLostReason(new IllegalArgumentException("jrt: malformed or missing spec"));
             return this;
         }
-
         try {
-            channel = SocketChannel.open(spec.address());
+            socket = parent.createCryptoSocket(SocketChannel.open(spec.address()), false);
         } catch (Exception e) {
             setLostReason(e);
         }
@@ -172,22 +176,32 @@ class Connection extends Target {
     }
 
     public boolean init(Selector selector) {
-        if (channel == null) {
+        if (!hasSocket()) {
             return false;
         }
         try {
-            channel.configureBlocking(false);
-            channel.socket().setTcpNoDelay(true);
-            selectionKey = channel.register(selector,
-                                            SelectionKey.OP_READ,
-                                            this);
+            socket.channel().configureBlocking(false);
+            socket.channel().socket().setTcpNoDelay(true);
+            selectionKey = socket.channel().register(selector,
+                    SelectionKey.OP_READ | SelectionKey.OP_WRITE,
+                    this);
         } catch (Exception e) {
             log.log(Level.WARNING, "Error initializing connection", e);
             setLostReason(e);
             return false;
         }
-        setState(CONNECTED);
+        setState(CONNECTING);
         return true;
+    }
+
+    public void enableRead() {
+        selectionKey.interestOps(selectionKey.interestOps()
+                                 | SelectionKey.OP_READ);
+    }
+
+    public void disableRead() {
+        selectionKey.interestOps(selectionKey.interestOps()
+                                 & ~SelectionKey.OP_READ);
     }
 
     public void enableWrite() {
@@ -200,45 +214,84 @@ class Connection extends Target {
                                  & ~SelectionKey.OP_WRITE);
     }
 
-    public void read() throws IOException {
+    private void handshake() throws IOException {
+        switch (socket.handshake()) {
+        case DONE:
+            if (socket.getMinimumReadBufferSize() > readSize) {
+                readSize = socket.getMinimumReadBufferSize();
+            }
+            setState(CONNECTED);
+            while (socket.drain(input.getChannelWritable(readSize)) > 0) {
+                handlePackets();
+            }
+            break;
+        case NEED_READ:
+            enableRead();
+            disableWrite();
+            break;
+        case NEED_WRITE:
+            disableRead();
+            enableWrite();
+            break;
+        }
+    }
+
+    private void handlePackets() throws IOException {
+        ByteBuffer rb = input.getReadable();
+        while (true) {
+            PacketInfo info = PacketInfo.getPacketInfo(rb);
+            if (info == null || info.packetLength() > rb.remaining()) {
+                break;
+            }
+            owner.readPacket(info);
+            Packet packet;
+            try {
+                packet = info.decodePacket(rb);
+            } catch (RuntimeException e) {
+                log.log(Level.WARNING, "got garbage; closing connection: " + toString());
+                throw new IOException("jrt: decode error", e);
+            }
+            ReplyHandler handler;
+            synchronized (this) {
+                handler = replyMap.remove(packet.requestId());
+            }
+            if (handler != null) {
+                handler.handleReply(packet);
+            } else {
+                owner.handlePacket(this, packet);
+            }
+        }
+    }
+
+    private void read() throws IOException {
         boolean doneRead = false;
         for (int i = 0; !doneRead && i < READ_REDO; i++) {
-            ByteBuffer wb = input.getChannelWritable(READ_SIZE);
-            if (channel.read(wb) == -1) {
+            ByteBuffer wb = input.getChannelWritable(readSize);
+            if (socket.read(wb) == -1) {
                 throw new IOException("jrt: Connection closed by peer");
             }
             doneRead = (wb.remaining() > 0);
-            ByteBuffer rb = input.getReadable();
-            while (true) {
-                PacketInfo info = PacketInfo.getPacketInfo(rb);
-                if (info == null || info.packetLength() > rb.remaining()) {
-                    break;
-                }
-                owner.readPacket(info);
-                Packet packet;
-                try {
-                    packet = info.decodePacket(rb);
-                } catch (RuntimeException e) {
-                    log.log(Level.WARNING, "got garbage; closing connection: " + toString());
-                    throw new IOException("jrt: decode error", e);
-                }
-                ReplyHandler handler;
-                synchronized (this) {
-                    handler = replyMap.remove(packet.requestId());
-                }
-                if (handler != null) {
-                    handler.handleReply(packet);
-                } else {
-                    owner.handlePacket(this, packet);
-                }
-            }
+            handlePackets();
+        }
+        while (socket.drain(input.getChannelWritable(readSize)) > 0) {
+            handlePackets();
         }
         if (maxInputSize > 0) {
             input.shrink(maxInputSize);
         }
     }
 
-    public void write() throws IOException {
+    public void handleReadEvent() throws IOException {
+        if (state == CONNECTED) {
+            read();
+        } else if (state == CONNECTING) {
+            handshake();
+        } else {
+            throw new IOException("jrt: got read event in incompatible state: " + state);
+        }
+    }
+
+    private void write() throws IOException {
         synchronized (this) {
             queue.flush(myQueue);
         }
@@ -257,16 +310,23 @@ class Connection extends Target {
             if (rb.remaining() == 0) {
                 break;
             }
-            channel.write(rb);
+            socket.write(rb);
             if (rb.remaining() > 0) {
                 break;
             }
         }
+        int myWriteWork = 0;
+        if (output.bytes() > 0) {
+            myWriteWork++;
+        }
+        if (socket.flush() == CryptoSocket.FlushResult.NEED_WRITE) {
+            myWriteWork++;
+        }
         boolean disableWrite;
         synchronized (this) {
             writeWork = queue.size()
-                + myQueue.size()
-                + ((output.bytes() > 0) ? 1 : 0);
+                        + myQueue.size()
+                        + myWriteWork;
             disableWrite = (writeWork == 0);
         }
         if (disableWrite) {
@@ -274,6 +334,16 @@ class Connection extends Target {
         }
         if (maxOutputSize > 0) {
             output.shrink(maxOutputSize);
+        }
+    }
+
+    public void handleWriteEvent() throws IOException {
+        if (state == CONNECTED) {
+            write();
+        } else if (state == CONNECTING) {
+            handshake();
+        } else {
+            throw new IOException("jrt: got write event in incompatible state: " + state);
         }
     }
 
@@ -289,13 +359,13 @@ class Connection extends Target {
     }
 
     public boolean hasSocket() {
-        return (channel != null);
+        return ((socket != null) && (socket.channel() != null));
     }
 
     public void closeSocket() {
-        if (channel != null) {
+        if (hasSocket()) {
             try {
-                channel.socket().close();
+                socket.channel().socket().close();
             } catch (Exception e) {
                 log.log(Level.WARNING, "Error closing connection", e);
             }
@@ -393,8 +463,8 @@ class Connection extends Target {
     }
 
     public String toString() {
-        if (channel != null) {
-            return "Connection { " + channel.socket() + " }";
+        if (hasSocket()) {
+            return "Connection { " + socket.channel().socket() + " }";
         }
         return "Connection { no socket, spec " + spec + " }";
     }
