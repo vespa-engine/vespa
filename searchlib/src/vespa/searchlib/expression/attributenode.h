@@ -55,69 +55,23 @@ public:
 
     void useEnumOptimization(bool use=true) { _useEnumOptimization = use; }
     bool hasMultiValue() const { return _hasMultiValue; }
-private:
-    void cleanup();
-    void wireAttributes(const search::attribute::IAttributeContext & attrCtx) override;
-    void onPrepare(bool preserveAccurateTypes) override;
-    bool onExecute() const override;
+protected:
     class Handler
     {
     public:
         virtual ~Handler() { }
         virtual void handle(const AttributeResult & r) = 0;
     };
-    class IntegerHandler : public Handler
-    {
-    public:
-        IntegerHandler(ResultNode & result) :
-            Handler(),
-            _vector(((IntegerResultNodeVector &)result).getVector()),
-            _wVector()
-        { }
-        void handle(const AttributeResult & r) override;
-    private:
-        IntegerResultNodeVector::Vector & _vector;
-        mutable std::vector<search::attribute::IAttributeVector::WeightedInt> _wVector;
-    };
-    class FloatHandler : public Handler
-    {
-    public:
-        FloatHandler(ResultNode & result) :
-            Handler(),
-            _vector(((FloatResultNodeVector &)result).getVector()),
-            _wVector()
-        { }
-        void handle(const AttributeResult & r) override;
-    private:
-        FloatResultNodeVector::Vector & _vector;
-        mutable std::vector<search::attribute::IAttributeVector::WeightedFloat> _wVector;
-    };
-    class StringHandler : public Handler
-    {
-    public:
-        StringHandler(ResultNode & result) :
-            Handler(),
-            _vector(((StringResultNodeVector &)result).getVector()),
-            _wVector()
-        { }
-        void handle(const AttributeResult & r) override;
-    private:
-        StringResultNodeVector::Vector & _vector;
-        mutable std::vector<search::attribute::IAttributeVector::WeightedConstChar> _wVector;
-    };
-    class EnumHandler : public Handler
-    {
-    public:
-        EnumHandler(ResultNode & result) :
-            Handler(),
-            _vector(((EnumResultNodeVector &)result).getVector()),
-            _wVector()
-        { }
-        void handle(const AttributeResult & r) override;
-    private:
-        EnumResultNodeVector::Vector &_vector;
-        mutable std::vector<search::attribute::IAttributeVector::WeightedEnum> _wVector;
-    };
+private:
+    class IntegerHandler;
+    class FloatHandler;
+    class StringHandler;
+    class EnumHandler;
+protected:
+    void cleanup();
+    void wireAttributes(const search::attribute::IAttributeContext & attrCtx) override;
+    void onPrepare(bool preserveAccurateTypes) override;
+    bool onExecute() const override;
 
     std::unique_ptr<AttributeResult> _scratchResult;
     bool                             _hasMultiValue;

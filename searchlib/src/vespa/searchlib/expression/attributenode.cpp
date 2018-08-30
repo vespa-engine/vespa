@@ -13,6 +13,62 @@ using search::attribute::BasicType;
 
 IMPLEMENT_EXPRESSIONNODE(AttributeNode, FunctionNode);
 
+class AttributeNode::IntegerHandler : public AttributeNode::Handler
+{
+public:
+    IntegerHandler(ResultNode & result) :
+        Handler(),
+        _vector(((IntegerResultNodeVector &)result).getVector()),
+        _wVector()
+    { }
+    void handle(const AttributeResult & r) override;
+private:
+    IntegerResultNodeVector::Vector & _vector;
+    std::vector<search::attribute::IAttributeVector::WeightedInt> _wVector;
+};
+
+class AttributeNode::FloatHandler : public AttributeNode::Handler
+{
+public:
+    FloatHandler(ResultNode & result) :
+        Handler(),
+        _vector(((FloatResultNodeVector &)result).getVector()),
+        _wVector()
+    { }
+    void handle(const AttributeResult & r) override;
+private:
+    FloatResultNodeVector::Vector & _vector;
+    std::vector<search::attribute::IAttributeVector::WeightedFloat> _wVector;
+};
+
+class AttributeNode::StringHandler : public AttributeNode::Handler
+{
+public:
+    StringHandler(ResultNode & result) :
+        Handler(),
+        _vector(((StringResultNodeVector &)result).getVector()),
+        _wVector()
+    { }
+    void handle(const AttributeResult & r) override;
+private:
+    StringResultNodeVector::Vector & _vector;
+    std::vector<search::attribute::IAttributeVector::WeightedConstChar> _wVector;
+};
+
+class AttributeNode::EnumHandler : public AttributeNode::Handler
+{
+public:
+    EnumHandler(ResultNode & result) :
+        Handler(),
+        _vector(((EnumResultNodeVector &)result).getVector()),
+        _wVector()
+    { }
+    void handle(const AttributeResult & r) override;
+private:
+    EnumResultNodeVector::Vector &_vector;
+    std::vector<search::attribute::IAttributeVector::WeightedEnum> _wVector;
+};
+
 namespace {
 
 std::unique_ptr<AttributeResult> createResult(const IAttributeVector * attribute)
