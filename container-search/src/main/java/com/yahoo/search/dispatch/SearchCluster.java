@@ -182,7 +182,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         node.setWorking(true);
 
         if (usesDirectDispatchTo(node))
-            vipStatus.setInRotation(true);
+            vipStatus.addToRotation(this);
     }
 
     /** Used by the cluster monitor to manage node status */
@@ -192,16 +192,16 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
 
         // Take ourselves out if we usually dispatch only to our own host
         if (usesDirectDispatchTo(node))
-            vipStatus.setInRotation(false);
+            vipStatus.removeFromRotation(this);
     }
 
     private void updateSufficientCoverage(Group group, boolean sufficientCoverage) {
         // update VIP status if we direct dispatch to this group and coverage status changed
         if (usesDirectDispatchTo(group) && sufficientCoverage != group.hasSufficientCoverage()) {
             if (sufficientCoverage) {
-                vipStatus.setInRotation(true);
+                vipStatus.addToRotation(this);
             } else {
-                vipStatus.setInRotation(false);
+                vipStatus.removeFromRotation(this);
             }
         }
         group.setHasSufficientCoverage(sufficientCoverage);
