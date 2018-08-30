@@ -68,13 +68,13 @@ public class JobRunner extends Maintainer {
 
     /** Advances each of the ready steps for the given run, or marks it as finished, and stashes it. */
     private void advance(Run run) {
+        if (   ! run.hasFailed()
+            &&   run.start().isBefore(controller().clock().instant().minus(jobTimeout)))
+            jobs.abort(run.id());
         List<Step> steps = run.readySteps();
-        steps.forEach(step -> executors.execute(() -> advance(run.id(), step)));
         if (steps.isEmpty())
             jobs.finish(run.id());
-        else if (   run.status() != RunStatus.aborted
-                 && run.start().isBefore(controller().clock().instant().minus(jobTimeout)))
-            jobs.abort(run.id());
+        steps.forEach(step -> executors.execute(() -> advance(run.id(), step)));
     }
 
     /** Attempts to advance the status of the given step, for the given run. */
