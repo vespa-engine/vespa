@@ -105,20 +105,6 @@ public class JobControllerApiHandlerHelperTest {
         assertFile(response, "job/run-details-response.json");
     }
 
-    @Test
-    public void submitResponse() {
-        ControllerTester tester = new ControllerTester();
-        tester.createTenant("tenant", "domain", 1L);
-        tester.createApplication(TenantName.from("tenant"), "application", "default", 1L);
-
-        JobController jobController = new JobController(tester.controller(), new MockRunDataStore(), new MockTesterCloud());
-
-        HttpResponse response = JobControllerApiHandlerHelper.submitResponse(
-                jobController, "tenant", "application", new SourceRevision("repository", "branch", "commit"), new byte[0], new byte[0]);
-        compare(response, "{\"version\":\"1.0.1-commit\"}");
-    }
-
-
     private Run createRun(JobType type, long runid, long duration, Step lastStep, Optional<RunStatus> lastStepStatus) {
         RunId runId = new RunId(appId, type, runid);
 
