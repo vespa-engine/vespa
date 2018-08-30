@@ -23,7 +23,7 @@ public class RestartTest {
             dockerTester.addChildNodeRepositoryNode(createNodeRepositoryNode(wantedRestartGeneration, currentRestartGeneration));
 
             // Wait for node admin to be notified with node repo state and the docker container has been started
-            while (dockerTester.nodeAdmin.getListOfHosts().size() == 0) {
+            while (dockerTester.nodeAdmin.getNumberOfNodeAgents() == 0) {
                 Thread.sleep(10);
             }
 

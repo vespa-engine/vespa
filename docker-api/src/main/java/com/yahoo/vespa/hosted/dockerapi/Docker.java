@@ -63,8 +63,6 @@ public interface Docker {
 
     List<Container> getAllContainersManagedBy(String manager);
 
-    List<ContainerName> listAllContainersManagedBy(String manager);
-
     Optional<Container> getContainer(ContainerName containerName);
 
     /**
@@ -114,12 +112,4 @@ public interface Docker {
      * @return exitcodes, stdout and stderr in the ProcessResult
      */
     ProcessResult executeInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... command);
-
-    String getGlobalIPv6Address(ContainerName name);
-
-    /**
-     * If set, the supplier will we called every time before a pull/push request is made to get the credentials
-     */
-    void setDockerRegistryCredentialsSupplier(DockerRegistryCredentialsSupplier dockerRegistryCredentialsSupplier);
-
 }

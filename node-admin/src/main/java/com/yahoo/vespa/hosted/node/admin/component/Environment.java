@@ -8,11 +8,10 @@ import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
-import com.yahoo.vespa.hosted.node.admin.util.InetAddressResolver;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesImpl;
 
-import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
@@ -53,7 +52,7 @@ public class Environment {
     private final String region;
     private final String system;
     private final String parentHostHostname;
-    private final InetAddressResolver inetAddressResolver;
+    private final IPAddresses ipAddresses;
     private final PathResolver pathResolver;
     private final List<String> logstashNodes;
     private final Optional<String> coredumpFeedEndpoint;
@@ -64,6 +63,7 @@ public class Environment {
     private final URI ztsUri;
     private final AthenzService nodeAthenzIdentity;
     private final boolean nodeAgentCertEnabled;
+    private final boolean isRunningOnHost;
     private final Path trustStorePath;
 
     static {
@@ -77,7 +77,7 @@ public class Environment {
              getEnvironmentVariable(REGION),
              getEnvironmentVariable(SYSTEM),
              Defaults.getDefaults().vespaHostname(),
-             new InetAddressResolver(),
+             new IPAddressesImpl(),
              new PathResolver(),
              getLogstashNodesFromEnvironment(),
              Optional.of(getEnvironmentVariable(COREDUMP_FEED_ENDPOINT)),
@@ -87,7 +87,8 @@ public class Environment {
              getEnvironmentVariable(CERTIFICATE_DNS_SUFFIX),
              URI.create(getEnvironmentVariable(ZTS_URI)),
              (AthenzService)AthenzIdentities.from(getEnvironmentVariable(NODE_ATHENZ_IDENTITY)),
-             Boolean.valueOf(getEnvironmentVariable(ENABLE_NODE_AGENT_CERT)));
+             Boolean.valueOf(getEnvironmentVariable(ENABLE_NODE_AGENT_CERT)),
+             false);
     }
 
     private Environment(ConfigServerConfig configServerConfig,
@@ -96,7 +97,7 @@ public class Environment {
                         String region,
                         String system,
                         String parentHostHostname,
-                        InetAddressResolver inetAddressResolver,
+                        IPAddresses ipAddresses,
                         PathResolver pathResolver,
                         List<String> logstashNodes,
                         Optional<String> coreDumpFeedEndpoint,
@@ -106,7 +107,8 @@ public class Environment {
                         String certificateDnsSuffix,
                         URI ztsUri,
                         AthenzService nodeAthenzIdentity,
-                        boolean nodeAgentCertEnabled) {
+                        boolean nodeAgentCertEnabled,
+                        boolean isRunningOnHost) {
         Objects.requireNonNull(configServerConfig, "configServerConfig cannot be null");
         Objects.requireNonNull(environment, "environment cannot be null");
         Objects.requireNonNull(region, "region cannot be null");
@@ -118,7 +120,7 @@ public class Environment {
         this.region = region;
         this.system = system;
         this.parentHostHostname = parentHostHostname;
-        this.inetAddressResolver = inetAddressResolver;
+        this.ipAddresses = ipAddresses;
         this.pathResolver = pathResolver;
         this.logstashNodes = logstashNodes;
         this.coredumpFeedEndpoint = coreDumpFeedEndpoint;
@@ -129,6 +131,7 @@ public class Environment {
         this.ztsUri = ztsUri;
         this.nodeAthenzIdentity = nodeAthenzIdentity;
         this.nodeAgentCertEnabled = nodeAgentCertEnabled;
+        this.isRunningOnHost = isRunningOnHost;
         this.trustStorePath = trustStorePath;
     }
 
@@ -168,8 +171,8 @@ public class Environment {
         return Arrays.asList(logstashNodes.split("[,\\s]+"));
     }
 
-    public InetAddress getInetAddressForHost(String hostname) throws UnknownHostException {
-        return inetAddressResolver.getInetAddressForHost(hostname);
+    public IPAddresses getIpAddresses() {
+        return ipAddresses;
     }
 
     public PathResolver getPathResolver() {
@@ -273,13 +276,17 @@ public class Environment {
         return nodeAgentCertEnabled;
     }
 
+    public boolean isRunningOnHost() {
+        return isRunningOnHost;
+    }
+
     public static class Builder {
         private ConfigServerConfig configServerConfig;
         private String environment;
         private String region;
         private String system;
         private String parentHostHostname;
-        private InetAddressResolver inetAddressResolver;
+        private IPAddresses ipAddresses;
         private PathResolver pathResolver;
         private List<String> logstashNodes = Collections.emptyList();
         private Optional<String> coredumpFeedEndpoint = Optional.empty();
@@ -290,6 +297,7 @@ public class Environment {
         private URI ztsUri;
         private AthenzService nodeAthenzIdentity;
         private boolean nodeAgentCertEnabled;
+        private boolean isRunningOnHost;
         private Path trustStorePath;
 
         public Builder configServerConfig(ConfigServerConfig configServerConfig) {
@@ -317,8 +325,8 @@ public class Environment {
             return this;
         }
 
-        public Builder inetAddressResolver(InetAddressResolver inetAddressResolver) {
-            this.inetAddressResolver = inetAddressResolver;
+        public Builder ipAddresses(IPAddresses ipAddresses) {
+            this.ipAddresses = ipAddresses;
             return this;
         }
 
@@ -372,6 +380,11 @@ public class Environment {
             return this;
         }
 
+        public Builder isRunningOnHost(boolean isRunningOnHost) {
+            this.isRunningOnHost = isRunningOnHost;
+            return this;
+        }
+
         public Builder trustStorePath(Path trustStorePath) {
             this.trustStorePath = trustStorePath;
             return this;
@@ -384,7 +397,7 @@ public class Environment {
                                    region,
                                    system,
                                    parentHostHostname,
-                                   Optional.ofNullable(inetAddressResolver).orElseGet(InetAddressResolver::new),
+                                   Optional.ofNullable(ipAddresses).orElseGet(IPAddressesImpl::new),
                                    Optional.ofNullable(pathResolver).orElseGet(PathResolver::new),
                                    logstashNodes,
                                    coredumpFeedEndpoint,
@@ -394,7 +407,8 @@ public class Environment {
                                    certificateDnsSuffix,
                                    ztsUri,
                                    nodeAthenzIdentity,
-                                   nodeAgentCertEnabled);
+                                   nodeAgentCertEnabled,
+                                   isRunningOnHost);
         }
     }
 }

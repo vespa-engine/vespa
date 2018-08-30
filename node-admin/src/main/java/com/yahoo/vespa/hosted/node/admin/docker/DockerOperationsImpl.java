@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
+import com.google.common.net.InetAddresses;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.system.ProcessExecuter;
@@ -51,104 +52,103 @@ public class DockerOperationsImpl implements DockerOperations {
     private final ProcessExecuter processExecuter;
     private final String nodeProgram;
     private final Map<Path, Boolean> directoriesToMount;
-    private final IPAddresses retriever;
 
-    public DockerOperationsImpl(Docker docker, Environment environment, ProcessExecuter processExecuter, IPAddresses retriever) {
+    public DockerOperationsImpl(Docker docker, Environment environment, ProcessExecuter processExecuter) {
         this.docker = docker;
         this.environment = environment;
         this.processExecuter = processExecuter;
-        this.retriever = retriever;
 
         this.nodeProgram = environment.pathInNodeUnderVespaHome("bin/vespa-nodectl").toString();
         this.directoriesToMount = getDirectoriesToMount(environment);
     }
 
     @Override
-    public void createContainer(ContainerName containerName, final NodeSpec node, ContainerData containerData) {
+    public void createContainer(ContainerName containerName, NodeSpec node, ContainerData containerData) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         logger.info("Creating container " + containerName);
-        try {
-            InetAddress nodeInetAddress = environment.getInetAddressForHost(node.getHostname());
 
-            String configServers = String.join(",", environment.getConfigServerHostNames());
+        // IPv6 - Assume always valid
+        Inet6Address ipV6Address = environment.getIpAddresses().getIPv6Address(node.getHostname()).orElseThrow(
+                () -> new RuntimeException("Unable to find a valid IPv6 address for " + node.getHostname() +
+                        ". Missing an AAAA DNS entry?"));
 
-            Docker.CreateContainerCommand command = docker.createContainerCommand(
-                    node.getWantedDockerImage().get(),
-                    ContainerResources.from(node.getMinCpuCores(), node.getMinMainMemoryAvailableGb()),
-                    containerName,
-                    node.getHostname())
-                    .withManagedBy(MANAGER_NAME)
-                    .withEnvironment("VESPA_CONFIGSERVERS", configServers)
-                    .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS",
-                                     environment.getContainerEnvironmentResolver().createSettings(environment, node))
-                    .withUlimit("nofile", 262_144, 262_144)
-                    .withUlimit("nproc", 32_768, 409_600)
-                    .withUlimit("core", -1, -1)
-                    .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
-                    .withAddCapability("SYS_ADMIN"); // Needed for perf
+        String configServers = String.join(",", environment.getConfigServerHostNames());
 
-            if (environment.getNodeType() == NodeType.confighost ||
-                    environment.getNodeType() == NodeType.proxyhost) {
-                command.withVolume("/var/lib/sia", "/var/lib/sia");
-            }
+        Docker.CreateContainerCommand command = docker.createContainerCommand(
+                node.getWantedDockerImage().get(),
+                ContainerResources.from(node.getMinCpuCores(), node.getMinMainMemoryAvailableGb()),
+                containerName,
+                node.getHostname())
+                .withManagedBy(MANAGER_NAME)
+                .withEnvironment("VESPA_CONFIGSERVERS", configServers)
+                .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS",
+                                 environment.getContainerEnvironmentResolver().createSettings(environment, node))
+                .withUlimit("nofile", 262_144, 262_144)
+                .withUlimit("nproc", 32_768, 409_600)
+                .withUlimit("core", -1, -1)
+                .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
+                .withAddCapability("SYS_ADMIN") // Needed for perf
 
-            // TODO When rolling out host-admin on-prem: Always map in /var/zpe from host + make sure zpu is configured on host
-            if (environment.getCloud().equalsIgnoreCase("yahoo")) {
-                Path pathInNode = environment.pathInNodeUnderVespaHome("var/zpe");
-                command.withVolume(environment.pathInHostFromPathInNode(containerName, pathInNode).toString(), pathInNode.toString());
-            } else if (environment.getNodeType() == NodeType.host) {
-                command.withVolume("/var/zpe", environment.pathInNodeUnderVespaHome("var/zpe").toString());
-            }
+                // TODO: Fix. Run containers as privileged in AWS because mapped directories are on another device
+                .withPrivileged(environment.getCloud().equalsIgnoreCase("aws"));
 
-            if (environment.getNodeType() == NodeType.proxyhost) {
-                command.withVolume("/opt/yahoo/share/ssl/certs/", "/opt/yahoo/share/ssl/certs/");
-            }
-
-            if (!docker.networkNATed()) {
-                command.withIpAddress(nodeInetAddress);
-                command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
-                command.withVolume("/etc/hosts", "/etc/hosts");
-            } else {
-                // IPv6 - Assume always valid
-                Inet6Address ipV6Address = this.retriever.getIPv6Address(node.getHostname()).orElseThrow(
-                        () -> new RuntimeException("Unable to find a valid IPv6 address. Missing an AAAA DNS entry?"));
-                InetAddress ipV6Prefix = InetAddress.getByName(IPV6_NPT_PREFIX);
-                InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 8);
-                command.withIpAddress(ipV6Local);
-
-                // IPv4 - Only present for some containers
-                Optional<InetAddress> ipV4Local = this.retriever.getIPv4Address(node.getHostname())
-                        .map(ipV4Address -> {
-                            InetAddress ipV4Prefix = uncheck(() -> InetAddress.getByName(IPV4_NPT_PREFIX));
-                            return IPAddresses.prefixTranslate(ipV4Address, ipV4Prefix, 2);
-                        });
-                ipV4Local.ifPresent(command::withIpAddress);
-
-                addEtcHosts(containerData, node.getHostname(), ipV4Local, ipV6Local);
-
-                command.withNetworkMode(DOCKER_CUSTOM_BRIDGE_NETWORK_NAME);
-            }
-
-            for (Path pathInNode : directoriesToMount.keySet()) {
-                String pathInHost = environment.pathInHostFromPathInNode(containerName, pathInNode).toString();
-                command.withVolume(pathInHost, pathInNode.toString());
-            }
-
-            // TODO: Enforce disk constraints
-            long minMainMemoryAvailableMb = (long) (node.getMinMainMemoryAvailableGb() * 1024);
-            if (minMainMemoryAvailableMb > 0) {
-                // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
-                // only has this much physical memory (overrides total memory reported by `free -m`).
-                command.withEnvironment("VESPA_TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
-            }
-
-            logger.info("Creating new container with args: " + command);
-            command.create();
-
-            docker.createContainer(command);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to create container " + containerName.asString(), e);
+        if (environment.getNodeType() == NodeType.confighost ||
+                environment.getNodeType() == NodeType.proxyhost) {
+            command.withVolume("/var/lib/sia", "/var/lib/sia");
         }
+
+        if (environment.getNodeType() == NodeType.host) {
+            Path zpePathInNode = environment.pathInNodeUnderVespaHome("var/zpe");
+            if (environment.isRunningOnHost()) {
+                command.withVolume("/var/zpe", zpePathInNode.toString());
+            } else {
+                command.withVolume(environment.pathInHostFromPathInNode(containerName, zpePathInNode).toString(), zpePathInNode.toString());
+            }
+        }
+
+        if (environment.getNodeType() == NodeType.proxyhost) {
+            command.withVolume("/opt/yahoo/share/ssl/certs/", "/opt/yahoo/share/ssl/certs/");
+        }
+
+        if (!docker.networkNATed()) {
+            command.withIpAddress(ipV6Address);
+            command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
+            command.withVolume("/etc/hosts", "/etc/hosts");
+        } else {
+            InetAddress ipV6Prefix = InetAddresses.forString(IPV6_NPT_PREFIX);
+            InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 8);
+            command.withIpAddress(ipV6Local);
+
+            // IPv4 - Only present for some containers
+            Optional<InetAddress> ipV4Local = environment.getIpAddresses().getIPv4Address(node.getHostname())
+                    .map(ipV4Address -> {
+                        InetAddress ipV4Prefix = InetAddresses.forString(IPV4_NPT_PREFIX);
+                        return IPAddresses.prefixTranslate(ipV4Address, ipV4Prefix, 2);
+                    });
+            ipV4Local.ifPresent(command::withIpAddress);
+
+            addEtcHosts(containerData, node.getHostname(), ipV4Local, ipV6Local);
+
+            command.withNetworkMode(DOCKER_CUSTOM_BRIDGE_NETWORK_NAME);
+        }
+
+        for (Path pathInNode : directoriesToMount.keySet()) {
+            String pathInHost = environment.pathInHostFromPathInNode(containerName, pathInNode).toString();
+            command.withVolume(pathInHost, pathInNode.toString());
+        }
+
+        // TODO: Enforce disk constraints
+        long minMainMemoryAvailableMb = (long) (node.getMinMainMemoryAvailableGb() * 1024);
+        if (minMainMemoryAvailableMb > 0) {
+            // VESPA_TOTAL_MEMORY_MB is used to make any jdisc container think the machine
+            // only has this much physical memory (overrides total memory reported by `free -m`).
+            command.withEnvironment("VESPA_TOTAL_MEMORY_MB", Long.toString(minMainMemoryAvailableMb));
+        }
+
+        logger.info("Creating new container with args: " + command);
+        command.create();
+
+        docker.createContainer(command);
     }
 
     void addEtcHosts(ContainerData containerData,
@@ -182,36 +182,29 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void startContainer(ContainerName containerName, final NodeSpec node) {
+    public void startContainer(ContainerName containerName) {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         logger.info("Starting container " + containerName);
-        try {
-            InetAddress nodeInetAddress = environment.getInetAddressForHost(node.getHostname());
-            boolean isIPv6 = nodeInetAddress instanceof Inet6Address;
 
-            if (isIPv6) {
-                if (!docker.networkNATed()) {
-                    docker.connectContainerToNetwork(containerName, "bridge");
-                }
-
-                docker.startContainer(containerName);
-                setupContainerNetworkConnectivity(containerName);
-            } else {
-                docker.startContainer(containerName);
-            }
-
-            directoriesToMount.entrySet().stream()
-                    .filter(Map.Entry::getValue)
-                    .map(Map.Entry::getKey)
-                    .forEach(path ->
-                            docker.executeInContainerAsRoot(containerName, "chmod", "-R", "a+w", path.toString()));
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to start container " + containerName.asString(), e);
+        if (!docker.networkNATed()) {
+            docker.connectContainerToNetwork(containerName, "bridge");
         }
+
+        docker.startContainer(containerName);
+
+        if (!docker.networkNATed()) {
+            setupContainerNetworkConnectivity(containerName);
+        }
+
+        directoriesToMount.entrySet().stream()
+                .filter(Map.Entry::getValue)
+                .map(Map.Entry::getKey)
+                .forEach(path ->
+                        docker.executeInContainerAsRoot(containerName, "chmod", "-R", "a+w", path.toString()));
     }
 
     @Override
-    public void removeContainer(final Container existingContainer, NodeSpec node) {
+    public void removeContainer(Container existingContainer) {
         final ContainerName containerName = existingContainer.name;
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         if (existingContainer.state.isRunning()) {
@@ -254,12 +247,10 @@ public class DockerOperationsImpl implements DockerOperations {
      * Due to a bug in docker (https://github.com/docker/libnetwork/issues/1443), we need to manually set
      * IPv6 gateway in containers connected to more than one docker network
      */
-    private void setupContainerNetworkConnectivity(ContainerName containerName) throws IOException {
-        if (!docker.networkNATed()) {
-            InetAddress hostDefaultGateway = DockerNetworkCreator.getDefaultGatewayLinux(true);
-            executeCommandInNetworkNamespace(containerName,
-                    "route", "-A", "inet6", "add", "default", "gw", hostDefaultGateway.getHostAddress(), "dev", "eth1");
-        }
+    private void setupContainerNetworkConnectivity(ContainerName containerName) {
+        InetAddress hostDefaultGateway = uncheck(() -> DockerNetworkCreator.getDefaultGatewayLinux(true));
+        executeCommandInNetworkNamespace(containerName,
+                "route", "-A", "inet6", "add", "default", "gw", hostDefaultGateway.getHostAddress(), "dev", "eth1");
     }
 
     @Override
@@ -344,11 +335,6 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public List<Container> getAllManagedContainers() {
         return docker.getAllContainersManagedBy(MANAGER_NAME);
-    }
-
-    @Override
-    public List<ContainerName> listAllManagedContainers() {
-        return docker.listAllContainersManagedBy(MANAGER_NAME);
     }
 
     @Override

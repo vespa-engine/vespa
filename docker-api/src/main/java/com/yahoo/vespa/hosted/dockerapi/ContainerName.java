@@ -26,7 +26,7 @@ public class ContainerName {
     }
 
     public static ContainerName fromHostname(final String hostName) {
-        return new ContainerName(hostName.split("\\.")[0]);
+        return new ContainerName(hostName.split("\\.", 2)[0]);
     }
 
     @Override

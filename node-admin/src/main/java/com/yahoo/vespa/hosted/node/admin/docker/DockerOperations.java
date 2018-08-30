@@ -16,9 +16,9 @@ public interface DockerOperations {
 
     void createContainer(ContainerName containerName, NodeSpec node, ContainerData containerData);
 
-    void startContainer(ContainerName containerName, NodeSpec node);
+    void startContainer(ContainerName containerName);
 
-    void removeContainer(Container existingContainer, NodeSpec node);
+    void removeContainer(Container existingContainer);
 
     Optional<Container> getContainer(ContainerName containerName);
 
@@ -44,8 +44,6 @@ public interface DockerOperations {
      * Returns the list of containers managed by node-admin
      */
     List<Container> getAllManagedContainers();
-
-    List<ContainerName> listAllManagedContainers();
 
     void deleteUnusedDockerImages();
 }

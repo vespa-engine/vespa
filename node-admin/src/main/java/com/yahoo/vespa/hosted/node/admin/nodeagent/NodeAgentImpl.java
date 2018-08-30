@@ -26,7 +26,6 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsM
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
@@ -276,7 +275,7 @@ public class NodeAgentImpl implements NodeAgent {
     private void startContainer(NodeSpec node) {
         ContainerData containerData = createContainerData(environment, node);
         dockerOperations.createContainer(containerName, node, containerData);
-        dockerOperations.startContainer(containerName, node);
+        dockerOperations.startContainer(containerName);
         lastCpuMetric = new CpuUsageReporter();
 
         resumeScriptRun = false;
@@ -364,7 +363,7 @@ public class NodeAgentImpl implements NodeAgent {
                 }
             }
             stopFilebeatSchedulerIfNeeded();
-            dockerOperations.removeContainer(existingContainer, node);
+            dockerOperations.removeContainer(existingContainer);
             containerState = ABSENT;
             logger.info("Container successfully removed, new containerState is " + containerState);
             return Optional.empty();
@@ -738,11 +737,8 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     protected ContainerData createContainerData(Environment environment, NodeSpec node) {
-        return new ContainerData() {
-            @Override
-            public void addFile(Path pathInContainer, String data) {
-                throw new UnsupportedOperationException("addFile not implemented");
-            }
+        return (pathInContainer, data) -> {
+            throw new UnsupportedOperationException("addFile not implemented");
         };
     }
 }

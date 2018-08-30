@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.docker;
 
+import com.google.common.net.InetAddresses;
 import com.yahoo.collections.Pair;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
@@ -11,13 +12,11 @@ import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
-import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import org.junit.Test;
 import org.mockito.InOrder;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.util.Optional;
 
@@ -43,9 +42,8 @@ public class DockerOperationsImplTest {
             .build();
     private final Docker docker = mock(Docker.class);
     private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
-    private final IPAddressesMock addressesMock = new IPAddressesMock();
     private final DockerOperationsImpl dockerOperations
-            = new DockerOperationsImpl(docker, environment, processExecuter, addressesMock);
+            = new DockerOperationsImpl(docker, environment, processExecuter);
 
     @Test
     public void processResultFromNodeProgramWhenSuccess() {
@@ -103,17 +101,16 @@ public class DockerOperationsImplTest {
     }
 
     @Test
-    public void verifyEtcHosts() throws UnknownHostException {
+    public void verifyEtcHosts() {
         ContainerData containerData = mock(ContainerData.class);
         String hostname = "hostname";
-        InetAddress ipV6Local = InetAddress.getByName("::1");
-        InetAddress ipV4Local = InetAddress.getByName("127.0.0.1");
+        InetAddress ipV6Local = InetAddresses.forString("::1");
+        InetAddress ipV4Local = InetAddresses.forString("127.0.0.1");
 
         DockerOperationsImpl dockerOperations = new DockerOperationsImpl(
                 docker,
                 environment,
-                processExecuter,
-                addressesMock);
+                processExecuter);
         dockerOperations.addEtcHosts(containerData, hostname, Optional.empty(), ipV6Local);
 
         verify(containerData, times(1)).addFile(

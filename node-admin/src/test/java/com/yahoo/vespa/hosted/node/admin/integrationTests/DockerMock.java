@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.dockerapi.DockerRegistryCredentialsSupplier;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 
 import java.net.InetAddress;
@@ -16,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Mock with some simple logic
@@ -62,13 +60,6 @@ public class DockerMock implements Docker {
     public List<Container> getAllContainersManagedBy(String manager) {
         synchronized (monitor) {
             return new ArrayList<>(containersByContainerName.values());
-        }
-    }
-
-    @Override
-    public List<ContainerName> listAllContainersManagedBy(String manager) {
-        synchronized (monitor) {
-            return getAllContainersManagedBy(manager).stream().map(container -> container.name).collect(Collectors.toList());
         }
     }
 
@@ -158,16 +149,6 @@ public class DockerMock implements Docker {
         return new ProcessResult(0, null, "");
     }
 
-
-    @Override
-    public String getGlobalIPv6Address(ContainerName name) {
-        return "2001:db8:1:2:0:242:ac13:2";
-    }
-
-    @Override
-    public void setDockerRegistryCredentialsSupplier(DockerRegistryCredentialsSupplier dockerRegistryCredentialsSupplier) {
-
-    }
 
     public static class StartContainerCommandMock implements CreateContainerCommand {
         @Override
