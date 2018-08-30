@@ -5,8 +5,7 @@
 #include "attributevector.h"
 #include <vespa/config-attributes.h>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 /**
  * Class used to convert from attributes config to the config used by the AttributeVector implementation.
@@ -16,6 +15,4 @@ public:
     static Config convert(const vespa::config::search::AttributesConfig::Attribute & cfg);
 };
 
-} // namespace attribute
-} // namespace search
-
+}
