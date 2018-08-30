@@ -97,12 +97,13 @@ public class DockerOperationsImpl implements DockerOperations {
             command.withVolume("/var/lib/sia", "/var/lib/sia");
         }
 
-        // TODO When rolling out host-admin on-prem: Always map in /var/zpe from host + make sure zpu is configured on host
-        if (environment.getCloud().equalsIgnoreCase("yahoo")) {
-            Path pathInNode = environment.pathInNodeUnderVespaHome("var/zpe");
-            command.withVolume(environment.pathInHostFromPathInNode(containerName, pathInNode).toString(), pathInNode.toString());
-        } else if (environment.getNodeType() == NodeType.host) {
-            command.withVolume("/var/zpe", environment.pathInNodeUnderVespaHome("var/zpe").toString());
+        if (environment.getNodeType() == NodeType.host) {
+            Path zpePathInNode = environment.pathInNodeUnderVespaHome("var/zpe");
+            if (environment.isRunningOnHost()) {
+                command.withVolume("/var/zpe", zpePathInNode.toString());
+            } else {
+                command.withVolume(environment.pathInHostFromPathInNode(containerName, zpePathInNode).toString(), zpePathInNode.toString());
+            }
         }
 
         if (environment.getNodeType() == NodeType.proxyhost) {

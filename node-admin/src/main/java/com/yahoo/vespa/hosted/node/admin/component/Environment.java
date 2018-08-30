@@ -63,6 +63,7 @@ public class Environment {
     private final URI ztsUri;
     private final AthenzService nodeAthenzIdentity;
     private final boolean nodeAgentCertEnabled;
+    private final boolean isRunningOnHost;
     private final Path trustStorePath;
 
     static {
@@ -86,7 +87,8 @@ public class Environment {
              getEnvironmentVariable(CERTIFICATE_DNS_SUFFIX),
              URI.create(getEnvironmentVariable(ZTS_URI)),
              (AthenzService)AthenzIdentities.from(getEnvironmentVariable(NODE_ATHENZ_IDENTITY)),
-             Boolean.valueOf(getEnvironmentVariable(ENABLE_NODE_AGENT_CERT)));
+             Boolean.valueOf(getEnvironmentVariable(ENABLE_NODE_AGENT_CERT)),
+             false);
     }
 
     private Environment(ConfigServerConfig configServerConfig,
@@ -105,7 +107,8 @@ public class Environment {
                         String certificateDnsSuffix,
                         URI ztsUri,
                         AthenzService nodeAthenzIdentity,
-                        boolean nodeAgentCertEnabled) {
+                        boolean nodeAgentCertEnabled,
+                        boolean isRunningOnHost) {
         Objects.requireNonNull(configServerConfig, "configServerConfig cannot be null");
         Objects.requireNonNull(environment, "environment cannot be null");
         Objects.requireNonNull(region, "region cannot be null");
@@ -128,6 +131,7 @@ public class Environment {
         this.ztsUri = ztsUri;
         this.nodeAthenzIdentity = nodeAthenzIdentity;
         this.nodeAgentCertEnabled = nodeAgentCertEnabled;
+        this.isRunningOnHost = isRunningOnHost;
         this.trustStorePath = trustStorePath;
     }
 
@@ -272,6 +276,10 @@ public class Environment {
         return nodeAgentCertEnabled;
     }
 
+    public boolean isRunningOnHost() {
+        return isRunningOnHost;
+    }
+
     public static class Builder {
         private ConfigServerConfig configServerConfig;
         private String environment;
@@ -289,6 +297,7 @@ public class Environment {
         private URI ztsUri;
         private AthenzService nodeAthenzIdentity;
         private boolean nodeAgentCertEnabled;
+        private boolean isRunningOnHost;
         private Path trustStorePath;
 
         public Builder configServerConfig(ConfigServerConfig configServerConfig) {
@@ -371,6 +380,11 @@ public class Environment {
             return this;
         }
 
+        public Builder isRunningOnHost(boolean isRunningOnHost) {
+            this.isRunningOnHost = isRunningOnHost;
+            return this;
+        }
+
         public Builder trustStorePath(Path trustStorePath) {
             this.trustStorePath = trustStorePath;
             return this;
@@ -393,7 +407,8 @@ public class Environment {
                                    certificateDnsSuffix,
                                    ztsUri,
                                    nodeAthenzIdentity,
-                                   nodeAgentCertEnabled);
+                                   nodeAgentCertEnabled,
+                                   isRunningOnHost);
         }
     }
 }
