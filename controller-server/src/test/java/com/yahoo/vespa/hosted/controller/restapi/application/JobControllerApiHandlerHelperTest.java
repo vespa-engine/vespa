@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
 
 import static org.junit.Assert.fail;
 
@@ -56,18 +55,12 @@ public class JobControllerApiHandlerHelperTest {
 
     @Test
     public void jobTypeResponse() {
-        Map<JobType, Run> jobMap = new HashMap<>();
-        List<JobType> jobList = new ArrayList<>();
-        jobMap.put(JobType.systemTest, createRun(JobType.systemTest, 1, 30, lastStep, Optional.of(RunStatus.running)));
-        jobList.add(JobType.systemTest);
-        jobMap.put(JobType.productionApNortheast1, createRun(JobType.productionApNortheast1, 1, 60, lastStep, Optional.of(RunStatus.running)));
-        jobList.add(JobType.productionApNortheast1);
-        jobMap.put(JobType.productionUsWest1, createRun(JobType.productionUsWest1, 1, 60, Step.startTests, Optional.of(RunStatus.error)));
-        jobList.add(JobType.productionUsWest1);
+        ControllerTester tester = new ControllerTester();
+
+
 
         URI jobUrl = URI.create("https://domain.tld/application/v4/tenant/sometenant/application/someapp/instance/usuallydefault/job");
-
-        HttpResponse response = JobControllerApiHandlerHelper.jobTypeResponse(jobList, jobMap, jobUrl);
+        HttpResponse response = JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), appId, jobUrl);
         assertFile(response, "job/job-type-response.json");
     }
 
@@ -174,4 +167,5 @@ public class JobControllerApiHandlerHelperTest {
             throw new RuntimeException(e);
         }
     }
+
 }
