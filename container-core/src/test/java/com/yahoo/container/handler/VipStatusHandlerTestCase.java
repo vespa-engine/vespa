@@ -35,16 +35,16 @@ import static org.junit.Assert.fail;
  * care about the incoming URI, that's 100% handled in JDIsc by the binding
  * pattern.
  *
- * @author Steinar Knutsen
+ * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class VipStatusHandlerTestCase {
 
-    public static class MockResponseHandler implements ResponseHandler {
-
+    public static final class MockResponseHandler implements ResponseHandler {
         final ReadableContentChannel channel = new ReadableContentChannel();
 
         @Override
-        public ContentChannel handleResponse(com.yahoo.jdisc.Response response) {
+        public ContentChannel handleResponse(
+                final com.yahoo.jdisc.Response response) {
             return channel;
         }
     }
@@ -52,44 +52,45 @@ public class VipStatusHandlerTestCase {
     Metric metric = Mockito.mock(Metric.class);
 
     @Test
-    public void testHandleRequest() {
-        VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(false)
+    public final void testHandleRequest() {
+        final VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(false)
                 .noSearchBackendsImpliesOutOfService(false));
-        VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config, metric);
-        MockResponseHandler responseHandler = new MockResponseHandler();
-        HttpRequest request = createRequest();
-        BufferedContentChannel requestContent = createChannel();
+        final VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config, metric);
+        final MockResponseHandler responseHandler = new MockResponseHandler();
+        final HttpRequest request = createRequest();
+        final BufferedContentChannel requestContent = createChannel();
         handler.handleRequest(request, requestContent, responseHandler);
-        ByteBuffer b = responseHandler.channel.read();
-        byte[] asBytes = new byte[b.remaining()];
+        final ByteBuffer b = responseHandler.channel.read();
+        final byte[] asBytes = new byte[b.remaining()];
         b.get(asBytes);
         assertEquals(VipStatusHandler.OK_MESSAGE, Utf8.toString(asBytes));
     }
 
-    public static class NotFoundResponseHandler implements ResponseHandler {
-
+    public static final class NotFoundResponseHandler implements
+            ResponseHandler {
         final ReadableContentChannel channel = new ReadableContentChannel();
 
         @Override
-        public ContentChannel handleResponse(com.yahoo.jdisc.Response response) {
-            assertEquals(com.yahoo.jdisc.Response.Status.NOT_FOUND, response.getStatus());
+        public ContentChannel handleResponse(
+                final com.yahoo.jdisc.Response response) {
+            assertEquals(com.yahoo.jdisc.Response.Status.NOT_FOUND,
+                    response.getStatus());
             return channel;
         }
-
     }
 
     @Test
-    public void testFileNotFound() {
-        VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(true)
+    public final void testFileNotFound() {
+        final VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(true)
                 .statusfile("/VipStatusHandlerTestCaseFileThatReallyReallyShouldNotExist")
                 .noSearchBackendsImpliesOutOfService(false));
-        VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config, metric);
-        NotFoundResponseHandler responseHandler = new NotFoundResponseHandler();
-        HttpRequest request = createRequest();
-        BufferedContentChannel requestContent = createChannel();
+        final VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config, metric);
+        final NotFoundResponseHandler responseHandler = new NotFoundResponseHandler();
+        final HttpRequest request = createRequest();
+        final BufferedContentChannel requestContent = createChannel();
         handler.handleRequest(request, requestContent, responseHandler);
-        ByteBuffer b = responseHandler.channel.read();
-        byte[] asBytes = new byte[b.remaining()];
+        final ByteBuffer b = responseHandler.channel.read();
+        final byte[] asBytes = new byte[b.remaining()];
         b.get(asBytes);
         assertEquals(
                 VipStatusHandler.StatusResponse.COULD_NOT_FIND_STATUS_FILE,
@@ -97,22 +98,23 @@ public class VipStatusHandlerTestCase {
     }
 
     @Test
-    public void testFileFound() throws IOException {
-        File statusFile = File.createTempFile("VipStatusHandlerTestCase", null);
+    public final void testFileFound() throws IOException {
+        final File statusFile = File.createTempFile("VipStatusHandlerTestCase",
+                null);
         try {
-            FileWriter writer = new FileWriter(statusFile);
-            String OK = "OK\n";
+            final FileWriter writer = new FileWriter(statusFile);
+            final String OK = "OK\n";
             writer.write(OK);
             writer.close();
-            VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(true)
+            final VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(true)
                     .statusfile(statusFile.getAbsolutePath()).noSearchBackendsImpliesOutOfService(false));
-            VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config, metric);
-            MockResponseHandler responseHandler = new MockResponseHandler();
-            HttpRequest request = createRequest();
-            BufferedContentChannel requestContent = createChannel();
+            final VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config, metric);
+            final MockResponseHandler responseHandler = new MockResponseHandler();
+            final HttpRequest request = createRequest();
+            final BufferedContentChannel requestContent = createChannel();
             handler.handleRequest(request, requestContent, responseHandler);
-            ByteBuffer b = responseHandler.channel.read();
-            byte[] asBytes = new byte[b.remaining()];
+            final ByteBuffer b = responseHandler.channel.read();
+            final byte[] asBytes = new byte[b.remaining()];
             b.get(asBytes);
             assertEquals(OK, Utf8.toString(asBytes));
         } finally {
@@ -121,34 +123,34 @@ public class VipStatusHandlerTestCase {
     }
 
     @Test
-    public void testExplicitlyRotationControl() {
+    public final void testProgrammaticallyRemovedFromRotation() throws IOException {
         VipStatus vipStatus = new VipStatus();
-        VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(false)
+        final VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(false)
                 .noSearchBackendsImpliesOutOfService(true));
-        VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config,  metric, vipStatus);
+        final VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config,  metric, vipStatus);
 
-        vipStatus.setInRotation(false);
+        vipStatus.removeFromRotation(this);
 
         {
-            MockResponseHandler responseHandler = new MockResponseHandler();
-            HttpRequest request = createRequest();
-            BufferedContentChannel requestContent = createChannel();
+            final MockResponseHandler responseHandler = new MockResponseHandler();
+            final HttpRequest request = createRequest();
+            final BufferedContentChannel requestContent = createChannel();
             handler.handleRequest(request, requestContent, responseHandler);
-            ByteBuffer b = responseHandler.channel.read();
-            byte[] asBytes = new byte[b.remaining()];
+            final ByteBuffer b = responseHandler.channel.read();
+            final byte[] asBytes = new byte[b.remaining()];
             b.get(asBytes);
             assertEquals(VipStatusHandler.StatusResponse.NO_SEARCH_BACKENDS, Utf8.toString(asBytes));
         }
 
-        vipStatus.setInRotation(true);
+        vipStatus.addToRotation(this);
 
         {
-            MockResponseHandler responseHandler = new MockResponseHandler();
-            HttpRequest request = createRequest();
-            BufferedContentChannel requestContent = createChannel();
+            final MockResponseHandler responseHandler = new MockResponseHandler();
+            final HttpRequest request = createRequest();
+            final BufferedContentChannel requestContent = createChannel();
             handler.handleRequest(request, requestContent, responseHandler);
-            ByteBuffer b = responseHandler.channel.read();
-            byte[] asBytes = new byte[b.remaining()];
+            final ByteBuffer b = responseHandler.channel.read();
+            final byte[] asBytes = new byte[b.remaining()];
             b.get(asBytes);
             assertEquals(VipStatusHandler.OK_MESSAGE, Utf8.toString(asBytes));
         }

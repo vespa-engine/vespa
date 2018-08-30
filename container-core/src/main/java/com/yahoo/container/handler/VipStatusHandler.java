@@ -49,7 +49,7 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
     class StatusResponse extends HttpResponse {
 
         static final String COULD_NOT_FIND_STATUS_FILE = "Could not find status file.\n";
-        static final String NO_SEARCH_BACKENDS = "No search backends available, VIP status disabled."; // TODO: Generify
+        static final String NO_SEARCH_BACKENDS = "No search backends available, VIP status disabled.";
         private static final String TEXT_HTML = "text/html";
         private String contentType = TEXT_HTML;
         private byte[] data = null;
