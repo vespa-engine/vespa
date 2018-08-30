@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.google.inject.Inject;
 import com.yahoo.vespa.curator.mock.MockCurator;
 
+import java.time.Duration;
+
 /**
  * A curator db backed by a mock curator.
  * 
@@ -23,7 +25,7 @@ public class MockCuratorDb extends CuratorDb {
             public String zooKeeperEnsembleConnectionSpec() {
                 return zooKeeperEnsembleConnectionSpec;
             }
-        });
+        }, Duration.ofMillis(1));
     }
 
 }

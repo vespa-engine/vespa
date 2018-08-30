@@ -48,9 +48,6 @@ import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.reducing;
-import static java.util.stream.Collectors.toMap;
 
 /**
  * Curator backed database for storing the persistence state of controllers. This maps controller specific operations
@@ -64,6 +61,7 @@ public class CuratorDb {
 
     private static final Logger log = Logger.getLogger(CuratorDb.class.getName());
     private static final Duration defaultLockTimeout = Duration.ofMinutes(5);
+    private static final Duration defaultTryLockTimeout = Duration.ofSeconds(1);
 
     private static final Path root = Path.fromString("/controller/v1");
     private static final Path lockRoot = root.append("locks");
@@ -83,6 +81,7 @@ public class CuratorDb {
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
 
     private final Curator curator;
+    private final Duration tryLockTimeout;
 
     /**
      * All keys, to allow reentrancy.
@@ -92,7 +91,12 @@ public class CuratorDb {
 
     @Inject
     public CuratorDb(Curator curator) {
+        this(curator, defaultTryLockTimeout);
+    }
+
+    CuratorDb(Curator curator, Duration tryLockTimeout) {
         this.curator = curator;
+        this.tryLockTimeout = tryLockTimeout;
     }
 
     /** Returns all hosts configured to be part of this ZooKeeper cluster */
@@ -176,7 +180,7 @@ public class CuratorDb {
      */
     private Lock tryLock(Path path) throws TimeoutException {
         try {
-            return lock(path, Duration.ofSeconds(1));
+            return lock(path, tryLockTimeout);
         }
         catch (UncheckedTimeoutException e) {
             throw new TimeoutException(e.getMessage());
