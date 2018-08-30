@@ -66,6 +66,19 @@ public class Versions {
                 sourceApplication.equals(jobRun.sourceApplication()));
     }
 
+    /** Returns whether source versions are present and match those of the given job other versions. */
+    public boolean sourcesMatchIfPresent(Versions versions) {
+        return ( ! sourcePlatform.filter(version -> ! version.equals(targetPlatform)).isPresent() ||
+                sourcePlatform.equals(versions.sourcePlatform())) &&
+               ( ! sourceApplication.filter(version -> ! version.equals(targetApplication)).isPresent() ||
+                sourceApplication.equals(versions.sourceApplication()));
+    }
+
+    public boolean targetsMatch(Versions versions) {
+        return targetPlatform.equals(versions.targetPlatform()) &&
+               targetApplication.equals(versions.targetApplication());
+    }
+
     public boolean targetsMatch(JobStatus.JobRun jobRun) {
         return targetPlatform.equals(jobRun.platform()) &&
                targetApplication.equals(jobRun.application());

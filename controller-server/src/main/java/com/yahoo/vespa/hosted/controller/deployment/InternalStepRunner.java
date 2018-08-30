@@ -51,6 +51,8 @@ import java.util.stream.Collectors;
 import static com.yahoo.log.LogLevel.DEBUG;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.ACTIVATION_CONFLICT;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.APPLICATION_LOCK_FAILURE;
+import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.BAD_REQUEST;
+import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.OUT_OF_CAPACITY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
@@ -206,6 +208,11 @@ public class InternalStepRunner implements StepRunner {
                 || e.getErrorCode() == APPLICATION_LOCK_FAILURE) {
                 logger.log("Will retry, because of '" + e.getErrorCode() + "' deploying:\n" + e.getMessage());
                 return Optional.empty();
+            }
+            if (   e.getErrorCode() == INVALID_APPLICATION_PACKAGE
+                || e.getErrorCode() == BAD_REQUEST) {
+                logger.log("Deployment failed: " + e.getMessage());
+                return Optional.of(deploymentFailed);
             }
             throw e;
         }

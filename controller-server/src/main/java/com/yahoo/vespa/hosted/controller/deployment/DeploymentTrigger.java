@@ -345,7 +345,7 @@ public class DeploymentTrigger {
     }
 
     /** Returns whether job can trigger at given instant */
-    private boolean triggerAt(Instant instant, JobType job, Versions versions, Application application) {
+    public boolean triggerAt(Instant instant, JobType job, Versions versions, Application application) {
         Optional<JobStatus> jobStatus = application.deploymentJobs().statusOf(job);
         if (!jobStatus.isPresent()) return true;
         if (jobStatus.get().isSuccess()) return true; // Success
@@ -410,7 +410,7 @@ public class DeploymentTrigger {
      * change for the application downgrades the deployment, which is an acknowledgement that the deployed
      * version is broken somehow, such that the job may be locked in failure until a new version is released.
      */
-    private boolean isComplete(Change change, Application application, JobType jobType) {
+    public boolean isComplete(Change change, Application application, JobType jobType) {
         Optional<Deployment> existingDeployment = deploymentFor(application, jobType);
         return    successOn(application, jobType, Versions.from(change, application, existingDeployment, controller.systemVersion())).isPresent()
                ||    jobType.isProduction()
@@ -427,18 +427,20 @@ public class DeploymentTrigger {
     }
 
     private boolean isTested(Application application, Versions versions) {
-        return testedAt(application, versions).isPresent() || alreadyTriggered(application, versions);
+        return       testedIn(application, systemTest, versions)
+                  && testedIn(application, stagingTest, versions)
+               || alreadyTriggered(application, versions);
     }
 
-    private Optional<Instant> testedAt(Application application, Versions versions) {
-        Optional<JobRun> testRun = successOn(application, systemTest, versions);
-        Optional<JobRun> stagingRun = successOn(application, stagingTest, versions)
-                .filter(versions::sourcesMatchIfPresent);
-        return max(testRun.map(JobRun::at), stagingRun.map(JobRun::at))
-                .filter(__ -> testRun.isPresent() && stagingRun.isPresent());
+    public boolean testedIn(Application application, JobType testType, Versions versions) {
+        if (testType == systemTest)
+            return successOn(application, systemTest, versions).isPresent();
+        if (testType == stagingTest)
+            return successOn(application, stagingTest, versions).filter(versions::sourcesMatchIfPresent).isPresent();
+        throw new IllegalArgumentException(testType + " is not a test job!");
     }
 
-    private boolean alreadyTriggered(Application application, Versions versions) {
+    public boolean alreadyTriggered(Application application, Versions versions) {
         return application.deploymentJobs().jobStatus().values().stream()
                           .filter(job -> job.type().isProduction())
                           .anyMatch(job -> job.lastTriggered()
