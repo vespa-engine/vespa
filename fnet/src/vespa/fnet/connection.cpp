@@ -229,9 +229,21 @@ FNET_Connection::handshake()
         SetState(FNET_CLOSED);
         broken = true;
         break;
-    case vespalib::CryptoSocket::HandshakeResult::DONE:
+    case vespalib::CryptoSocket::HandshakeResult::DONE: {
         EnableReadEvent(true);
         EnableWriteEvent(writePendingAfterConnect());
+        size_t chunk_size = std::max(size_t(FNET_READ_SIZE), _socket->min_read_buffer_size());
+        uint32_t ignore_stats = 0;
+        ssize_t res = 0;
+        do { // drain input pipeline
+            _input.EnsureFree(chunk_size);
+            res = _socket->drain(_input.GetFree(), _input.GetFreeLen());
+            if (res > 0) {
+                _input.FreeToData((uint32_t)res);
+                broken = !handle_packets(ignore_stats);
+                _input.resetIfEmpty();
+            }
+        } while ((res > 0) && !broken); }
         break;
     case vespalib::CryptoSocket::HandshakeResult::NEED_READ:
         EnableReadEvent(true);
