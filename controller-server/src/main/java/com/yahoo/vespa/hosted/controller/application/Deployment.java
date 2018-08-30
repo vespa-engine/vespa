@@ -68,12 +68,12 @@ public class Deployment {
     public DeploymentActivity activity() { return activity; }
 
     /** Returns information about the clusters allocated to this */
-    public  Map<Id, ClusterInfo> clusterInfo() {
+    public Map<Id, ClusterInfo> clusterInfo() {
         return clusterInfo;
     }
 
     /** Returns utilization of the clusters allocated to this */
-    public  Map<Id, ClusterUtilization> clusterUtils() {
+    public Map<Id, ClusterUtilization> clusterUtils() {
         return clusterUtils;
     }
 

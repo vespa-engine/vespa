@@ -375,9 +375,9 @@ public class DeploymentTriggerTest {
         // This component completion should remove the older outstanding change, to avoid a later downgrade.
         clock.advance(Duration.ofHours(1));
         tester.deployAndNotify(application, applicationPackage, true, productionUsWest1);
-        assertEquals((Long) BuildJob.defaultBuildNumber, tester.application(application.id()).deploymentJobs().jobStatus()
-                                                               .get(productionUsWest1).lastSuccess().get().application().buildNumber().get());
-        assertEquals((Long) (BuildJob.defaultBuildNumber + 1), tester.application(application.id()).outstandingChange().application().get().buildNumber().get());
+        assertEquals(BuildJob.defaultBuildNumber, tester.application(application.id()).deploymentJobs().jobStatus()
+                                                               .get(productionUsWest1).lastSuccess().get().application().buildNumber().getAsLong());
+        assertEquals((BuildJob.defaultBuildNumber + 1), tester.application(application.id()).outstandingChange().application().get().buildNumber().getAsLong());
 
         tester.readyJobTrigger().maintain();
         assertTrue(tester.buildService().jobs().isEmpty());
@@ -513,14 +513,14 @@ public class DeploymentTriggerTest {
 
         tester.assertRunning(productionUsCentral1, application.id());
         assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main)).version());
-        assertEquals(Long.valueOf(42L), app.get().deployments().get(productionUsCentral1.zone(main)).applicationVersion().buildNumber().get());
+        assertEquals(42, app.get().deployments().get(productionUsCentral1.zone(main)).applicationVersion().buildNumber().getAsLong());
         assertNotEquals(triggered, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
 
         // Change has a higher application version than what is deployed -- deployment should trigger.
         tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
         tester.deploy(productionUsCentral1, application, applicationPackage);
         assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main)).version());
-        assertEquals(Long.valueOf(43), app.get().deployments().get(productionUsCentral1.zone(main)).applicationVersion().buildNumber().get());
+        assertEquals(43, app.get().deployments().get(productionUsCentral1.zone(main)).applicationVersion().buildNumber().getAsLong());
 
         // Change is again strictly dominated, and us-central-1 is skipped, even though it is still failing.
         tester.clock().advance(Duration.ofHours(2).plus(Duration.ofSeconds(1))); // Enough time for retry
@@ -588,8 +588,8 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, true, productionUsEast3);
         tester.deployAndNotify(application, true, productionEuWest1);
         assertFalse(app.get().change().isPresent());
-        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionEuWest1).lastSuccess().get().application().buildNumber().get().longValue());
-        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsEast3).lastSuccess().get().application().buildNumber().get().longValue());
+        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionEuWest1).lastSuccess().get().application().buildNumber().getAsLong());
+        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsEast3).lastSuccess().get().application().buildNumber().getAsLong());
     }
 
     @Test
