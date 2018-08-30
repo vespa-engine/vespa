@@ -43,11 +43,11 @@ public class YumPackageName {
             "([a-z0-9._]*[0-9][a-z0-9._]*)$"); // rel contains at least one digit
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-z0-9._-]+$");
 
-    public final Optional<String> epoch;
-    public final String name;
-    public final Optional<String> version;
-    public final Optional<String> release;
-    public final Optional<String> architecture;
+    private final Optional<String> epoch;
+    private final String name;
+    private final Optional<String> version;
+    private final Optional<String> release;
+    private final Optional<String> architecture;
 
     public static class Builder {
         private Optional<String> epoch = Optional.empty();
