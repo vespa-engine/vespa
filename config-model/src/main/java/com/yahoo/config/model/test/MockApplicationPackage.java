@@ -16,17 +16,11 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.config.application.api.ApplicationPackage;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.UncheckedIOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * For testing purposes only
@@ -119,7 +113,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     @Override
     public ApplicationFile getFile(Path file) {
-        return new MockApplicationFile(file, Path.fromString(root.toString()));
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -304,124 +298,6 @@ public class MockApplicationPackage implements ApplicationPackage {
         int idEnd = Math.min(xmlStringWithIdAttribute.indexOf(" ", idStart),
                              xmlStringWithIdAttribute.indexOf(">", idStart));
         return xmlStringWithIdAttribute.substring(idStart + 4, idEnd - 1);
-    }
-
-    public static class MockApplicationFile extends ApplicationFile {
-
-        /** The path to the application package root */
-        private final Path root;
-
-        /** The File pointing to the actual file represented by this */
-        private final File file;
-
-        public MockApplicationFile(Path filePath, Path applicationPackagePath) {
-            super(filePath);
-            this.root = applicationPackagePath;
-            file = applicationPackagePath.append(filePath).toFile();
-        }
-
-        @Override
-        public boolean isDirectory() {
-            return file.isDirectory();
-        }
-
-        @Override
-        public boolean exists() {
-            return file.exists();
-        }
-
-        @Override
-        public Reader createReader() throws FileNotFoundException {
-            try {
-                if ( ! exists()) throw new FileNotFoundException("File '" + file + "' does not exist");
-                return IOUtils.createReader(file, "UTF-8");
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        @Override
-        public InputStream createInputStream() throws FileNotFoundException {
-            try {
-                if ( ! exists()) throw new FileNotFoundException("File '" + file + "' does not exist");
-                return new BufferedInputStream(new FileInputStream(file));
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        @Override
-        public ApplicationFile createDirectory() {
-            file.mkdirs();
-            return this;
-        }
-
-        @Override
-        public ApplicationFile writeFile(Reader input) {
-            try {
-                IOUtils.writeFile(file, IOUtils.readAll(input), false);
-                return this;
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        @Override
-        public ApplicationFile appendFile(String value) {
-            try {
-                IOUtils.writeFile(file, value, true);
-                return this;
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        @Override
-        public List<ApplicationFile> listFiles(PathFilter filter) {
-            if ( ! isDirectory()) return Collections.emptyList();
-            return Arrays.stream(file.listFiles()).filter(f -> filter.accept(Path.fromString(f.toString())))
-                         .map(f -> new MockApplicationFile(asApplicationRelativePath(f), root))
-                         .collect(Collectors.toList());
-        }
-
-        @Override
-        public ApplicationFile delete() {
-            file.delete();
-            return this;
-        }
-
-        @Override
-        public MetaData getMetaData() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int compareTo(ApplicationFile other) {
-            return this.getPath().getName().compareTo((other).getPath().getName());
-        }
-
-        /** Strips the application package root path prefix from the path of the given file */
-        private Path asApplicationRelativePath(File file) {
-            Path path = Path.fromString(file.toString());
-
-            Iterator<String> pathIterator = path.iterator();
-            // Skip the path elements this shares with the root
-            for (Iterator<String> rootIterator = root.iterator(); rootIterator.hasNext(); ) {
-                String rootElement = rootIterator.next();
-                String pathElement = pathIterator.next();
-                if ( ! rootElement.equals(pathElement)) throw new RuntimeException("Assumption broken");
-            }
-            // Build a path from the remaining
-            Path relative = Path.fromString("");
-            while (pathIterator.hasNext())
-                relative = relative.append(pathIterator.next());
-            return relative;
-        }
-
     }
 
 }
