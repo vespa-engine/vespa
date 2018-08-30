@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 public class ConfigServerBootstrap extends AbstractComponent implements Runnable {
 
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ConfigServerBootstrap.class.getName());
+    private static final String vipStatusClusterIdentifier = "configserver";
 
     enum MainThread {START, DO_NOT_START}
     enum RedeployingApplicationsFails {EXIT_JVM, CONTINUE}
@@ -139,18 +140,18 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     private void up() {
         stateMonitor.status(StateMonitor.Status.up);
-        vipStatus.setInRotation(true);
+        vipStatus.addToRotation(vipStatusClusterIdentifier);
     }
 
     private void down() {
         stateMonitor.status(StateMonitor.Status.down);
-        vipStatus.setInRotation(false);
+        vipStatus.removeFromRotation(vipStatusClusterIdentifier);
     }
 
     private void initializing() {
         // This is default value (from config), so not strictly necessary
         stateMonitor.status(StateMonitor.Status.initializing);
-        vipStatus.setInRotation(false);
+        vipStatus.removeFromRotation(vipStatusClusterIdentifier);
     }
 
     private void startRpcServer() {

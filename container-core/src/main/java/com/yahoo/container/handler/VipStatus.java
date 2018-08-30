@@ -15,56 +15,70 @@ import com.yahoo.container.core.VipStatusConfig;
  */
 public class VipStatus {
 
-    private final ClustersStatus clustersStatus;
-
-    /** If this is non-null, its value decides whether this container is in rotation */
-    private Boolean inRotationOverride;
+    private final Map<Object, Boolean> clusters = new IdentityHashMap<>();
+    private final VipStatusConfig vipStatusConfig;
 
     public VipStatus() {
-        this(new QrSearchersConfig(new QrSearchersConfig.Builder()),
-             new VipStatusConfig(new VipStatusConfig.Builder()),
-             new ClustersStatus());
+        this(null, new VipStatusConfig(new VipStatusConfig.Builder()));
     }
 
     public VipStatus(QrSearchersConfig dispatchers) {
-        this(dispatchers, new VipStatusConfig(new VipStatusConfig.Builder()), new ClustersStatus());
+        this(dispatchers, new VipStatusConfig(new VipStatusConfig.Builder()));
     }
 
-    public VipStatus(ClustersStatus clustersStatus) {
-        this.clustersStatus = clustersStatus;
-    }
-
+    // TODO: Why use QrSearchersConfig here? Remove and inject ComponentRegistry<ClusterSearcher> instead?
     @Inject
-    public VipStatus(QrSearchersConfig dispatchers, VipStatusConfig vipStatusConfig, ClustersStatus clustersStatus) {
-        this.clustersStatus = clustersStatus;
-        clustersStatus.setReceiveTrafficByDefault(vipStatusConfig.initiallyInRotation());
-        clustersStatus.setContainerHasClusters(! dispatchers.searchcluster().isEmpty());
+    public VipStatus(QrSearchersConfig dispatchers, VipStatusConfig vipStatusConfig) {
+        // the config is not used for anything, it's just a dummy to create a
+        // dependency link to which dispatchers are used
+        this.vipStatusConfig = vipStatusConfig;
     }
 
     /**
-     * Explicitly set this container in or out of rotation
+     * Set a service or cluster into rotation.
      *
-     * @param inRotation true to set this in rotation regardless of any clusters and of the default value,
-     *                   false to set it out, and null to make this decision using the usual cluster-dependent logic
+     * @param clusterIdentifier
+     *            an object where the object identity will serve to identify the
+     *            cluster or service
      */
-    public void setInRotation(Boolean inRotation) {
-        this.inRotationOverride = inRotation;
-    }
-
-    /** Note that a cluster (which influences up/down state) is up */
     public void addToRotation(Object clusterIdentifier) {
-        clustersStatus.setUp(clusterIdentifier);
+        synchronized (clusters) {
+            clusters.put(clusterIdentifier, Boolean.TRUE);
+        }
     }
 
-    /** Note that a cluster (which influences up/down state) is down */
+    /**
+     * Set a service or cluster out of rotation.
+     *
+     * @param clusterIdentifier
+     *            an object where the object identity will serve to identify the
+     *            cluster or service
+     */
     public void removeFromRotation(Object clusterIdentifier) {
-        clustersStatus.setDown(clusterIdentifier);
+        synchronized (clusters) {
+            clusters.put(clusterIdentifier, Boolean.FALSE);
+        }
     }
 
-    /** Returns whether this container should receive traffic at this time */
+    /**
+     * Tell whether the container is connected to any active services at all.
+     *
+     * @return true if at least one service or cluster is up, or value is taken from config if no services
+     *         are registered (yet)
+     */
     public boolean isInRotation() {
-        if (inRotationOverride != null) return inRotationOverride;
-        return clustersStatus.containerShouldReceiveTraffic();
+        synchronized (clusters) {
+            // if no stored state, use config to decide whether to serve or not
+            if (clusters.size() == 0) {
+                return vipStatusConfig.initiallyInRotation();
+            }
+            for (Boolean inRotation : clusters.values()) {
+                if (inRotation) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 }
