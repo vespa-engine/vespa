@@ -6,7 +6,6 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
-import com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Ranking;
 import com.yahoo.searchdefinition.document.Sorting;
@@ -208,6 +207,9 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         }
         if (attribute.isFastAccess()) {
             aaB.fastaccess(true);
+        }
+        if (attribute.isMutable()) {
+            aaB.ismutable(true);
         }
         if (attribute.isHuge()) {
             aaB.huge(true);
