@@ -1,7 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributenode.h"
-#include <vespa/searchlib/attribute/singleenumattribute.h>
+#include "enumattributeresult.h"
+#include <vespa/searchcommon/attribute/iattributecontext.h>
 
 namespace search::expression {
 
@@ -11,29 +12,8 @@ using search::attribute::IAttributeVector;
 using search::attribute::BasicType;
 
 IMPLEMENT_EXPRESSIONNODE(AttributeNode, FunctionNode);
-IMPLEMENT_RESULTNODE(AttributeResult, ResultNode);
 
 namespace {
-
-class EnumAttributeResult : public AttributeResult
-{
-public:
-    DECLARE_RESULTNODE(EnumAttributeResult);
-    EnumAttributeResult(const attribute::IAttributeVector * attribute, DocId docId) :
-        AttributeResult(attribute, docId),
-        _enumAttr(dynamic_cast<const SingleValueEnumAttributeBase *>(attribute))
-    {
-    }
-private:
-    EnumAttributeResult() :
-        AttributeResult(),
-        _enumAttr(NULL)
-    { }
-    int64_t onGetEnum(size_t index) const override { (void) index; return (static_cast<int64_t>(_enumAttr->getE(getDocId()))); }
-    const SingleValueEnumAttributeBase * _enumAttr;
-};
-
-IMPLEMENT_RESULTNODE(EnumAttributeResult, AttributeResult);
 
 std::unique_ptr<AttributeResult> createResult(const IAttributeVector * attribute)
 {
