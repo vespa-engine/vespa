@@ -262,6 +262,12 @@ AttributeManagerTest::testConfigConvert()
         a.fastaccess = true;
         EXPECT_TRUE(CC::convert(a).fastAccess());
     }
+    {
+        CACA a;
+        EXPECT_TRUE(!CC::convert(a).isMutable());
+        a.ismutable = true;
+        EXPECT_TRUE(CC::convert(a).isMutable());
+    }
     { // tensor
         CACA a;
         a.datatype = CACA::TENSOR;
