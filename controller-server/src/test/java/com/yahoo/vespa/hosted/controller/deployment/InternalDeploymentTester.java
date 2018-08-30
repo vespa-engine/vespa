@@ -40,8 +40,8 @@ public class InternalDeploymentTester {
     public static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
             .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
             .upgradePolicy("default")
-            .region("us-west-1")
-            .region("us-east-3")
+            .region("us-central-1")
+            .parallel("us-west-1", "us-east-3")
             .build();
     public static final ApplicationId appId = ApplicationId.from("tenant", "application", "default");
 
@@ -114,6 +114,7 @@ public class InternalDeploymentTester {
 
         runJob(JobType.systemTest);
         runJob(JobType.stagingTest);
+        runJob(JobType.productionUsCentral1);
         runJob(JobType.productionUsWest1);
         runJob(JobType.productionUsEast3);
 
@@ -132,16 +133,20 @@ public class InternalDeploymentTester {
 
         runJob(JobType.systemTest);
         runJob(JobType.stagingTest);
+        runJob(JobType.productionUsCentral1);
         runJob(JobType.productionUsWest1);
         runJob(JobType.productionUsEast3);
         assertTrue(app().productionDeployments().values().stream()
                         .allMatch(deployment -> deployment.version().equals(version)));
         assertTrue(tester.configServer().nodeRepository()
+                         .list(JobType.productionAwsUsEast1a.zone(tester.controller().system()), appId).stream()
+                         .allMatch(node -> node.currentVersion().equals(version)));
+        assertTrue(tester.configServer().nodeRepository()
                          .list(JobType.productionUsEast3.zone(tester.controller().system()), appId).stream()
                          .allMatch(node -> node.currentVersion().equals(version)));
         assertTrue(tester.configServer().nodeRepository()
-                                .list(JobType.productionUsEast3.zone(tester.controller().system()), appId).stream()
-                                .allMatch(node -> node.currentVersion().equals(version)));
+                         .list(JobType.productionUsEast3.zone(tester.controller().system()), appId).stream()
+                         .allMatch(node -> node.currentVersion().equals(version)));
         assertFalse(app().change().isPresent());
     }
 

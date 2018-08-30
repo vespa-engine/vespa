@@ -66,6 +66,7 @@ public class InternalStepRunnerTest {
     public void canSwitchFromScrewdriver() {
         // Deploys a default application package with default build number.
         tester.tester().deployCompletely(tester.app(), InternalDeploymentTester.applicationPackage);
+        tester.setEndpoints(InternalDeploymentTester.appId, JobType.productionUsCentral1.zone(tester.tester().controller().system()));
         tester.setEndpoints(InternalDeploymentTester.appId, JobType.productionUsWest1.zone(tester.tester().controller().system()));
         tester.setEndpoints(InternalDeploymentTester.appId, JobType.productionUsEast3.zone(tester.tester().controller().system()));
 
@@ -86,7 +87,7 @@ public class InternalStepRunnerTest {
 
     @Test
     public void refeedRequirementBlocksDeployment() {
-        RunId id = tester.newRun(JobType.productionUsWest1);
+        RunId id = tester.newRun(JobType.productionUsCentral1);
         tester.configServer().setConfigChangeActions(new ConfigChangeActions(Collections.emptyList(),
                                                                                       Collections.singletonList(new RefeedAction("Refeed",
                                                                                                                         false,
@@ -101,7 +102,7 @@ public class InternalStepRunnerTest {
 
     @Test
     public void restartsServicesAndWaitsForRestartAndReboot() {
-        RunId id = tester.newRun(JobType.productionUsWest1);
+        RunId id = tester.newRun(JobType.productionUsCentral1);
         ZoneId zone = id.type().zone(tester.tester().controller().system());
         HostName host = tester.configServer().hostFor(InternalDeploymentTester.appId, zone);
         tester.configServer().setConfigChangeActions(new ConfigChangeActions(Collections.singletonList(new RestartAction("cluster",
