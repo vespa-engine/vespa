@@ -86,14 +86,15 @@ public class ConvertedModel {
      */
     public static ConvertedModel fromSourceOrStore(Path modelPath, RankProfileTransformContext context) {
         File sourceModel = sourceModelFile(context.rankProfile().applicationPackage(), modelPath);
+        String modelName = context.rankProfile().getName() + "." + toModelName(modelPath); // must be unique to each profile
         if (sourceModel.exists())
-            return fromSource(toModelName(modelPath),
+            return fromSource(modelName,
                               modelPath.toString(),
                               context.rankProfile(),
                               context.queryProfiles(),
                               context.importedModels().get(sourceModel)); // TODO: Convert to name here, make sure its done just one way
         else
-            return fromStore(toModelName(modelPath),
+            return fromStore(modelName,
                              modelPath.toString(),
                              context.rankProfile());
     }

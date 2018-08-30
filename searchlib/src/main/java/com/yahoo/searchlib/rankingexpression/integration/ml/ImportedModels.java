@@ -64,7 +64,6 @@ public class ImportedModels {
      * @return the model at this path or null if none
      */
     public ImportedModel get(File modelPath) {
-        System.out.println("Name from " + modelPath + ": " + toName(modelPath));
         return importedModels.get(toName(modelPath));
     }
 

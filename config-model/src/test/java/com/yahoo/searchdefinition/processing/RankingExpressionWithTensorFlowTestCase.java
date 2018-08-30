@@ -403,7 +403,7 @@ public class RankingExpressionWithTensorFlowTestCase {
      */
     private void assertLargeConstant(String name, RankProfileSearchFixture search, Optional<Long> expectedSize) {
         try {
-            Path constantApplicationPackagePath = Path.fromString("models.generated/mnist_softmax_saved/constants").append(name + ".tbf");
+            Path constantApplicationPackagePath = Path.fromString("models.generated/my_profile.mnist_softmax_saved/constants").append(name + ".tbf");
             RankingConstant rankingConstant = search.search().rankingConstants().get(name);
             assertEquals(name, rankingConstant.getName());
             assertTrue(rankingConstant.getFileName().endsWith(constantApplicationPackagePath.toString()));
