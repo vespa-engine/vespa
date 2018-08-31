@@ -47,4 +47,5 @@ flavor[].description string default=""
 flavor[].retired bool default=false
 
 # The free capacity we would like to preserve for this flavor
+# Note: Not used after Vespa 6.282
 flavor[].idealHeadroom int default=0

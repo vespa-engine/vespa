@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
-import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -15,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,17 +42,15 @@ public class NodePrioritizer {
     private final boolean isDocker;
     private final boolean isAllocatingForReplacement;
     private final Set<Node> spareHosts;
-    private final Map<Node, ResourceCapacity> headroomHosts;
 
     NodePrioritizer(List<Node> allNodes, ApplicationId appId, ClusterSpec clusterSpec, NodeSpec nodeSpec,
-                    NodeFlavors nodeFlavors, int spares, NameResolver nameResolver) {
+                    int spares, NameResolver nameResolver) {
         this.allNodes = Collections.unmodifiableList(allNodes);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
         this.appId = appId;
         this.nameResolver = nameResolver;
         this.spareHosts = findSpareHosts(allNodes, spares);
-        this.headroomHosts = findHeadroomHosts(allNodes, spareHosts, nodeFlavors);
 
         this.capacity = new DockerHostCapacity(allNodes);
 
@@ -90,62 +86,6 @@ public class NodePrioritizer {
                 .sorted(capacity::compareWithoutInactive)
                 .limit(spares)
                 .collect(Collectors.toSet());
-    }
-
-    /**
-     * Headroom hosts are the host with the least but sufficient capacity for the requested headroom.
-     *
-     * If not enough headroom - the headroom violating hosts are the once that are closest to fulfill
-     * a headroom request.
-     */
-    private static Map<Node, ResourceCapacity> findHeadroomHosts(List<Node> nodes, Set<Node> spareNodes, NodeFlavors flavors) {
-        DockerHostCapacity capacity = new DockerHostCapacity(nodes);
-        Map<Node, ResourceCapacity> headroomHosts = new HashMap<>();
-
-        List<Node> hostsSortedOnLeastCapacity = nodes.stream()
-                .filter(n -> !spareNodes.contains(n))
-                .filter(node -> node.type().equals(NodeType.host))
-                .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
-                .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
-                .sorted((a, b) -> capacity.compareWithoutInactive(b, a))
-                .collect(Collectors.toList());
-
-        // For all flavors with ideal headroom - find which hosts this headroom should be allocated to
-        for (Flavor flavor : flavors.getFlavors().stream().filter(f -> f.getIdealHeadroom() > 0).collect(Collectors.toList())) {
-            Set<Node> tempHeadroom = new HashSet<>();
-            Set<Node> notEnoughCapacity = new HashSet<>();
-
-            ResourceCapacity headroomCapacity = ResourceCapacity.of(flavor);
-
-            // Select hosts that has available capacity for both headroom and for new allocations
-            for (Node host : hostsSortedOnLeastCapacity) {
-                if (headroomHosts.containsKey(host)) continue;
-                if (capacity.hasCapacityWhenRetiredAndInactiveNodesAreGone(host, headroomCapacity)) {
-                    headroomHosts.put(host, headroomCapacity);
-                    tempHeadroom.add(host);
-                } else {
-                    notEnoughCapacity.add(host);
-                }
-
-                if (tempHeadroom.size() == flavor.getIdealHeadroom()) {
-                    break;
-                }
-            }
-
-            // Now check if we have enough headroom - if not choose the nodes that almost has it
-            if (tempHeadroom.size() < flavor.getIdealHeadroom()) {
-                List<Node> violations = notEnoughCapacity.stream()
-                        .sorted((a, b) -> capacity.compare(b, a))
-                        .limit(flavor.getIdealHeadroom() - tempHeadroom.size())
-                        .collect(Collectors.toList());
-
-                for (Node hostViolatingHeadrom : violations) {
-                    headroomHosts.put(hostViolatingHeadrom, headroomCapacity);
-                }
-            }
-        }
-
-        return headroomHosts;
     }
 
     /**
@@ -256,16 +196,6 @@ public class NodePrioritizer {
 
             if (spareHosts.contains(parent)) {
                 pri.violatesSpares = true;
-            }
-
-            if (headroomHosts.containsKey(parent) && isPreferredNodeToBeReloacted(allNodes, node, parent)) {
-                ResourceCapacity neededCapacity = headroomHosts.get(parent);
-
-                // If the node is new then we need to check the headroom requirement after it has been added
-                if (isNewNode) {
-                    neededCapacity = ResourceCapacity.composite(neededCapacity, new ResourceCapacity(node));
-                }
-                pri.violatesHeadroom = !capacity.hasCapacity(parent, neededCapacity);
             }
         }
 

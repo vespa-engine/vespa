@@ -170,7 +170,6 @@ public class MetricsReporterTest {
         assertEquals(4.0, metric.values.get("hostedVespa.docker.freeCapacityCpu"));
 
         assertContext(metric, "hostedVespa.docker.freeCapacityFlavor", 1, 0);
-        assertContext(metric, "hostedVespa.docker.idealHeadroomFlavor", 0, 0);
         assertContext(metric, "hostedVespa.docker.hostsAvailableFlavor", 1l, 0l);
     }
 
