@@ -52,7 +52,7 @@ athenzDnsSuffix string default=""
 ztsUrl string default=""
 
 # Node admin
-nodeAdminInContainer bool default=true
+nodeAdminInContainer bool default=false
 
 # Maintainers
 maintainerIntervalMinutes int default=60
