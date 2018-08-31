@@ -81,6 +81,9 @@ public class StorageMaintainer {
                 .build();
         numberOfNodeAdminMaintenanceFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.maintenance.fails");
         numberOfCoredumpsOnHost = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.coredumps");
+
+        metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.running_on_host")
+                .add(environment.isRunningOnHost() ? 1 : 0);
     }
 
     public void writeMetricsConfig(ContainerName containerName, NodeSpec node) {
