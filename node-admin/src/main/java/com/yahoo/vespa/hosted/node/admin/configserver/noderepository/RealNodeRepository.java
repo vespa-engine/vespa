@@ -41,9 +41,8 @@ public class RealNodeRepository implements NodeRepository {
                 .collect(Collectors.toList());
 
         NodeMessageResponse response = configServerApi.post("/nodes/v2/node", nodesToPost, NodeMessageResponse.class);
-        if (!Strings.isNullOrEmpty(response.errorCode)) {
-            throw new NodeRepositoryException("Failed to add nodes to node-repo: " + response.message + " " + response.errorCode);
-        }
+        if (Strings.isNullOrEmpty(response.errorCode)) return;
+        throw new NodeRepositoryException("Failed to add nodes to node-repo: " + response.message + " " + response.errorCode);
     }
 
     @Override
@@ -61,10 +60,8 @@ public class RealNodeRepository implements NodeRepository {
         try {
             NodeRepositoryNode nodeResponse = configServerApi.get("/nodes/v2/node/" + hostName,
                     NodeRepositoryNode.class);
-            if (nodeResponse == null) {
-                return Optional.empty();
-            }
-            return Optional.of(createNodeSpec(nodeResponse));
+
+            return Optional.ofNullable(nodeResponse).map(RealNodeRepository::createNodeSpec);
         } catch (HttpException.NotFoundException | HttpException.ForbiddenException e) {
             // Return empty on 403 in addition to 404 as it likely means we're trying to access a node that
             // has been deleted. When a node is deleted, the parent-child relationship no longer exists and
@@ -117,9 +114,8 @@ public class RealNodeRepository implements NodeRepository {
                 nodeRepositoryNodeFromNodeAttributes(nodeAttributes),
                 NodeMessageResponse.class);
 
-        if (!Strings.isNullOrEmpty(response.errorCode)) {
-            throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
-        }
+        if (Strings.isNullOrEmpty(response.errorCode)) return;
+        throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
     }
 
     @Override
@@ -131,9 +127,19 @@ public class RealNodeRepository implements NodeRepository {
                 NodeMessageResponse.class);
         NODE_ADMIN_LOGGER.info(response.message);
 
-        if (response.errorCode == null || response.errorCode.isEmpty()) {
-            return;
-        }
+        if (Strings.isNullOrEmpty(response.errorCode)) return;
+        throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
+    }
+
+    @Override
+    public void scheduleReboot(String hostName) {
+        NodeMessageResponse response = configServerApi.post(
+                "/nodes/v2/command/reboot?hostname=" + hostName,
+                Optional.empty(), /* body */
+                NodeMessageResponse.class);
+        NODE_ADMIN_LOGGER.info(response.message);
+
+        if (Strings.isNullOrEmpty(response.errorCode)) return;
         throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
     }
 
