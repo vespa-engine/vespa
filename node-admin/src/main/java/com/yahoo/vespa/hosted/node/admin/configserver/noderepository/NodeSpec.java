@@ -641,6 +641,7 @@ public class NodeSpec {
 
         public Builder updateFromNodeAttributes(NodeAttributes attributes) {
             attributes.getDockerImage().ifPresent(this::currentDockerImage);
+            attributes.getCurrentOsVersion().ifPresent(this::currentOsVersion);
             attributes.getHardwareDivergence().ifPresent(this::hardwareDivergence);
             attributes.getRebootGeneration().ifPresent(this::currentRebootGeneration);
             attributes.getRestartGeneration().ifPresent(this::currentRestartGeneration);
