@@ -65,9 +65,6 @@ transport                       string      default=""
 ## to the delayed ack feature present on various tcp stacks).
 transportnodelay                bool   	    default=true restart
 
-## Decides if a Q is used when sending data. Q will increase throughput.
-transportdirectwrite            bool        default=false restart
-
 ## Minimum size of packets to compress (0 means no compression)
 ##
 packetcompresslimit int default = 1024 restart
