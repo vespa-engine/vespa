@@ -11,6 +11,7 @@ import com.yahoo.container.protect.Error;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.data.access.slime.SlimeAdapter;
+import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
@@ -28,6 +29,7 @@ import com.yahoo.vespa.config.search.DispatchConfig;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -57,10 +59,15 @@ public class Dispatcher extends AbstractComponent {
 
     private final Compressor compressor = new Compressor();
 
+    private final LoadBalancer loadBalancer;
+    private final FS4ResourcePool fs4ResourcePool;
+
     public Dispatcher(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool,
                       int containerClusterSize, VipStatus vipStatus) {
         this.client = new RpcClient();
         this.searchCluster = new SearchCluster(dispatchConfig, fs4ResourcePool, containerClusterSize, vipStatus);
+        this.fs4ResourcePool = fs4ResourcePool;
+        this.loadBalancer = new LoadBalancer(searchCluster);
 
         // Create node rpc connections, indexed by the node distribution key
         ImmutableMap.Builder<Integer, Client.NodeConnection> nodeConnectionsBuilder = new ImmutableMap.Builder<>();
@@ -75,6 +82,8 @@ public class Dispatcher extends AbstractComponent {
         this.searchCluster = null;
         this.nodeConnections = ImmutableMap.copyOf(nodeConnections);
         this.client = client;
+        this.fs4ResourcePool = null;
+        this.loadBalancer = new LoadBalancer(searchCluster);
     }
     
     /** Returns the search cluster this dispatches to */
@@ -275,4 +284,19 @@ public class Dispatcher extends AbstractComponent {
 
     }
 
+    public Optional<CloseableChannel> getDispatchBackend(Query query) {
+        Optional<SearchCluster.Group> groupInCluster = loadBalancer.getGroupForQuery(query);
+
+        return groupInCluster.flatMap(group -> {
+            if(group.nodes().size() == 1) {
+                return Optional.of(group.nodes().get(0));
+            } else {
+                return Optional.empty();
+            }
+        }).map(node -> {
+            query.trace(false, 2, "Dispatching directly (anywhere) to ", node);
+            Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port(), Optional.of(node.key()));
+            return new CloseableChannel(backend);
+        });
+    }
 }

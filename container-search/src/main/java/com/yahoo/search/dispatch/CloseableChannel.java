@@ -1,0 +1,44 @@
+package com.yahoo.search.dispatch;
+
+import com.yahoo.fs4.BasicPacket;
+import com.yahoo.fs4.ChannelTimeoutException;
+import com.yahoo.fs4.mplex.Backend;
+import com.yahoo.fs4.mplex.FS4Channel;
+import com.yahoo.fs4.mplex.InvalidChannelException;
+import com.yahoo.search.Query;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Optional;
+
+public class CloseableChannel implements Closeable {
+    private FS4Channel channel;
+
+    public CloseableChannel(Backend backend) {
+        this.channel = backend.openChannel();
+    }
+
+    public void setQuery(Query query) {
+        channel.setQuery(query);
+    }
+
+    public boolean sendPacket(BasicPacket packet) throws InvalidChannelException, IOException {
+        return channel.sendPacket(packet);
+    }
+
+    public BasicPacket[] receivePackets(long timeout, int packetCount) throws InvalidChannelException, ChannelTimeoutException {
+        return channel.receivePackets(timeout, packetCount);
+    }
+
+    public Optional<Integer> distributionKey() {
+        return channel.distributionKey();
+    }
+
+    @Override
+    public void close() {
+        if (channel != null) {
+            channel.close();
+            channel = null;
+        }
+    }
+}
