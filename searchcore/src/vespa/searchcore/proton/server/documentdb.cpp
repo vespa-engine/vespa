@@ -1186,6 +1186,13 @@ updateDocumentStoreCacheHitRate(const CacheStats &current, const CacheStats &las
 }
 
 void
+updateCountMetric(uint64_t currVal, uint64_t lastVal, metrics::LongCountMetric &metric)
+{
+    uint64_t delta = (currVal >= lastVal) ? (currVal - lastVal) : 0;
+    metric.inc(delta);
+}
+
+void
 updateDocstoreMetrics(LegacyDocumentDBMetrics::DocstoreMetrics &metrics,
                       const DocumentSubDBCollection &sub_dbs,
                       CacheStats &lastCacheStats)
@@ -1200,7 +1207,7 @@ updateDocstoreMetrics(LegacyDocumentDBMetrics::DocstoreMetrics &metrics,
         }
     }
     metrics.memoryUsage.set(memoryUsage);
-    metrics.cacheLookups.set(cache_stats.lookups());
+    updateCountMetric(cache_stats.lookups(), lastCacheStats.lookups(), metrics.cacheLookups);
     updateDocumentStoreCacheHitRate(cache_stats, lastCacheStats, metrics.cacheHitRate);
     metrics.hits = cache_stats.hits;
     metrics.cacheElements.set(cache_stats.elements);
@@ -1225,8 +1232,8 @@ updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreM
     metrics.cache.memoryUsage.set(cacheStats.memory_used);
     metrics.cache.elements.set(cacheStats.elements);
     updateDocumentStoreCacheHitRate(cacheStats, lastCacheStats, metrics.cache.hitRate);
-    metrics.cache.lookups.set(cacheStats.lookups());
-    metrics.cache.invalidations.set(cacheStats.invalidations);
+    updateCountMetric(cacheStats.lookups(), lastCacheStats.lookups(), metrics.cache.lookups);
+    updateCountMetric(cacheStats.invalidations, lastCacheStats.invalidations, metrics.cache.invalidations);
     lastCacheStats = cacheStats;
 }
 
