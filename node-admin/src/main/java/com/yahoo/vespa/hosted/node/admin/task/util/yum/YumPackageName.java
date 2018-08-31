@@ -70,8 +70,8 @@ public class YumPackageName {
 
         public Builder setEpoch(String epoch) { this.epoch = Optional.of(epoch); return this; }
         public Builder setName(String name) { this.name = name; return this; }
-        public Builder setRelease(String version) { this.version = Optional.of(version); return this; }
-        public Builder setVersion(String release) { this.release = Optional.of(release); return this; }
+        public Builder setVersion(String version) { this.version = Optional.of(version); return this; }
+        public Builder setRelease(String release) { this.release = Optional.of(release); return this; }
         public Builder setArchitecture(String architecture) { this.architecture = Optional.of(architecture); return this; }
 
         public YumPackageName build() { return new YumPackageName(epoch, name, version, release, architecture); }
