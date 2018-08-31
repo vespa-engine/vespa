@@ -14,14 +14,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-public class FileContentUpdaterTest {
+public class FileUpdaterTest {
     private final FileSystem fileSystem = TestFileSystem.create();
     private final UnixPath path = new UnixPath(fileSystem.getPath("/sys/kernel/mm/transparent_hugepage/enabled"));
     private final String wantedContent = "[always] madvise never";
     private final String writeContent = "enabled";
-    private final FileContentUpdater writer = new FileContentUpdater(
+    private final FileUpdater writer = new FileUpdater(
             path.toPath(),
-            content -> content.equals(wantedContent) ? Optional.empty() : Optional.of(writeContent));
+            content -> content.isPresent() && content.get().equals(wantedContent) ?
+                    Optional.empty() : Optional.of(writeContent));
     private final TaskContext context = mock(TaskContext.class);
 
     @Before
