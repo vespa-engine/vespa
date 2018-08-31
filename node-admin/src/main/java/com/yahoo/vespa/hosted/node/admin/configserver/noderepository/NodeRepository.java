@@ -27,4 +27,6 @@ public interface NodeRepository {
     void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes);
 
     void setNodeState(String hostName, Node.State nodeState);
+
+    void scheduleReboot(String hostname);
 }
