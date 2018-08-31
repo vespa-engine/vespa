@@ -340,7 +340,6 @@ Fdispatch::Init()
     _nodeManager = std::make_unique<FastS_NodeManager>(_componentConfig, this, _partition);
 
     GetFNETTransport()->SetTCPNoDelay(_config->transportnodelay);
-    GetFNETTransport()->SetDirectWrite(_config->transportdirectwrite);
 
     if (ptportnum == 0) {
         throw vespalib::IllegalArgumentException("fdispatchrc.ptportnum must be non-zero, most likely an issue with config delivery.");
@@ -349,7 +348,6 @@ Fdispatch::Init()
     _engineAdapter = std::make_unique<fdispatch::EngineAdapter>(this, _mypool.get());
     _transportServer = std::make_unique<TransportServer>(*_engineAdapter, *_engineAdapter, *_engineAdapter, ptportnum, search::engine::TransportServer::DEBUG_ALL);
     _transportServer->setTCPNoDelay(_config->transportnodelay);
-    _transportServer->setDirectWrite(_config->transportdirectwrite);
 
     if (!_transportServer->start()) {
         _transportServer.reset();

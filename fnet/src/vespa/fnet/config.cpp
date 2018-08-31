@@ -9,6 +9,5 @@ FNET_Config::FNET_Config()
       _maxInputBufferSize(0x10000),
       _maxOutputBufferSize(0x10000),
       _tcpNoDelay(true),
-      _logStats(false),
-      _directWrite(false)
+      _logStats(false)
 { }
