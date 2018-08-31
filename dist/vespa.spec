@@ -67,7 +67,7 @@ BuildRequires: lz4-devel
 BuildRequires: libzstd-devel
 BuildRequires: zlib-devel
 BuildRequires: libicu-devel
-BuildRequires: java-1.8.0-openjdk-devel
+BuildRequires: java-10-openjdk-devel
 BuildRequires: openssl-devel
 BuildRequires: rpm-build
 BuildRequires: make
@@ -132,7 +132,7 @@ Requires: llvm-libs >= 7.0.0
 %define _extra_link_directory /opt/vespa-cppunit/lib%{?_vespa_llvm_link_directory:;%{_vespa_llvm_link_directory}}%{?_vespa_gtest_link_directory:;%{_vespa_gtest_link_directory}}
 %define _extra_include_directory /opt/vespa-cppunit/include%{?_vespa_llvm_include_directory:;%{_vespa_llvm_include_directory}}%{?_vespa_gtest_include_directory:;%{_vespa_gtest_include_directory}}
 %endif
-Requires: java-1.8.0-openjdk
+Requires: java-10-openjdk
 Requires: openssl
 Requires: vespa-cppunit >= 1.12.1-6
 Requires(pre): shadow-utils
@@ -162,7 +162,7 @@ cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=/usr/lib/jvm/java-openjdk \
        -DEXTRA_LINK_DIRECTORY="%{_extra_link_directory}" \
        -DEXTRA_INCLUDE_DIRECTORY="%{_extra_include_directory}" \
-       -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64%{?_extra_link_directory:;%{_extra_link_directory}};/usr/lib/jvm/java-1.8.0/jre/lib/amd64/server" \
+       -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64%{?_extra_link_directory:;%{_extra_link_directory}};/usr/lib/jvm/java-10/jre/lib/amd64/server" \
        %{?_vespa_llvm_version:-DVESPA_LLVM_VERSION="%{_vespa_llvm_version}"} \
        .
 
