@@ -18,7 +18,7 @@ public class FileUpdaterTest {
     private final FileSystem fileSystem = TestFileSystem.create();
     private final UnixPath path = new UnixPath(fileSystem.getPath("/sys/kernel/mm/transparent_hugepage/enabled"));
     private final String wantedContent = "[always] madvise never";
-    private final String writeContent = "enabled";
+    private final String writeContent = "always";
     private final FileUpdater writer = new FileUpdater(
             path.toPath(),
             content -> content.isPresent() && content.get().equals(wantedContent) ?
