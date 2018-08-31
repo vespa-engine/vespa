@@ -5,10 +5,11 @@ package com.yahoo.jrt;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
-import org.junit.runners.Parameterized;
 
+import static com.yahoo.jrt.CryptoUtils.createTestSslContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -17,8 +18,8 @@ import static org.junit.Assert.assertTrue;
 public class SessionTest implements SessionHandler {
 
     @Parameter public CryptoEngine crypto;
-    @Parameters public static Object[] engines() {
-        return new Object[] { CryptoEngine.createDefault(), new XorCryptoEngine() };
+    @Parameters(name = "{0}") public static Object[] engines() {
+        return new Object[] { CryptoEngine.createDefault(), new XorCryptoEngine(), new SslEngine(createTestSslContext()) };
     }
 
     private static class Session {

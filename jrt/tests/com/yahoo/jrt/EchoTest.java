@@ -5,11 +5,11 @@ package com.yahoo.jrt;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
-import org.junit.runners.Parameterized;
 
-
+import static com.yahoo.jrt.CryptoUtils.createTestSslContext;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
@@ -22,8 +22,8 @@ public class EchoTest {
     Values     refValues;
 
     @Parameter public CryptoEngine crypto;
-    @Parameters public static Object[] engines() {
-        return new Object[] { CryptoEngine.createDefault(), new XorCryptoEngine() };
+    @Parameters(name = "{0}") public static Object[] engines() {
+        return new Object[] { CryptoEngine.createDefault(), new XorCryptoEngine(), new SslEngine(createTestSslContext()) };
     }
 
     @Before
