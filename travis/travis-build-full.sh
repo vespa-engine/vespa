@@ -14,7 +14,7 @@ ccache --print-config
 
 cd ${SOURCE_DIR}
 sh ./bootstrap.sh java
-mvn install --no-snapshot-updates --batch-mode --threads ${NUM_THREADS}
+mvn -V install --no-snapshot-updates --batch-mode --threads ${NUM_THREADS}
 bash ${SOURCE_DIR}/bootstrap-cmake.sh ${SOURCE_DIR}
 make -j ${NUM_THREADS}
 ctest3 --output-on-failure -j ${NUM_THREADS}
