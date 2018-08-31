@@ -65,6 +65,7 @@ public class Processing {
      * Create a Processing from the given document operation
      * @deprecated Use {@link #of(DocumentOperation)} instead
      */
+    // TODO: Remove on Vespa 7
     @Deprecated
     @SuppressWarnings("unused")
     public static Processing fromDocumentOperation(DocumentOperation documentOperation) {
