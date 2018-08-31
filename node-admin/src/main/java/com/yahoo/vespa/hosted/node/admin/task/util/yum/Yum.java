@@ -6,10 +6,8 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -19,9 +17,13 @@ import java.util.stream.Collectors;
  */
 public class Yum {
     // Note: "(?dm)" makes newline be \n (only), and enables multiline mode where ^$ match lines with find()
-    private static final Pattern INSTALL_NOOP_PATTERN = Pattern.compile("(?dm)^Nothing to do$");
+    private static final Pattern CHECKING_FOR_UPDATE_PATTERN =
+            Pattern.compile("(?dm)^Package matching [^ ]+ already installed\\. Checking for update\\.$");
+    private static final Pattern NOTHING_TO_DO_PATTERN = Pattern.compile("(?dm)^Nothing to do$");
+    private static final Pattern INSTALL_NOOP_PATTERN = NOTHING_TO_DO_PATTERN;
     private static final Pattern UPGRADE_NOOP_PATTERN = Pattern.compile("(?dm)^No packages marked for update$");
     private static final Pattern REMOVE_NOOP_PATTERN = Pattern.compile("(?dm)^No Packages marked for removal$");
+
 
     private static final Pattern UNKNOWN_PACKAGE_PATTERN = Pattern.compile(
             "(?dm)^No package ([^ ]+) available\\.$");
@@ -30,6 +32,85 @@ public class Yum {
 
     public Yum(Terminal terminal) {
         this.terminal = terminal;
+    }
+
+    /**
+     * Lock and install, or if necessary downgrade, a package to a given version.
+     *
+     * @return false only if the package was already locked and installed at the given version (no-op)
+     */
+    public boolean installFixedVersion(TaskContext context, YumPackageName yumPackage) {
+        String targetVersionLockName = yumPackage.toVersionLockName();
+
+        boolean alreadyLocked = terminal
+                .newCommandLine(context)
+                .add("yum", "--quiet", "versionlock", "list")
+                .executeSilently()
+                .getOutputLinesStream()
+                .map(YumPackageName::parseString)
+                .filter(Optional::isPresent) // removes garbage first lines, even with --quiet
+                .map(Optional::get)
+                .anyMatch(packageName -> {
+                    // Ignore lines for other packages
+                    if (packageName.getName().equals(yumPackage.getName())) {
+                        // If existing lock doesn't exactly match the full package name,
+                        // it means it's locked to another version and we must remove that lock.
+                        String versionLockName = packageName.toVersionLockName();
+                        if (versionLockName.equals(targetVersionLockName)) {
+                            return true;
+                        } else {
+                            terminal.newCommandLine(context)
+                                    .add("yum", "versionlock", "delete", versionLockName)
+                                    .execute();
+                        }
+                    }
+
+                    return false;
+                });
+
+        boolean modified = false;
+
+        if (!alreadyLocked) {
+            terminal.newCommandLine(context)
+                    .add("yum", "versionlock", "add", targetVersionLockName)
+                    .execute();
+            modified = true;
+        }
+
+        // The following 3 things may happen with yum install:
+        //  1. The package is installed or upgraded to the target version, in case we'd return
+        //     true from converge()
+        //  2. The package is already installed at target version, in case
+        //     "Nothing to do" is printed in the last line and we may return false from converge()
+        //  3. The package is already installed but at a later version than the target version,
+        //     in case the last 2 lines of the output is:
+        //       - "Package matching yakl-client-0.10-654.el7.x86_64 already installed. Checking for update."
+        //       - "Nothing to do"
+        //     And in case we need to downgrade and return true from converge()
+
+        CommandLine commandLine = terminal
+                .newCommandLine(context)
+                .add("yum", "install", "--assumeyes", yumPackage.toName());
+
+        String output = commandLine.executeSilently().getUntrimmedOutput();
+
+        if (NOTHING_TO_DO_PATTERN.matcher(output).find()) {
+            if (CHECKING_FOR_UPDATE_PATTERN.matcher(output).find()) {
+                // case 3.
+                terminal.newCommandLine(context)
+                        .add("yum", "downgrade", "--assumeyes", yumPackage.toName())
+                        .execute();
+                modified = true;
+            } else {
+                // case 2.
+            }
+        } else {
+            // case 1.
+            commandLine.recordSilentExecutionAsSystemModification();
+            modified = true;
+        }
+
+        return modified;
     }
 
     public GenericYumCommand install(YumPackageName... packages) {
@@ -82,7 +163,6 @@ public class Yum {
         private final Pattern commandOutputNoopPattern;
 
         private Optional<String> enabledRepo = Optional.empty();
-        private boolean lockVersion = false;
 
         private GenericYumCommand(Terminal terminal,
                                   String yumCommand,
@@ -104,54 +184,7 @@ public class Yum {
             return this;
         }
 
-        /**
-         * Ensure the version of the installs are locked.
-         *
-         * <p>WARNING: In order to simplify the user interface of {@link #lockVersion()},
-         * the package name specified in the command, e.g. {@link #install(String, String...)}, MUST be of
-         * a simple format, see {@link YumPackageName#fromString(String)}.
-         */
-        public GenericYumCommand lockVersion() {
-            // Verify each package has sufficient info to form a proper version lock name.
-            packages.forEach(YumPackageName::toVersionLockName);
-            lockVersion = true;
-            return this;
-        }
-
         public boolean converge(TaskContext context) {
-            Set<String> packageNamesToLock = new HashSet<>();
-            Set<String> fullPackageNamesToLock = new HashSet<>();
-
-            if (lockVersion) {
-                // Remove all locks for other version
-
-                packages.forEach(packageName -> {
-                            packageNamesToLock.add(packageName.getName());
-                            fullPackageNamesToLock.add(packageName.toVersionLockName());
-                        });
-
-                terminal.newCommandLine(context)
-                        .add("yum", "--quiet", "versionlock", "list")
-                        .executeSilently()
-                        .getOutputLinesStream()
-                        .map(YumPackageName::parseString)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .forEach(packageName -> {
-                            // Ignore lines for other packages
-                            if (packageNamesToLock.contains(packageName.getName())) {
-                                // If existing lock doesn't exactly match the full package name,
-                                // it means it's locked to another version and we must remove that lock.
-                                String versionLockName = packageName.toVersionLockName();
-                                if (!fullPackageNamesToLock.remove(versionLockName)) {
-                                    terminal.newCommandLine(context)
-                                            .add("yum", "versionlock", "delete", versionLockName)
-                                            .execute();
-                                }
-                            }
-                        });
-            }
-
             CommandLine commandLine = terminal.newCommandLine(context);
             commandLine.add("yum", yumCommand, "--assumeyes");
             enabledRepo.ifPresent(repo -> commandLine.add("--enablerepo=" + repo));
@@ -166,12 +199,6 @@ public class Yum {
             if (modifiedSystem) {
                 commandLine.recordSilentExecutionAsSystemModification();
             }
-
-            fullPackageNamesToLock.forEach(fullPackageName ->
-                    terminal.newCommandLine(context)
-                            .add("yum", "versionlock", "add", fullPackageName)
-                            .execute());
-            modifiedSystem |= !fullPackageNamesToLock.isEmpty();
 
             return modifiedSystem;
         }
