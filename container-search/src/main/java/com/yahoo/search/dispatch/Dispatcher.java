@@ -284,7 +284,7 @@ public class Dispatcher extends AbstractComponent {
 
     }
 
-    public Optional<Backend> getDispatchBackend(Query query) {
+    public Optional<CloseableChannel> getDispatchBackend(Query query) {
         Optional<SearchCluster.Group> groupInCluster = loadBalancer.getGroupForQuery(query);
 
         return groupInCluster.flatMap(group -> {
@@ -295,7 +295,8 @@ public class Dispatcher extends AbstractComponent {
             }
         }).map(node -> {
             query.trace(false, 2, "Dispatching directly (anywhere) to ", node);
-            return fs4ResourcePool.getBackend(node.hostname(), node.fs4port(), Optional.of(node.key()));
+            Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port(), Optional.of(node.key()));
+            return new CloseableChannel(backend);
         });
     }
 }

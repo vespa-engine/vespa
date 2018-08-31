@@ -22,6 +22,7 @@ import com.yahoo.prelude.querytransform.QueryRewrite;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.CloseableChannel;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.SearchCluster;
 import com.yahoo.search.grouping.GroupingRequest;
@@ -172,11 +173,9 @@ public class FastSearcher extends VespaBackEndSearcher {
 
     @Override
     public Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) {
-        FS4Channel channel = null;
-        try {
-            if (dispatcher.searchCluster().groupSize() == 1)
-                forceSinglePassGrouping(query);
-            channel = chooseBackend(query).openChannel();
+        if (dispatcher.searchCluster().groupSize() == 1)
+            forceSinglePassGrouping(query);
+        try(CloseableChannel channel = getChannel(query)) {
             channel.setQuery(query);
 
             Result result = searchTwoPhase(channel, query, queryPacket, cacheKey);
@@ -199,9 +198,6 @@ public class FastSearcher extends VespaBackEndSearcher {
                 query.trace(getName() + " error response: " + result, false, 1);
             result.hits().addError(ErrorMessage.createBackendCommunicationError(getName() + " failed: "+ e.getMessage()));
             return result;
-        } finally {
-            if (channel != null)
-                channel.close();
         }
     }
     
@@ -218,29 +214,32 @@ public class FastSearcher extends VespaBackEndSearcher {
     }
 
     /**
-     * Returns the backend object to issue a search request over.
-     * Normally this is the backend field of this instance, which connects to the dispatch node this talks to
-     * (which is why this instance was chosen by the cluster controller). However, under certain conditions
-     *  we will instead return a backend instance which connects directly to the relevant search nodes.
+     * Returns an interface object to issue a search request over.
+     * Normally this is built from the backend field of this instance, which connects to the dispatch node
+     * this component talks to (which is why this instance was chosen by the cluster controller). However,
+     * under certain conditions we will instead return an interface which connects directly to the relevant
+     * search nodes.
      */
-    private Backend chooseBackend(Query query) {
+    private CloseableChannel getChannel(Query query) {
         if (query.properties().getBoolean(dispatchInternal, false)) {
-            Optional<Backend> directDispatchBackend = dispatcher.getDispatchBackend(query);
-            if(directDispatchBackend.isPresent()) {
-                return directDispatchBackend.get();
+            Optional<CloseableChannel> directDispatchChannel = dispatcher.getDispatchBackend(query);
+            if(directDispatchChannel.isPresent()) {
+                return directDispatchChannel.get();
             }
         }
-        if ( ! query.properties().getBoolean(dispatchDirect, true)) return dispatchBackend;
-        if (query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE)) return dispatchBackend;
+        if (!query.properties().getBoolean(dispatchDirect, true))
+            return new CloseableChannel(dispatchBackend);
+        if (query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE))
+            return new CloseableChannel(dispatchBackend);
 
         Optional<SearchCluster.Node> directDispatchRecipient = dispatcher.searchCluster().directDispatchTarget();
-        if ( ! directDispatchRecipient.isPresent()) return dispatchBackend;
+        if (!directDispatchRecipient.isPresent())
+            return new CloseableChannel(dispatchBackend);
 
         // Dispatch directly to the single, local search node
         query.trace(false, 2, "Dispatching directly to ", directDispatchRecipient.get());
-        return fs4ResourcePool.getBackend(directDispatchRecipient.get().hostname(),
-                                          directDispatchRecipient.get().fs4port(),
-                                          Optional.of(directDispatchRecipient.get().key()));
+        return new CloseableChannel(fs4ResourcePool.getBackend(directDispatchRecipient.get().hostname(),
+                directDispatchRecipient.get().fs4port(), Optional.of(directDispatchRecipient.get().key())));
     }
 
     /**
@@ -279,10 +278,9 @@ public class FastSearcher extends VespaBackEndSearcher {
             packetWrapper = cacheLookupTwoPhase(cacheKey, result, summaryClass);
         }
 
-        FS4Channel channel = chooseBackend(query).openChannel();
-        channel.setQuery(query);
         Packet[] receivedPackets;
-        try {
+        try(CloseableChannel channel = getChannel(query)) {
+            channel.setQuery(query);
             DocsumPacketKey[] packetKeys;
 
             if (countFastHits(result) > 0) {
@@ -349,8 +347,6 @@ public class FastSearcher extends VespaBackEndSearcher {
                     query.trace(traceMsg, false, 3);
                 }
             }
-        } finally {
-            channel.close();
         }
     }
 
@@ -382,7 +378,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         return null;
     }
 
-    private Result searchTwoPhase(FS4Channel channel, Query query, QueryPacket queryPacket, CacheKey cacheKey) throws IOException {
+    private Result searchTwoPhase(CloseableChannel channel, Query query, QueryPacket queryPacket, CacheKey cacheKey) throws IOException {
         if (isLoggingFine())
             getLogger().finest("sending query packet");
 
@@ -462,7 +458,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         return packets;
     }
 
-    private Packet[] fetchSummaries(FS4Channel channel, Result result, String summaryClass)
+    private Packet[] fetchSummaries(CloseableChannel channel, Result result, String summaryClass)
             throws InvalidChannelException, ChannelTimeoutException, ClassCastException, IOException {
 
         BasicPacket[] receivedPackets;
