@@ -157,8 +157,8 @@ public class NodeAdminImpl implements NodeAdmin {
         Map<String, Object> debug = new LinkedHashMap<>();
         debug.put("isFrozen", isFrozen);
 
-        List<Map<String, Object>> nodeAgentDebugs = nodeAgentsByHostname.entrySet().stream()
-                .map(node -> node.getValue().debugInfo()).collect(Collectors.toList());
+        List<Map<String, Object>> nodeAgentDebugs = nodeAgentsByHostname.values().stream()
+                .map(NodeAgent::debugInfo).collect(Collectors.toList());
         debug.put("NodeAgents", nodeAgentDebugs);
         return debug;
     }
@@ -171,7 +171,7 @@ public class NodeAdminImpl implements NodeAdmin {
             } catch (Throwable e) {
                 logger.warning("Metric fetcher scheduler failed", e);
             }
-        }, 0, 55, TimeUnit.SECONDS);
+        }, 10, 55, TimeUnit.SECONDS);
 
         int delay = 120; // WARNING: Reducing this will increase the load on config servers.
         aclScheduler.scheduleWithFixedDelay(() -> {
