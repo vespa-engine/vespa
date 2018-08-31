@@ -76,7 +76,9 @@ public class StorageMaintainer {
         this.coredumpHandler = Optional.ofNullable(coredumpHandler);
         this.clock = clock;
 
-        Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
+        Dimensions dimensions = new Dimensions.Builder()
+                .add("role", SecretAgentCheckConfig.nodeTypeToRole(environment.getNodeType()))
+                .build();
         numberOfNodeAdminMaintenanceFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.maintenance.fails");
         numberOfCoredumpsOnHost = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.coredumps");
     }
