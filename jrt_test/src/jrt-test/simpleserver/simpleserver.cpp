@@ -76,15 +76,10 @@ int
 App::Main()
 {
     if (_argc < 2) {
-        printf("usage: %s <listenspec> [ddw]\n", _argv[0]);
-        printf("  ddw = disable direct write\n");
+        printf("usage: %s <listenspec>\n", _argv[0]);
         return 1;
     }
     FRT_Supervisor orb;
-    if (_argc >= 3 && strcmp(_argv[2], "ddw") == 0) {
-        printf("(direct write disabled)\n");
-        orb.GetTransport()->SetDirectWrite(false);
-    }
     Server server(&orb);
     orb.Listen(_argv[1]);
     orb.Main();

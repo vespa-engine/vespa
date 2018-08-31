@@ -351,7 +351,7 @@ done_read:
 
 
 bool
-FNET_Connection::Write(bool direct)
+FNET_Connection::Write()
 {
     uint32_t my_write_work  = 0;
     uint32_t writtenData    = 0;     // total data written
@@ -437,29 +437,13 @@ FNET_Connection::Write(bool direct)
     }
     bool writePending = (_writeWork > 0);
 
-    if (direct) { // direct write (from post packet)
-        if (writtenData > 0) {
-            CountDirectDataWrite(writtenData);
-            CountDirectPacketWrite(writtenPackets);
-        }
-        if (writePending) {
-            AddRef_NoLock();
-            guard.unlock();
-            if (broken) {
-                Owner()->Close(this, /* needRef = */ false);
-            } else {
-                Owner()->EnableWrite(this, /* needRef = */ false);
-            }
-        }
-    } else {      // normal write (from event loop)
-        guard.unlock();
-        if (writtenData > 0) {
-            CountDataWrite(writtenData);
-            CountPacketWrite(writtenPackets);
-        }
-        if (!writePending)
-            EnableWriteEvent(false);
+    guard.unlock();
+    if (writtenData > 0) {
+        CountDataWrite(writtenData);
+        CountPacketWrite(writtenPackets);
     }
+    if (!writePending)
+        EnableWriteEvent(false);
 
     return !broken;
 }
@@ -701,16 +685,9 @@ FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
     if (writeWork == 0 && !_flags._writeLock &&
         _state == FNET_CONNECTED)
     {
-        if (GetConfig()->_directWrite) {
-            _flags._writeLock = true;
-            _queue.FlushPackets_NoLock(&_myQueue);
-            guard.unlock();
-            Write(true);
-        } else {
-            AddRef_NoLock();
-            guard.unlock();
-            Owner()->EnableWrite(this, /* needRef = */ false);
-        }
+        AddRef_NoLock();
+        guard.unlock();
+        Owner()->EnableWrite(this, /* needRef = */ false);
     }
     return true;
 }
@@ -805,7 +782,7 @@ FNET_Connection::HandleWriteEvent()
             _flags._writeLock = true;
             _queue.FlushPackets_NoLock(&_myQueue);
         }
-        broken = !Write(false);
+        broken = !Write();
         break;
     case FNET_CLOSING:
     case FNET_CLOSED:

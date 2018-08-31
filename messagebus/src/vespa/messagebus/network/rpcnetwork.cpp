@@ -128,7 +128,6 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _allowDispatchForEncode(params.getDispatchOnEncode()),
     _allowDispatchForDecode(params.getDispatchOnDecode())
 {
-    _transport->SetDirectWrite(false);
     _transport->SetMaxInputBufferSize(params.getMaxInputBufferSize());
     _transport->SetMaxOutputBufferSize(params.getMaxOutputBufferSize());
 }

@@ -345,18 +345,6 @@ public:
     void SetMaxOutputBufferSize(uint32_t bytes)
     { _config._maxOutputBufferSize = bytes; }
 
-
-    /**
-     * Enable or disable the direct write optimization. This is
-     * enabled by default and favors low latency above throughput.
-     *
-     * @param directWrite enable direct write?
-     **/
-    void SetDirectWrite(bool directWrite) {
-        _config._directWrite = directWrite;
-    }
-
-
     /**
      * Enable or disable use of the TCP_NODELAY flag with sockets
      * created by this transport object.

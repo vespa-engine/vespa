@@ -301,13 +301,6 @@ public:
     void setTCPNoDelay(bool noDelay) { _transport.SetTCPNoDelay(noDelay); }
 
     /**
-     * Enable or disable the use of a Q for throughput between search thread and network thread.
-     *
-     * @param directWrite bypasses Q
-     **/
-    void setDirectWrite(bool directWrite) { _transport.SetDirectWrite(directWrite); }
-
-    /**
      * Set a limit on how long a connection may be idle before closing it.
      *
      * @param millisecs max idle time in milliseconds

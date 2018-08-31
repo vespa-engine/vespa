@@ -227,10 +227,8 @@ private:
      * Write outgoing data to socket.
      *
      * @return false if socket is broken.
-     * @param direct is this a direct write (called directly from
-     *        postpacket, without waiting for a write event)
      **/
-    bool Write(bool direct);
+    bool Write();
 
     bool writePendingAfterConnect();
 public:

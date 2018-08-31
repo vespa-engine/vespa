@@ -166,12 +166,6 @@ FNET_TransportThread::UpdateStats()
     _now.SetNow(); // trade some overhead for better stats
     double ms = _now.MilliSecs() - _statTime.MilliSecs();
     _statTime = _now;
-    for (FNET_IOComponent *comp = _componentsHead;
-         comp != nullptr; comp = comp->_ioc_next)
-    {
-        auto guard(comp->getGuard());
-        comp->FlushDirectWriteStats();
-    }
     {
         std::lock_guard<std::mutex> guard(_lock);
         _stats.Update(&_counters, ms / 1000.0);

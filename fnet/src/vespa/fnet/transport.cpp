@@ -112,14 +112,6 @@ FNET_Transport::SetMaxOutputBufferSize(uint32_t bytes)
 }
 
 void
-FNET_Transport::SetDirectWrite(bool directWrite)
-{
-    for (const auto &thread: _threads) {
-        thread->SetDirectWrite(directWrite);
-    }
-}
-
-void
 FNET_Transport::SetTCPNoDelay(bool noDelay)
 {
     for (const auto &thread: _threads) {
