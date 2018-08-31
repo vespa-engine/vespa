@@ -55,18 +55,6 @@ public class AthenzTenant extends Tenant {
         return "athenz tenant '" + name() + "'";
     }
 
-    public AthenzTenant with(AthenzDomain domain) {
-        return new AthenzTenant(name(), domain, property(), propertyId());
-    }
-
-    public AthenzTenant with(Property property) {
-        return new AthenzTenant(name(), domain, property, propertyId());
-    }
-
-    public AthenzTenant with(PropertyId propertyId) {
-        return new AthenzTenant(name(), domain, property, Optional.of(propertyId));
-    }
-
     /** Create a new Athenz tenant */
     public static AthenzTenant create(TenantName name, AthenzDomain domain, Property property,
                                       Optional<PropertyId> propertyId) {

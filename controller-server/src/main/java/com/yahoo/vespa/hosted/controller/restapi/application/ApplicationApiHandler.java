@@ -642,19 +642,27 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse updateTenant(String tenantName, HttpRequest request) {
-        Optional<AthenzTenant> existingTenant = controller.tenants().athenzTenant(TenantName.from(tenantName));
-        if ( ! existingTenant.isPresent()) return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
+        Optional<AthenzTenant> tenant = controller.tenants().athenzTenant(TenantName.from(tenantName));
+        if ( ! tenant.isPresent()) return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
 
         Inspector requestData = toSlime(request.getData()).get();
-        AthenzTenant updatedTenant = existingTenant.get()
-                                                   .with(new AthenzDomain(mandatory("athensDomain", requestData).asString()))
-                                                   .with(new Property(mandatory("property", requestData).asString()));
-        Optional<PropertyId> propertyId = optional("propertyId", requestData).map(PropertyId::new);
-        if (propertyId.isPresent()) {
-            updatedTenant = updatedTenant.with(propertyId.get());
-        }
-        controller.tenants().updateTenant(updatedTenant, requireNToken(request, "Could not update " + tenantName));
-        return tenant(updatedTenant, request, true);
+        NToken token = requireNToken(request, "Could not update " + tenantName);
+
+        controller.tenants().lockOrThrow(tenant.get().name(), lockedTenant -> {
+            lockedTenant = lockedTenant.with(new Property(mandatory("property", requestData).asString()));
+            lockedTenant = controller.tenants().withDomain(
+                    lockedTenant,
+                    new AthenzDomain(mandatory("athensDomain", requestData).asString()),
+                    token
+            );
+            Optional<PropertyId> propertyId = optional("propertyId", requestData).map(PropertyId::new);
+            if (propertyId.isPresent()) {
+                lockedTenant = lockedTenant.with(propertyId.get());
+            }
+            controller.tenants().store(lockedTenant);
+        });
+
+        return tenant(controller.tenants().requireAthenzTenant(tenant.get().name()), request, true);
     }
 
     private HttpResponse createTenant(String tenantName, HttpRequest request) {
