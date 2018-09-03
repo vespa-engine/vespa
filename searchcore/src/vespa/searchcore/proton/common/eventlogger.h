@@ -41,6 +41,7 @@ public:
                            SerialNum current);
     static void flushComplete(const string &name,
                               int64_t elapsedTimeMs,
+                              SerialNum flushed,
                               const string &outputPath,
                               size_t outputPathElems);
     static void flushPrune(const string &name, SerialNum oldestFlushed);
