@@ -104,7 +104,7 @@ public class DockerOperationsImpl implements DockerOperations {
         if (environment.getNodeType() == NodeType.host) {
             Path zpePathInNode = environment.pathInNodeUnderVespaHome("var/zpe");
             if (environment.isRunningOnHost()) {
-                command.withVolume("/var/zpe", zpePathInNode.toString());
+                command.withSharedVolume("/var/zpe", zpePathInNode.toString());
             } else {
                 command.withVolume(environment.pathInHostFromPathInNode(containerName, zpePathInNode).toString(), zpePathInNode.toString());
             }
@@ -113,7 +113,7 @@ public class DockerOperationsImpl implements DockerOperations {
         if (!docker.networkNATed()) {
             command.withIpAddress(ipV6Address);
             command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
-            command.withVolume("/etc/hosts", "/etc/hosts");
+            command.withSharedVolume("/etc/hosts", "/etc/hosts");
         } else {
             InetAddress ipV6Prefix = InetAddresses.forString(IPV6_NPT_PREFIX);
             InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 8);
