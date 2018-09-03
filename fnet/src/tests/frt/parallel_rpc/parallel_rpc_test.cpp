@@ -93,8 +93,8 @@ void perform_test(size_t thread_id, Client &client, Result &result) {
         seq = ret;
     };
     size_t loop_cnt = 128;
-    BenchmarkTimer::benchmark(invoke, invoke, 1.0);
-    BenchmarkTimer timer(3.0);
+    BenchmarkTimer::benchmark(invoke, invoke, 0.5);
+    BenchmarkTimer timer(1.5);
     while (timer.has_budget()) {
         timer.before();
         for (size_t i = 0; i < loop_cnt; ++i) {
@@ -103,7 +103,7 @@ void perform_test(size_t thread_id, Client &client, Result &result) {
         timer.after();
     }
     double t = timer.min_time();
-    BenchmarkTimer::benchmark(invoke, invoke, 1.0);
+    BenchmarkTimer::benchmark(invoke, invoke, 0.5);
     EXPECT_GREATER_EQUAL(seq, loop_cnt);
     result.req_per_sec[thread_id] = double(loop_cnt) / t;
     req->SubRef();
@@ -116,12 +116,6 @@ void perform_test(size_t thread_id, Client &client, Result &result) {
 
 TEST_MT_FFF("parallel rpc with 1/1 transport threads and 128 user threads",
             128, Server(1), Client(1, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
-
-TEST_MT_FFF("parallel rpc with 1/8 transport threads and 128 user threads",
-            128, Server(8), Client(1, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
-
-TEST_MT_FFF("parallel rpc with 8/1 transport threads and 128 user threads",
-            128, Server(1), Client(8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
 
 TEST_MT_FFF("parallel rpc with 8/8 transport threads and 128 user threads",
             128, Server(8), Client(8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
