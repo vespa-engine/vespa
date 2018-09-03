@@ -28,7 +28,7 @@ public class SslSocket implements CryptoSocket {
     private final SSLEngine sslEngine;
     private final ByteBuffer wrapBuffer;
     private final ByteBuffer unwrapBuffer;
-    private final ByteBuffer handshakeDummyBuffer;
+    private ByteBuffer handshakeDummyBuffer;
     private HandshakeState handshakeState;
 
     public SslSocket(SocketChannel channel, SSLEngine sslEngine) {
@@ -77,6 +77,7 @@ public class SslSocket implements CryptoSocket {
                 case NOT_HANDSHAKING:
                     if (hasWrapBufferMoreData()) return HandshakeState.NEED_WRITE;
                     sslEngine.setEnableSessionCreation(false); // disable renegotiation
+                    handshakeDummyBuffer = null;
                     return HandshakeState.COMPLETED;
                 case NEED_TASK:
                     sslEngine.getDelegatedTask().run();
@@ -147,12 +148,12 @@ public class SslSocket implements CryptoSocket {
 
     @Override
     public int write(ByteBuffer src) throws IOException {
-        channelWrite();
-        if (hasWrapBufferMoreData()) return 0;
+        FlushResult flushResult = flush();
+        if (flushResult == FlushResult.NEED_WRITE) return 0;
         int totalBytesWrapped = 0;
         while (src.hasRemaining()) {
             int bytesWrapped = sslEngineAppDataWrap(src);
-            if (bytesWrapped == -1) break;
+            if (bytesWrapped == 0) break;
             totalBytesWrapped += bytesWrapped;
         }
         return totalBytesWrapped;
@@ -167,6 +168,7 @@ public class SslSocket implements CryptoSocket {
     private int sslEngineAppDataWrap(ByteBuffer src) throws IOException {
         int bytesWrapped = sslEngineWrap(src);
         if (bytesWrapped == 0) throw new SSLException("Got handshake data in application data wrap");
+        if (bytesWrapped == -1) return 0;
         return bytesWrapped;
     }
 
@@ -179,6 +181,8 @@ public class SslSocket implements CryptoSocket {
         switch (status) {
             case OK:
                 return result.bytesProduced();
+            case BUFFER_OVERFLOW:
+                throw new SSLException("Cannot unwrap - remaining capacity too small: " + dst);
             case BUFFER_UNDERFLOW:
                 return -1;
             case CLOSED:
@@ -216,7 +220,6 @@ public class SslSocket implements CryptoSocket {
         wrapBuffer.flip();
         int written = channel.write(wrapBuffer);
         wrapBuffer.compact();
-        if (written == -1) throw new ClosedChannelException();
         return written;
     }
 
