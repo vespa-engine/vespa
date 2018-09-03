@@ -2,6 +2,7 @@
 package com.yahoo.security;
 
 import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
 import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyStore;
@@ -31,7 +32,7 @@ class TestUtils {
     static X509Certificate createCertificate(KeyPair keyPair, X500Principal subject)  {
         return X509CertificateBuilder
                 .fromKeypair(
-                        keyPair, subject, Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA512_WITH_ECDSA, 1)
+                        keyPair, subject, Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(1))
                 .build();
     }
 

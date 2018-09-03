@@ -6,6 +6,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
@@ -51,7 +52,7 @@ public class X509CertificateBuilderTest {
                         Instant.now(),
                         Instant.now().plus(1, ChronoUnit.DAYS),
                         signatureAlgorithm,
-                        1)
+                        BigInteger.valueOf(1))
                 .setBasicConstraints(true, true)
                 .build();
         assertEquals(subject, cert.getSubjectX500Principal());
@@ -72,7 +73,7 @@ public class X509CertificateBuilderTest {
                         Instant.now().plus(1, ChronoUnit.DAYS),
                         caKeypair.getPrivate(),
                         signatureAlgorithm,
-                        1)
+                        BigInteger.valueOf(1))
                 .addSubjectAlternativeName("subject1.alt")
                 .addSubjectAlternativeName("subject2.alt")
                 .build();

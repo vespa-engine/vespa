@@ -21,6 +21,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.sql.Date;
 import java.time.Instant;
@@ -35,7 +36,7 @@ import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
  */
 public class X509CertificateBuilder {
 
-    private final long serialNumber;
+    private final BigInteger serialNumber;
     private final SignatureAlgorithm signingAlgorithm;
     private final PrivateKey caPrivateKey;
     private final Instant notBefore;
@@ -53,7 +54,7 @@ public class X509CertificateBuilder {
                                    PublicKey certPublicKey,
                                    PrivateKey caPrivateKey,
                                    SignatureAlgorithm signingAlgorithm,
-                                   long serialNumber) {
+                                   BigInteger serialNumber) {
         this.issuer = issuer;
         this.subject = subject;
         this.notBefore = notBefore;
@@ -70,7 +71,7 @@ public class X509CertificateBuilder {
                                                  Instant notAfter,
                                                  PrivateKey caPrivateKey,
                                                  SignatureAlgorithm signingAlgorithm,
-                                                 long serialNumber) {
+                                                 BigInteger serialNumber) {
         try {
             PKCS10CertificationRequest bcCsr = csr.getBcCsr();
             PublicKey publicKey = new JcaPKCS10CertificationRequest(bcCsr)
@@ -96,7 +97,7 @@ public class X509CertificateBuilder {
                                                      Instant notBefore,
                                                      Instant notAfter,
                                                      SignatureAlgorithm signingAlgorithm,
-                                                     long serialNumber) {
+                                                     BigInteger serialNumber) {
         return new X509CertificateBuilder(subject,
                                           subject,
                                           notBefore,
@@ -105,6 +106,13 @@ public class X509CertificateBuilder {
                                           keyPair.getPrivate(),
                                           signingAlgorithm,
                                           serialNumber);
+    }
+
+    /**
+     * @return generates a cryptographically secure positive serial number up to 128 bits
+     */
+    public static BigInteger generateRandomSerialNumber() {
+        return new BigInteger(128, new SecureRandom());
     }
 
     public X509CertificateBuilder addSubjectAlternativeName(String dnsName) {
@@ -129,7 +137,7 @@ public class X509CertificateBuilder {
     public X509Certificate build() {
         try {
             JcaX509v3CertificateBuilder jcaCertBuilder = new JcaX509v3CertificateBuilder(
-                    issuer, BigInteger.valueOf(serialNumber), Date.from(notBefore), Date.from(notAfter), subject, certPublicKey);
+                    issuer, serialNumber, Date.from(notBefore), Date.from(notAfter), subject, certPublicKey);
             if (basicConstraintsExtension != null) {
                 jcaCertBuilder.addExtension(
                         Extension.basicConstraints,

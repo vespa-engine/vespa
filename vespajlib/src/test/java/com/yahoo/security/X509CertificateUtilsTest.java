@@ -4,6 +4,7 @@ package com.yahoo.security;
 import org.junit.Test;
 
 import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
@@ -62,7 +63,7 @@ public class X509CertificateUtilsTest {
                         Instant.now(),
                         Instant.now().plus(1, ChronoUnit.DAYS),
                         SignatureAlgorithm.SHA512_WITH_ECDSA,
-                        1)
+                        BigInteger.valueOf(1))
                 .addSubjectAlternativeName(san)
                 .build();
 
