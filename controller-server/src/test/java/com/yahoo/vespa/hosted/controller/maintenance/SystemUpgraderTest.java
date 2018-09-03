@@ -88,9 +88,12 @@ public class SystemUpgraderTest {
         assertWantedVersion(SystemApplication.zone, version1, zone2, zone3, zone4);
 
         // zone 2 and 3: upgrade does not start until zone 1 zone-application config converges
+        // TODO: Commented out for now, see comment in SystemApplication.configConvergedIn()
+        /*
         systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.configServer, version1, zone2, zone3);
         convergeServices(SystemApplication.zone, zone1);
+        */
 
         // zone 2 and 3: zone-config-server upgrades, first in zone 2, then in zone 3
         systemUpgrader.maintain();
@@ -127,11 +130,14 @@ public class SystemUpgraderTest {
         completeUpgrade(SystemApplication.zone, version2, zone4);
 
         // zone 4: System version remains unchanged until config converges
+        // TODO: Commented out for now, see comment in SystemApplication.configConvergedIn()
+        /*
         tester.computeVersionStatus();
         assertSystemVersion(version1);
         convergeServices(SystemApplication.zone, zone4);
         tester.computeVersionStatus();
         assertSystemVersion(version2);
+        */
 
         // Next run does nothing as system is now upgraded
         systemUpgrader.maintain();
@@ -159,12 +165,16 @@ public class SystemUpgraderTest {
         systemUpgrader.maintain();
         completeUpgrade(SystemApplication.zone, version2, zone1);
         tester.computeVersionStatus();
-        assertSystemVersion(version1); // Unchanged until zone-application converges
+        // TODO: Changed for now, see comment in SystemApplication.configConvergedIn()
+        //assertSystemVersion(version1); // Unchanged until zone-application converges
+        assertSystemVersion(version2);
 
         // Controller upgrades again
         Version version3 = Version.fromString("6.7");
         tester.upgradeController(version3);
-        assertSystemVersion(version1);
+        // TODO: Changed for now, see todo above
+        //assertSystemVersion(version1);
+        assertSystemVersion(version2);
         assertControllerVersion(version3);
 
         // zone 1: zone-application converges and system version changes
