@@ -6,6 +6,11 @@
 
 //-------------------------------------------------------------
 
+#include "my_crypto_engine.hpp"
+vespalib::CryptoEngine::SP crypto;
+
+//-------------------------------------------------------------
+
 std::mutex   _delayedReturnCntLock;
 uint32_t     _delayedReturnCnt = 0;
 
@@ -400,8 +405,8 @@ struct State {
     FRT_RPCRequest    *_req;
 
     State()
-        : _client(),
-          _server(),
+        : _client(crypto),
+          _server(crypto),
           _rpc(&_server, _client.GetScheduler()),
           _echo(),
           _peerSpec(),
@@ -929,4 +934,7 @@ TEST_F("invoke test", State()) {
     EXPECT_TRUE(_phase_echo_cnt == 1);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+TEST_MAIN() {
+    crypto = my_crypto_engine();
+    TEST_RUN_ALL();
+}
