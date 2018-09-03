@@ -12,7 +12,7 @@ cache:
 
 branches:
   only:
-  - master
+  - 7
 
 before_cache:
   - sudo rm -rf $HOME/.m2/repository/com/yahoo/vespa
