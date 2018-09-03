@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
@@ -68,13 +67,17 @@ public enum SystemApplication {
         if (!hasApplicationPackage()) {
             return true;
         }
-        // TODO: Remove this hack once Docker hosts are removed from zone-application.
-        if (isAws(zone.region())) {
-            return true; // Skip checking config convergence on AWS as Docker hosts do not have cloud config
-        }
+        // TODO: Docker hosts running host admin cannot be checked. Since a zone can have
+        // Docker hosts running either host admin or node-admin, it's not possible to check
+        // config convergence, so we need to always return true here.
+        // We want to remove the line below and check config convergence for proxy nodes
+        // when all Docker hosts are running host admin
+        return true;
+        /*
         return controller.configServer().serviceConvergence(new DeploymentId(id(), zone))
                          .map(ServiceConvergence::converged)
                          .orElse(false);
+                         */
     }
 
     /** Returns the node types of this that should receive OS upgrades */
@@ -90,10 +93,6 @@ public enum SystemApplication {
     @Override
     public String toString() {
         return String.format("system application %s of type %s", id, nodeTypes);
-    }
-
-    private static boolean isAws(RegionName region) {
-        return region.value().startsWith("cd-aws-") || region.value().startsWith("aws-");
     }
 
 }
