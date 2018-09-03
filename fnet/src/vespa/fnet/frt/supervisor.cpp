@@ -26,7 +26,8 @@ FRT_Supervisor::FRT_Supervisor(FNET_Transport *transport,
 }
 
 
-FRT_Supervisor::FRT_Supervisor(uint32_t threadStackSize,
+FRT_Supervisor::FRT_Supervisor(vespalib::CryptoEngine::SP crypto,
+                               uint32_t threadStackSize,
                                uint32_t maxThreads)
     : _transport(nullptr),
       _threadPool(nullptr),
@@ -39,7 +40,7 @@ FRT_Supervisor::FRT_Supervisor(uint32_t threadStackSize,
       _connHooks(*this),
       _methodMismatchHook(nullptr)
 {
-    _transport = new FNET_Transport();
+    _transport = new FNET_Transport(std::move(crypto), 1);
     assert(_transport != nullptr);
     if (threadStackSize > 0) {
         _threadPool = new FastOS_ThreadPool(threadStackSize, maxThreads);

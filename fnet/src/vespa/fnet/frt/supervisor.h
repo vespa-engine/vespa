@@ -9,6 +9,7 @@
 #include <vespa/fnet/ipackethandler.h>
 #include <vespa/fnet/connection.h>
 #include <vespa/fnet/simplepacketstreamer.h>
+#include <vespa/vespalib/net/crypto_engine.h>
 
 class FNET_Transport;
 class FRT_Target;
@@ -82,10 +83,10 @@ private:
     FRT_Supervisor &operator=(const FRT_Supervisor &);
 
 public:
-    FRT_Supervisor(FNET_Transport *transport,
-                   FastOS_ThreadPool *threadPool);
-    FRT_Supervisor(uint32_t threadStackSize = 65000,
-                   uint32_t maxThreads = 0);
+    FRT_Supervisor(FNET_Transport *transport, FastOS_ThreadPool *threadPool);
+    FRT_Supervisor(vespalib::CryptoEngine::SP crypto, uint32_t threadStackSize = 65000, uint32_t maxThreads = 0);
+    FRT_Supervisor(uint32_t threadStackSize = 65000, uint32_t maxThreads = 0)
+        : FRT_Supervisor(vespalib::CryptoEngine::get_default(), threadStackSize, maxThreads) {}
     virtual ~FRT_Supervisor();
 
     bool StandAlone() { return _standAlone; }

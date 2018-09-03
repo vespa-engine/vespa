@@ -4,6 +4,12 @@
 #include <vespa/fnet/frt/frt.h>
 #include <mutex>
 
+//-------------------------------------------------------------
+
+#include "my_crypto_engine.hpp"
+vespalib::CryptoEngine::SP crypto;
+
+//-------------------------------------------------------------
 
 class Session
 {
@@ -82,7 +88,7 @@ struct RPC : public FRT_Invokable
 
 TEST("session") {
     RPC rpc;
-    FRT_Supervisor orb;
+    FRT_Supervisor orb(crypto);
     char spec[64];
     rpc.Init(&orb);
     ASSERT_TRUE(orb.Listen("tcp/0"));
@@ -121,4 +127,7 @@ TEST("session") {
     EXPECT_TRUE(!rpc.bogusFini);
 };
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+TEST_MAIN() {
+    crypto = my_crypto_engine();
+    TEST_RUN_ALL();
+}
