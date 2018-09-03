@@ -3,8 +3,10 @@ package ai.vespa.models.evaluation;
 
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.FileSource;
+import com.yahoo.path.Path;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import org.junit.Test;
 
 import java.io.File;
@@ -22,9 +24,8 @@ public class RankProfilesImporterTest {
 
     @Test
     public void testImportingModels() {
-        String configPath = "src/test/resources/config/models/rank-profiles.cfg";
-        RankProfilesConfig config = new ConfigGetter<>(new FileSource(new File(configPath)), RankProfilesConfig.class).getConfig("");
-        Map<String, Model> models = new RankProfilesConfigImporter().importFrom(config);
+        Map<String, Model> models = createModels("src/test/resources/config/models/");
+
         assertEquals(4, models.size());
 
         Model xgboost = models.get("xgboost_2_2");
@@ -36,6 +37,8 @@ public class RankProfilesImporterTest {
         assertFunction("default.add",
                        "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(mnist_softmax_Variable), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_Variable_1), f(a,b)(a + b))",
                        onnxMnistSoftmax);
+        assertEquals("tensor(d1[10],d2[784])",
+                     onnxMnistSoftmax.evaluatorOf("default.add").context().get("constant(mnist_softmax_Variable)").type().toString());
 
         Model tfMnistSoftmax = models.get("mnist_softmax_saved");
         assertFunction("serving_default.y",
@@ -50,9 +53,8 @@ public class RankProfilesImporterTest {
 
     @Test
     public void testImportingRankExpressions() {
-        String configPath = "src/test/resources/config/rankexpression/rank-profiles.cfg";
-        RankProfilesConfig config = new ConfigGetter<>(new FileSource(new File(configPath)), RankProfilesConfig.class).getConfig("");
-        Map<String, Model> models = new RankProfilesConfigImporter().importFrom(config);
+        Map<String, Model> models = createModels("src/test/resources/config/rankexpression/");
+
         assertEquals(18, models.size());
 
         Model macros = models.get("macros");
@@ -83,6 +85,15 @@ public class RankProfilesImporterTest {
         assertNotNull("Function '" + name + "' is present", function);
         assertEquals(name, function.getName());
         assertEquals(expression, function.getBody().getRoot().toString());
+    }
+
+    private Map<String, Model> createModels(String path) {
+        Path configDir = Path.fromString(path);
+        RankProfilesConfig config = new ConfigGetter<>(new FileSource(configDir.append("rank-profiles.cfg").toFile()),
+                                                       RankProfilesConfig.class).getConfig("");
+        RankingConstantsConfig constantsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-constants.cfg").toFile()),
+                                                                    RankingConstantsConfig.class).getConfig("");
+        return new RankProfilesConfigImporter().importFrom(config, constantsConfig);
     }
 
 }
