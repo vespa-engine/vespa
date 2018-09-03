@@ -35,6 +35,7 @@ import static com.yahoo.security.KeyAlgorithm.RSA;
 /**
  * @author bjorncs
  */
+// TODO Support serialization of EC private keys
 public class KeyUtils {
     private KeyUtils() {}
 
