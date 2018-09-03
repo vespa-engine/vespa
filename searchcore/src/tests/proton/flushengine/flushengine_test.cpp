@@ -245,8 +245,24 @@ public:
     vespalib::Gate    _taskDone;
     Task::UP          _task;
 
+protected:
+    SimpleTarget(const std::string &name, const Type &type, search::SerialNum flushedSerial = 0, bool proceedImmediately = true) :
+        test::DummyFlushTarget(name, type, Component::OTHER),
+        _flushedSerial(flushedSerial),
+        _proceed(),
+        _initDone(),
+        _taskStart(),
+        _taskDone(),
+        _task(std::make_unique<SimpleTask>(_taskStart, _taskDone, &_proceed,
+                                           _flushedSerial, _currentSerial))
+    {
+        if (proceedImmediately) {
+            _proceed.countDown();
+        }
+    }
+
 public:
-    typedef std::shared_ptr<SimpleTarget> SP;
+    using SP = std::shared_ptr<SimpleTarget>;
 
     SimpleTarget(Task::UP task, const std::string &name) :
         test::DummyFlushTarget(name),
@@ -260,22 +276,12 @@ public:
     {
     }
 
-    SimpleTarget(const std::string &name, search::SerialNum flushedSerial = 0, bool proceedImmediately = true) :
-        test::DummyFlushTarget(name),
-        _flushedSerial(flushedSerial),
-        _proceed(),
-        _initDone(),
-        _taskStart(),
-        _taskDone(),
-        _task(std::make_unique<SimpleTask>(_taskStart, _taskDone, &_proceed,
-                             _flushedSerial, _currentSerial))
-    {
-        if (proceedImmediately) {
-            _proceed.countDown();
-        }
-    }
     SimpleTarget(search::SerialNum flushedSerial = 0, bool proceedImmediately = true)
         : SimpleTarget("anon", flushedSerial, proceedImmediately)
+    { }
+
+    SimpleTarget(const std::string &name, search::SerialNum flushedSerial = 0, bool proceedImmediately = true)
+            : SimpleTarget(name, Type::OTHER, flushedSerial, proceedImmediately)
     { }
 
     virtual Time
@@ -299,6 +305,13 @@ public:
         return std::move(_task);
     }
 
+};
+
+class GCTarget : public SimpleTarget {
+public:
+    GCTarget(const vespalib::string &name, search::SerialNum flushedSerial)
+            : SimpleTarget(name, Type::GC, flushedSerial)
+    {}
 };
 
 class AssertedTarget : public SimpleTarget {
@@ -473,7 +486,6 @@ struct Fixture
     }
 };
 
-
 TEST_F("require that strategy controls flush target", Fixture(1, IINTERVAL))
 {
     vespalib::Gate fooG, barG;
@@ -521,6 +533,28 @@ TEST_F("require that oldest serial is found", Fixture(1, IINTERVAL))
     EXPECT_EQUAL(25ul, handler->_oldestSerial);
     FlushDoneHistory handlerFlushDoneHistory(handler->getFlushDoneHistory());
     EXPECT_EQUAL(FlushDoneHistory({ 10, 20, 25 }), handlerFlushDoneHistory);
+}
+
+TEST_F("require that GC targets are not considered when oldest serial is found", Fixture(1, IINTERVAL))
+{
+    auto foo = std::make_shared<SimpleTarget>("foo", 5);
+    auto bar = std::make_shared<GCTarget>("bar", 10);
+    auto baz = std::make_shared<SimpleTarget>("baz", 20);
+    f.addTargetToStrategy(foo);
+    f.addTargetToStrategy(bar);
+    f.addTargetToStrategy(baz);
+
+    auto handler = std::make_shared<SimpleHandler>(Targets({foo, bar, baz}), "handler", 25);
+    f.putFlushHandler("handler", handler);
+    f.engine.start();
+
+    // The targets are flushed in sequence: 'foo', 'bar', 'baz'
+    EXPECT_TRUE(handler->_done.await(LONG_TIMEOUT));
+    EXPECT_EQUAL(25ul, handler->_oldestSerial);
+
+    // Before anything is flushed the oldest serial is 5.
+    // After 'foo' has been flushed the oldest serial is 20 as GC target 'bar' is not considered.
+    EXPECT_EQUAL(FlushDoneHistory({ 5, 20, 20, 25 }), handler->getFlushDoneHistory());
 }
 
 TEST_F("require that oldest serial is found in group", Fixture(2, IINTERVAL))
