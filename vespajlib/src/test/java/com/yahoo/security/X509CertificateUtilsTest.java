@@ -38,9 +38,9 @@ public class X509CertificateUtilsTest {
     @Test
     public void can_deserialize_serialized_pem_certificate_list() {
         KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
-        X500Principal subject1 = new X500Principal("CN=myservice");
+        X500Principal subject1 = new X500Principal("CN=myservice1");
         X509Certificate cert1 = TestUtils.createCertificate(keypair, subject1);
-        X500Principal subject2 = new X500Principal("CN=myservice");
+        X500Principal subject2 = new X500Principal("CN=myservice2");
         X509Certificate cert2 = TestUtils.createCertificate(keypair, subject2);
         List<X509Certificate> certificateList = Arrays.asList(cert1, cert2);
         String pem = X509CertificateUtils.toPem(certificateList);
