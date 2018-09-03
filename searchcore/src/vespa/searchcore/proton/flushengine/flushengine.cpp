@@ -27,7 +27,9 @@ findOldestFlushedSerial(const IFlushTarget::List &lst, const IFlushHandler &hand
 {
     search::SerialNum ret(handler.getCurrentSerialNumber());
     for (const IFlushTarget::SP & target : lst) {
-        ret = std::min(ret, target->getFlushedSerialNum());
+        if (target->getType() != IFlushTarget::Type::GC) {
+            ret = std::min(ret, target->getFlushedSerialNum());
+        }
     }
     LOG(debug, "Oldest flushed serial for '%s' is %" PRIu64 ".", handler.getName().c_str(), ret);
     return ret;
