@@ -7,8 +7,6 @@
 #include <vector>
 #include <memory>
 #include <stdexcept>
-#include <string>
-#include <string_view>
 #include <openssl/ssl.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
