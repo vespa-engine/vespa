@@ -19,7 +19,23 @@ public interface Docker {
     interface CreateContainerCommand {
         CreateContainerCommand withLabel(String name, String value);
         CreateContainerCommand withEnvironment(String name, String value);
+
+        /**
+         * Mounts a directory on host inside the docker container.
+         *
+         * <p>Bind mount content will be <b>private</b> to this container (and host) only.
+         *
+         * <p><b>NOTE:</b> If the source directory is meant to be shared between
+         * multiple containers, please use {@link #withSharedVolume} instead.
+         */
         CreateContainerCommand withVolume(String path, String volumePath);
+
+        /**
+         * Mounts a directory on host inside the docker container.
+         *
+         * <p>The bind mount content will be <b>shared</b> among multiple containers.
+         */
+        CreateContainerCommand withSharedVolume(String path, String volumePath);
         CreateContainerCommand withNetworkMode(String mode);
         CreateContainerCommand withIpAddress(InetAddress address);
         CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit);

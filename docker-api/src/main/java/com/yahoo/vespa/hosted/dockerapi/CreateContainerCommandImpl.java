@@ -107,7 +107,14 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     @Override
     public Docker.CreateContainerCommand withVolume(String path, String volumePath) {
         assert path.indexOf(':') == -1;
-        volumeBindSpecs.add(path + ":" + volumePath);
+        volumeBindSpecs.add(path + ":" + volumePath + ":Z");
+        return this;
+    }
+
+    @Override
+    public Docker.CreateContainerCommand withSharedVolume(String path, String volumePath) {
+        assert path.indexOf(':') == -1;
+        volumeBindSpecs.add(path + ":" + volumePath + ":z");
         return this;
     }
 
