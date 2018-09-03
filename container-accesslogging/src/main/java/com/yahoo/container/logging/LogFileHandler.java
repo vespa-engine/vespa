@@ -2,6 +2,7 @@
 package com.yahoo.container.logging;
 
 import com.yahoo.container.core.AccessLogConfig;
+import com.yahoo.log.LogFileDb;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -250,6 +251,7 @@ public class LogFileHandler extends StreamHandler {
             FileOutputStream os = new FileOutputStream(fileName, true); // append mode, for safety
             super.setOutputStream(os);
             currentOutputStream = os;
+            if (! useSequenceNameScheme) LogFileDb.nowLoggingTo(fileName);
         }
         catch (IOException e) {
             throw new RuntimeException("Couldn't open log file '" + fileName + "'", e);
@@ -310,7 +312,9 @@ public class LogFileHandler extends StreamHandler {
             if (thisN>largestN)
                 largestN=thisN;
         }
-        file.renameTo(new File(dir,file.getName() + "." + (largestN + 1)));
+        File newFn = new File(dir, file.getName() + "." + (largestN + 1));
+        LogFileDb.nowLoggingTo(newFn.getAbsolutePath());
+        file.renameTo(newFn);
     }
 
     /**

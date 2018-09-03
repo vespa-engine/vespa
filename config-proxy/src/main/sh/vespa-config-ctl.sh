@@ -103,6 +103,7 @@ export LD_LIBRARY_PATH="$VESPA_HOME/lib64"
 
 case $1 in
     start)
+        nohup sbin/vespa-retention-enforcer > ${LOGDIR}/vre-start.log 2>&1 </dev/null &
         configsources=`bin/vespa-print-default configservers_rpc`
         userargs=$vespa_base__jvmargs_configproxy
         if [ "$userargs" == "" ]; then
