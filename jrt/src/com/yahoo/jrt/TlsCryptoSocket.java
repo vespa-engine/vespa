@@ -18,9 +18,9 @@ import static javax.net.ssl.SSLEngineResult.*;
  *
  * @author bjorncs
  */
-public class SslSocket implements CryptoSocket {
+public class TlsCryptoSocket implements CryptoSocket {
 
-    private static final Logger log = Logger.getLogger(SslSocket.class.getName());
+    private static final Logger log = Logger.getLogger(TlsCryptoSocket.class.getName());
 
     private enum HandshakeState { NOT_STARTED, NEED_READ, NEED_WRITE, COMPLETED }
 
@@ -31,7 +31,7 @@ public class SslSocket implements CryptoSocket {
     private ByteBuffer handshakeDummyBuffer;
     private HandshakeState handshakeState;
 
-    public SslSocket(SocketChannel channel, SSLEngine sslEngine) {
+    public TlsCryptoSocket(SocketChannel channel, SSLEngine sslEngine) {
         this.channel = channel;
         this.sslEngine = sslEngine;
         SSLSession nullSession = sslEngine.getSession();
