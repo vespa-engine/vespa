@@ -124,6 +124,20 @@ EventLogger::flushComplete(const string &name, int64_t elapsedTimeMs,
     EV_STATE("flush.complete", jstr.toString().data());
 }
 
+void
+EventLogger::flushPrune(const string &name, SerialNum oldestFlushed)
+{
+    JSONStringer jstr;
+    jstr.beginObject();
+    jstr.appendKey("name").appendString(name);
+    jstr.appendKey("serialnum")
+            .beginObject()
+            .appendKey("oldestflushed").appendInt64(oldestFlushed)
+            .endObject();
+    jstr.endObject();
+    EV_STATE("flush.prune", jstr.toString().data());
+}
+
 namespace {
 
 void
