@@ -7,7 +7,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
  * @author bjorncs
  */
 public enum Extension {
-    BASIC_CONSTRAINS(org.bouncycastle.asn1.x509.Extension.basicConstraints),
+    BASIC_CONSTRAINTS(org.bouncycastle.asn1.x509.Extension.basicConstraints),
     SUBJECT_ALTERNATIVE_NAMES(org.bouncycastle.asn1.x509.Extension.subjectAlternativeName);
 
     final ASN1ObjectIdentifier extensionOId;

@@ -49,7 +49,7 @@ public class Pkcs10CsrTest {
                 .addSubjectAlternativeName("san")
                 .setBasicConstraints(true, true)
                 .build();
-        List<String> expected = Arrays.asList(Extension.BASIC_CONSTRAINS.getOId(), Extension.SUBJECT_ALTERNATIVE_NAMES.getOId());
+        List<String> expected = Arrays.asList(Extension.BASIC_CONSTRAINTS.getOId(), Extension.SUBJECT_ALTERNATIVE_NAMES.getOId());
         List<String> actual = csr.getExtensionOIds();
         assertEquals(expected, actual);
     }
