@@ -59,6 +59,7 @@ public class ModelEvaluationTest {
         RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
         cluster.getConfig(b);
         RankProfilesConfig config = new RankProfilesConfig(b);
+        System.out.println(config);
         assertEquals(4, config.rankprofile().size());
         Set<String> modelNames = config.rankprofile().stream().map(v -> v.name()).collect(Collectors.toSet());
         assertTrue(modelNames.contains("xgboost_2_2"));
