@@ -6,7 +6,7 @@
 namespace vespalib::net::tls {
 
 TransportSecurityOptions::~TransportSecurityOptions() {
-    OPENSSL_cleanse(_private_key_pem.data(), _private_key_pem.size());
+    OPENSSL_cleanse(&_private_key_pem[0], _private_key_pem.size());
 }
 
 }

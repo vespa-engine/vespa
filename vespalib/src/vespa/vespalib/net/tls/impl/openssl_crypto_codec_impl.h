@@ -37,6 +37,11 @@ public:
     size_t min_encode_buffer_size() const noexcept override {
         return MaximumTlsFrameSize;
     }
+    size_t min_decode_buffer_size() const noexcept override {
+        // Technically this would be MaximumFramePayloadSize, but we like power
+        // of two numbers for buffer sizes, yes we do.
+        return MaximumTlsFrameSize;
+    }
 
     HandshakeResult handshake(const char* from_peer, size_t from_peer_buf_size,
                               char* to_peer, size_t to_peer_buf_size) noexcept override;

@@ -2,29 +2,29 @@
 
 #pragma once
 
-#include <string>
+#include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib::net::tls {
 
 class TransportSecurityOptions {
-    std::string _ca_certs_pem;
-    std::string _cert_chain_pem;
-    std::string _private_key_pem;
+    string _ca_certs_pem;
+    string _cert_chain_pem;
+    string _private_key_pem;
 public:
     TransportSecurityOptions() = default;
 
-    TransportSecurityOptions(std::string ca_certs_pem,
-                             std::string cert_chain_pem,
-                             std::string private_key_pem)
+    TransportSecurityOptions(string ca_certs_pem,
+                             string cert_chain_pem,
+                             string private_key_pem)
          : _ca_certs_pem(std::move(ca_certs_pem)),
            _cert_chain_pem(std::move(cert_chain_pem)),
            _private_key_pem(std::move(private_key_pem))
     {}
     ~TransportSecurityOptions();
 
-    const std::string& ca_certs_pem() const noexcept { return _ca_certs_pem; }
-    const std::string& cert_chain_pem() const noexcept { return _cert_chain_pem; }
-    const std::string& private_key_pem() const noexcept { return _private_key_pem; }
+    const string& ca_certs_pem() const noexcept { return _ca_certs_pem; }
+    const string& cert_chain_pem() const noexcept { return _cert_chain_pem; }
+    const string& private_key_pem() const noexcept { return _private_key_pem; }
 };
 
 }

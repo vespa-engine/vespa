@@ -14,7 +14,6 @@ struct HandshakeResult {
         Failed,
         Done,
         NeedsMorePeerData
-        // TODO add Closed/Shutdown as own state?
     };
     State state = State::Failed;
 
@@ -63,9 +62,19 @@ public:
 
     virtual ~CryptoCodec() = default;
 
+    /*
+     * Minimum buffer size required to represent one wire format frame
+     * of encrypted (ciphertext) data, including frame overhead.
+     */
     virtual size_t min_encode_buffer_size() const noexcept = 0;
+    /*
+     * Minimum buffer size required to represent the decoded (plaintext)
+     * output of a single frame of encrypted data.
+     */
+    virtual size_t min_decode_buffer_size() const noexcept = 0;
 
     /*
+     * Precondition:  to_peer_buf_size >= min_encode_buffer_size()
      * Postcondition: if result.done(), the handshake process has completed
      *                and data may be passed through encode()/decode().
      */
@@ -78,9 +87,13 @@ public:
      * field will be < plaintext_size. The number of actual ciphertext bytes produced
      * is available in the returned result's produced_bytes field.
      *
-     * Precondition: handshake must be completed
-     * Precondition: ciphertext_size >= min_encode_buffer_size(), i.e. it must be
-     *               possible to write at least 1 frame.
+     * Precondition:  handshake must be completed
+     * Precondition:  ciphertext_size >= min_encode_buffer_size(), i.e. it must be
+     *                possible to encode at least 1 frame.
+     * Postcondition: if plaintext_size > 0 and result.failed == false, a single
+     *                frame of ciphertext has been written into the to_peer buffer.
+     *                Size of written frame is given by result.bytes_produced. This
+     *                includes all protocol-specific frame overhead.
      */
     virtual EncodeResult encode(const char* plaintext, size_t plaintext_size,
                                 char* ciphertext, size_t ciphertext_size) noexcept = 0;
@@ -91,7 +104,8 @@ public:
      * complete frame is not present in `ciphertext`. In this case, decode()
      * must be called again once more data is available.
      *
-     * Precondition: handshake must be completed
+     * Precondition:  handshake must be completed
+     * Precondition:  plaintext_size >= min_decode_buffer_size()
      * Postcondition: if result.state == DecodeResult::State::OK, at least 1
      *                complete frame has been written to the `plaintext` buffer
      */

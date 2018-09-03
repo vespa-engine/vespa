@@ -88,7 +88,7 @@ const char* decode_state_to_str(DecodeResult::State state) noexcept {
 const char* hs_state_to_str(HandshakeResult::State state) noexcept {
     switch (state) {
     case HandshakeResult::State::Failed: return "Broken";
-    case HandshakeResult::State::Done:   return "Completed";
+    case HandshakeResult::State::Done:   return "Done";
     case HandshakeResult::State::NeedsMorePeerData: return "NeedsMorePeerData";
     default:
         abort();
@@ -114,13 +114,15 @@ void log_decode_result(const char* mode, const DecodeResult& res) {
 }
 
 bool complete_handshake(CryptoCodec& client, CryptoCodec& server) {
+    // Not using vespalib::string here since it doesn't have erase(iter, length) implemented.
     std::string client_to_server_buf;
     std::string server_to_client_buf;
 
-    HandshakeResult cli_res, serv_res;
+    HandshakeResult cli_res;
+    HandshakeResult serv_res;
     while (!(cli_res.done() && serv_res.done())) {
         client_to_server_buf.resize(client.min_encode_buffer_size());
-        server_to_client_buf.resize(client.min_encode_buffer_size());
+        server_to_client_buf.resize(server.min_encode_buffer_size());
 
         cli_res = client.handshake(server_to_client_buf.data(), serv_res.bytes_produced,
                                    client_to_server_buf.data(), client_to_server_buf.size());
@@ -159,10 +161,7 @@ TEST("client can send single data frame to server after handshake") {
     ASSERT_TRUE(complete_handshake(*client, *server));
 
     std::string client_to_server_buf;
-    std::string server_to_client_buf;
-
     client_to_server_buf.resize(client->min_encode_buffer_size());
-    server_to_client_buf.resize(client->min_encode_buffer_size());
 
     std::string client_plaintext = "Hellooo world! :D";
     auto cli_res = client->encode(client_plaintext.data(), client_plaintext.size(),
@@ -170,7 +169,7 @@ TEST("client can send single data frame to server after handshake") {
     log_encode_result("client", cli_res);
 
     std::string server_plaintext_out;
-    server_plaintext_out.resize(client->min_encode_buffer_size());
+    server_plaintext_out.resize(server->min_decode_buffer_size());
     auto serv_res = server->decode(client_to_server_buf.data(), cli_res.bytes_produced,
                                    server_plaintext_out.data(), server_plaintext_out.size());
     log_decode_result("server", serv_res);

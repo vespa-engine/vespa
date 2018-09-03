@@ -7,8 +7,6 @@
 #include <vector>
 #include <memory>
 #include <stdexcept>
-#include <string>
-#include <string_view>
 #include <openssl/ssl.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
@@ -88,7 +86,7 @@ void ensure_openssl_initialized_once() {
     (void) openssl_resources;
 }
 
-BioPtr bio_from_string(std::string_view str) {
+BioPtr bio_from_string(stringref str) {
     LOG_ASSERT(str.size() <= INT_MAX);
     BioPtr bio(::BIO_new_mem_buf(str.data(), static_cast<int>(str.size())));
     if (!bio) {
@@ -161,7 +159,7 @@ OpenSslTlsContextImpl::~OpenSslTlsContextImpl() {
     ::SSL_CTX_free(_ctx);
 }
 
-void OpenSslTlsContextImpl::add_certificate_authorities(std::string_view ca_pem) {
+void OpenSslTlsContextImpl::add_certificate_authorities(stringref ca_pem) {
     // TODO support empty CA set...? Ever useful?
     auto bio = bio_from_string(ca_pem);
     ::X509_STORE* cert_store = ::SSL_CTX_get_cert_store(_ctx); // Internal pointer, not owned by us.
@@ -176,7 +174,7 @@ void OpenSslTlsContextImpl::add_certificate_authorities(std::string_view ca_pem)
     }
 }
 
-void OpenSslTlsContextImpl::add_certificate_chain(std::string_view chain_pem) {
+void OpenSslTlsContextImpl::add_certificate_chain(stringref chain_pem) {
     ::ERR_clear_error();
     auto bio = bio_from_string(chain_pem);
     // First certificate in the chain is the node's own (trusted) certificate.
@@ -204,7 +202,7 @@ void OpenSslTlsContextImpl::add_certificate_chain(std::string_view chain_pem) {
     }
 }
 
-void OpenSslTlsContextImpl::use_private_key(std::string_view key_pem) {
+void OpenSslTlsContextImpl::use_private_key(stringref key_pem) {
     auto bio = bio_from_string(key_pem);
     EvpPkeyPtr key(::PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, empty_passphrase()));
     if (!key) {
