@@ -122,6 +122,10 @@ public class X509CertificateBuilder {
         return this;
     }
 
+    public X509CertificateBuilder setIsCertAuthority(boolean isCertAuthority) {
+        return setBasicConstraints(true, isCertAuthority);
+    }
+
     public X509Certificate build() {
         try {
             JcaX509v3CertificateBuilder jcaCertBuilder = new JcaX509v3CertificateBuilder(

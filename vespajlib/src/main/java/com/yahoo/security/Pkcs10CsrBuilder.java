@@ -67,6 +67,10 @@ public class Pkcs10CsrBuilder {
         return this;
     }
 
+    public Pkcs10CsrBuilder setIsCertAuthority(boolean isCertAuthority) {
+        return setBasicConstraints(true, isCertAuthority);
+    }
+
     public Pkcs10Csr build() {
         try {
             PKCS10CertificationRequestBuilder requestBuilder =
