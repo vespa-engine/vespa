@@ -290,7 +290,7 @@ EncodeResult OpenSslCryptoCodecImpl::encode(const char* plaintext, size_t plaint
     }
     size_t bytes_consumed = 0;
     if (plaintext_size != 0) {
-        int to_consume = static_cast<int>(std::min(plaintext_size, MaximumFramePayloadSize));
+        int to_consume = static_cast<int>(std::min(plaintext_size, MaximumFramePlaintextSize));
         // SSL_write encodes plaintext to ciphertext and writes to _output_bio
         int consumed = ::SSL_write(_ssl.get(), plaintext, to_consume);
         LOG(spam, "After SSL_write() -> %d, _input_bio pending=%d, _output_bio pending=%d",

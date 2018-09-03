@@ -27,20 +27,24 @@ class OpenSslCryptoCodecImpl : public CryptoCodec {
 public:
     OpenSslCryptoCodecImpl(::SSL_CTX& ctx, Mode mode);
 
-    // These assumptions are cheekily hoisted from gRPC.
-    // As is mentioned there, the max protocol overhead per frame is not available
-    // dynamically, so an educated guess is made.
-    static constexpr size_t MaximumTlsFrameSize = 16*1024;
-    static constexpr size_t MaximumTlsFrameProtocolOverhead = 100;
-    static constexpr size_t MaximumFramePayloadSize = MaximumTlsFrameSize - MaximumTlsFrameProtocolOverhead;
+    /*
+     * From RFC 8449 (Record Size Limit Extension for TLS), section 1:
+     *   "TLS versions 1.2 [RFC5246] and earlier permit senders to
+     *    generate records 16384 octets in size, plus any expansion
+     *    from compression and protection up to 2048 octets (though
+     *    typically this expansion is only 16 octets). TLS 1.3 reduces
+     *    the allowance for expansion to 256 octets."
+     *
+     * We're on TLSv1.2, so make room for the worst case.
+     */
+    static constexpr size_t MaximumTlsFrameSize = 16384 + 2048;
+    static constexpr size_t MaximumFramePlaintextSize = 16384;
 
     size_t min_encode_buffer_size() const noexcept override {
         return MaximumTlsFrameSize;
     }
     size_t min_decode_buffer_size() const noexcept override {
-        // Technically this would be MaximumFramePayloadSize, but we like power
-        // of two numbers for buffer sizes, yes we do.
-        return MaximumTlsFrameSize;
+        return MaximumFramePlaintextSize;
     }
 
     HandshakeResult handshake(const char* from_peer, size_t from_peer_buf_size,
