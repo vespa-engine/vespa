@@ -97,6 +97,10 @@ public class DockerOperationsImpl implements DockerOperations {
             command.withVolume("/var/lib/sia", "/var/lib/sia");
         }
 
+        if (environment.getNodeType() == NodeType.proxyhost) {
+            command.withVolume("/opt/yahoo/share/ssl/certs/", "/opt/yahoo/share/ssl/certs/");
+        }
+
         if (environment.getNodeType() == NodeType.host) {
             Path zpePathInNode = environment.pathInNodeUnderVespaHome("var/zpe");
             if (environment.isRunningOnHost()) {
@@ -104,10 +108,6 @@ public class DockerOperationsImpl implements DockerOperations {
             } else {
                 command.withVolume(environment.pathInHostFromPathInNode(containerName, zpePathInNode).toString(), zpePathInNode.toString());
             }
-        }
-
-        if (environment.getNodeType() == NodeType.proxyhost) {
-            command.withVolume("/opt/yahoo/share/ssl/certs/", "/opt/yahoo/share/ssl/certs/");
         }
 
         if (!docker.networkNATed()) {
@@ -368,9 +368,6 @@ public class DockerOperationsImpl implements DockerOperations {
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/db/vespa"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/jdisc_container"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/jdisc_core"), false);
-        if (environment.getNodeType() == NodeType.host) {
-            directoriesToMount.put(Paths.get("/var/lib/sia"), true);
-        }
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/maven"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/run"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/scoreboards"), true);
@@ -385,6 +382,8 @@ public class DockerOperationsImpl implements DockerOperations {
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/container-data"), false);
         if (environment.getNodeType() == NodeType.proxyhost)
             directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/vespa-hosted/routing"), true);
+        if (environment.getNodeType() == NodeType.host)
+            directoriesToMount.put(Paths.get("/var/lib/sia"), true);
 
         return Collections.unmodifiableMap(directoriesToMount);
     }
