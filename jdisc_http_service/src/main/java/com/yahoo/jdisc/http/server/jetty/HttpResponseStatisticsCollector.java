@@ -203,4 +203,10 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
         }
         return shutdownCb;
     }
+
+    @Override
+    public boolean isShutdown() {
+        FutureCallback futureCallback = shutdown.get();
+        return futureCallback != null && futureCallback.isDone();
+    }
 }
