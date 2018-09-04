@@ -10,14 +10,18 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Organization;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Contact;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -34,18 +38,17 @@ public class TenantController {
 
     private static final Logger log = Logger.getLogger(TenantController.class.getName());
 
-    /** The controller owning this */    
     private final Controller controller;
-
-    /** For persistence */
     private final CuratorDb curator;
-
     private final AthenzClientFactory athenzClientFactory;
+    private final Organization organization;
 
-    public TenantController(Controller controller, CuratorDb curator, AthenzClientFactory athenzClientFactory) {
-        this.controller = controller;
-        this.curator = curator;
-        this.athenzClientFactory = athenzClientFactory;
+    public TenantController(Controller controller, CuratorDb curator, AthenzClientFactory athenzClientFactory, Organization organization) {
+        this.controller = Objects.requireNonNull(controller, "controller must be non-null");
+        this.curator = Objects.requireNonNull(curator, "curator must be non-null");
+        this.athenzClientFactory = Objects.requireNonNull(athenzClientFactory, "athenzClientFactory must be non-null");
+        this.organization = Objects.requireNonNull(organization, "organization must be non-null");
+
         // Write all tenants to ensure persisted data uses latest serialization format
         for (Tenant tenant : curator.readTenants()) {
             try (Lock lock = lock(tenant.name())) {
@@ -77,6 +80,24 @@ public class TenantController {
                                              userDomains.stream().anyMatch(domain -> inDomain(tenant, domain)))
                            .collect(Collectors.toList());
         }
+    }
+
+    /** Find contact information for given tenant */
+    // TODO: Move this to ContactInformationMaintainer
+    public Optional<Contact> findContact(AthenzTenant tenant) {
+        if (!tenant.propertyId().isPresent()) {
+            return Optional.empty();
+        }
+        List<List<String>> persons = organization.contactsFor(tenant.propertyId().get())
+                                                 .stream()
+                                                 .map(personList -> personList.stream()
+                                                                              .map(User::displayName)
+                                                                              .collect(Collectors.toList()))
+                                                 .collect(Collectors.toList());
+        return Optional.of(new Contact(organization.contactsUri(tenant.propertyId().get()),
+                                       organization.propertyUri(tenant.propertyId().get()),
+                                       organization.issueCreationUri(tenant.propertyId().get()),
+                                       persons));
     }
 
     /**

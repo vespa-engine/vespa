@@ -5,13 +5,11 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -47,6 +45,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final List<OsUpgrader> osUpgraders;
     private final OsVersionStatusUpdater osVersionStatusUpdater;
     private final JobRunner jobRunner;
+    private final ContactInformationMaintainer contactInformationMaintainer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, Controller controller, CuratorDb curator,
@@ -71,6 +70,7 @@ public class ControllerMaintenance extends AbstractComponent {
         jobRunner = new JobRunner(controller, Duration.ofSeconds(30), jobControl);
         osUpgraders = osUpgraders(controller, jobControl);
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
+        contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -96,6 +96,7 @@ public class ControllerMaintenance extends AbstractComponent {
         osUpgraders.forEach(Maintainer::deconstruct);
         osVersionStatusUpdater.deconstruct();
         jobRunner.deconstruct();
+        contactInformationMaintainer.deconstruct();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */

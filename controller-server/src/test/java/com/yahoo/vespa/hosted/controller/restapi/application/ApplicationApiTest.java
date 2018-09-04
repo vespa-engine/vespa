@@ -46,6 +46,8 @@ import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
+import com.yahoo.vespa.hosted.controller.maintenance.ContactInformationMaintainer;
+import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -53,6 +55,7 @@ import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -61,6 +64,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -108,10 +112,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private static final ZoneId TEST_ZONE = ZoneId.from(Environment.test, RegionName.from("us-east-1"));
     private static final ZoneId STAGING_ZONE = ZoneId.from(Environment.staging, RegionName.from("us-east-3"));
 
+
+    private ContainerControllerTester controllerTester;
+    private ContainerTester tester;
+
+    @Before
+    public void before() {
+        controllerTester = new ContainerControllerTester(container, responseFiles);
+        tester = controllerTester.containerTester();
+    }
+
     @Test
-    public void testApplicationApi() throws Exception {
-        ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
-        ContainerTester tester = controllerTester.containerTester();
+    public void testApplicationApi() {
         tester.computeVersionStatus();
 
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID); // (Necessary but not provided in this API)
@@ -151,7 +163,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Add another Athens domain, so we can try to create more tenants
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN_2, USER_ID); // New domain to test tenant w/property ID
         // Add property info for that property id, as well, in the mock organization.
-        addPropertyData((MockOrganization) controllerTester.controller().organization(), "1234");
+        registerContact(1234);
+
         // POST (add) a tenant with property ID
         tester.assertResponse(request("/application/v4/tenant/tenant2", POST)
                                       .userIdentity(USER_ID)
@@ -164,9 +177,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .nToken(N_TOKEN)
                                       .data("{\"athensDomain\":\"domain2\", \"property\":\"property2\", \"propertyId\":\"1234\"}"),
                               new File("tenant-without-applications-with-id.json"));
-        // GET a tenant with property ID
+        // GET a tenant with property ID and contact information
+        updateContactInformation();
         tester.assertResponse(request("/application/v4/tenant/tenant2", GET).userIdentity(USER_ID),
-                              new File("tenant-without-applications-with-id.json"));
+                              new File("tenant-with-contact-info.json"));
 
         // POST (create) an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
@@ -465,8 +479,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
     @Test
     public void testDeployDirectly() {
         // Setup
-        ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
-        ContainerTester tester = controllerTester.containerTester();
         tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
@@ -500,8 +512,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
     @Test
     public void testDeployDirectlyUsingOneCallForDeploy() {
         // Setup
-        ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
-        ContainerTester tester = controllerTester.containerTester();
         tester.computeVersionStatus();
         UserId userId = new UserId("new_user");
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, userId);
@@ -523,10 +533,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void testSortsDeploymentsAndJobs() throws Exception {
+    public void testSortsDeploymentsAndJobs() {
         // Setup
-        ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
-        ContainerTester tester = controllerTester.containerTester();
         tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
@@ -602,7 +610,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
     
     @Test
     public void testErrorResponses() throws Exception {
-        ContainerTester tester = new ContainerTester(container, responseFiles);
         tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
@@ -749,7 +756,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Create legancy tenant name containing underscores
         tester.controller().tenants().create(new AthenzTenant(TenantName.from("my_tenant"), ATHENZ_TENANT_DOMAIN,
-                                                              new Property("property1"), Optional.empty()),
+                                                              new Property("property1"), Optional.empty(), Optional.empty()),
                                              N_TOKEN);
         // POST (add) a Athenz tenant with dashes duplicates existing one with underscores
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)
@@ -761,8 +768,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
     
     @Test
-    public void testAuthorization() throws Exception {
-        ContainerTester tester = new ContainerTester(container, responseFiles);
+    public void testAuthorization() {
         UserId authorizedUser = USER_ID;
         UserId unauthorizedUser = new UserId("othertenant");
         
@@ -855,9 +861,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void deployment_fails_on_illegal_domain_in_deployment_spec() throws IOException {
-        ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
-        ContainerTester tester = controllerTester.containerTester();
+    public void deployment_fails_on_illegal_domain_in_deployment_spec() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("invalid.domain"), com.yahoo.config.provision.AthenzService.from("service"))
@@ -881,8 +885,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     @Test
     public void deployment_succeeds_when_correct_domain_is_used() {
-        ContainerControllerTester controllerTester = new ContainerControllerTester(container, responseFiles);
-        ContainerTester tester = controllerTester.containerTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain1"), com.yahoo.config.provision.AthenzService.from("service"))
@@ -912,11 +914,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     @Test
     public void testJobStatusReporting() {
-        ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
-        tester.containerTester().computeVersionStatus();
+        tester.computeVersionStatus();
         long projectId = 1;
-        Application app = tester.createApplication();
+        Application app = controllerTester.createApplication();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("corp-us-east-1")
@@ -924,11 +925,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         Version vespaVersion = new Version("6.1"); // system version from mock config server client
 
-        BuildJob job = new BuildJob(report -> notifyCompletion(report, tester), tester.artifactRepository())
+        BuildJob job = new BuildJob(report -> notifyCompletion(report, controllerTester), controllerTester.artifactRepository())
                 .application(app)
                 .projectId(projectId);
         job.type(JobType.component).uploadArtifact(applicationPackage).submit();
-        tester.deploy(app, applicationPackage, TEST_ZONE);
+        controllerTester.deploy(app, applicationPackage, TEST_ZONE);
         job.type(JobType.systemTest).submit();
 
         // Notifying about unknown job fails
@@ -936,7 +937,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .data(asJson(job.type(JobType.productionUsEast3).report()))
                 .userIdentity(HOSTED_VESPA_OPERATOR)
                 .get();
-        tester.containerTester().assertResponse(request, new File("jobreport-unexpected-completion.json"), 400);
+        tester.assertResponse(request, new File("jobreport-unexpected-completion.json"), 400);
 
         // ... and assert it was recorded
         JobStatus recordedStatus =
@@ -960,25 +961,24 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     @Test
     public void testJobStatusReportingOutOfCapacity() {
-        ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
-        tester.containerTester().computeVersionStatus();
+        controllerTester.containerTester().computeVersionStatus();
 
         long projectId = 1;
-        Application app = tester.createApplication();
+        Application app = controllerTester.createApplication();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("corp-us-east-1")
                 .build();
 
         // Report job failing with out of capacity
-        BuildJob job = new BuildJob(report -> notifyCompletion(report, tester), tester.artifactRepository())
+        BuildJob job = new BuildJob(report -> notifyCompletion(report, controllerTester), controllerTester.artifactRepository())
                 .application(app)
                 .projectId(projectId);
         job.type(JobType.component).uploadArtifact(applicationPackage).submit();
 
-        tester.deploy(app, applicationPackage, TEST_ZONE);
+        controllerTester.deploy(app, applicationPackage, TEST_ZONE);
         job.type(JobType.systemTest).submit();
-        tester.deploy(app, applicationPackage, STAGING_ZONE);
+        controllerTester.deploy(app, applicationPackage, STAGING_ZONE);
         job.type(JobType.stagingTest).error(DeploymentJobs.JobError.outOfCapacity).submit();
 
         // Appropriate error is recorded
@@ -1134,7 +1134,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private void startAndTestChange(ContainerControllerTester controllerTester, ApplicationId application,
                                     long projectId, ApplicationPackage applicationPackage,
-                                    HttpEntity deployData, long buildNumber) throws IOException {
+                                    HttpEntity deployData, long buildNumber) {
         ContainerTester tester = controllerTester.containerTester();
 
         // Trigger application change
@@ -1208,11 +1208,22 @@ public class ApplicationApiTest extends ControllerContainerTest {
         }
     }
 
-    private void addPropertyData(MockOrganization organization, String propertyIdValue) {
-        PropertyId propertyId = new PropertyId(propertyIdValue);
-        organization.addProperty(propertyId);
-        organization.setContactsFor(propertyId, Arrays.asList(Collections.singletonList(User.from("alice")),
-                                                              Collections.singletonList(User.from("bob"))));
+    private MockOrganization organization() {
+        return (MockOrganization) tester.container().components().getComponent(MockOrganization.class.getName());
+    }
+
+    private void updateContactInformation() {
+        new ContactInformationMaintainer(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator())).run();
+    }
+
+    private void registerContact(long propertyId) {
+        PropertyId p = new PropertyId(String.valueOf(propertyId));
+        organization().addProperty(p)
+                      .setIssueUrl(p, URI.create("www.issues.tld/" + p.id()))
+                      .setContactsUrl(p, URI.create("www.contacts.tld/" + p.id()))
+                      .setPropertyUrl(p, URI.create("www.properties.tld/" + p.id()))
+                      .setContactsFor(p, Arrays.asList(Collections.singletonList(User.from("alice")),
+                                                       Collections.singletonList(User.from("bob"))));
     }
 
 }
