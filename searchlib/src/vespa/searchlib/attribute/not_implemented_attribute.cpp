@@ -139,11 +139,6 @@ NotImplementedAttribute::getEnum(DocId) const {
     return 0;
 }
 
-void
-NotImplementedAttribute::getEnumValue(const EnumHandle *, uint32_t *, uint32_t) const {
-    notImplemented();
-}
-
 bool
 NotImplementedAttribute::addDoc(DocId &) {
     notImplemented();

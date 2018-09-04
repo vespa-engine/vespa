@@ -125,11 +125,6 @@ public:
     largeint_t getInt(DocId doc) const override {
         return static_cast<largeint_t>(getFast(doc));
     }
-    void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const override {
-        (void) v;
-        (void) e;
-        (void) sz;
-    }
     double getFloat(DocId doc) const override {
         return static_cast<double>(_data[doc]);
     }

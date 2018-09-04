@@ -43,12 +43,6 @@ private:
 
     T getFromEnum(EnumHandle e) const override;
     bool findEnum(T value, EnumHandle & e) const override;
-    void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const override {
-        (void) v;
-        (void) e;
-        (void) sz;
-    }
-
 
 protected:
     typedef typename B::generation_t generation_t;
