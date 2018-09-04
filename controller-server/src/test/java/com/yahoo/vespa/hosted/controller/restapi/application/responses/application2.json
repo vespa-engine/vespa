@@ -1,6 +1,7 @@
 {
   "application": "application2",
   "instance": "default",
+  "deployments": "http://localhost:8080/application/v4/tenant/tenant2/application/application2/instance/default/job/",
   "deploying": {
     "version": "(ignore)"
   },
