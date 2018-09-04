@@ -10,8 +10,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Holds an intermediate representation of an imported ONNX or TensorFlow
- * graph. After this intermediate representation is constructed, it is used to
+ * Holds an intermediate representation of an imported model graph.
+ * After this intermediate representation is constructed, it is used to
  * simplify and optimize the computational graph and then converted into the
  * final ImportedModel that holds the Vespa ranking expressions for the model.
  *

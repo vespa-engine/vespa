@@ -39,7 +39,7 @@ public class TensorFlowImporter extends ModelImporter {
     @Override
     public ImportedModel importModel(String modelName, String modelDir) {
         try (SavedModelBundle model = SavedModelBundle.load(modelDir, "serve")) {
-            return importModel(modelName, model);
+            return importModel(modelName, modelDir, model);
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Could not import TensorFlow model from directory '" + modelDir + "'", e);
@@ -47,10 +47,10 @@ public class TensorFlowImporter extends ModelImporter {
     }
 
     /** Imports a TensorFlow model */
-    ImportedModel importModel(String modelName, SavedModelBundle model) {
+    ImportedModel importModel(String modelName, String modelDir, SavedModelBundle model) {
         try {
             IntermediateGraph graph = GraphImporter.importGraph(modelName, model);
-            return convertIntermediateGraphToModel(graph);
+            return convertIntermediateGraphToModel(graph, modelDir);
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Could not import TensorFlow model '" + model + "'", e);

@@ -27,7 +27,7 @@ public class XGBoostImporter extends ModelImporter {
     @Override
     public ImportedModel importModel(String modelName, String modelPath) {
         try {
-            ImportedModel model = new ImportedModel(modelName);
+            ImportedModel model = new ImportedModel(modelName, modelPath);
             XGBoostParser parser = new XGBoostParser(modelPath);
             RankingExpression expression = new RankingExpression(parser.toRankingExpression());
             model.expression(modelName, expression);

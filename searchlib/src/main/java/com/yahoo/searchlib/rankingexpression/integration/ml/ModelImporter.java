@@ -46,8 +46,8 @@ public abstract class ModelImporter {
      * Takes an IntermediateGraph and converts it to a ImportedModel containing
      * the actual Vespa ranking expressions.
      */
-    static ImportedModel convertIntermediateGraphToModel(IntermediateGraph graph) {
-        ImportedModel model = new ImportedModel(graph.name());
+    static ImportedModel convertIntermediateGraphToModel(IntermediateGraph graph, String modelSource) {
+        ImportedModel model = new ImportedModel(graph.name(), modelSource);
 
         graph.optimize();
 
