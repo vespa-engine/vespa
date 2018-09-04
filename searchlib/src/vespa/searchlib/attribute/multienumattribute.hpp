@@ -7,8 +7,6 @@
 #include "multienumattributesaver.h"
 #include "load_utils.h"
 
-#include <stdexcept>
-
 namespace search {
 
 template <typename B, typename M>
@@ -199,18 +197,10 @@ template <typename B, typename M>
 std::unique_ptr<AttributeSaver>
 MultiValueEnumAttribute<B, M>::onInitSave(vespalib::stringref fileName)
 {
-    {
-        this->logEnumStoreEvent("reenumerate", "drain");
-        EnumModifier enumGuard(this->getEnumModifier());
-        this->logEnumStoreEvent("reenumerate", "start");
-        this->_enumStore.reEnumerate();
-    }
-    this->logEnumStoreEvent("reenumerate", "complete");
-    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().
-                                             takeGuard());
+    this->_enumStore.reEnumerate();
+    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().takeGuard());
     return std::make_unique<MultiValueEnumAttributeSaver<WeightedIndex>>
-        (std::move(guard), this->createAttributeHeader(fileName), this->_mvMapping,
-         this->_enumStore);
+        (std::move(guard), this->createAttributeHeader(fileName), this->_mvMapping, this->_enumStore);
 }
 
 } // namespace search

@@ -309,15 +309,8 @@ template <typename B>
 std::unique_ptr<AttributeSaver>
 SingleValueEnumAttribute<B>::onInitSave(vespalib::stringref fileName)
 {
-    {
-        this->logEnumStoreEvent("reenumerate", "drain");
-        EnumModifier enumGuard(this->getEnumModifier());
-        this->logEnumStoreEvent("reenumerate", "start");
-        this->_enumStore.reEnumerate();
-    }
-    this->logEnumStoreEvent("reenumerate", "complete");
-    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().
-                                             takeGuard());
+    this->_enumStore.reEnumerate();
+    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().takeGuard());
     return std::make_unique<SingleValueEnumAttributeSaver>
         (std::move(guard),
          this->createAttributeHeader(fileName),
