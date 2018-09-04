@@ -22,23 +22,15 @@ namespace proton {
 
 namespace {
 
-std::pair<search::SerialNum, vespalib::string>
-findOldestFlushedTarget(const IFlushTarget::List &lst, const IFlushHandler &handler)
+search::SerialNum
+findOldestFlushedSerial(const IFlushTarget::List &lst, const IFlushHandler &handler)
 {
-    search::SerialNum oldestFlushedSerial = handler.getCurrentSerialNumber();
-    vespalib::string oldestFlushedName = "null";
-    for (const IFlushTarget::SP &target : lst) {
-        if (target->getType() != IFlushTarget::Type::GC) {
-            search::SerialNum targetFlushedSerial = target->getFlushedSerialNum();
-            if (targetFlushedSerial <= oldestFlushedSerial) {
-                oldestFlushedSerial = targetFlushedSerial;
-                oldestFlushedName = target->getName();
-            }
-        }
+    search::SerialNum ret(handler.getCurrentSerialNumber());
+    for (const IFlushTarget::SP & target : lst) {
+        ret = std::min(ret, target->getFlushedSerialNum());
     }
-    LOG(debug, "Oldest flushed serial for handler='%s', target='%s': %" PRIu64 ".",
-        handler.getName().c_str(), oldestFlushedName.c_str(), oldestFlushedSerial);
-    return std::make_pair(oldestFlushedSerial, oldestFlushedName);
+    LOG(debug, "Oldest flushed serial for '%s' is %" PRIu64 ".", handler.getName().c_str(), ret);
+    return ret;
 }
 
 void
@@ -182,16 +174,6 @@ FlushEngine::Run(FastOS_ThreadInterface *, void *)
     prune();
 }
 
-namespace {
-
-vespalib::string
-createName(const IFlushHandler &handler, const vespalib::string &targetName)
-{
-    return (handler.getName() + "." + targetName);
-}
-
-}
-
 bool
 FlushEngine::prune()
 {
@@ -205,11 +187,7 @@ FlushEngine::prune()
     }
     for (const auto &handler : toPrune) {
         IFlushTarget::List lst = handler->getFlushTargets();
-        auto oldestFlushed = findOldestFlushedTarget(lst, *handler);
-        if (LOG_WOULD_LOG(event)) {
-            EventLogger::flushPrune(createName(*handler, oldestFlushed.second), oldestFlushed.first);
-        }
-        handler->flushDone(oldestFlushed.first);
+        handler->flushDone(findOldestFlushedSerial(lst, *handler));
     }
     return true;
 }
@@ -355,8 +333,7 @@ FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
     }
     if (LOG_WOULD_LOG(event)) {
         FlushStats stats = ctx.getTarget()->getLastFlushStats();
-        EventLogger::flushComplete(ctx.getName(), duration.ms(), ctx.getTarget()->getFlushedSerialNum(),
-                                   stats.getPath(), stats.getPathElementsToLog());
+        EventLogger::flushComplete(ctx.getName(), duration.ms(), stats.getPath(), stats.getPathElementsToLog());
     }
     LOG(debug, "FlushEngine::flushDone(taskId='%d') took '%f' secs", taskId, duration.sec());
     std::lock_guard<std::mutex> guard(_lock);
