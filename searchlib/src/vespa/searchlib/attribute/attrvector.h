@@ -34,11 +34,6 @@ private:
     NumericDirectAttribute & operator=(const NumericDirectAttribute &);
     bool onLoad() override;
     typename B::BaseType getFromEnum(EnumHandle e) const override { return _data[e]; }
-    void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const override {
-        for (size_t i(0); i < sz; i++) {
-            e[i] = v[i];
-        }
-    }
 protected:
     typedef typename B::BaseType   BaseType;
     typedef typename B::DocId      DocId;
@@ -153,11 +148,6 @@ protected:
     ~StringDirectAttribute();
     bool findEnum(const char * value, EnumHandle & e) const override;
     std::vector<EnumHandle> findFoldedEnums(const char *) const override;
-    void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const override {
-        for (size_t i(0); i < sz; i++) {
-            e[i] = v[i];
-        }
-    }
     void onCommit() override;
     void onUpdateStat() override { }
     bool addDoc(DocId & ) override;

@@ -56,7 +56,6 @@ protected:
     const EnumStore & getEnumStore() const { return _enumStore; }
 
     const EnumStoreBase * getEnumStoreBase() const override { return &_enumStore; }
-    void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const override { _enumStore.getEnumValue(v, e, sz); }
     EnumType getFromEnum(EnumHandle e)        const override { return _enumStore.getValue(e); }
 
     void fillPostings(LoadedVector & loaded) override { (void) loaded; }

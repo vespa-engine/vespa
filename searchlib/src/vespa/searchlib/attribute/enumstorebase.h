@@ -273,7 +273,6 @@ public:
     size_t getMaxEnumOffset() const {
         return _store.getBufferState(_store.getActiveBufferId(TYPE_ID)).size();
     }
-    void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const;
     uint32_t getRefCount(Index idx) const { return getEntryBase(idx).getRefCount(); }
     uint32_t getEnum(Index idx)     const { return getEntryBase(idx).getEnum(); }
     void incRefCount(Index idx)           { getEntryBase(idx).incRefCount(); }

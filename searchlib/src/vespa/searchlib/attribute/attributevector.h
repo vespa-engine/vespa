@@ -461,13 +461,6 @@ public:
 
     virtual uint32_t clearDoc(DocId doc) = 0;
     virtual largeint_t getDefaultValue() const = 0;
-    virtual void getEnumValue(const EnumHandle *v, uint32_t *e, uint32_t sz) const = 0;
-
-    uint32_t getEnumValue(EnumHandle eh) const {
-        uint32_t e(0);
-        getEnumValue(&eh, &e, 1);
-        return e;
-    }
 
     // Implements IAttributeVector
     virtual uint32_t get(DocId doc, EnumHandle *v, uint32_t sz) const override = 0;

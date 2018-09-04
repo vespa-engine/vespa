@@ -136,14 +136,6 @@ EnumStoreBase::getAddressSpaceUsage() const
 }
 
 void
-EnumStoreBase::getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const
-{
-    for(size_t i(0); i < sz; i++) {
-        e[i] = getEnum(Index(v[i]));
-    }
-}
-
-void
 EnumStoreBase::transferHoldLists(generation_t generation)
 {
     _enumDict->onTransferHoldLists(generation);
