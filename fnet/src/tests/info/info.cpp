@@ -24,7 +24,7 @@ struct RPC : public FRT_Invokable
   {
     FRT_ReflectionBuilder rb(s);
     //-------------------------------------------------------------------
-    rb.DefineMethod("getInfo", "", "sssii", true,
+    rb.DefineMethod("getInfo", "", "sssii",
                     FRT_METHOD(RPC::GetInfo), this);
     // FastOS version
     // FNET version

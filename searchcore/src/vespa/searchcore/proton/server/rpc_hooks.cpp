@@ -127,7 +127,7 @@ RPCHooksBase::initRPC()
 
     FRT_ReflectionBuilder rb(_orb.get());
     //-------------------------------------------------------------------------
-    rb.DefineMethod("pandora.rtc.getState", "ii", "SSi", true,
+    rb.DefineMethod("pandora.rtc.getState", "ii", "SSi",
                     FRT_METHOD(RPCHooksBase::rpc_GetState), this);
     rb.MethodDesc("Get the current state of node");
     rb.ParamDesc("gencnt", "old state generation held by the client");
@@ -136,7 +136,7 @@ RPCHooksBase::initRPC()
     rb.ReturnDesc("values", "Array of state values");
     rb.ReturnDesc("newgen", "New state generation count");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("proton.getStatus", "s", "SSSS", true,
+    rb.DefineMethod("proton.getStatus", "s", "SSSS",
                     FRT_METHOD(RPCHooksBase::rpc_GetProtonStatus), this);
     rb.MethodDesc("Get the current state of proton or a proton component");
     rb.ParamDesc("component", "Which component to check the status for");
@@ -145,7 +145,7 @@ RPCHooksBase::initRPC()
     rb.ReturnDesc("internalStates", "Array of internal states ");
     rb.ReturnDesc("message", "Array of status messages");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("pandora.rtc.getIncrementalState", "i", "SSi", true,
+    rb.DefineMethod("pandora.rtc.getIncrementalState", "i", "SSi",
                     FRT_METHOD(RPCHooksBase::rpc_getIncrementalState), this);
     rb.MethodDesc("Get node state changes since last invocation");
     rb.ParamDesc("timeout", "How many milliseconds to wait for state update");
@@ -153,26 +153,26 @@ RPCHooksBase::initRPC()
     rb.ReturnDesc("values", "Array of state values");
     rb.ReturnDesc("dummy", "Dummy value to enable code reuse");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("pandora.rtc.shutdown", "", "", true,
+    rb.DefineMethod("pandora.rtc.shutdown", "", "",
                     FRT_METHOD(RPCHooksBase::rpc_Shutdown), this);
     rb.MethodDesc("Shut down the rtc application");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("pandora.rtc.die", "", "", true,
+    rb.DefineMethod("pandora.rtc.die", "", "",
                     FRT_METHOD(RPCHooksBase::rpc_die), this);
     rb.MethodDesc("Exit the rtc application without cleanup");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("proton.triggerFlush", "", "b", true,
+    rb.DefineMethod("proton.triggerFlush", "", "b",
                     FRT_METHOD(RPCHooksBase::rpc_triggerFlush), this);
     rb.MethodDesc("Tell the node to trigger flush ASAP");
     rb.ReturnDesc("success", "Whether or not a flush was triggered.");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("proton.prepareRestart", "", "b", true,
+    rb.DefineMethod("proton.prepareRestart", "", "b",
                     FRT_METHOD(RPCHooksBase::rpc_prepareRestart), this);
     rb.MethodDesc("Tell the node to prepare for a restart by flushing components "
             "such that TLS replay time + time spent flushing components is as low as possible");
     rb.ReturnDesc("success", "Whether or not prepare for restart was triggered.");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("proton.getDocsums", "bix", "bix", true, FRT_METHOD(RPCHooksBase::rpc_getDocSums), this);
+    rb.DefineMethod("proton.getDocsums", "bix", "bix", FRT_METHOD(RPCHooksBase::rpc_getDocSums), this);
     rb.MethodDesc("Get list of document summaries");
     rb.ParamDesc("encoding", "0=raw, 6=lz4");
     rb.ParamDesc("uncompressedBlobSize", "Uncompressed blob size");

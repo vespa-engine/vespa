@@ -64,18 +64,14 @@ FRT_RPCInvoker::FRT_RPCInvoker(FRT_Supervisor *supervisor,
     req->SetReturnHandler(this);
 }
 
-bool FRT_RPCInvoker::IsInstant() {
-    return _method->IsInstant();
-}
-
-bool FRT_RPCInvoker::Invoke(bool freeChannel)
+bool FRT_RPCInvoker::Invoke()
 {
     bool detached = false;
     _req->SetDetachedPT(&detached);
     (_method->GetHandler()->*_method->GetMethod())(_req);
     if (detached)
         return false;
-    HandleDone(freeChannel);
+    HandleDone(false);
     return true;
 }
 
@@ -118,13 +114,6 @@ FNET_Connection *
 FRT_RPCInvoker::GetConnection()
 {
     return _req->GetContext()._value.CHANNEL->GetConnection();
-}
-
-
-void
-FRT_RPCInvoker::Run(FastOS_ThreadInterface *, void *)
-{
-    Invoke(true);
 }
 
 //-----------------------------------------------------------------------------

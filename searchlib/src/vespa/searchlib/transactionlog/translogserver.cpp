@@ -244,32 +244,32 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     FRT_ReflectionBuilder rb( & supervisor);
 
     //-- Create Domain -----------------------------------------------------------
-    rb.DefineMethod("createDomain", "s", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("createDomain", "s", "i", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Create a new domain.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ReturnDesc("handle", "A handle(int) to the domain. Negative number indicates error.");
 
     //-- Delete Domain -----------------------------------------------------------
-    rb.DefineMethod("deleteDomain", "s", "is", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("deleteDomain", "s", "is", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Create a new domain.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ReturnDesc("retval", "0 on success. Negative number indicates error.");
     rb.ReturnDesc("errormsg", "Message describing the error, if any.");
 
     //-- Open Domain -----------------------------------------------------------
-    rb.DefineMethod("openDomain", "s", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("openDomain", "s", "i", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Open an existing domain.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ReturnDesc("handle", "A handle(int) to the domain. Negative number indicates error.");
 
     //-- List Domains -----------------------------------------------------------
-    rb.DefineMethod("listDomains", "", "is", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("listDomains", "", "is", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Will return a list of all the domains.");
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error.");
     rb.ReturnDesc("domains", "List of all the domains in a newline separated string");
 
     //-- Domain Status -----------------------------------------------------------
-    rb.DefineMethod("domainStatus", "s", "illl", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainStatus", "s", "illl", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("This will return key status information about the domain.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error.");
@@ -278,7 +278,7 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     rb.ReturnDesc("size", "Number of elements in the log.");
 
     //-- Domain Commit -----------------------------------------------------------
-    rb.DefineMethod("domainCommit", "sx", "is", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainCommit", "sx", "is", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Will commit the data to the log.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("packet", "The data to commit to the domain.");
@@ -286,14 +286,14 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     rb.ReturnDesc("message", "A textual description of the result code.");
 
     //-- Domain Prune -----------------------------------------------------------
-    rb.DefineMethod("domainPrune", "sl", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainPrune", "sl", "i", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Will erase all operations prior to the serial number.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("to", "Will erase all up and including.");
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error.");
 
     //-- Domain Visit -----------------------------------------------------------
-    rb.DefineMethod("domainVisit", "sll", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainVisit", "sll", "i", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("This will create a visitor that return all operations in the range.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("from", "Will return all entries following(not including) <from>.");
@@ -301,21 +301,21 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error. Positive number is the sessionid");
 
     //-- Domain Session Run -----------------------------------------------------------
-    rb.DefineMethod("domainSessionRun", "si", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainSessionRun", "si", "i", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("This will start the session thread.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("sessionid", "The session identifier.");
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error.");
 
     //-- Domain Session Close -----------------------------------------------------------
-    rb.DefineMethod("domainSessionClose", "si", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainSessionClose", "si", "i", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("This will close the session.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("sessionid", "The session identifier.");
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error. 1 means busy -> retry. 0 is OK.");
 
     //-- Domain Sync --
-    rb.DefineMethod("domainSync", "sl", "il", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainSync", "sl", "il", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Sync domain to given entry");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("syncto", "Entry to sync to");

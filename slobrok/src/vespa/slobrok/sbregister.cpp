@@ -277,12 +277,12 @@ RegisterAPI::RPCHooks::RPCHooks(RegisterAPI &owner)
 {
     FRT_ReflectionBuilder rb(&_owner._orb);
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.callback.listNamesServed", "", "S", true,
+    rb.DefineMethod("slobrok.callback.listNamesServed", "", "S",
                     FRT_METHOD(RPCHooks::rpc_listNamesServed), this);
     rb.MethodDesc("List rpcserver names");
     rb.ReturnDesc("names", "The rpcserver names this server wants to serve");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.callback.notifyUnregistered", "s", "", true,
+    rb.DefineMethod("slobrok.callback.notifyUnregistered", "s", "",
                     FRT_METHOD(RPCHooks::rpc_notifyUnregistered), this);
     rb.MethodDesc("Notify a server about removed registration");
     rb.ParamDesc("name", "RpcServer name");

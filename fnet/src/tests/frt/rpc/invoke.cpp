@@ -124,7 +124,7 @@ public:
         assert(_echo_stash != nullptr && _echo_args != nullptr);
 
         FRT_ReflectionBuilder rb(supervisor);
-        rb.DefineMethod("echo", "*", "*", true,
+        rb.DefineMethod("echo", "*", "*",
                         FRT_METHOD(EchoTest::RPC_Echo), this);
 
         FRT_Values *args = _echo_args;
@@ -225,17 +225,15 @@ public:
     {
         FRT_ReflectionBuilder rb(supervisor);
 
-        rb.DefineMethod("inc", "i", "i", true,
+        rb.DefineMethod("inc", "i", "i",
                         FRT_METHOD(TestRPC::RPC_Inc), this);
-        rb.DefineMethod("setValue", "i", "", true,
+        rb.DefineMethod("setValue", "i", "",
                         FRT_METHOD(TestRPC::RPC_SetValue), this);
-        rb.DefineMethod("incValue", "", "", true,
+        rb.DefineMethod("incValue", "", "",
                         FRT_METHOD(TestRPC::RPC_IncValue), this);
-        rb.DefineMethod("getValue", "", "i", true,
+        rb.DefineMethod("getValue", "", "i",
                         FRT_METHOD(TestRPC::RPC_GetValue), this);
-        rb.DefineMethod("testFast", "iiibb", "i", true,
-                        FRT_METHOD(TestRPC::RPC_Test), this);
-        rb.DefineMethod("testSlow", "iiibb", "i", false,
+        rb.DefineMethod("testFast", "iiibb", "i",
                         FRT_METHOD(TestRPC::RPC_Test), this);
     }
 
@@ -364,7 +362,6 @@ const char phase_names[PHASE_ZZZ][32] =
 enum {
     TIMING_NULL = 0,
     TIMING_INSTANT,
-    TIMING_NON_INSTANT,
     TIMING_ZZZ
 };
 
@@ -372,7 +369,6 @@ const char timing_names[TIMING_ZZZ][32] =
 {
     "nullptr",
     "INSTANT",
-    "NON-INSTANT"
 };
 
 enum {
@@ -451,17 +447,10 @@ struct State {
     void PrepareTestMethod()
     {
         NewReq();
-        bool instant = (_timing == TIMING_INSTANT);
-        if (_timing != TIMING_INSTANT &&
-            _timing != TIMING_NON_INSTANT)
-        {
+        if (_timing != TIMING_INSTANT) {
             ASSERT_TRUE(false); // consult your dealer...
         }
-        if (instant) {
-            _req->SetMethodName("testFast");
-        } else {
-            _req->SetMethodName("testSlow");
-        }
+        _req->SetMethodName("testFast");
     }
 
     void SetTestParams(uint32_t value, uint32_t delay,
@@ -928,9 +917,9 @@ TEST_F("invoke test", State()) {
     EXPECT_TRUE(_phase_simple_cnt == 1);
     EXPECT_TRUE(_phase_void_cnt == 1);
     EXPECT_TRUE(_phase_speed_cnt == 1);
-    EXPECT_TRUE(_phase_advanced_cnt == 4);
-    EXPECT_TRUE(_phase_error_cnt == 4);
-    EXPECT_TRUE(_phase_abort_cnt == 4);
+    EXPECT_TRUE(_phase_advanced_cnt == 2);
+    EXPECT_TRUE(_phase_error_cnt == 2);
+    EXPECT_TRUE(_phase_abort_cnt == 2);
     EXPECT_TRUE(_phase_echo_cnt == 1);
 }
 

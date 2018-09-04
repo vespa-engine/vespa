@@ -37,7 +37,7 @@ struct Server : Rpc {
     }
     void init_rpc() {
         FRT_ReflectionBuilder rb(&orb);
-        rb.DefineMethod("inc", "l", "l", true, FRT_METHOD(Server::rpc_inc), this);
+        rb.DefineMethod("inc", "l", "l", FRT_METHOD(Server::rpc_inc), this);
         rb.MethodDesc("increment a 64-bit integer");
         rb.ParamDesc("in", "an integer (64 bit)");
         rb.ReturnDesc("out", "in + 1 (64 bit)");

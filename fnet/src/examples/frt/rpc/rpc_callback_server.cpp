@@ -2,6 +2,7 @@
 
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/fastos/app.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("rpc_callback_server");
@@ -12,9 +13,7 @@ struct RPC : public FRT_Invokable
     void Init(FRT_Supervisor *s);
 };
 
-void
-RPC::CallBack(FRT_RPCRequest *req)
-{
+void do_callback(FRT_RPCRequest *req) {
     FNET_Connection *conn = req->GetConnection();
     FRT_RPCRequest *cb = new FRT_RPCRequest();
     cb->SetMethodName(req->GetParams()->GetValue(0)._string._str);
@@ -25,6 +24,14 @@ RPC::CallBack(FRT_RPCRequest *req)
                cb->GetErrorMessage());
     }
     cb->SubRef();
+    req->Return();
+}
+
+void
+RPC::CallBack(FRT_RPCRequest *req)
+{
+    req->Detach();
+    std::thread(do_callback, req).detach();
 }
 
 void
@@ -32,7 +39,7 @@ RPC::Init(FRT_Supervisor *s)
 {
     FRT_ReflectionBuilder rb(s);
     //-------------------------------------------------------------------
-    rb.DefineMethod("callBack", "s", "", false,
+    rb.DefineMethod("callBack", "s", "",
                     FRT_METHOD(RPC::CallBack), this);
     //-------------------------------------------------------------------
 }

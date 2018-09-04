@@ -87,12 +87,12 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
 
     FRT_ReflectionBuilder rb(supervisor);
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.callback.listNamesServed", "", "S", true,
+    rb.DefineMethod("slobrok.callback.listNamesServed", "", "S",
                     FRT_METHOD(RPCHooks::rpc_listNamesServed), this);
     rb.MethodDesc("Look up a rpcserver");
     rb.ReturnDesc("names", "The rpcserver names on this server");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("system.stop", "", "", true,
+    rb.DefineMethod("system.stop", "", "",
                     FRT_METHOD(RPCHooks::rpc_stop), this);
     rb.MethodDesc("Shut down the application");
     //-------------------------------------------------------------------------

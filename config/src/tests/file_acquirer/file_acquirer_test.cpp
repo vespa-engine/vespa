@@ -11,7 +11,7 @@ struct ServerFixture : FRT_Invokable {
     vespalib::string spec;
     void init_rpc() {
         FRT_ReflectionBuilder rb(&orb);
-        rb.DefineMethod("waitFor", "s", "s", true, FRT_METHOD(ServerFixture::RPC_waitFor), this);
+        rb.DefineMethod("waitFor", "s", "s", FRT_METHOD(ServerFixture::RPC_waitFor), this);
         rb.MethodDesc("wait for and resolve file reference");
         rb.ParamDesc("file_ref", "file reference to wait for and resolve");
         rb.ReturnDesc("file_path", "actual path to the requested file");
