@@ -17,7 +17,6 @@ vespa_add_library(fnet
     scheduler.cpp
     signalshutdown.cpp
     simplepacketstreamer.cpp
-    stats.cpp
     task.cpp
     transport.cpp
     transport_thread.cpp

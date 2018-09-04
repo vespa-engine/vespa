@@ -212,9 +212,8 @@ private:
      * for each one.
      *
      * @return false if socket is broken.
-     * @param read_packets count read packets here
      **/
-    bool handle_packets(uint32_t &read_packets);
+    bool handle_packets();
 
     /**
      * Read incoming data from socket.

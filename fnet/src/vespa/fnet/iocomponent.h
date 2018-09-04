@@ -2,14 +2,12 @@
 
 #pragma once
 
-#include "stats.h"
 #include <vespa/fastos/timestamp.h>
 #include <vespa/vespalib/net/selector.h>
 #include <mutex>
 #include <condition_variable>
 
 class FNET_TransportThread;
-class FNET_StatCounters;
 class FNET_Config;
 
 /**
@@ -45,7 +43,6 @@ protected:
     FNET_IOComponent        *_ioc_next;          // next in list
     FNET_IOComponent        *_ioc_prev;          // prev in list
     FNET_TransportThread    *_ioc_owner;         // owner(TransportThread) ref.
-    FNET_StatCounters       *_ioc_counters;      // stat counters
     int                      _ioc_socket_fd;     // source of events.
     Selector                *_ioc_selector;      // attached event selector
     char                    *_ioc_spec;          // connect/listen spec
@@ -153,47 +150,6 @@ public:
      * FNET_TransportThread::UpdateTimeOut() with itself as parameter.
      **/
     void UpdateTimeOut();
-
-
-    /**
-     * Count packet read(s). This is a proxy method updating the stat
-     * counters associated with the owning transport object.
-     *
-     * @param cnt the number of packets read (default is 1).
-     **/
-    void CountPacketRead(uint32_t cnt = 1)
-    { _ioc_counters->CountPacketRead(cnt); }
-
-
-    /**
-     * Count packet write(s). This is a proxy method updating the stat
-     * counters associated with the owning transport object.
-     *
-     * @param cnt the number of packets written (default is 1).
-     **/
-    void CountPacketWrite(uint32_t cnt = 1)
-    { _ioc_counters->CountPacketWrite(cnt); }
-
-
-    /**
-     * Count read data. This is a proxy method updating the stat
-     * counters associated with the owning transport object.
-     *
-     * @param bytes the number of bytes read.
-     **/
-    void CountDataRead(uint32_t bytes)
-    { _ioc_counters->CountDataRead(bytes); }
-
-
-    /**
-     * Count written data. This is a proxy method updating the stat
-     * counters associated with the owning transport object.
-     *
-     * @param bytes the number of bytes written.
-     **/
-    void CountDataWrite(uint32_t bytes)
-    { _ioc_counters->CountDataWrite(bytes); }
-
 
     /**
      * Attach an event selector to this component. Before deleting an

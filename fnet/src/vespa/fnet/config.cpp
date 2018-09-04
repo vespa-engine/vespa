@@ -6,6 +6,6 @@ FNET_Config::FNET_Config()
     : _iocTimeOut(0),
       _maxInputBufferSize(0x10000),
       _maxOutputBufferSize(0x10000),
-      _tcpNoDelay(true),
-      _logStats(false)
-{ }
+      _tcpNoDelay(true)
+{
+}
