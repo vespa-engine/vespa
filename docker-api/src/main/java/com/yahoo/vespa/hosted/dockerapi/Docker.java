@@ -25,8 +25,13 @@ public interface Docker {
          *
          * <p>Bind mount content will be <b>private</b> to this container (and host) only.
          *
-         * <p><b>NOTE:</b> If the source directory is meant to be shared between
-         * multiple containers, please use {@link #withSharedVolume} instead.
+         * <p>When using this method and selinux is enabled (/usr/sbin/sestatus), starting
+         * multiple containers which mount host's /foo directory into the container, will make
+         * /foo's content visible/readable/writable only inside the container which was last
+         * started and on the host. All the other containers will get "Permission denied".
+         *
+         * <p>Use {@link #withSharedVolume(String, String)} to mount a given host directory
+         * into multiple containers.
          */
         CreateContainerCommand withVolume(String path, String volumePath);
 
@@ -34,6 +39,8 @@ public interface Docker {
          * Mounts a directory on host inside the docker container.
          *
          * <p>The bind mount content will be <b>shared</b> among multiple containers.
+         *
+         * @see #withVolume(String, String)
          */
         CreateContainerCommand withSharedVolume(String path, String volumePath);
         CreateContainerCommand withNetworkMode(String mode);
