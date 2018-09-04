@@ -447,19 +447,6 @@ public:
 
 
     /**
-     * Obtain the number of packets located in the output queue for this
-     * connection. Note that this number is volatile and should only be
-     * used as an estimate. Also note that since a queue latching
-     * strategy is used, this method requires a mutex lock/unlock and is
-     * therefore not as cheap as may be expected.
-     *
-     * @return number of packets currently located in the output queue
-     *         for this connection.
-     **/
-    uint32_t GetQueueLen();
-
-
-    /**
      * Sync with this connection. When this method is invoked it will
      * block until all packets currently posted on this connection is
      * encoded into the output buffer. Also, the amount of data in the

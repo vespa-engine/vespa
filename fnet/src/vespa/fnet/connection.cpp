@@ -659,14 +659,6 @@ FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
 }
 
 
-uint32_t
-FNET_Connection::GetQueueLen()
-{
-    std::lock_guard<std::mutex> guard(_ioc_lock);
-    return _queue.GetPacketCnt_NoLock() + _myQueue.GetPacketCnt_NoLock();
-}
-
-
 void
 FNET_Connection::Sync()
 {
