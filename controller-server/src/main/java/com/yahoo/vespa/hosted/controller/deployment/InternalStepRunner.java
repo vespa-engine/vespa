@@ -238,7 +238,7 @@ public class InternalStepRunner implements StepRunner {
         ApplicationVersion application = setTheStage ? versions.sourceApplication().orElse(versions.targetApplication()) : versions.targetApplication();
         logger.log("Checking installation of " + platform + " and " + application.id() + " ...");
 
-        if (nodesConverged(id.application(), id.type(), platform, logger) && servicesConverged(id.application(), id.type())) {
+        if (nodesConverged(id.application(), id.type(), platform, logger) && servicesConverged(id.application(), id.type(), logger)) {
             logger.log("Installation succeeded!");
             return Optional.of(running);
         }
@@ -260,7 +260,7 @@ public class InternalStepRunner implements StepRunner {
         }
 
         logger.log("Checking installation of tester container ...");
-        if (servicesConverged(JobController.testerOf(id.application()), id.type())) {
+        if (servicesConverged(JobController.testerOf(id.application()), id.type(), logger)) {
             logger.log("Tester container successfully installed!");
             return Optional.of(running);
         }
@@ -291,11 +291,21 @@ public class InternalStepRunner implements StepRunner {
                                                && node.rebootGeneration() == node.wantedRebootGeneration());
     }
 
-    private boolean servicesConverged(ApplicationId id, JobType type) {
-        // TODO jvenstad: Print information for each host.
-        return controller.configServer().serviceConvergence(new DeploymentId(id, type.zone(controller.system())))
-                         .map(ServiceConvergence::converged)
-                         .orElse(false);
+    private boolean servicesConverged(ApplicationId id, JobType type, DualLogger logger) {
+        Optional<ServiceConvergence> convergence = controller.configServer().serviceConvergence(new DeploymentId(id, type.zone(controller.system())));
+        if ( ! convergence.isPresent()) {
+            logger.log("Config status not currently available -- will retry.");
+            return false;
+        }
+        logger.log("Wanted config generation is " + convergence.get().wantedGeneration());
+        for (ServiceConvergence.Status serviceStatus : convergence.get().services())
+            if (serviceStatus.currentGeneration() != convergence.get().wantedGeneration())
+                logger.log(String.format("%70s: %11s on port %4d has %s",
+                                         serviceStatus.host().value(),
+                                         serviceStatus.type(),
+                                         serviceStatus.port(),
+                                         serviceStatus.currentGeneration() == -1 ? "(unknown)" : Long.toString(serviceStatus.currentGeneration())));
+        return convergence.get().converged();
     }
 
     private Optional<RunStatus> startTests(RunId id, DualLogger logger) {
