@@ -22,19 +22,15 @@ public class GroupingValidatorTestCase {
 
     @Test
     public void requireThatAvailableAttributesDoNotThrow() {
-        Query query = new Query();
-        GroupingRequest req = GroupingRequest.newInstance(query);
-        req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(output(max(bar))))"));
-        validateGrouping("myCluster", Arrays.asList("foo", "bar"), query);
+        validateGrouping("myCluster", Arrays.asList("foo", "bar"),
+                "all(group(foo) each(output(max(bar))))");;
     }
 
     @Test
     public void requireThatUnavailableAttributesThrow() {
-        Query query = new Query();
-        GroupingRequest req = GroupingRequest.newInstance(query);
-        req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(output(max(bar))))"));
         try {
-            validateGrouping("myCluster", Arrays.asList("foo"), query);
+            validateGrouping("myCluster", Arrays.asList("foo"),
+                    "all(group(foo) each(output(max(bar))))");
             fail("Validator should throw exception because attribute 'bar' is unavailable.");
         } catch (UnavailableAttributeException e) {
             assertEquals("myCluster", e.getClusterName());
@@ -44,11 +40,20 @@ public class GroupingValidatorTestCase {
 
     @Test
     public void requireThatEnableFlagPreventsThrow() {
-        Query query = new Query();
-        GroupingRequest req = GroupingRequest.newInstance(query);
-        req.setRootOperation(GroupingOperation.fromString("all(group(foo) each(output(max(bar))))"));
+        Query query = createQuery("all(group(foo) each(output(max(bar))))");
         query.properties().set(GroupingValidator.PARAM_ENABLED, "false");
         validateGrouping("myCluster", Arrays.asList("foo"), query);
+    }
+
+    private static Query createQuery(String groupingExpression) {
+        Query query = new Query();
+        GroupingRequest req = GroupingRequest.newInstance(query);
+        req.setRootOperation(GroupingOperation.fromString(groupingExpression));
+        return query;
+    }
+
+    private static void validateGrouping(String clusterName, Collection<String> attributeNames, String groupingExpression) {
+        validateGrouping(clusterName, attributeNames, createQuery(groupingExpression));
     }
 
     private static void validateGrouping(String clusterName, Collection<String> attributeNames, Query query) {
