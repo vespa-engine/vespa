@@ -175,7 +175,7 @@ public class JSONFormatter {
             duration = new BigDecimal(0xffffffff);
         }
 
-        return duration.setScale(3, BigDecimal.ROUND_HALF_UP);
+        return duration.setScale(3, RoundingMode.HALF_UP);
     }
 
     private static String getNormalizedURI(String rawPath, String rawQuery) {
