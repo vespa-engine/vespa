@@ -123,7 +123,7 @@ public class TlsCryptoSocket implements CryptoSocket {
     @Override
     public int read(ByteBuffer dst) throws IOException {
         verifyHandshakeCompleted();
-        int bytesUnwrapped = applicationDataUnwrap(dst);
+        int bytesUnwrapped = drain(dst);
         if (bytesUnwrapped > 0) return bytesUnwrapped;
 
         int bytesRead = channelRead();
