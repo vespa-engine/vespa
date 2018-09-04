@@ -75,7 +75,16 @@ public class DocumentDatabase extends AbstractConfigProducer implements
 
     @Override
     public void getConfig(RankingConstantsConfig.Builder builder) {
-        derivedCfg.getRankProfileList().getConfig(builder);
+        for (RankingConstant constant : derivedCfg.getSearch().rankingConstants().asMap().values()) {
+            if ("".equals(constant.getFileReference())) {
+                System.err.println("INVALID rank constant "+constant.getName()+" [missing file reference]"); // TODO: Throw or log warning
+                continue;
+            }
+            builder.constant(new RankingConstantsConfig.Constant.Builder()
+                             .name(constant.getName())
+                             .fileref(constant.getFileReference())
+                             .type(constant.getType()));
+        }
     }
 
     @Override
