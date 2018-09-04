@@ -46,7 +46,7 @@ public class CreateContainerCommandImplTest {
                 "--ulimit nproc=10:20 " +
                 "--env env1=val1 " +
                 "--env env2=val2 " +
-                "--volume vol1:/host/vol1 " +
+                "--volume vol1:/host/vol1:Z " +
                 "--cap-add SYS_ADMIN " +
                 "--cap-add SYS_PTRACE " +
                 "--cap-drop NET_ADMIN " +

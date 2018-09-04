@@ -19,7 +19,30 @@ public interface Docker {
     interface CreateContainerCommand {
         CreateContainerCommand withLabel(String name, String value);
         CreateContainerCommand withEnvironment(String name, String value);
+
+        /**
+         * Mounts a directory on host inside the docker container.
+         *
+         * <p>Bind mount content will be <b>private</b> to this container (and host) only.
+         *
+         * <p>When using this method and selinux is enabled (/usr/sbin/sestatus), starting
+         * multiple containers which mount host's /foo directory into the container, will make
+         * /foo's content visible/readable/writable only inside the container which was last
+         * started and on the host. All the other containers will get "Permission denied".
+         *
+         * <p>Use {@link #withSharedVolume(String, String)} to mount a given host directory
+         * into multiple containers.
+         */
         CreateContainerCommand withVolume(String path, String volumePath);
+
+        /**
+         * Mounts a directory on host inside the docker container.
+         *
+         * <p>The bind mount content will be <b>shared</b> among multiple containers.
+         *
+         * @see #withVolume(String, String)
+         */
+        CreateContainerCommand withSharedVolume(String path, String volumePath);
         CreateContainerCommand withNetworkMode(String mode);
         CreateContainerCommand withIpAddress(InetAddress address);
         CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit);

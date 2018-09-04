@@ -167,6 +167,11 @@ public class DockerMock implements Docker {
         }
 
         @Override
+        public CreateContainerCommand withSharedVolume(String path, String volumePath) {
+            return this;
+        }
+
+        @Override
         public CreateContainerCommand withNetworkMode(String mode) {
             return this;
         }

@@ -87,33 +87,30 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withUlimit("nproc", 32_768, 409_600)
                 .withUlimit("core", -1, -1)
                 .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
-                .withAddCapability("SYS_ADMIN") // Needed for perf
-
-                // TODO: Fix. Run containers as privileged in AWS because mapped directories are on another device
-                .withPrivileged(environment.getCloud().equalsIgnoreCase("aws"));
+                .withAddCapability("SYS_ADMIN"); // Needed for perf
 
         if (environment.getNodeType() == NodeType.confighost ||
                 environment.getNodeType() == NodeType.proxyhost) {
             command.withVolume("/var/lib/sia", "/var/lib/sia");
         }
 
+        if (environment.getNodeType() == NodeType.proxyhost) {
+            command.withVolume("/opt/yahoo/share/ssl/certs/", "/opt/yahoo/share/ssl/certs/");
+        }
+
         if (environment.getNodeType() == NodeType.host) {
             Path zpePathInNode = environment.pathInNodeUnderVespaHome("var/zpe");
             if (environment.isRunningOnHost()) {
-                command.withVolume("/var/zpe", zpePathInNode.toString());
+                command.withSharedVolume("/var/zpe", zpePathInNode.toString());
             } else {
                 command.withVolume(environment.pathInHostFromPathInNode(containerName, zpePathInNode).toString(), zpePathInNode.toString());
             }
         }
 
-        if (environment.getNodeType() == NodeType.proxyhost) {
-            command.withVolume("/opt/yahoo/share/ssl/certs/", "/opt/yahoo/share/ssl/certs/");
-        }
-
         if (!docker.networkNATed()) {
             command.withIpAddress(ipV6Address);
             command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
-            command.withVolume("/etc/hosts", "/etc/hosts");
+            command.withSharedVolume("/etc/hosts", "/etc/hosts");
         } else {
             InetAddress ipV6Prefix = InetAddresses.forString(IPV6_NPT_PREFIX);
             InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 8);
@@ -368,9 +365,6 @@ public class DockerOperationsImpl implements DockerOperations {
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/db/vespa"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/jdisc_container"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/jdisc_core"), false);
-        if (environment.getNodeType() == NodeType.host) {
-            directoriesToMount.put(Paths.get("/var/lib/sia"), true);
-        }
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/maven"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/run"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/scoreboards"), true);
@@ -385,6 +379,8 @@ public class DockerOperationsImpl implements DockerOperations {
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/container-data"), false);
         if (environment.getNodeType() == NodeType.proxyhost)
             directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/vespa-hosted/routing"), true);
+        if (environment.getNodeType() == NodeType.host)
+            directoriesToMount.put(Paths.get("/var/lib/sia"), true);
 
         return Collections.unmodifiableMap(directoriesToMount);
     }
