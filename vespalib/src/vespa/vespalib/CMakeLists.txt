@@ -9,8 +9,6 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_vespalib_io>
     $<TARGET_OBJECTS:vespalib_vespalib_locale>
     $<TARGET_OBJECTS:vespalib_vespalib_net>
-    $<TARGET_OBJECTS:vespalib_vespalib_net_tls>
-    $<TARGET_OBJECTS:vespalib_vespalib_net_tls_impl>
     $<TARGET_OBJECTS:vespalib_vespalib_objects>
     $<TARGET_OBJECTS:vespalib_vespalib_stllike>
     $<TARGET_OBJECTS:vespalib_vespalib_testkit>
@@ -25,5 +23,3 @@ vespa_add_library(vespalib
     vespalib_vespalib_test
     gcc
 )
-
-vespa_add_target_package_dependency(vespalib OpenSSL)
