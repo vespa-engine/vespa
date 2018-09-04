@@ -110,13 +110,6 @@ FNET_Connection::SetState(State state)
     }
     if (oldstate < FNET_CLOSING && state >= FNET_CLOSING) {
 
-        if (_flags._writeLock) {
-            _flags._discarding = true;
-            while (_flags._writeLock)
-                _ioc_cond.wait(guard);
-            _flags._discarding = false;
-        }
-
         while (!_queue.IsEmpty_NoLock() || !_myQueue.IsEmpty_NoLock()) {
             _flags._discarding = true;
             _queue.FlushPackets_NoLock(&_myQueue);
@@ -415,10 +408,6 @@ FNET_Connection::Write()
     _writeWork = _queue.GetPacketCnt_NoLock()
                  + _myQueue.GetPacketCnt_NoLock()
                  + my_write_work;
-    _flags._writeLock = false;
-    if (_flags._discarding) {
-        _ioc_cond.notify_all();
-    }
     bool writePending = (_writeWork > 0);
 
     guard.unlock();
@@ -508,7 +497,6 @@ FNET_Connection::~FNET_Connection()
         delete _adminChannel;
     }
     assert(_cleanup == nullptr);
-    assert(!_flags._writeLock);
 }
 
 
@@ -662,9 +650,7 @@ FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
     writeWork = _writeWork;
     _writeWork++;
     _queue.QueuePacket_NoLock(packet, FNET_Context(chid));
-    if (writeWork == 0 && !_flags._writeLock &&
-        _state == FNET_CONNECTED)
-    {
+    if ((writeWork == 0) && (_state == FNET_CONNECTED)) {
         AddRef_NoLock();
         guard.unlock();
         Owner()->EnableWrite(this, /* needRef = */ false);
@@ -754,12 +740,6 @@ FNET_Connection::HandleWriteEvent()
     case FNET_CONNECTED:
         {
             std::unique_lock<std::mutex> guard(_ioc_lock);
-            if (_flags._writeLock) {
-                guard.unlock();
-                EnableWriteEvent(false);
-                return true;
-            }
-            _flags._writeLock = true;
             _queue.FlushPackets_NoLock(&_myQueue);
         }
         broken = !Write();

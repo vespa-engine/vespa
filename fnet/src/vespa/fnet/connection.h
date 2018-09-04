@@ -68,13 +68,11 @@ private:
     struct Flags {
         Flags() :
             _gotheader(false),
-            _writeLock(false),
             _inCallback(false),
             _callbackWait(false),
             _discarding(false)
         { }
         bool _gotheader;
-        bool _writeLock;
         bool _inCallback;
         bool _callbackWait;
         bool _discarding;
