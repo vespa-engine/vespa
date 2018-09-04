@@ -52,7 +52,7 @@ getconfig() {
             qrstartcfg="`cat ${config_dir}/qr-start.cfg`"
             ;;
         *)
-            qrstartcfg="`$VESPA_HOME/bin/vespa-get-config -w 10 -n search.config.qr-start -i ${VESPA_CONFIG_ID}`"
+            qrstartcfg="`$VESPA_HOME/bin/vespa-get-config -l -w 10 -n search.config.qr-start -i ${VESPA_CONFIG_ID}`"
             ;;
     esac
     cmds=`echo "$qrstartcfg" | perl -ne 's/^(\w+)\.(\w+) (.*)/$1_$2=$3/ && print'`
