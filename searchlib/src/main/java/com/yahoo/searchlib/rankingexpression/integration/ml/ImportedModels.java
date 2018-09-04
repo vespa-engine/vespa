@@ -6,7 +6,10 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.path.Path;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -30,25 +33,30 @@ public class ImportedModels {
     }
 
     public ImportedModels(File modelsDirectory) {
-        ImmutableMap.Builder<String, ImportedModel> builder = new ImmutableMap.Builder<>();
+        Map<String, ImportedModel> models = new HashMap<>();
 
         // Find all subdirectories recursively which contains a model we can read
-        importRecursively(modelsDirectory, builder);
-        importedModels = builder.build();
+        importRecursively(modelsDirectory, models);
+        importedModels = ImmutableMap.copyOf(models);
     }
 
-    private static void importRecursively(File dir, ImmutableMap.Builder<String, ImportedModel> builder) {
+    private static void importRecursively(File dir, Map<String, ImportedModel> models) {
         if ( ! dir.isDirectory()) return;
-        for (File child : dir.listFiles()) {
+
+        Arrays.stream(dir.listFiles()).sorted().forEach(child -> {
             Optional<ModelImporter> importer = findImporterOf(child);
             if (importer.isPresent()) {
                 String name = toName(child);
-                builder.put(name, importer.get().importModel(name, child));
+                ImportedModel existing = models.get(name);
+                if (existing != null)
+                    throw new IllegalArgumentException("The models in " + child + " and " + existing.source() +
+                                                       " both resolve to the model name '" + name + "'");
+                models.put(name, importer.get().importModel(name, child));
             }
             else {
-                importRecursively(child, builder);
+                importRecursively(child, models);
             }
-        }
+        });
     }
 
     private static Optional<ModelImporter> findImporterOf(File path) {

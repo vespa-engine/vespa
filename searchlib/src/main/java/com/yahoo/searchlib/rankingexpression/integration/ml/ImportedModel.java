@@ -23,6 +23,7 @@ public class ImportedModel {
 
     private static final Pattern nameRegexp = Pattern.compile("[A-Za-z0-9_]*");
     private final String name;
+    private final String source;
 
     private final Map<String, Signature> signatures = new HashMap<>();
     private final Map<String, TensorType> arguments = new HashMap<>();
@@ -36,15 +37,20 @@ public class ImportedModel {
      * Creates a new imported model.
      *
      * @param name the name of this mode, containing only characters in [A-Za-z0-9_]
+     * @param source the source path (directory or file) of this model
      */
-    public ImportedModel(String name) {
+    public ImportedModel(String name, String source) {
         if ( ! nameRegexp.matcher(name).matches())
             throw new IllegalArgumentException("An imported model name can only contain [A-Za-z0-9_], but is '" + name + "'");
         this.name = name;
+        this.source = source;
     }
 
     /** Returns the name of this model, which can only contain the characters in [A-Za-z0-9_] */
     public String name() { return name; }
+
+    /** Returns the source path (directiry or file) of this model */
+    public String source() { return source; }
 
     /** Returns an immutable map of the arguments ("Placeholders") of this */
     public Map<String, TensorType> arguments() { return Collections.unmodifiableMap(arguments); }

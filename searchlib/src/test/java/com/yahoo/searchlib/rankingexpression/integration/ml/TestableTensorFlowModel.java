@@ -36,7 +36,7 @@ public class TestableTensorFlowModel {
 
     public TestableTensorFlowModel(String modelName, String modelDir) {
         tensorFlowModel = SavedModelBundle.load(modelDir, "serve");
-        model = new TensorFlowImporter().importModel(modelName, tensorFlowModel);
+        model = new TensorFlowImporter().importModel(modelName, modelDir, tensorFlowModel);
     }
 
     public ImportedModel get() { return model; }

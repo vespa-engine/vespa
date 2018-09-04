@@ -31,7 +31,7 @@ public class OnnxImporter extends ModelImporter {
         try (FileInputStream inputStream = new FileInputStream(modelPath)) {
             Onnx.ModelProto model = Onnx.ModelProto.parseFrom(inputStream);
             IntermediateGraph graph = GraphImporter.importGraph(modelName, model);
-            return convertIntermediateGraphToModel(graph);
+            return convertIntermediateGraphToModel(graph, modelPath);
         } catch (IOException e) {
             throw new IllegalArgumentException("Could not import ONNX model from '" + modelPath + "'", e);
         }
