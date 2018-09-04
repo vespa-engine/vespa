@@ -1,6 +1,6 @@
 Provides
 - an injectable component (ai.vespa.models.evaluation.ModelsEvaluator) which allows direct, stateless evaluation of
-any machine learned models added to the models/ directory in any container.
+  any machine learned models added to the models/ directory in any container.
 - a handler (turned on with the <models-evaluation> tag in <container>) which provides the models-evaluation REST
-API which provides stateless (single data point) model evaluation over HTTP(S).
+  API which provides stateless (single data point) model evaluation over HTTP(S).
 
