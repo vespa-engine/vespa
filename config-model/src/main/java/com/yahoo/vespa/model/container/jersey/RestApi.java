@@ -8,26 +8,22 @@ import com.yahoo.vespa.model.container.component.Component;
 import java.util.Optional;
 
 /**
+ * Represents a rest-api
+ *
  * @author gjoranv
- * @since 5.6
  */
-public class RestApi extends AbstractConfigProducer<AbstractConfigProducer<?>> implements
-        JerseyInitConfig.Producer
+public class RestApi extends AbstractConfigProducer<AbstractConfigProducer<?>> implements JerseyInitConfig.Producer
 {
-    public final boolean isJersey2;
     private final String bindingPath;
-    private final Component<?, ?> jerseyHandler;
+    private final Jersey2Servlet jerseyServlet;
     private RestApiContext restApiContext;
 
-    public RestApi(String bindingPath, boolean isJersey2) {
+    public RestApi(String bindingPath) {
         super(idFromPath(bindingPath));
         this.bindingPath = bindingPath;
-        this.isJersey2 = isJersey2;
 
-        jerseyHandler = isJersey2 ?
-                createJersey2Servlet(this.bindingPath):
-                createJersey1Handler(this.bindingPath);
-        addChild(jerseyHandler);
+        jerseyServlet = createJersey2Servlet(this.bindingPath);
+        addChild(jerseyServlet);
     }
 
     public static String idFromPath(String path) {
@@ -36,12 +32,6 @@ public class RestApi extends AbstractConfigProducer<AbstractConfigProducer<?>> i
 
     private Jersey2Servlet createJersey2Servlet(String bindingPath) {
         return new Jersey2Servlet(bindingPath);
-    }
-
-    private static JerseyHandler createJersey1Handler(String bindingPath) {
-        JerseyHandler jerseyHandler = new JerseyHandler(bindingPath);
-        jerseyHandler.addServerBindings(getBindings(bindingPath));
-        return jerseyHandler;
     }
 
     public String getBindingPath() {
@@ -56,26 +46,13 @@ public class RestApi extends AbstractConfigProducer<AbstractConfigProducer<?>> i
     public void setRestApiContext(RestApiContext restApiContext) {
         this.restApiContext = restApiContext;
         addChild(restApiContext);
-        jerseyHandler.inject(restApiContext);
+        jerseyServlet.inject(restApiContext);
     }
 
     public RestApiContext getContext() { return restApiContext; }
 
-    public Optional<JerseyHandler> getJersey1Handler() {
-        return isJersey2 ?
-                Optional.empty():
-                Optional.of((JerseyHandler)jerseyHandler);
-    }
-
-    public Optional<Jersey2Servlet> getJersey2Servlet() {
-        return isJersey2 ?
-                Optional.of((Jersey2Servlet)jerseyHandler) :
-                Optional.empty();
-    }
-
-    private static String[] getBindings(String bindingPath) {
-        String bindingWithoutScheme = "://*/" + bindingPath + "/*";
-        return new String[] {"http" + bindingWithoutScheme, "https" + bindingWithoutScheme};
+    public Jersey2Servlet getJersey2Servlet() {
+        return jerseyServlet;
     }
 
     public void prepare() {

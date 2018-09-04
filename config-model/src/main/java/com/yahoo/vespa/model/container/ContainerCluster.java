@@ -41,8 +41,6 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
-import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
@@ -67,11 +65,9 @@ import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
-import com.yahoo.vespa.model.container.jersey.JerseyHandler;
 import com.yahoo.vespa.model.container.jersey.RestApi;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
-import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
@@ -79,7 +75,6 @@ import com.yahoo.vespa.model.utils.FileSender;
 import com.yahoo.vespaclient.config.FeederConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -564,19 +559,11 @@ public final class ContainerCluster
     @Override
     public final void getConfig(JdiscBindingsConfig.Builder builder) {
         builder.handlers.putAll(DiscBindingsConfigGenerator.generate(getHandlers()));
-
-        allJersey1Handlers().forEach(handler ->
-                        builder.handlers.putAll(DiscBindingsConfigGenerator.generate(handler))
-        );
     }
 
     @Override
     public void getConfig(ThreadpoolConfig.Builder builder) {
         clusterVerifier.getConfig(builder);
-    }
-
-    private Stream<JerseyHandler> allJersey1Handlers() {
-        return restApiGroup.getComponents().stream().flatMap(streamOf(RestApi::getJersey1Handler));
     }
 
     @Override
@@ -593,14 +580,7 @@ public final class ContainerCluster
     }
 
     private Stream<Jersey2Servlet> allJersey2Servlets() {
-        return restApiGroup.getComponents().stream().flatMap(streamOf(RestApi::getJersey2Servlet));
-    }
-
-    private <T, R> Function<T, Stream<R>> streamOf(Function<T, Optional<R>> f) {
-        return t ->
-                f.apply(t).
-                <Stream<R>>map(Stream::of).
-                orElse(Stream.empty());
+        return restApiGroup.getComponents().stream().map(RestApi::getJersey2Servlet);
     }
 
     @Override
