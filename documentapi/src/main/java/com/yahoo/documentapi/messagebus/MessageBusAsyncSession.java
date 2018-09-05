@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * The sessions are multithread safe.
  *
  * @author bratseth
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar Rosenvinge</a>
+ * @author Einar Rosenvinge
  */
 public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
 

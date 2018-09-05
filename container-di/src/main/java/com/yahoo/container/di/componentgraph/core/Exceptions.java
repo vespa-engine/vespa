@@ -3,6 +3,7 @@ package com.yahoo.container.di.componentgraph.core;
 import java.util.Arrays;
 
 class Exceptions {
+
     static <E extends Throwable> E removeStackTrace(E exception) {
         if (preserveStackTrace()) {
             return exception;
