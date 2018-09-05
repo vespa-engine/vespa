@@ -5,9 +5,12 @@ import com.yahoo.application.container.handler.Request.Method;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
-import com.yahoo.vespa.athenz.tls.X509CertificateBuilder;
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.X509CertificateBuilder;
 
 import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
 import java.net.URI;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -20,7 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_RSA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -65,7 +69,7 @@ public class FilterTester {
         when(r.getRemoteAddr()).thenReturn(request.remoteAddr());
         when(r.getLocalAddr()).thenReturn(request.localAddr());
         if (request.commonName().isPresent()) {
-            X509Certificate cert = certificateFor(request.commonName().get(), keyPair());
+            X509Certificate cert = certificateFor(request.commonName().get(), KeyUtils.generateKeypair(KeyAlgorithm.EC));
             List<X509Certificate> certs = Collections.singletonList(cert);
             when(r.getClientCertificateChain()).thenReturn(certs);
             when(r.getUserPrincipal()).thenReturn(NodePrincipal.withLegacyIdentity(request.commonName().get(), certs));
@@ -73,23 +77,13 @@ public class FilterTester {
         return r;
     }
 
-    /** Create a RSA public/private key pair */
-    private static KeyPair keyPair() {
-        try {
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-            keyGen.initialize(2048);
-            return keyGen.generateKeyPair();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     /** Create a self signed certificate for commonName using given public/private key pair */
     private static X509Certificate certificateFor(String commonName, KeyPair keyPair) {
         Instant now = Instant.now();
         X500Principal subject = new X500Principal("CN=" + commonName);
         return X509CertificateBuilder
-                .fromKeypair(keyPair, subject, now, now.plus(Duration.ofDays(30)), SHA256_WITH_RSA, now.toEpochMilli())
+                .fromKeypair(keyPair, subject, now, now.plus(Duration.ofDays(30)), SHA256_WITH_ECDSA, BigInteger.valueOf(now.toEpochMilli()))
                 .setBasicConstraints(true, true)
                 .build();
     }

@@ -2,8 +2,8 @@
 package com.yahoo.vespa.athenz.utils;
 
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.tls.KeyUtils;
-import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.X509CertificateUtils;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

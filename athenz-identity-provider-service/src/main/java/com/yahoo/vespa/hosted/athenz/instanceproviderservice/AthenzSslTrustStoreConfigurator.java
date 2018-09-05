@@ -4,11 +4,11 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 import com.google.inject.Inject;
 import com.yahoo.jdisc.http.ssl.SslTrustStoreConfigurator;
 import com.yahoo.jdisc.http.ssl.SslTrustStoreContext;
-import com.yahoo.vespa.athenz.tls.KeyStoreBuilder;
-import com.yahoo.vespa.athenz.tls.KeyStoreType;
+import com.yahoo.security.KeyStoreBuilder;
+import com.yahoo.security.KeyStoreType;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 
-import java.io.File;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
@@ -43,7 +43,7 @@ public class AthenzSslTrustStoreConfigurator implements SslTrustStoreConfigurato
     private static KeyStore createTrustStore(AthenzProviderServiceConfig athenzProviderServiceConfig) {
         try {
             return KeyStoreBuilder.withType(KeyStoreType.JKS)
-                    .fromFile(new File(athenzProviderServiceConfig.athenzCaTrustStore()))
+                    .fromFile(Paths.get(athenzProviderServiceConfig.athenzCaTrustStore()))
                     .build();
         } catch (Exception e) {
             throw new RuntimeException(e);
