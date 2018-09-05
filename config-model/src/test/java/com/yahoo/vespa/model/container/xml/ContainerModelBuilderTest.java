@@ -483,21 +483,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void legacy_yca_filter_and_its_config_provider_are_included_in_components_config()  {
-        Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0'>",
-                "  <filter id='YcaFilter' /> ",
-                "</jdisc>");
-
-        createModel(root, clusterElem);
-        assertThat(componentsConfig().toString(), containsString(".id \"YcaFilter\""));
-
-        String providerId = HttpFilter.configProviderId(ComponentId.fromString("YcaFilter")).stringValue();
-        assertThat(componentsConfig().toString(), containsString(".id \"" + providerId + "\""));
-    }
-
-    @Test
-    public void nested_components_are_injected_to_handlers() {
+    public void nested_components_are_injected_to_handlers() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <handler id='myHandler'>",
