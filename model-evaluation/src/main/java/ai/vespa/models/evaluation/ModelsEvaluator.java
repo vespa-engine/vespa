@@ -5,6 +5,7 @@ import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,8 +22,8 @@ public class ModelsEvaluator extends AbstractComponent {
 
     private final ImmutableMap<String, Model> models;
 
-    public ModelsEvaluator(RankProfilesConfig config) {
-        models = ImmutableMap.copyOf(new RankProfilesConfigImporter().importFrom(config));
+    public ModelsEvaluator(RankProfilesConfig config, RankingConstantsConfig constantsConfig) {
+        models = ImmutableMap.copyOf(new RankProfilesConfigImporter().importFrom(config, constantsConfig));
     }
 
     /** Returns the models of this as an immutable map */
