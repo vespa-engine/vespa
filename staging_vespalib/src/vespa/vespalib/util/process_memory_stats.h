@@ -36,7 +36,7 @@ public:
     uint64_t getMappingsCount() const { return _mappings_count; }
     bool similarTo(const ProcessMemoryStats &rhs, uint64_t sizeEpsilon) const;
     vespalib::string toString() const;
-    bool operator < (const ProcessMemoryStats & rhs) const { return _mapped_rss < rhs._mapped_rss; }
+    bool operator < (const ProcessMemoryStats & rhs) const { return _anonymous_rss < rhs._anonymous_rss; }
 
     /** for unit tests only */
     ProcessMemoryStats(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
