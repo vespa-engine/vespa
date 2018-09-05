@@ -716,17 +716,6 @@ public class ContentCluster extends AbstractConfigProducer implements
                         addedmetrics("*").
                         removedtags("thread").
                         tags("disk"));
-
-        Map<String, MetricsConsumer> consumers = getRoot().getAdmin().getLegacyUserMetricsConsumers();
-        if (consumers != null) {
-           for (Map.Entry<String, MetricsConsumer> e : consumers.entrySet()) {
-                MetricsmanagerConfig.Consumer.Builder b = getMetricBuilder(e.getKey(), builder);
-                for (Metric m : e.getValue().getMetrics().values()) {
-                    b.addedmetrics(m.name);
-                }
-            }
-        }
-
     }
 
     private static final String DEFAULT_BUCKET_SPACE = "default";
