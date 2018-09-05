@@ -75,9 +75,9 @@ OpenSslLibraryResources::~OpenSslLibraryResources() {
         ::CRYPTO_set_locking_callback(nullptr);
     }
 #endif
-    ::ERR_free_strings();
-    ::EVP_cleanup();
-    ::CRYPTO_cleanup_all_ex_data();
+    ERR_free_strings();
+    EVP_cleanup();
+    CRYPTO_cleanup_all_ex_data();
 }
 
 // TODO make global init instead..?
@@ -137,7 +137,10 @@ X509Ptr read_untrusted_x509_from_bio(::BIO& bio) {
 
 ::SSL_CTX* new_tls1_2_ctx_with_auto_init() {
     ensure_openssl_initialized_once();
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     return ::SSL_CTX_new(::TLSv1_2_method());
+#pragma GCC diagnostic pop
 }
 
 } // anon ns
