@@ -11,7 +11,7 @@ AdminV2 =
    FileDistribution? &
    AdminSlobroks? &
    (LegacyAdminMonitoring | AdminMonitoring)? &
-   (LegacyMetricConsumers | Metrics)? &
+   Metrics? &
    ClusterControllers? &
    LogForwarding?
  }
@@ -30,7 +30,7 @@ AdminV4 =
     AdminV4LogServers? &
     GenericConfig* &
     (LegacyAdminMonitoring | AdminMonitoring)? &
-    (LegacyMetricConsumers | Metrics)? &
+    Metrics? &
     LogForwarding?
   }
 
@@ -91,17 +91,6 @@ Metrics = element metrics {
             attribute id { xsd:Name } &
             attribute display-name { xsd:Name }?
         }*
-    }+
-}
-
-# TODO: Remove on Vespa 7
-LegacyMetricConsumers = element metric-consumers {
-    element consumer {
-        attribute name { xsd:string { pattern = "[a-zA-Z][_a-zA-Z0-9]*" } }&
-        element metric {
-            attribute name{xsd:Name} &
-            attribute output-name{xsd:Name}?
-         }+
     }+
 }
 

@@ -67,14 +67,9 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         Monitoring monitoring = getMonitoring(getChildWithFallback(adminElement, "monitoring", "yamas"));
         Metrics metrics = new MetricsBuilder(applicationType, predefinedMetricSets)
                 .buildMetrics(XML.getChild(adminElement, "metrics"));
-        Map<String, MetricsConsumer> legacyMetricsConsumers = DomMetricBuilderHelper
-                .buildMetricsConsumers(XML.getChild(adminElement, "metric-consumers"));
-        if (! legacyMetricsConsumers.isEmpty()) {
-            parent.deployLogger().log(WARNING, "Element 'metric-consumers' is deprecated and will be removed in Vespa 7. Use 'metrics' instead!");
-        }
         FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent);
 
-        Admin admin = new Admin(parent, monitoring, metrics, legacyMetricsConsumers, multitenant, fileDistributionConfigProducer);
+        Admin admin = new Admin(parent, monitoring, metrics, multitenant, fileDistributionConfigProducer);
         admin.setApplicationType(applicationType);
         doBuildAdmin(admin, adminElement);
         new ModelConfigProvider(admin);
