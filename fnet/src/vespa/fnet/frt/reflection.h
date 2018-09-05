@@ -19,7 +19,6 @@ private:
     char            *_name;          // method name
     char            *_paramSpec;     // method parameter spec
     char            *_returnSpec;    // method return spec
-    bool             _instant;       // method is instant ?
     FRT_METHOD_PT    _method;        // method pointer
     FRT_Invokable   *_handler;       // method handler
     uint32_t         _docLen;        // method documentation length
@@ -32,7 +31,6 @@ public:
     FRT_Method(const char    *name,
                const char    *paramSpec,
                const char    *returnSpec,
-               bool           instant,
                FRT_METHOD_PT  method,
                FRT_Invokable *handler);
 
@@ -42,7 +40,6 @@ public:
     const char *GetName() { return _name; }
     const char *GetParamSpec() { return _paramSpec; }
     const char *GetReturnSpec() { return _returnSpec; }
-    bool IsInstant() { return _instant; }
     FRT_METHOD_PT GetMethod() { return _method; }
     FRT_Invokable *GetHandler() { return _handler; }
     void SetDocumentation(FRT_Values *values);
@@ -121,7 +118,6 @@ public:
     void DefineMethod(const char    *name,
                       const char    *paramSpec,
                       const char    *returnSpec,
-                      bool           instant,
                       FRT_METHOD_PT  method,
                       FRT_Invokable *handler);
     void MethodDesc(const char *desc);

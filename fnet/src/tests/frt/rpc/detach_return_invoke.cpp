@@ -20,7 +20,7 @@ struct Server : public FRT_Invokable
 
     Server(FRT_Supervisor &s, Receptor &r) : orb(s), receptor(r) {
         FRT_ReflectionBuilder rb(&s);
-        rb.DefineMethod("hook", "", "", true,
+        rb.DefineMethod("hook", "", "",
                         FRT_METHOD(Server::rpc_hook), this);
     }
 

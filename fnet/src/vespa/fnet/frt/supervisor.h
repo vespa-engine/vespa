@@ -99,8 +99,6 @@ public:
     bool Listen(int port);
     uint32_t GetListenPort() const;
 
-    bool RunInvocation(FRT_RPCInvoker *invoker);
-
     FRT_Target *GetTarget(const char *spec);
     FRT_Target *Get2WayTarget(const char *spec,
                               FNET_Context connContext = FNET_Context());

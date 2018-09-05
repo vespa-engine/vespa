@@ -77,9 +77,9 @@ struct RPC : public FRT_Invokable
   void Init(FRT_Supervisor *s)
   {
     FRT_ReflectionBuilder rb(s);
-    rb.DefineMethod("getValue", "", "i", true,
+    rb.DefineMethod("getValue", "", "i",
                     FRT_METHOD(RPC::GetValue), this);
-    rb.DefineMethod("setValue", "i", "", true,
+    rb.DefineMethod("setValue", "i", "",
                     FRT_METHOD(RPC::SetValue), this);
     s->SetSessionInitHook(FRT_METHOD(RPC::InitSession), this);
     s->SetSessionFiniHook(FRT_METHOD(RPC::FiniSession), this);

@@ -5,6 +5,7 @@
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/util/buffer.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/fnet/frt/invokable.h>
 #include <map>
 #include <vector>
@@ -96,8 +97,10 @@ public:
     const vespalib::string &getRPCTarget() const { return _rpcTarget; }
 private:
     void exportRPC(FRT_Supervisor & supervisor);
-    void visitCallbackRPC(FRT_RPCRequest *req);
-    void eofCallbackRPC(FRT_RPCRequest *req);
+    void do_visitCallbackRPC(FRT_RPCRequest *req);
+    void do_eofCallbackRPC(FRT_RPCRequest *req);
+    void visitCallbackRPC_hook(FRT_RPCRequest *req);
+    void eofCallbackRPC_hook(FRT_RPCRequest *req);
     int32_t rpc(FRT_RPCRequest * req);
     Session * findSession(const vespalib::string & domain, int sessionId);
 
@@ -114,6 +117,7 @@ private:
 
     typedef std::map< SessionKey, Session * > SessionMap;
 
+    vespalib::ThreadStackExecutor _executor;
     vespalib::string _rpcTarget;
     SessionMap       _sessions;
     //Brute force lock for subscriptions. For multithread safety.

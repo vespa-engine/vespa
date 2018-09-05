@@ -207,35 +207,35 @@ void initTest() {
 
   //-------------------------------------------------------------------
 
-  rb.DefineMethod("simpleMethod", "", "", true,
+  rb.DefineMethod("simpleMethod", "", "",
                   FRT_METHOD(SimpleHandler::RPC_Method),
                   _simpleHandler);
 
   //-------------------------------------------------------------------
 
-  rb.DefineMethod("mediumMethod1", "", "", true,
+  rb.DefineMethod("mediumMethod1", "", "",
                   FRT_METHOD(MediumHandler1::RPC_Method),
                   _mediumHandler1);
 
-  rb.DefineMethod("mediumMethod2", "", "", true,
+  rb.DefineMethod("mediumMethod2", "", "",
                   FRT_METHOD(MediumHandler2::RPC_Method),
                   _mediumHandler2);
 
-  rb.DefineMethod("mediumMethod3", "", "", true,
+  rb.DefineMethod("mediumMethod3", "", "",
                   FRT_METHOD(MediumHandler3::RPC_Method),
                   _mediumHandler3);
 
   //-------------------------------------------------------------------
 
-  rb.DefineMethod("complexMethod1", "", "", true,
+  rb.DefineMethod("complexMethod1", "", "",
                   FRT_METHOD(ComplexHandler1::RPC_Method),
                   _complexHandler1);
 
-  rb.DefineMethod("complexMethod2", "", "", true,
+  rb.DefineMethod("complexMethod2", "", "",
                   FRT_METHOD(ComplexHandler2::RPC_Method),
                   _complexHandler2);
 
-  rb.DefineMethod("complexMethod3", "", "", true,
+  rb.DefineMethod("complexMethod3", "", "",
                   FRT_METHOD(ComplexHandler3::RPC_Method),
                   _complexHandler3);
 

@@ -133,7 +133,7 @@ public:
     FNET_Packet *CreateReplyPacket();
 
     void SetDetachedPT(bool *detachedPT) { _detachedPT = detachedPT; }
-    void Detach() { *_detachedPT = true; }
+    FRT_RPCRequest *Detach() { *_detachedPT = true; return this; }
 
     void SetAbortHandler(FRT_IAbortHandler *handler) { _abortHandler = handler; }
     void SetReturnHandler(FRT_IReturnHandler *handler) { _returnHandler = handler; }

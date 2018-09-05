@@ -14,19 +14,19 @@ public:
     {
         FRT_ReflectionBuilder rb(s);
         //---------------------------------------------------------------------
-        rb.DefineMethod("inc", "i", "i", true,
+        rb.DefineMethod("inc", "i", "i",
                         FRT_METHOD(Server::rpc_inc), this);
         rb.MethodDesc("Increase an integer value");
         rb.ParamDesc("value", "initial value");
         rb.ReturnDesc("result", "value + 1");
         //---------------------------------------------------------------------
-        rb.DefineMethod("blob", "x", "x", true,
+        rb.DefineMethod("blob", "x", "x",
                         FRT_METHOD(Server::rpc_blob), this);
         rb.MethodDesc("Send a copy of a blob back to the client");
         rb.ParamDesc("blob", "the original blob");
         rb.ReturnDesc("blob", "a copy of the original blob");
         //---------------------------------------------------------------------
-        rb.DefineMethod("test", "iib", "i", true,
+        rb.DefineMethod("test", "iib", "i",
                         FRT_METHOD(Server::rpc_test), this);
         rb.MethodDesc("Magic test method");
         rb.ParamDesc("value", "the value");

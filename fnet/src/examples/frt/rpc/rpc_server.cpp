@@ -28,21 +28,21 @@ RPCServer::InitRPC(FRT_Supervisor *s)
 {
     FRT_ReflectionBuilder rb(s);
     //-------------------------------------------------------------------
-    rb.DefineMethod("concat", "ss", "s", true,
+    rb.DefineMethod("concat", "ss", "s",
                     FRT_METHOD(RPCServer::RPC_concat), this);
     rb.MethodDesc("Concatenate two strings");
     rb.ParamDesc("string1", "a string");
     rb.ParamDesc("string2", "another string");
     rb.ReturnDesc("ret", "the concatenation of string1 and string2");
     //-------------------------------------------------------------------
-    rb.DefineMethod("addFloat", "ff", "f", true,
+    rb.DefineMethod("addFloat", "ff", "f",
                     FRT_METHOD(RPCServer::RPC_addFloat), this);
     rb.MethodDesc("Add two floats");
     rb.ParamDesc("float1", "a float");
     rb.ParamDesc("float2", "another float");
     rb.ReturnDesc("ret", "float1 + float2");
     //-------------------------------------------------------------------
-    rb.DefineMethod("addDouble", "dd", "d", true,
+    rb.DefineMethod("addDouble", "dd", "d",
                     FRT_METHOD(RPCServer::RPC_addDouble), this);
     rb.MethodDesc("Add two doubles");
     rb.ParamDesc("double1", "a double");

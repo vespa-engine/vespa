@@ -43,12 +43,12 @@ FastS_RPC::Init(int port, const vespalib::string &myHeartbeatId)
 void
 FastS_RPC::RegisterMethods(FRT_ReflectionBuilder *rb)
 {
-    rb->DefineMethod("fs.admin.getNodeType", "", "s", true,
+    rb->DefineMethod("fs.admin.getNodeType", "", "s",
                      FRT_METHOD(FastS_RPC::RPC_GetNodeType), this);
     rb->MethodDesc("Get string indicating the node type");
     rb->ReturnDesc("type",  "node type");
     //---------------------------------------------------------------//
-    rb->DefineMethod("fs.admin.getCompileInfo", "", "*", true,
+    rb->DefineMethod("fs.admin.getCompileInfo", "", "*",
                      FRT_METHOD(FastS_RPC::RPC_GetCompileInfo), this);
     rb->MethodDesc("Obtain compile info for this node");
     rb->ReturnDesc("info",  "any number of descriptive strings");

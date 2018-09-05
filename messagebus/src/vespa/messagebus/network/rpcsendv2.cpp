@@ -59,7 +59,7 @@ bool RPCSendV2::isCompatible(stringref method, stringref request, stringref resp
 void
 RPCSendV2::build(FRT_ReflectionBuilder & builder)
 {
-    builder.DefineMethod(METHOD_NAME, METHOD_PARAMS, METHOD_RETURN, true, FRT_METHOD(RPCSendV2::invoke), this);
+    builder.DefineMethod(METHOD_NAME, METHOD_PARAMS, METHOD_RETURN, FRT_METHOD(RPCSendV2::invoke), this);
     builder.MethodDesc("Send a message bus slime request and get a reply back.");
     builder.ParamDesc("header_encoding", "0=raw, 6=lz4");
     builder.ParamDesc("header_decoded_size", "Uncompressed header blob size");

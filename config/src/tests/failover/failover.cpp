@@ -38,7 +38,7 @@ struct RPCServer : public FRT_Invokable {
 
     void init(FRT_Supervisor * s) {
         FRT_ReflectionBuilder rb(s);
-        rb.DefineMethod("config.v3.getConfig", requestTypes.c_str(), responseTypes.c_str(), true,
+        rb.DefineMethod("config.v3.getConfig", requestTypes.c_str(), responseTypes.c_str(),
                         FRT_METHOD(RPCServer::getConfig), this);
     }
 
