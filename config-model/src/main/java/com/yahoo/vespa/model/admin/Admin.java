@@ -44,7 +44,6 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     private final boolean isHostedVespa;
     private final Monitoring monitoring;
     private final Metrics metrics;
-    private final Map<String, MetricsConsumer> legacyMetricsConsumers;
     private final List<Configserver> configservers = new ArrayList<>();
 
     private final List<Slobrok> slobroks = new ArrayList<>();
@@ -73,14 +72,16 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     private FileDistributionConfigProducer fileDistribution;
     private final boolean multitenant;
 
-    public Admin(AbstractConfigProducer parent, Monitoring monitoring, Metrics metrics,
-                 Map<String, MetricsConsumer> legacyMetricsConsumers, boolean multitenant,
-                 FileDistributionConfigProducer fileDistributionConfigProducer,boolean isHostedVespa) {
+    public Admin(AbstractConfigProducer parent,
+                 Monitoring monitoring,
+                 Metrics metrics,
+                 boolean multitenant,
+                 FileDistributionConfigProducer fileDistributionConfigProducer,
+                 boolean isHostedVespa) {
         super(parent, "admin");
         this.isHostedVespa = isHostedVespa;
         this.monitoring = monitoring;
         this.metrics = metrics;
-        this.legacyMetricsConsumers = legacyMetricsConsumers;
         this.multitenant = multitenant;
         this.fileDistribution = fileDistributionConfigProducer;
     }
@@ -93,11 +94,6 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     }
 
     public Metrics getUserMetrics() { return metrics; }
-
-    /** Returns the configured userMetricConsumers. Empty if not configured */
-    public Map<String, MetricsConsumer> getLegacyUserMetricsConsumers(){
-        return legacyMetricsConsumers;
-    }
 
     /** Returns a list of all config servers */
     public List<Configserver> getConfigservers() {
