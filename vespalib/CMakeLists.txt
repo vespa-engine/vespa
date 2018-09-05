@@ -56,6 +56,7 @@ vespa_define_module(
     src/tests/net/send_fd
     src/tests/net/socket
     src/tests/net/socket_spec
+    src/tests/net/tls/openssl_impl
     src/tests/objects/nbostream
     src/tests/optimized
     src/tests/printable
@@ -118,6 +119,8 @@ vespa_define_module(
     src/vespa/vespalib/io
     src/vespa/vespalib/locale
     src/vespa/vespalib/net
+    src/vespa/vespalib/net/tls
+    src/vespa/vespalib/net/tls/impl
     src/vespa/vespalib/objects
     src/vespa/vespalib/stllike
     src/vespa/vespalib/test
