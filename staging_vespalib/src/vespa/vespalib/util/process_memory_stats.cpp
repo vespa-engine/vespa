@@ -4,6 +4,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 
@@ -182,18 +183,20 @@ ProcessMemoryStats::toString() const
 ProcessMemoryStats
 ProcessMemoryStats::create(uint64_t sizeEpsilon)
 {
-    ProcessMemoryStats prevStats = createStatsFromSmaps();
-    const size_t NUM_TRIES = 10;
+    constexpr size_t NUM_TRIES = 10;
+    std::vector<ProcessMemoryStats> samples;
+    samples.reserve(NUM_TRIES);
+    samples.push_back(createStatsFromSmaps());
     for (size_t i = 0; i < NUM_TRIES; ++i) {
-        ProcessMemoryStats currStats = createStatsFromSmaps();
-        if (prevStats.similarTo(currStats, sizeEpsilon)) {
-            return prevStats;
+        samples.push_back(createStatsFromSmaps());
+        if (samples.back().similarTo(*(samples.rbegin()+1), sizeEpsilon)) {
+            return samples.back();
         }
         LOG(info, "create(): Memory stats have changed, trying to read smaps file again: i=%zu, prevStats={%s}, currStats={%s}",
-            i, prevStats.toString().c_str(), currStats.toString().c_str());
-        prevStats = currStats;
+            i, (samples.rbegin()+1)->toString().c_str(), samples.back().toString().c_str());
     }
-    return prevStats;
+    std::sort(samples.begin(), samples.end());
+    return samples[samples.size()/2];
 }
 
 }
