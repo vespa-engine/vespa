@@ -21,7 +21,7 @@ public class Routing extends ConfigModel {
     private final List<String> errors = new ArrayList<>();
     private ApplicationSpec explicitApplication = null;
     private RoutingSpec explicitRouting = null;
-    private List<Protocol> protocols = new ArrayList<>();
+    private final List<Protocol> protocols = new ArrayList<>();
     private RoutingSpec derivedRouting;
 
     public Routing(ConfigModelContext modelContext) {
@@ -91,7 +91,7 @@ public class Routing extends ConfigModel {
     }
 
     public void getConfig(MessagebusConfig.Builder builder) {
-        if (derivedRouting==null) {
+        if (derivedRouting == null) {
             // The error list should be populated then
             return;
         }
@@ -198,4 +198,5 @@ public class Routing extends ConfigModel {
     public List<String> getErrors() {
         return Collections.unmodifiableList(errors);
     }
+
 }
