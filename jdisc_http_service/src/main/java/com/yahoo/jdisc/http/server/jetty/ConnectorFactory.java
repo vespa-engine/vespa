@@ -65,23 +65,9 @@ public class ConnectorFactory {
         connector.setName(connectorConfig.name());
         connector.setAcceptQueueSize(connectorConfig.acceptQueueSize());
         connector.setReuseAddress(connectorConfig.reuseAddress());
-        double soLingerTimeSeconds = connectorConfig.soLingerTime();
-        if (soLingerTimeSeconds == -1) {
-            setSoLingerTime(connector, -1);
-        } else {
-            setSoLingerTime(connector, (int)(soLingerTimeSeconds * 1000.0));
-        }
         connector.setIdleTimeout((long)(connectorConfig.idleTimeout() * 1000.0));
         connector.setStopTimeout((long)(connectorConfig.stopTimeout() * 1000.0));
         return connector;
-    }
-
-    @SuppressWarnings("deprecation")
-    private static void setSoLingerTime(ServerConnector connector, int milliseconds) {
-        // TODO: Don't use deprecated methods. Deprecate soLingerTime from connector config
-        // Jetty says: "don't use as socket close linger time has undefined behavior for non-blocking sockets"
-        // Jetty implementation is now a noop: https://github.com/eclipse/jetty.project/issues/2468, http://mail.openjdk.java.net/pipermail/nio-dev/2018-June/005195.html
-        connector.setSoLingerTime(milliseconds);
     }
 
     private HttpConnectionFactory newHttpConnectionFactory() {
