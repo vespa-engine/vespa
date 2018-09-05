@@ -16,7 +16,6 @@ import org.w3c.dom.Element;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -33,7 +32,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verify_that_overriding_connector_options_works() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0' jetty='true'>\n" +
+                "<jdisc id='default' version='1.0'>\n" +
                 "  <http>\n" +
                 "    <server id='bananarama' port='4321'>\n" +
                 "      <config name='jdisc.http.connector'>\n" +
@@ -46,7 +45,6 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 "</jdisc>\n"
         );
         createModel(root, clusterElem);
-        ConnectorConfig.Builder connectorConfigBuilder = new ConnectorConfig.Builder();
         ConnectorConfig cfg = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/bananarama");
         assertThat(cfg.requestHeaderSize(), is(300000));
         assertThat(cfg.headerCacheSize(), is(300000));
@@ -55,7 +53,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verify_that_enabling_jetty_works() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0' jetty='true'>" +
+                "<jdisc id='default' version='1.0'>" +
                         nodesXml +
                         "</jdisc>"
         );
@@ -66,7 +64,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verify_that_enabling_jetty_works_for_custom_http_servers() throws Exception {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0' jetty='true'>",
+                "<jdisc id='default' version='1.0'>",
                 "  <http>",
                 "    <server port='9000' id='foo' />",
                 "  </http>",
@@ -79,7 +77,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verifyThatJettyHttpServerHasFilterBindingsProvider() throws Exception {
         final Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0' jetty='true'>",
+                "<jdisc id='default' version='1.0'>",
                 nodesXml,
                 "</jdisc>" );
         createModel(root, clusterElem);
@@ -100,7 +98,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verifyThatJettyHttpServerHasFilterBindingsProviderForCustomHttpServers() throws Exception {
         final Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0' jetty='true'>",
+                "<jdisc id='default' version='1.0'>",
                 "  <http>",
                 "    <server port='9000' id='foo' />",
                 "  </http>",
@@ -122,73 +120,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     @Test
-    public void verify_that_old_http_config_override_inside_server_tag_works() throws Exception {
-        Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0' jetty='true'>",
-                "  <http>",
-                "    <server port='9000' id='foo'>",
-                "      <config name=\"container.jdisc.config.http-server\">",
-                "        <tcpKeepAliveEnabled>true</tcpKeepAliveEnabled>",
-                "        <tcpNoDelayEnabled>false</tcpNoDelayEnabled>",
-                "        <tcpListenBacklogLength>2</tcpListenBacklogLength>",
-                "        <idleConnectionTimeout>34.1</idleConnectionTimeout>",
-                "        <soLinger>42.2</soLinger>",
-                "        <sendBufferSize>1234</sendBufferSize>",
-                "        <maxHeaderSize>4321</maxHeaderSize>",
-                "        <ssl>",
-                "          <enabled>true</enabled>",
-                "          <keyStoreType>JKS</keyStoreType>",
-                "          <keyStorePath>apple</keyStorePath>",
-                "          <trustStorePath>grape</trustStorePath>",
-                "          <keyDBKey>tomato</keyDBKey>",
-                "          <algorithm>onion</algorithm>",
-                "          <protocol>carrot</protocol>",
-                "        </ssl>",
-                "      </config>",
-                "    </server>",
-                "  </http>",
-                nodesXml,
-                "</jdisc>" );
-        createModel(root, clusterElem);
-        ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
-        List<JettyHttpServer> jettyServers = cluster.getChildrenByTypeRecursive(JettyHttpServer.class);
-
-        assertThat(jettyServers.size(), is(1));
-
-        JettyHttpServer server = jettyServers.get(0);
-        assertThat(server.model.bundleInstantiationSpec.classId.toString(),
-                is(com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName()));
-        assertThat(server.model.bundleInstantiationSpec.bundle.toString(), is("jdisc_http_service"));
-        assertThat(server.getConnectorFactories().size(), is(1));
-
-        ConnectorConfig.Builder connectorConfigBuilder = new ConnectorConfig.Builder();
-        server.getConnectorFactories().get(0).getConfig(connectorConfigBuilder);
-        ConnectorConfig connector = new ConnectorConfig(connectorConfigBuilder);
-        assertThat(connector.name(), equalTo("foo"));
-        assertThat(connector.tcpKeepAliveEnabled(), equalTo(true));
-        assertThat(connector.tcpNoDelay(), equalTo(false));
-        assertThat(connector.acceptQueueSize(), equalTo(2));
-        assertThat(connector.idleTimeout(), equalTo(34.1));
-        assertThat(connector.soLingerTime(), equalTo(42.2));
-        assertThat(connector.outputBufferSize(), equalTo(1234));
-        assertThat(connector.headerCacheSize(), equalTo(4321));
-        assertThat(connector.ssl().enabled(), equalTo(true));
-        assertThat(connector.ssl().keyStoreType(), equalTo(KeyStoreType.Enum.JKS));
-        assertThat(connector.ssl().keyStorePath(), equalTo("apple"));
-        assertThat(connector.ssl().trustStorePath(), equalTo("grape"));
-        assertThat(connector.ssl().keyDbKey(), equalTo("tomato"));
-        assertThat(connector.ssl().sslKeyManagerFactoryAlgorithm(), equalTo("onion"));
-        assertThat(connector.ssl().protocol(), equalTo("carrot"));
-
-        assertThat(
-                extractComponentByClassName(
-                        clusterComponentsConfig(),
-                        com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName()),
-                is(not(nullValue())));
-    }
-
-    @Test
-    public void verify_that_ssl_element_generates_connector_config_and_inject_provider_component() {
+    public void ssl_element_generates_connector_config_and_injects_provider_component() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0' jetty='true'>",
                 "    <http>",
