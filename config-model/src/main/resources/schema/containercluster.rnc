@@ -24,7 +24,6 @@ ContainerServices =
     Client* &
     Server* &
     Http? &
-    HttpFilter? &
     AccessLog* &
     SecretStore? &
     GenericConfig*
