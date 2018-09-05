@@ -31,15 +31,6 @@ struct Sync : public FNET_IExecutable
 
 } // namespace<unnamed>
 
-#ifndef IAM_DOXYGEN
-void
-FNET_TransportThread::StatsTask::PerformTask()
-{
-    _transport->UpdateStats();
-    Schedule(5.0);
-}
-#endif
-
 void
 FNET_TransportThread::AddComponent(FNET_IOComponent *comp)
 {
@@ -160,22 +151,6 @@ FNET_TransportThread::DiscardEvent(FNET_ControlPacket *cpacket,
 }
 
 
-void
-FNET_TransportThread::UpdateStats()
-{
-    _now.SetNow(); // trade some overhead for better stats
-    double ms = _now.MilliSecs() - _statTime.MilliSecs();
-    _statTime = _now;
-    {
-        std::lock_guard<std::mutex> guard(_lock);
-        _stats.Update(&_counters, ms / 1000.0);
-    }
-    _counters.Clear();
-
-    if (_config._logStats)
-        _stats.Log();
-}
-
 extern "C" {
 
     static void pipehandler(int)
@@ -203,10 +178,6 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
       _startTime(),
       _now(),
       _scheduler(&_now),
-      _counters(),
-      _stats(),
-      _statsTask(&_scheduler, this),
-      _statTime(),
       _config(),
       _componentsHead(nullptr),
       _timeOutHead(nullptr),
@@ -424,8 +395,6 @@ FNET_TransportThread::InitEventLoop()
     }
     _now.SetNow();
     _startTime = _now;
-    _statTime  = _now;
-    _statsTask.Schedule(5.0);
     return true;
 }
 
@@ -435,7 +404,7 @@ FNET_TransportThread::handle_wakeup()
 {
     {
         std::lock_guard<std::mutex> guard(_lock);
-        CountEvent(_queue.FlushPackets_NoLock(&_myQueue));
+        _queue.FlushPackets_NoLock(&_myQueue);
     }
 
     FNET_Context context;
@@ -534,7 +503,6 @@ FNET_TransportThread::EventLoopIteration()
 
         // obtain I/O events
         _selector.poll(msTimeout);
-        CountEventLoop();
 
         // sample current time (performed once per event loop iteration)
         _now.SetNow();
@@ -548,7 +516,6 @@ FNET_TransportThread::EventLoopIteration()
 #endif
 
         // handle wakeup and io-events
-        CountIOEvent(_selector.num_events());
         _selector.dispatch(*this);
 
         // handle IOC time-outs
@@ -578,9 +545,6 @@ FNET_TransportThread::EventLoopIteration()
         return true;
     if (_finished)
         return false;
-
-    // unschedule statistics task
-    _statsTask.Kill();
 
     // flush event queue
     {

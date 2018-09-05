@@ -6,7 +6,6 @@
 #include "config.h"
 #include "task.h"
 #include "packetqueue.h"
-#include "stats.h"
 #include <vespa/fastos/thread.h>
 #include <vespa/fastos/time.h>
 #include <vespa/vespalib/net/socket_handle.h>
@@ -31,31 +30,11 @@ class FNET_TransportThread : public FastOS_Runnable
 public:
     using Selector = vespalib::Selector<FNET_IOComponent>;
 
-#ifndef IAM_DOXYGEN
-    class StatsTask : public FNET_Task
-    {
-    private:
-        FNET_TransportThread *_transport;
-        StatsTask(const StatsTask &);
-        StatsTask &operator=(const StatsTask &);
-    public:
-        StatsTask(FNET_Scheduler *scheduler,
-                  FNET_TransportThread *transport) : FNET_Task(scheduler),
-                                                     _transport(transport) {}
-        void PerformTask() override;
-    };
-    friend class FNET_TransportThread::StatsTask;
-#endif // DOXYGEN
-
 private:
     FNET_Transport          &_owner;          // owning transport layer
     FastOS_Time              _startTime;      // when event loop started
     FastOS_Time              _now;            // current time sampler
     FNET_Scheduler           _scheduler;      // transport thread scheduler
-    FNET_StatCounters        _counters;       // stat counters
-    FNET_Stats               _stats;          // current stats
-    StatsTask                _statsTask;      // stats task
-    FastOS_Time              _statTime;       // last stat update
     FNET_Config              _config;         // FNET configuration [static]
     FNET_IOComponent        *_componentsHead; // I/O component list head
     FNET_IOComponent        *_timeOutHead;    // first IOC in list to time out
@@ -153,49 +132,6 @@ private:
      * @param context the event parameter
      **/
     void DiscardEvent(FNET_ControlPacket *cpacket, FNET_Context context);
-
-
-    /**
-     * Update internal FNET statistics. This method is called regularly
-     * by the statistics update task.
-     **/
-    void UpdateStats();
-
-
-    /**
-     * Obtain a reference to the stat counters used by this transport
-     * object.
-     *
-     * @return stat counters for this transport object.
-     **/
-    FNET_StatCounters *GetStatCounters() { return &_counters; }
-
-
-    /**
-     * Count event loop iteration(s).
-     *
-     * @param cnt event loop iterations (default is 1).
-     **/
-    void CountEventLoop(uint32_t cnt = 1)
-    { _counters.CountEventLoop(cnt); }
-
-
-    /**
-     * Count internal event(s).
-     *
-     * @param cnt number of internal events.
-     **/
-    void CountEvent(uint32_t cnt)
-    { _counters.CountEvent(cnt); }
-
-
-    /**
-     * Count IO events.
-     *
-     * @param cnt number of IO events.
-     **/
-    void CountIOEvent(uint32_t cnt)
-    { _counters.CountIOEvent(cnt); }
 
 
     /**
@@ -352,15 +288,6 @@ public:
      * @param noDelay true if TCP_NODELAY flag should be used.
      **/
     void SetTCPNoDelay(bool noDelay) { _config._tcpNoDelay = noDelay; }
-
-
-    /**
-     * Enable or disable logging of FNET statistics. This feature is
-     * disabled by default.
-     *
-     * @param logStats true if stats should be logged.
-     **/
-    void SetLogStats(bool logStats) { _config._logStats = logStats; }
 
 
     /**

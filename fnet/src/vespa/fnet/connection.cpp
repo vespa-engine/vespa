@@ -110,13 +110,6 @@ FNET_Connection::SetState(State state)
     }
     if (oldstate < FNET_CLOSING && state >= FNET_CLOSING) {
 
-        if (_flags._writeLock) {
-            _flags._discarding = true;
-            while (_flags._writeLock)
-                _ioc_cond.wait(guard);
-            _flags._discarding = false;
-        }
-
         while (!_queue.IsEmpty_NoLock() || !_myQueue.IsEmpty_NoLock()) {
             _flags._discarding = true;
             _queue.FlushPackets_NoLock(&_myQueue);
@@ -233,14 +226,13 @@ FNET_Connection::handshake()
         EnableReadEvent(true);
         EnableWriteEvent(writePendingAfterConnect());
         size_t chunk_size = std::max(size_t(FNET_READ_SIZE), _socket->min_read_buffer_size());
-        uint32_t ignore_stats = 0;
         ssize_t res = 0;
         do { // drain input pipeline
             _input.EnsureFree(chunk_size);
             res = _socket->drain(_input.GetFree(), _input.GetFreeLen());
             if (res > 0) {
                 _input.FreeToData((uint32_t)res);
-                broken = !handle_packets(ignore_stats);
+                broken = !handle_packets();
                 _input.resetIfEmpty();
             }
         } while ((res > 0) && !broken); }
@@ -258,7 +250,7 @@ FNET_Connection::handshake()
 }
 
 bool
-FNET_Connection::handle_packets(uint32_t &read_packets)
+FNET_Connection::handle_packets()
 {
     bool broken = false;
     for (bool done = false; !done;) { // handle each complete packet in the buffer.
@@ -268,7 +260,6 @@ FNET_Connection::handle_packets(uint32_t &read_packets)
                     &broken);
         }
         if (_flags._gotheader && (_input.GetDataLen() >= _packetLength)) {
-            read_packets++;
             HandlePacket(_packetLength, _packetCode, _packetCHID);
             _flags._gotheader = false; // reset header flag.
         } else {
@@ -282,8 +273,6 @@ bool
 FNET_Connection::Read()
 {
     size_t   chunk_size  = std::max(size_t(FNET_READ_SIZE), _socket->min_read_buffer_size());
-    uint32_t readData    = 0;     // total data read
-    uint32_t readPackets = 0;     // total packets read
     int      readCnt     = 0;     // read count
     bool     broken      = false; // is this conn broken ?
     ssize_t  res;                 // single read result
@@ -294,8 +283,7 @@ FNET_Connection::Read()
 
     while (res > 0) {
         _input.FreeToData((uint32_t)res);
-        readData += (uint32_t)res;
-        broken = !handle_packets(readPackets);
+        broken = !handle_packets();
         _input.resetIfEmpty();
         if (broken || (_input.GetFreeLen() > 0) || (readCnt >= FNET_READ_REDO)) {
             goto done_read;
@@ -313,8 +301,7 @@ done_read:
         readCnt++;
         if (res > 0) {
             _input.FreeToData((uint32_t)res);
-            readData += (uint32_t)res;
-            broken = !handle_packets(readPackets);
+            broken = !handle_packets();
             _input.resetIfEmpty();
         } else if (res == 0) { // fully drained -> EWOULDBLOCK
             errno = EWOULDBLOCK;
@@ -322,16 +309,12 @@ done_read:
         }
     }
 
-    if (readData > 0) {
-        UpdateTimeOut();
-        CountDataRead(readData);
-        CountPacketRead(readPackets);
-        uint32_t maxSize = GetConfig()->_maxInputBufferSize;
-        if (maxSize > 0 && _input.GetBufSize() > maxSize)
-        {
-            if (!_flags._gotheader || _packetLength < maxSize) {
-                _input.Shrink(maxSize);
-            }
+    UpdateTimeOut();
+    uint32_t maxSize = GetConfig()->_maxInputBufferSize;
+    if (maxSize > 0 && _input.GetBufSize() > maxSize)
+    {
+        if (!_flags._gotheader || _packetLength < maxSize) {
+            _input.Shrink(maxSize);
         }
     }
 
@@ -354,8 +337,6 @@ bool
 FNET_Connection::Write()
 {
     uint32_t my_write_work  = 0;
-    uint32_t writtenData    = 0;     // total data written
-    uint32_t writtenPackets = 0;     // total packets written
     int      writeCnt       = 0;     // write count
     bool     broken         = false; // is this conn broken ?
     ssize_t  res;                    // single write result
@@ -374,7 +355,6 @@ FNET_Connection::Write()
             packet = _myQueue.DequeuePacket_NoLock(&context);
             if (packet->IsRegularPacket()) { // ignore non-regular packets
                 _streamer->Encode(packet, context._value.INT, &_output);
-                writtenPackets++;
             }
             packet->Free();
         }
@@ -390,7 +370,6 @@ FNET_Connection::Write()
         writeCnt++;
         if (res > 0) {
             _output.DataToDead((uint32_t)res);
-            writtenData += (uint32_t)res;
             _output.resetIfEmpty();
         }
     } while (res > 0 &&
@@ -409,11 +388,9 @@ FNET_Connection::Write()
         }
     }
 
-    if (writtenData > 0) {
-        uint32_t maxSize = GetConfig()->_maxOutputBufferSize;
-        if (maxSize > 0 && _output.GetBufSize() > maxSize) {
-            _output.Shrink(maxSize);
-        }
+    uint32_t maxSize = GetConfig()->_maxOutputBufferSize;
+    if (maxSize > 0 && _output.GetBufSize() > maxSize) {
+        _output.Shrink(maxSize);
     }
 
     if (res < 0) {
@@ -431,17 +408,9 @@ FNET_Connection::Write()
     _writeWork = _queue.GetPacketCnt_NoLock()
                  + _myQueue.GetPacketCnt_NoLock()
                  + my_write_work;
-    _flags._writeLock = false;
-    if (_flags._discarding) {
-        _ioc_cond.notify_all();
-    }
     bool writePending = (_writeWork > 0);
 
     guard.unlock();
-    if (writtenData > 0) {
-        CountDataWrite(writtenData);
-        CountPacketWrite(writtenPackets);
-    }
     if (!writePending)
         EnableWriteEvent(false);
 
@@ -528,7 +497,6 @@ FNET_Connection::~FNET_Connection()
         delete _adminChannel;
     }
     assert(_cleanup == nullptr);
-    assert(!_flags._writeLock);
 }
 
 
@@ -682,22 +650,12 @@ FNET_Connection::PostPacket(FNET_Packet *packet, uint32_t chid)
     writeWork = _writeWork;
     _writeWork++;
     _queue.QueuePacket_NoLock(packet, FNET_Context(chid));
-    if (writeWork == 0 && !_flags._writeLock &&
-        _state == FNET_CONNECTED)
-    {
+    if ((writeWork == 0) && (_state == FNET_CONNECTED)) {
         AddRef_NoLock();
         guard.unlock();
         Owner()->EnableWrite(this, /* needRef = */ false);
     }
     return true;
-}
-
-
-uint32_t
-FNET_Connection::GetQueueLen()
-{
-    std::lock_guard<std::mutex> guard(_ioc_lock);
-    return _queue.GetPacketCnt_NoLock() + _myQueue.GetPacketCnt_NoLock();
 }
 
 
@@ -774,12 +732,6 @@ FNET_Connection::HandleWriteEvent()
     case FNET_CONNECTED:
         {
             std::unique_lock<std::mutex> guard(_ioc_lock);
-            if (_flags._writeLock) {
-                guard.unlock();
-                EnableWriteEvent(false);
-                return true;
-            }
-            _flags._writeLock = true;
             _queue.FlushPackets_NoLock(&_myQueue);
         }
         broken = !Write();

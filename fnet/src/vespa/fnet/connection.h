@@ -68,13 +68,11 @@ private:
     struct Flags {
         Flags() :
             _gotheader(false),
-            _writeLock(false),
             _inCallback(false),
             _callbackWait(false),
             _discarding(false)
         { }
         bool _gotheader;
-        bool _writeLock;
         bool _inCallback;
         bool _callbackWait;
         bool _discarding;
@@ -212,9 +210,8 @@ private:
      * for each one.
      *
      * @return false if socket is broken.
-     * @param read_packets count read packets here
      **/
-    bool handle_packets(uint32_t &read_packets);
+    bool handle_packets();
 
     /**
      * Read incoming data from socket.
@@ -447,19 +444,6 @@ public:
      * @param chid the channel id for the packet
      **/
     bool PostPacket(FNET_Packet *packet, uint32_t chid);
-
-
-    /**
-     * Obtain the number of packets located in the output queue for this
-     * connection. Note that this number is volatile and should only be
-     * used as an estimate. Also note that since a queue latching
-     * strategy is used, this method requires a mutex lock/unlock and is
-     * therefore not as cheap as may be expected.
-     *
-     * @return number of packets currently located in the output queue
-     *         for this connection.
-     **/
-    uint32_t GetQueueLen();
 
 
     /**

@@ -11,14 +11,10 @@
 class FNET_Config
 {
 public:
-    uint32_t  _minEventTimeOut;
-    uint32_t  _pingInterval;
     uint32_t  _iocTimeOut;
     uint32_t  _maxInputBufferSize;
     uint32_t  _maxOutputBufferSize;
     bool      _tcpNoDelay;
-    bool      _logStats;
 
     FNET_Config();
 };
-

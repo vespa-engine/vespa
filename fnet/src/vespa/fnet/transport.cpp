@@ -120,14 +120,6 @@ FNET_Transport::SetTCPNoDelay(bool noDelay)
 }
 
 void
-FNET_Transport::SetLogStats(bool logStats)
-{
-    for (const auto &thread: _threads) {
-        thread->SetLogStats(logStats);
-    }
-}
-
-void
 FNET_Transport::sync()
 {
     for (const auto &thread: _threads) {

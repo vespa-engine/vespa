@@ -3,11 +3,9 @@
 #include "config.h"
 
 FNET_Config::FNET_Config()
-    : _minEventTimeOut(0),
-      _pingInterval(0),
-      _iocTimeOut(0),
+    : _iocTimeOut(0),
       _maxInputBufferSize(0x10000),
       _maxOutputBufferSize(0x10000),
-      _tcpNoDelay(true),
-      _logStats(false)
-{ }
+      _tcpNoDelay(true)
+{
+}

@@ -195,14 +195,6 @@ public:
     void SetTCPNoDelay(bool noDelay);
 
     /**
-     * Enable or disable logging of FNET statistics. This feature is
-     * disabled by default.
-     *
-     * @param logStats true if stats should be logged.
-     **/
-    void SetLogStats(bool logStats);
-
-    /**
      * Synchronize with all transport threads. This method will block
      * until all events posted before this method was invoked has been
      * processed. If a transport thread has been shut down (or is in
