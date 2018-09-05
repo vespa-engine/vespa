@@ -12,8 +12,8 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
-import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
+import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
@@ -79,7 +79,6 @@ public class Controller extends AbstractComponent {
     private final ConfigServer configServer;
     private final MetricsService metricsService;
     private final Chef chef;
-    private final Organization organization;
     private final AthenzClientFactory athenzClientFactory;
 
     /**
@@ -117,7 +116,6 @@ public class Controller extends AbstractComponent {
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
         this.gitHub = Objects.requireNonNull(gitHub, "GitHub cannot be null");
         this.entityService = Objects.requireNonNull(entityService, "EntityService cannot be null");
-        this.organization = Objects.requireNonNull(organization, "Organization cannot be null");
         this.globalRoutingService = Objects.requireNonNull(globalRoutingService, "GlobalRoutingService cannot be null");
         this.zoneRegistry = Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
         this.configServer = Objects.requireNonNull(configServer, "ConfigServer cannot be null");
@@ -136,7 +134,7 @@ public class Controller extends AbstractComponent {
                                                           Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock);
-        tenantController = new TenantController(this, curator, athenzClientFactory);
+        tenantController = new TenantController(this, curator, athenzClientFactory, organization);
 
         // Record the version of this controller
         curator().writeControllerVersion(this.hostname(), Vtag.currentVersion);
@@ -287,10 +285,6 @@ public class Controller extends AbstractComponent {
 
     public Chef chefClient() {
         return chef;
-    }
-
-    public Organization organization() {
-        return organization;
     }
 
     public CuratorDb curator() {

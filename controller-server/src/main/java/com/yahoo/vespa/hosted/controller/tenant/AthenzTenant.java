@@ -6,6 +6,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -18,16 +19,19 @@ public class AthenzTenant extends Tenant {
     private final AthenzDomain domain;
     private final Property property;
     private final Optional<PropertyId> propertyId;
+    private final Optional<Contact> contact;
 
     /**
      * This should only be used by serialization.
      * Use {@link #create(TenantName, AthenzDomain, Property, Optional)}.
      * */
-    public AthenzTenant(TenantName name, AthenzDomain domain, Property property, Optional<PropertyId> propertyId) {
+    public AthenzTenant(TenantName name, AthenzDomain domain, Property property, Optional<PropertyId> propertyId,
+                        Optional<Contact> contact) {
         super(name);
-        this.domain = domain;
-        this.property = property;
-        this.propertyId = propertyId;
+        this.domain = Objects.requireNonNull(domain, "domain must be non-null");
+        this.property = Objects.requireNonNull(property, "property must be non-null");
+        this.propertyId = Objects.requireNonNull(propertyId, "propertyId must be non-null");
+        this.contact = Objects.requireNonNull(contact, "contact must be non-null");
     }
 
     /** Property name of this tenant */
@@ -35,9 +39,14 @@ public class AthenzTenant extends Tenant {
         return property;
     }
 
-    /** Property ID of the tenant, if present */
+    /** Property ID of the tenant, if any */
     public Optional<PropertyId> propertyId() {
         return propertyId;
+    }
+
+    /** Contact information for this, if any */
+    public Optional<Contact> contact() {
+        return contact;
     }
 
     /** Athenz domain of this tenant */
@@ -55,22 +64,10 @@ public class AthenzTenant extends Tenant {
         return "athenz tenant '" + name() + "'";
     }
 
-    public AthenzTenant with(AthenzDomain domain) {
-        return new AthenzTenant(name(), domain, property(), propertyId());
-    }
-
-    public AthenzTenant with(Property property) {
-        return new AthenzTenant(name(), domain, property, propertyId());
-    }
-
-    public AthenzTenant with(PropertyId propertyId) {
-        return new AthenzTenant(name(), domain, property, Optional.of(propertyId));
-    }
-
     /** Create a new Athenz tenant */
     public static AthenzTenant create(TenantName name, AthenzDomain domain, Property property,
                                       Optional<PropertyId> propertyId) {
-        return new AthenzTenant(requireName(requireNoPrefix(name)), domain, property, propertyId);
+        return new AthenzTenant(requireName(requireNoPrefix(name)), domain, property, propertyId, Optional.empty());
     }
 
     private static TenantName requireNoPrefix(TenantName name) {

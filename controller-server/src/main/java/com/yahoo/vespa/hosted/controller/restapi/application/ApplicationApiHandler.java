@@ -16,6 +16,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
+import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -50,7 +51,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -66,12 +66,12 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
-import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 import com.yahoo.vespa.hosted.controller.restapi.filter.SetBouncerPassthruHeaderFilter;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Contact;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -647,19 +647,27 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse updateTenant(String tenantName, HttpRequest request) {
-        Optional<AthenzTenant> existingTenant = controller.tenants().athenzTenant(TenantName.from(tenantName));
-        if ( ! existingTenant.isPresent()) return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
+        Optional<AthenzTenant> tenant = controller.tenants().athenzTenant(TenantName.from(tenantName));
+        if ( ! tenant.isPresent()) return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
 
         Inspector requestData = toSlime(request.getData()).get();
-        AthenzTenant updatedTenant = existingTenant.get()
-                                                   .with(new AthenzDomain(mandatory("athensDomain", requestData).asString()))
-                                                   .with(new Property(mandatory("property", requestData).asString()));
-        Optional<PropertyId> propertyId = optional("propertyId", requestData).map(PropertyId::new);
-        if (propertyId.isPresent()) {
-            updatedTenant = updatedTenant.with(propertyId.get());
-        }
-        controller.tenants().updateTenant(updatedTenant, requireNToken(request, "Could not update " + tenantName));
-        return tenant(updatedTenant, request, true);
+        NToken token = requireNToken(request, "Could not update " + tenantName);
+
+        controller.tenants().lockOrThrow(tenant.get().name(), lockedTenant -> {
+            lockedTenant = lockedTenant.with(new Property(mandatory("property", requestData).asString()));
+            lockedTenant = controller.tenants().withDomain(
+                    lockedTenant,
+                    new AthenzDomain(mandatory("athensDomain", requestData).asString()),
+                    token
+            );
+            Optional<PropertyId> propertyId = optional("propertyId", requestData).map(PropertyId::new);
+            if (propertyId.isPresent()) {
+                lockedTenant = lockedTenant.with(propertyId.get());
+            }
+            controller.tenants().store(lockedTenant);
+        });
+
+        return tenant(controller.tenants().requireAthenzTenant(tenant.get().name()), request, true);
     }
 
     private HttpResponse createTenant(String tenantName, HttpRequest request) {
@@ -902,13 +910,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request, boolean listApplications) {
         object.setString("tenant", tenant.name().value());
         object.setString("type", tentantType(tenant));
-        Optional<PropertyId> propertyId = Optional.empty();
         if (tenant instanceof AthenzTenant) {
             AthenzTenant athenzTenant = (AthenzTenant) tenant;
             object.setString("athensDomain", athenzTenant.domain().getName());
             object.setString("property", athenzTenant.property().id());
-            propertyId = athenzTenant.propertyId();
-            propertyId.ifPresent(id -> object.setString("propertyId", id.toString()));
+            athenzTenant.propertyId().ifPresent(id -> object.setString("propertyId", id.toString()));
         }
         Cursor applicationArray = object.setArray("applications");
         if (listApplications) { // This cludge is needed because we call this after deleting the tenant. As this call makes another tenant lookup it will fail. TODO is to support lookup on tenant
@@ -921,23 +927,23 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 }
             }
         }
-        propertyId.ifPresent(id -> {
-            try {
-                object.setString("propertyUrl", controller.organization().propertyUri(id).toString());
-                object.setString("contactsUrl", controller.organization().contactsUri(id).toString());
-                object.setString("issueCreationUrl", controller.organization().issueCreationUri(id).toString());
-                Cursor lists = object.setArray("contacts");
-                for (List<? extends User> contactList : controller.organization().contactsFor(id)) {
-                    Cursor list = lists.addArray();
-                    for (User contact : contactList)
-                        list.addString(contact.displayName());
-                }
+        if (tenant instanceof AthenzTenant) {
+            AthenzTenant athenzTenant = (AthenzTenant) tenant;
+            Optional<Contact> contact = athenzTenant.contact();
+            if (!contact.isPresent()) { // TODO: Remove this fallback once all contacts have been written once
+                contact = controller.tenants().findContact(athenzTenant);
             }
-            catch (RuntimeException e) {
-                log.log(Level.WARNING, "Error fetching property info for " + tenant + " with propertyId " + id + ": " +
-                        Exceptions.toMessageString(e));
-            }
-        });
+            contact.ifPresent(c -> {
+                object.setString("propertyUrl", c.propertyUrl().toString());
+                object.setString("contactsUrl", c.url().toString());
+                object.setString("issueCreationUrl", c.issueTrackerUrl().toString());
+                Cursor contactsArray = object.setArray("contacts");
+                c.persons().forEach(persons -> {
+                    Cursor personArray = contactsArray.addArray();
+                    persons.forEach(personArray::addString);
+                });
+            });
+        }
     }
 
     // A tenant has different content when in a list ... antipattern, but not solvable before application/v5

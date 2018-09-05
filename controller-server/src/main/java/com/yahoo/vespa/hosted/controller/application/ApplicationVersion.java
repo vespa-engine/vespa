@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 /**
  * An application package version, identified by a source revision and a build number.
@@ -16,21 +17,21 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
      * Used in cases where application version cannot be determined, such as manual deployments (e.g. in dev
      * environment)
      */
-    public static final ApplicationVersion unknown = new ApplicationVersion(Optional.empty(), Optional.empty());
+    public static final ApplicationVersion unknown = new ApplicationVersion(Optional.empty(), OptionalLong.empty());
 
     // This never changes and is only used to create a valid semantic version number, as required by application bundles
     private static final String majorVersion = "1.0";
 
     private final Optional<SourceRevision> source;
-    private final Optional<Long> buildNumber;
+    private final OptionalLong buildNumber;
 
-    private ApplicationVersion(Optional<SourceRevision> source, Optional<Long> buildNumber) {
+    private ApplicationVersion(Optional<SourceRevision> source, OptionalLong buildNumber) {
         Objects.requireNonNull(source, "source cannot be null");
         Objects.requireNonNull(buildNumber, "buildNumber cannot be null");
         if (source.isPresent() != buildNumber.isPresent()) {
             throw new IllegalArgumentException("both buildNumber and source must be set together");
         }
-        if (buildNumber.isPresent() && buildNumber.get() <= 0) {
+        if (buildNumber.isPresent() && buildNumber.getAsLong() <= 0) {
             throw new IllegalArgumentException("buildNumber must be > 0");
         }
         this.source = source;
@@ -39,7 +40,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Create an application package version from a completed build */
     public static ApplicationVersion from(SourceRevision source, long buildNumber) {
-        return new ApplicationVersion(Optional.of(source), Optional.of(buildNumber));
+        return new ApplicationVersion(Optional.of(source), OptionalLong.of(buildNumber));
     }
 
     /** Returns an unique identifier for this version or "unknown" if version is not known */
@@ -47,7 +48,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         if (isUnknown()) {
             return "unknown";
         }
-        return String.format("%s.%d-%s", majorVersion, buildNumber.get(), abbreviateCommit(source.get().commit()));
+        return String.format("%s.%d-%s", majorVersion, buildNumber.getAsLong(), abbreviateCommit(source.get().commit()));
     }
 
     /**
@@ -57,7 +58,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     public Optional<SourceRevision> source() { return source; }
 
     /** Returns the build number that built this version */
-    public Optional<Long> buildNumber() { return buildNumber; }
+    public OptionalLong buildNumber() { return buildNumber; }
 
     /** Returns whether this is unknown */
     public boolean isUnknown() {
@@ -93,6 +94,6 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         if ( ! buildNumber().isPresent() || ! o.buildNumber().isPresent())
             return Boolean.compare(buildNumber().isPresent(), o.buildNumber.isPresent()); // Application package hash sorts first
 
-        return buildNumber().get().compareTo(o.buildNumber().get());
+        return Long.compare(buildNumber().getAsLong(), o.buildNumber().getAsLong());
     }
 }
