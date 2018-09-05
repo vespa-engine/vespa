@@ -75,8 +75,22 @@ public class GroupingValidator extends Searcher {
         public void visitExpression(GroupingExpression exp) {
             if (exp instanceof AttributeValue) {
                 String name = ((AttributeValue)exp).getAttributeName();
-                if (!attributeNames.contains(name)) {
-                    throw new UnavailableAttributeException(clusterName, name);
+                int leftBracePos = name.indexOf('{');
+                if (leftBracePos == -1) {
+                    if (!attributeNames.contains(name)) {
+                        throw new UnavailableAttributeException(clusterName, name);
+                    }
+                } else {
+                    String baseName = name.substring(0, leftBracePos);
+                    String keyName = baseName + ".key";
+                    if (!attributeNames.contains(keyName)) {
+                        throw new UnavailableAttributeException(clusterName, keyName);
+                    }
+                    int rightBracePos = name.lastIndexOf('}');
+                    String valueName = baseName + ".value" + name.substring(rightBracePos + 1);
+                    if (!attributeNames.contains(valueName)) {
+                        throw new UnavailableAttributeException(clusterName, valueName);
+                    }
                 }
             }
         }
