@@ -7,5 +7,6 @@ vespa_add_library(vespalib_vespalib_net_tls OBJECT
     transport_security_options.cpp
     DEPENDS
 )
-vespa_add_target_package_dependency(vespalib_vespalib_net_tls OpenSSL)
+find_package(OpenSSL)
+target_include_directories(vespalib_vespalib_net_tls PUBLIC ${OPENSSL_INCLUDE_DIR})
 

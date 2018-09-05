@@ -5,5 +5,6 @@ vespa_add_library(vespalib_vespalib_net_tls_impl OBJECT
     openssl_crypto_codec_impl.cpp
     DEPENDS
 )
-vespa_add_target_package_dependency(vespalib_vespalib_net_tls_impl OpenSSL)
+find_package(OpenSSL)
+target_include_directories(vespalib_vespalib_net_tls_impl PUBLIC ${OPENSSL_INCLUDE_DIR})
 
