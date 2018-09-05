@@ -24,6 +24,8 @@ import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.nio.channels.ServerSocketChannel;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -105,6 +107,13 @@ public class ConnectorFactory {
         if (!sslConfig.prng().isEmpty()) {
             factory.setSecureRandomAlgorithm(sslConfig.prng());
         }
+
+        // NOTE: ^TLS_RSA_.*$ ciphers are disabled by default in Jetty 9.4.12+ (https://github.com/eclipse/jetty.project/issues/2807)
+        // JDisc will allow these ciphers by default to support older clients (e.g. Java 8u60 and curl 7.29.0)
+        String[] excludedCiphersWithoutTlsRsaExclusion = Arrays.stream(factory.getExcludeCipherSuites())
+                .filter(cipher -> !cipher.equals("^TLS_RSA_.*$"))
+                .toArray(String[]::new);
+        factory.setExcludeProtocols(excludedCiphersWithoutTlsRsaExclusion);
 
         setStringArrayParameter(
                 factory, sslConfig.excludeProtocol(), ExcludeProtocol::name, SslContextFactory::setExcludeProtocols);
