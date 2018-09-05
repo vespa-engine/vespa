@@ -113,11 +113,7 @@
       </filtering>
 
       <server port="4080" id="myServer"/>
-      <server port="4081" id="anotherServer">
-        <config name="container.jdisc.config.http-server">
-          <maxChunkSize>9999</maxChunkSize>
-        </config>
-      </server>
+      <server port="4081" id="anotherServer"/>
       <server port="4082" id="defaultSsl">
         <ssl>
           <private-key-file>/foo/key</private-key-file>
