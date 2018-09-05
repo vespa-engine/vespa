@@ -13,12 +13,16 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Stack;
+import java.util.stream.Collectors;
 
 /**
  * A context which only contains type information.
@@ -26,21 +30,29 @@ import java.util.Optional;
  * query, attribute or constant features, as we do not have information about which such
  * features exist (but we know those that exist are doubles).
  *
+ * This is not multithread safe.
+ *
  * @author bratseth
  */
 public class MapEvaluationTypeContext extends FunctionReferenceContext implements TypeContext<Reference> {
 
     private final Map<Reference, TensorType> featureTypes = new HashMap<>();
 
-    public MapEvaluationTypeContext(Collection<ExpressionFunction> functions) {
+    /** For invocation loop detection */
+    private final Deque<Reference> currentResolutionCallStack;
+
+    MapEvaluationTypeContext(Collection<ExpressionFunction> functions) {
         super(functions);
+        this.currentResolutionCallStack =  new ArrayDeque<>();
     }
 
-    public MapEvaluationTypeContext(Map<String, ExpressionFunction> functions,
-                                    Map<String, String> bindings,
-                                    Map<Reference, TensorType> featureTypes) {
+    private MapEvaluationTypeContext(Map<String, ExpressionFunction> functions,
+                                     Map<String, String> bindings,
+                                     Map<Reference, TensorType> featureTypes,
+                                     Deque<Reference> currentResolutionCallStack) {
         super(functions, bindings);
         this.featureTypes.putAll(featureTypes);
+        this.currentResolutionCallStack = currentResolutionCallStack;
     }
 
     public void setType(Reference reference, TensorType type) {
@@ -55,42 +67,52 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     @Override
     public TensorType getType(Reference reference) {
         // A reference to a macro argument?
-        Optional<String> binding = boundIdentifier(reference);
-        if (binding.isPresent()) {
-            try {
-                // This is not pretty, but changing to bind expressions rather
-                // than their string values requires deeper changes
-                return new RankingExpression(binding.get()).type(this);
+        if (currentResolutionCallStack.contains(reference))
+            throw new IllegalArgumentException("Invocation loop: " +
+                                               currentResolutionCallStack.stream().map(Reference::toString).collect(Collectors.joining(" -> ")) +
+                                               " -> " + reference);
+        currentResolutionCallStack.addLast(reference);
+
+        try {
+            Optional<String> binding = boundIdentifier(reference);
+            if (binding.isPresent()) {
+                try {
+                    // This is not pretty, but changing to bind expressions rather
+                    // than their string values requires deeper changes
+                    return new RankingExpression(binding.get()).type(this);
+                } catch (ParseException e) {
+                    throw new IllegalArgumentException(e);
+                }
             }
-            catch (ParseException e) {
-                throw new IllegalArgumentException(e);
+
+            // A reference to an attribute, query or constant feature?
+            if (FeatureNames.isSimpleFeature(reference)) {
+                // The argument may be a local identifier bound to the actual value
+                String argument = reference.simpleArgument().get();
+                reference = Reference.simple(reference.name(), bindings.getOrDefault(argument, argument));
+                return featureTypes.getOrDefault(reference, defaultTypeOf(reference));
             }
-        }
 
-        // A reference to an attribute, query or constant feature?
-        if (FeatureNames.isSimpleFeature(reference)) {
-            // The argument may be a local identifier bound to the actual value
-            String argument = reference.simpleArgument().get();
-            reference = Reference.simple(reference.name(), bindings.getOrDefault(argument, argument));
-            return featureTypes.getOrDefault(reference, defaultTypeOf(reference));
-        }
+            // A reference to a function?
+            Optional<ExpressionFunction> function = functionInvocation(reference);
+            if (function.isPresent()) {
+                return function.get().getBody().type(this.withBindings(bind(function.get().arguments(), reference.arguments())));
+            }
 
-        // A reference to a function?
-        Optional<ExpressionFunction> function = functionInvocation(reference);
-        if (function.isPresent()) {
-            return function.get().getBody().type(this.withBindings(bind(function.get().arguments(), reference.arguments())));
-        }
+            // A reference to a feature which returns a tensor?
+            Optional<TensorType> featureTensorType = tensorFeatureType(reference);
+            if (featureTensorType.isPresent()) {
+                return featureTensorType.get();
+            }
 
-        // A reference to a feature which returns a tensor?
-        Optional<TensorType> featureTensorType = tensorFeatureType(reference);
-        if (featureTensorType.isPresent()) {
-            return featureTensorType.get();
+            // We do not know what this is - since we do not have complete knowledge abut the match features
+            // in Java we must assume this is a match feature and return the double type - which is the type of all
+            // all match features
+            return TensorType.empty;
         }
-
-        // We do not know what this is - since we do not have complete knowledge abut the match features
-        // in Java we must assume this is a match feature and return the double type - which is the type of all
-        // all match features
-        return TensorType.empty;
+        finally {
+            currentResolutionCallStack.removeLast();
+        }
     }
 
     /**
@@ -173,7 +195,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     @Override
     public MapEvaluationTypeContext withBindings(Map<String, String> bindings) {
         if (bindings.isEmpty() && this.bindings.isEmpty()) return this;
-        return new MapEvaluationTypeContext(functions(), bindings, featureTypes);
+        return new MapEvaluationTypeContext(functions(), bindings, featureTypes, currentResolutionCallStack);
     }
 
 }
