@@ -36,15 +36,11 @@ public class Model {
 
     private final ExpressionOptimizer expressionOptimizer = new ExpressionOptimizer();
 
-    /** Programmatically create a model containing functions without constant of function references only */
     public Model(String name, Collection<ExpressionFunction> functions) {
-        this(name, functions, Collections.emptyMap(), Collections.emptyList());
+        this(name, functions, Collections.emptyMap());
     }
 
-    Model(String name,
-          Collection<ExpressionFunction> functions,
-          Map<FunctionReference, ExpressionFunction> referencedFunctions,
-          List<Constant> constants) {
+    Model(String name, Collection<ExpressionFunction> functions, Map<FunctionReference, ExpressionFunction> referencedFunctions) {
         // TODO: Optimize functions
         this.name = name;
         this.functions = ImmutableList.copyOf(functions);
@@ -52,8 +48,7 @@ public class Model {
         ImmutableMap.Builder<String, LazyArrayContext> contextBuilder = new ImmutableMap.Builder<>();
         for (ExpressionFunction function : functions) {
             try {
-                contextBuilder.put(function.getName(),
-                                   new LazyArrayContext(function.getBody(), referencedFunctions, constants, this));
+                contextBuilder.put(function.getName(), new LazyArrayContext(function.getBody(), referencedFunctions, this));
             }
             catch (RuntimeException e) {
                 throw new IllegalArgumentException("Could not prepare an evaluation context for " + function, e);

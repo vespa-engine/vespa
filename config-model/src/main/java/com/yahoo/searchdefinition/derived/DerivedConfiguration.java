@@ -94,7 +94,7 @@ public class DerivedConfiguration {
             summaries = new Summaries(search, deployLogger);
             summaryMap = new SummaryMap(search, summaries);
             juniperrc = new Juniperrc(search);
-            rankProfileList = new RankProfileList(search, search.rankingConstants(), attributeFields, rankProfileRegistry, queryProfiles, importedModels);
+            rankProfileList = new RankProfileList(search, attributeFields, rankProfileRegistry, queryProfiles, importedModels);
             indexingScript = new IndexingScript(search);
             indexInfo = new IndexInfo(search);
             indexSchema = new IndexSchema(search);
