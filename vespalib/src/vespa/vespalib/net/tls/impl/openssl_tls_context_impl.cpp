@@ -88,7 +88,7 @@ void ensure_openssl_initialized_once() {
 
 BioPtr bio_from_string(vespalib::stringref str) {
     LOG_ASSERT(str.size() <= INT_MAX);
-    BioPtr bio(::BIO_new_mem_buf(str.data(), static_cast<int>(str.size())));
+    BioPtr bio(::BIO_new_mem_buf(&str[0], static_cast<int>(str.size())));
     if (!bio) {
         throw CryptoException("BIO_new_mem_buf");
     }
@@ -222,14 +222,16 @@ void OpenSslTlsContextImpl::verify_private_key() {
 
 void OpenSslTlsContextImpl::enable_ephemeral_key_exchange() {
     // Always enabled by default on higher versions.
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x10002000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
     // Auto curve selection is preferred over using SSL_CTX_set_ecdh_tmp
     if (!::SSL_CTX_set_ecdh_auto(_ctx, 1)) {
         throw CryptoException("SSL_CTX_set_ecdh_auto");
     }
-#endif
     // New ECDH key per connection.
     ::SSL_CTX_set_options(_ctx, SSL_OP_SINGLE_ECDH_USE);
+#else
+    // TODO make this work on OpenSSL 1.0.1 as well
+#endif
 }
 
 void OpenSslTlsContextImpl::disable_compression() {
