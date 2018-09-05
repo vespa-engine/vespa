@@ -37,6 +37,6 @@
             </filtering>
         </http>
 
-        <nodes count="1" flavor="d-0-4-50" />
+        <nodes count="1" flavor="d-0-2-25" />
     </container>
 </services>
