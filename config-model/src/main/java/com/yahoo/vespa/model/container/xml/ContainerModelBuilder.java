@@ -179,7 +179,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addClientProviders(spec, cluster);
         addServerProviders(spec, cluster);
-        addLegacyFilters(spec, cluster);  // TODO: Remove for Vespa 7
 
         addAthensCopperArgos(cluster, context);  // Must be added after nodes.
     }
@@ -295,22 +294,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addServerProviders(Element spec, ContainerCluster cluster) {
         addConfiguredComponents(cluster, spec, "server");
-    }
-
-    private void addLegacyFilters(Element spec, ContainerCluster cluster) {
-        for (Component component : buildLegacyFilters(cluster, spec)) {
-            cluster.addComponent(component);
-        }
-    }
-
-    private List<Component> buildLegacyFilters(AbstractConfigProducer ancestor,
-                                               Element spec) {
-        List<Component> components = new ArrayList<>();
-
-        for (Element node : XML.getChildren(spec, "filter")) {
-            components.add(new DomFilterBuilder().build(ancestor, node));
-        }
-        return components;
     }
 
     protected void addAccessLogs(ContainerCluster cluster, Element spec) {
