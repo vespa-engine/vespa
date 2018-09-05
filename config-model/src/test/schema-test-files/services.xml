@@ -116,11 +116,7 @@
         <ssl-keystore-configurator class="com.yahoo.MySslKeyStoreConfigurator" bundle="mybundle" />
         <ssl-truststore-configurator class="com.yahoo.MySslTrustStoreConfigurator" bundle="mybundle" />
       </server>
-      <server port="4081" id="anotherServer">
-        <config name="container.jdisc.config.http-server">
-          <maxChunkSize>9999</maxChunkSize>
-        </config>
-      </server>
+      <server port="4081" id="anotherServer" />
     </http>
 
     <accesslog type='json'
