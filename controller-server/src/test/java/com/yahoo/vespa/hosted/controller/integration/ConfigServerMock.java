@@ -110,7 +110,17 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     /** Converge all services belonging to the given application */
     public void convergeServices(ApplicationId application, ZoneId zone) {
-        serviceStatus.put(new DeploymentId(application, zone), new ServiceConvergence(application, zone, true));
+        List<Node> nodes = nodeRepository.list(zone, application);
+        serviceStatus.put(new DeploymentId(application, zone), new ServiceConvergence(application,
+                                                                                      zone,
+                                                                                      true,
+                                                                                      2,
+                                                                                      nodes.stream()
+                                                                                           .map(node -> new ServiceConvergence.Status(node.hostname(),
+                                                                                                                                      43,
+                                                                                                                                      "container",
+                                                                                                                                      2))
+                                                                                           .collect(Collectors.toList())));
     }
 
     /** The version given in the previous prepare call, or empty if no call has been made */
@@ -189,14 +199,24 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             public PrepareResponse prepareResponse() {
                 Application application = applications.get(deployment.applicationId());
                 application.activate();
-                for (Node node : nodeRepository.list(deployment.zoneId(), deployment.applicationId())) {
+                List<Node> nodes = nodeRepository.list(deployment.zoneId(), deployment.applicationId());
+                for (Node node : nodes) {
                     nodeRepository.putByHostname(deployment.zoneId(), new Node(node.hostname(),
                                                                                node.state(), node.type(),
                                                                                node.owner(),
                                                                                node.currentVersion(),
                                                                                application.version().get()));
                 }
-                serviceStatus.remove(deployment); // Deployment is no longer converging after new deployment
+                serviceStatus.put(deployment, new ServiceConvergence(deployment.applicationId(),
+                                                                     deployment.zoneId(),
+                                                                     false,
+                                                                     2,
+                                                                     nodes.stream()
+                                                                          .map(node -> new ServiceConvergence.Status(node.hostname(),
+                                                                                                                     43,
+                                                                                                                     "container",
+                                                                                                                     1))
+                                                                          .collect(Collectors.toList())));
 
                 PrepareResponse prepareResponse = new PrepareResponse();
                 prepareResponse.message = "foo";
@@ -223,6 +243,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         applications.remove(deployment.applicationId());
         nodeRepository().removeByHostname(deployment.zoneId(),
                                           nodeRepository().list(deployment.zoneId(), deployment.applicationId()));
+        serviceStatus.remove(deployment);
     }
 
     // Returns a canned example response
