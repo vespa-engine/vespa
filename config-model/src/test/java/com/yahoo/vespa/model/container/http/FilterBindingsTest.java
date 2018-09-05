@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.container.http;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import com.yahoo.container.jdisc.config.HttpServerConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.component.chain.Chain;
@@ -23,7 +22,6 @@ import static org.junit.Assert.assertNotNull;
 
 /**
  * @author gjoranv
- * @since 5.1.25
  */
 public class FilterBindingsTest extends DomBuilderTest {
 
@@ -85,7 +83,7 @@ public class FilterBindingsTest extends DomBuilderTest {
     @Test
     public void bindings_are_added_to_config_for_all_http_servers_with_jetty() throws Exception {
         final Element xml = parse(
-                "<jdisc version='1.0' jetty='true'>",
+                "<jdisc version='1.0'>",
                 "  <http>",
                 "    <filtering>",
                 "      <request-chain id='my-request-chain'>",
