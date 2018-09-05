@@ -2,18 +2,14 @@
 package com.yahoo.vespa.model.container.jersey;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.container.config.jersey.JerseyInitConfig;
-import com.yahoo.vespa.model.container.component.Component;
-
-import java.util.Optional;
 
 /**
  * Represents a rest-api
  *
  * @author gjoranv
  */
-public class RestApi extends AbstractConfigProducer<AbstractConfigProducer<?>> implements JerseyInitConfig.Producer
-{
+public class RestApi extends AbstractConfigProducer<AbstractConfigProducer<?>> {
+
     private final String bindingPath;
     private final Jersey2Servlet jerseyServlet;
     private RestApiContext restApiContext;
@@ -36,11 +32,6 @@ public class RestApi extends AbstractConfigProducer<AbstractConfigProducer<?>> i
 
     public String getBindingPath() {
         return bindingPath;
-    }
-
-    @Override
-    public void getConfig(JerseyInitConfig.Builder builder) {
-        builder.jerseyMapping(bindingPath);
     }
 
     public void setRestApiContext(RestApiContext restApiContext) {
