@@ -7,7 +7,6 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
-import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import org.junit.After;
@@ -58,22 +57,16 @@ public class ModelEvaluationTest {
 
     private void assertHasMlModels(VespaModel model) {
         ContainerCluster cluster = model.getContainerClusters().get("container");
-
         RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
         cluster.getConfig(b);
         RankProfilesConfig config = new RankProfilesConfig(b);
-
-        RankingConstantsConfig.Builder cb = new RankingConstantsConfig.Builder();
-        cluster.getConfig(cb);
-        RankingConstantsConfig constantsConfig = new RankingConstantsConfig(cb);
-
         assertEquals(4, config.rankprofile().size());
         Set<String> modelNames = config.rankprofile().stream().map(v -> v.name()).collect(Collectors.toSet());
         assertTrue(modelNames.contains("xgboost_2_2"));
         assertTrue(modelNames.contains("mnist_softmax"));
         assertTrue(modelNames.contains("mnist_softmax_saved"));
 
-        ModelsEvaluator evaluator = new ModelsEvaluator(config, constantsConfig);
+        ModelsEvaluator evaluator = new ModelsEvaluator(config);
 
         assertEquals(4, evaluator.models().size());
         Model xgboost = evaluator.models().get("xgboost_2_2");
