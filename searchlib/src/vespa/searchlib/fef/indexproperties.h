@@ -320,6 +320,7 @@ namespace hitcollector {
         static const vespalib::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props);
+        static uint32_t lookup(const Properties &props, uint32_t defaultValue);
     };
 
     /**

@@ -214,8 +214,9 @@ MatchToolsFactory::createDiversifier() const
         LOG(warning, "Skipping diversity due to no %s attribute.", _diversityParams.attribute.c_str());
         return std::unique_ptr<IDiversifier>();
     }
-    size_t max_per_group = _rankSetup.getHeapSize()/_diversityParams.min_groups;
-    return DiversityFilter::create(*attr, _rankSetup.getHeapSize(), max_per_group, _diversityParams.min_groups,
+    uint32_t heapSize = hitcollector::HeapSize::lookup(_queryEnv.getProperties(), _rankSetup.getHeapSize());
+    size_t max_per_group = heapSize/_diversityParams.min_groups;
+    return DiversityFilter::create(*attr, heapSize, max_per_group, _diversityParams.min_groups,
                                    _diversityParams.cutoff_strategy == DiversityParams::CutoffStrategy::STRICT);
 }
 

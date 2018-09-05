@@ -399,7 +399,13 @@ const uint32_t HeapSize::DEFAULT_VALUE(100);
 uint32_t
 HeapSize::lookup(const Properties &props)
 {
-    return lookupUint32(props, NAME, DEFAULT_VALUE);
+    return lookup(props, DEFAULT_VALUE);
+}
+
+uint32_t
+HeapSize::lookup(const Properties &props, uint32_t defaultValue)
+{
+    return lookupUint32(props, NAME, defaultValue);
 }
 
 const vespalib::string ArraySize::NAME("vespa.hitcollector.arraysize");
