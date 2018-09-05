@@ -25,8 +25,8 @@ acceptQueueSize                     int      default=0
 # Whether the server socket reuses addresses.
 reuseAddress                        bool     default=true
 
-# TODO Vespa 7: Remove soLingerTime - Jetty no longer support it
-# DEPRECATED The linger time in seconds. Use -1.0 to disable.
+# TODO Vespa 7: Remove soLingerTime - Jetty no longer support it.
+# DEPRECATED No longer in use
 soLingerTime                        double   default=-1.0
 
 # The maximum idle time for a connection, which roughly translates to the Socket.setSoTimeout(int).
