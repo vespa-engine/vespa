@@ -3,7 +3,9 @@ package com.yahoo.vespa.athenz.tls;
 
 /**
  * @author bjorncs
+ * @deprecated Use com.yahoo.security.*
  */
+@Deprecated
 public enum KeyAlgorithm {
     RSA("RSA");
 

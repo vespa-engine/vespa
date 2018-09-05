@@ -24,7 +24,9 @@ import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
 
 /**
  * @author bjorncs
+ * @deprecated Use com.yahoo.security.*
  */
+@Deprecated
 public class Pkcs10CsrBuilder {
 
     private final X500Principal subject;

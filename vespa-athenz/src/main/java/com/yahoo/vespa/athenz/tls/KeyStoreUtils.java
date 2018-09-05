@@ -12,7 +12,9 @@ import java.security.KeyStore;
 
 /**
  * @author bjorncs
+ * @deprecated Use com.yahoo.security.*
  */
+@Deprecated
 public class KeyStoreUtils {
     private KeyStoreUtils() {}
 

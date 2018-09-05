@@ -19,7 +19,9 @@ import static java.util.Collections.singletonList;
 
 /**
  * @author bjorncs
+ * @deprecated Use com.yahoo.security.*
  */
+@Deprecated
 public class KeyStoreBuilder {
 
     private final List<KeyEntry> keyEntries = new ArrayList<>();
