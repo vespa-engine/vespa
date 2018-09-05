@@ -12,18 +12,10 @@ import com.yahoo.messagebus.routing.RoutingTableSpec;
  */
 public interface Protocol {
 
-    /**
-     * Returns the specification for the routing table of this protocol.
-     *
-     * @return The routing table spec.
-     */
-    public RoutingTableSpec getRoutingTableSpec();
+    /** Returns the specification for the routing table of this protocol. */
+    RoutingTableSpec getRoutingTableSpec();
 
-    /**
-     * Returns the specification of the application as seen by this protocol.
-     *
-     * @return The application spec.
-     */
-    public ApplicationSpec getApplicationSpec();
+    /** Returns the specification of the application as seen by this protocol. */
+    ApplicationSpec getApplicationSpec();
 
 }

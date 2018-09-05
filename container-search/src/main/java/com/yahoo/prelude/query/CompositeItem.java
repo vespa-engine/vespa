@@ -73,8 +73,7 @@ public abstract class CompositeItem extends Item {
      */
     public void addItem(int index, Item item) {
         if (index > subitems.size() || index < 0) {
-            throw new IndexOutOfBoundsException(
-                    "Could not add a subitem at position " + index + " to " + this);
+            throw new IndexOutOfBoundsException("Could not add a subitem at position " + index + " to " + this);
         }
         adding(item);
         subitems.add(index, item);
