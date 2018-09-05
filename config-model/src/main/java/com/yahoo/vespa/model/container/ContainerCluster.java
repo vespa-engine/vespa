@@ -43,7 +43,6 @@ import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
-import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
@@ -125,8 +124,7 @@ public final class ContainerCluster
         RoutingProviderConfig.Producer,
         ConfigserverConfig.Producer,
         ThreadpoolConfig.Producer,
-        RankProfilesConfig.Producer,
-        RankingConstantsConfig.Producer
+        RankProfilesConfig.Producer
 
 {
 
@@ -713,9 +711,6 @@ public final class ContainerCluster
     public void getConfig(RankProfilesConfig.Builder builder) {
         rankProfileList.getConfig(builder);
     }
-
-    @Override
-    public void getConfig(RankingConstantsConfig.Builder builder) { rankProfileList.getConfig(builder); }
 
     public void setMbusParams(MbusParams mbusParams) {
         this.mbusParams = mbusParams;

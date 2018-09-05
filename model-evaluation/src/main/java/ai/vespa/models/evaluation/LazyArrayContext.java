@@ -8,7 +8,6 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
-import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
@@ -17,7 +16,6 @@ import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,11 +37,8 @@ final class LazyArrayContext extends Context implements ContextIndex {
      *
      * @param expression the expression to create a context for
      */
-    LazyArrayContext(RankingExpression expression,
-                     Map<FunctionReference, ExpressionFunction> functions,
-                     List<Constant> constants,
-                     Model model) {
-        this.indexedBindings = new IndexedBindings(expression, functions, constants, this, model);
+    LazyArrayContext(RankingExpression expression, Map<FunctionReference, ExpressionFunction> functions, Model model) {
+        this.indexedBindings = new IndexedBindings(expression, functions, this, model);
     }
 
     /**
@@ -144,10 +139,8 @@ final class LazyArrayContext extends Context implements ContextIndex {
          */
         IndexedBindings(RankingExpression expression,
                         Map<FunctionReference, ExpressionFunction> functions,
-                        List<Constant> constants,
                         LazyArrayContext owner,
                         Model model) {
-            // 1. Determine and prepare bind targets
             Set<String> bindTargets = new LinkedHashSet<>();
             extractBindTargets(expression.getRoot(), functions, bindTargets);
 
@@ -157,17 +150,8 @@ final class LazyArrayContext extends Context implements ContextIndex {
             int i = 0;
             ImmutableMap.Builder<String, Integer> nameToIndexBuilder = new ImmutableMap.Builder<>();
             for (String variable : bindTargets)
-                nameToIndexBuilder.put(variable, i++);
+                nameToIndexBuilder.put(variable,i++);
             nameToIndex = nameToIndexBuilder.build();
-
-
-            // 2. Bind the bind targets
-            for (Constant constant : constants) {
-                String constantReference = "constant(" + constant.name() + ")";
-                Integer index = nameToIndex.get(constantReference);
-                if (index != null)
-                    values[index] = new TensorValue(constant.value());
-            }
 
             for (Map.Entry<FunctionReference, ExpressionFunction> function : functions.entrySet()) {
                 Integer index = nameToIndex.get(function.getKey().serialForm());
@@ -186,7 +170,7 @@ final class LazyArrayContext extends Context implements ContextIndex {
                 extractBindTargets(functions.get(reference).getBody().getRoot(), functions, bindTargets);
             }
             else if (isConstant(node)) {
-                bindTargets.add(node.toString());
+                // Ignore
             }
             else if (node instanceof ReferenceNode) {
                 bindTargets.add(node.toString());
@@ -209,7 +193,7 @@ final class LazyArrayContext extends Context implements ContextIndex {
             if ( ! (node instanceof ReferenceNode)) return false;
 
             ReferenceNode reference = (ReferenceNode)node;
-            return reference.getName().equals("constant") && reference.getArguments().size() == 1;
+            return reference.getName().equals("value") && reference.getArguments().size() == 1;
         }
 
         Value get(int index) { return values[index]; }
