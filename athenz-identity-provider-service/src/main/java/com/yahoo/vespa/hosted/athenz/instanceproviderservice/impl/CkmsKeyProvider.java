@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.vespa.athenz.tls.KeyUtils;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 

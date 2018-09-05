@@ -9,7 +9,9 @@ import java.security.KeyStoreException;
 
 /**
  * @author bjorncs
+ * @deprecated Use com.yahoo.security.*
  */
+@Deprecated
 public enum KeyStoreType {
     JKS {
         KeyStore createKeystore() throws KeyStoreException {

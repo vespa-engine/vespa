@@ -25,7 +25,9 @@ import java.security.spec.PKCS8EncodedKeySpec;
 
 /**
  * @author bjorncs
+ * @deprecated Use com.yahoo.security.*
  */
+@Deprecated
 public class KeyUtils {
     private KeyUtils() {}
 

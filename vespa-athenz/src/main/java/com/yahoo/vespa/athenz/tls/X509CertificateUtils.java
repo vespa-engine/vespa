@@ -30,7 +30,9 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * @author bjorncs
+ * @deprecated Use com.yahoo.security.*
  */
+@Deprecated
 public class X509CertificateUtils {
 
     private X509CertificateUtils() {}

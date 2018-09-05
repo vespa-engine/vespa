@@ -19,8 +19,8 @@ import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
-import com.yahoo.vespa.athenz.tls.KeyStoreType;
-import com.yahoo.vespa.athenz.tls.SslContextBuilder;
+import com.yahoo.security.KeyStoreType;
+import com.yahoo.security.SslContextBuilder;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.defaults.Defaults;
 
@@ -177,7 +177,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
             X509Certificate roleCertificate = client.getRoleCertificate(role, credentials.getKeyPair(), dnsSuffix);
             return new SslContextBuilder()
                     .withKeyStore(credentials.getKeyPair().getPrivate(), roleCertificate)
-                    .withTrustStore(getDefaultTrustStoreLocation(), KeyStoreType.JKS)
+                    .withTrustStore(getDefaultTrustStoreLocation().toPath(), KeyStoreType.JKS)
                     .build();
         }
     }

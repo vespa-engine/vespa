@@ -11,10 +11,10 @@ import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
-import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
-import com.yahoo.vespa.athenz.tls.KeyUtils;
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SslContextBuilder;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
-import com.yahoo.vespa.athenz.tls.SslContextBuilder;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.defaults.Defaults;
 
@@ -31,7 +31,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
 
-import static com.yahoo.vespa.athenz.tls.KeyStoreType.JKS;
+import static com.yahoo.security.KeyStoreType.JKS;
 import static java.util.Collections.singleton;
 
 /**
@@ -153,7 +153,7 @@ class AthenzCredentialsService {
     private SSLContext createIdentitySslContext(PrivateKey privateKey, X509Certificate certificate) {
         return new SslContextBuilder()
                 .withKeyStore(privateKey, certificate)
-                .withTrustStore(trustStoreJks, JKS)
+                .withTrustStore(trustStoreJks.toPath(), JKS)
                 .build();
     }
 

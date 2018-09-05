@@ -12,10 +12,10 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
-import com.yahoo.vespa.athenz.tls.KeyUtils;
-import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
-import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
-import com.yahoo.vespa.athenz.tls.X509CertificateBuilder;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.Pkcs10Csr;
+import com.yahoo.security.Pkcs10CsrBuilder;
+import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -26,14 +26,17 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import javax.security.auth.x500.X500Principal;
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Optional;
 
+import static com.yahoo.security.KeyAlgorithm.EC;
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static com.yahoo.vespa.athenz.identityprovider.api.IdentityType.*;
-import static com.yahoo.vespa.athenz.tls.KeyAlgorithm.RSA;
-import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
+import static com.yahoo.security.KeyAlgorithm.RSA;
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_RSA;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifier.CONFIGSERVER_HOST_IDENTITY;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifier.PROXY_HOST_IDENTITY;
 import static com.yahoo.vespa.hosted.provision.restapi.v2.filter.NodeIdentifier.TENANT_DOCKER_CONTAINER_IDENTITY;
@@ -64,7 +67,7 @@ public class NodeIdentifierTest {
 
     private static final String INSTANCE_ID = "default";
     private static final Zone ZONE = new Zone(SystemName.main, Environment.prod, RegionName.defaultName());
-    private static final KeyPair KEYPAIR = KeyUtils.generateKeypair(RSA);
+    private static final KeyPair KEYPAIR = KeyUtils.generateKeypair(EC);
     private static final X509Certificate ATHENZ_YAHOO_CA_CERT = createDummyCaCertificate("Yahoo Athenz CA");
     private static final X509Certificate ATHENZ_AWS_CA_CERT = createDummyCaCertificate("Athenz AWS CA");
 
@@ -73,7 +76,7 @@ public class NodeIdentifierTest {
         NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
         X509Certificate certificate = X509CertificateBuilder
                 .fromKeypair(
-                        KEYPAIR, new X500Principal("CN=" + HOSTNAME), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), SHA256_WITH_RSA, 1)
+                        KEYPAIR, new X500Principal("CN=" + HOSTNAME), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .build();
         NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
         expectedException.expect(NodeIdentifier.NodeIdentifierException.class);
@@ -87,10 +90,10 @@ public class NodeIdentifierTest {
         nodeRepositoryDummy.addNode(OPENSTACK_ID, HOSTNAME, INSTANCE_ID, NodeType.host);
         nodeRepositoryDummy.setNodeState(HOSTNAME, Node.State.active);
         Pkcs10Csr csr = Pkcs10CsrBuilder
-                .fromKeypair(new X500Principal("CN=" + TENANT_DOCKER_HOST_IDENTITY), KEYPAIR, SHA256_WITH_RSA)
+                .fromKeypair(new X500Principal("CN=" + TENANT_DOCKER_HOST_IDENTITY), KEYPAIR, SHA256_WITH_ECDSA)
                 .build();
         X509Certificate certificate = X509CertificateBuilder
-                .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .addSubjectAlternativeName(OPENSTACK_ID + ".instanceid.athenz.provider-name.ostk.yahoo.cloud")
                 .build();
         NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
@@ -106,10 +109,10 @@ public class NodeIdentifierTest {
         nodeRepositoryDummy.addNode(AWS_INSTANCE_ID, HOSTNAME, INSTANCE_ID, NodeType.host);
         nodeRepositoryDummy.setNodeState(HOSTNAME, Node.State.active);
         Pkcs10Csr csr = Pkcs10CsrBuilder
-                .fromKeypair(new X500Principal("CN=" + TENANT_DOCKER_HOST_IDENTITY), KEYPAIR, SHA256_WITH_RSA)
+                .fromKeypair(new X500Principal("CN=" + TENANT_DOCKER_HOST_IDENTITY), KEYPAIR, SHA256_WITH_ECDSA)
                 .build();
         X509Certificate certificate = X509CertificateBuilder
-                .fromCsr(csr, ATHENZ_AWS_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .fromCsr(csr, ATHENZ_AWS_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .addSubjectAlternativeName(AWS_INSTANCE_ID + ".instanceid.athenz.aws.oath.cloud")
                 .build();
         NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
@@ -125,10 +128,10 @@ public class NodeIdentifierTest {
         nodeRepositoryDummy.addNode(AWS_INSTANCE_ID, PROXY_HOSTNAME, INSTANCE_ID, NodeType.proxyhost);
         nodeRepositoryDummy.setNodeState(PROXY_HOSTNAME, Node.State.active);
         Pkcs10Csr csr = Pkcs10CsrBuilder
-                .fromKeypair(new X500Principal("CN=" + PROXY_HOST_IDENTITY), KEYPAIR, SHA256_WITH_RSA)
+                .fromKeypair(new X500Principal("CN=" + PROXY_HOST_IDENTITY), KEYPAIR, SHA256_WITH_ECDSA)
                 .build();
         X509Certificate certificate = X509CertificateBuilder
-                .fromCsr(csr, ATHENZ_AWS_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .fromCsr(csr, ATHENZ_AWS_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .addSubjectAlternativeName(AWS_INSTANCE_ID + ".instanceid.athenz.aws.oath.cloud")
                 .build();
         NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
@@ -142,10 +145,10 @@ public class NodeIdentifierTest {
     public void accepts_aws_configserver_host_certificate() {
         NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
         Pkcs10Csr csr = Pkcs10CsrBuilder
-                .fromKeypair(new X500Principal("CN=" + CONFIGSERVER_HOST_IDENTITY), KEYPAIR, SHA256_WITH_RSA)
+                .fromKeypair(new X500Principal("CN=" + CONFIGSERVER_HOST_IDENTITY), KEYPAIR, SHA256_WITH_ECDSA)
                 .build();
         X509Certificate certificate = X509CertificateBuilder
-                .fromCsr(csr, ATHENZ_AWS_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .fromCsr(csr, ATHENZ_AWS_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .addSubjectAlternativeName(AWS_INSTANCE_ID + ".instanceid.athenz.aws.oath.cloud")
                 .build();
         NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
@@ -156,7 +159,7 @@ public class NodeIdentifierTest {
     @Test
     public void accepts_zts_certificate() {
         X509Certificate certificate = X509CertificateBuilder
-                .fromKeypair(KEYPAIR, new X500Principal("CN=" + ZTS_AWS_IDENTITY), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), SHA256_WITH_RSA, 1)
+                .fromKeypair(KEYPAIR, new X500Principal("CN=" + ZTS_AWS_IDENTITY), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .build();
         NodeIdentifier identifier = new NodeIdentifier(ZONE, new NodeRepositoryTester().nodeRepository());
         NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
@@ -176,11 +179,11 @@ public class NodeIdentifierTest {
         Node node = createNode(clusterId, clusterIndex, tenant, application);
         nodeRepositoryDummy.nodeRepository().addDockerNodes(singletonList(node));
         Pkcs10Csr csr = Pkcs10CsrBuilder
-                .fromKeypair(new X500Principal("CN=" + TENANT_DOCKER_CONTAINER_IDENTITY), KEYPAIR, SHA256_WITH_RSA)
+                .fromKeypair(new X500Principal("CN=" + TENANT_DOCKER_CONTAINER_IDENTITY), KEYPAIR, SHA256_WITH_ECDSA)
                 .build();
         VespaUniqueInstanceId vespaUniqueInstanceId = new VespaUniqueInstanceId(clusterIndex, clusterId, INSTANCE_ID, application, tenant, region, environment, NODE);
         X509Certificate certificate = X509CertificateBuilder
-                .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .addSubjectAlternativeName(vespaUniqueInstanceId.asDottedString() + ".instanceid.athenz.provider-name.vespa.yahoo.cloud")
                 .build();
         NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
@@ -194,10 +197,10 @@ public class NodeIdentifierTest {
     public void accepts_controller_certificate() {
         NodeRepositoryTester nodeRepositoryDummy = new NodeRepositoryTester();
         Pkcs10Csr csr = Pkcs10CsrBuilder
-                .fromKeypair(new X500Principal("CN=" + CONTROLLER_IDENTITY), KEYPAIR, SHA256_WITH_RSA)
+                .fromKeypair(new X500Principal("CN=" + CONTROLLER_IDENTITY), KEYPAIR, SHA256_WITH_ECDSA)
                 .build();
         X509Certificate certificate = X509CertificateBuilder
-                .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .build();
         NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
         NodePrincipal identity = identifier.resolveNode(singletonList(certificate));
@@ -211,10 +214,10 @@ public class NodeIdentifierTest {
         nodeRepositoryDummy.addNode(OPENSTACK_ID, HOSTNAME, INSTANCE_ID, NodeType.tenant);
         nodeRepositoryDummy.setNodeState(HOSTNAME, Node.State.active);
         Pkcs10Csr csr = Pkcs10CsrBuilder
-                .fromKeypair(new X500Principal("CN=" + TENANT_DOCKER_CONTAINER_IDENTITY), KEYPAIR, SHA256_WITH_RSA)
+                .fromKeypair(new X500Principal("CN=" + TENANT_DOCKER_CONTAINER_IDENTITY), KEYPAIR, SHA256_WITH_ECDSA)
                 .build();
         X509Certificate certificate = X509CertificateBuilder
-                .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_RSA, 1)
+                .fromCsr(csr, ATHENZ_YAHOO_CA_CERT.getSubjectX500Principal(), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), KEYPAIR.getPrivate(), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .addSubjectAlternativeName(OPENSTACK_ID + ".instanceid.athenz.ostk.yahoo.cloud")
                 .build();
         NodeIdentifier identifier = new NodeIdentifier(ZONE, nodeRepositoryDummy.nodeRepository());
@@ -251,10 +254,10 @@ public class NodeIdentifierTest {
     }
 
     private static X509Certificate createDummyCaCertificate(String caCommonName) {
-        KeyPair keyPair = KeyUtils.generateKeypair(RSA);
+        KeyPair keyPair = KeyUtils.generateKeypair(EC);
         return X509CertificateBuilder
                 .fromKeypair(
-                        keyPair, new X500Principal("CN=" + caCommonName), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), SHA256_WITH_RSA, 1)
+                        keyPair, new X500Principal("CN=" + caCommonName), Instant.EPOCH, Instant.EPOCH.plusSeconds(60), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .setBasicConstraints(true, true)
                 .build();
 

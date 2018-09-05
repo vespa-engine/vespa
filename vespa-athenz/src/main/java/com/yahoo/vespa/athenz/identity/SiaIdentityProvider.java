@@ -5,8 +5,8 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.tls.KeyStoreType;
-import com.yahoo.vespa.athenz.tls.SslContextBuilder;
+import com.yahoo.security.KeyStoreType;
+import com.yahoo.security.SslContextBuilder;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 
 import javax.net.ssl.SSLContext;
@@ -92,8 +92,8 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
 
     private SSLContext createIdentitySslContext() {
         return new SslContextBuilder()
-                .withTrustStore(trustStoreFile, KeyStoreType.JKS)
-                .withKeyStore(privateKeyFile, certificateFile)
+                .withTrustStore(trustStoreFile.toPath(), KeyStoreType.JKS)
+                .withKeyStore(privateKeyFile.toPath(), certificateFile.toPath())
                 .build();
     }
 

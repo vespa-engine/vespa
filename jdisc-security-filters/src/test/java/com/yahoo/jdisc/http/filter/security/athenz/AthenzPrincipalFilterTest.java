@@ -10,9 +10,9 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.NToken;
-import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
-import com.yahoo.vespa.athenz.tls.KeyUtils;
-import com.yahoo.vespa.athenz.tls.X509CertificateBuilder;
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.vespa.athenz.utils.ntoken.NTokenValidator;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
@@ -30,7 +31,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.yahoo.jdisc.Response.Status.UNAUTHORIZED;
-import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_RSA;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
@@ -189,11 +191,11 @@ public class AthenzPrincipalFilterTest {
     }
 
     private static X509Certificate createSelfSignedCertificate(AthenzIdentity identity) {
-        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 512);
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         X500Principal x500Name = new X500Principal("CN="+ identity.getFullName());
         Instant now = Instant.now();
         return X509CertificateBuilder
-                .fromKeypair(keyPair, x500Name, now, now.plus(Duration.ofDays(30)), SHA256_WITH_RSA, 1)
+                .fromKeypair(keyPair, x500Name, now, now.plus(Duration.ofDays(30)), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .build();
     }
 

@@ -18,7 +18,9 @@ import java.security.cert.X509Certificate;
 
 /**
  * @author bjorncs
+ * @deprecated Use com.yahoo.security.*
  */
+@Deprecated
 public class SslContextBuilder {
 
     private KeyStoreSupplier trustStoreSupplier;
