@@ -78,12 +78,4 @@ public abstract class ContainerModelBuilderTestBase {
                 ComponentId.fromString(componentId));
     }
 
-    // TODO: will not work with multiple instances of the same class
-    public Component<?, ?> getContainerComponentNested(String clusterId, String componentId) {
-        ComponentId id = ComponentId.fromString(componentId);
-        for (Component<?,?> component : getContainerCluster(clusterId).getAllComponents())
-            if (id.equals(component.getComponentId()))
-                    return component;
-        return null;
-    }
 }
