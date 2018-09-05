@@ -349,6 +349,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void toSlime(Cursor object, Application application, HttpRequest request) {
         object.setString("application", application.id().application().value());
         object.setString("instance", application.id().instance().value());
+        object.setString("deployments", withPath("/application/v4" +
+                                                 "/tenant/" + application.id().tenant().value() +
+                                                 "/application/" + application.id().application().value() +
+                                                 "/instance/" + application.id().instance().value() + "/job/",
+                                                 request.getUri()).toString());
 
         // Currently deploying change
         if (application.change().isPresent()) {
