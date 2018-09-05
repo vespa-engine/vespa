@@ -287,7 +287,7 @@ struct MyWorld {
         Matcher::SP matcher = createMatcher();
         search::fef::Properties overrides;
         auto mtf = matcher->create_match_tools_factory(*req, searchContext, attributeContext, metaStore, overrides);
-        auto diversity = mtf->createDiversifier();
+        auto diversity = mtf->createDiversifier(search::fef::indexproperties::hitcollector::HeapSize::lookup(config));
         EXPECT_EQUAL(expectDiverse, static_cast<bool>(diversity));
     }
 

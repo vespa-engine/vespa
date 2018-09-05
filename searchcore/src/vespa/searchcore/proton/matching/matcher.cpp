@@ -19,7 +19,6 @@
 LOG_SETUP(".proton.matching.matcher");
 
 using search::fef::Properties;
-using namespace search::fef::indexproperties;
 using namespace search::fef::indexproperties::matching;
 using namespace search::engine;
 using namespace search::grouping;
@@ -244,7 +243,8 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         }
 
         const Properties & rankProperties = request.propertiesMap.rankProperties();
-        uint32_t heapSize = hitcollector::HeapSize::lookup(rankProperties, _rankSetup->getHeapSize());
+        uint32_t heapSize = search::fef::indexproperties::hitcollector:: HeapSize::lookup(rankProperties,
+                                                                                          _rankSetup->getHeapSize());
 
         MatchParams params(searchContext.getDocIdLimit(), heapSize, _rankSetup->getArraySize(),
                            _rankSetup->getRankScoreDropLimit(), request.offset, request.maxhits,
