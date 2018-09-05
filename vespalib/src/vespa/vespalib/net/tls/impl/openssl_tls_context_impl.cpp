@@ -88,7 +88,7 @@ void ensure_openssl_initialized_once() {
 
 BioPtr bio_from_string(vespalib::stringref str) {
     LOG_ASSERT(str.size() <= INT_MAX);
-#if (OPENSSL_VERSION_NUMBER > 0x10001000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x10002000L)
     BioPtr bio(::BIO_new_mem_buf(str.data(), static_cast<int>(str.size())));
 #else
     BioPtr bio(::BIO_new_mem_buf(const_cast<char*>(str.data()), static_cast<int>(str.size())));
