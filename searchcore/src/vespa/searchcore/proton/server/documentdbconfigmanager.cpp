@@ -3,9 +3,9 @@
 #include "documentdbconfigmanager.h"
 #include "bootstrapconfig.h"
 #include <vespa/searchcore/proton/common/hw_info.h>
-#include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-rank-profiles.h>
+#include <vespa/config-ranking-constants.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/config/file_acquirer/file_acquirer.h>
 #include <vespa/config/helper/legacy.h>

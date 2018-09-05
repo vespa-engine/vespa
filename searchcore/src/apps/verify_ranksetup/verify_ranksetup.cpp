@@ -4,6 +4,7 @@
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
+#include <vespa/config-ranking-constants.h>
 #include <vespa/config/config.h>
 #include <vespa/config/helper/legacy.h>
 #include <vespa/config/common/exceptions.h>
@@ -11,7 +12,6 @@
 #include <vespa/eval/eval/value_cache/constant_value.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
-#include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/searchcore/proton/matching/error_constant_value.h>
 #include <vespa/searchcore/proton/matching/indexenvironment.h>
 #include <vespa/searchlib/features/setup.h>
