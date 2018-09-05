@@ -24,7 +24,6 @@ import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.nio.channels.ServerSocketChannel;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -113,7 +112,7 @@ public class ConnectorFactory {
         String[] excludedCiphersWithoutTlsRsaExclusion = Arrays.stream(factory.getExcludeCipherSuites())
                 .filter(cipher -> !cipher.equals("^TLS_RSA_.*$"))
                 .toArray(String[]::new);
-        factory.setExcludeProtocols(excludedCiphersWithoutTlsRsaExclusion);
+        factory.setExcludeCipherSuites(excludedCiphersWithoutTlsRsaExclusion);
 
         setStringArrayParameter(
                 factory, sslConfig.excludeProtocol(), ExcludeProtocol::name, SslContextFactory::setExcludeProtocols);
