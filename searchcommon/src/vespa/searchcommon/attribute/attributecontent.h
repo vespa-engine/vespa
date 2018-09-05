@@ -145,7 +145,7 @@ public:
               search::attribute::IAttributeVector::DocId docId)
     {
         uint32_t count = attribute.get(docId, data(), capacity());
-        if (count > capacity()) {
+        while (count > capacity()) {
             allocate(count);
             count = attribute.get(docId, data(), capacity());
         }
