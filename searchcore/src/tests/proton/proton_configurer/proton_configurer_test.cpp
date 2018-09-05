@@ -5,6 +5,7 @@
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
+#include <vespa/config-ranking-constants.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -18,7 +19,6 @@
 #include <vespa/searchcore/proton/server/i_proton_configurer_owner.h>
 #include <vespa/searchcore/proton/server/i_proton_disk_layout.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/searchcore/config/config-ranking-constants.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
