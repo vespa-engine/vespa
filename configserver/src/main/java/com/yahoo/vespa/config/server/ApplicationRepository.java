@@ -691,13 +691,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     /** Returns version to use when deploying application in given environment */
-    static Version decideVersion(ApplicationId application, Environment environment, Version targetVersion, boolean bootstrap) {
-        if (environment.isManuallyDeployed() &&
-            !"hosted-vespa".equals(application.tenant().value()) && // Never change version of system applications
-            !bootstrap) { // Do not use current version when bootstrapping config server
+    static Version decideVersion(ApplicationId application, Environment environment, Version sessionVersion, boolean bootstrap) {
+        if (     environment.isManuallyDeployed()
+            && ! "hosted-vespa".equals(application.tenant().value()) // Never change version of system applications
+            && ! application.instance().value().endsWith("-t") // Never upgrade tester containers
+            && ! bootstrap) { // Do not use current version when bootstrapping config server
             return Vtag.currentVersion;
         }
-        return targetVersion;
+        return sessionVersion;
     }
 
     public Slime createDeployLog() {
