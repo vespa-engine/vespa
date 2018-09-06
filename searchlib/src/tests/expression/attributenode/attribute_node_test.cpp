@@ -81,9 +81,9 @@ struct AttributeManagerFixture
 AttributeManagerFixture::AttributeManagerFixture()
     : mgr()
 {
-    buildStringAttribute("sfield", { "n1", "n2", ""});
-    buildIntegerAttribute("ifield", BasicType::Type::INT8, { 10, 20, getUndefined<int8_t>() });
-    buildFloatAttribute("ffield", { 110.0, 120.0, getUndefined<double>() });
+    buildStringAttribute("sfield", { "n1", ""});
+    buildIntegerAttribute("ifield", BasicType::Type::INT8, { 10, getUndefined<int8_t>() });
+    buildFloatAttribute("ffield", { 110.0, getUndefined<double>() });
     buildStringArrayAttribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {}});
     buildIntegerArrayAttribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {}});
     buildFloatArrayAttribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, {}});
@@ -368,11 +368,11 @@ Fixture::assertFloatArrays(std::vector<std::vector<double>> expVals, const vespa
 
 TEST_F("test single values", Fixture)
 {
-    TEST_DO(f.assertInts({ 10, 20, getUndefined<int8_t>()}, "ifield"));
-    TEST_DO(f.assertInts({ 10, 20, getUndefined<int8_t>()}, "ifield", true));
-    TEST_DO(f.assertStrings({ "n1", "n2", "" }, "sfield"));
-    TEST_DO(f.assertStrings({ "n1", "n2", "" }, "sfield", true));
-    TEST_DO(f.assertFloats({ 110.0, 120.0, getUndefined<double>() }, "ffield"));
+    TEST_DO(f.assertInts({ 10, getUndefined<int8_t>()}, "ifield"));
+    TEST_DO(f.assertInts({ 10, getUndefined<int8_t>()}, "ifield", true));
+    TEST_DO(f.assertStrings({ "n1", "" }, "sfield"));
+    TEST_DO(f.assertStrings({ "n1", "" }, "sfield", true));
+    TEST_DO(f.assertFloats({ 110.0, getUndefined<double>() }, "ffield"));
 }
 
 TEST_F("Test array values", Fixture)
