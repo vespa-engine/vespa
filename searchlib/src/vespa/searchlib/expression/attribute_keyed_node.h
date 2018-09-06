@@ -21,7 +21,7 @@ private:
     const IAttributeVector *_keyAttribute;
 
     void setupAttributeNames();
-    template <typename RN>
+    template <typename ResultNodeType>
     void prepareIntValues(std::unique_ptr<KeyHandler> keyHandler, const IAttributeVector &attribute, IAttributeVector::largeint_t undefinedValue);
     std::unique_ptr<KeyHandler> makeKeyHandlerHelper();
     std::unique_ptr<KeyHandler> makeKeyHandler();
