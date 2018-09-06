@@ -5,20 +5,20 @@
         <adminserver hostalias="node1"/>
         <logserver hostalias="node1"/>
         <monitoring interval="60"/>
-        <metric-consumers>
-            <consumer name="fooConsumer">
-                <metric name="some.foo.metric" output-name="someFooMetric"/>
-                <metric name="some.foo.metric2" output-name="someFooMetric2"/>
-                <metric name="proton.numdocs.average" output-name="tull"/>
+        <metrics>
+            <consumer id="fooConsumer">
+                <metric id="some.foo.metric" display-name="someFooMetric"/>
+                <metric id="some.foo.metric2" display-name="someFooMetric2"/>
+                <metric id="proton.numdocs.average" display-name="tull"/>
             </consumer>
-            <consumer name="fooConsumer2">
-                <metric name="some.foo.metric3" output-name="someFooMetric3"/>
+            <consumer id="fooConsumer2">
+                <metric id="some.foo.metric3" display-name="someFooMetric3"/>
             </consumer>
-            <consumer name="yamas">
-                <metric name="vds.distributor.bytesstored.average" output-name="tullball"/>
-                <metric name="proton.numdocs.average" output-name="overridden"/>
+            <consumer id="yamas">
+                <metric id="vds.distributor.bytesstored.average" display-name="tullball"/>
+                <metric id="proton.numdocs.average" display-name="overridden"/>
             </consumer>
-        </metric-consumers>
+        </metrics>
     </admin>
 
     <container version="1.0">
