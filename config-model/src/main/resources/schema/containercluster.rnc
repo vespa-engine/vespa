@@ -63,6 +63,7 @@ Filtering = element filtering {
 HttpServer =  element server {
     attribute port { xsd:nonNegativeInteger } &
     ComponentId &
+    (Ssl | SslProvider)? &
     element ssl-keystore-configurator { BundleSpec }? & # FOR INTERNAL USE ONLY - SUBJECT TO CHANGE
     element ssl-truststore-configurator { BundleSpec }? & # FOR INTERNAL USE ONLY - SUBJECT TO CHANGE
     GenericConfig*
@@ -88,6 +89,17 @@ SecretStore = element secret-store {
 
 ModelEvaluation = element model-evaluation {
     empty
+}
+
+Ssl = element ssl {
+    element private-key-file { string } &
+    element certificate-file { string } &
+    element ca-certificates-file { string }? &
+    element client-authentication { string "disabled" | string "want" | string "need" }?
+}
+
+SslProvider = element ssl-provider {
+    ComponentDefinition
 }
 
 # REST-API:
