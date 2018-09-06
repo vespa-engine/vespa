@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -162,7 +163,7 @@ public class Yum {
         private final List<YumPackageName> packages;
         private final Pattern commandOutputNoopPattern;
 
-        private Optional<String> enabledRepo = Optional.empty();
+        private List<String> enabledRepo = new ArrayList<>();
 
         private GenericYumCommand(Terminal terminal,
                                   String yumCommand,
@@ -179,15 +180,15 @@ public class Yum {
         }
 
         @SuppressWarnings("unchecked")
-        public GenericYumCommand enableRepo(String repo) {
-            enabledRepo = Optional.of(repo);
+        public GenericYumCommand enableRepos(String... repos) {
+            enabledRepo.addAll(Arrays.asList(repos));
             return this;
         }
 
         public boolean converge(TaskContext context) {
             CommandLine commandLine = terminal.newCommandLine(context);
             commandLine.add("yum", yumCommand, "--assumeyes");
-            enabledRepo.ifPresent(repo -> commandLine.add("--enablerepo=" + repo));
+            enabledRepo.forEach(repo -> commandLine.add("--enablerepo=" + repo));
             commandLine.add(packages.stream().map(YumPackageName::toName).collect(Collectors.toList()));
 
             // There's no way to figure out whether a yum command would have been a no-op.
