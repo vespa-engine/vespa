@@ -42,10 +42,10 @@ public:
     uint32_t handle(DocId) override { return noKeyIdx(); }
 };
 
-template <typename KT>
-KT convertKey(const IAttributeVector &, const vespalib::string &key)
+template <typename KeyType>
+KeyType convertKey(const IAttributeVector &, const vespalib::string &key)
 {
-    KT ret;
+    KeyType ret;
     vespalib::asciistream is(key);
     is >> ret;
     return ret;
@@ -67,17 +67,17 @@ EnumHandle convertKey<EnumHandle>(const IAttributeVector &attribute, const vespa
     return ret;
 }
 
-template <typename T, typename KT = T>
+template <typename T, typename KeyType = T>
 class KeyHandlerT : public AttributeKeyedNode::KeyHandler
 {
     AttributeContent<T> _values;
-    KT _key;
+    KeyType _key;
 
 public:
     KeyHandlerT(const IAttributeVector &attribute, const vespalib::string &key)
         : KeyHandler(attribute),
           _values(),
-          _key(convertKey<KT>(attribute, key))
+          _key(convertKey<KeyType>(attribute, key))
     {
     }
     ~KeyHandlerT() override;
@@ -92,8 +92,8 @@ public:
     }
 };
 
-template <typename T, typename KT>
-KeyHandlerT<T,KT>::~KeyHandlerT()
+template <typename T, typename KeyType>
+KeyHandlerT<T,KeyType>::~KeyHandlerT()
 {
 }
 
