@@ -6,16 +6,16 @@
     <slobroks><nodes count="3" flavor="small"/></slobroks>
     <logservers><nodes count="1" dedicated="true"/></logservers>
     <monitoring systemname="vespa.routing" interval="60" />
-    <metric-consumers>
-      <consumer name="yamas">
-        <metric name="upstreams_generated" />
-        <metric name="upstreams_nginx_reloads" />
-        <metric name="upstreams_nginx_reloads_succeeded" />
-        <metric name="upstreams_configuration_age.last" />
-        <metric name="nginx.upstreams.up.last" output-name="nginx.upstreams.up"/>
-        <metric name="nginx.upstreams.down.last" output-name="nginx.upstreams.down"/>
+    <metrics>
+      <consumer id="yamas">
+        <metric id="upstreams_generated" />
+        <metric id="upstreams_nginx_reloads" />
+        <metric id="upstreams_nginx_reloads_succeeded" />
+        <metric id="upstreams_configuration_age.last" />
+        <metric id="nginx.upstreams.up.last" display-name="nginx.upstreams.up"/>
+        <metric id="nginx.upstreams.down.last" display-name="nginx.upstreams.down"/>
       </consumer>
-    </metric-consumers>
+    </metrics>
   </admin>
 
   <jdisc id="container" version="1.0">
