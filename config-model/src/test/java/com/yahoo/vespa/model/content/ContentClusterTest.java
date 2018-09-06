@@ -676,18 +676,6 @@ public class ContentClusterTest extends ContentBaseTest {
             "<admin version=\"2.0\">" +
             "  <logserver hostalias=\"node0\"/>" +
             "  <adminserver hostalias=\"node0\"/>" +
-            "  <metric-consumers>" +
-            "    <consumer name=\"foobar\">" +
-            "      <metric name=\"storage.foo.bar\"/>" +
-            "    </consumer>" +
-            "    <consumer name=\"log\">" +
-            "      <metric name=\"extralogmetric\"/>" +
-            "      <metric name=\"extralogmetric3\"/>" +
-            "    </consumer>" +
-            "    <consumer name=\"fleetcontroller\">" +
-            "      <metric name=\"extraextra\"/>" +
-            "    </consumer>" +
-            "  </metric-consumers>" +
             "</admin>" +
             "</services>";
 
@@ -700,11 +688,8 @@ public class ContentClusterTest extends ContentBaseTest {
             model.getConfig(builder, "storage/storage/0");
             MetricsmanagerConfig config = new MetricsmanagerConfig(builder);
 
-            assertEquals("[storage.foo.bar]", getConsumer("foobar", config).addedmetrics().toString());
             String expected =
-                    "[extralogmetric\n" +
-                    "extralogmetric3\n" +
-                    "vds.filestor.alldisks.allthreads.put.sum\n" +
+                    "[vds.filestor.alldisks.allthreads.put.sum\n" +
                     "vds.filestor.alldisks.allthreads.get.sum\n" +
                     "vds.filestor.alldisks.allthreads.remove.sum\n" +
                     "vds.filestor.alldisks.allthreads.update.sum\n" +
@@ -720,8 +705,7 @@ public class ContentClusterTest extends ContentBaseTest {
             assertEquals(expected, actual);
             assertEquals("[logdefault]", getConsumer("log", config).tags().toString());
             expected =
-                    "[extraextra\n" +
-                    "vds.datastored.alldisks.docs\n" +
+                    "[vds.datastored.alldisks.docs\n" +
                     "vds.datastored.alldisks.bytes\n" +
                     "vds.datastored.alldisks.buckets]";
             actual = getConsumer("fleetcontroller", config).addedmetrics().toString().replaceAll(", ", "\n");
@@ -733,10 +717,7 @@ public class ContentClusterTest extends ContentBaseTest {
             model.getConfig(builder, "storage/distributor/0");
             MetricsmanagerConfig config = new MetricsmanagerConfig(builder);
 
-            assertEquals("[storage.foo.bar]", getConsumer("foobar", config).addedmetrics().toString());
-            assertEquals("[extralogmetric, extralogmetric3, vds.distributor.docsstored, vds.distributor.bytesstored, vds.idealstate.delete_bucket.done_ok, vds.idealstate.merge_bucket.done_ok, vds.idealstate.split_bucket.done_ok, vds.idealstate.join_bucket.done_ok, vds.idealstate.buckets_rechecking]", getConsumer("log", config).addedmetrics().toString());
             assertEquals("[logdefault]", getConsumer("log", config).tags().toString());
-            assertEquals("[extraextra]", getConsumer("fleetcontroller", config).addedmetrics().toString());
         }
     }
 
