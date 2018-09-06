@@ -22,6 +22,13 @@ struct SslDeleter {
 };
 using SslPtr = std::unique_ptr<::SSL, SslDeleter>;
 
+struct SslCtxDeleter {
+    void operator()(::SSL_CTX* ssl) const noexcept {
+        ::SSL_CTX_free(ssl);
+    }
+};
+using SslCtxPtr = std::unique_ptr<::SSL_CTX, SslCtxDeleter>;
+
 struct X509Deleter {
     void operator()(::X509* cert) const noexcept {
         ::X509_free(cert);
@@ -35,5 +42,12 @@ struct EvpPkeyDeleter {
     }
 };
 using EvpPkeyPtr = std::unique_ptr<::EVP_PKEY, EvpPkeyDeleter>;
+
+struct EcKeyDeleter {
+    void operator()(::EC_KEY* ec_key) const noexcept {
+        ::EC_KEY_free(ec_key);
+    }
+};
+using EcKeyPtr = std::unique_ptr<::EC_KEY, EcKeyDeleter>;
 
 }

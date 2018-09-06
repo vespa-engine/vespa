@@ -8,12 +8,12 @@
 namespace vespalib::net::tls::impl {
 
 class OpenSslTlsContextImpl : public TlsContext {
-    ::SSL_CTX* _ctx;
+    SslCtxPtr _ctx;
 public:
     explicit OpenSslTlsContextImpl(const TransportSecurityOptions&);
     ~OpenSslTlsContextImpl() override;
 
-    ::SSL_CTX* native_context() const noexcept { return _ctx; }
+    ::SSL_CTX* native_context() const noexcept { return _ctx.get(); }
 private:
     // Note: single use per instance; does _not_ clear existing chain!
     void add_certificate_authorities(stringref ca_pem);
