@@ -79,18 +79,18 @@ struct AttributeManagerFixture
 AttributeManagerFixture::AttributeManagerFixture()
     : mgr()
 {
-    buildStringAttribute("sfield", { "n1", "n2", "n3", "n4" });
-    buildIntegerAttribute("ifield", BasicType::Type::INT8, { 10, 20, getUndefined<int8_t>(), 40 });
-    buildFloatAttribute("ffield", { 110.0, 120.0, 130.0, 140.0 });
-    buildStringArrayAttribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
-    buildIntegerArrayAttribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
-    buildFloatArrayAttribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}});
-    buildStringArrayAttribute("smap.key", {{"k1.1", "k1.2"}, {"k2"}, {"k3.1", "k3.2"}, {"", "k4.2"}, {}});
-    buildStringArrayAttribute("smap.value.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
-    buildIntegerArrayAttribute("smap.value.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
-    buildFloatArrayAttribute("smap.value.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}});
-    buildStringArrayAttribute("map.key", {{"k1.1", "k1.2"}, {"k2"}, {"k3.1"}, {"", "k4.2"}, {}});
-    buildStringArrayAttribute("map.value", {{"n1.1", "n1.2"}, {}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
+    buildStringAttribute("sfield", { "n1", "n2", ""});
+    buildIntegerAttribute("ifield", BasicType::Type::INT8, { 10, 20, getUndefined<int8_t>() });
+    buildFloatAttribute("ffield", { 110.0, 120.0, getUndefined<double>() });
+    buildStringArrayAttribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {}});
+    buildIntegerArrayAttribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {}});
+    buildFloatArrayAttribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, {}});
+    buildStringArrayAttribute("smap.key", {{"k1.1", "k1.2"}, {"k2"}, {}});
+    buildStringArrayAttribute("smap.value.name", {{"n1.1", "n1.2"}, {"n2"}, {}});
+    buildIntegerArrayAttribute("smap.value.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {}});
+    buildFloatArrayAttribute("smap.value.fval", {{ 110.0}, { 120.0, 121.0 }, {}});
+    buildStringArrayAttribute("map.key", {{"k1.1", "k1.2"}, {"k2"}, {}});
+    buildStringArrayAttribute("map.value", {{"n1.1", "n1.2"}, {"n2"}, {}});
 }
 
 AttributeManagerFixture::~AttributeManagerFixture() = default;
@@ -361,26 +361,26 @@ Fixture::assertFloatArrays(std::vector<std::vector<double>> expVals, const vespa
 
 TEST_F("test single values", Fixture)
 {
-    TEST_DO(f.assertInts({ 10, 20, getUndefined<int8_t>(), 40 }, "ifield"));
-    TEST_DO(f.assertInts({ 10, 20, getUndefined<int8_t>(), 40 }, "ifield", true));
-    TEST_DO(f.assertStrings({ "n1", "n2", "n3", "n4" }, "sfield"));
-    TEST_DO(f.assertStrings({ "n1", "n2", "n3", "n4" }, "sfield", true));
-    TEST_DO(f.assertFloats({ 110.0, 120.0, 130.0, 140.0 }, "ffield"));
+    TEST_DO(f.assertInts({ 10, 20, getUndefined<int8_t>()}, "ifield"));
+    TEST_DO(f.assertInts({ 10, 20, getUndefined<int8_t>()}, "ifield", true));
+    TEST_DO(f.assertStrings({ "n1", "n2", "" }, "sfield"));
+    TEST_DO(f.assertStrings({ "n1", "n2", "" }, "sfield", true));
+    TEST_DO(f.assertFloats({ 110.0, 120.0, getUndefined<double>() }, "ffield"));
 }
 
 TEST_F("Test array values", Fixture)
 {
-    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}}, "array.val"));
-    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}}, "array.val", true));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}}, "array.name"));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}}, "array.name", true));
-    TEST_DO(f.assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}}, "array.fval"));
-    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {"k3.1", "k3.2"}, {"", "k4.2"}, {}}, "smap.key"));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}}, "smap.value.name"));
-    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}}, "smap.value.val"));
-    TEST_DO(f.assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}}, "smap.value.fval"));
-    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {"k3.1"}, {"", "k4.2"}, {}}, "map.key"));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}}, "map.value"));
+    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {}}, "array.val"));
+    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {}}, "array.val", true));
+    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "array.name"));
+    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "array.name", true));
+    TEST_DO(f.assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, {}}, "array.fval"));
+    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {}}, "smap.key"));
+    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "smap.value.name"));
+    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {}}, "smap.value.val"));
+    TEST_DO(f.assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, {}}, "smap.value.fval"));
+    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {}}, "map.key"));
+    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "map.value"));
 }
 
 }
