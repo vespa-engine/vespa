@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class Route {
 
-    private final List<Hop> hops = new ArrayList<Hop>();
+    private final List<Hop> hops = new ArrayList<>();
     private String cache = null;
 
     /**

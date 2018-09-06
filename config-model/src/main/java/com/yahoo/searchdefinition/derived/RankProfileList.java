@@ -10,7 +10,9 @@ import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.model.AbstractService;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -77,6 +79,10 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     /** Returns the raw rank profile with the given name, or null if it is not present */
     public RawRankProfile getRankProfile(String name) {
         return rankProfiles.get(name);
+    }
+
+    public void sendConstantsTo(Collection<? extends AbstractService> services) {
+        rankingConstants.sendTo(services);
     }
 
     @Override

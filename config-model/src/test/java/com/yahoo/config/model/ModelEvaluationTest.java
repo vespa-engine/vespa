@@ -70,31 +70,41 @@ public class ModelEvaluationTest {
         assertEquals(4, config.rankprofile().size());
         Set<String> modelNames = config.rankprofile().stream().map(v -> v.name()).collect(Collectors.toSet());
         assertTrue(modelNames.contains("xgboost_2_2"));
+        assertTrue(modelNames.contains("mnist_saved"));
         assertTrue(modelNames.contains("mnist_softmax"));
         assertTrue(modelNames.contains("mnist_softmax_saved"));
 
         ModelsEvaluator evaluator = new ModelsEvaluator(config, constantsConfig);
 
         assertEquals(4, evaluator.models().size());
+
         Model xgboost = evaluator.models().get("xgboost_2_2");
         assertNotNull(xgboost);
         assertNotNull(xgboost.evaluatorOf());
         assertNotNull(xgboost.evaluatorOf("xgboost_2_2"));
 
-        Model onnx = evaluator.models().get("mnist_softmax");
-        assertNotNull(onnx);
-        assertNotNull(onnx.evaluatorOf());
-        assertNotNull(onnx.evaluatorOf("default"));
-        assertNotNull(onnx.evaluatorOf("default", "add"));
-        assertNotNull(onnx.evaluatorOf("default.add"));
+        Model tensorflow_mnist = evaluator.models().get("mnist_saved");
+        assertNotNull(tensorflow_mnist);
+        assertNotNull(tensorflow_mnist.evaluatorOf("serving_default"));
+        assertNotNull(tensorflow_mnist.evaluatorOf("serving_default", "y"));
+        assertNotNull(tensorflow_mnist.evaluatorOf("serving_default.y"));
+        assertNotNull(evaluator.evaluatorOf("mnist_saved", "serving_default.y"));
+        assertNotNull(evaluator.evaluatorOf("mnist_saved", "serving_default", "y"));
+
+        Model onnx_mnist_softmax = evaluator.models().get("mnist_softmax");
+        assertNotNull(onnx_mnist_softmax);
+        assertNotNull(onnx_mnist_softmax.evaluatorOf());
+        assertNotNull(onnx_mnist_softmax.evaluatorOf("default"));
+        assertNotNull(onnx_mnist_softmax.evaluatorOf("default", "add"));
+        assertNotNull(onnx_mnist_softmax.evaluatorOf("default.add"));
         assertNotNull(evaluator.evaluatorOf("mnist_softmax", "default.add"));
         assertNotNull(evaluator.evaluatorOf("mnist_softmax", "default", "add"));
 
-        Model tensorflow = evaluator.models().get("mnist_softmax_saved");
-        assertNotNull(tensorflow);
-        assertNotNull(tensorflow.evaluatorOf());
-        assertNotNull(tensorflow.evaluatorOf("serving_default"));
-        assertNotNull(tensorflow.evaluatorOf("serving_default", "y"));
+        Model tensorflow_mnist_softmax = evaluator.models().get("mnist_softmax_saved");
+        assertNotNull(tensorflow_mnist_softmax);
+        assertNotNull(tensorflow_mnist_softmax.evaluatorOf());
+        assertNotNull(tensorflow_mnist_softmax.evaluatorOf("serving_default"));
+        assertNotNull(tensorflow_mnist_softmax.evaluatorOf("serving_default", "y"));
     }
 
 }
