@@ -55,6 +55,7 @@ public:
 
     void useEnumOptimization(bool use=true) { _useEnumOptimization = use; }
     bool hasMultiValue() const { return _hasMultiValue; }
+    virtual bool isKeyed() const { return false; }
 protected:
     class Handler
     {
@@ -68,7 +69,7 @@ private:
     class StringHandler;
     class EnumHandler;
 protected:
-    void cleanup();
+    virtual void cleanup();
     void wireAttributes(const search::attribute::IAttributeContext & attrCtx) override;
     void onPrepare(bool preserveAccurateTypes) override;
     bool onExecute() const override;
