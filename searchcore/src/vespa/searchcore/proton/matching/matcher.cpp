@@ -28,6 +28,7 @@ using search::FeatureSet;
 using search::attribute::IAttributeContext;
 using search::fef::MatchDataLayout;
 using search::fef::MatchData;
+using search::fef::indexproperties::hitcollector::HeapSize;
 using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
 using vespalib::Doom;
@@ -243,8 +244,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         }
 
         const Properties & rankProperties = request.propertiesMap.rankProperties();
-        uint32_t heapSize = search::fef::indexproperties::hitcollector:: HeapSize::lookup(rankProperties,
-                                                                                          _rankSetup->getHeapSize());
+        uint32_t heapSize = HeapSize::lookup(rankProperties, _rankSetup->getHeapSize());
 
         MatchParams params(searchContext.getDocIdLimit(), heapSize, _rankSetup->getArraySize(),
                            _rankSetup->getRankScoreDropLimit(), request.offset, request.maxhits,

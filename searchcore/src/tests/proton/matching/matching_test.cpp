@@ -53,6 +53,7 @@ using namespace search;
 using search::attribute::test::MockAttributeContext;
 using search::index::schema::DataType;
 using storage::spi::Timestamp;
+using search::fef::indexproperties::hitcollector::HeapSize;
 
 void inject_match_phase_limiting(Properties &setup, const vespalib::string &attribute, size_t max_hits, bool descending)
 {
@@ -287,7 +288,7 @@ struct MyWorld {
         Matcher::SP matcher = createMatcher();
         search::fef::Properties overrides;
         auto mtf = matcher->create_match_tools_factory(*req, searchContext, attributeContext, metaStore, overrides);
-        auto diversity = mtf->createDiversifier(search::fef::indexproperties::hitcollector::HeapSize::lookup(config));
+        auto diversity = mtf->createDiversifier(HeapSize::lookup(config));
         EXPECT_EQUAL(expectDiverse, static_cast<bool>(diversity));
     }
 
