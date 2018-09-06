@@ -11,7 +11,6 @@ import com.yahoo.container.protect.Error;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.data.access.slime.SlimeAdapter;
-import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
@@ -284,19 +283,17 @@ public class Dispatcher extends AbstractComponent {
 
     }
 
-    public Optional<CloseableChannel> getDispatchBackend(Query query) {
+    public Optional<CloseableChannel> getDispatchedChannel(Query query) {
         Optional<SearchCluster.Group> groupInCluster = loadBalancer.getGroupForQuery(query);
 
         return groupInCluster.flatMap(group -> {
             if(group.nodes().size() == 1) {
-                return Optional.of(group.nodes().get(0));
+                query.trace(false, 2, "Dispatching directly (anywhere) to ", group);
+                return Optional.of(new DispatchedChannel(fs4ResourcePool, loadBalancer, group));
             } else {
+                loadBalancer.releaseGroup(group);
                 return Optional.empty();
             }
-        }).map(node -> {
-            query.trace(false, 2, "Dispatching directly (anywhere) to ", node);
-            Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port(), Optional.of(node.key()));
-            return new CloseableChannel(backend);
         });
     }
 }
