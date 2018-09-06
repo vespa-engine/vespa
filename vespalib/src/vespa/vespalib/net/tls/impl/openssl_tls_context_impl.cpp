@@ -135,7 +135,7 @@ X509Ptr read_untrusted_x509_from_bio(::BIO& bio) {
     return X509Ptr(::PEM_read_bio_X509(&bio, nullptr, nullptr, empty_passphrase()));
 }
 
-SslCtxPtr new_tls1_2_ctx_with_auto_init() {
+SslCtxPtr new_tls_ctx_with_auto_init() {
     ensure_openssl_initialized_once();
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L)
     return SslCtxPtr(::SSL_CTX_new(::TLSv1_2_method()));
@@ -151,7 +151,7 @@ SslCtxPtr new_tls1_2_ctx_with_auto_init() {
 } // anon ns
 
 OpenSslTlsContextImpl::OpenSslTlsContextImpl(const TransportSecurityOptions& ts_opts)
-    : _ctx(new_tls1_2_ctx_with_auto_init())
+    : _ctx(new_tls_ctx_with_auto_init())
 {
     if (!_ctx) {
         throw CryptoException("Failed to create new TLS context");
