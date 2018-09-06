@@ -931,7 +931,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             AthenzTenant athenzTenant = (AthenzTenant) tenant;
             Optional<Contact> contact = athenzTenant.contact();
             if (!contact.isPresent()) { // TODO: Remove this fallback once all contacts have been written once
-                contact = controller.tenants().findContact(athenzTenant);
+                try {
+                    contact = controller.tenants().findContact(athenzTenant);
+                } catch (Exception e) {
+                    log.log(Level.WARNING, "Failed to fetch contact information for tenant " + athenzTenant +
+                                           ": " + Exceptions.toMessageString(e));
+                }
             }
             contact.ifPresent(c -> {
                 object.setString("propertyUrl", c.propertyUrl().toString());
