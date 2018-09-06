@@ -1,3 +1,4 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
 import com.yahoo.fs4.BasicPacket;
@@ -11,6 +12,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Optional;
 
+/**
+ * @author ollivir
+ */
 public class CloseableChannel implements Closeable {
     private FS4Channel channel;
 

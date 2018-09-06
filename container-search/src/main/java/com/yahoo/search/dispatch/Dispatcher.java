@@ -284,7 +284,7 @@ public class Dispatcher extends AbstractComponent {
     }
 
     public Optional<CloseableChannel> getDispatchedChannel(Query query) {
-        Optional<SearchCluster.Group> groupInCluster = loadBalancer.getGroupForQuery(query);
+        Optional<SearchCluster.Group> groupInCluster = loadBalancer.takeGroupForQuery(query);
 
         return groupInCluster.flatMap(group -> {
             if(group.nodes().size() == 1) {

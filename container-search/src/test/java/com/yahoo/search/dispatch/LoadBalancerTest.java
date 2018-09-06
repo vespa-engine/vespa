@@ -14,6 +14,9 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 
+/**
+ * @author ollivir
+ */
 public class LoadBalancerTest {
     @Test
     public void requreThatLoadBalancerServesSingleNodeSetups() {
@@ -21,7 +24,7 @@ public class LoadBalancerTest {
         SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1), null, 1, null);
         LoadBalancer lb = new LoadBalancer(cluster);
 
-        Optional<Group> grp = lb.getGroupForQuery(null);
+        Optional<Group> grp = lb.takeGroupForQuery(null);
         Group group = grp.orElseGet(() -> {
             throw new AssertionFailedError("Expected a SearchCluster.Group");
         });
@@ -35,7 +38,7 @@ public class LoadBalancerTest {
         SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1, n2), null, 1, null);
         LoadBalancer lb = new LoadBalancer(cluster);
 
-        Optional<Group> grp = lb.getGroupForQuery(null);
+        Optional<Group> grp = lb.takeGroupForQuery(null);
         Group group = grp.orElseGet(() -> {
             throw new AssertionFailedError("Expected a SearchCluster.Group");
         });
@@ -49,7 +52,7 @@ public class LoadBalancerTest {
         SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1, n2), null, 2, null);
         LoadBalancer lb = new LoadBalancer(cluster);
 
-        Optional<Group> grp = lb.getGroupForQuery(null);
+        Optional<Group> grp = lb.takeGroupForQuery(null);
         assertThat(grp.isPresent(), is(false));
     }
 
@@ -62,7 +65,7 @@ public class LoadBalancerTest {
         SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1, n2, n3, n4), null, 2, null);
         LoadBalancer lb = new LoadBalancer(cluster);
 
-        Optional<Group> grp = lb.getGroupForQuery(null);
+        Optional<Group> grp = lb.takeGroupForQuery(null);
         assertThat(grp.isPresent(), is(false));
     }
 
@@ -74,14 +77,14 @@ public class LoadBalancerTest {
         LoadBalancer lb = new LoadBalancer(cluster);
 
         // get first group
-        Optional<Group> grp = lb.getGroupForQuery(null);
+        Optional<Group> grp = lb.takeGroupForQuery(null);
         Group group = grp.get();
         int id1 = group.id();
         // release allocation
         lb.releaseGroup(group);
 
         // get second group
-        grp = lb.getGroupForQuery(null);
+        grp = lb.takeGroupForQuery(null);
         group = grp.get();
         assertThat(group.id(), not(equalTo(id1)));
     }
@@ -94,12 +97,12 @@ public class LoadBalancerTest {
         LoadBalancer lb = new LoadBalancer(cluster);
 
         // get first group
-        Optional<Group> grp = lb.getGroupForQuery(null);
+        Optional<Group> grp = lb.takeGroupForQuery(null);
         Group group = grp.get();
         int id1 = group.id();
 
         // get second group
-        grp = lb.getGroupForQuery(null);
+        grp = lb.takeGroupForQuery(null);
         group = grp.get();
         int id2 = group.id();
         assertThat(id2, not(equalTo(id1)));
@@ -107,7 +110,7 @@ public class LoadBalancerTest {
         lb.releaseGroup(group);
 
         // get third group
-        grp = lb.getGroupForQuery(null);
+        grp = lb.takeGroupForQuery(null);
         group = grp.get();
         assertThat(group.id(), equalTo(id2));
     }

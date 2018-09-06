@@ -1,3 +1,4 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
@@ -6,6 +7,11 @@ import com.yahoo.search.dispatch.SearchCluster.Node;
 
 import java.util.Optional;
 
+/**
+ * An extension to CloseableChannel that encapsulates the release of a LoadBalancer group allocation.
+ *
+ * @author ollivir
+ */
 public class DispatchedChannel extends CloseableChannel {
     private final SearchCluster.Group group;
     private final LoadBalancer loadBalancer;

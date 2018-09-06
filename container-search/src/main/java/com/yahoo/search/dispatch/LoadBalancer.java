@@ -1,3 +1,4 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
 import com.yahoo.search.Query;
@@ -10,6 +11,12 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * LoadBalancer determines which group of content nodes should be accessed next for each search query when the internal java dispatcher is
+ * used.
+ *
+ * @author ollivir
+ */
 public class LoadBalancer {
     // The implementation here is a simplistic least queries in flight + round-robin load balancer
     // TODO: consider the options in com.yahoo.vespa.model.content.TuningDispatch
@@ -35,7 +42,14 @@ public class LoadBalancer {
         Collections.shuffle(scoreboard);
     }
 
-    public Optional<Group> getGroupForQuery(Query query) {
+    /**
+     * Select and allocate the search cluster group which is to be used for the provided query. Callers <b>must</b> call
+     * {@link #releaseGroup(Group)} symmetrically for each taken allocation.
+     *
+     * @param query
+     * @return The node group to target, or <i>empty</i> if the internal dispatch logic cannot be used
+     */
+    public Optional<Group> takeGroupForQuery(Query query) {
         if (!isInternallyDispatchable) {
             return Optional.empty();
         }
@@ -43,6 +57,12 @@ public class LoadBalancer {
         return allocateNextGroup();
     }
 
+    /**
+     * Release an allocation given by {@link #takeGroupForQuery(Query)}. The release must be done exactly once for each allocation.
+     *
+     * @param group
+     *            previously allocated group
+     */
     public void releaseGroup(Group group) {
         synchronized (this) {
             for (GroupSchedule sched : scoreboard) {
@@ -61,18 +81,13 @@ public class LoadBalancer {
             int index = needle;
             for (int i = 0; i < scoreboard.size(); i++) {
                 GroupSchedule sched = scoreboard.get(index);
-                index++;
-                if (index >= scoreboard.size()) {
-                    index = 0;
-                }
-                if (sched.group.hasSufficientCoverage() && (bestSchedule == null || sched.compareTo(bestSchedule) < 0)) {
+                if (sched.isPreferredOver(bestSchedule)) {
                     bestSchedule = sched;
                 }
+                index = nextScoreboardIndex(index);
             }
-            needle++;
-            if (needle >= scoreboard.size()) {
-                needle = 0;
-            }
+            needle = nextScoreboardIndex(needle);
+
             Group ret = null;
             if (bestSchedule != null) {
                 bestSchedule.adjustScore(1);
@@ -85,7 +100,15 @@ public class LoadBalancer {
         }
     }
 
-    public static class GroupSchedule implements Comparable<GroupSchedule> {
+    private int nextScoreboardIndex(int current) {
+        int next = current + 1;
+        if (next >= scoreboard.size()) {
+            next %= scoreboard.size();
+        }
+        return next;
+    }
+
+    private static class GroupSchedule {
         private final Group group;
         private int score;
 
@@ -94,9 +117,14 @@ public class LoadBalancer {
             this.score = 0;
         }
 
-        @Override
-        public int compareTo(GroupSchedule that) {
-            return this.score - that.score;
+        public boolean isPreferredOver(GroupSchedule other) {
+            if (! group.hasSufficientCoverage()) {
+                return false;
+            }
+            if (other == null) {
+                return true;
+            }
+            return this.score < other.score;
         }
 
         public void adjustScore(int amount) {
