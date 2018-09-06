@@ -18,6 +18,8 @@ import com.yahoo.vespa.hosted.controller.tenant.Contact;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +27,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -50,6 +53,8 @@ public class TenantController {
         this.organization = Objects.requireNonNull(organization, "organization must be non-null");
 
         // Write all tenants to ensure persisted data uses latest serialization format
+        Instant start = controller.clock().instant();
+        int count = 0;
         for (Tenant tenant : curator.readTenants()) {
             try (Lock lock = lock(tenant.name())) {
                 if (tenant instanceof AthenzTenant) {
@@ -60,7 +65,9 @@ public class TenantController {
                     throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());
                 }
             }
+            count++;
         }
+        log.log(Level.INFO, String.format("Wrote %d tenants in %s", count, Duration.between(start, controller.clock().instant())));
     }
 
     /** Returns a list of all known tenants sorted by name */
