@@ -5,10 +5,15 @@ import com.yahoo.cloud.config.LogforwarderConfig;
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
@@ -183,6 +188,26 @@ public class DedicatedAdminV4Test {
         }
     }
 
+    @Test
+    public void testDedicatedLogserverInHostedVespa() throws IOException, SAXException {
+        String services = "<services>" +
+                "  <admin version='4.0'>" +
+                "    <logservers>" +
+                "      <nodes count='1' dedicated='true'/>" +
+                "    </logservers>" +
+                "  </admin>" +
+                "</services>";
+
+        VespaModel model = createModel(hosts, services, new DeployState.Builder()
+                .zone(new Zone(SystemName.cd, Environment.dev, RegionName.defaultName()))
+                .properties(new DeployProperties.Builder()
+                                    .hostedVespa(true)
+                                    .build()));
+        assertEquals(1, model.getHosts().size());
+        // Should create a container on the same node as logserver
+        assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver", "container");
+    }
+
     private Set<String> serviceNames(VespaModel model, String hostname) {
         SentinelConfig config = model.getConfig(SentinelConfig.class, hostname);
         return config.service().stream().map(SentinelConfig.Service::name).collect(Collectors.toSet());
@@ -197,14 +222,18 @@ public class DedicatedAdminV4Test {
     }
 
     private VespaModel createModel(String hosts, String services) throws IOException, SAXException {
+        return createModel(hosts, services, new DeployState.Builder());
+    }
+
+    private VespaModel createModel(String hosts, String services, DeployState.Builder deployStateBuilder) throws IOException, SAXException {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withHosts(hosts)
                 .withServices(services)
                 .build();
-        return new VespaModel(new NullConfigModelRegistry(),
-                              new DeployState.Builder().applicationPackage(app).modelHostProvisioner(
-                                      new InMemoryProvisioner(Hosts.readFrom(app.getHosts()), true))
-                                                       .build());
+        return new VespaModel(new NullConfigModelRegistry(), deployStateBuilder
+                .applicationPackage(app)
+                .modelHostProvisioner(new InMemoryProvisioner(Hosts.readFrom(app.getHosts()), true))
+                .build());
     }
 
 }

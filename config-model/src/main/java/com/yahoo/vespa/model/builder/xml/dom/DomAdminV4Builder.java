@@ -1,18 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.log.LogLevel;
+import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.container.Container;
+import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
+import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
+import com.yahoo.vespa.model.container.component.Handler;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
@@ -73,12 +78,41 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         if (nodesSpecification.count() > 1) throw new IllegalArgumentException("You can only request a single log server");
 
         if (nodesSpecification.isDedicated()) {
-            createLogserver(admin, allocateHosts(admin.getHostSystem(), "logserver", nodesSpecification));
+            Collection<HostResource> hosts = allocateHosts(admin.getHostSystem(), "logserver", nodesSpecification);
+            if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
+
+            Logserver logserver = createLogserver(admin, hosts);
+            // TODO: Enable for main system as well
+            if (context.getDeployState().isHosted() && context.getDeployState().zone().system() == SystemName.cd)
+                createAdditionalContainerToRunOnLogserverHost(admin, logserver.getHostResource());
+        } else if (containerModels.iterator().hasNext()) {
+            createLogserver(admin, sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.count(), false));
+        } else {
+            context.getDeployLogger().log(LogLevel.INFO, "No container host available to use for running logserver");
         }
-        else {
-            if (containerModels.iterator().hasNext())
-                createLogserver(admin, sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.count(), false));
-        }
+    }
+
+    // Creates a container cluster 'logserver-cluster' with 1 container on logserver host
+    // for setting up a handler for getting logs from logserver
+    private void createAdditionalContainerToRunOnLogserverHost(Admin admin, HostResource hostResource) {
+        ContainerCluster logServerCluster = new ContainerCluster(admin, "logserver-cluster", "logserver-cluster", RankProfileList.empty);
+        ContainerModel logserverClusterModel = new ContainerModel(context.withParent(admin).withId(logServerCluster.getSubId()));
+        logserverClusterModel.setCluster(logServerCluster);
+
+        addLogHandler(logServerCluster);
+
+        Container container = new Container(logServerCluster, "logserver-container", 0);
+        container.setHostResource(hostResource);
+        container.initService();
+        logServerCluster.addContainer(container);
+        admin.addAndInitializeService(hostResource, container);
+    }
+
+    // TODO: Wire in handler for getting logs
+    private void addLogHandler(ContainerCluster cluster) {
+        Handler<?> logHandler = Handler.fromClassName("TODO");
+        //logHandler.addServerBindings("http://*/logs/", "https://*/logs/");
+        cluster.addComponent(logHandler);
     }
 
     private Collection<HostResource> allocateHosts(HostSystem hostSystem, String clusterId, NodesSpecification nodesSpecification) {
@@ -148,12 +182,12 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         return HostResource.pickHosts(hosts, count, 1);
     }
 
-    private void createLogserver(Admin admin, Collection<HostResource> hosts) {
-        if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
+    private Logserver createLogserver(Admin admin, Collection<HostResource> hosts) {
         Logserver logserver = new Logserver(admin);
         logserver.setHostResource(hosts.iterator().next());
         admin.setLogserver(logserver);
         logserver.initService();
+        return logserver;
     }
 
     private void createSlobroks(Admin admin, Collection<HostResource> hosts) {
