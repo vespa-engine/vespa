@@ -3,20 +3,7 @@
 <services>
 
     <simple version="1.0">
-        <simpleservice hostalias="host2">
-            <metric-consumers>
-                <consumer name="yamas">
-                    <metric name="onlyMine" output-name="user"/>
-                </consumer>
-            </metric-consumers>
-        </simpleservice>
-
-        <simpleservice hostalias="host2">
-            <metric-consumers>
-                <consumer name="yamas">
-                    <metric name="test" output-name="user"/>
-                </consumer>
-            </metric-consumers>
-        </simpleservice>
+        <simpleservice hostalias="host2" />
+        <simpleservice hostalias="host2" />
     </simple>
 </services>
