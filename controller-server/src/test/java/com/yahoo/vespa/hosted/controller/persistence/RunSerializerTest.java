@@ -30,12 +30,13 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -97,7 +98,7 @@ public class RunSerializerTest {
                              .build(),
                      run.steps());
 
-        run = run.aborted().finished(Instant.now());
+        run = run.aborted().finished(Instant.now().truncatedTo(MILLIS));
         assertEquals(aborted, run.status());
         assertTrue(run.hasEnded());
 
