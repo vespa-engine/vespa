@@ -275,10 +275,12 @@ FNET_Connection::Read()
     size_t   chunk_size  = std::max(size_t(FNET_READ_SIZE), _socket->min_read_buffer_size());
     int      readCnt     = 0;     // read count
     bool     broken      = false; // is this conn broken ?
+    int      my_errno    = 0;     // sample and preserve errno
     ssize_t  res;                 // single read result
 
     _input.EnsureFree(chunk_size);
     res = _socket->read(_input.GetFree(), _input.GetFreeLen());
+    my_errno = errno;
     readCnt++;
 
     while (res > 0) {
@@ -290,6 +292,7 @@ FNET_Connection::Read()
         }
         _input.EnsureFree(chunk_size);
         res = _socket->read(_input.GetFree(), _input.GetFreeLen());
+        my_errno = errno;
         readCnt++;
     }
 
@@ -298,13 +301,14 @@ done_read:
     while ((res > 0) && !broken) { // drain input pipeline
         _input.EnsureFree(chunk_size);
         res = _socket->drain(_input.GetFree(), _input.GetFreeLen());
+        my_errno = errno;
         readCnt++;
         if (res > 0) {
             _input.FreeToData((uint32_t)res);
             broken = !handle_packets();
             _input.resetIfEmpty();
         } else if (res == 0) { // fully drained -> EWOULDBLOCK
-            errno = EWOULDBLOCK;
+            my_errno = EWOULDBLOCK;
             res = -1;
         }
     }
@@ -322,9 +326,9 @@ done_read:
         if (res == 0) {
             broken = true; // handle EOF
         } else { // res < 0
-            broken = ((errno != EWOULDBLOCK) && (errno != EAGAIN));
-            if (broken && (errno != ECONNRESET)) {
-                LOG(debug, "Connection(%s): read error: %d", GetSpec(), errno);
+            broken = ((my_errno != EWOULDBLOCK) && (my_errno != EAGAIN));
+            if (broken && (my_errno != ECONNRESET)) {
+                LOG(debug, "Connection(%s): read error: %d", GetSpec(), my_errno);
             }
         }
     }
@@ -339,6 +343,7 @@ FNET_Connection::Write()
     uint32_t my_write_work  = 0;
     int      writeCnt       = 0;     // write count
     bool     broken         = false; // is this conn broken ?
+    int      my_errno       = 0;     // sample and preserve errno
     ssize_t  res;                    // single write result
 
     FNET_Packet     *packet;
@@ -367,6 +372,7 @@ FNET_Connection::Write()
         // write data
 
         res = _socket->write(_output.GetData(), _output.GetDataLen());
+        my_errno = errno;
         writeCnt++;
         if (res > 0) {
             _output.DataToDead((uint32_t)res);
@@ -383,8 +389,10 @@ FNET_Connection::Write()
 
     if (res >= 0) { // flush output pipeline
         res = _socket->flush();
+        my_errno = errno;
         while (res > 0) {
             res = _socket->flush();
+            my_errno = errno;
         }
     }
 
@@ -394,13 +402,13 @@ FNET_Connection::Write()
     }
 
     if (res < 0) {
-        if ((errno == EWOULDBLOCK) || (errno == EAGAIN)) {
+        if ((my_errno == EWOULDBLOCK) || (my_errno == EAGAIN)) {
             ++my_write_work; // incomplete write/flush
         } else {
             broken = true;
         }
-        if (broken && (errno != ECONNRESET)) {
-            LOG(debug, "Connection(%s): write error: %d", GetSpec(), errno);
+        if (broken && (my_errno != ECONNRESET)) {
+            LOG(debug, "Connection(%s): write error: %d", GetSpec(), my_errno);
         }
     }
 
