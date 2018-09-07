@@ -135,21 +135,26 @@ X509Ptr read_untrusted_x509_from_bio(::BIO& bio) {
     return X509Ptr(::PEM_read_bio_X509(&bio, nullptr, nullptr, empty_passphrase()));
 }
 
-::SSL_CTX* new_tls1_2_ctx_with_auto_init() {
+SslCtxPtr new_tls_ctx_with_auto_init() {
     ensure_openssl_initialized_once();
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-    return ::SSL_CTX_new(::TLSv1_2_method());
-#pragma GCC diagnostic pop
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+    return SslCtxPtr(::SSL_CTX_new(::TLSv1_2_method()));
+#else
+    SslCtxPtr ctx(::SSL_CTX_new(::TLS_method()));
+    if (!::SSL_CTX_set_min_proto_version(ctx.get(), TLS1_2_VERSION)) {
+        throw CryptoException("SSL_CTX_set_min_proto_version");
+    }
+    return ctx;
+#endif
 }
 
 } // anon ns
 
 OpenSslTlsContextImpl::OpenSslTlsContextImpl(const TransportSecurityOptions& ts_opts)
-    : _ctx(new_tls1_2_ctx_with_auto_init())
+    : _ctx(new_tls_ctx_with_auto_init())
 {
     if (!_ctx) {
-        throw CryptoException("Failed to create new TLSv1.2 context");
+        throw CryptoException("Failed to create new TLS context");
     }
     add_certificate_authorities(ts_opts.ca_certs_pem());
     add_certificate_chain(ts_opts.cert_chain_pem());
@@ -162,14 +167,12 @@ OpenSslTlsContextImpl::OpenSslTlsContextImpl(const TransportSecurityOptions& ts_
     // TODO set peer verification flags!
 }
 
-OpenSslTlsContextImpl::~OpenSslTlsContextImpl() {
-    ::SSL_CTX_free(_ctx);
-}
+OpenSslTlsContextImpl::~OpenSslTlsContextImpl() = default;
 
 void OpenSslTlsContextImpl::add_certificate_authorities(vespalib::stringref ca_pem) {
     // TODO support empty CA set...? Ever useful?
     auto bio = bio_from_string(ca_pem);
-    ::X509_STORE* cert_store = ::SSL_CTX_get_cert_store(_ctx); // Internal pointer, not owned by us.
+    ::X509_STORE* cert_store = ::SSL_CTX_get_cert_store(_ctx.get()); // Internal pointer, not owned by us.
     while (true) {
         auto ca_cert = read_untrusted_x509_from_bio(*bio);
         if (!ca_cert) {
@@ -191,7 +194,7 @@ void OpenSslTlsContextImpl::add_certificate_chain(vespalib::stringref chain_pem)
     }
     // Ownership of certificate is _not_ transferred, OpenSSL makes internal copy.
     // This is not well documented, but is mentioned by other impls.
-    if (::SSL_CTX_use_certificate(_ctx, own_cert.get()) != 1) {
+    if (::SSL_CTX_use_certificate(_ctx.get(), own_cert.get()) != 1) {
         throw CryptoException("SSL_CTX_use_certificate");
     }
     // After the node's own certificate comes any intermediate CA-provided certificates.
@@ -203,7 +206,7 @@ void OpenSslTlsContextImpl::add_certificate_chain(vespalib::stringref chain_pem)
             break;
         }
         // Ownership of certificate _is_ transferred here!
-        if (!::SSL_CTX_add_extra_chain_cert(_ctx, ca_cert.release())) {
+        if (!::SSL_CTX_add_extra_chain_cert(_ctx.get(), ca_cert.release())) {
             throw CryptoException("SSL_CTX_add_extra_chain_cert");
         }
     }
@@ -216,35 +219,44 @@ void OpenSslTlsContextImpl::use_private_key(vespalib::stringref key_pem) {
         throw CryptoException("Failed to read PEM private key data");
     }
     // Ownership _not_ taken.
-    if (::SSL_CTX_use_PrivateKey(_ctx, key.get()) != 1) {
+    if (::SSL_CTX_use_PrivateKey(_ctx.get(), key.get()) != 1) {
         throw CryptoException("SSL_CTX_use_PrivateKey");
     }
 }
 
 void OpenSslTlsContextImpl::verify_private_key() {
-    if (::SSL_CTX_check_private_key(_ctx) != 1) {
+    if (::SSL_CTX_check_private_key(_ctx.get()) != 1) {
         throw CryptoException("SSL_CTX_check_private_key failed; mismatch between public and private key?");
     }
 }
 
 void OpenSslTlsContextImpl::enable_ephemeral_key_exchange() {
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#  if (OPENSSL_VERSION_NUMBER >= 0x10002000L)
     // Always enabled by default on higher versions.
-#if (OPENSSL_VERSION_NUMBER >= 0x10002000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
     // Auto curve selection is preferred over using SSL_CTX_set_ecdh_tmp
-    if (!::SSL_CTX_set_ecdh_auto(_ctx, 1)) {
+    if (!::SSL_CTX_set_ecdh_auto(_ctx.get(), 1)) {
         throw CryptoException("SSL_CTX_set_ecdh_auto");
     }
     // New ECDH key per connection.
-    ::SSL_CTX_set_options(_ctx, SSL_OP_SINGLE_ECDH_USE);
-#else
-    // TODO make this work on OpenSSL 1.0.1 as well
+    ::SSL_CTX_set_options(_ctx.get(), SSL_OP_SINGLE_ECDH_USE);
+#  else
+    // Set explicit P-256 curve used for ECDH purposes.
+    EcKeyPtr ec_curve(::EC_KEY_new_by_curve_name(NID_X9_62_prime256v1));
+    if (!ec_curve) {
+        throw CryptoException("EC_KEY_new_by_curve_name(NID_X9_62_prime256v1)");
+    }
+    if (!::SSL_CTX_set_tmp_ecdh(_ctx.get(), ec_curve.get())) {
+        throw CryptoException("SSL_CTX_set_tmp_ecdh");
+    }
+#  endif
 #endif
 }
 
 void OpenSslTlsContextImpl::disable_compression() {
     // TLS stream compression is vulnerable to a host of chosen plaintext
     // attacks (CRIME, BREACH etc), so disable it.
-    ::SSL_CTX_set_options(_ctx, SSL_OP_NO_COMPRESSION);
+    ::SSL_CTX_set_options(_ctx.get(), SSL_OP_NO_COMPRESSION);
 }
 
 }
