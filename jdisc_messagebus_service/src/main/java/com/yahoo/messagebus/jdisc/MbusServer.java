@@ -32,7 +32,7 @@ public final class MbusServer extends AbstractResource implements ServerProvider
     private final ResourceReference sessionReference;
 
     @Inject
-    public MbusServer(final CurrentContainer container, final ServerSession session) {
+    public MbusServer(CurrentContainer container, ServerSession session) {
         this.container = container;
         this.session = session;
         uri = URI.create("mbus://localhost/" + session.name());
@@ -60,7 +60,7 @@ public final class MbusServer extends AbstractResource implements ServerProvider
     }
 
     @Override
-    public void handleMessage(final Message msg) {
+    public void handleMessage(Message msg) {
         if (!running.get()) {
             dispatchErrorReply(msg, ErrorCode.SESSION_BUSY, "Session temporarily closed.");
             return;
@@ -73,7 +73,7 @@ public final class MbusServer extends AbstractResource implements ServerProvider
         try {
             request = new MbusRequest(container, uri, msg);
             content = request.connect(new ServerResponseHandler(msg));
-        } catch (final RuntimeException e) {
+        } catch (RuntimeException e) {
             dispatchErrorReply(msg, ErrorCode.APP_FATAL_ERROR, e.toString());
         } finally {
             if (request != null) {
@@ -89,8 +89,8 @@ public final class MbusServer extends AbstractResource implements ServerProvider
         return session.connectionSpec();
     }
 
-    private void dispatchErrorReply(final Message msg, final int errCode, final String errMsg) {
-        final Reply reply = new EmptyReply();
+    private void dispatchErrorReply(Message msg, int errCode, String errMsg) {
+        Reply reply = new EmptyReply();
         reply.swapState(msg);
         reply.addError(new Error(errCode, errMsg));
         session.sendReply(reply);
@@ -100,20 +100,20 @@ public final class MbusServer extends AbstractResource implements ServerProvider
 
         final Message msg;
 
-        ServerResponseHandler(final Message msg) {
+        ServerResponseHandler(Message msg) {
             this.msg = msg;
         }
 
         @Override
-        public ContentChannel handleResponse(final Response response) {
-            final Reply reply;
+        public ContentChannel handleResponse(Response response) {
+            Reply reply;
             if (response instanceof MbusResponse) {
                 reply = ((MbusResponse)response).getReply();
             } else {
                 reply = new EmptyReply();
                 reply.swapState(msg);
             }
-            final Error err = StatusCodes.toMbusError(response.getStatus());
+            Error err = StatusCodes.toMbusError(response.getStatus());
             if (err != null) {
                 if (err.isFatal()) {
                     if (!reply.hasFatalErrors()) {
