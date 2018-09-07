@@ -8,6 +8,9 @@
 #include <vespa/fnet/frt/invokable.h>
 #include <mutex>
 
+
+class FRT_Supervisor;
+
 namespace search::common { class FileHeaderContext; }
 
 namespace search::transactionlog {

@@ -322,12 +322,12 @@ bool Domain::erase(SerialNum to)
 }
 
 int Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to,
-                  FRT_Supervisor & supervisor, FNET_Connection *conn)
+                  std::unique_ptr<Session::Destination> dest)
 {
     assert(this == domain.get());
     cleanSessions();
     SerialNumRange range(from, to);
-    auto session = std::make_shared<Session>(_sessionId++, range, domain, supervisor, conn);
+    auto session = std::make_shared<Session>(_sessionId++, range, domain, std::move(dest));
     int id = session->id();
     LockGuard guard(_sessionLock);
     _sessions[id] = std::move(session);

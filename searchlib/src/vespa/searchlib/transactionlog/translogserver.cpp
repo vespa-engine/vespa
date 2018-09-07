@@ -4,6 +4,8 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/task.h>
 #include <fstream>
 
 #include <vespa/log/log.h>
@@ -26,21 +28,16 @@ class SyncHandler : public FNET_Task
     SerialNum                   _syncTo;
     
 public:
-    SyncHandler(FRT_Supervisor *supervisor,
-                FRT_RPCRequest *req,const Domain::SP &domain,
-                const TransLogServer::Session::SP &session,
-                SerialNum syncTo);
+    SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req,const Domain::SP &domain,
+                const TransLogServer::Session::SP &session, SerialNum syncTo);
 
     ~SyncHandler();
     void PerformTask() override;
 };
 
 
-SyncHandler::SyncHandler(FRT_Supervisor *supervisor,
-                         FRT_RPCRequest *req,
-                         const Domain::SP &domain,
-                         const TransLogServer::Session::SP &session,
-                         SerialNum syncTo)
+SyncHandler::SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req, const Domain::SP &domain,
+                         const TransLogServer::Session::SP &session, SerialNum syncTo)
     : FNET_Task(supervisor->GetScheduler()),
       _req(*req),
       _domain(domain),
@@ -50,9 +47,7 @@ SyncHandler::SyncHandler(FRT_Supervisor *supervisor,
 }
 
 
-SyncHandler::~SyncHandler()
-{
-}
+SyncHandler::~SyncHandler() = default;
 
 
 void
@@ -154,14 +149,16 @@ TransLogServer::~TransLogServer()
     _supervisor->ShutDown(true);
 }
 
-bool TransLogServer::onStop()
+bool
+TransLogServer::onStop()
 {
     LOG(info, "Stopping TLS");
     _reqQ.push(NULL);
     return true;
 }
 
-void TransLogServer::run()
+void
+TransLogServer::run()
 {
     FRT_RPCRequest *req(NULL);
     bool hasPacket(false);
@@ -236,7 +233,8 @@ TransLogServer::findDomain(stringref domainName)
     return domain;
 }
 
-void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
+void
+TransLogServer::exportRPC(FRT_Supervisor & supervisor)
 {
     _supervisor->SetSessionInitHook(FRT_METHOD(TransLogServer::initSession), this);
     _supervisor->SetSessionFiniHook(FRT_METHOD(TransLogServer::finiSession), this);
@@ -325,6 +323,8 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
 
 namespace {
 
+constexpr double NEVER(-1.0);
+
 void
 writeDomainDir(std::lock_guard<std::mutex> &guard,
                vespalib::string dir,
@@ -344,9 +344,77 @@ writeDomainDir(std::lock_guard<std::mutex> &guard,
     vespalib::File::sync(dir);
 }
 
+class RPCDestination : public Session::Destination {
+public:
+    RPCDestination(FRT_Supervisor & supervisor, FNET_Connection * connection)
+        : _supervisor(supervisor), _connection(connection), _ok(true)
+    {
+        _connection->AddRef();
+    }
+    ~RPCDestination() override { _connection->SubRef(); }
+
+    bool ok() const override {
+        return _ok;
+    }
+
+    bool send(int32_t id, const vespalib::string & domain, const Packet & packet) override {
+        FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
+        req->SetMethodName("visitCallback");
+        req->GetParams()->AddString(domain.c_str());
+        req->GetParams()->AddInt32(id);
+        req->GetParams()->AddData(packet.getHandle().c_str(), packet.getHandle().size());
+        return send(req);
+    }
+
+    bool sendDone(int32_t id, const vespalib::string & domain) override {
+        FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
+        req->SetMethodName("eofCallback");
+        req->GetParams()->AddString(domain.c_str());
+        req->GetParams()->AddInt32(id);
+        bool retval(send(req));
+        return retval;
+    }
+    bool connected() const override {
+        return (_connection->GetState() <= FNET_Connection::FNET_CONNECTED);
+    }
+private:
+    bool send(FRT_RPCRequest * req) {
+        int32_t retval = rpc(req);
+        if ( ! ((retval == RPC::OK) || (retval == FRTE_RPC_CONNECTION)) ) {
+            LOG(error, "Return value != OK(%d) in send for method 'visitCallback'.", retval);
+        }
+        req->SubRef();
+
+        return (retval == RPC::OK);
+    }
+    int32_t rpc(FRT_RPCRequest * req) {
+        int32_t retval(-7);
+        LOG(debug, "rpc %s starting.", req->GetMethodName());
+        FRT_Supervisor::InvokeSync(_supervisor.GetTransport(), _connection, req, NEVER);
+        if (req->GetErrorCode() == FRTE_NO_ERROR) {
+            retval = (req->GetReturn()->GetValue(0)._intval32);
+            LOG(debug, "rpc %s = %d\n", req->GetMethodName(), retval);
+        } else if (req->GetErrorCode() == FRTE_RPC_TIMEOUT) {
+            LOG(warning, "rpc %s timed out. Will allow to continue: error(%d): %s\n", req->GetMethodName(), req->GetErrorCode(), req->GetErrorMessage());
+            retval = -req->GetErrorCode();
+        } else {
+            if (req->GetErrorCode() != FRTE_RPC_CONNECTION) {
+                LOG(warning, "rpc %s: error(%d): %s\n", req->GetMethodName(), req->GetErrorCode(), req->GetErrorMessage());
+            }
+            retval = -req->GetErrorCode();
+            _ok = false;
+        }
+        return retval;
+    }
+    FRT_Supervisor   & _supervisor;
+    FNET_Connection  * _connection;
+    bool               _ok;
+};
+
 }
 
-void TransLogServer::createDomain(FRT_RPCRequest *req)
+void
+TransLogServer::createDomain(FRT_RPCRequest *req)
 {
     uint32_t retval(0);
     FRT_Values & params = *req->GetParams();
@@ -373,7 +441,8 @@ void TransLogServer::createDomain(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void TransLogServer::deleteDomain(FRT_RPCRequest *req)
+void
+TransLogServer::deleteDomain(FRT_RPCRequest *req)
 {
     uint32_t retval(0);
     vespalib::string msg("ok");
@@ -410,7 +479,8 @@ void TransLogServer::deleteDomain(FRT_RPCRequest *req)
     ret.AddString(msg.c_str());
 }
 
-void TransLogServer::openDomain(FRT_RPCRequest *req)
+void
+TransLogServer::openDomain(FRT_RPCRequest *req)
 {
     uint32_t retval(0);
     FRT_Values & params = *req->GetParams();
@@ -427,7 +497,8 @@ void TransLogServer::openDomain(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void TransLogServer::listDomains(FRT_RPCRequest *req)
+void
+TransLogServer::listDomains(FRT_RPCRequest *req)
 {
     FRT_Values & ret    = *req->GetReturn();
     LOG(debug, "listDomains()");
@@ -442,7 +513,8 @@ void TransLogServer::listDomains(FRT_RPCRequest *req)
     ret.AddString(domains.c_str());
 }
 
-void TransLogServer::domainStatus(FRT_RPCRequest *req)
+void
+TransLogServer::domainStatus(FRT_RPCRequest *req)
 {
     FRT_Values & params = *req->GetParams();
     FRT_Values & ret    = *req->GetReturn();
@@ -462,7 +534,8 @@ void TransLogServer::domainStatus(FRT_RPCRequest *req)
     }
 }
 
-void TransLogServer::commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done)
+void
+TransLogServer::commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done)
 {
     (void) done;
     Domain::SP domain(findDomain(domainName));
@@ -473,7 +546,8 @@ void TransLogServer::commit(const vespalib::string & domainName, const Packet & 
     }
 }
 
-void TransLogServer::domainCommit(FRT_RPCRequest *req)
+void
+TransLogServer::domainCommit(FRT_RPCRequest *req)
 {
     FRT_Values & params = *req->GetParams();
     FRT_Values & ret    = *req->GetReturn();
@@ -496,7 +570,8 @@ void TransLogServer::domainCommit(FRT_RPCRequest *req)
     }
 }
 
-void TransLogServer::domainVisit(FRT_RPCRequest *req)
+void
+TransLogServer::domainVisit(FRT_RPCRequest *req)
 {
     uint32_t retval(uint32_t(-1));
     FRT_Values & params = *req->GetParams();
@@ -508,12 +583,13 @@ void TransLogServer::domainVisit(FRT_RPCRequest *req)
         SerialNum from(params[1]._intval64);
         SerialNum to(params[2]._intval64);
         LOG(debug, "domainVisit(%s, %" PRIu64 ", %" PRIu64 ")", domainName, from, to);
-        retval = domain->visit(domain, from, to, *_supervisor, req->GetConnection());
+        retval = domain->visit(domain, from, to, std::make_unique<RPCDestination>(*_supervisor, req->GetConnection()));
     }
     ret.AddInt32(retval);
 }
 
-void TransLogServer::domainSessionRun(FRT_RPCRequest *req)
+void
+TransLogServer::domainSessionRun(FRT_RPCRequest *req)
 {
     uint32_t retval(uint32_t(-1));
     FRT_Values & params = *req->GetParams();
@@ -529,13 +605,15 @@ void TransLogServer::domainSessionRun(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void TransLogServer::relayToThreadRPC(FRT_RPCRequest *req)
+void
+TransLogServer::relayToThreadRPC(FRT_RPCRequest *req)
 {
     req->Detach();
     _reqQ.push(req);
 }
 
-void TransLogServer::domainSessionClose(FRT_RPCRequest *req)
+void
+TransLogServer::domainSessionClose(FRT_RPCRequest *req)
 {
     uint32_t retval(uint32_t(-1));
     FRT_Values & params = *req->GetParams();
@@ -552,7 +630,8 @@ void TransLogServer::domainSessionClose(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void TransLogServer::domainPrune(FRT_RPCRequest *req)
+void
+TransLogServer::domainPrune(FRT_RPCRequest *req)
 {
     uint32_t retval(uint32_t(-1));
     FRT_Values & params = *req->GetParams();
@@ -572,7 +651,6 @@ void TransLogServer::domainPrune(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-
 const TransLogServer::Session::SP &
 TransLogServer::getSession(FRT_RPCRequest *req)
 {
@@ -582,13 +660,11 @@ TransLogServer::getSession(FRT_RPCRequest *req)
     return *sessionspp;
 }
 
-
 void
 TransLogServer::initSession(FRT_RPCRequest *req)
 {
     req->GetConnection()->SetContext(new Session::SP(new Session()));
 }
-
 
 void
 TransLogServer::finiSession(FRT_RPCRequest *req)
@@ -600,13 +676,11 @@ TransLogServer::finiSession(FRT_RPCRequest *req)
     delete sessionspp;
 }
 
-
 void
 TransLogServer::downSession(FRT_RPCRequest *req)
 {
     getSession(req)->setDown();
 }
-
 
 void
 TransLogServer::domainSync(FRT_RPCRequest *req)

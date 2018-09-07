@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "session.h"
 #include "domain.h"
-#include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/log/log.h>
 
@@ -11,14 +10,10 @@ using vespalib::LockGuard;
 
 namespace search::transactionlog {
 
-namespace {
-    const double NEVER(-1.0);
-}
-
 vespalib::Executor::Task::UP
 Session::createTask(const Session::SP & session)
 {
-    return Task::UP(new VisitTask(session));
+    return std::make_unique<VisitTask>(session);
 }
 
 Session::VisitTask::VisitTask(const Session::SP & session)
@@ -86,7 +81,7 @@ Session::visitOnly()
 }
 
 bool Session::finished() const {
-    return _finished || (_connection->GetState() != FNET_Connection::FNET_CONNECTED);
+    return _finished || ! _destination->connected();
 }
 
 void
@@ -99,80 +94,31 @@ Session::finalize()
     _finished = true;
 }
 
-int32_t
-Session::rpc(FRT_RPCRequest * req)
-{
-    int32_t retval(-7);
-    LOG(debug, "rpc %s starting.", req->GetMethodName());
-    FRT_Supervisor::InvokeSync(_supervisor.GetTransport(), _connection, req, NEVER);
-    if (req->GetErrorCode() == FRTE_NO_ERROR) {
-        retval = (req->GetReturn()->GetValue(0)._intval32);
-        LOG(debug, "rpc %s = %d\n", req->GetMethodName(), retval);
-    } else if (req->GetErrorCode() == FRTE_RPC_TIMEOUT) {
-        LOG(warning, "rpc %s timed out. Will allow to continue: error(%d): %s\n", req->GetMethodName(), req->GetErrorCode(), req->GetErrorMessage());
-        retval = -req->GetErrorCode();
-    } else {
-        if (req->GetErrorCode() != FRTE_RPC_CONNECTION) {
-            LOG(warning, "rpc %s: error(%d): %s\n", req->GetMethodName(), req->GetErrorCode(), req->GetErrorMessage());
-        }
-        retval = -req->GetErrorCode();
-        _ok = false;
-    }
-    return retval;
-}
-
 Session::Session(int sId, const SerialNumRange & r, const Domain::SP & d,
-                 FRT_Supervisor & supervisor, FNET_Connection *conn) :
-    _supervisor(supervisor),
-    _connection(conn),
+                 std::unique_ptr<Destination> destination) :
+    _destination(std::move(destination)),
     _domain(d),
     _range(r),
     _id(sId),
-    _ok(true),
     _visitRunning(false),
     _inSync(false),
     _finished(false),
     _startTime()
 {
-    _connection->AddRef();
 }
 
-Session::~Session()
-{
-    _connection->SubRef();
-}
+Session::~Session() = default;
 
 bool
 Session::send(const Packet & packet)
 {
-    FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
-    req->SetMethodName("visitCallback");
-    req->GetParams()->AddString(_domain->name().c_str());
-    req->GetParams()->AddInt32(id());
-    req->GetParams()->AddData(packet.getHandle().c_str(), packet.getHandle().size());
-    return send(req);
-}
-
-bool
-Session::send(FRT_RPCRequest * req)
-{
-    int32_t retval = rpc(req);
-    if ( ! ((retval == RPC::OK) || (retval == FRTE_RPC_CONNECTION)) ) {
-        LOG(error, "Return value != OK(%d) in send for method 'visitCallback'.", retval);
-    }
-    req->SubRef();
-
-    return (retval == RPC::OK);
+    return _destination->send(_id, _domain->name(), packet);
 }
 
 bool
 Session::sendDone()
 {
-    FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
-    req->SetMethodName("eofCallback");
-    req->GetParams()->AddString(_domain->name().c_str());
-    req->GetParams()->AddInt32(id());
-    bool retval(send(req));
+    bool retval = _destination->sendDone(_id, _domain->name());
     _inSync = true;
     return retval;
 }
