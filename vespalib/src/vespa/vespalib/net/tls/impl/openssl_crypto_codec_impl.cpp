@@ -35,6 +35,10 @@ namespace vespalib::net::tls::impl {
 
 namespace {
 
+bool verify_buf(const char *buf, size_t len) {
+    return ((len < INT32_MAX) && ((len == 0) || (buf != nullptr)));
+}
+
 const char* ssl_error_to_str(int ssl_error) noexcept {
     // From https://www.openssl.org/docs/manmaster/man3/SSL_get_error.html
     // Our code paths shouldn't trigger most of these, but included for completeness
@@ -200,8 +204,7 @@ int OpenSslCryptoCodecImpl::drain_outgoing_network_bytes_if_any(
 
 HandshakeResult OpenSslCryptoCodecImpl::handshake(const char* from_peer, size_t from_peer_buf_size,
                                                   char* to_peer, size_t to_peer_buf_size) noexcept {
-    LOG_ASSERT(from_peer != nullptr && to_peer != nullptr
-               && from_peer_buf_size < INT32_MAX && to_peer_buf_size < INT32_MAX);
+    LOG_ASSERT(verify_buf(from_peer, from_peer_buf_size) && verify_buf(to_peer, to_peer_buf_size));
 
     if (SSL_is_init_finished(_ssl.get())) {
         return handshake_completed();
@@ -279,8 +282,7 @@ HandshakeResult OpenSslCryptoCodecImpl::do_handshake_and_consume_peer_input_byte
 
 EncodeResult OpenSslCryptoCodecImpl::encode(const char* plaintext, size_t plaintext_size,
                                             char* ciphertext, size_t ciphertext_size) noexcept {
-    LOG_ASSERT(plaintext != nullptr && ciphertext != nullptr
-               && plaintext_size < INT32_MAX && ciphertext_size < INT32_MAX);
+    LOG_ASSERT(verify_buf(plaintext, plaintext_size) && verify_buf(ciphertext, ciphertext_size));
 
     if (!SSL_is_init_finished(_ssl.get())) {
         LOG(error, "OpenSslCryptoCodecImpl::encode() called before handshake completed");
@@ -317,8 +319,7 @@ EncodeResult OpenSslCryptoCodecImpl::encode(const char* plaintext, size_t plaint
 }
 DecodeResult OpenSslCryptoCodecImpl::decode(const char* ciphertext, size_t ciphertext_size,
                                             char* plaintext, size_t plaintext_size) noexcept {
-    LOG_ASSERT(ciphertext != nullptr && plaintext != nullptr
-               && ciphertext_size < INT32_MAX && plaintext_size < INT32_MAX);
+    LOG_ASSERT(verify_buf(ciphertext, ciphertext_size) && verify_buf(plaintext, plaintext_size));
 
     if (!SSL_is_init_finished(_ssl.get())) {
         LOG(error, "OpenSslCryptoCodecImpl::decode() called before handshake completed");
