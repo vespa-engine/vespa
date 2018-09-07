@@ -74,13 +74,16 @@ struct CryptoSocket {
     virtual ssize_t write(const char *buf, size_t len) = 0;
 
     /**
-     * Try to flush data in the write pipeline that is not depenedent
+     * Try to flush data in the write pipeline that is not dependent
      * on data not yet written by the application into the underlying
      * socket. This is to enable the application to identify pending
      * work that may not be completed until the underlying socket is
      * ready for writing more data. The semantics are the same as with
      * a normal socket write (errno, etc.) with the exception that 0
-     * will be returned when there is no more data to flush.
+     * will be returned when there is no more data to flush and any
+     * positive number indicates that we were able to flush something
+     * (it does not need to reflect the actual number of bytes written
+     * to the underlying socket).
      **/
     virtual ssize_t flush() = 0;
 
