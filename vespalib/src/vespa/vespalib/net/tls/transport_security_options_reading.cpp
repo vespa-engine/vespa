@@ -94,7 +94,7 @@ std::unique_ptr<TransportSecurityOptions> read_options_from_json_string(const ve
 std::unique_ptr<TransportSecurityOptions> read_options_from_json_file(const vespalib::string& file_path) {
     MappedFileInput file_input(file_path);
     if (!file_input.valid()) {
-        throw IllegalArgumentException(make_string("TLS config file '%s' does not exist", file_path.c_str()));
+        throw IllegalArgumentException(make_string("TLS config file '%s' could not be read", file_path.c_str()));
     }
     return load_from_input(file_input);
 }

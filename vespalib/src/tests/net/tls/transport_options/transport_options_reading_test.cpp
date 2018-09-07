@@ -20,7 +20,7 @@ TEST("can load TLS credentials via config file") {
 
 TEST("missing JSON file throws exception") {
     EXPECT_EXCEPTION(read_options_from_json_file("missing_config.json"), IllegalArgumentException,
-                     "TLS config file 'missing_config.json' does not exist");
+                     "TLS config file 'missing_config.json' could not be read");
 }
 
 TEST("bad JSON content throws exception") {
