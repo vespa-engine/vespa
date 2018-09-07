@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstance
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
@@ -38,7 +39,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
@@ -57,6 +57,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -115,9 +117,13 @@ public class ApplicationController {
         this.rotationRepository = new RotationRepository(rotationsConfig, this, curator);
         this.deploymentTrigger = new DeploymentTrigger(controller, buildService, clock);
 
+        Instant start = clock.instant();
+        int count = 0;
         for (Application application : curator.readApplications()) {
             lockIfPresent(application.id(), this::store);
+            count++;
         }
+        log.log(Level.INFO, String.format("Wrote %d applications in %s", count, Duration.between(start, clock.instant())));
     }
 
     /** Returns the application with the given id, or null if it is not present */
