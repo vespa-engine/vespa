@@ -20,10 +20,6 @@ import com.yahoo.vespaclient.config.FeederConfig;
 
 import java.util.concurrent.Executor;
 
-/**
- * @deprecated Legacy API. Will be removed in Vespa 7
- */
-@Deprecated
 public class VespaFeedHandlerRemoveLocation extends VespaFeedHandlerBase {
 
     @Inject

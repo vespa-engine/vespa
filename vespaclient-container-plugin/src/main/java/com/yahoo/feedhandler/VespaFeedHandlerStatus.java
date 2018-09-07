@@ -15,10 +15,6 @@ import com.yahoo.metrics.MetricManager;
 import com.yahoo.metrics.MetricSet;
 import com.yahoo.vespaclient.config.FeederConfig;
 
-/**
- * @deprecated Legacy API. Will be removed in Vespa 7
- */
-@Deprecated
 public class VespaFeedHandlerStatus extends ThreadedHttpRequestHandler {
 
     private MetricManager manager;

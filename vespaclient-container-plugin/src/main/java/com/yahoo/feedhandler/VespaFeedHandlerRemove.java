@@ -21,10 +21,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.concurrent.Executor;
 
-/**
- * @deprecated Legacy API. Will be removed in Vespa 7
- */
-@Deprecated
 public class VespaFeedHandlerRemove extends VespaFeedHandlerBase {
 
     @Inject
