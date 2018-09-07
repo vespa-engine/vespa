@@ -26,7 +26,7 @@ public class MonitoringConfigSnoopTest {
         return ""
                 + "<admin version='2.0'>"
                 + "  <adminserver hostalias='mockhost' />"
-                + "  <yamas interval='" + interval + "' systemname='test' />"
+                + "  <monitoring interval='" + interval + "' systemname='test' />"
                 + "</admin>";
     }
 
