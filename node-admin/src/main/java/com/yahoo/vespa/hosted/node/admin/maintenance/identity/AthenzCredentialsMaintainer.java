@@ -1,6 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyStoreType;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SslContextBuilder;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
@@ -40,7 +45,6 @@ import static java.util.Collections.singleton;
  *
  * @author bjorncs
  */
-@SuppressWarnings("deprecation")
 public class AthenzCredentialsMaintainer {
 
     private static final Duration EXPIRY_MARGIN = Duration.ofDays(1);
@@ -157,15 +161,16 @@ public class AthenzCredentialsMaintainer {
 
     private X509Certificate readCertificateFromFile() throws IOException {
         String pemEncodedCertificate = new String(Files.readAllBytes(certificateFile));
-        return com.yahoo.vespa.athenz.tls.X509CertificateUtils.fromPem(pemEncodedCertificate);
+        return X509CertificateUtils.fromPem(pemEncodedCertificate);
     }
 
     private boolean isCertificateExpired(Instant expiry, Instant now) {
         return now.isAfter(expiry.minus(EXPIRY_MARGIN));
     }
 
+    @SuppressWarnings("deprecation")
     private void registerIdentity() {
-        KeyPair keyPair = com.yahoo.vespa.athenz.tls.KeyUtils.generateKeypair(com.yahoo.vespa.athenz.tls.KeyAlgorithm.RSA);
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         SignedIdentityDocument signedIdentityDocument = identityDocumentClient.getNodeIdentityDocument(hostname);
         com.yahoo.vespa.athenz.tls.Pkcs10Csr csr = csrGenerator.generateCsr(
                 containerIdentity, signedIdentityDocument.providerUniqueId(), signedIdentityDocument.ipAddresses(), keyPair);
@@ -186,14 +191,15 @@ public class AthenzCredentialsMaintainer {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void refreshIdentity() {
         SignedIdentityDocument identityDocument = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
-        KeyPair keyPair = com.yahoo.vespa.athenz.tls.KeyUtils.generateKeypair(com.yahoo.vespa.athenz.tls.KeyAlgorithm.RSA);
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         com.yahoo.vespa.athenz.tls.Pkcs10Csr csr = csrGenerator.generateCsr(containerIdentity, identityDocument.providerUniqueId(), identityDocument.ipAddresses(), keyPair);
         SSLContext containerIdentitySslContext =
-                new com.yahoo.vespa.athenz.tls.SslContextBuilder()
-                        .withKeyStore(privateKeyFile.toFile(), certificateFile.toFile())
-                        .withTrustStore(trustStorePath.toFile(), com.yahoo.vespa.athenz.tls.KeyStoreType.JKS)
+                new SslContextBuilder()
+                        .withKeyStore(privateKeyFile, certificateFile)
+                        .withTrustStore(trustStorePath, KeyStoreType.JKS)
                         .build();
         try {
             try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, containerIdentity, containerIdentitySslContext)) {
@@ -221,9 +227,9 @@ public class AthenzCredentialsMaintainer {
 
     private void writePrivateKeyAndCertificate(PrivateKey privateKey, X509Certificate certificate) throws IOException {
         Path tempPrivateKeyFile = toTempPath(privateKeyFile);
-        Files.write(tempPrivateKeyFile, com.yahoo.vespa.athenz.tls.KeyUtils.toPem(privateKey).getBytes());
+        Files.write(tempPrivateKeyFile, KeyUtils.toPem(privateKey).getBytes());
         Path tempCertificateFile = toTempPath(certificateFile);
-        Files.write(tempCertificateFile, com.yahoo.vespa.athenz.tls.X509CertificateUtils.toPem(certificate).getBytes());
+        Files.write(tempCertificateFile, X509CertificateUtils.toPem(certificate).getBytes());
 
         Files.move(tempPrivateKeyFile, privateKeyFile, StandardCopyOption.ATOMIC_MOVE);
         Files.move(tempCertificateFile, certificateFile, StandardCopyOption.ATOMIC_MOVE);

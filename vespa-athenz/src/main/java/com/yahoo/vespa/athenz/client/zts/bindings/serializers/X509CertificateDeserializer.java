@@ -4,7 +4,7 @@ package com.yahoo.vespa.athenz.client.zts.bindings.serializers;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
+import com.yahoo.security.X509CertificateUtils;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
