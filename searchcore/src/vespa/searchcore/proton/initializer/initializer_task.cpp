@@ -10,11 +10,7 @@ InitializerTask::InitializerTask()
 {
 }
 
-
-InitializerTask::~InitializerTask()
-{
-}
-
+InitializerTask::~InitializerTask() = default;
 
 void
 InitializerTask::addDependency(SP dependency)
@@ -22,5 +18,4 @@ InitializerTask::addDependency(SP dependency)
     _dependencies.emplace_back(std::move(dependency));
 }
 
-} // namespace proton::initializer
-
+}
