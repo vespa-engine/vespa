@@ -23,7 +23,8 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
         fieldWriter.reset(new EmptyDFW());
         rc = true;
     } else if ((overrideName == "attribute") ||
-               ((overrideName == "geopos"))) {
+            (overrideName == "attributecombiner") ||
+            (overrideName == "geopos")) {
         rc = true;
     } else {
         fieldWriter = search::docsummary::DynamicDocsumConfig::createFieldWriter(fieldName, overrideName, argument, rc);
