@@ -150,8 +150,10 @@ void *
 MmapMemory::get(size_t len)
 {
     void * memory(nullptr);
+    int prevErrno = errno;
     memory = getHugePages(len);
     if (memory == nullptr) {
+        errno = prevErrno; // The temporary error should not impact if the end is good.
         memory = getNormalPages(len);
     }
     return memory;
@@ -162,9 +164,11 @@ MmapMemory::getHugePages(size_t len)
 {
     void * memory(nullptr);
     if ( ((len & 0x1fffff) == 0) && len) {
+        int prevErrno = errno;
         memory = getBasePages(len, MAP_ANON | MAP_PRIVATE | MAP_HUGETLB, -1, 0);
         if (memory == nullptr) {
             if (_hugePagesFd >= 0) {
+                errno = prevErrno; // The temporary error should not impact if the end is good.
                 memory = getBasePages(len, MAP_SHARED, _hugePagesFd, _hugePagesOffset);
                 if (memory) {
                     _hugePagesOffset += len;
