@@ -4,6 +4,8 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/task.h>
 #include <fstream>
 
 #include <vespa/log/log.h>
@@ -26,21 +28,16 @@ class SyncHandler : public FNET_Task
     SerialNum                   _syncTo;
     
 public:
-    SyncHandler(FRT_Supervisor *supervisor,
-                FRT_RPCRequest *req,const Domain::SP &domain,
-                const TransLogServer::Session::SP &session,
-                SerialNum syncTo);
+    SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req,const Domain::SP &domain,
+                const TransLogServer::Session::SP &session, SerialNum syncTo);
 
     ~SyncHandler();
     void PerformTask() override;
 };
 
 
-SyncHandler::SyncHandler(FRT_Supervisor *supervisor,
-                         FRT_RPCRequest *req,
-                         const Domain::SP &domain,
-                         const TransLogServer::Session::SP &session,
-                         SerialNum syncTo)
+SyncHandler::SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req, const Domain::SP &domain,
+                         const TransLogServer::Session::SP &session, SerialNum syncTo)
     : FNET_Task(supervisor->GetScheduler()),
       _req(*req),
       _domain(domain),
@@ -325,6 +322,8 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
 
 namespace {
 
+constexpr double NEVER(-1.0);
+
 void
 writeDomainDir(std::lock_guard<std::mutex> &guard,
                vespalib::string dir,
@@ -343,6 +342,77 @@ writeDomainDir(std::lock_guard<std::mutex> &guard,
     vespalib::rename(domainListTmp, domainList, false, false);
     vespalib::File::sync(dir);
 }
+
+class RPCDestination : public Session::Destination {
+public:
+    RPCDestination(FRT_Supervisor & supervisor, FNET_Connection * connection)
+        : _supervisor(supervisor), _connection(connection), _ok(true)
+    {
+        _connection->AddRef();
+    }
+    ~RPCDestination() override { _connection->SubRef(); }
+
+    bool
+    send(int32_t id, const vespalib::string & domain, const Packet & packet) override
+    {
+        FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
+        req->SetMethodName("visitCallback");
+        req->GetParams()->AddString(domain.c_str());
+        req->GetParams()->AddInt32(id);
+        req->GetParams()->AddData(packet.getHandle().c_str(), packet.getHandle().size());
+        return send(req);
+    }
+
+    bool
+    sendDone(int32_t id, const vespalib::string & domain) override
+    {
+        FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
+        req->SetMethodName("eofCallback");
+        req->GetParams()->AddString(domain.c_str());
+        req->GetParams()->AddInt32(id);
+        bool retval(send(req));
+        return retval;
+    }
+    bool connected() const override {
+        return (_connection->GetState() != FNET_Connection::FNET_CONNECTED);
+    }
+private:
+    bool
+    send(FRT_RPCRequest * req)
+    {
+        int32_t retval = rpc(req);
+        if ( ! ((retval == RPC::OK) || (retval == FRTE_RPC_CONNECTION)) ) {
+            LOG(error, "Return value != OK(%d) in send for method 'visitCallback'.", retval);
+        }
+        req->SubRef();
+
+        return (retval == RPC::OK);
+    }
+    int32_t
+    rpc(FRT_RPCRequest * req)
+    {
+        int32_t retval(-7);
+        LOG(debug, "rpc %s starting.", req->GetMethodName());
+        FRT_Supervisor::InvokeSync(_supervisor.GetTransport(), _connection, req, NEVER);
+        if (req->GetErrorCode() == FRTE_NO_ERROR) {
+            retval = (req->GetReturn()->GetValue(0)._intval32);
+            LOG(debug, "rpc %s = %d\n", req->GetMethodName(), retval);
+        } else if (req->GetErrorCode() == FRTE_RPC_TIMEOUT) {
+            LOG(warning, "rpc %s timed out. Will allow to continue: error(%d): %s\n", req->GetMethodName(), req->GetErrorCode(), req->GetErrorMessage());
+            retval = -req->GetErrorCode();
+        } else {
+            if (req->GetErrorCode() != FRTE_RPC_CONNECTION) {
+                LOG(warning, "rpc %s: error(%d): %s\n", req->GetMethodName(), req->GetErrorCode(), req->GetErrorMessage());
+            }
+            retval = -req->GetErrorCode();
+            _ok = false;
+        }
+        return retval;
+    }
+    FRT_Supervisor   & _supervisor;
+    FNET_Connection  * _connection;
+    bool               _ok;
+};
 
 }
 
@@ -508,7 +578,7 @@ void TransLogServer::domainVisit(FRT_RPCRequest *req)
         SerialNum from(params[1]._intval64);
         SerialNum to(params[2]._intval64);
         LOG(debug, "domainVisit(%s, %" PRIu64 ", %" PRIu64 ")", domainName, from, to);
-        retval = domain->visit(domain, from, to, *_supervisor, req->GetConnection());
+        retval = domain->visit(domain, from, to, std::make_unique<RPCDestination>(*_supervisor, req->GetConnection()));
     }
     ret.AddInt32(retval);
 }
