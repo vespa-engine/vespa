@@ -10,7 +10,7 @@ AdminV2 =
    (ConfigServer | ConfigServers)? &
    FileDistribution? &
    AdminSlobroks? &
-   (LegacyAdminMonitoring | AdminMonitoring)? &
+   AdminMonitoring? &
    Metrics? &
    ClusterControllers? &
    LogForwarding?
@@ -29,7 +29,7 @@ AdminV4 =
     AdminV4Slobroks? &
     AdminV4LogServers? &
     GenericConfig* &
-    (LegacyAdminMonitoring | AdminMonitoring)? &
+    AdminMonitoring? &
     Metrics? &
     LogForwarding?
   }
@@ -57,14 +57,6 @@ AdminMonitoring =
       attribute interval { xsd:int }?,
       attribute systemname { xsd:string }?
    }
-
-# TODO: Alternative name for the 'monitoring' tag. Remove on Vespa 7
-LegacyAdminMonitoring =
-   element yamas {
-      attribute interval { xsd:int }?,
-      attribute systemname { xsd:string }?
-   }
-
 
 ConfigServer = element configserver {
    service.attlist
