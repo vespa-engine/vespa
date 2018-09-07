@@ -120,7 +120,7 @@ class RankProfilesConfigImporter {
         return constants;
     }
 
-    private Tensor readTensorFromFile(String name, TensorType type, String fileReference) {
+    Tensor readTensorFromFile(String name, TensorType type, String fileReference) {
         try {
             // TODO: Only allow these two fallbacks in testing mode
             if (fileReference.isEmpty()) { // this may be the case in unit tests
@@ -135,6 +135,7 @@ class RankProfilesConfigImporter {
             }
 
             // TODO: Move these 2 lines to FileReference
+
             dir = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"), fileReference);
             File file = dir.listFiles()[0]; // directory contains one file having the original name
 
