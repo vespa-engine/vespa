@@ -47,13 +47,13 @@ public class YumTest {
     @Test
     public void testAlreadyInstalled() {
         terminal.expectCommand(
-                "yum install --assumeyes --enablerepo=repo-name package-1 package-2 2>&1",
+                "yum install --assumeyes --enablerepo=repo1 --enablerepo=repo2 package-1 package-2 2>&1",
                 0,
                 "foobar\nNothing to do\n");
 
         assertFalse(yum
                 .install("package-1", "package-2")
-                .enableRepo("repo-name")
+                .enableRepos("repo1", "repo2")
                 .converge(taskContext));
     }
 
@@ -102,7 +102,7 @@ public class YumTest {
 
         assertTrue(yum
                 .install("package-1", "package-2")
-                .enableRepo("repo-name")
+                .enableRepos("repo-name")
                 .converge(taskContext));
     }
 
@@ -185,7 +185,7 @@ public class YumTest {
                 "error");
 
         yum.install("package-1", "package-2")
-                .enableRepo("repo-name")
+                .enableRepos("repo-name")
                 .converge(taskContext);
         fail();
     }
