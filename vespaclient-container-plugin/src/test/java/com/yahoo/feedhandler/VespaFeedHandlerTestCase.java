@@ -39,6 +39,7 @@ import java.util.zip.GZIPOutputStream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("deprecation") // VespaFeedHandler classes are going away on Vespa 7
 public class VespaFeedHandlerTestCase {
 
     private VespaFeedHandler feedHandler;
