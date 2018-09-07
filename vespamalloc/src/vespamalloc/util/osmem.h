@@ -13,7 +13,7 @@ namespace vespamalloc {
 class Memory
 {
 public:
-    Memory(size_t blockSize) : _blockSize(std::max(blockSize, size_t(getpagesize()))), _start(NULL), _end(NULL) { }
+    Memory(size_t blockSize) : _blockSize(std::max(blockSize, size_t(getpagesize()))), _start(nullptr), _end(nullptr) { }
     virtual ~Memory() { }
     void * getStart() const  { return _start; }
     void * getEnd()   const  { return _end; }

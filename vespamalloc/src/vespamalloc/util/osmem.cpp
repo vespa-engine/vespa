@@ -10,7 +10,8 @@
 
 namespace vespamalloc {
 
-void * MmapMemory::reserve(size_t & len)
+void *
+MmapMemory::reserve(size_t & len)
 {
     len = 0;
     const size_t wLen(0x1000);
@@ -20,10 +21,11 @@ void * MmapMemory::reserve(size_t & len)
     (void) test;
     setStart(wanted);
     setEnd(getStart());
-    return NULL;
+    return nullptr;
 }
 
-size_t findInMemInfo(const char * wanted)
+size_t
+findInMemInfo(const char * wanted)
 {
     size_t value(0);
     char memInfo[8192];
@@ -34,16 +36,17 @@ size_t findInMemInfo(const char * wanted)
         assert((sz < int(sizeof(memInfo))) && (sz >= 0));
         memInfo[sz] = '\0';
         const char  * found(strstr(memInfo, wanted));
-        if (found != NULL) {
+        if (found != nullptr) {
             found += strlen(wanted);
-            value = strtoul(found, NULL, 0);
+            value = strtoul(found, nullptr, 0);
         }
         close(fd);
     }
     return value;
 }
 
-const char * getToken(const char * & s, const char * e)
+const char *
+getToken(const char * & s, const char * e)
 {
     for (; (s < e) && isspace(s[0]); s++) { }
     const char * c = s;
@@ -51,7 +54,8 @@ const char * getToken(const char * & s, const char * e)
     return c;
 }
 
-bool verifyHugePagesMount(const char * mount)
+bool
+verifyHugePagesMount(const char * mount)
 {
     const unsigned int HUGETLBFS_MAGIC(0x958458f6);
     struct statfs64 st;
@@ -70,15 +74,17 @@ MmapMemory::MmapMemory(size_t blockSize) :
     setupHugePages();
 }
 
-void MmapMemory::setupFAdvise()
+void
+MmapMemory::setupFAdvise()
 {
     const char * madv = getenv("VESPA_MALLOC_MADVISE_LIMIT");
     if (madv) {
-        _useMAdvLimit = strtoul(madv, NULL, 0);
+        _useMAdvLimit = strtoul(madv, nullptr, 0);
     }
 }
 
-void MmapMemory::setupHugePages()
+void
+MmapMemory::setupHugePages()
 {
     _hugePagesFileName[0] = '\0';
     const char * vespaHugePages = getenv("VESPA_MALLOC_HUGEPAGES");
@@ -140,23 +146,29 @@ MmapMemory::~MmapMemory()
     }
 }
 
-void * MmapMemory::get(size_t len)
+void *
+MmapMemory::get(size_t len)
 {
-    void * memory(NULL);
+    void * memory(nullptr);
+    int prevErrno = errno;
     memory = getHugePages(len);
-    if (memory ==NULL) {
+    if (memory == nullptr) {
+        errno = prevErrno; // The temporary error should not impact if the end is good.
         memory = getNormalPages(len);
     }
     return memory;
 }
 
-void * MmapMemory::getHugePages(size_t len)
+void *
+MmapMemory::getHugePages(size_t len)
 {
-    void * memory(NULL);
+    void * memory(nullptr);
     if ( ((len & 0x1fffff) == 0) && len) {
+        int prevErrno = errno;
         memory = getBasePages(len, MAP_ANON | MAP_PRIVATE | MAP_HUGETLB, -1, 0);
-        if (memory == NULL) {
+        if (memory == nullptr) {
             if (_hugePagesFd >= 0) {
+                errno = prevErrno; // The temporary error should not impact if the end is good.
                 memory = getBasePages(len, MAP_SHARED, _hugePagesFd, _hugePagesOffset);
                 if (memory) {
                     _hugePagesOffset += len;
@@ -167,21 +179,22 @@ void * MmapMemory::getHugePages(size_t len)
     return memory;
 }
 
-void * MmapMemory::getNormalPages(size_t len)
+void *
+MmapMemory::getNormalPages(size_t len)
 {
     return getBasePages(len, MAP_ANON | MAP_PRIVATE, -1, 0);
 }
 
-void * MmapMemory::getBasePages(size_t len, int mmapOpt, int fd, size_t offset)
+void *
+MmapMemory::getBasePages(size_t len, int mmapOpt, int fd, size_t offset)
 {
     char * wanted = reinterpret_cast<char *>(std::max(reinterpret_cast<size_t>(getEnd()), getMinPreferredStartAddress()));
-    void * mem(NULL);
+    void * mem(nullptr);
     for (bool ok(false) ; !ok && (mem != MAP_FAILED); wanted += getBlockAlignment()) {
-        if (mem != NULL) {
+        if (mem != nullptr) {
             int tmp(munmap(mem, len));
             assert(tmp == 0);
             (void) tmp;
-            mem = NULL;
         }
         // no alignment to _blockSize needed?
         // both 0x10000000000ul*4 and 0x200000 are multiples of the current block size.
@@ -189,7 +202,7 @@ void * MmapMemory::getBasePages(size_t len, int mmapOpt, int fd, size_t offset)
         ok = (mem == wanted);
     }
     if (mem != MAP_FAILED) {
-        if (getStart() == NULL) {
+        if (getStart() == nullptr) {
             setStart(mem);
             // assumes len parameter is always multiple of the current block size.
             setEnd(static_cast<char *>(mem)+len);
@@ -198,10 +211,11 @@ void * MmapMemory::getBasePages(size_t len, int mmapOpt, int fd, size_t offset)
         }
         return mem;
     }
-    return  NULL;
+    return nullptr;
 }
 
-bool MmapMemory::release(void * mem, size_t len)
+bool
+MmapMemory::release(void * mem, size_t len)
 {
     int ret(0);
     if (_useMAdvLimit <= len) {
@@ -214,7 +228,8 @@ bool MmapMemory::release(void * mem, size_t len)
     return true;
 }
 
-bool MmapMemory::freeTail(void * mem, size_t len)
+bool
+MmapMemory::freeTail(void * mem, size_t len)
 {
     int ret(0);
     if ((_useMAdvLimit <= len) && (static_cast<char *>(mem) + len) == getEnd()) {
@@ -225,7 +240,8 @@ bool MmapMemory::freeTail(void * mem, size_t len)
     return (ret == 0);
 }
 
-bool MmapMemory::reclaim(void * mem, size_t len)
+bool
+MmapMemory::reclaim(void * mem, size_t len)
 {
     int ret(0);
     if (_useMAdvLimit <= len) {
