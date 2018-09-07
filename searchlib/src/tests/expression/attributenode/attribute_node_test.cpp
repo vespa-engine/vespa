@@ -93,6 +93,8 @@ AttributeManagerFixture::AttributeManagerFixture()
     buildFloatArrayAttribute("smap.value.fval", {{ 110.0}, { 120.0, 121.0 }, {}});
     buildStringArrayAttribute("map.key", {{"k1.1", "k1.2"}, {"k2"}, {}});
     buildStringArrayAttribute("map.value", {{"n1.1", "n1.2"}, {"n2"}, {}});
+    buildStringAttribute("keyfield1", {"k1.2", "k2", "k3"});
+    buildStringAttribute("keyfield2", {"k1.1", "k1", "k1"});
 }
 
 AttributeManagerFixture::~AttributeManagerFixture() = default;
@@ -408,6 +410,18 @@ TEST_F("test keyed values", Fixture)
     TEST_DO(f.assertStrings({"n1.2", "", ""}, "map{\"k1.2\"}"));
     TEST_DO(f.assertStrings({"", "n2", ""}, "map{\"k2\"}"));
     TEST_DO(f.assertStrings({"", "", ""}, "map{\"k5\"}"));
+}
+
+TEST_F("test indirectly keyed values", Fixture)
+{
+    TEST_DO(f.assertStrings({"n1.2", "n2", ""}, "map{attribute(keyfield1)}"));
+    TEST_DO(f.assertStrings({"n1.1", "", ""}, "map{attribute(keyfield2)}"));
+    TEST_DO(f.assertStrings({"n1.2", "n2", ""}, "smap{attribute(keyfield1)}.name"));
+    TEST_DO(f.assertStrings({"n1.1", "", ""}, "smap{attribute(keyfield2)}.name"));
+    TEST_DO(f.assertFloats({ getUndefined<double>(), 120.0, getUndefined<double>()}, "smap{attribute(keyfield1)}.fval"));
+    TEST_DO(f.assertFloats({ 110.0, getUndefined<double>(), getUndefined<double>()}, "smap{attribute(keyfield2)}.fval"));
+    TEST_DO(f.assertInts({ 11, 20, getUndefined<int8_t>()}, "smap{attribute(keyfield1)}.val"));
+    TEST_DO(f.assertInts({ 10, getUndefined<int8_t>(), getUndefined<int8_t>()}, "smap{attribute(keyfield2)}.val"));
 }
 
 }

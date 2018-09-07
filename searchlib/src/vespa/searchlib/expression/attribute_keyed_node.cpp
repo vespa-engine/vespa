@@ -32,6 +32,8 @@ public:
 
 namespace {
 
+vespalib::string indirectKeyMarker("attribute(");
+
 class BadKeyHandler : public AttributeKeyedNode::KeyHandler
 {
 public:
@@ -101,6 +103,56 @@ using IntegerKeyHandler = KeyHandlerT<IAttributeVector::largeint_t>;
 using FloatKeyHandler   = KeyHandlerT<double>;
 using StringKeyHandler  = KeyHandlerT<const char *, vespalib::string>;
 using EnumKeyHandler    = KeyHandlerT<EnumHandle>;
+
+template <typename T>
+bool
+matchingKey(T lhs, T rhs)
+{
+    return lhs == rhs;
+}
+
+template <>
+bool
+matchingKey<const char *>(const char *lhs, const char *rhs)
+{
+    return (strcmp(lhs, rhs) == 0);
+}
+
+template <typename T>
+class IndirectKeyHandlerT : public AttributeKeyedNode::KeyHandler
+{
+    const IAttributeVector &_keySourceAttribute;
+    AttributeContent<T>     _keys;
+
+public:
+    IndirectKeyHandlerT(const IAttributeVector &attribute, const IAttributeVector &keySourceAttribute)
+        : KeyHandler(attribute),
+          _keySourceAttribute(keySourceAttribute),
+          _keys()
+    {
+    }
+    ~IndirectKeyHandlerT() override;
+    uint32_t handle(DocId docId) override {
+        T key = T();
+        _keySourceAttribute.get(docId, &key, 1);
+        _keys.fill(_attribute, docId);
+        for (uint32_t i = 0; i < _keys.size(); ++i) {
+            if (matchingKey(key, _keys[i])) {
+                return i;
+            }
+        }
+        return noKeyIdx();
+    }
+};
+
+template <typename T>
+IndirectKeyHandlerT<T>::~IndirectKeyHandlerT()
+{
+}
+
+using IndirectIntegerKeyHandler = IndirectKeyHandlerT<IAttributeVector::largeint_t>;
+using IndirectFloatKeyHandler = IndirectKeyHandlerT<double>;
+using IndirectStringKeyHandler = IndirectKeyHandlerT<const char *>;
 
 class ValueHandler : public AttributeNode::Handler
 {
@@ -181,7 +233,9 @@ AttributeKeyedNode::AttributeKeyedNode()
       _keyAttributeName(),
       _valueAttributeName(),
       _key(),
-      _keyAttribute(nullptr)
+      _keySourceAttributeName(),
+      _keyAttribute(nullptr),
+      _keySourceAttribute(nullptr)
 {
 }
 
@@ -192,7 +246,9 @@ AttributeKeyedNode::AttributeKeyedNode(vespalib::stringref name)
       _keyAttributeName(),
       _valueAttributeName(),
       _key(),
-      _keyAttribute(nullptr)
+      _keySourceAttributeName(),
+      _keyAttribute(nullptr),
+      _keySourceAttribute(nullptr)
 {
     setupAttributeNames();
 }
@@ -208,15 +264,20 @@ AttributeKeyedNode::setupAttributeNames()
     vespalib::asciistream keyName;
     vespalib::asciistream valueName;
     auto leftBracePos = _attributeName.find('{');
-    auto leftQuotePos = _attributeName.find('"', leftBracePos + 1);
-    auto rightQuotePos = _attributeName.find('"', leftQuotePos + 1);
-    auto rightBracePos = _attributeName.find('}', rightQuotePos + 1);
     auto baseName = _attributeName.substr(0, leftBracePos);
+    auto rightBracePos = _attributeName.rfind('}');
     keyName << baseName << ".key";
     valueName << baseName << ".value" << _attributeName.substr(rightBracePos + 1);
     _keyAttributeName = keyName.str();
     _valueAttributeName = valueName.str();
-    _key = _attributeName.substr(leftQuotePos + 1, rightQuotePos - leftQuotePos - 1);
+    if (rightBracePos != vespalib::string::npos && rightBracePos > leftBracePos) {
+        if (_attributeName[leftBracePos + 1] == '"' && _attributeName[rightBracePos - 1] == '"') {
+            _key = _attributeName.substr(leftBracePos + 2, rightBracePos - leftBracePos - 3);
+        } else if (_attributeName.substr(leftBracePos + 1, indirectKeyMarker.size()) == indirectKeyMarker && _attributeName[rightBracePos - 1] == ')') {
+            auto startPos = leftBracePos + 1 + indirectKeyMarker.size();
+            _keySourceAttributeName = _attributeName.substr(startPos, rightBracePos - 1 - startPos);
+        }
+    }
 }
 
 template <typename ResultNodeType>
@@ -232,6 +293,18 @@ std::unique_ptr<AttributeKeyedNode::KeyHandler>
 AttributeKeyedNode::makeKeyHandlerHelper()
 {
     const IAttributeVector &attribute = *_keyAttribute;
+    if (_keySourceAttribute != nullptr) {
+        const IAttributeVector &keySourceAttribute = *_keySourceAttribute;
+        if (attribute.isIntegerType() && keySourceAttribute.isIntegerType()) {
+            return std::make_unique<IndirectIntegerKeyHandler>(attribute, keySourceAttribute);
+        } else if (attribute.isFloatingPointType() && keySourceAttribute.isFloatingPointType()) {
+            return std::make_unique<IndirectFloatKeyHandler>(attribute, keySourceAttribute);
+        } else if (attribute.isStringType() && keySourceAttribute.isStringType()) {
+            return std::make_unique<IndirectStringKeyHandler>(attribute, keySourceAttribute);
+        } else {
+            return std::make_unique<BadKeyHandler>(attribute);
+        }
+    }
     if (attribute.hasEnum() && _useEnumOptimization) {
         return std::make_unique<EnumKeyHandler>(attribute, _key);
     } else if (attribute.isIntegerType()) {
@@ -310,6 +383,7 @@ void
 AttributeKeyedNode::cleanup()
 {
     _keyAttribute = nullptr;
+    _keySourceAttribute = nullptr;
     AttributeNode::cleanup();
 }
 
@@ -320,6 +394,9 @@ AttributeKeyedNode::wireAttributes(const search::attribute::IAttributeContext &a
     _hasMultiValue = false;
     _scratchResult = std::make_unique<AttributeResult>(valueAttribute, 0);
     _keyAttribute = findAttribute(attrCtx, _useEnumOptimization, _keyAttributeName);
+    if (!_keySourceAttributeName.empty()) {
+        _keySourceAttribute = findAttribute(attrCtx, false, _keySourceAttributeName);
+    }
 }
 
 void
@@ -327,6 +404,7 @@ AttributeKeyedNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     AttributeNode::visitMembers(visitor);
     visit(visitor, "keyAttributeName", _keyAttributeName);
+    visit(visitor, "keySourceAttributeName", _keySourceAttributeName);
     visit(visitor, "valueAttributeName", _valueAttributeName);
     visit(visitor, "key", _key);
 }
