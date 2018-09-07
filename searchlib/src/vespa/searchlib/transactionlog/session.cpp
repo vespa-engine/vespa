@@ -121,21 +121,6 @@ Session::rpc(FRT_RPCRequest * req)
     return retval;
 }
 
-void
-Session::RequestDone(FRT_RPCRequest * req)
-{
-    _ok = (req->GetErrorCode() == FRTE_NO_ERROR);
-    if (req->GetErrorCode() != FRTE_NO_ERROR) {
-        LOG(warning, "rpcAsync failed %s: error(%d): %s\n", req->GetMethodName(), req->GetErrorCode(), req->GetErrorMessage());
-    } else {
-        int32_t retval = req->GetReturn()->GetValue(0)._intval32;
-        if (retval != RPC::OK) {
-            LOG(error, "Return value != OK in RequestDone for method '%s'", req->GetMethodName());
-        }
-    }
-    req->SubRef();
-}
-
 Session::Session(int sId, const SerialNumRange & r, const Domain::SP & d,
                  FRT_Supervisor & supervisor, FNET_Connection *conn) :
     _supervisor(supervisor),

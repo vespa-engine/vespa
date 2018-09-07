@@ -16,7 +16,7 @@ class Domain;
 class DomainPart;
 using DomainSP = std::shared_ptr<Domain>;
 
-class Session : public FRT_IRequestWait
+class Session
 {
 private:
     using Task = vespalib::Executor::Task;
@@ -48,7 +48,6 @@ private:
     };
 
     bool send(FRT_RPCRequest * req);
-    void RequestDone(FRT_RPCRequest *req) override;
     bool send(const Packet & packet);
     bool sendDone();
     void visit();
