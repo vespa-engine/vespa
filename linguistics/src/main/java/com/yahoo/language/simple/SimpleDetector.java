@@ -37,6 +37,7 @@ import java.util.Locale;
  * @author bjorncs
  */
 public class SimpleDetector implements Detector {
+
     static private TextObjectFactory textObjectFactory;
     static private LanguageDetector languageDetector;
 

@@ -1,6 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.config.FileReference;
+import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.utils.FileSender;
+
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,6 +36,16 @@ public class RankingConstants {
     /** Returns a read-only map of the ranking constants in this indexed by name */
     public Map<String, RankingConstant> asMap() {
         return Collections.unmodifiableMap(constants);
+    }
+
+    /** Initiate sending of these constants to some services over file distribution */
+    public void sendTo(Collection<? extends AbstractService> services) {
+        for (RankingConstant constant : constants.values()) {
+            FileReference reference = (constant.getPathType() == RankingConstant.PathType.FILE)
+                                      ? FileSender.sendFileToServices(constant.getFileName(), services)
+                                      : FileSender.sendUriToServices(constant.getUri(), services);
+            constant.setFileReference(reference.value());
+        }
     }
 
 }

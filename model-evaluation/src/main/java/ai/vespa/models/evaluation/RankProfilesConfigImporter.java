@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * Converts RankProfilesConfig instances to RankingExpressions for evaluation.
@@ -35,19 +36,13 @@ import java.util.Optional;
  */
 class RankProfilesConfigImporter {
 
-    /**
-     * Constants already imported in this while reading some expression.
-     * This is to avoid re-reading constants referenced
-     * multiple places, as that is potentially costly.
-     */
-    private Map<String, Constant> globalImportedConstants = new HashMap<>();
+    private static final Logger log = Logger.getLogger("CONSTANTS");
 
     /**
      * Returns a map of the models contained in this config, indexed on name.
      * The map is modifiable and owned by the caller.
      */
     Map<String, Model> importFrom(RankProfilesConfig config, RankingConstantsConfig constantsConfig) {
-        globalImportedConstants.clear();
         try {
             Map<String, Model> models = new HashMap<>();
             for (RankProfilesConfig.Rankprofile profile : config.rankprofile()) {
@@ -61,7 +56,8 @@ class RankProfilesConfigImporter {
         }
     }
 
-    private Model importProfile(RankProfilesConfig.Rankprofile profile, RankingConstantsConfig constantsConfig) throws ParseException {
+    private Model importProfile(RankProfilesConfig.Rankprofile profile, RankingConstantsConfig constantsConfig)
+            throws ParseException {
         List<ExpressionFunction> functions = new ArrayList<>();
         Map<FunctionReference, ExpressionFunction> referencedFunctions = new HashMap<>();
         ExpressionFunction firstPhase = null;
@@ -79,7 +75,8 @@ class RankProfilesConfigImporter {
                     functions.add(new ExpressionFunction(reference.get().functionName(), arguments, expression)); //
 
                 // Make all functions, bound or not available under the name they are referenced by in expressions
-                referencedFunctions.put(reference.get(), new ExpressionFunction(reference.get().serialForm(), arguments, expression));
+                referencedFunctions.put(reference.get(),
+                                        new ExpressionFunction(reference.get().serialForm(), arguments, expression));
             }
             else if (property.name().equals("vespa.rank.firstphase")) { // Include in addition to macros
                 firstPhase = new ExpressionFunction("firstphase", new ArrayList<>(),
@@ -112,24 +109,29 @@ class RankProfilesConfigImporter {
 
     private List<Constant> readConstants(RankingConstantsConfig constantsConfig) {
         List<Constant> constants = new ArrayList<>();
+
         for (RankingConstantsConfig.Constant constantConfig : constantsConfig.constant()) {
             constants.add(new Constant(constantConfig.name(),
-                                       readTensorFromFile(TensorType.fromSpec(constantConfig.type()),
+                                       readTensorFromFile(constantConfig.name(),
+                                                          TensorType.fromSpec(constantConfig.type()),
                                                           constantConfig.fileref().value())));
         }
         return constants;
     }
 
-    private Tensor readTensorFromFile(TensorType type, String fileName) {
+    private Tensor readTensorFromFile(String name, TensorType type, String fileReference) {
         try {
-            if (fileName.endsWith(".tbf"))
-                return TypedBinaryFormat.decode(Optional.of(type),
-                                                GrowableByteBuffer.wrap(IOUtils.readFileBytes(new File(fileName))));
-            // TODO: Support json and json.lz4
-
-            if (fileName.isEmpty()) // this is the case in unit tests
+            if (fileReference.isEmpty()) { // this may be the case in unit tests
+                log.warning("Got empty file reference for constant '" + name + "', using an empty tensor");
                 return Tensor.from(type, "{}");
-            throw new IllegalArgumentException("Unknown tensor file format (determined by file ending): " + fileName);
+            }
+            if ( ! new File(fileReference).exists()) { // this may be the case in unit tests
+                log.warning("Got empty file reference for constant '" + name + "', using an empty tensor");
+                return Tensor.from(type, "{}");
+            }
+            return TypedBinaryFormat.decode(Optional.of(type),
+                                            GrowableByteBuffer.wrap(IOUtils.readFileBytes(new File(fileReference))));
+            // TODO: Support json and json.lz4
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
