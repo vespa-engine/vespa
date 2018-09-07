@@ -108,6 +108,8 @@ public class JettyHttpServer extends AbstractServerProvider {
         String RESPONSES_3XX = "http.status.3xx";
         String RESPONSES_4XX = "http.status.4xx";
         String RESPONSES_5XX = "http.status.5xx";
+        String RESPONSES_401 = "http.status.401";
+        String RESPONSES_403 = "http.status.403";
 
         String STARTED_MILLIS = "serverStartedMillis";
         @Deprecated String MANHATTAN_STARTED_MILLIS = "proc.uptime";

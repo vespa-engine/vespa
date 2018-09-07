@@ -41,7 +41,7 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
     }
 
     private static final String[] HTTP_RESPONSE_GROUPS = { Metrics.RESPONSES_1XX, Metrics.RESPONSES_2XX, Metrics.RESPONSES_3XX,
-            Metrics.RESPONSES_4XX, Metrics.RESPONSES_5XX };
+            Metrics.RESPONSES_4XX, Metrics.RESPONSES_5XX, Metrics.RESPONSES_401, Metrics.RESPONSES_403};
 
     private final AtomicLong inFlight = new AtomicLong();
     private final LongAdder statistics[][];
@@ -112,6 +112,9 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
         if (group >= 0) {
             HttpMethod method = getMethod(request);
             statistics[method.ordinal()][group].increment();
+            if (group == 5 || group == 6) { // if 401/403, also increment 4xx
+                statistics[method.ordinal()][3].increment();
+            }
         }
 
         long live = inFlight.decrementAndGet();
@@ -127,15 +130,19 @@ public class HttpResponseStatisticsCollector extends HandlerWrapper implements G
     }
 
     private int groupIndex(Request request) {
-        if (request.isHandled()) {
-            int index = (request.getResponse().getStatus() / 100) - 1; // 1xx = 0, 2xx = 1 etc.
-            if (index < 0 || index > statistics.length) {
-                return -1;
-            } else {
-                return index;
-            }
+        int index = request.getResponse().getStatus();
+        if (index == 401) {
+            return 5;
+        }
+        if (index == 403) {
+            return 6;
+        }
+
+        index = index / 100 - 1; // 1xx = 0, 2xx = 1 etc.
+        if (index < 0 || index >= statistics[0].length) {
+            return -1;
         } else {
-            return 3; // 4xx
+            return index;
         }
     }
 
