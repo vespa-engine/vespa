@@ -1,12 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
-import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
-import com.yahoo.vespa.athenz.tls.KeyUtils;
 import org.junit.Test;
 
 import java.security.KeyPair;
