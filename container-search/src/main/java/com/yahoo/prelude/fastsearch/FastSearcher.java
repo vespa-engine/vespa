@@ -222,9 +222,9 @@ public class FastSearcher extends VespaBackEndSearcher {
      */
     private CloseableChannel getChannel(Query query) {
         if (query.properties().getBoolean(dispatchInternal, false)) {
-            Optional<CloseableChannel> directDispatchChannel = dispatcher.getDispatchBackend(query);
-            if(directDispatchChannel.isPresent()) {
-                return directDispatchChannel.get();
+            Optional<CloseableChannel> dispatchedChannel = dispatcher.getDispatchedChannel(query);
+            if (dispatchedChannel.isPresent()) {
+                return dispatchedChannel.get();
             }
         }
         if (!query.properties().getBoolean(dispatchDirect, true))
