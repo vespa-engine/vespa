@@ -5,6 +5,7 @@ vespa_add_library(vespalib_vespalib_net_tls OBJECT
     crypto_exception.cpp
     tls_context.cpp
     transport_security_options.cpp
+    transport_security_options_reading.cpp
     DEPENDS
 )
 find_package(OpenSSL)
