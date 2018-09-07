@@ -14,7 +14,6 @@ import java.util.Map;
  * Represents a 'path' in a {@link ConfigInstance}, usually a filename.
  *
  * @author gjoranv
- * @since 5.1.30
  */
 public class PathNode extends LeafNode<Path> {
 

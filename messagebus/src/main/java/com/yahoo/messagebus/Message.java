@@ -5,9 +5,9 @@ import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.messagebus.routing.Route;
 
 /**
- * <p>A message is a child of Routable, it is not a reply, and it has a sequencing identifier. Furthermore, a message
+ * A message is a child of Routable, it is not a reply, and it has a sequencing identifier. Furthermore, a message
  * contains a retry counter that holds what retry the message is currently on. See the method comment {@link #getRetry}
- * for more information.</p>
+ * for more information.
  *
  * @author Simon Thoresen Hult
  */
