@@ -269,6 +269,41 @@ FNET_Connection::handle_packets()
     return !broken;
 }
 
+namespace {
+
+bool
+hasReadError(bool broken, const FNET_Connection & conn, int res, int ioErrno) {
+    if (res <= 0) {
+        if (res == 0) {
+            return true; // handle EOF
+        } else { // res < 0
+            broken = ((ioErrno != EWOULDBLOCK) && (ioErrno != EAGAIN));
+            if (broken && (ioErrno != ECONNRESET)) {
+                LOG(debug, "Connection(%s): read error: %d", conn.GetSpec(), ioErrno);
+            }
+            return broken;
+        }
+    }
+    return false;
+}
+
+bool
+hasWriteError(bool broken, uint32_t & write_work, const FNET_Connection & conn, int res, int ioErrno) {
+    if (res < 0) {
+        if ((ioErrno == EWOULDBLOCK) || (ioErrno == EAGAIN)) {
+            ++write_work; // incomplete write/flush
+        } else {
+            return true;
+        }
+        if (broken && (ioErrno != ECONNRESET)) {
+            LOG(debug, "Connection(%s): write error: %d", conn.GetSpec(), errno);
+        }
+    }
+    return false;
+}
+
+}
+
 bool
 FNET_Connection::Read()
 {
@@ -309,23 +344,13 @@ done_read:
         }
     }
 
+    broken = hasReadError(broken, *this, res, errno);
+
     UpdateTimeOut();
     uint32_t maxSize = GetConfig()->_maxInputBufferSize;
-    if (maxSize > 0 && _input.GetBufSize() > maxSize)
-    {
+    if (maxSize > 0 && _input.GetBufSize() > maxSize) {
         if (!_flags._gotheader || _packetLength < maxSize) {
             _input.Shrink(maxSize);
-        }
-    }
-
-    if (res <= 0) {
-        if (res == 0) {
-            broken = true; // handle EOF
-        } else { // res < 0
-            broken = ((errno != EWOULDBLOCK) && (errno != EAGAIN));
-            if (broken && (errno != ECONNRESET)) {
-                LOG(debug, "Connection(%s): read error: %d", GetSpec(), errno);
-            }
         }
     }
 
@@ -388,20 +413,11 @@ FNET_Connection::Write()
         }
     }
 
+    broken = hasWriteError(broken, my_write_work, *this, res, errno);
+
     uint32_t maxSize = GetConfig()->_maxOutputBufferSize;
     if (maxSize > 0 && _output.GetBufSize() > maxSize) {
         _output.Shrink(maxSize);
-    }
-
-    if (res < 0) {
-        if ((errno == EWOULDBLOCK) || (errno == EAGAIN)) {
-            ++my_write_work; // incomplete write/flush
-        } else {
-            broken = true;
-        }
-        if (broken && (errno != ECONNRESET)) {
-            LOG(debug, "Connection(%s): write error: %d", GetSpec(), errno);
-        }
     }
 
     std::unique_lock<std::mutex> guard(_ioc_lock);
