@@ -40,7 +40,7 @@ namespace vespalib::net::tls {
 
  */
 
-using namespace slime;
+using namespace slime::convenience;
 
 namespace {
 
@@ -66,12 +66,12 @@ vespalib::string load_file_referenced_by_field(const Cursor& cursor, const char*
 
 std::unique_ptr<TransportSecurityOptions> load_from_input(Input& input) {
     Slime root;
-    auto parsed = JsonFormat::decode(input, root);
+    auto parsed = slime::JsonFormat::decode(input, root);
     if (parsed == 0) {
         throw IllegalArgumentException("Provided TLS config file is not valid JSON");
     }
     auto& files = root[files_field];
-    if (files.children() == 0) {
+    if (files.fields() == 0) {
         throw IllegalArgumentException("TLS config root field 'files' is missing or empty");
     }
     // Note: we do no look at the _contents_ of the files; this is deferred to the
@@ -92,10 +92,10 @@ std::unique_ptr<TransportSecurityOptions> read_options_from_json_string(const ve
 }
 
 std::unique_ptr<TransportSecurityOptions> read_options_from_json_file(const vespalib::string& file_path) {
-    if (!fileExists(file_path)) {
+    MappedFileInput file_input(file_path);
+    if (!file_input.valid()) {
         throw IllegalArgumentException(make_string("TLS config file '%s' does not exist", file_path.c_str()));
     }
-    MappedFileInput file_input(file_path);
     return load_from_input(file_input);
 }
 
