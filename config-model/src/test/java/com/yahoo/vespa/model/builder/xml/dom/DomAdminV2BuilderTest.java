@@ -72,7 +72,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
                         "    <configserver hostalias=\"mockhost\"/>" +
                         "  </configservers>" +
                         "    <adminserver hostalias=\"mockhost\"/>" +
-                        "  <yamas systemname=\"foo\"/>" +
+                        "  <monitoring systemname=\"foo\"/>" +
                         "</admin>").getDocumentElement();
     }
 
@@ -100,7 +100,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
                         "    <configserver hostalias=\"mockhost\"/>" +
                         "  </configservers>" +
                         "    <adminserver hostalias=\"mockhost\"/>" +
-                        "  <yamas systemname=\"foo\" interval=\"300\"/>" +
+                        "  <monitoring systemname=\"foo\" interval=\"300\"/>" +
                         "</admin>").getDocumentElement();
     }
 
@@ -186,7 +186,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
         Element servicesYamasIllegalInterval = XML.getDocument(
                         "<admin version=\"2.0\">" +
                         "  <adminserver hostalias=\"mockhost\"/>" +
-                        "  <yamas interval=\"5\"/>" +
+                        "  <monitoring interval=\"5\"/>" +
                         "</admin>").getDocumentElement();
         Admin admin = buildAdmin(servicesYamasIllegalInterval);
     }
