@@ -28,6 +28,7 @@ using search::FeatureSet;
 using search::attribute::IAttributeContext;
 using search::fef::MatchDataLayout;
 using search::fef::MatchData;
+using search::fef::indexproperties::hitcollector::HeapSize;
 using search::queryeval::Blueprint;
 using search::queryeval::SearchIterator;
 using vespalib::Doom;
@@ -242,14 +243,16 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             return reply;
         }
 
-        MatchParams params(searchContext.getDocIdLimit(), _rankSetup->getHeapSize(), _rankSetup->getArraySize(),
+        const Properties & rankProperties = request.propertiesMap.rankProperties();
+        uint32_t heapSize = HeapSize::lookup(rankProperties, _rankSetup->getHeapSize());
+
+        MatchParams params(searchContext.getDocIdLimit(), heapSize, _rankSetup->getArraySize(),
                            _rankSetup->getRankScoreDropLimit(), request.offset, request.maxhits,
                            !_rankSetup->getSecondPhaseRank().empty(), !willNotNeedRanking(request, groupingContext));
 
         ResultProcessor rp(attrContext, metaStore, sessionMgr, groupingContext, sessionId,
                            request.sortSpec, params.offset, params.hits, request.should_drop_sort_data());
 
-        const Properties & rankProperties = request.propertiesMap.rankProperties();
         size_t numThreadsPerSearch = computeNumThreadsPerSearch(mtf->estimate(), rankProperties);
         LimitedThreadBundleWrapper limitedThreadBundle(threadBundle, numThreadsPerSearch);
         MatchMaster master;
