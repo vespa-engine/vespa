@@ -29,6 +29,7 @@ public:
         virtual bool send(int32_t id, const vespalib::string & domain, const Packet & packet) = 0;
         virtual bool sendDone(int32_t id, const vespalib::string & domain) = 0;
         virtual bool connected() const = 0;
+        virtual bool ok() const = 0;
     };
     typedef std::shared_ptr<Session> SP;
     Session(const Session &) = delete;
@@ -38,7 +39,6 @@ public:
     const SerialNumRange & range() const { return _range; }
     int                       id() const { return _id; }
     bool inSync()    const { return _inSync; }
-    bool ok()        const { return _ok; }
     bool finished()  const;
     static Task::UP createTask(const Session::SP & session);
     void setStartTime(time_point startTime) { _startTime = startTime; }
@@ -54,6 +54,7 @@ private:
         Session::SP _session;
     };
 
+    bool ok()        const { return _destination->ok(); }
     bool send(const Packet & packet);
     bool sendDone();
     void visit();
@@ -65,7 +66,6 @@ private:
     DomainSP                     _domain;
     SerialNumRange               _range;
     int                          _id;
-    bool                         _ok;
     std::atomic<bool>            _visitRunning;
     std::atomic<bool>            _inSync;
     std::atomic<bool>            _finished;

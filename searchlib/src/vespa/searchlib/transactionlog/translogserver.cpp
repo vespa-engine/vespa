@@ -353,6 +353,10 @@ public:
     }
     ~RPCDestination() override { _connection->SubRef(); }
 
+    bool ok() const override {
+        return _ok;
+    }
+
     bool send(int32_t id, const vespalib::string & domain, const Packet & packet) override {
         FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
         req->SetMethodName("visitCallback");
@@ -371,7 +375,7 @@ public:
         return retval;
     }
     bool connected() const override {
-        return (_connection->GetState() != FNET_Connection::FNET_CONNECTED);
+        return (_connection->GetState() <= FNET_Connection::FNET_CONNECTED);
     }
 private:
     bool send(FRT_RPCRequest * req) {
