@@ -18,7 +18,9 @@ private:
     vespalib::string        _keyAttributeName;
     vespalib::string        _valueAttributeName;
     vespalib::string        _key;
+    vespalib::string        _keySourceAttributeName;
     const IAttributeVector *_keyAttribute;
+    const IAttributeVector *_keySourceAttribute;
 
     void setupAttributeNames();
     template <typename ResultNodeType>
