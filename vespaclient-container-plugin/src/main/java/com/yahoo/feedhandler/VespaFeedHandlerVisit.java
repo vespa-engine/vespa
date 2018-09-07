@@ -13,10 +13,7 @@ import com.yahoo.search.handler.SearchHandler;
 
 /**
  * @author thomasg
- *
- * @deprecated Legacy API. Will be removed in Vespa 7
  */
-@Deprecated
 public class VespaFeedHandlerVisit extends ThreadedHttpRequestHandler {
 
     private final SearchHandler searchHandler;
