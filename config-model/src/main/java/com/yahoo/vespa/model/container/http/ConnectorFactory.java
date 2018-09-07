@@ -11,12 +11,15 @@ import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import org.w3c.dom.Element;
 
+import java.util.Optional;
+
 import static com.yahoo.component.ComponentSpecification.fromString;
 import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType;
 
 /**
  * @author Einar M R Rosenvinge
  * @author bjorncs
+ * @author mortent
  */
 public class ConnectorFactory extends SimpleComponent implements ConnectorConfig.Producer {
 
@@ -25,14 +28,15 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     private final Element legacyConfig;
 
     public ConnectorFactory(String name, int listenPort) {
-        this(name, listenPort, null, null, null);
+        this(name, listenPort, null, null, null, null);
     }
 
     public ConnectorFactory(String name,
                             int listenPort,
                             Element legacyConfig,
                             Element sslKeystoreConfigurator,
-                            Element sslTruststoreConfigurator) {
+                            Element sslTruststoreConfigurator,
+                            SimpleComponent sslProviderComponent) {
         super(new ComponentModel(
                 new BundleInstantiationSpecification(new ComponentId(name),
                                                      fromString("com.yahoo.jdisc.http.server.jetty.ConnectorFactory"),
@@ -40,6 +44,10 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         this.name = name;
         this.listenPort = listenPort;
         this.legacyConfig = legacyConfig;
+        Optional.ofNullable(sslProviderComponent).ifPresent(component -> {
+            addChild(component);
+            inject(component);
+        });
         addSslKeyStoreConfigurator(name, sslKeystoreConfigurator);
         addSslTrustStoreConfigurator(name, sslTruststoreConfigurator);
     }
@@ -153,6 +161,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         }
     }
 
+
     private void addSslKeyStoreConfigurator(String name, Element sslKeystoreConfigurator) {
         addSslConfigurator("ssl-keystore-configurator@" + name,
                            DefaultSslKeyStoreConfigurator.class,
@@ -172,11 +181,9 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
             String bundleName = configuratorElement.getAttribute("bundle");
             configuratorComponent = new SimpleComponent(new ComponentModel(idSpec, className, bundleName));
         } else {
-            configuratorComponent =
-                    new SimpleComponent(new ComponentModel(idSpec, defaultImplementation.getName(), "jdisc_http_service"));
+            configuratorComponent = new SimpleComponent(new ComponentModel(idSpec, defaultImplementation.getName(), "jdisc_http_service"));
         }
         addChild(configuratorComponent);
         inject(configuratorComponent);
     }
-
 }
