@@ -57,6 +57,7 @@ vespa_define_module(
     src/tests/net/socket
     src/tests/net/socket_spec
     src/tests/net/tls/openssl_impl
+    src/tests/net/tls/transport_options
     src/tests/objects/nbostream
     src/tests/optimized
     src/tests/printable
