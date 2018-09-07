@@ -501,7 +501,7 @@ public class InternalStepRunner implements StepRunner {
                 "            </filtering>\n" +
                 "        </http>\n" +
                 "\n" +
-                "        <nodes count=\"1\" flavor=\"d-2-8-50\" />\n" +
+                "        <nodes count=\"1\" flavor=\"d-1-4-50\" />\n" +
                 "    </container>\n" +
                 "</services>\n";
 
