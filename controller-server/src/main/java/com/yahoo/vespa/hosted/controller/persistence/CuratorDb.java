@@ -302,12 +302,17 @@ public class CuratorDb {
     }
 
     public List<Tenant> readTenants() {
+        return readTenantNames().stream()
+                                .map(this::readTenant)
+                                .filter(Optional::isPresent)
+                                .map(Optional::get)
+                                .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+    }
+
+    public List<TenantName> readTenantNames() {
         return curator.getChildren(tenantRoot).stream()
                       .map(TenantName::from)
-                      .map(this::readTenant)
-                      .filter(Optional::isPresent)
-                      .map(Optional::get)
-                      .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                      .collect(Collectors.toList());
     }
 
     public void removeTenant(TenantName name) {
