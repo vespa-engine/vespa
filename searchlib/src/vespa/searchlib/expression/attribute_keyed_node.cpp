@@ -70,21 +70,21 @@ EnumHandle convertKey<EnumHandle>(const IAttributeVector &attribute, const vespa
 template <typename T, typename KeyType = T>
 class KeyHandlerT : public AttributeKeyedNode::KeyHandler
 {
-    AttributeContent<T> _values;
+    AttributeContent<T> _keys;
     KeyType _key;
 
 public:
     KeyHandlerT(const IAttributeVector &attribute, const vespalib::string &key)
         : KeyHandler(attribute),
-          _values(),
+          _keys(),
           _key(convertKey<KeyType>(attribute, key))
     {
     }
     ~KeyHandlerT() override;
     uint32_t handle(DocId docId) override {
-        _values.fill(_attribute, docId);
-        for (uint32_t i = 0; i < _values.size(); ++i) {
-            if (_key == _values[i]) {
+        _keys.fill(_attribute, docId);
+        for (uint32_t i = 0; i < _keys.size(); ++i) {
+            if (_key == _keys[i]) {
                 return i;
             }
         }
