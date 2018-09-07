@@ -33,6 +33,16 @@ prepare_stuff() {
 	ensure_dir $DBDIR
 }
 
+bad_timestamp() {
+	now=$(date +%s)
+	if [ "$1" ] && [ "$1" -ge 1514764800 ] && [ "$1" -le $now ]; then
+		# sane timestamp:
+		return 1
+	fi
+	# bad timestamp:
+	return 0
+}
+
 mark_pid() {
 	echo $$ > $PIDF.$$.tmp
 	mv $PIDF.$$.tmp $PIDF || exit 1
@@ -54,19 +64,22 @@ check_pidfile() {
 }
 
 maybe_collect() {
-	now=$(date +%s)
-	chopnow=${now%?????}
-	ts=${1##*/*.}
-	[ "$ts" ] || return 1
-	[ "$ts" -gt 0 ] || return 1
-	add=$((3 * $RETAIN_DAYS))
-	lim1=$(($ts + $add))
-	mod_time=$(get_mode_time "$1")
-	add=$((3 * 86400 * $RETAIN_DAYS))
+	timestamp=$1
+	logfilename=$2
+
+	if bad_timestamp "$1"; then
+		echo "WARNING: bad timestamp '$timestamp' for logfilename '$logfilename'"
+		return
+	fi
+
+	add=$((86400 * $RETAIN_DAYS))
+	lim1=$(($timestamp + $add))
+	mod_time=$(get_mod_time "$logfilename")
 	lim2=$(($mod_time + $add))
-	if [ $lim1 -lt $chopnow ] && [ $lim2 -lt $now ]; then
-		echo "Collect meta-logfile '$1' ts '$ts' (lim $lim, now $chopnow)"
-		rm -f "$1"
+
+	if [ $lim1 -lt $now ] && [ $lim2 -lt $now ]; then
+		echo "Collect logfile '$logfilename' timestamped $timestamp modified $mod_time"
+		rm -f "$logfilename"
 	fi
 }
 
@@ -75,29 +88,27 @@ get_mod_time() {
 }
 
 process_file() {
+	dbfile="$1"
 	now=$(date +%s)
-	add=$((86400 * $RETAIN_DAYS))
 	found=0
 	while read timestamp logfilename; do
-		if [ -f "$logfilename" ]; then
-			found=1
-			lim1=$(($timestamp + $add))
-			mod_time=$(get_mod_time "$logfilename")
-			lim2=$((mod_time + $add))
-			if [ $lim1 -lt $now ] && [ $lim2 -lt $now ]; then
-				echo "Collect logfile '$logfilename' timestamped $timestamp modified $mod_time"
-				rm -f "$logfilename"
+		for fn in $logfilename $logfilename.*z*; do
+			if [ -f "$fn" ]; then
+				found=1
+				maybe_collect "$timestamp" "$fn"
 			fi
-		fi
-	done < $1
+		done
+	done < $dbfile
 	if [ $found = 0 ]; then
-		maybe_collect $1
+		ts=${dbfile##*.}00000
+		maybe_collect "$ts" "$dbfile"
 	fi
 }
 
 process_all() {
 	for dbf in $DBDIR/logfiles.* ; do
-		[ -f "$dbf" ] && process_file "$dbf"
+		[ -f "$dbf" ] || continue
+		process_file "$dbf"
 	done
 }
 
