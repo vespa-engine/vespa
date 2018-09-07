@@ -18,6 +18,7 @@
     <name>${project.artifactId}</name>
 
     <dependencies>
+        <!-- Provided -->
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>docker-api</artifactId>
@@ -32,11 +33,6 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>node-repository</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>defaults</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
@@ -48,20 +44,13 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>net.jpountz.lz4</groupId>
-            <artifactId>lz4</artifactId>
-            <scope>compile</scope>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>vespa-athenz</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-            <version>4.4.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>4.5</version>
-        </dependency>
+
+        <!-- Compile -->
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>orchestrator-restapi</artifactId>
@@ -70,15 +59,43 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>vespa-athenz</artifactId>
+            <artifactId>node-repository</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>4.4.1</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.jpountz.lz4</groupId>
+            <artifactId>lz4</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.velocity</groupId>
+            <artifactId>velocity</artifactId>
+            <scope>compile</scope>
         </dependency>
 
+        <!-- Test -->
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-junit</artifactId>
             <version>2.0.0.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -89,8 +106,14 @@
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>application</artifactId>
-            <scope>test</scope>
             <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>application-model</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
@@ -106,25 +129,9 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>application-model</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>testutil</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.velocity</groupId>
-            <artifactId>velocity</artifactId>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
     <build>

@@ -18,16 +18,20 @@
     <name>${project.artifactId}</name>
 
     <dependencies>
+        <!-- Provided -->
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-dev</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
+
+        <!-- Compile -->
         <dependency>
             <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java</artifactId>
             <version>3.0.13</version>
+            <scope>compile</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -92,6 +96,7 @@
         <dependency>
             <groupId>net.jpountz.lz4</groupId>
             <artifactId>lz4</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -100,6 +105,7 @@
             docker-java so the dependency is declared closer to the root of maven and
             more likely be the version that is finally being used. -->
             <version>4.4.1</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -108,7 +114,10 @@
             docker-java so the dependency is declared closer to the root of maven and
             more likely be the version that is finally being used. -->
             <version>4.5</version>
+            <scope>compile</scope>
         </dependency>
+
+        <!-- Test -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -120,7 +129,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 
     <build>
         <plugins>
