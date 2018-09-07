@@ -3,12 +3,13 @@ package com.yahoo.container.core;
 
 /**
  * @author gjoranv
- * @since 5.46
  */
 public interface BundleLoaderProperties {
+
     // TODO: This should be removed. The prefix is used to separate the bundles in BundlesConfig
     // into those that are transferred with filedistribution and those that are preinstalled
     // on disk. Instead, the model should have put them in two different configs. I.e. create a new
     // config 'preinstalled-bundles.def'.
-    public static final String DISK_BUNDLE_PREFIX = "file:";
+    String DISK_BUNDLE_PREFIX = "file:";
+
 }

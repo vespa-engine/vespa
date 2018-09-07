@@ -95,7 +95,7 @@ public class BundleLoader {
         log.info("Installing bundle from disk with reference '" + reference.value() + "'");
 
         File file = new File(referenceFileName);
-        if (!file.exists()) {
+        if ( ! file.exists()) {
             throw new IllegalArgumentException("Reference '" + reference.value() + "' not found on disk.");
         }
 

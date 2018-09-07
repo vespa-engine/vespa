@@ -15,6 +15,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.File;
 import java.io.IOException;
@@ -121,16 +122,28 @@ class RankProfilesConfigImporter {
 
     private Tensor readTensorFromFile(String name, TensorType type, String fileReference) {
         try {
+            // TODO: Only allow these two fallbacks in testing mode
             if (fileReference.isEmpty()) { // this may be the case in unit tests
                 log.warning("Got empty file reference for constant '" + name + "', using an empty tensor");
                 return Tensor.from(type, "{}");
             }
-            if ( ! new File(fileReference).exists()) { // this may be the case in unit tests
-                log.warning("Got empty file reference for constant '" + name + "', using an empty tensor");
+            File dir = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"), fileReference);
+            if ( ! dir.exists()) { // this may be the case in unit tests
+                log.warning("Got reference to nonexisting file " + dir + "e for constant '" + name +
+                            "', using an empty tensor");
                 return Tensor.from(type, "{}");
             }
-            return TypedBinaryFormat.decode(Optional.of(type),
-                                            GrowableByteBuffer.wrap(IOUtils.readFileBytes(new File(fileReference))));
+
+            // TODO: Move these 2 lines to FileReference
+            dir = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"), fileReference);
+            File file = dir.listFiles()[0]; // directory contains one file having the original name
+
+            if (file.getName().endsWith(".tbf"))
+                return TypedBinaryFormat.decode(Optional.of(type),
+                                                GrowableByteBuffer.wrap(IOUtils.readFileBytes(file)));
+            else
+                throw new IllegalArgumentException("Constant files on other formats than .tbf are not supported, got " +
+                                                   file + " for constant " + name);
             // TODO: Support json and json.lz4
         }
         catch (IOException e) {
