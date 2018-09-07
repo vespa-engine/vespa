@@ -64,7 +64,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 
     @Override
     protected Admin doBuild(AbstractConfigProducer parent, Element adminElement) {
-        Monitoring monitoring = getMonitoring(getChildWithFallback(adminElement, "monitoring", "yamas"));
+        Monitoring monitoring = getMonitoring(XML.getChild(adminElement,"monitoring"));
         Metrics metrics = new MetricsBuilder(applicationType, predefinedMetricSets)
                 .buildMetrics(XML.getChild(adminElement, "metrics"));
         FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent);
@@ -79,12 +79,6 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 
     private FileDistributionConfigProducer getFileDistributionConfigProducer(AbstractConfigProducer parent) {
         return new FileDistributionConfigProducer(parent, fileRegistry, configServerSpecs);
-    }
-
-    private Element getChildWithFallback(Element parent, String childName, String alternativeChildName) {
-        Element child = XML.getChild(parent, childName);
-        if (child != null) return child;
-        return XML.getChild(parent, alternativeChildName);
     }
 
     protected abstract void doBuildAdmin(Admin admin, Element adminE);
