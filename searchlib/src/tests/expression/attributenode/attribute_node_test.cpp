@@ -10,6 +10,7 @@
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/searchlib/expression/attribute_keyed_node.h>
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -30,6 +31,7 @@ using search::attribute::Config;
 using search::attribute::IAttributeVector;
 using search::attribute::getUndefined;
 using search::expression::AttributeNode;
+using search::expression::AttributeKeyedNode;
 using search::expression::EnumResultNode;
 using search::expression::EnumResultNodeVector;
 using search::expression::FloatResultNode;
@@ -79,18 +81,18 @@ struct AttributeManagerFixture
 AttributeManagerFixture::AttributeManagerFixture()
     : mgr()
 {
-    buildStringAttribute("sfield", { "n1", "n2", "n3", "n4" });
-    buildIntegerAttribute("ifield", BasicType::Type::INT8, { 10, 20, getUndefined<int8_t>(), 40 });
-    buildFloatAttribute("ffield", { 110.0, 120.0, 130.0, 140.0 });
-    buildStringArrayAttribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
-    buildIntegerArrayAttribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
-    buildFloatArrayAttribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}});
-    buildStringArrayAttribute("smap.key", {{"k1.1", "k1.2"}, {"k2"}, {"k3.1", "k3.2"}, {"", "k4.2"}, {}});
-    buildStringArrayAttribute("smap.value.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
-    buildIntegerArrayAttribute("smap.value.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
-    buildFloatArrayAttribute("smap.value.fval", {{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}});
-    buildStringArrayAttribute("map.key", {{"k1.1", "k1.2"}, {"k2"}, {"k3.1"}, {"", "k4.2"}, {}});
-    buildStringArrayAttribute("map.value", {{"n1.1", "n1.2"}, {}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
+    buildStringAttribute("sfield", { "n1", ""});
+    buildIntegerAttribute("ifield", BasicType::Type::INT8, { 10, getUndefined<int8_t>() });
+    buildFloatAttribute("ffield", { 110.0, getUndefined<double>() });
+    buildStringArrayAttribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {}});
+    buildIntegerArrayAttribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {}});
+    buildFloatArrayAttribute("array.fval", {{ 110.0}, { 120.0, 121.0 }, {}});
+    buildStringArrayAttribute("smap.key", {{"k1.1", "k1.2"}, {"k2"}, {}});
+    buildStringArrayAttribute("smap.value.name", {{"n1.1", "n1.2"}, {"n2"}, {}});
+    buildIntegerArrayAttribute("smap.value.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {}});
+    buildFloatArrayAttribute("smap.value.fval", {{ 110.0}, { 120.0, 121.0 }, {}});
+    buildStringArrayAttribute("map.key", {{"k1.1", "k1.2"}, {"k2"}, {}});
+    buildStringArrayAttribute("map.value", {{"n1.1", "n1.2"}, {"n2"}, {}});
 }
 
 AttributeManagerFixture::~AttributeManagerFixture() = default;
@@ -212,7 +214,12 @@ Fixture::~Fixture() = default;
 std::unique_ptr<AttributeNode>
 Fixture::makeNode(const vespalib::string &attributeName, bool useEnumOptimization, bool preserveAccurateTypes)
 {
-    auto node = std::make_unique<AttributeNode>(attributeName);
+    std::unique_ptr<AttributeNode> node;
+    if (attributeName.find('{') == vespalib::string::npos) {
+        node = std::make_unique<AttributeNode>(attributeName);
+    } else {
+        node = std::make_unique<AttributeKeyedNode>(attributeName);
+    }
     if (useEnumOptimization) {
         node->useEnumOptimization();
     }
@@ -361,26 +368,46 @@ Fixture::assertFloatArrays(std::vector<std::vector<double>> expVals, const vespa
 
 TEST_F("test single values", Fixture)
 {
-    TEST_DO(f.assertInts({ 10, 20, getUndefined<int8_t>(), 40 }, "ifield"));
-    TEST_DO(f.assertInts({ 10, 20, getUndefined<int8_t>(), 40 }, "ifield", true));
-    TEST_DO(f.assertStrings({ "n1", "n2", "n3", "n4" }, "sfield"));
-    TEST_DO(f.assertStrings({ "n1", "n2", "n3", "n4" }, "sfield", true));
-    TEST_DO(f.assertFloats({ 110.0, 120.0, 130.0, 140.0 }, "ffield"));
+    TEST_DO(f.assertInts({ 10, getUndefined<int8_t>()}, "ifield"));
+    TEST_DO(f.assertInts({ 10, getUndefined<int8_t>()}, "ifield", true));
+    TEST_DO(f.assertStrings({ "n1", "" }, "sfield"));
+    TEST_DO(f.assertStrings({ "n1", "" }, "sfield", true));
+    TEST_DO(f.assertFloats({ 110.0, getUndefined<double>() }, "ffield"));
 }
 
 TEST_F("Test array values", Fixture)
 {
-    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}}, "array.val"));
-    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}}, "array.val", true));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}}, "array.name"));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}}, "array.name", true));
-    TEST_DO(f.assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}}, "array.fval"));
-    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {"k3.1", "k3.2"}, {"", "k4.2"}, {}}, "smap.key"));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}}, "smap.value.name"));
-    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}}, "smap.value.val"));
-    TEST_DO(f.assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, { 130.0, 131.0}, { getUndefined<double>(), 141.0 }, {}}, "smap.value.fval"));
-    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {"k3.1"}, {"", "k4.2"}, {}}, "map.key"));
-    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}}, "map.value"));
+    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {}}, "array.val"));
+    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {}}, "array.val", true));
+    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "array.name"));
+    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "array.name", true));
+    TEST_DO(f.assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, {}}, "array.fval"));
+    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {}}, "smap.key"));
+    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "smap.value.name"));
+    TEST_DO(f.assertIntArrays({{ 10, 11}, {20, 21 }, {}}, "smap.value.val"));
+    TEST_DO(f.assertFloatArrays({{ 110.0}, { 120.0, 121.0 }, {}}, "smap.value.fval"));
+    TEST_DO(f.assertStringArrays({{"k1.1", "k1.2"}, {"k2"}, {}}, "map.key"));
+    TEST_DO(f.assertStringArrays({{"n1.1", "n1.2"}, {"n2"}, {}}, "map.value"));
+}
+
+TEST_F("test keyed values", Fixture)
+{
+    TEST_DO(f.assertStrings({"n1.1", "", ""}, "smap{\"k1.1\"}.name"));
+    TEST_DO(f.assertStrings({"n1.2", "", ""}, "smap{\"k1.2\"}.name"));
+    TEST_DO(f.assertStrings({"", "n2", ""}, "smap{\"k2\"}.name"));
+    TEST_DO(f.assertStrings({"", "", ""}, "smap{\"k5\"}.name"));
+    TEST_DO(f.assertFloats({ 110.0, getUndefined<double>(), getUndefined<double>()}, "smap{\"k1.1\"}.fval"));
+    TEST_DO(f.assertFloats({ getUndefined<double>(), getUndefined<double>(), getUndefined<double>()}, "smap{\"k1.2\"}.fval"));
+    TEST_DO(f.assertFloats({ getUndefined<double>(), 120.0, getUndefined<double>()}, "smap{\"k2\"}.fval"));
+    TEST_DO(f.assertFloats({ getUndefined<double>(), getUndefined<double>(), getUndefined<double>()}, "smap{\"k5\"}.fval"));
+    TEST_DO(f.assertInts({ 10, getUndefined<int8_t>(), getUndefined<int8_t>()}, "smap{\"k1.1\"}.val"));
+    TEST_DO(f.assertInts({ 11, getUndefined<int8_t>(), getUndefined<int8_t>()}, "smap{\"k1.2\"}.val"));
+    TEST_DO(f.assertInts({ getUndefined<int8_t>(), 20, getUndefined<int8_t>()}, "smap{\"k2\"}.val"));
+    TEST_DO(f.assertInts({ getUndefined<int8_t>(), getUndefined<int8_t>(), getUndefined<int8_t>()}, "smap{\"k5\"}.val"));
+    TEST_DO(f.assertStrings({"n1.1", "", ""}, "map{\"k1.1\"}"));
+    TEST_DO(f.assertStrings({"n1.2", "", ""}, "map{\"k1.2\"}"));
+    TEST_DO(f.assertStrings({"", "n2", ""}, "map{\"k2\"}"));
+    TEST_DO(f.assertStrings({"", "", ""}, "map{\"k5\"}"));
 }
 
 }

@@ -28,4 +28,10 @@ private:
     std::unique_ptr<search::expression::ExpressionNode> getReplacementNode(const search::expression::AttributeNode &attributeNode) override;
 };
 
+class Attribute2AttributeKeyed : public AttributeNodeReplacer
+{
+private:
+    std::unique_ptr<search::expression::ExpressionNode> getReplacementNode(const search::expression::AttributeNode &attributeNode) override;
+};
+
 }

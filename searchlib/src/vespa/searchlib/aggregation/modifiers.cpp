@@ -4,6 +4,7 @@
 #include "grouping.h"
 #include <vespa/searchlib/expression/multiargfunctionnode.h>
 #include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/searchlib/expression/attribute_keyed_node.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
 
 using namespace search::expression;
@@ -61,6 +62,18 @@ std::unique_ptr<ExpressionNode>
 Attribute2DocumentAccessor::getReplacementNode(const AttributeNode &attributeNode)
 {
     return std::make_unique<DocumentFieldNode>(attributeNode.getAttributeName());
+}
+
+std::unique_ptr<ExpressionNode>
+Attribute2AttributeKeyed::getReplacementNode(const AttributeNode &attributeNode)
+{
+    const vespalib::string &attributeName = attributeNode.getAttributeName();
+    auto lBracePos = attributeName.find('{');
+    if (attributeNode.isKeyed() || lBracePos == vespalib::string::npos) {
+        return std::unique_ptr<ExpressionNode>();
+    } else {
+        return std::make_unique<AttributeKeyedNode>(attributeName);
+    }
 }
 
 }
