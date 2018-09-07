@@ -35,7 +35,7 @@ import java.util.logging.Logger;
  *
  * @author bratseth
  */
-class RankProfilesConfigImporter {
+public class RankProfilesConfigImporter {
 
     private static final Logger log = Logger.getLogger("CONSTANTS");
 
@@ -43,7 +43,7 @@ class RankProfilesConfigImporter {
      * Returns a map of the models contained in this config, indexed on name.
      * The map is modifiable and owned by the caller.
      */
-    Map<String, Model> importFrom(RankProfilesConfig config, RankingConstantsConfig constantsConfig) {
+    public Map<String, Model> importFrom(RankProfilesConfig config, RankingConstantsConfig constantsConfig) {
         try {
             Map<String, Model> models = new HashMap<>();
             for (RankProfilesConfig.Rankprofile profile : config.rankprofile()) {
@@ -120,23 +120,9 @@ class RankProfilesConfigImporter {
         return constants;
     }
 
-    Tensor readTensorFromFile(String name, TensorType type, String fileReference) {
+    protected Tensor readTensorFromFile(String name, TensorType type, String fileReference) {
         try {
-            // TODO: Only allow these two fallbacks in testing mode
-            if (fileReference.isEmpty()) { // this may be the case in unit tests
-                log.warning("Got empty file reference for constant '" + name + "', using an empty tensor");
-                return Tensor.from(type, "{}");
-            }
             File dir = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"), fileReference);
-            if ( ! dir.exists()) { // this may be the case in unit tests
-                log.warning("Got reference to nonexisting file " + dir + "e for constant '" + name +
-                            "', using an empty tensor");
-                return Tensor.from(type, "{}");
-            }
-
-            // TODO: Move these 2 lines to FileReference
-
-            dir = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"), fileReference);
             File file = dir.listFiles()[0]; // directory contains one file having the original name
 
             if (file.getName().endsWith(".tbf"))
