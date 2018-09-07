@@ -142,13 +142,13 @@ class JobControllerApiHandlerHelper {
                 lastVespa = version;
 
         Version lastPlatform = lastVespa.versionNumber();
-        lastPlatformObject.setString("version", lastPlatform.toString());
+        lastPlatformObject.setString("platform", lastPlatform.toString());
         lastPlatformObject.setLong("at", lastVespa.committedAt().toEpochMilli());
         long completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), application, type)).count();
         if (Optional.of(lastPlatform).equals(change.platform()))
-            lastPlatformObject.setString("deploying", completed + " of " + steps.productionJobs().size());
+            lastPlatformObject.setString("deploying", completed + " of " + steps.productionJobs().size() + "complete");
         else if (completed == steps.productionJobs().size())
-            lastPlatformObject.setString("completed", completed + " of " + steps.productionJobs().size());
+            lastPlatformObject.setString("completed", completed + " of " + steps.productionJobs().size() + "complete");
         else if ( ! application.deploymentSpec().canUpgradeAt(controller.clock().instant())) {
             lastPlatformObject.setString("blocked", application.deploymentSpec().changeBlocker().stream()
                                                                .filter(blocker -> blocker.blocksVersions())
@@ -162,7 +162,7 @@ class JobControllerApiHandlerHelper {
     private static void lastApplicationToSlime(Cursor lastApplicationObject, Application application, Change change, DeploymentSteps steps, Controller controller) {
         long completed;
         ApplicationVersion lastApplication = application.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).get().application();
-        applicationVersionToSlime(lastApplicationObject.setObject("version"), lastApplication);
+        applicationVersionToSlime(lastApplicationObject.setObject("application"), lastApplication);
         lastApplicationObject.setLong("at", application.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).get().at().toEpochMilli());
         completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), application, type)).count();
         if (Optional.of(lastApplication).equals(change.application()))
@@ -333,11 +333,12 @@ class JobControllerApiHandlerHelper {
     }
 
     private static void applicationVersionToSlime(Cursor versionObject, ApplicationVersion version) {
-        versionObject.setString("id", version.id());
+        versionObject.setString("hash", version.id());
         versionObject.setLong("build", version.buildNumber().getAsLong());
-        versionObject.setString("repository", version.source().get().repository());
-        versionObject.setString("branch", version.source().get().branch());
-        versionObject.setString("commit", version.source().get().commit());
+        Cursor sourceObject = versionObject.setObject("source");
+        sourceObject.setString("gitRepository", version.source().get().repository());
+        sourceObject.setString("gitBranch", version.source().get().branch());
+        sourceObject.setString("gitCommit", version.source().get().commit());
     }
 
     /**

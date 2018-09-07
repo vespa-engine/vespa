@@ -6,11 +6,13 @@
     "end": 0,
     "wantedPlatform": "6.1",
     "wantedApplication": {
-      "id": "1.0.1-commit1",
+      "hash": "1.0.1-commit1",
       "build": 1,
-      "repository": "repository1",
-      "branch": "master",
-      "commit": "commit1"
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      }
     },
     "steps": {
       "deployInitialReal": "succeeded",
@@ -39,19 +41,23 @@
     "end": 1000,
     "wantedPlatform": "6.1",
     "wantedApplication": {
-      "id": "1.0.2-commit1",
+      "hash": "1.0.2-commit1",
       "build": 2,
-      "repository": "repository1",
-      "branch": "master",
-      "commit": "commit1"
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      }
     },
     "currentPlatform": "6.1",
     "currentApplication": {
-      "id": "1.0.1-commit1",
+      "hash": "1.0.1-commit1",
       "build": 1,
-      "repository": "repository1",
-      "branch": "master",
-      "commit": "commit1"
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      }
     },
     "steps": {
       "deployInitialReal": "succeeded",
@@ -80,19 +86,23 @@
     "end": 2000,
     "wantedPlatform": "6.1",
     "wantedApplication": {
-      "id": "1.0.3-commit1",
+      "hash": "1.0.3-commit1",
       "build": 3,
-      "repository": "repository1",
-      "branch": "master",
-      "commit": "commit1"
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      }
     },
     "currentPlatform": "6.1",
     "currentApplication": {
-      "id": "1.0.2-commit1",
+      "hash": "1.0.2-commit1",
       "build": 2,
-      "repository": "repository1",
-      "branch": "master",
-      "commit": "commit1"
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      }
     },
     "steps": {
       "deployInitialReal": "succeeded",
@@ -121,19 +131,23 @@
     "end": 2000,
     "wantedPlatform": "6.1",
     "wantedApplication": {
-      "id": "1.0.3-commit1",
+      "hash": "1.0.3-commit1",
       "build": 3,
-      "repository": "repository1",
-      "branch": "master",
-      "commit": "commit1"
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      }
     },
     "currentPlatform": "6.1",
     "currentApplication": {
-      "id": "1.0.1-commit1",
+      "hash": "1.0.1-commit1",
       "build": 1,
-      "repository": "repository1",
-      "branch": "master",
-      "commit": "commit1"
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      }
     },
     "steps": {
       "deployInitialReal": "succeeded",

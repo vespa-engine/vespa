@@ -1,17 +1,19 @@
 {
   "lastVersions": {
     "platform": {
-      "version": "7.1",
+      "platform": "7.1",
       "at": 0,
       "pending": "Waiting for current deployment to complete"
     },
     "application": {
-      "version": {
-        "id": "1.0.3-commit1",
+      "application": {
+        "hash": "1.0.3-commit1",
         "build": 3,
-        "repository": "repository1",
-        "branch": "master",
-        "commit": "commit1"
+        "source": {
+          "gitRepository": "repository1",
+          "gitBranch": "master",
+          "gitCommit": "commit1"
+        }
       },
       "at": 2000,
       "deploying": "0 of 3 complete"
@@ -19,11 +21,13 @@
   },
   "deploying": {
     "application": {
-      "id": "1.0.3-commit1",
+      "hash": "1.0.3-commit1",
       "build": 3,
-      "repository": "repository1",
-      "branch": "master",
-      "commit": "commit1"
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      }
     }
   },
   "deployments": [
@@ -32,11 +36,13 @@
         "at": 2000,
         "platform": "6.1",
         "application": {
-          "id": "1.0.3-commit1",
+          "hash": "1.0.3-commit1",
           "build": 3,
-          "repository": "repository1",
-          "branch": "master",
-          "commit": "commit1"
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
         },
         "verified": false,
         "status": "verifying"
@@ -47,11 +53,13 @@
         "at": 1000,
         "platform": "6.1",
         "application": {
-          "id": "1.0.2-commit1",
+          "hash": "1.0.2-commit1",
           "build": 2,
-          "repository": "repository1",
-          "branch": "master",
-          "commit": "commit1"
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
         },
         "verified": false,
         "status": "pending"
@@ -60,11 +68,13 @@
         "at": 0,
         "platform": "6.1",
         "application": {
-          "id": "1.0.1-commit1",
+          "hash": "1.0.1-commit1",
           "build": 1,
-          "repository": "repository1",
-          "branch": "master",
-          "commit": "commit1"
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
         },
         "verified": true,
         "status": "pending"
@@ -81,19 +91,23 @@
           "end": 2000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.3-commit1",
+            "hash": "1.0.3-commit1",
             "build": 3,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "currentPlatform": "6.1",
           "currentApplication": {
-            "id": "1.0.2-commit1",
+            "hash": "1.0.2-commit1",
             "build": 2,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "deploy": "succeeded",
@@ -109,19 +123,23 @@
           "end": 1000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.2-commit1",
+            "hash": "1.0.2-commit1",
             "build": 2,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "currentPlatform": "6.1",
           "currentApplication": {
-            "id": "1.0.1-commit1",
+            "hash": "1.0.1-commit1",
             "build": 1,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "deploy": "succeeded",
@@ -137,11 +155,13 @@
           "end": 0,
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.1-commit1",
+            "hash": "1.0.1-commit1",
             "build": 1,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "deploy": "succeeded",
@@ -159,19 +179,23 @@
           "status": "pending",
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.3-commit1",
+            "hash": "1.0.3-commit1",
             "build": 3,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "currentPlatform": "6.1",
           "currentApplication": {
-            "id": "1.0.1-commit1",
+            "hash": "1.0.1-commit1",
             "build": 1,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "cooldown": "failed"
@@ -185,19 +209,23 @@
           "end": 2000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.3-commit1",
+            "hash": "1.0.3-commit1",
             "build": 3,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "currentPlatform": "6.1",
           "currentApplication": {
-            "id": "1.0.1-commit1",
+            "hash": "1.0.1-commit1",
             "build": 1,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {},
           "log": "https://some.url:43/root/staging-test/run/4"
@@ -209,19 +237,23 @@
           "end": 2000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.3-commit1",
+            "hash": "1.0.3-commit1",
             "build": 3,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "currentPlatform": "6.1",
           "currentApplication": {
-            "id": "1.0.2-commit1",
+            "hash": "1.0.2-commit1",
             "build": 2,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "deploy": "succeeded",
@@ -237,19 +269,23 @@
           "end": 1000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.2-commit1",
+            "hash": "1.0.2-commit1",
             "build": 2,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "currentPlatform": "6.1",
           "currentApplication": {
-            "id": "1.0.1-commit1",
+            "hash": "1.0.1-commit1",
             "build": 1,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "deploy": "succeeded",
@@ -265,11 +301,13 @@
           "end": 0,
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.1-commit1",
+            "hash": "1.0.1-commit1",
             "build": 1,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "deploy": "succeeded",
@@ -289,19 +327,23 @@
           "start": 2000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.3-commit1",
+            "hash": "1.0.3-commit1",
             "build": 3,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "currentPlatform": "6.1",
           "currentApplication": {
-            "id": "1.0.2-commit1",
+            "hash": "1.0.2-commit1",
             "build": 2,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "deploy": "succeeded",
@@ -316,19 +358,23 @@
           "end": 1000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.2-commit1",
+            "hash": "1.0.2-commit1",
             "build": 2,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "currentPlatform": "6.1",
           "currentApplication": {
-            "id": "1.0.1-commit1",
+            "hash": "1.0.1-commit1",
             "build": 1,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "deploy": "succeeded",
@@ -344,11 +390,13 @@
           "end": 0,
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.1-commit1",
+            "hash": "1.0.1-commit1",
             "build": 1,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "deploy": "succeeded",
@@ -366,19 +414,23 @@
           "status": "pending",
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.3-commit1",
+            "hash": "1.0.3-commit1",
             "build": 3,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "currentPlatform": "6.1",
           "currentApplication": {
-            "id": "1.0.2-commit1",
+            "hash": "1.0.2-commit1",
             "build": 2,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "production-us-central-1": "running"
@@ -391,19 +443,23 @@
           "end": 1000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.2-commit1",
+            "hash": "1.0.2-commit1",
             "build": 2,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "currentPlatform": "6.1",
           "currentApplication": {
-            "id": "1.0.1-commit1",
+            "hash": "1.0.1-commit1",
             "build": 1,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "deploy": "succeeded",
@@ -419,11 +475,13 @@
           "end": 0,
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.1-commit1",
+            "hash": "1.0.1-commit1",
             "build": 1,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "deploy": "succeeded",
@@ -441,19 +499,23 @@
           "status": "pending",
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.3-commit1",
+            "hash": "1.0.3-commit1",
             "build": 3,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "currentPlatform": "6.1",
           "currentApplication": {
-            "id": "1.0.1-commit1",
+            "hash": "1.0.1-commit1",
             "build": 1,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "staging-test": "failed",
@@ -467,19 +529,23 @@
           "end": 1000,
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.2-commit1",
+            "hash": "1.0.2-commit1",
             "build": 2,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "currentPlatform": "6.1",
           "currentApplication": {
-            "id": "1.0.1-commit1",
+            "hash": "1.0.1-commit1",
             "build": 1,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "deploy": "failed"
@@ -493,11 +559,13 @@
           "end": 0,
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "id": "1.0.1-commit1",
+            "hash": "1.0.1-commit1",
             "build": 1,
-            "repository": "repository1",
-            "branch": "master",
-            "commit": "commit1"
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
           },
           "tasks": {
             "deploy": "succeeded",
