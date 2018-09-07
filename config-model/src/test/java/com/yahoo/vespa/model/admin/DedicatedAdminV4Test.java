@@ -53,7 +53,7 @@ public class DedicatedAdminV4Test {
                 "  <admin version='4.0'>" +
                 "    <slobroks><nodes count='2' dedicated='true'/></slobroks>" +
                 "    <logservers><nodes count='1' dedicated='true'/></logservers>" +
-                "    <yamas systemname='vespa.routing' interval='60' />" +
+                "    <monitoring systemname='vespa.routing' interval='60' />" +
                 "    <metrics>" +
                 "     <consumer id='slingstone'>" +
                 "        <metric id='foobar.count' display-name='foobar'/>" +
