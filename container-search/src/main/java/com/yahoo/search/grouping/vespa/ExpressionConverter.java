@@ -6,6 +6,7 @@ import com.yahoo.search.grouping.request.AggregatorNode;
 import com.yahoo.search.grouping.request.AndFunction;
 import com.yahoo.search.grouping.request.ArrayAtLookup;
 import com.yahoo.search.grouping.request.AttributeFunction;
+import com.yahoo.search.grouping.request.AttributeMapLookupValue;
 import com.yahoo.search.grouping.request.AttributeValue;
 import com.yahoo.search.grouping.request.AvgAggregator;
 import com.yahoo.search.grouping.request.BucketValue;
@@ -262,6 +263,9 @@ class ExpressionConverter {
         }
         if (exp instanceof AndFunction) {
             return addArguments(new AndFunctionNode(), (AndFunction)exp);
+        }
+        if (exp instanceof AttributeMapLookupValue) {
+            return new AttributeNode(((AttributeMapLookupValue)exp).getAttributeName());
         }
         if (exp instanceof AttributeValue) {
             return new AttributeNode(((AttributeValue)exp).getAttributeName());
