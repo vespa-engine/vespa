@@ -16,7 +16,6 @@ import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
-import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import org.w3c.dom.Element;
 
@@ -84,9 +83,12 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
             Logserver logserver = createLogserver(admin, hosts);
             // TODO: Enable for main system as well
             if (context.getDeployState().isHosted() && context.getDeployState().zone().system() == SystemName.cd)
-                createAdditionalContainerToRunOnLogserverHost(admin, logserver.getHostResource());
+                createAdditionalContainerOnLogserverHost(admin, logserver.getHostResource());
         } else if (containerModels.iterator().hasNext()) {
-            createLogserver(admin, sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.count(), false));
+            List<HostResource> hosts = sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.count(), false);
+            if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
+
+            createLogserver(admin, hosts);
         } else {
             context.getDeployLogger().log(LogLevel.INFO, "No container host available to use for running logserver");
         }
@@ -94,7 +96,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
     // Creates a container cluster 'logserver-cluster' with 1 container on logserver host
     // for setting up a handler for getting logs from logserver
-    private void createAdditionalContainerToRunOnLogserverHost(Admin admin, HostResource hostResource) {
+    private void createAdditionalContainerOnLogserverHost(Admin admin, HostResource hostResource) {
         ContainerCluster logServerCluster = new ContainerCluster(admin, "logserver-cluster", "logserver-cluster", RankProfileList.empty);
         ContainerModel logserverClusterModel = new ContainerModel(context.withParent(admin).withId(logServerCluster.getSubId()));
         logserverClusterModel.setCluster(logServerCluster);
