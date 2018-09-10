@@ -38,36 +38,48 @@ import java.util.Locale;
  */
 public class SimpleDetector implements Detector {
 
-    static private TextObjectFactory textObjectFactory;
-    static private LanguageDetector languageDetector;
+    static private Object initGuard = new Object();
+    static private TextObjectFactory textObjectFactory = null;
+    static private LanguageDetector languageDetector = null;
 
-    static {
-        // origin: https://github.com/optimaize/language-detector
-        //load all languages:
-        List<LanguageProfile> languageProfiles;
-        try {
-            languageProfiles = new LanguageProfileReader().readAllBuiltIn();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    static private void initOptimaize (boolean useOptimaize) {
+        if (!useOptimaize) return;
+        synchronized (initGuard) {
+            if ((textObjectFactory != null) && (languageDetector != null)) return;
+
+            // origin: https://github.com/optimaize/language-detector
+            //load all languages:
+            List<LanguageProfile> languageProfiles;
+            try {
+                languageProfiles = new LanguageProfileReader().readAllBuiltIn();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            //build language detector:
+            languageDetector = LanguageDetectorBuilder.create(NgramExtractors.standard())
+                    .withProfiles(languageProfiles)
+                    .build();
+
+            //create a text object factory
+            textObjectFactory = CommonTextObjectFactories.forDetectingOnLargeText();
         }
-
-        //build language detector:
-        languageDetector = LanguageDetectorBuilder.create(NgramExtractors.standard())
-                .withProfiles(languageProfiles)
-                .build();
-
-        //create a text object factory
-        textObjectFactory = CommonTextObjectFactories.forDetectingOnLargeText();
     }
 
     private final boolean enableOptimaize;
 
+    private SimpleDetector(boolean enableOptimaize) {
+        initOptimaize(enableOptimaize);
+        this.enableOptimaize = enableOptimaize;
+
+    }
+
     public SimpleDetector() {
-        this.enableOptimaize = true;
+        this(true);
     }
 
     public SimpleDetector(SimpleLinguisticsConfig.Detector detector) {
-        this.enableOptimaize = detector.enableOptimaize();
+        this(detector.enableOptimaize());
     }
 
     @Override
