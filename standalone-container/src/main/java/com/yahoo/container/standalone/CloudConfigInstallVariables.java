@@ -56,7 +56,7 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
 
     @Override
     public Optional<Integer> zookeeperQuorumPort() {
-        return getInstallVariable("zookeeper_quoromPort", Integer::parseInt);
+        return getInstallVariable("zookeeper_quorumPort", Integer::parseInt);
     }
 
     @Override
