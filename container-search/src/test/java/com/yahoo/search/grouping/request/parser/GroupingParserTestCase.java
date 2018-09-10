@@ -2,6 +2,7 @@
 package com.yahoo.search.grouping.request.parser;
 
 import com.yahoo.search.grouping.request.AllOperation;
+import com.yahoo.search.grouping.request.AttributeMapLookupValue;
 import com.yahoo.search.grouping.request.EachOperation;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.parser.Parsable;
@@ -23,12 +24,6 @@ import static org.junit.Assert.fail;
  * @author Simon Thoresen Hult
  */
 public class GroupingParserTestCase {
-
-    // --------------------------------------------------------------------------------
-    //
-    // Tests.
-    //
-    // --------------------------------------------------------------------------------
 
     @Test
     public void requireThatMathAllowsWhitespace() {
@@ -448,6 +443,46 @@ public class GroupingParserTestCase {
         assertParse("all(group(my.little{key }))", "all(group(my.little{\"key\"}))");
         assertParse("all(group(my.little{\"key\"}))", "all(group(my.little{\"key\"}))");
         assertParse("all(group(my.little{\"key{}%\"}))", "all(group(my.little{\"key{}%\"}))");
+        assertParse("all(group(my.little{key}.name))", "all(group(my.little{\"key\"}.name))");
+        assertParse("all(group(my.little{key }.name))", "all(group(my.little{\"key\"}.name))");
+        assertParse("all(group(my.little{\"key\"}.name))", "all(group(my.little{\"key\"}.name))");
+        assertParse("all(group(my.little{\"key{}%\"}.name))", "all(group(my.little{\"key{}%\"}.name))");
+
+        assertAttributeMapLookup("all(group(my_map{\"my_key\"}))",
+                "my_map.key", "my_map.value", "my_key", "");
+        assertAttributeMapLookup("all(group(my_map{\"my_key\"}.name))",
+                "my_map.key", "my_map.value.name", "my_key", "");
+        assertAttributeMapLookup("all(group(my.map{\"my_key\"}))",
+                "my.map.key", "my.map.value", "my_key", "");
+    }
+
+    @Test
+    public void testMapSyntaxWithKeySourceAttribute() {
+        assertAttributeMapLookup("all(group(my_map{attribute(my_attr)}))",
+                "my_map.key", "my_map.value", "", "my_attr");
+        assertAttributeMapLookup("all(group(my_map{attribute(my_attr)}.name))",
+                "my_map.key", "my_map.value.name", "", "my_attr");
+        assertAttributeMapLookup("all(group(my.map{attribute(my_attr.name)}))",
+                "my.map.key", "my.map.value", "", "my_attr.name");
+
+        assertIllegalArgument("all(group(my_map{attribute(\"my_attr\")}))",
+                "Encountered \" <STRING> \"\\\"my_attr\\\" \"\" at line 1, column 28");
+
+    }
+
+    private static void assertAttributeMapLookup(String request,
+                                                 String expKeyAttribute,
+                                                 String expValueAttribute,
+                                                 String expKey,
+                                                 String expKeySourceAttribute) {
+        assertParse(request, request);
+        List<GroupingOperation> operations = GroupingOperation.fromStringAsList(request);
+        assertEquals(1, operations.size());
+        AttributeMapLookupValue mapLookup = (AttributeMapLookupValue)operations.get(0).getGroupBy();
+        assertEquals(expKeyAttribute, mapLookup.getKeyAttribute());
+        assertEquals(expValueAttribute, mapLookup.getValueAttribute());
+        assertEquals(expKey, mapLookup.getKey());
+        assertEquals(expKeySourceAttribute, mapLookup.getKeySourceAttribute());
     }
 
     @Test

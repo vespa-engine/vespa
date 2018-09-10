@@ -404,14 +404,31 @@ AndFunction andFunction(GroupingOperation grp) :
 
 AttributeValue attributeValue() :
 {
-    StringBuilder ret = new StringBuilder();
+    StringBuilder prefix = new StringBuilder();
+    StringBuilder suffix = new StringBuilder();
     String str;
+    String key = null;
+    AttributeFunction keySourceAttr = null;
 }
 {
-    ( str = identifier() { ret.append(str); }
-    ( ( <DOT> { ret.append(token.image); } ( str = identifier() { ret.append(str); } ) ) |
-      ( lcurly() str = string() { ret.append("{\"").append(str).append("\"}"); } rcurly() ) )* )
-    { return new AttributeValue(ret.toString()); }
+    ( str = identifier() { prefix.append(str); }
+      ( LOOKAHEAD(2) <DOT> { prefix.append(token.image); } ( str = identifier() { prefix.append(str); } ) )*
+      ( LOOKAHEAD(3)
+          ( lcurly() key = string() rcurly() ) |
+          ( lcurly() keySourceAttr = attributeFunction() rcurly() )
+      )?
+      ( <DOT> { suffix.append(token.image); } ( str = identifier() { suffix.append(str); } ) )*
+    )
+    {
+        if (key != null) {
+            return AttributeMapLookupValue.fromKey(prefix.toString(), key, suffix.toString());
+        } else if (keySourceAttr != null) {
+            return AttributeMapLookupValue.fromKeySourceAttribute(prefix.toString(), keySourceAttr.getAttributeName(), suffix.toString());
+        } else {
+            prefix.append(suffix.toString());
+            return new AttributeValue(prefix.toString());
+        }
+    }
 }
 
 AttributeFunction attributeFunction() :
