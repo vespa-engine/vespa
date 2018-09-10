@@ -61,12 +61,11 @@ public class Backend implements ConnectionFactory {
     private final ConnectionPool connectionPool;
     private final PacketDumper packetDumper;
     private final AtomicInteger connectionCount = new AtomicInteger(0);
-    private final Optional<Integer> distributionKey;
 
     /**
      * For unit testing.  do not use
      */
-    protected Backend(Optional<Integer> distributionKey) {
+    protected Backend() {
         listeners = null;
         host = null;
         port = 0;
@@ -74,15 +73,13 @@ public class Backend implements ConnectionFactory {
         packetDumper = null;
         address = null;
         connectionPool = new ConnectionPool();
-        this.distributionKey = distributionKey;
     }
 
     public Backend(String host,
                    int port,
                    String serverDiscriminator,
                    ListenerPool listenerPool,
-                   ConnectionPool connectionPool,
-                   Optional<Integer> distributionKey) {
+                   ConnectionPool connectionPool) {
         String fileNamePattern = "qrs." + serverDiscriminator + '.' + host + ":" + port + ".%s" + ".dump";
         packetDumper = new PacketDumper(new File(Defaults.getDefaults().underVespaHome("logs/vespa/qrs/")),
                                         fileNamePattern);
@@ -92,7 +89,6 @@ public class Backend implements ConnectionFactory {
         this.port = port;
         address = new InetSocketAddress(host, port);
         this.connectionPool = connectionPool;
-        this.distributionKey = distributionKey;
     }
 
     private void logWarning(String attemptDescription, Exception e) {
@@ -102,9 +98,6 @@ public class Backend implements ConnectionFactory {
     private void logInfo(String attemptDescription, Exception e) {
         log.log(Level.INFO, "Exception on " + attemptDescription + " '" + host + ":" + port + "': " + Exceptions.toMessageString(e));
     }
-
-    /** Returns the distribution key of the content node this represents, or empty if it is a dispatch node */
-    public Optional<Integer> distributionKey() { return distributionKey; }
 
     // ============================================================
     // ==== connection pool stuff

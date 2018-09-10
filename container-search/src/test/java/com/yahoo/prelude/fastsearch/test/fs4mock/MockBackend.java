@@ -4,9 +4,6 @@ package com.yahoo.prelude.fastsearch.test.fs4mock;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.FS4Channel;
 
-import java.util.Optional;
-import java.util.function.Supplier;
-
 /**
  * @author bratseth
  */
@@ -20,11 +17,11 @@ public class MockBackend extends Backend {
     private MockFSChannel channel = null;
 
     public MockBackend() {
-        this(Optional.empty(), "", 0L, true);
+        this("", 0L, true);
     }
     
-    public MockBackend(Optional<Integer> distributionKey, String hostname, long activeDocumentsInBackend, boolean working) {
-        super(distributionKey);
+    public MockBackend(String hostname, long activeDocumentsInBackend, boolean working) {
+        super();
         this.hostname = hostname;
         this.activeDocumentsInBackend = activeDocumentsInBackend;
         this.working = working;

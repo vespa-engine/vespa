@@ -26,12 +26,12 @@ public class MockFS4ResourcePool extends FS4ResourcePool {
     }
 
     @Override
-    public Backend getBackend(String hostname, int port, Optional<Integer> distributionKey) {
+    public Backend getBackend(String hostname, int port) {
         countRequest(hostname + ":" + port);
         if (nonRespondingBackends.contains(hostname))
-            return new MockBackend(distributionKey, hostname, 0L, false);
+            return new MockBackend(hostname, 0L, false);
         else
-            return new MockBackend(distributionKey, hostname, activeDocumentsInBackend.getOrDefault(hostname, 0L), true);
+            return new MockBackend(hostname, activeDocumentsInBackend.getOrDefault(hostname, 0L), true);
     }
 
     /** 

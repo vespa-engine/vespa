@@ -239,7 +239,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         // Dispatch directly to the single, local search node
         query.trace(false, 2, "Dispatching directly to ", directDispatchRecipient.get());
         return new CloseableChannel(fs4ResourcePool.getBackend(directDispatchRecipient.get().hostname(),
-                directDispatchRecipient.get().fs4port(), Optional.of(directDispatchRecipient.get().key())));
+                directDispatchRecipient.get().fs4port()), Optional.of(directDispatchRecipient.get().key()));
     }
 
     /**

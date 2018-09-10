@@ -17,9 +17,15 @@ import java.util.Optional;
  */
 public class CloseableChannel implements Closeable {
     private FS4Channel channel;
+    private final Optional<Integer> distributionKey;
 
     public CloseableChannel(Backend backend) {
+        this(backend, Optional.empty());
+    }
+
+    public CloseableChannel(Backend backend, Optional<Integer> distributionKey) {
         this.channel = backend.openChannel();
+        this.distributionKey = distributionKey;
     }
 
     public void setQuery(Query query) {
@@ -35,7 +41,7 @@ public class CloseableChannel implements Closeable {
     }
 
     public Optional<Integer> distributionKey() {
-        return channel.distributionKey();
+        return distributionKey;
     }
 
     @Override

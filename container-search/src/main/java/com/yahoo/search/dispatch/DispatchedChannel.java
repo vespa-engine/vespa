@@ -18,7 +18,7 @@ public class DispatchedChannel extends CloseableChannel {
     private boolean groupAllocated = true;
 
     public DispatchedChannel(FS4ResourcePool fs4ResourcePool, LoadBalancer loadBalancer, Group group, Node node) {
-        super(fs4ResourcePool.getBackend(node.hostname(), node.fs4port(), Optional.of(node.key())));
+        super(fs4ResourcePool.getBackend(node.hostname(), node.fs4port()), Optional.of(node.key()));
 
         this.loadBalancer = loadBalancer;
         this.group = group;
