@@ -33,7 +33,9 @@ public class ContactInformationMaintainerTest {
     @Before
     public void before() {
         tester = new ControllerTester();
-        maintainer = new ContactInformationMaintainer(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()));
+        maintainer = new ContactInformationMaintainer(tester.controller(), Duration.ofDays(1),
+                                                      new JobControl(tester.controller().curator()),
+                                                      tester.organization());
     }
 
     @Test

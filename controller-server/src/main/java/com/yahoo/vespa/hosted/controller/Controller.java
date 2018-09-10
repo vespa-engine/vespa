@@ -96,14 +96,14 @@ public class Controller extends AbstractComponent {
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore) {
         this(curator, rotationsConfig,
-             gitHub, entityService, organization, globalRoutingService, zoneRegistry,
+             gitHub, entityService, globalRoutingService, zoneRegistry,
              configServer, metricsService, nameService, routingGenerator, chef,
              Clock.systemUTC(), athenzClientFactory, artifactRepository, applicationStore, testerCloud,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
-                      GitHub gitHub, EntityService entityService, Organization organization,
+                      GitHub gitHub, EntityService entityService,
                       GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
@@ -134,7 +134,7 @@ public class Controller extends AbstractComponent {
                                                           Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock);
-        tenantController = new TenantController(this, curator, athenzClientFactory, organization);
+        tenantController = new TenantController(this, curator, athenzClientFactory);
 
         // Record the version of this controller
         curator().writeControllerVersion(this.hostname(), Vtag.currentVersion);

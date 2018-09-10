@@ -1213,7 +1213,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private void updateContactInformation() {
-        new ContactInformationMaintainer(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator())).run();
+        new ContactInformationMaintainer(tester.controller(), Duration.ofDays(1),
+                                         new JobControl(tester.controller().curator()),
+                                         organization()).run();
     }
 
     private void registerContact(long propertyId) {
