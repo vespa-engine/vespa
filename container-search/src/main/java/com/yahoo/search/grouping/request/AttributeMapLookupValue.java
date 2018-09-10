@@ -51,6 +51,10 @@ public class AttributeMapLookupValue extends AttributeValue {
         return key;
     }
 
+    public boolean hasKeySourceAttribute() {
+        return !keySourceAttribute.isEmpty();
+    }
+
     public String getKeySourceAttribute() {
         return keySourceAttribute;
     }
