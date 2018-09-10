@@ -3,16 +3,19 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/net/tls/tls_crypto_engine.h>
+#include <vespa/vespalib/test/make_tls_options_for_testing.h>
 #include <thread>
 
-using vespalib::BenchmarkTimer;
+using namespace vespalib;
 
 struct Rpc : FRT_Invokable {
     FastOS_ThreadPool thread_pool;
     FNET_Transport    transport;
     FRT_Supervisor    orb;
-    Rpc(size_t num_threads)
-        : thread_pool(128 * 1024), transport(num_threads), orb(&transport, &thread_pool) {}
+    Rpc(CryptoEngine::SP crypto, size_t num_threads)
+        : thread_pool(128 * 1024), transport(crypto, num_threads), orb(&transport, &thread_pool) {}
     void start() {
         ASSERT_TRUE(transport.Start(&thread_pool));
     }
@@ -31,7 +34,7 @@ struct Rpc : FRT_Invokable {
 
 struct Server : Rpc {
     uint32_t port;
-    Server(size_t num_threads) : Rpc(num_threads), port(listen()) {
+    Server(CryptoEngine::SP crypto, size_t num_threads) : Rpc(crypto, num_threads), port(listen()) {
         init_rpc();
         start();
     }
@@ -51,7 +54,7 @@ struct Server : Rpc {
 
 struct Client : Rpc {
     uint32_t port;
-    Client(size_t num_threads, const Server &server) : Rpc(num_threads), port(server.port) {
+    Client(CryptoEngine::SP crypto, size_t num_threads, const Server &server) : Rpc(crypto, num_threads), port(server.port) {
         start();
     }
     FRT_Target *connect() { return Rpc::connect(port); }
@@ -114,10 +117,26 @@ void perform_test(size_t thread_id, Client &client, Result &result) {
     }
 }
 
-TEST_MT_FFF("parallel rpc with 1/1 transport threads and 128 user threads",
-            128, Server(1), Client(1, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+CryptoEngine::SP null_crypto = std::make_shared<NullCryptoEngine>();
+CryptoEngine::SP xor_crypto = std::make_shared<XorCryptoEngine>();
+CryptoEngine::SP tls_crypto = std::make_shared<vespalib::TlsCryptoEngine>(vespalib::test::make_tls_options_for_testing());
 
-TEST_MT_FFF("parallel rpc with 8/8 transport threads and 128 user threads",
-            128, Server(8), Client(8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+TEST_MT_FFF("parallel rpc with 1/1 transport threads and 128 user threads (no encryption)",
+            128, Server(null_crypto, 1), Client(null_crypto, 1, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+
+TEST_MT_FFF("parallel rpc with 1/1 transport threads and 128 user threads (xor encryption)",
+            128, Server(xor_crypto, 1), Client(xor_crypto, 1, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+
+TEST_MT_FFF("parallel rpc with 1/1 transport threads and 128 user threads (tls encryption)",
+            128, Server(tls_crypto, 1), Client(tls_crypto, 1, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+
+TEST_MT_FFF("parallel rpc with 8/8 transport threads and 128 user threads (no encryption)",
+            128, Server(null_crypto, 8), Client(null_crypto, 8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+
+TEST_MT_FFF("parallel rpc with 8/8 transport threads and 128 user threads (xor encryption)",
+            128, Server(xor_crypto, 8), Client(xor_crypto, 8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+
+TEST_MT_FFF("parallel rpc with 8/8 transport threads and 128 user threads (tls encryption)",
+            128, Server(tls_crypto, 8), Client(tls_crypto, 8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

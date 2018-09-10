@@ -7,6 +7,7 @@
 #include <vespa/fnet/connection.h>
 #include <vespa/fnet/connector.h>
 #include <vespa/fnet/iexecutable.h>
+#include <vespa/vespalib/net/crypto_engine.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".engine.transportserver");
@@ -358,7 +359,7 @@ TransportServer::TransportServer(SearchServer &searchServer,
     : _searchServer(searchServer),
       _docsumServer(docsumServer),
       _monitorServer(monitorServer),
-      _transport(),
+      _transport(std::make_shared<vespalib::NullCryptoEngine>(), 1), // disable encryption
       _ready(false),
       _failed(false),
       _doListen(true),
