@@ -26,14 +26,11 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsM
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -79,9 +76,6 @@ public class NodeAgentImpl implements NodeAgent {
     private final Clock clock;
     private final Duration timeBetweenEachConverge;
     private final AthenzCredentialsMaintainer athenzCredentialsMaintainer;
-
-    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    private final LinkedList<String> debugMessages = new LinkedList<>();
 
     private int numberOfUnhandledException = 0;
     private Instant lastConverge;
@@ -155,22 +149,11 @@ public class NodeAgentImpl implements NodeAgent {
         synchronized (monitor) {
             if (wantFrozen != frozen) {
                 wantFrozen = frozen;
-                addDebugMessage(wantFrozen ? "Freezing" : "Unfreezing");
+                logger.debug(wantFrozen ? "Freezing" : "Unfreezing");
                 signalWorkToBeDone();
             }
 
             return isFrozen == frozen;
-        }
-    }
-
-    private void addDebugMessage(String message) {
-        synchronized (debugMessages) {
-            while (debugMessages.size() > 1000) {
-                debugMessages.pop();
-            }
-
-            logger.debug(message);
-            debugMessages.add("[" + sdf.format(new Date()) + "] " + message);
         }
     }
 
@@ -182,18 +165,13 @@ public class NodeAgentImpl implements NodeAgent {
         debug.put("wantFrozen", wantFrozen);
         debug.put("terminated", terminated);
         debug.put("workToDoNow", workToDoNow);
-        synchronized (debugMessages) {
-            debug.put("history", new LinkedList<>(debugMessages));
-        }
         debug.put("nodeRepoState", lastNode.getState().name());
         return debug;
     }
 
     @Override
     public void start() {
-        String message = "Starting with interval " + timeBetweenEachConverge.toMillis() + " ms";
-        logger.info(message);
-        addDebugMessage(message);
+        logger.info("Starting with interval " + timeBetweenEachConverge.toMillis() + " ms");
 
         loopThread.start();
 
@@ -213,7 +191,6 @@ public class NodeAgentImpl implements NodeAgent {
 
     @Override
     public void stop() {
-        addDebugMessage("Stopping");
         filebeatRestarter.shutdown();
         if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
@@ -240,7 +217,7 @@ public class NodeAgentImpl implements NodeAgent {
             currentFilebeatRestarter = Optional.of(filebeatRestarter.scheduleWithFixedDelay(
                     () -> serviceRestarter.accept("filebeat"), 1, 1, TimeUnit.DAYS));
 
-            addDebugMessage("Starting optional node program resume command");
+            logger.debug("Starting optional node program resume command");
             dockerOperations.resumeNode(containerName);
             resumeScriptRun = true;
         }
@@ -266,8 +243,6 @@ public class NodeAgentImpl implements NodeAgent {
         if (!currentAttributes.equals(wantedAttributes)) {
             logger.info("Publishing new set of attributes to node repo: "
                     + currentAttributes + " -> " + wantedAttributes);
-            addDebugMessage("Publishing new set of attributes to node repo: {" +
-                    currentAttributes + "} -> {" + wantedAttributes + "}");
             nodeRepository.updateNodeAttributes(hostname, wantedAttributes);
         }
     }
@@ -386,7 +361,7 @@ public class NodeAgentImpl implements NodeAgent {
         synchronized (monitor) {
             if (!workToDoNow) {
                 workToDoNow = true;
-                addDebugMessage("Signaling work to be done");
+                logger.debug("Signaling work to be done");
                 monitor.notifyAll();
             }
         }
@@ -421,21 +396,19 @@ public class NodeAgentImpl implements NodeAgent {
         boolean converged = false;
 
         if (isFrozenCopy) {
-            addDebugMessage("tick: isFrozen");
+            logger.debug("tick: isFrozen");
         } else {
             try {
                 converge();
                 converged = true;
             } catch (OrchestratorException e) {
                 logger.info(e.getMessage());
-                addDebugMessage(e.getMessage());
             } catch (DockerException e) {
                 numberOfUnhandledException++;
                 logger.error("Caught a DockerException, resetting containerState to " + containerState, e);
             } catch (Exception e) {
                 numberOfUnhandledException++;
                 logger.error("Unhandled exception, ignoring.", e);
-                addDebugMessage(e.getMessage());
             }
         }
 
@@ -462,7 +435,7 @@ public class NodeAgentImpl implements NodeAgent {
                 storageMaintainer.writeMetricsConfig(containerName, node);
             }
 
-            addDebugMessage("Loading new node spec: " + node.toString());
+            logger.debug("Loading new node spec: " + node.toString());
             lastNode = node;
         }
 
@@ -484,7 +457,7 @@ public class NodeAgentImpl implements NodeAgent {
 
                 scheduleDownLoadIfNeeded(node);
                 if (isDownloadingImage()) {
-                    addDebugMessage("Waiting for image to download " + imageBeingDownloaded.asString());
+                    logger.debug("Waiting for image to download " + imageBeingDownloaded.asString());
                     return;
                 }
                 container = removeContainerIfNeededUpdateContainerState(node, container);

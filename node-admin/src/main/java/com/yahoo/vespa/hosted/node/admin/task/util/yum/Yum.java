@@ -163,7 +163,7 @@ public class Yum {
         private final List<YumPackageName> packages;
         private final Pattern commandOutputNoopPattern;
 
-        private List<String> enabledRepo = new ArrayList<>();
+        private final List<String> enabledRepo = new ArrayList<>();
 
         private GenericYumCommand(Terminal terminal,
                                   String yumCommand,

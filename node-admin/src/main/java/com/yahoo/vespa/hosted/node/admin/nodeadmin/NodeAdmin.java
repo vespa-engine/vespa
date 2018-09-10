@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * NodeAdmin manages the life cycle of NodeAgents.
