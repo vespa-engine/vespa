@@ -694,7 +694,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     static Version decideVersion(ApplicationId application, Environment environment, Version sessionVersion, boolean bootstrap) {
         if (     environment.isManuallyDeployed()
             && ! "hosted-vespa".equals(application.tenant().value()) // Never change version of system applications
-            && ! application.instance().value().endsWith("-t") // Never upgrade tester containers
+            && ! application.instance().isTester() // Never upgrade tester containers
             && ! bootstrap) { // Do not use current version when bootstrapping config server
             return Vtag.currentVersion;
         }
