@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
@@ -25,12 +26,12 @@ import java.util.stream.Collectors;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.anyVararg;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.anyVararg;
 
 public class AclMaintainerTest {
 
@@ -49,11 +50,13 @@ public class AclMaintainerTest {
     public void before() {
         when(dockerOperations.getAllManagedContainers()).thenReturn(containerList);
         when(env.getCloud()).thenReturn("AWS");
+        when(env.getDockerNetworking()).thenReturn(DockerNetworking.NPT);
     }
 
     @Test
     public void no_redirect_in_yahoo() {
         when(env.getCloud()).thenReturn("YAHOO");
+        when(env.getDockerNetworking()).thenReturn(DockerNetworking.MACVLAN);
 
         Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
         Map<String, Acl> acls = makeAcl(container.hostname, "4321", "2001::1");

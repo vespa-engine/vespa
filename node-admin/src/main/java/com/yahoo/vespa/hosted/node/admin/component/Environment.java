@@ -8,6 +8,7 @@ import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesImpl;
 
@@ -278,6 +279,10 @@ public class Environment {
 
     public boolean isRunningOnHost() {
         return isRunningOnHost;
+    }
+
+    public DockerNetworking getDockerNetworking() {
+        return DockerNetworking.from(cloud, nodeType, isRunningOnHost);
     }
 
     public static class Builder {
