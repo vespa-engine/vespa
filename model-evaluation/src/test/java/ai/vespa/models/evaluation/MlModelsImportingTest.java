@@ -67,7 +67,7 @@ public class MlModelsImportingTest {
                                   tfMnist);
             FunctionEvaluator evaluator = tfMnist.evaluatorOf("serving_default"); // TODO: Macro is offered as an alternative output currently, so need to specify argument
             assertEquals("constant(mnist_saved_dnn_hidden1_bias_read), constant(mnist_saved_dnn_hidden1_weights_read), constant(mnist_saved_dnn_hidden2_bias_read), constant(mnist_saved_dnn_hidden2_weights_read), constant(mnist_saved_dnn_outputs_bias_read), constant(mnist_saved_dnn_outputs_weights_read), input, rankingExpression(imported_ml_macro_mnist_saved_dnn_hidden1_add)", evaluator.context().names().stream().sorted().collect(Collectors.joining(", ")));
-            assertEquals(-0.714629131972222, evaluator.evaluate().sum().asDouble(), delta); // TODO: Verify in TF native
+            assertEquals(-0.714629131972222, evaluator.evaluate().sum().asDouble(), delta);
         }
     }
 

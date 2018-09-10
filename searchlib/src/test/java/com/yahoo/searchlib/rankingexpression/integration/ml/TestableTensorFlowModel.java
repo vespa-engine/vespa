@@ -41,6 +41,21 @@ public class TestableTensorFlowModel {
 
     public ImportedModel get() { return model; }
 
+    /** Compare that summing the tensors produce the same result to within some tolerance delta */
+    public void assertEqualResultSum(String inputName, String operationName, double delta) {
+        Tensor tfResult = tensorFlowExecute(tensorFlowModel, inputName, operationName);
+        Context context = contextFrom(model);
+        Tensor placeholder = placeholderArgument();
+        context.put(inputName, new TensorValue(placeholder));
+
+        model.macros().forEach((k,v) -> evaluateMacro(context, model, k));
+
+        Tensor vespaResult = model.expressions().get(operationName).evaluate(context).asTensor();
+        assertEquals("Operation '" + operationName + "' produces equal results",
+                     tfResult.sum().asDouble(), vespaResult.sum().asDouble(), delta);
+    }
+
+    /** Compare tensors 100% exactly */
     public void assertEqualResult(String inputName, String operationName) {
         Tensor tfResult = tensorFlowExecute(tensorFlowModel, inputName, operationName);
         Context context = contextFrom(model);
