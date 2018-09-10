@@ -1,6 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attribute_keyed_node.h"
+#include "attribute_map_lookup_node.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
@@ -15,7 +15,7 @@ using EnumHandle = IAttributeVector::EnumHandle;
 
 namespace search::expression {
 
-class AttributeKeyedNode::KeyHandler
+class AttributeMapLookupNode::KeyHandler
 {
 protected:
     const IAttributeVector &_attribute;
@@ -34,7 +34,7 @@ namespace {
 
 vespalib::string indirectKeyMarker("attribute(");
 
-class BadKeyHandler : public AttributeKeyedNode::KeyHandler
+class BadKeyHandler : public AttributeMapLookupNode::KeyHandler
 {
 public:
     BadKeyHandler(const IAttributeVector &attribute)
@@ -70,7 +70,7 @@ EnumHandle convertKey<EnumHandle>(const IAttributeVector &attribute, const vespa
 }
 
 template <typename T, typename KeyType = T>
-class KeyHandlerT : public AttributeKeyedNode::KeyHandler
+class KeyHandlerT : public AttributeMapLookupNode::KeyHandler
 {
     AttributeContent<T> _keys;
     KeyType _key;
@@ -119,7 +119,7 @@ matchingKey<const char *>(const char *lhs, const char *rhs)
 }
 
 template <typename T>
-class IndirectKeyHandlerT : public AttributeKeyedNode::KeyHandler
+class IndirectKeyHandlerT : public AttributeMapLookupNode::KeyHandler
 {
     const IAttributeVector &_keySourceAttribute;
     AttributeContent<T>     _keys;
@@ -157,9 +157,9 @@ using IndirectStringKeyHandler = IndirectKeyHandlerT<const char *>;
 class ValueHandler : public AttributeNode::Handler
 {
 protected:
-    std::unique_ptr<AttributeKeyedNode::KeyHandler> _keyHandler;
+    std::unique_ptr<AttributeMapLookupNode::KeyHandler> _keyHandler;
     const IAttributeVector &_attribute;
-    ValueHandler(std::unique_ptr<AttributeKeyedNode::KeyHandler> keyHandler, const IAttributeVector &attribute)
+    ValueHandler(std::unique_ptr<AttributeMapLookupNode::KeyHandler> keyHandler, const IAttributeVector &attribute)
         : _keyHandler(std::move(keyHandler)),
           _attribute(attribute)
     {
@@ -173,7 +173,7 @@ class ValueHandlerT : public ValueHandler
     ResultNodeType &_result;
     T _undefinedValue;
 public:
-    ValueHandlerT(std::unique_ptr<AttributeKeyedNode::KeyHandler> keyHandler, const IAttributeVector &attribute, ResultNodeType &result, T undefinedValue)
+    ValueHandlerT(std::unique_ptr<AttributeMapLookupNode::KeyHandler> keyHandler, const IAttributeVector &attribute, ResultNodeType &result, T undefinedValue)
         : ValueHandler(std::move(keyHandler), attribute),
           _values(),
           _result(result),
@@ -183,7 +183,7 @@ public:
     void handle(const AttributeResult & r) override {
         uint32_t docId = r.getDocId();
         uint32_t keyIdx  = _keyHandler->handle(docId);
-        if (keyIdx != AttributeKeyedNode::KeyHandler::noKeyIdx()) {
+        if (keyIdx != AttributeMapLookupNode::KeyHandler::noKeyIdx()) {
             _values.fill(_attribute, docId);
             if (keyIdx < _values.size()) {
                 _result = _values[keyIdx];
@@ -228,7 +228,7 @@ IAttributeVector::largeint_t getUndefinedValue(BasicType::Type basicType)
 
 }
 
-AttributeKeyedNode::AttributeKeyedNode()
+AttributeMapLookupNode::AttributeMapLookupNode()
     : AttributeNode(),
       _keyAttributeName(),
       _valueAttributeName(),
@@ -239,9 +239,9 @@ AttributeKeyedNode::AttributeKeyedNode()
 {
 }
 
-AttributeKeyedNode::AttributeKeyedNode(const AttributeKeyedNode &) = default;
+AttributeMapLookupNode::AttributeMapLookupNode(const AttributeMapLookupNode &) = default;
 
-AttributeKeyedNode::AttributeKeyedNode(vespalib::stringref name)
+AttributeMapLookupNode::AttributeMapLookupNode(vespalib::stringref name)
     : AttributeNode(name),
       _keyAttributeName(),
       _valueAttributeName(),
@@ -253,13 +253,13 @@ AttributeKeyedNode::AttributeKeyedNode(vespalib::stringref name)
     setupAttributeNames();
 }
 
-AttributeKeyedNode::~AttributeKeyedNode() = default;
+AttributeMapLookupNode::~AttributeMapLookupNode() = default;
 
-AttributeKeyedNode &
-AttributeKeyedNode::operator=(const AttributeKeyedNode &rhs) = default;
+AttributeMapLookupNode &
+AttributeMapLookupNode::operator=(const AttributeMapLookupNode &rhs) = default;
 
 void
-AttributeKeyedNode::setupAttributeNames()
+AttributeMapLookupNode::setupAttributeNames()
 {
     vespalib::asciistream keyName;
     vespalib::asciistream valueName;
@@ -282,15 +282,15 @@ AttributeKeyedNode::setupAttributeNames()
 
 template <typename ResultNodeType>
 void
-AttributeKeyedNode::prepareIntValues(std::unique_ptr<KeyHandler> keyHandler, const IAttributeVector &attribute, IAttributeVector::largeint_t undefinedValue)
+AttributeMapLookupNode::prepareIntValues(std::unique_ptr<KeyHandler> keyHandler, const IAttributeVector &attribute, IAttributeVector::largeint_t undefinedValue)
 {
     auto resultNode = std::make_unique<ResultNodeType>();
     _handler = std::make_unique<IntegerValueHandler<ResultNodeType>>(std::move(keyHandler), attribute, *resultNode, undefinedValue);
     setResultType(std::move(resultNode));
 }
 
-std::unique_ptr<AttributeKeyedNode::KeyHandler>
-AttributeKeyedNode::makeKeyHandlerHelper()
+std::unique_ptr<AttributeMapLookupNode::KeyHandler>
+AttributeMapLookupNode::makeKeyHandlerHelper()
 {
     const IAttributeVector &attribute = *_keyAttribute;
     if (_keySourceAttribute != nullptr) {
@@ -318,8 +318,8 @@ AttributeKeyedNode::makeKeyHandlerHelper()
     }
 }
 
-std::unique_ptr<AttributeKeyedNode::KeyHandler>
-AttributeKeyedNode::makeKeyHandler()
+std::unique_ptr<AttributeMapLookupNode::KeyHandler>
+AttributeMapLookupNode::makeKeyHandler()
 {
     try {
         return makeKeyHandlerHelper();
@@ -329,7 +329,7 @@ AttributeKeyedNode::makeKeyHandler()
 }
 
 void
-AttributeKeyedNode::onPrepare(bool preserveAccurateTypes)
+AttributeMapLookupNode::onPrepare(bool preserveAccurateTypes)
 {
     auto keyHandler = makeKeyHandler();
     const IAttributeVector * attribute = _scratchResult->getAttribute();
@@ -380,7 +380,7 @@ AttributeKeyedNode::onPrepare(bool preserveAccurateTypes)
 }
 
 void
-AttributeKeyedNode::cleanup()
+AttributeMapLookupNode::cleanup()
 {
     _keyAttribute = nullptr;
     _keySourceAttribute = nullptr;
@@ -388,7 +388,7 @@ AttributeKeyedNode::cleanup()
 }
 
 void
-AttributeKeyedNode::wireAttributes(const search::attribute::IAttributeContext &attrCtx)
+AttributeMapLookupNode::wireAttributes(const search::attribute::IAttributeContext &attrCtx)
 {
     auto valueAttribute = findAttribute(attrCtx, _useEnumOptimization, _valueAttributeName);
     _hasMultiValue = false;
@@ -400,7 +400,7 @@ AttributeKeyedNode::wireAttributes(const search::attribute::IAttributeContext &a
 }
 
 void
-AttributeKeyedNode::visitMembers(vespalib::ObjectVisitor &visitor) const
+AttributeMapLookupNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     AttributeNode::visitMembers(visitor);
     visit(visitor, "keyAttributeName", _keyAttributeName);

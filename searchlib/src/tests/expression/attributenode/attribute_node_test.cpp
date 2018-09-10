@@ -10,7 +10,7 @@
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/expression/attributenode.h>
-#include <vespa/searchlib/expression/attribute_keyed_node.h>
+#include <vespa/searchlib/expression/attribute_map_lookup_node.h>
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -31,7 +31,7 @@ using search::attribute::Config;
 using search::attribute::IAttributeVector;
 using search::attribute::getUndefined;
 using search::expression::AttributeNode;
-using search::expression::AttributeKeyedNode;
+using search::expression::AttributeMapLookupNode;
 using search::expression::EnumResultNode;
 using search::expression::EnumResultNodeVector;
 using search::expression::FloatResultNode;
@@ -220,7 +220,7 @@ Fixture::makeNode(const vespalib::string &attributeName, bool useEnumOptimizatio
     if (attributeName.find('{') == vespalib::string::npos) {
         node = std::make_unique<AttributeNode>(attributeName);
     } else {
-        node = std::make_unique<AttributeKeyedNode>(attributeName);
+        node = std::make_unique<AttributeMapLookupNode>(attributeName);
     }
     if (useEnumOptimization) {
         node->useEnumOptimization();

@@ -9,7 +9,7 @@ namespace search::expression {
  * Extract map value from attribute for the map key specified in the
  * grouping expression.
  */
-class AttributeKeyedNode : public AttributeNode
+class AttributeMapLookupNode : public AttributeNode
 {
 public:
     using IAttributeVector = search::attribute::IAttributeVector;
@@ -31,13 +31,13 @@ private:
     void wireAttributes(const search::attribute::IAttributeContext & attrCtx) override;
     void onPrepare(bool preserveAccurateTypes) override;
 public:
-    AttributeKeyedNode();
-    AttributeKeyedNode(vespalib::stringref name);
-    AttributeKeyedNode(const AttributeKeyedNode &);
-    AttributeKeyedNode(AttributeKeyedNode &&) = delete;
-    ~AttributeKeyedNode() override;
-    AttributeKeyedNode &operator=(const AttributeKeyedNode &rhs);
-    AttributeKeyedNode &operator=(AttributeKeyedNode &&rhs) = delete;
+    AttributeMapLookupNode();
+    AttributeMapLookupNode(vespalib::stringref name);
+    AttributeMapLookupNode(const AttributeMapLookupNode &);
+    AttributeMapLookupNode(AttributeMapLookupNode &&) = delete;
+    ~AttributeMapLookupNode() override;
+    AttributeMapLookupNode &operator=(const AttributeMapLookupNode &rhs);
+    AttributeMapLookupNode &operator=(AttributeMapLookupNode &&rhs) = delete;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     bool isKeyed() const override { return true; }
 };
