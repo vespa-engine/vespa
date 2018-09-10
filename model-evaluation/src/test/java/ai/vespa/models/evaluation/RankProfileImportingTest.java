@@ -3,8 +3,6 @@ package ai.vespa.models.evaluation;
 
 import org.junit.Test;
 
-import java.util.Map;
-
 import static org.junit.Assert.assertEquals;
 
 /**
