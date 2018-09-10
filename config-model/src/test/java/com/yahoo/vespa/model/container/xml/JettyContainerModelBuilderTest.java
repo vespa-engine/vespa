@@ -235,33 +235,33 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     @Test
-    public void verify_default_ssl_configuration() {
+    public void verify_that_ssl_element_generates_connector_config_and_inject_provider_component() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0' jetty='true'>\n" +
-                "    <http>\n" +
-                "        <server port='9000' id='minimal'>\n" +
-                "            <ssl>\n" +
-                "                <private-key-file>/foo/key</private-key-file>\n" +
-                "                <certificate-file>/foo/cert</certificate-file>\n" +
-                "            </ssl>\n" +
-                "        </server>\n" +
-                "        <server port='9001' id='with-cacerts'>\n" +
-                "            <ssl>\n" +
-                "                <private-key-file>/foo/key</private-key-file>\n" +
-                "                <certificate-file>/foo/cert</certificate-file>\n" +
-                "                <ca-certificates-file>/foo/cacerts</ca-certificates-file>\n" +
-                "            </ssl>\n" +
-                "        </server>\n" +
-                "        <server port='9002' id='need-client-auth'>\n" +
-                "            <ssl>\n" +
-                "                <private-key-file>/foo/key</private-key-file>\n" +
-                "                <certificate-file>/foo/cert</certificate-file>\n" +
-                "                <client-authentication>need</client-authentication>\n" +
-                "            </ssl>\n" +
-                "        </server>\n" +
-                "    </http>" +
-                nodesXml +
-                "\n" +
+                "<jdisc id='default' version='1.0' jetty='true'>",
+                "    <http>",
+                "        <server port='9000' id='minimal'>",
+                "            <ssl>",
+                "                <private-key-file>/foo/key</private-key-file>",
+                "                <certificate-file>/foo/cert</certificate-file>",
+                "            </ssl>",
+                "        </server>",
+                "        <server port='9001' id='with-cacerts'>",
+                "            <ssl>",
+                "                <private-key-file>/foo/key</private-key-file>",
+                "                <certificate-file>/foo/cert</certificate-file>",
+                "                <ca-certificates-file>/foo/cacerts</ca-certificates-file>",
+                "            </ssl>",
+                "        </server>",
+                "        <server port='9002' id='need-client-auth'>",
+                "            <ssl>",
+                "                <private-key-file>/foo/key</private-key-file>",
+                "                <certificate-file>/foo/cert</certificate-file>",
+                "                <client-authentication>need</client-authentication>",
+                "            </ssl>",
+                "        </server>",
+                "    </http>",
+                nodesXml,
+                "",
                 "</jdisc>");
 
         createModel(root, clusterElem);
@@ -294,14 +294,14 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verify_ssl_provider_configuration() {
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id='default' version='1.0' jetty='true'>\n" +
-                "    <http>\n" +
-                "        <server port='9000' id='ssl'>\n" +
-                "            <ssl-provider id='ssl-provider' class='com.yahoo.CustomSslProvider' bundle='mybundle'/>\n" +
-                "        </server>\n" +
-                "    </http>" +
-                nodesXml +
-                "\n" +
+                "<jdisc id='default' version='1.0' jetty='true'>",
+                "    <http>",
+                "        <server port='9000' id='ssl'>",
+                "            <ssl-provider id='ssl-provider' class='com.yahoo.CustomSslProvider' bundle='mybundle'/>",
+                "        </server>",
+                "    </http>",
+                nodesXml,
+                "",
                 "</jdisc>");
 
         createModel(root, clusterElem);
