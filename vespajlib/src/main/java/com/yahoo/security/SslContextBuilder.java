@@ -14,6 +14,10 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.List;
+
+import static java.util.Collections.singletonList;
 
 /**
  * @author bjorncs
@@ -33,6 +37,24 @@ public class SslContextBuilder {
 
     public SslContextBuilder withTrustStore(KeyStore trustStore) {
         this.trustStoreSupplier = () -> trustStore;
+        return this;
+    }
+
+    public SslContextBuilder withTrustStore(X509Certificate caCertificate) {
+        return withTrustStore(singletonList(caCertificate));
+    }
+
+    public SslContextBuilder withTrustStore(List<X509Certificate> caCertificates) {
+        this.trustStoreSupplier = () -> createTrustStore(caCertificates);
+        return this;
+    }
+
+    public SslContextBuilder withTrustStore(Path pemEncodedCaCertificates) {
+        this.trustStoreSupplier = () -> {
+            List<X509Certificate> caCertificates =
+                    X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(pemEncodedCaCertificates)));
+            return createTrustStore(caCertificates);
+        };
         return this;
     }
 
@@ -98,6 +120,14 @@ public class SslContextBuilder {
                 KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         keyManagerFactory.init(keyStoreSupplier.get(), password);
         return keyManagerFactory.getKeyManagers();
+    }
+
+    private static KeyStore createTrustStore(List<X509Certificate> caCertificates) {
+        KeyStoreBuilder trustStoreBuilder = KeyStoreBuilder.withType(KeyStoreType.JKS);
+        for (int i = 0; i < caCertificates.size(); i++) {
+            trustStoreBuilder.withCertificateEntry("cert-" + i, caCertificates.get(i));
+        }
+        return trustStoreBuilder.build();
     }
 
     private interface KeyStoreSupplier {
