@@ -75,7 +75,6 @@ public class JobRunnerTest {
     public void multiThreadedExecutionFinishes() throws InterruptedException {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
-        // Fail the installation of the initial version of the real application in staging tests, and succeed everything else.
         StepRunner stepRunner = (step, id) -> id.type() == stagingTest && step.get() == startTests? Optional.of(error) : Optional.of(running);
         CountDownLatch latch = new CountDownLatch(19); // Number of steps that will run, below: all but endTests in staging and all 9 in system.
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
@@ -93,9 +92,10 @@ public class JobRunnerTest {
         jobs.start(id, stagingTest, versions);
 
         assertTrue(jobs.last(id, systemTest).get().steps().values().stream().allMatch(unfinished::equals));
-        runner.maintain();
         assertFalse(jobs.last(id, systemTest).get().hasEnded());
+        assertTrue(jobs.last(id, stagingTest).get().steps().values().stream().allMatch(unfinished::equals));
         assertFalse(jobs.last(id, stagingTest).get().hasEnded());
+        runner.maintain();
 
         latch.await(1, TimeUnit.SECONDS);
         assertEquals(0, latch.getCount());
