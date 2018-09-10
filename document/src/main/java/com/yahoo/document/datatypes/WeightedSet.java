@@ -1,14 +1,25 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
-import com.yahoo.collections.CollectionComparator;
-import com.yahoo.document.*;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Field;
+import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.FieldPath;
 import com.yahoo.document.serialization.FieldReader;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.document.serialization.XmlSerializationHelper;
 import com.yahoo.document.serialization.XmlStream;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
 
 /**
  * A weighted set, a unique set of keys with an associated integer weight. This class

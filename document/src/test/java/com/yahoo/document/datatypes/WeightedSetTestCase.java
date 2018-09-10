@@ -4,6 +4,7 @@ package com.yahoo.document.datatypes;
 import com.yahoo.document.DataType;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -33,7 +34,23 @@ public class WeightedSetTestCase {
         assertEquals(a, b);
         assertEquals(0, a.compareTo(b));
         assertEquals(0, b.compareTo(a));
+    }
 
+    @Test
+    public void testEqualsOnMixedPrimitiveAndFieldValues() {
+        WeightedSet<StringFieldValue> a = new WeightedSet<>(DataType.TAG);
+        a.put(new StringFieldValue("this is a test"), 5);
+        a.put(new StringFieldValue("this is a second test"), 7);
+
+        WeightedSet<StringFieldValue> b = new WeightedSet<>(DataType.TAG);
+        Map<String, Integer> m = new HashMap<String, Integer>();
+        m.put("this is a second test", 7);
+        m.put("this is a test", 5);
+        b.assign(m);
+
+        assertEquals(a, b);
+        assertEquals(0, a.compareTo(b));
+        assertEquals(0, b.compareTo(a));
     }
 
     @Test
