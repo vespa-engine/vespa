@@ -9,6 +9,7 @@ import com.yahoo.jdisc.http.ssl.DefaultSslTrustStoreConfigurator;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
+import com.yahoo.vespa.model.container.http.ssl.DummySslProvider;
 import org.w3c.dom.Element;
 
 import java.util.Optional;
@@ -28,7 +29,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     private final Element legacyConfig;
 
     public ConnectorFactory(String name, int listenPort) {
-        this(name, listenPort, null, null, null, null);
+        this(name, listenPort, null, null, null, new DummySslProvider(name));
     }
 
     public ConnectorFactory(String name,
@@ -44,10 +45,8 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         this.name = name;
         this.listenPort = listenPort;
         this.legacyConfig = legacyConfig;
-        Optional.ofNullable(sslProviderComponent).ifPresent(component -> {
-            addChild(component);
-            inject(component);
-        });
+        addChild(sslProviderComponent);
+        inject(sslProviderComponent);
         addSslKeyStoreConfigurator(name, sslKeystoreConfigurator);
         addSslTrustStoreConfigurator(name, sslTruststoreConfigurator);
     }

@@ -214,7 +214,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         List<ConnectorFactory> connectorFactories = cluster.getChildrenByTypeRecursive(ConnectorFactory.class);
         {
             ConnectorFactory firstConnector = connectorFactories.get(0);
-            assertConnectorHasInjectedComponents(firstConnector, "ssl-keystore-configurator@foo", "ssl-truststore-configurator@foo");
+            assertConnectorHasInjectedComponents(firstConnector, "ssl-keystore-configurator@foo", "ssl-truststore-configurator@foo", "dummy-ssl-provider@foo");
             assertComponentHasClassNameAndBundle(getChildComponent(firstConnector, 0),
                                                  "com.yahoo.MySslKeyStoreConfigurator",
                                                  "mybundle");
@@ -224,7 +224,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         }
         {
             ConnectorFactory secondConnector = connectorFactories.get(1);
-            assertConnectorHasInjectedComponents(secondConnector, "ssl-keystore-configurator@bar", "ssl-truststore-configurator@bar");
+            assertConnectorHasInjectedComponents(secondConnector, "ssl-keystore-configurator@bar", "ssl-truststore-configurator@bar", "dummy-ssl-provider@bar");
             assertComponentHasClassNameAndBundle(getChildComponent(secondConnector, 0),
                                                  DefaultSslKeyStoreConfigurator.class.getName(),
                                                  "jdisc_http_service");

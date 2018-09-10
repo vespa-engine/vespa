@@ -9,6 +9,7 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.container.http.ssl.CustomSslProvider;
 import com.yahoo.vespa.model.container.http.ssl.DefaultSslProvider;
+import com.yahoo.vespa.model.container.http.ssl.DummySslProvider;
 import org.w3c.dom.Element;
 
 import java.util.Optional;
@@ -62,8 +63,9 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
             String className = sslProviderConfigurator.getAttribute("class");
             String bundle = sslProviderConfigurator.getAttribute("bundle");
             return new CustomSslProvider(id, className, bundle);
+        } else {
+            // No ssl config..
+            return new DummySslProvider(serverName);
         }
-        // No ssl config..
-        return null;
     }
 }
