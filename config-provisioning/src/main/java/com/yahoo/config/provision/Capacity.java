@@ -65,12 +65,6 @@ public final class Capacity {
         return fromNodeCount(capacity, Optional.empty(), false, true);
     }
 
-    // TODO: Remove after July 2018
-    @Deprecated
-    public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor, boolean required) {
-        return new Capacity(nodeCount, flavor, required, true, NodeType.tenant);
-    }
-
     public static Capacity fromNodeCount(int nodeCount, Optional<String> flavor, boolean required, boolean canFail) {
         return new Capacity(nodeCount, flavor, required, canFail, NodeType.tenant);
     }
