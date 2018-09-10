@@ -64,18 +64,6 @@ Attribute2DocumentAccessor::getReplacementNode(const AttributeNode &attributeNod
     return std::make_unique<DocumentFieldNode>(attributeNode.getAttributeName());
 }
 
-std::unique_ptr<ExpressionNode>
-Attribute2AttributeKeyed::getReplacementNode(const AttributeNode &attributeNode)
-{
-    const vespalib::string &attributeName = attributeNode.getAttributeName();
-    auto lBracePos = attributeName.find('{');
-    if (attributeNode.isKeyed() || lBracePos == vespalib::string::npos) {
-        return std::unique_ptr<ExpressionNode>();
-    } else {
-        return std::make_unique<AttributeMapLookupNode>(attributeName);
-    }
-}
-
 }
 
 // this function was added by ../../forcelink.sh

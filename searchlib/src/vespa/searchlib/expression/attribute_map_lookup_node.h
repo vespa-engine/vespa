@@ -22,7 +22,6 @@ private:
     const IAttributeVector *_keyAttribute;
     const IAttributeVector *_keySourceAttribute;
 
-    void setupAttributeNames();
     template <typename ResultNodeType>
     void prepareIntValues(std::unique_ptr<KeyHandler> keyHandler, const IAttributeVector &attribute, IAttributeVector::largeint_t undefinedValue);
     std::unique_ptr<KeyHandler> makeKeyHandlerHelper();
@@ -31,15 +30,16 @@ private:
     void wireAttributes(const search::attribute::IAttributeContext & attrCtx) override;
     void onPrepare(bool preserveAccurateTypes) override;
 public:
+    DECLARE_NBO_SERIALIZE;
+    DECLARE_EXPRESSIONNODE(AttributeMapLookupNode);
     AttributeMapLookupNode();
-    AttributeMapLookupNode(vespalib::stringref name);
+    AttributeMapLookupNode(vespalib::stringref keyAttributeName, vespalib::stringref valueAttributeName, vespalib::stringref key, vespalib::stringref keySourceAttributeName);
     AttributeMapLookupNode(const AttributeMapLookupNode &);
     AttributeMapLookupNode(AttributeMapLookupNode &&) = delete;
     ~AttributeMapLookupNode() override;
     AttributeMapLookupNode &operator=(const AttributeMapLookupNode &rhs);
     AttributeMapLookupNode &operator=(AttributeMapLookupNode &&rhs) = delete;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    bool isKeyed() const override { return true; }
 };
 
 }

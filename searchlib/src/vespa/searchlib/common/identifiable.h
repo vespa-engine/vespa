@@ -148,6 +148,7 @@
 #define CID_search_expression_AggregationRefNode            SEARCHLIB_CID(142)
 #define CID_search_expression_NormalizeSubjectFunctionNode  SEARCHLIB_CID(143)
 #define CID_search_expression_DebugWaitFunctionNode         SEARCHLIB_CID(144)
+#define CID_search_expression_AttributeMapLookupNode        SEARCHLIB_CID(145)
 
 #define CID_search_QueryNode                                SEARCHLIB_CID(150)
 #define CID_search_Query                                    SEARCHLIB_CID(151)

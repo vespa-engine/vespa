@@ -11,9 +11,13 @@ using search::attribute::AttributeContent;
 using search::attribute::IAttributeVector;
 using search::attribute::BasicType;
 using search::attribute::getUndefined;
+using vespalib::Deserializer;
+using vespalib::Serializer;
 using EnumHandle = IAttributeVector::EnumHandle;
 
 namespace search::expression {
+
+IMPLEMENT_EXPRESSIONNODE(AttributeMapLookupNode, AttributeNode);
 
 class AttributeMapLookupNode::KeyHandler
 {
@@ -241,44 +245,21 @@ AttributeMapLookupNode::AttributeMapLookupNode()
 
 AttributeMapLookupNode::AttributeMapLookupNode(const AttributeMapLookupNode &) = default;
 
-AttributeMapLookupNode::AttributeMapLookupNode(vespalib::stringref name)
-    : AttributeNode(name),
-      _keyAttributeName(),
-      _valueAttributeName(),
-      _key(),
-      _keySourceAttributeName(),
+AttributeMapLookupNode::AttributeMapLookupNode(vespalib::stringref keyAttributeName, vespalib::stringref valueAttributeName, vespalib::stringref key, vespalib::stringref keySourceAttributeName)
+    : AttributeNode(""),
+      _keyAttributeName(keyAttributeName),
+      _valueAttributeName(valueAttributeName),
+      _key(key),
+      _keySourceAttributeName(keySourceAttributeName),
       _keyAttribute(nullptr),
       _keySourceAttribute(nullptr)
 {
-    setupAttributeNames();
 }
 
 AttributeMapLookupNode::~AttributeMapLookupNode() = default;
 
 AttributeMapLookupNode &
 AttributeMapLookupNode::operator=(const AttributeMapLookupNode &rhs) = default;
-
-void
-AttributeMapLookupNode::setupAttributeNames()
-{
-    vespalib::asciistream keyName;
-    vespalib::asciistream valueName;
-    auto leftBracePos = _attributeName.find('{');
-    auto baseName = _attributeName.substr(0, leftBracePos);
-    auto rightBracePos = _attributeName.rfind('}');
-    keyName << baseName << ".key";
-    valueName << baseName << ".value" << _attributeName.substr(rightBracePos + 1);
-    _keyAttributeName = keyName.str();
-    _valueAttributeName = valueName.str();
-    if (rightBracePos != vespalib::string::npos && rightBracePos > leftBracePos) {
-        if (_attributeName[leftBracePos + 1] == '"' && _attributeName[rightBracePos - 1] == '"') {
-            _key = _attributeName.substr(leftBracePos + 2, rightBracePos - leftBracePos - 3);
-        } else if (_attributeName.substr(leftBracePos + 1, indirectKeyMarker.size()) == indirectKeyMarker && _attributeName[rightBracePos - 1] == ')') {
-            auto startPos = leftBracePos + 1 + indirectKeyMarker.size();
-            _keySourceAttributeName = _attributeName.substr(startPos, rightBracePos - 1 - startPos);
-        }
-    }
-}
 
 template <typename ResultNodeType>
 void
@@ -399,10 +380,21 @@ AttributeMapLookupNode::wireAttributes(const search::attribute::IAttributeContex
     }
 }
 
+Serializer & AttributeMapLookupNode::onSerialize(Serializer & os) const
+{
+    FunctionNode::onSerialize(os);
+    return os << _keyAttributeName << _valueAttributeName << _key << _keySourceAttributeName;
+}
+
+Deserializer & AttributeMapLookupNode::onDeserialize(Deserializer & is)
+{
+    FunctionNode::onDeserialize(is);
+    return is >> _keyAttributeName >> _valueAttributeName >> _key >> _keySourceAttributeName;
+}
+
 void
 AttributeMapLookupNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
-    AttributeNode::visitMembers(visitor);
     visit(visitor, "keyAttributeName", _keyAttributeName);
     visit(visitor, "keySourceAttributeName", _keySourceAttributeName);
     visit(visitor, "valueAttributeName", _valueAttributeName);

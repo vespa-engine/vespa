@@ -60,6 +60,31 @@ vespalib::string stringValue(const ResultNode &result, const IAttributeVector &a
     return vespalib::string(sbuf.c_str(), sbuf.c_str() + sbuf.size());
 }
 
+vespalib::string indirectKeyMarker("attribute(");
+
+std::unique_ptr<AttributeNode>
+makeAttributeMapLookupNode(const vespalib::string attributeName)
+{
+    vespalib::asciistream keyName;
+    vespalib::asciistream valueName;
+    auto leftBracePos = attributeName.find('{');
+    auto baseName = attributeName.substr(0, leftBracePos);
+    auto rightBracePos = attributeName.rfind('}');
+    keyName << baseName << ".key";
+    valueName << baseName << ".value" << attributeName.substr(rightBracePos + 1);
+    if (rightBracePos != vespalib::string::npos && rightBracePos > leftBracePos) {
+        if (attributeName[leftBracePos + 1] == '"' && attributeName[rightBracePos - 1] == '"') {
+            vespalib::string key = attributeName.substr(leftBracePos + 2, rightBracePos - leftBracePos - 3);
+            return std::make_unique<AttributeMapLookupNode>(keyName.str(), valueName.str(), key, "");
+        } else if (attributeName.substr(leftBracePos + 1, indirectKeyMarker.size()) == indirectKeyMarker && attributeName[rightBracePos - 1] == ')') {
+            auto startPos = leftBracePos + 1 + indirectKeyMarker.size();
+            vespalib::string keySourceAttributeName = attributeName.substr(startPos, rightBracePos - 1 - startPos);
+            return std::make_unique<AttributeMapLookupNode>(keyName.str(), valueName.str(), "", keySourceAttributeName);
+        }
+    }
+    return std::unique_ptr<AttributeNode>();
+}
+
 struct AttributeManagerFixture
 {
     AttributeManager mgr;
@@ -220,7 +245,7 @@ Fixture::makeNode(const vespalib::string &attributeName, bool useEnumOptimizatio
     if (attributeName.find('{') == vespalib::string::npos) {
         node = std::make_unique<AttributeNode>(attributeName);
     } else {
-        node = std::make_unique<AttributeMapLookupNode>(attributeName);
+        node = makeAttributeMapLookupNode(attributeName);
     }
     if (useEnumOptimization) {
         node->useEnumOptimization();
