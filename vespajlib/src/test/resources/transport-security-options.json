@@ -1,0 +1,7 @@
+{
+  "files": {
+    "private-key": "myhost.key",
+    "ca-certificates": "my_cas.pem",
+    "certificates": "certs.pem"
+  }
+}
