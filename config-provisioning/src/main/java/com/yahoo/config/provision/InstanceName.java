@@ -46,6 +46,10 @@ public class InstanceName implements Comparable<InstanceName> {
         return equals(InstanceName.defaultName());
     }
 
+    public boolean isTester() {
+        return value().endsWith("-t");
+    }
+
     public String value() { return instanceName; }
 
     @Override

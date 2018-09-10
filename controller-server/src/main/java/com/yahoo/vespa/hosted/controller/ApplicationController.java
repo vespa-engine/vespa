@@ -246,7 +246,9 @@ public class ApplicationController {
      */
     public Application createApplication(ApplicationId id, Optional<NToken> token) {
         if ( ! (id.instance().isDefault())) // TODO: Support instances properly
-            throw new UnsupportedOperationException("Only the instance name 'default' is supported at the moment");
+            throw new IllegalArgumentException("Only the instance name 'default' is supported at the moment");
+        if (id.instance().isTester())
+            throw new IllegalArgumentException("'" + id + "' is a tester application!");
         try (Lock lock = lock(id)) {
             // Validate only application names which do not already exist.
             if (asList(id.tenant()).stream().noneMatch(application -> application.id().application().equals(id.application())))
@@ -279,6 +281,9 @@ public class ApplicationController {
     public ActivateResult deploy(ApplicationId applicationId, ZoneId zone,
                                  Optional<ApplicationPackage> applicationPackageFromDeployer,
                                  DeployOptions options) {
+        if (applicationId.instance().isTester())
+            throw new IllegalArgumentException("'" + applicationId + "' is a tester application!");
+
         try (Lock lock = lock(applicationId)) {
             LockedApplication application = get(applicationId)
                     .map(app -> new LockedApplication(app, lock))
@@ -381,7 +386,7 @@ public class ApplicationController {
 
     /** Assembles and deploys a tester application to the given zone. */
     public ActivateResult deployTester(ApplicationId tester, ApplicationPackage applicationPackage, ZoneId zone, DeployOptions options) {
-        if ( ! tester.instance().value().endsWith("-t"))
+        if ( ! tester.instance().isTester())
             throw new IllegalArgumentException("'" + tester + "' is not a tester application!");
 
         return deploy(tester, applicationPackage, zone, options, Collections.emptySet(), Collections.emptySet());
