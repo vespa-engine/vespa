@@ -77,13 +77,13 @@ public class SslContextBuilder {
         return this;
     }
 
-    public SslContextBuilder withKeyStore(Path privateKeyPemFile, Path certificatePemFile) {
+    public SslContextBuilder withKeyStore(Path privateKeyPemFile, Path certificatesPemFile) {
         this.keyStoreSupplier =
                 () ->  {
                     PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyPemFile)));
-                    X509Certificate certificate = X509CertificateUtils.fromPem(new String(Files.readAllBytes(certificatePemFile)));
+                    List<X509Certificate> certificates = X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(certificatesPemFile)));
                     return KeyStoreBuilder.withType(KeyStoreType.JKS)
-                            .withKeyEntry("default", privateKey, certificate)
+                            .withKeyEntry("default", privateKey, certificates)
                             .build();
                 };
         this.keyStorePassword = new char[0];
