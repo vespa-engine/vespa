@@ -7,9 +7,6 @@ import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
-import org.tensorflow.SavedModelBundle;
-
-import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -21,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 public class OnnxMnistSoftmaxImportTestCase {
 
     @Test
-    public void testMnistSoftmaxImport() throws IOException {
+    public void testMnistSoftmaxImport() {
         ImportedModel model = new OnnxImporter().importModel("test", "src/test/files/integration/onnx/mnist_softmax/mnist_softmax.onnx");
 
         // Check constants
@@ -43,14 +40,14 @@ public class OnnxMnistSoftmaxImportTestCase {
         assertEquals(1, model.requiredMacros().size());
         assertTrue(model.requiredMacros().containsKey("Placeholder"));
         assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(),
-                model.requiredMacros().get("Placeholder"));
+                     model.requiredMacros().get("Placeholder"));
 
         // Check outputs
         RankingExpression output = model.defaultSignature().outputExpression("add");
         assertNotNull(output);
         assertEquals("add", output.getName());
         assertEquals("join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(test_Variable), f(a,b)(a * b)), sum, d2), constant(test_Variable_1), f(a,b)(a + b))",
-                output.getRoot().toString());
+                     output.getRoot().toString());
     }
 
     @Test
