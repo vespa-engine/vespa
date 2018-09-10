@@ -18,3 +18,5 @@ vespa_define_module(
     src/tests/info
     src/tests/rotate
 )
+
+vespa_install_script(src/apps/retention/retention-enforcer.sh vespa-retention-enforcer sbin)

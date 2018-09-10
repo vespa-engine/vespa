@@ -1,11 +1,16 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=container.core
 
-
 # File name patterns supporting the expected time variables, e.g. ".%Y%m%d%H%M%S"
 fileHandler.pattern string
+
+# When should rotation happen, in minutes after midnight
+# Does this really need to be configurable?
+# Could just configure "every N minutes" instead
 fileHandler.rotation string default="0 60 ..."
 
+# TODO remove in Vespa 7, always use DATE
+#
 # Defines how file rotation is done. There are two options:
 #
 # DATE:
@@ -27,4 +32,5 @@ fileHandler.rotateScheme enum {DATE, SEQUENCE} default=DATE
 fileHandler.symlink string default=""
 
 # compress the previous access log after rotation
+# TODO change to "true" for Vespa 7
 fileHandler.compressOnRotation bool default=false
