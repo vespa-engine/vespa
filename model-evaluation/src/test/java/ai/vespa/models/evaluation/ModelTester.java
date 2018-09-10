@@ -1,17 +1,24 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import com.yahoo.config.FileReference;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.FileSource;
+import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
+import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
+import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 
-import java.util.HashMap;
+import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
@@ -38,7 +45,8 @@ public class ModelTester {
                                                        RankProfilesConfig.class).getConfig("");
         RankingConstantsConfig constantsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-constants.cfg").toFile()),
                                                                     RankingConstantsConfig.class).getConfig("");
-        return new RankProfilesConfigImporterWithMockedConstants().importFrom(config, constantsConfig);
+        return new RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"), MockFileAcquirer.returnFile(null))
+                       .importFrom(config, constantsConfig);
     }
 
     public void assertFunction(String name, String expression, Model model) {
@@ -61,15 +69,24 @@ public class ModelTester {
 
         private static final Logger log = Logger.getLogger(RankProfilesConfigImporterWithMockedConstants.class.getName());
 
-        Map<String, Tensor> constants = new HashMap<>();
+        private final Path constantsPath;
+
+        public RankProfilesConfigImporterWithMockedConstants(Path constantsPath, FileAcquirer fileAcquirer) {
+            super(fileAcquirer);
+            this.constantsPath = constantsPath;
+        }
 
         @Override
-        Tensor readTensorFromFile(String name, TensorType type, String fileReference) {
-            if ( ! constants.containsKey(name)) {
-                log.warning("Missing a mocked tensor constant for '" + name + "': Returning an empty tensor");
+        protected Tensor readTensorFromFile(String name, TensorType type, FileReference fileReference) {
+            try {
+                return TypedBinaryFormat.decode(Optional.of(type),
+                                                GrowableByteBuffer.wrap(IOUtils.readFileBytes(constantsPath.append(name).toFile())));
+            }
+            catch (IOException e) {
+                log.warning("Missing a mocked tensor constant for '" + name + "': " + e.getMessage() +
+                            ". Returning an empty tensor");
                 return Tensor.from(type, "{}");
             }
-            return constants.get(name);
         }
 
     }

@@ -41,8 +41,7 @@ public class BundleLoader {
         initialBundles = Arrays.asList(osgi.getBundles());
     }
 
-    private List<Bundle> obtainBundles(FileReference reference, FileAcquirer fileAcquirer)
-            throws InterruptedException {
+    private List<Bundle> obtainBundles(FileReference reference, FileAcquirer fileAcquirer) throws InterruptedException {
         File file = fileAcquirer.waitFor(reference, 7, TimeUnit.DAYS);
         return osgi.install(file.getAbsolutePath());
     }

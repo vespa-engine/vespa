@@ -3,9 +3,15 @@ package com.yahoo.config.model;
 
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
+import ai.vespa.models.evaluation.RankProfilesConfigImporter;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
+import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.model.VespaModel;
@@ -74,7 +80,8 @@ public class ModelEvaluationTest {
         assertTrue(modelNames.contains("mnist_softmax"));
         assertTrue(modelNames.contains("mnist_softmax_saved"));
 
-        ModelsEvaluator evaluator = new ModelsEvaluator(config, constantsConfig);
+        ModelsEvaluator evaluator = new ModelsEvaluator(new ToleratingMissingConstantFilesRankProfilesConfigImporter(MockFileAcquirer.returnFile(null))
+                                                                .importFrom(config, constantsConfig));
 
         assertEquals(4, evaluator.models().size());
 
@@ -105,6 +112,19 @@ public class ModelEvaluationTest {
         assertNotNull(tensorflow_mnist_softmax.evaluatorOf());
         assertNotNull(tensorflow_mnist_softmax.evaluatorOf("serving_default"));
         assertNotNull(tensorflow_mnist_softmax.evaluatorOf("serving_default", "y"));
+    }
+
+    // We don't have function file distribution so just return empty tensor constants
+    private static class ToleratingMissingConstantFilesRankProfilesConfigImporter extends RankProfilesConfigImporter {
+
+        public ToleratingMissingConstantFilesRankProfilesConfigImporter(FileAcquirer fileAcquirer) {
+            super(fileAcquirer);
+        }
+
+        protected Tensor readTensorFromFile(String name, TensorType type, FileReference fileReference) {
+            return Tensor.from(type, "{}");
+        }
+
     }
 
 }

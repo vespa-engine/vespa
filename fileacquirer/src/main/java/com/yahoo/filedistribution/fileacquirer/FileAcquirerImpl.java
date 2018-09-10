@@ -23,12 +23,15 @@ import java.io.File;
  * @author Tony Vaagenes
  */
 class FileAcquirerImpl implements FileAcquirer {
+
     static final class FileDistributionErrorCode {
+
         public static final int baseErrorCode = 0x10000;
         public static final int baseFileProviderErrorCode = baseErrorCode + 0x1000;
 
         public static final int fileReferenceDoesNotExists = baseFileProviderErrorCode;
         public static final int fileReferenceRemoved = fileReferenceDoesNotExists + 1;
+
     }
 
     private static final Logger log = Logger.getLogger(FileAcquirerImpl.class.getName());
@@ -131,13 +134,10 @@ class FileAcquirerImpl implements FileAcquirer {
      * given file reference.  File references are produced by the
      * config system.
      *
-     * @throws TimeoutException if the file or directory could not be
-     *     retrieved in time.
-     * @throws FileReferenceDoesNotExistException if the file is no
-     *     longer available (due to reloading of config).
+     * @throws TimeoutException if the file or directory could not be retrieved in time.
+     * @throws FileReferenceDoesNotExistException if the file is no longer available (due to reloading of config).
      */
-    public File waitFor(FileReference fileReference, long timeout, TimeUnit timeUnit)
-            throws InterruptedException {
+    public File waitFor(FileReference fileReference, long timeout, TimeUnit timeUnit) throws InterruptedException {
         Timer timer = new Timer(timeout, timeUnit);
         do {
             Target target = connection.getTarget(timer);
