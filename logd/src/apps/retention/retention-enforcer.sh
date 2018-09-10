@@ -1,9 +1,18 @@
 #!/bin/sh
 
+# daemon that collects old log files.
+# global settings:
+
 DBGF=logs/vespa/debug.retention-enforcer
 DBDIR=var/db/vespa/logfiledb
 PIDF=$DBDIR/retention-enforcer.pid
 RETAIN_DAYS=31
+
+# this depends on components adding their log files
+# to a "database" in DBDIR named "logfiles.TTTTT" where
+# TTTTT is a timestamp in format (seconds/100000).
+# The "database" holds lines with format "timestamp /path/to/logfile"
+# where "timestamp" is just seconds since epoch.
 
 prereq_dir() {
 	if [ -d $1 ] && [ -w $1 ]; then
@@ -100,7 +109,7 @@ process_file() {
 		done
 	done < $dbfile
 	if [ $found = 0 ]; then
-		ts=${dbfile##*.}00000
+		ts=${dbfile##*.}99999
 		maybe_collect "$ts" "$dbfile"
 	fi
 }
@@ -120,6 +129,8 @@ mainloop() {
 		check_pidfile
 	done
 }
+
+# MAIN:
 
 prepare_stuff
 mainloop
