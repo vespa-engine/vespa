@@ -61,7 +61,7 @@ class ElasticSearchParser:
                 _all_enabled = data[index]["mappings"][type]["_all"]["enabled"]
                 if not _all_enabled:
                     self._all = False
-                    print(" > All fields in the document type '" + type + "' is not searchable. Go inside " + self.path + type + ".sd to add which fields that should be searchable")
+                    print(" > Not all fields in the document type '" + type + "' are searchable. Edit " + self.path + "searchdefinitions/" + type + ".sd to control which fields are searchable")
             except KeyError:
                 print(" > All fields in the document type '" + type + "' is searchable")
 
@@ -108,7 +108,7 @@ class ElasticSearchParser:
 
         vespa_docs.close()
         unparsed_document_file.close()
-        print(" > Parsed all documents '" + ", ".join(self.types) + "'" + "' at '" + file_path + "'")
+        print(" > Parsed all documents '" + ", ".join(self.types) + "' at '" + file_path + "'")
 
     def createSearchDefinition(self, type, type_mapping):
         file_path = self.path + "searchdefinitions/" + type + ".sd"
@@ -117,6 +117,10 @@ class ElasticSearchParser:
         new_sd.write("    document " + type + " {\n")
 
         for key, item in type_mapping.items():
+            type = self.get_type(item)
+            if(type == "nested"):
+                print(" > SKIPPING FIELD " + key + ", this tool is not yet able to convert nested fields")
+                continue
             new_sd.write("        field " + key + " type " + self.get_type(item) + " {\n")
             new_sd.write("            indexing: " + self.get_indexing(key, self.get_type(item)) + "\n")
             new_sd.write("        }\n")
@@ -180,6 +184,8 @@ class ElasticSearchParser:
 
     def get_type(self, type):
         return {
+            "integer": "int",
+            "string": "string", # for compatability with older ES versions
             "text": "string",
             "keyword": "string",
             "date": "string",
@@ -189,6 +195,7 @@ class ElasticSearchParser:
             "ip": "text",
             "byte": "byte",
             "float": "float",
+            "nested": "nested"
 
         }[type]
 
