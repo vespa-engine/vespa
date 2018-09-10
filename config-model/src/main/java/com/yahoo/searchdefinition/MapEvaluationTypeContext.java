@@ -66,14 +66,16 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     @Override
     public TensorType getType(Reference reference) {
-        // A reference to a macro argument?
+        /*        TODO: Enable
         if (currentResolutionCallStack.contains(reference))
             throw new IllegalArgumentException("Invocation loop: " +
                                                currentResolutionCallStack.stream().map(Reference::toString).collect(Collectors.joining(" -> ")) +
                                                " -> " + reference);
+                                               */
         currentResolutionCallStack.addLast(reference);
 
         try {
+            // A reference to a macro argument?
             Optional<String> binding = boundIdentifier(reference);
             if (binding.isPresent()) {
                 try {
