@@ -2,7 +2,10 @@
 package com.yahoo.jrt;
 
 
+import com.yahoo.security.tls.TransportSecurityOptions;
+
 import java.nio.channels.SocketChannel;
+import java.nio.file.Paths;
 
 
 /**
@@ -13,5 +16,12 @@ import java.nio.channels.SocketChannel;
  **/
 public interface CryptoEngine {
     public CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer);
-    static public CryptoEngine createDefault() { return new NullCryptoEngine(); }
+    static public CryptoEngine createDefault() { // TODO Move this logic to a dedicated factory class
+        String tlsConfigParameter = System.getenv("VESPA_TLS_CONFIG_FILE");
+        if (tlsConfigParameter != null && !tlsConfigParameter.isEmpty()) {
+            return new TlsCryptoEngine(TransportSecurityOptions.fromJsonFile(Paths.get(tlsConfigParameter)));
+        } else {
+            return new NullCryptoEngine();
+        }
+    }
 }

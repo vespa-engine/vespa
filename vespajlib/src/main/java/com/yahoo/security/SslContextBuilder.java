@@ -14,6 +14,10 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.List;
+
+import static java.util.Collections.singletonList;
 
 /**
  * @author bjorncs
@@ -36,6 +40,24 @@ public class SslContextBuilder {
         return this;
     }
 
+    public SslContextBuilder withTrustStore(X509Certificate caCertificate) {
+        return withTrustStore(singletonList(caCertificate));
+    }
+
+    public SslContextBuilder withTrustStore(List<X509Certificate> caCertificates) {
+        this.trustStoreSupplier = () -> createTrustStore(caCertificates);
+        return this;
+    }
+
+    public SslContextBuilder withTrustStore(Path pemEncodedCaCertificates) {
+        this.trustStoreSupplier = () -> {
+            List<X509Certificate> caCertificates =
+                    X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(pemEncodedCaCertificates)));
+            return createTrustStore(caCertificates);
+        };
+        return this;
+    }
+
     public SslContextBuilder withKeyStore(PrivateKey privateKey, X509Certificate certificate) {
         char[] pwd = new char[0];
         this.keyStoreSupplier = () -> KeyStoreBuilder.withType(KeyStoreType.JKS).withKeyEntry("default", privateKey, certificate).build();
@@ -55,13 +77,13 @@ public class SslContextBuilder {
         return this;
     }
 
-    public SslContextBuilder withKeyStore(Path privateKeyPemFile, Path certificatePemFile) {
+    public SslContextBuilder withKeyStore(Path privateKeyPemFile, Path certificatesPemFile) {
         this.keyStoreSupplier =
                 () ->  {
                     PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyPemFile)));
-                    X509Certificate certificate = X509CertificateUtils.fromPem(new String(Files.readAllBytes(certificatePemFile)));
+                    List<X509Certificate> certificates = X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(certificatesPemFile)));
                     return KeyStoreBuilder.withType(KeyStoreType.JKS)
-                            .withKeyEntry("default", privateKey, certificate)
+                            .withKeyEntry("default", privateKey, certificates)
                             .build();
                 };
         this.keyStorePassword = new char[0];
@@ -98,6 +120,14 @@ public class SslContextBuilder {
                 KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         keyManagerFactory.init(keyStoreSupplier.get(), password);
         return keyManagerFactory.getKeyManagers();
+    }
+
+    private static KeyStore createTrustStore(List<X509Certificate> caCertificates) {
+        KeyStoreBuilder trustStoreBuilder = KeyStoreBuilder.withType(KeyStoreType.JKS);
+        for (int i = 0; i < caCertificates.size(); i++) {
+            trustStoreBuilder.withCertificateEntry("cert-" + i, caCertificates.get(i));
+        }
+        return trustStoreBuilder.build();
     }
 
     private interface KeyStoreSupplier {
