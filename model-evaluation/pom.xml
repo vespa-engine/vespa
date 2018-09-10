@@ -42,6 +42,12 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>searchcore</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -79,9 +85,6 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
-        <configuration>
-          <importPackage>com.yahoo.config</importPackage> <!-- To make DI see RankingConstantsConfig as a ConfigInstance -->
-        </configuration>
       </plugin>
     </plugins>
   </build>
