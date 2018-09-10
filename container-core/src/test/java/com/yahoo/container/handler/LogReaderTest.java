@@ -1,5 +1,6 @@
 package com.yahoo.container.handler;
 
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,18 +20,9 @@ public class LogReaderTest {
     @Test
     public void testThatFilesAreWrittenCorrectlyToOutputStream() throws Exception{
         String logDirectory = "src/test/resources/logfolder/";
-        LogReader.writeToOutputStream(logDirectory, outputStream);
+        JSONObject json = LogReader.readLogs(logDirectory);
         String expected = "{\"subfolder\":{\"log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxl\"},\"log1.log\":\"VGhpcyBpcyBvbmUgbG9nIGZpbGU=\"}";
-        String actual = new String(outputStream.toByteArray());
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testNothingISWrittenToOutputStreamWithEmptyLogFolder() throws Exception {
-        String logDirectory = "src/test/resources/emptylogfolder/";
-        LogReader.writeToOutputStream(logDirectory, outputStream);
-        String expected = "{}";
-        String actual = new String(outputStream.toByteArray());
+        String actual = json.toString();
         assertEquals(expected, actual);
     }
 }

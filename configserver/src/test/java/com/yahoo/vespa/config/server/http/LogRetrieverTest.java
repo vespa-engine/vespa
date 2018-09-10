@@ -2,6 +2,7 @@ package com.yahoo.vespa.config.server.http;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.yahoo.container.jdisc.HttpResponse;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -20,14 +21,21 @@ import static org.junit.Assert.assertEquals;
 public class LogRetrieverTest {
 
     private String logServerHostName = "http://localhost:8080/";
+    private LogRetriever logRetriever;
+
     @Rule
     public final WireMockRule wireMock = new WireMockRule(options().port(8080), true);
+
+    @Before
+    public void setup() {
+        logRetriever = new LogRetriever();
+    }
 
     @Test
     public void testThatLogHandlerPropagatesResponseBody() throws IOException {
         String expectedBody = "{logs-json}";
         stubFor(get(urlEqualTo("/")).willReturn(okJson(expectedBody)));
-        HttpResponse response = LogRetriever.getLogs(logServerHostName);
+        HttpResponse response = logRetriever.getLogs(logServerHostName);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         response.render(byteArrayOutputStream);
         assertEquals(expectedBody, byteArrayOutputStream.toString());
@@ -37,7 +45,7 @@ public class LogRetrieverTest {
     @Test
     public void testThatNotFoundLogServerReturns404() throws IOException {
         stubFor(get(urlEqualTo("/")).willReturn(aResponse().withStatus(200)));
-        HttpResponse response = LogRetriever.getLogs("http://wrong-host:8080/");
+        HttpResponse response = logRetriever.getLogs("http://wrong-host:8080/");
         assertEquals(404, response.getStatus());
     }
 

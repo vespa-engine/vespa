@@ -16,7 +16,7 @@ public class LogRetriever {
 
     private final static Logger log = Logger.getLogger(LogRetriever.class.getName());
 
-    public static HttpResponse getLogs(String logServerHostname) {
+    public HttpResponse getLogs(String logServerHostname) {
         HttpGet get = new HttpGet(logServerHostname);
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             org.apache.http.HttpResponse response = httpClient.execute(get);

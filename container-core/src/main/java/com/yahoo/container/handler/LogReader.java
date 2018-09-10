@@ -1,32 +1,20 @@
 package com.yahoo.container.handler;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import org.apache.commons.codec.binary.Base64;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.xml.bind.DatatypeConverter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 
 public class LogReader {
 
-    protected static void writeToOutputStream(String logDirectory, OutputStream outputStream) throws IOException {
-        OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
+    protected static JSONObject readLogs(String logDirectory) throws IOException, JSONException {
         JSONObject json = new JSONObject();
         File root = new File(logDirectory);
-        try {
-            traverse_folder(root, json);
-        } catch (JSONException e) {
-            outputStreamWriter.write("Failed to create log JSON");
-        }
-        outputStreamWriter.write(json.toString());
-        outputStreamWriter.close();
+        traverse_folder(root, json);
+        return json;
     }
 
     private static void traverse_folder(File root, JSONObject json) throws IOException, JSONException {
