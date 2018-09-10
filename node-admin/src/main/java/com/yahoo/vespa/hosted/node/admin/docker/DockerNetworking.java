@@ -10,13 +10,22 @@ import com.yahoo.config.provision.NodeType;
  */
 public enum DockerNetworking {
     /** Each container has an associated macvlan bridge. */
-    MACVLAN,
+    MACVLAN("vespa-macvlan"),
 
     /** Network Prefix-Translated networking. */
-    NPT,
+    NPT("vespa-bridge"),
 
     /** A host running a single container in the host network namespace. */
-    HOST_NETWORK;
+    HOST_NETWORK("host");
+
+    private final String dockerNetworkMode;
+    DockerNetworking(String dockerNetworkMode) {
+        this.dockerNetworkMode = dockerNetworkMode;
+    }
+
+    public String getDockerNetworkMode() {
+        return dockerNetworkMode;
+    }
 
     public static DockerNetworking from(String cloud, NodeType nodeType, boolean hostAdmin) {
         if (cloud.equals("AWS")) {

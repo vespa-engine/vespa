@@ -15,16 +15,14 @@ import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesImpl;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.TimeZone;
 
 /**
  * Various utilities for getting values from node-admin's environment. Immutable.
@@ -33,7 +31,8 @@ import java.util.TimeZone;
  * @author hmusum
  */
 public class Environment {
-    private static final DateFormat filenameFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    private static final DateTimeFormatter filenameFormatter = DateTimeFormatter
+            .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS").withZone(ZoneOffset.UTC);
     public static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
 
     private static final String ENVIRONMENT = "ENVIRONMENT";
@@ -52,13 +51,13 @@ public class Environment {
     private final String environment;
     private final String region;
     private final String system;
+    private final String cloud;
     private final String parentHostHostname;
     private final IPAddresses ipAddresses;
     private final PathResolver pathResolver;
     private final List<String> logstashNodes;
     private final Optional<String> coredumpFeedEndpoint;
     private final NodeType nodeType;
-    private final String cloud;
     private final ContainerEnvironmentResolver containerEnvironmentResolver;
     private final String certificateDnsSuffix;
     private final URI ztsUri;
@@ -66,10 +65,7 @@ public class Environment {
     private final boolean nodeAgentCertEnabled;
     private final boolean isRunningOnHost;
     private final Path trustStorePath;
-
-    static {
-        filenameFormatter.setTimeZone(TimeZone.getTimeZone("UTC"));
-    }
+    private final DockerNetworking dockerNetworking;
 
     public Environment(ConfigServerConfig configServerConfig) {
         this(configServerConfig,
@@ -77,19 +73,20 @@ public class Environment {
              getEnvironmentVariable(ENVIRONMENT),
              getEnvironmentVariable(REGION),
              getEnvironmentVariable(SYSTEM),
+             getEnvironmentVariable(CLOUD),
              Defaults.getDefaults().vespaHostname(),
              new IPAddressesImpl(),
              new PathResolver(),
              getLogstashNodesFromEnvironment(),
              Optional.of(getEnvironmentVariable(COREDUMP_FEED_ENDPOINT)),
              NodeType.host,
-             getEnvironmentVariable(CLOUD),
              new DefaultContainerEnvironmentResolver(),
              getEnvironmentVariable(CERTIFICATE_DNS_SUFFIX),
              URI.create(getEnvironmentVariable(ZTS_URI)),
              (AthenzService)AthenzIdentities.from(getEnvironmentVariable(NODE_ATHENZ_IDENTITY)),
              Boolean.valueOf(getEnvironmentVariable(ENABLE_NODE_AGENT_CERT)),
-             false);
+             false,
+             DockerNetworking.MACVLAN);
     }
 
     private Environment(ConfigServerConfig configServerConfig,
@@ -97,36 +94,33 @@ public class Environment {
                         String environment,
                         String region,
                         String system,
+                        String cloud,
                         String parentHostHostname,
                         IPAddresses ipAddresses,
                         PathResolver pathResolver,
                         List<String> logstashNodes,
                         Optional<String> coreDumpFeedEndpoint,
                         NodeType nodeType,
-                        String cloud,
                         ContainerEnvironmentResolver containerEnvironmentResolver,
                         String certificateDnsSuffix,
                         URI ztsUri,
                         AthenzService nodeAthenzIdentity,
                         boolean nodeAgentCertEnabled,
-                        boolean isRunningOnHost) {
+                        boolean isRunningOnHost,
+                        DockerNetworking dockerNetworking) {
         Objects.requireNonNull(configServerConfig, "configServerConfig cannot be null");
-        Objects.requireNonNull(environment, "environment cannot be null");
-        Objects.requireNonNull(region, "region cannot be null");
-        Objects.requireNonNull(system, "system cannot be null");
-        Objects.requireNonNull(cloud, "cloud cannot be null");
 
         this.configServerInfo = new ConfigServerInfo(configServerConfig);
-        this.environment = environment;
-        this.region = region;
-        this.system = system;
+        this.environment = Objects.requireNonNull(environment, "environment cannot be null");;
+        this.region = Objects.requireNonNull(region, "region cannot be null");;
+        this.system = Objects.requireNonNull(system, "system cannot be null");;
+        this.cloud = Objects.requireNonNull(cloud, "cloud cannot be null");
         this.parentHostHostname = parentHostHostname;
         this.ipAddresses = ipAddresses;
         this.pathResolver = pathResolver;
         this.logstashNodes = logstashNodes;
         this.coredumpFeedEndpoint = coreDumpFeedEndpoint;
         this.nodeType = nodeType;
-        this.cloud = cloud;
         this.containerEnvironmentResolver = containerEnvironmentResolver;
         this.certificateDnsSuffix = certificateDnsSuffix;
         this.ztsUri = ztsUri;
@@ -134,6 +128,7 @@ public class Environment {
         this.nodeAgentCertEnabled = nodeAgentCertEnabled;
         this.isRunningOnHost = isRunningOnHost;
         this.trustStorePath = trustStorePath;
+        this.dockerNetworking = Objects.requireNonNull(dockerNetworking, "dockerNetworking cannot be null");
     }
 
     public List<String> getConfigServerHostNames() { return configServerInfo.getConfigServerHostNames(); }
@@ -147,6 +142,8 @@ public class Environment {
     public String getSystem() {
         return system;
     }
+
+    public String getCloud() { return cloud; }
 
     public String getParentHostHostname() {
         return parentHostHostname;
@@ -197,7 +194,7 @@ public class Environment {
     public Path pathInNodeAdminToNodeCleanup(ContainerName containerName) {
         return pathResolver.getApplicationStoragePathForNodeAdmin()
                 .resolve(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX + containerName.asString() +
-                        "_" + filenameFormatter.format(Date.from(Instant.now())));
+                        "_" + filenameFormatter.format(Instant.now()));
     }
 
     /**
@@ -243,8 +240,6 @@ public class Environment {
 
     public NodeType getNodeType() { return nodeType; }
 
-    public String getCloud() { return cloud; }
-
     public ContainerEnvironmentResolver getContainerEnvironmentResolver() {
         return containerEnvironmentResolver;
     }
@@ -282,7 +277,7 @@ public class Environment {
     }
 
     public DockerNetworking getDockerNetworking() {
-        return DockerNetworking.from(cloud, nodeType, isRunningOnHost);
+        return dockerNetworking;
     }
 
     public static class Builder {
@@ -290,13 +285,13 @@ public class Environment {
         private String environment;
         private String region;
         private String system;
+        private String cloud;
         private String parentHostHostname;
         private IPAddresses ipAddresses;
         private PathResolver pathResolver;
         private List<String> logstashNodes = Collections.emptyList();
         private Optional<String> coredumpFeedEndpoint = Optional.empty();
         private NodeType nodeType = NodeType.tenant;
-        private String cloud;
         private ContainerEnvironmentResolver containerEnvironmentResolver;
         private String certificateDnsSuffix;
         private URI ztsUri;
@@ -304,6 +299,7 @@ public class Environment {
         private boolean nodeAgentCertEnabled;
         private boolean isRunningOnHost;
         private Path trustStorePath;
+        private DockerNetworking dockerNetworking;
 
         public Builder configServerConfig(ConfigServerConfig configServerConfig) {
             this.configServerConfig = configServerConfig;
@@ -322,6 +318,11 @@ public class Environment {
 
         public Builder system(String system) {
             this.system = system;
+            return this;
+        }
+
+        public Builder cloud(String cloud) {
+            this.cloud = cloud;
             return this;
         }
 
@@ -360,11 +361,6 @@ public class Environment {
             return this;
         }
 
-        public Builder cloud(String cloud) {
-            this.cloud = cloud;
-            return this;
-        }
-
         public Builder certificateDnsSuffix(String certificateDnsSuffix) {
             this.certificateDnsSuffix = certificateDnsSuffix;
             return this;
@@ -395,25 +391,31 @@ public class Environment {
             return this;
         }
 
+        public Builder dockerNetworking(DockerNetworking dockerNetworking) {
+            this.dockerNetworking = dockerNetworking;
+            return this;
+        }
+
         public Environment build() {
             return new Environment(configServerConfig,
                                    trustStorePath,
                                    environment,
                                    region,
                                    system,
+                                   cloud,
                                    parentHostHostname,
                                    Optional.ofNullable(ipAddresses).orElseGet(IPAddressesImpl::new),
                                    Optional.ofNullable(pathResolver).orElseGet(PathResolver::new),
                                    logstashNodes,
                                    coredumpFeedEndpoint,
                                    nodeType,
-                                   cloud,
                                    Optional.ofNullable(containerEnvironmentResolver).orElseGet(DefaultContainerEnvironmentResolver::new),
                                    certificateDnsSuffix,
                                    ztsUri,
                                    nodeAthenzIdentity,
                                    nodeAgentCertEnabled,
-                                   isRunningOnHost);
+                                   isRunningOnHost,
+                                   Optional.ofNullable(dockerNetworking).orElseGet(() -> DockerNetworking.from(cloud, nodeType, isRunningOnHost)));
         }
     }
 }

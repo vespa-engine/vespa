@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
@@ -88,9 +89,10 @@ public class NodeAgentImplTest {
             .environment("dev")
             .region("us-east-1")
             .system("main")
+            .cloud("mycloud")
             .parentHostHostname("parent.host.name.yahoo.com")
             .pathResolver(pathResolver)
-            .cloud("mycloud")
+            .dockerNetworking(DockerNetworking.HOST_NETWORK)
             .build();
 
     private final NodeSpec.Builder nodeBuilder = new NodeSpec.Builder()

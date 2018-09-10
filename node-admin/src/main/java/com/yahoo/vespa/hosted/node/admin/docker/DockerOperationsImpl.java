@@ -45,8 +45,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private static final String IPV6_NPT_PREFIX = "fd00::";
     private static final String IPV4_NPT_PREFIX = "172.17.0.0";
-    private static final String DOCKER_CUSTOM_BRIDGE_NETWORK_NAME = "vespa-bridge";
-    
+
     private final Docker docker;
     private final Environment environment;
     private final ProcessExecuter processExecuter;
@@ -107,11 +106,14 @@ public class DockerOperationsImpl implements DockerOperations {
             }
         }
 
-        if (environment.getDockerNetworking() == DockerNetworking.MACVLAN) {
+        DockerNetworking networking = environment.getDockerNetworking();
+        command.withNetworkMode(networking.getDockerNetworkMode());
+
+        if (networking == DockerNetworking.MACVLAN) { // TODO: Remove this else-if when migration to host-admin is complete
             command.withIpAddress(ipV6Address);
             command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
             command.withSharedVolume("/etc/hosts", "/etc/hosts");
-        } else {
+        } else if (networking == DockerNetworking.NPT) {
             InetAddress ipV6Prefix = InetAddresses.forString(IPV6_NPT_PREFIX);
             InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 8);
             command.withIpAddress(ipV6Local);
@@ -125,8 +127,6 @@ public class DockerOperationsImpl implements DockerOperations {
             ipV4Local.ifPresent(command::withIpAddress);
 
             addEtcHosts(containerData, node.getHostname(), ipV4Local, ipV6Local);
-
-            command.withNetworkMode(DOCKER_CUSTOM_BRIDGE_NETWORK_NAME);
         }
 
         for (Path pathInNode : directoriesToMount.keySet()) {
