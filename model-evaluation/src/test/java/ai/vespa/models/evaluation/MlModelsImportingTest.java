@@ -14,6 +14,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class MlModelsImportingTest {
 
+    private static final double delta = 0.00000000001;
+
     @Test
     public void testImportingModels() {
         ModelTester tester = new ModelTester("src/test/resources/config/models/");
@@ -28,6 +30,7 @@ public class MlModelsImportingTest {
                                   xgboost);
             FunctionEvaluator evaluator = xgboost.evaluatorOf();
             assertEquals("f109, f29, f56, f60", evaluator.context().names().stream().sorted().collect(Collectors.joining(", ")));
+            assertEquals(-8.17695, evaluator.evaluate().sum().asDouble(), delta);
         }
 
         {
@@ -40,6 +43,7 @@ public class MlModelsImportingTest {
                          onnxMnistSoftmax.evaluatorOf("default.add").context().get("constant(mnist_softmax_Variable)").type().toString());
             FunctionEvaluator evaluator = onnxMnistSoftmax.evaluatorOf(); // Verify exactly one output available
             assertEquals("Placeholder, constant(mnist_softmax_Variable), constant(mnist_softmax_Variable_1)", evaluator.context().names().stream().sorted().collect(Collectors.joining(", ")));
+            assertEquals(-1.6372650861740112E-6, evaluator.evaluate().sum().asDouble(), delta);
         }
 
         {
@@ -49,6 +53,7 @@ public class MlModelsImportingTest {
                                   tfMnistSoftmax);
             FunctionEvaluator evaluator = tfMnistSoftmax.evaluatorOf(); // Verify exactly one output available
             assertEquals("Placeholder, constant(mnist_softmax_saved_layer_Variable_1_read), constant(mnist_softmax_saved_layer_Variable_read)", evaluator.context().names().stream().sorted().collect(Collectors.joining(", ")));
+            assertEquals(-1.6372650861740112E-6, evaluator.evaluate().sum().asDouble(), delta);
         }
 
         {
@@ -62,6 +67,7 @@ public class MlModelsImportingTest {
                                   tfMnist);
             FunctionEvaluator evaluator = tfMnist.evaluatorOf("serving_default"); // TODO: Macro is offered as an alternative output currently, so need to specify argument
             assertEquals("constant(mnist_saved_dnn_hidden1_bias_read), constant(mnist_saved_dnn_hidden1_weights_read), constant(mnist_saved_dnn_hidden2_bias_read), constant(mnist_saved_dnn_hidden2_weights_read), constant(mnist_saved_dnn_outputs_bias_read), constant(mnist_saved_dnn_outputs_weights_read), input, rankingExpression(imported_ml_macro_mnist_saved_dnn_hidden1_add)", evaluator.context().names().stream().sorted().collect(Collectors.joining(", ")));
+            assertEquals(-0.714629131972222, evaluator.evaluate().sum().asDouble(), delta); // TODO: Verify in TF native
         }
     }
 

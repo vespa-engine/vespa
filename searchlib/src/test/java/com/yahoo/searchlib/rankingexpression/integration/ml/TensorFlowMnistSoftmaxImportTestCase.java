@@ -13,7 +13,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author bratseth
  */
-public class MnistSoftmaxImportTestCase {
+public class TensorFlowMnistSoftmaxImportTestCase {
 
     @Test
     public void testMnistSoftmaxImport() {
