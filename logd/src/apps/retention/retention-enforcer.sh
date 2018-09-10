@@ -63,6 +63,10 @@ check_pidfile() {
 	fi
 }
 
+get_mod_time() {
+	perl -e 'print (((stat("'"$1"'"))[9]) . "\n")'
+}
+
 maybe_collect() {
 	timestamp=$1
 	logfilename=$2
@@ -81,10 +85,6 @@ maybe_collect() {
 		echo "Collect logfile '$logfilename' timestamped $timestamp modified $mod_time"
 		rm -f "$logfilename"
 	fi
-}
-
-get_mod_time() {
-	perl -e 'print (((stat("'"$1"'"))[9]) . "\n")'
 }
 
 process_file() {
