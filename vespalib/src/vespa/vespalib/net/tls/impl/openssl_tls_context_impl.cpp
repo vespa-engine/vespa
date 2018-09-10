@@ -162,9 +162,9 @@ OpenSslTlsContextImpl::OpenSslTlsContextImpl(const TransportSecurityOptions& ts_
     verify_private_key();
     enable_ephemeral_key_exchange();
     disable_compression();
+    enforce_peer_certificate_verification();
     // TODO set accepted cipher suites!
     // TODO `--> If not set in options, use Modern spec from https://wiki.mozilla.org/Security/Server_Side_TLS
-    // TODO set peer verification flags!
 }
 
 OpenSslTlsContextImpl::~OpenSslTlsContextImpl() = default;
@@ -257,6 +257,13 @@ void OpenSslTlsContextImpl::disable_compression() {
     // TLS stream compression is vulnerable to a host of chosen plaintext
     // attacks (CRIME, BREACH etc), so disable it.
     ::SSL_CTX_set_options(_ctx.get(), SSL_OP_NO_COMPRESSION);
+}
+
+void OpenSslTlsContextImpl::enforce_peer_certificate_verification() {
+    // We require full mutual certificate verification. No way to configure
+    // out of this, at least not for the time being.
+    // TODO verification callback for custom CN/SAN etc checks.
+    SSL_CTX_set_verify(_ctx.get(), SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, nullptr);
 }
 
 }

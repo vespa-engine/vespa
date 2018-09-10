@@ -23,6 +23,7 @@ private:
     // Enable use of ephemeral key exchange (ECDHE), allowing forward secrecy.
     void enable_ephemeral_key_exchange();
     void disable_compression();
+    void enforce_peer_certificate_verification();
 };
 
 }
