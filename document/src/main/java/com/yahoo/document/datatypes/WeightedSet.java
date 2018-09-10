@@ -241,8 +241,7 @@ public final class WeightedSet<K extends FieldValue> extends CollectionFieldValu
      */
     public boolean equals(Object o) {
         if (!(o instanceof WeightedSet)) return false;
-        WeightedSet otherSet = (WeightedSet) o;
-        return (super.equals(o) && map.equals(otherSet.map));
+        return (super.equals(o) && map.equals(((WeightedSet<K>)o).map));
     }
 
     /**
@@ -293,15 +292,7 @@ public final class WeightedSet<K extends FieldValue> extends CollectionFieldValu
             return comp;
         }
 
-        //types are equal, this must be of this type
-        WeightedSet otherValue = (WeightedSet) fieldValue;
-        comp = CollectionComparator.compare(map.keySet(), otherValue.map.keySet());
-
-        if (comp != 0) {
-            return comp;
-        }
-
-        return CollectionComparator.compare(map.values(), otherValue.map.values());
+        return map.compareTo(((WeightedSet<K>)fieldValue).map);
     }
 
 
