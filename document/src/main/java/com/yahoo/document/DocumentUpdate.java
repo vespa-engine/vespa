@@ -7,6 +7,7 @@ import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.document.serialization.DocumentUpdateReader;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
 import com.yahoo.document.update.AssignValueUpdate;
+import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
@@ -139,6 +140,17 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
                     FieldValue currentValue = doc.getFieldValue(update.getField());
                     if ((currentValue != null) && currentValue.equals(last.getValue())) {
                         iter.remove();
+                    }
+                } else if (last instanceof ClearValueUpdate) {
+                    FieldValue currentValue = doc.getFieldValue(update.getField());
+                    if (currentValue == null) {
+                        iter.remove();
+                    } else {
+                        FieldValue copy = currentValue.clone();
+                        copy.clear();
+                        if (currentValue.equals(copy)) {
+                            iter.remove();
+                        }
                     }
                 }
             }

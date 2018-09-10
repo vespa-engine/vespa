@@ -709,6 +709,48 @@ public class DocumentUpdateTestCase {
         assertEquals(expected, doc.getFieldValue(field).getWrappedValue());
     }
 
+    @Test
+    public void testThatClearCanBePrunedIfNoneExisting() {
+        Field field = docType.getField("strfoo");
+        Document doc = createDocument();
+        StringFieldValue expected = new StringFieldValue("some value");
+        expected.clear();
+        doc.setFieldValue(field, expected);
+        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId(documentId));
+        update.addFieldUpdate(FieldUpdate.createClearField(field));
+        update.prune(doc);
+        assertEquals(0, update.size());
+        update.applyTo(doc);
+        assertEquals(expected, doc.getFieldValue(field));
+    }
+
+    @Test
+    public void testThatClearCanBePrunedIfEmpty() {
+        Field field = docType.getField("strfoo");
+        String expected = "";
+        Document doc = createDocument();
+        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId(documentId));
+        update.addFieldUpdate(FieldUpdate.createClearField(field));
+        update.prune(doc);
+        assertEquals(0, update.size());
+        update.applyTo(doc);
+        assertNull(doc.getFieldValue(field));
+    }
+
+    @Test
+    public void testThatClearCanBePrunedIfNoneExistingAndLast() {
+        Field field = docType.getField("strfoo");
+        String expected = "";
+        Document doc = createDocument();
+        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId(documentId));
+        update.addFieldUpdate(FieldUpdate.createAssign(field, new StringFieldValue("some value")));
+        update.addFieldUpdate(FieldUpdate.createClearField(field));
+        update.prune(doc);
+        assertEquals(0, update.size());
+        update.applyTo(doc);
+        assertNull(doc.getFieldValue(field));
+    }
+
     private static TensorFieldValue createTensorFieldValue(String tensor) {
         return new TensorFieldValue(Tensor.from(tensor));
     }
