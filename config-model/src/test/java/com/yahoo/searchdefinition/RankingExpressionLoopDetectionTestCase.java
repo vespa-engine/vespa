@@ -3,7 +3,6 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.yolean.Exceptions;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -15,7 +14,6 @@ import static org.junit.Assert.fail;
 public class RankingExpressionLoopDetectionTestCase {
 
     @Test
-    @Ignore // TODO
     public void testSelfLoop() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
@@ -48,7 +46,6 @@ public class RankingExpressionLoopDetectionTestCase {
     }
 
     @Test
-    @Ignore // TODO
     public void testNestedLoop() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
@@ -84,7 +81,6 @@ public class RankingExpressionLoopDetectionTestCase {
     }
 
     @Test
-    @Ignore // TODO
     public void testSelfArgumentLoop() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
@@ -114,7 +110,7 @@ public class RankingExpressionLoopDetectionTestCase {
             fail("Excepted exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("In search definition 'test', rank profile 'test': The first-phase expression is invalid: Invocation loop: foo -> arg(foo) -> a1 -> foo",
+            assertEquals("In search definition 'test', rank profile 'test': The first-phase expression is invalid: Invocation loop: foo -> arg(foo) -> foo",
                          Exceptions.toMessageString(e));
         }
     }
@@ -171,6 +167,29 @@ public class RankingExpressionLoopDetectionTestCase {
                 "        }\n" +
                 "    }\n" +
                 "\n" +
+                "}\n");
+        builder.build();
+    }
+
+    @Test
+    public void testNoLoopWithBoundIdentifiers() throws ParseException {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        builder.importString(
+                "search test {\n" +
+                "    document test { \n" +
+                "    }\n" +
+                "    rank-profile test {\n" +
+                "        first-phase {\n" +
+                "            expression: foo(bar(2))\n" +
+                "        }\n" +
+                "        macro foo(x) {\n" +
+                "            expression: x * x\n" +
+                "        }\n" +
+                "        macro bar(x) {\n" +
+                "            expression: x + x\n" +
+                "        }\n" +
+                "    }\n" +
                 "}\n");
         builder.build();
     }

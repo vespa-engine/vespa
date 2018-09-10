@@ -66,26 +66,25 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     @Override
     public TensorType getType(Reference reference) {
-        /*        TODO: Enable
         if (currentResolutionCallStack.contains(reference))
             throw new IllegalArgumentException("Invocation loop: " +
                                                currentResolutionCallStack.stream().map(Reference::toString).collect(Collectors.joining(" -> ")) +
                                                " -> " + reference);
-                                               */
-        currentResolutionCallStack.addLast(reference);
+
+        // A reference to a macro argument?
+        Optional<String> binding = boundIdentifier(reference);
+        if (binding.isPresent()) {
+            try {
+                // This is not pretty, but changing to bind expressions rather
+                // than their string values requires deeper changes
+                return new RankingExpression(binding.get()).type(this);
+            } catch (ParseException e) {
+                throw new IllegalArgumentException(e);
+            }
+        }
 
         try {
-            // A reference to a macro argument?
-            Optional<String> binding = boundIdentifier(reference);
-            if (binding.isPresent()) {
-                try {
-                    // This is not pretty, but changing to bind expressions rather
-                    // than their string values requires deeper changes
-                    return new RankingExpression(binding.get()).type(this);
-                } catch (ParseException e) {
-                    throw new IllegalArgumentException(e);
-                }
-            }
+            currentResolutionCallStack.addLast(reference);
 
             // A reference to an attribute, query or constant feature?
             if (FeatureNames.isSimpleFeature(reference)) {
