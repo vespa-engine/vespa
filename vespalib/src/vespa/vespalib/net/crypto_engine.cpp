@@ -5,6 +5,10 @@
 #include <chrono>
 #include <thread>
 #include <vespa/vespalib/xxhash/xxhash.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/net/tls/transport_security_options.h>
+#include <vespa/vespalib/net/tls/transport_security_options_reading.h>
+#include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <assert.h>
 
 namespace vespalib {
@@ -156,9 +160,13 @@ public:
 };
 
 CryptoEngine::SP create_default_crypto_engine() {
-    // TODO: check VESPA_TLS_CONFIG_FILE here
-    // return std::make_shared<XorCryptoEngine>();
-    return std::make_shared<NullCryptoEngine>();
+    const char *env = getenv("VESPA_TLS_CONFIG_FILE");
+    vespalib::string cfg_file = env ? env : "";
+    if (cfg_file.empty()) {
+        return std::make_shared<NullCryptoEngine>();
+    }
+    auto tls_opts = net::tls::read_options_from_json_file(cfg_file);
+    return std::make_shared<TlsCryptoEngine>(*tls_opts);
 }
 
 } // namespace vespalib::<unnamed>
