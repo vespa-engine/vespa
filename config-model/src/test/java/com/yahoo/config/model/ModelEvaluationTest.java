@@ -4,7 +4,10 @@ package com.yahoo.config.model;
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import ai.vespa.models.evaluation.RankProfilesConfigImporter;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
+import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.tensor.Tensor;
@@ -77,7 +80,7 @@ public class ModelEvaluationTest {
         assertTrue(modelNames.contains("mnist_softmax"));
         assertTrue(modelNames.contains("mnist_softmax_saved"));
 
-        ModelsEvaluator evaluator = new ModelsEvaluator(new ToleratingMissingConstantFilesRankProfilesConfigImporter()
+        ModelsEvaluator evaluator = new ModelsEvaluator(new ToleratingMissingConstantFilesRankProfilesConfigImporter(MockFileAcquirer.returnFile(null))
                                                                 .importFrom(config, constantsConfig));
 
         assertEquals(4, evaluator.models().size());
@@ -114,7 +117,11 @@ public class ModelEvaluationTest {
     // We don't have function file distribution so just return empty tensor constants
     private static class ToleratingMissingConstantFilesRankProfilesConfigImporter extends RankProfilesConfigImporter {
 
-        protected Tensor readTensorFromFile(String name, TensorType type, String fileReference) {
+        public ToleratingMissingConstantFilesRankProfilesConfigImporter(FileAcquirer fileAcquirer) {
+            super(fileAcquirer);
+        }
+
+        protected Tensor readTensorFromFile(String name, TensorType type, FileReference fileReference) {
             return Tensor.from(type, "{}");
         }
 

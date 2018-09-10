@@ -14,8 +14,9 @@ import java.util.concurrent.TimeUnit;
  * @author Tony Vaagenes
  */
 public abstract class MockFileAcquirer implements FileAcquirer {
+
     /** Creates a FileAcquirer that always returns the given file. **/
-    public static FileAcquirer returnFile(final File file) {
+    public static FileAcquirer returnFile(File file) {
         return new MockFileAcquirer() {
             @Override
             public File waitFor(FileReference fileReference,
@@ -26,7 +27,7 @@ public abstract class MockFileAcquirer implements FileAcquirer {
     }
 
     /** Creates a FileAcquirer that maps from fileReference.value to a file. **/
-    public static FileAcquirer returnFiles(final Map<String, File> files) {
+    public static FileAcquirer returnFiles(Map<String, File> files) {
         return new MockFileAcquirer() {
             @Override
             public File waitFor(FileReference fileReference,
@@ -60,4 +61,5 @@ public abstract class MockFileAcquirer implements FileAcquirer {
 
     @Override
     public void shutdown() {}
+
 }

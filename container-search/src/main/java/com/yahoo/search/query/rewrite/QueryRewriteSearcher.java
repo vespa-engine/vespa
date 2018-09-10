@@ -36,14 +36,13 @@ import java.util.logging.Logger;
 public abstract class QueryRewriteSearcher extends Searcher {
 
     // Indicate whether rewriter is properly initiated
-    private boolean isOk = false;
+    private boolean isOk;
 
     protected final Logger logger = Logger.getLogger(QueryRewriteSearcher.class.getName());
 
     // HashMap which store the rewriter dicts
     // It has the following format:
-    // HashMap<String(e.g. dictionary name, etc),
-    //         Object(e.g. FSA, etc)>>
+    // HashMap<String(e.g. dictionary name, etc), Object(e.g. FSA, etc)>>
     protected HashMap<String, Object> rewriterDicts = new HashMap<>();
 
     /**
@@ -201,14 +200,14 @@ public abstract class QueryRewriteSearcher extends Searcher {
                                       "FSA file location for " + fsaName + ": " + fsaPath);
 
                     // Retrieve FSA File handler
-                    File fsaFile = null;
-                    if(fileAcquirer!=null) {
+                    File fsaFile;
+                    if (fileAcquirer != null) {
                         fsaFile = fileAcquirer.waitFor(fsaPath, 5, TimeUnit.MINUTES);
-                    } else if(fileList!=null) {
+                    } else {
                         fsaFile = fileList.get(fsaName);
                     }
 
-                    if(fsaFile==null) {
+                    if (fsaFile == null) {
                         RewriterUtils.error(logger, "Error loading FSA dictionary file handler");
                         return false;
                     }

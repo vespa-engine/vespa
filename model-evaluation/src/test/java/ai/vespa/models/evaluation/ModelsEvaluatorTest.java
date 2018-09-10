@@ -3,6 +3,7 @@ package ai.vespa.models.evaluation;
 
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.FileSource;
+import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.path.Path;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -47,7 +48,7 @@ public class ModelsEvaluatorTest {
                                                        RankProfilesConfig.class).getConfig("");
         RankingConstantsConfig constantsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-constants.cfg").toFile()),
                                                                     RankingConstantsConfig.class).getConfig("");
-        return new ModelsEvaluator(config, constantsConfig);
+        return new ModelsEvaluator(config, constantsConfig, MockFileAcquirer.returnFile(null));
     }
 
 }

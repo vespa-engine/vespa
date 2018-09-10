@@ -1,8 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import com.yahoo.config.FileReference;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.config.subscription.FileSource;
+import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
+import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -42,7 +45,7 @@ public class ModelTester {
                                                        RankProfilesConfig.class).getConfig("");
         RankingConstantsConfig constantsConfig = new ConfigGetter<>(new FileSource(configDir.append("ranking-constants.cfg").toFile()),
                                                                     RankingConstantsConfig.class).getConfig("");
-        return new RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"))
+        return new RankProfilesConfigImporterWithMockedConstants(Path.fromString(path).append("constants"), MockFileAcquirer.returnFile(null))
                        .importFrom(config, constantsConfig);
     }
 
@@ -68,12 +71,13 @@ public class ModelTester {
 
         private final Path constantsPath;
 
-        public RankProfilesConfigImporterWithMockedConstants(Path constantsPath) {
+        public RankProfilesConfigImporterWithMockedConstants(Path constantsPath, FileAcquirer fileAcquirer) {
+            super(fileAcquirer);
             this.constantsPath = constantsPath;
         }
 
         @Override
-        protected Tensor readTensorFromFile(String name, TensorType type, String fileReference) {
+        protected Tensor readTensorFromFile(String name, TensorType type, FileReference fileReference) {
             try {
                 return TypedBinaryFormat.decode(Optional.of(type),
                                                 GrowableByteBuffer.wrap(IOUtils.readFileBytes(constantsPath.append(name).toFile())));

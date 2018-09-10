@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import com.yahoo.config.FileReference;
+import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
@@ -11,7 +13,6 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
-import com.yahoo.vespa.defaults.Defaults;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Logger;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Converts RankProfilesConfig instances to RankingExpressions for evaluation.
@@ -30,6 +31,12 @@ import java.util.logging.Logger;
  * @author bratseth
  */
 public class RankProfilesConfigImporter {
+
+    private final FileAcquirer fileAcquirer;
+
+    public RankProfilesConfigImporter(FileAcquirer fileAcquirer) {
+        this.fileAcquirer = fileAcquirer;
+    }
 
     /**
      * Returns a map of the models contained in this config, indexed on name.
@@ -107,16 +114,14 @@ public class RankProfilesConfigImporter {
             constants.add(new Constant(constantConfig.name(),
                                        readTensorFromFile(constantConfig.name(),
                                                           TensorType.fromSpec(constantConfig.type()),
-                                                          constantConfig.fileref().value())));
+                                                          constantConfig.fileref())));
         }
         return constants;
     }
 
-    protected Tensor readTensorFromFile(String name, TensorType type, String fileReference) {
+    protected Tensor readTensorFromFile(String name, TensorType type, FileReference fileReference) {
         try {
-            File dir = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"), fileReference);
-            File file = dir.listFiles()[0]; // directory contains one file having the original name
-
+            File file = fileAcquirer.waitFor(fileReference, 7, TimeUnit.DAYS);
             if (file.getName().endsWith(".tbf"))
                 return TypedBinaryFormat.decode(Optional.of(type),
                                                 GrowableByteBuffer.wrap(IOUtils.readFileBytes(file)));
@@ -124,6 +129,9 @@ public class RankProfilesConfigImporter {
                 throw new IllegalArgumentException("Constant files on other formats than .tbf are not supported, got " +
                                                    file + " for constant " + name);
             // TODO: Support json and json.lz4
+        }
+        catch (InterruptedException e) {
+            throw new IllegalStateException("Gave up waiting for constant " + name);
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
