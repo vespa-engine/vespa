@@ -137,7 +137,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
                 ValueUpdate last = update.getValueUpdate(update.size() - 1);
                 if (last instanceof AssignValueUpdate) {
                     FieldValue currentValue = doc.getFieldValue(update.getField());
-                    if ((currentValue != null) && (currentValue.compareTo(last.getValue()) == 0)) {
+                    if ((currentValue != null) && currentValue.equals(last.getValue())) {
                         iter.remove();
                     }
                 }
