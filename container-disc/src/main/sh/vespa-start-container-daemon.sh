@@ -117,7 +117,7 @@ configure_numactl() {
 configure_gcopts() {
     consider_fallback jvm_gcopts "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1"
     if [ "$jvm_verbosegc" = "true" ]; then
-        jvm_gcopts="${jvm_gcopts} -verbose:gc"
+        jvm_gcopts="${jvm_gcopts} -verbose:gc -XX:+PrintGCDetails"
     fi
 }
 
