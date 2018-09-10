@@ -8,6 +8,7 @@
 #include <vespa/searchcore/util/eventloop.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/vespalib/net/crypto_engine.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".fdispatch");
@@ -296,7 +297,7 @@ Fdispatch::Init()
     
 
     LOG(debug, "Creating FNET transport");
-    _transport = std::make_unique<FNET_Transport>(_config->transportthreads);
+    _transport = std::make_unique<FNET_Transport>(std::make_shared<vespalib::NullCryptoEngine>(), _config->transportthreads); // disable encryption
 
     // grab node slowness limit defaults
 
