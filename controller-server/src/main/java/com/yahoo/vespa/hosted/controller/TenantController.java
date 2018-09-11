@@ -10,6 +10,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
+import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -47,22 +48,30 @@ public class TenantController {
         this.curator = Objects.requireNonNull(curator, "curator must be non-null");
         this.athenzClientFactory = Objects.requireNonNull(athenzClientFactory, "athenzClientFactory must be non-null");
 
-        // Write all tenants to ensure persisted data uses latest serialization format
-        Instant start = controller.clock().instant();
-        int count = 0;
-        for (Tenant tenant : curator.readTenants()) {
-            try (Lock lock = lock(tenant.name())) {
-                if (tenant instanceof AthenzTenant) {
-                    curator.writeTenant((AthenzTenant) tenant);
-                } else if (tenant instanceof UserTenant) {
-                    curator.writeTenant((UserTenant) tenant);
-                } else {
-                    throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());
+        // Update serialization format of all tenants
+        Once.after(Duration.ofMinutes(1), () -> {
+            Instant start = controller.clock().instant();
+            int count = 0;
+            for (TenantName name : curator.readTenantNames()) {
+                try (Lock lock = lock(name)) {
+                    // Get while holding lock so that we know we're operating on a current version
+                    Optional<Tenant> optionalTenant = tenant(name);
+                    if (!optionalTenant.isPresent()) continue; // Deleted while updating, skip
+
+                    Tenant tenant = optionalTenant.get();
+                    if (tenant instanceof AthenzTenant) {
+                        curator.writeTenant((AthenzTenant) tenant);
+                    } else if (tenant instanceof UserTenant) {
+                        curator.writeTenant((UserTenant) tenant);
+                    } else {
+                        throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());
+                    }
                 }
+                count++;
             }
-            count++;
-        }
-        log.log(Level.INFO, String.format("Wrote %d tenants in %s", count, Duration.between(start, controller.clock().instant())));
+            log.log(Level.INFO, String.format("Wrote %d tenants in %s", count,
+                                              Duration.between(start, controller.clock().instant())));
+        });
     }
 
     /** Returns a list of all known tenants sorted by name */
