@@ -46,8 +46,10 @@ public class OsUpgrader extends InfrastructureUpgrader {
 
     @Override
     protected void upgrade(Version target, SystemApplication application, ZoneId zone) {
+        if (wantedVersion(zone, application, target).equals(target)) {
+            return;
+        }
         log.info(String.format("Upgrading OS of %s to version %s in %s", application.id(), target, zone));
-        // Node repository ensures the upgrade call is idempotent
         application.nodeTypesWithUpgradableOs().forEach(nodeType -> controller().configServer().nodeRepository()
                                                                                 .upgradeOs(zone, nodeType, target));
     }
@@ -73,6 +75,10 @@ public class OsUpgrader extends InfrastructureUpgrader {
 
     private Version currentVersion(ZoneId zone, SystemApplication application, Version defaultVersion) {
         return minVersion(zone, application, Node::currentOsVersion).orElse(defaultVersion);
+    }
+
+    private Version wantedVersion(ZoneId zone, SystemApplication application, Version defaultVersion) {
+        return minVersion(zone, application, Node::wantedOsVersion).orElse(defaultVersion);
     }
 
     /** Returns whether node in application should be upgraded by this */
