@@ -32,7 +32,7 @@ public abstract class ModelImporter {
 
     private static final Logger log = Logger.getLogger(ModelImporter.class.getName());
 
-    /** Returns whether the file or directory at the given path is of the tyope which can be imported by this */
+    /** Returns whether the file or directory at the given path is of the type which can be imported by this */
     public abstract boolean canImport(String modelPath);
 
     /** Imports the given model */

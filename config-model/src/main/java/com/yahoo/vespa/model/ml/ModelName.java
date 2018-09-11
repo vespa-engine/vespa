@@ -19,14 +19,22 @@ public class ModelName {
         this(null, name);
     }
 
-    public ModelName(String namespace, Path modelPath) {
-        this(namespace, modelPath.toString().replace("/", "_"));
+    public ModelName(String namespace, Path modelPath, boolean pathIsFile) {
+        this(namespace,
+             stripFileEndingIfFile(modelPath, pathIsFile).toString().replace("/", "_"));
     }
 
     private ModelName(String namespace, String name) {
         this.namespace = namespace;
         this.name = name;
         this.fullName = (namespace != null ? namespace + "." : "") + name;
+    }
+
+    private static Path stripFileEndingIfFile(Path path, boolean pathIsFile) {
+        if ( ! pathIsFile) return path;
+        int dotIndex = path.last().lastIndexOf(".");
+        if (dotIndex <= 0) return path;
+        return path.withLast(path.last().substring(0, dotIndex));
     }
 
     /** Returns true if the local name of this is not in a namespace */
