@@ -21,6 +21,9 @@ public interface TesterCloud {
     /** Returns the current status of the tester. */
     Status getStatus(URI testerUrl);
 
+    /** Returns whether the tester is ready to serve. */
+    boolean ready(URI testerUrl);
+
 
     enum Status {
 

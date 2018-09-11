@@ -333,7 +333,7 @@ public class InternalStepRunner implements StepRunner {
         }
 
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
-        if (testerEndpoint.isPresent()) {
+        if (testerEndpoint.isPresent() && controller.jobController().cloud().ready(testerEndpoint.get())) {
             logger.log("Starting tests ...");
             controller.jobController().cloud().startTests(testerEndpoint.get(),
                                                           TesterCloud.Suite.of(id.type()),

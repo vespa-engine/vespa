@@ -37,6 +37,11 @@ public class MockTesterCloud implements TesterCloud {
         return status;
     }
 
+    @Override
+    public boolean ready(URI resterUrl) {
+        return true;
+    }
+
     public void add(LogEntry entry) {
         log.add(entry);
     }
