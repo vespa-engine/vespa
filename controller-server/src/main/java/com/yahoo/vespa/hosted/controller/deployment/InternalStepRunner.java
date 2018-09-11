@@ -40,7 +40,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -358,13 +357,16 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(aborted);
         }
 
-        URI testerEndpoint = controller.jobController().testerEndpoint(id)
-                                       .orElseThrow(() -> new NoSuchElementException("Endpoint for tester vanished again before tests were complete!"));
+        Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
+        if ( ! testerEndpoint.isPresent()) {
+            logger.log("Endpoints for tester not found -- trying again later.");
+            return Optional.empty();
+        }
 
         controller.jobController().updateTestLog(id);
 
         RunStatus status;
-        TesterCloud.Status testStatus = controller.jobController().cloud().getStatus(testerEndpoint);
+        TesterCloud.Status testStatus = controller.jobController().cloud().getStatus(testerEndpoint.get());
         switch (testStatus) {
             case NOT_STARTED:
                 throw new IllegalStateException("Tester reports tests not started, even though they should have!");
