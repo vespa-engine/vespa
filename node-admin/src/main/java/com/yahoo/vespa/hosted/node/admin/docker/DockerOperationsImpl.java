@@ -107,7 +107,7 @@ public class DockerOperationsImpl implements DockerOperations {
             }
         }
 
-        if (!docker.networkNATed()) {
+        if (environment.getDockerNetworking() == DockerNetworking.MACVLAN) {
             command.withIpAddress(ipV6Address);
             command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
             command.withSharedVolume("/etc/hosts", "/etc/hosts");
@@ -183,13 +183,13 @@ public class DockerOperationsImpl implements DockerOperations {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         logger.info("Starting container " + containerName);
 
-        if (!docker.networkNATed()) {
+        if (environment.getDockerNetworking() == DockerNetworking.MACVLAN) {
             docker.connectContainerToNetwork(containerName, "bridge");
         }
 
         docker.startContainer(containerName);
 
-        if (!docker.networkNATed()) {
+        if (environment.getDockerNetworking() == DockerNetworking.MACVLAN) {
             setupContainerNetworkConnectivity(containerName);
         }
 
