@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.dockerapi.DockerImpl;
 import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
@@ -109,9 +108,8 @@ public class DockerOperationsImpl implements DockerOperations {
         DockerNetworking networking = environment.getDockerNetworking();
         command.withNetworkMode(networking.getDockerNetworkMode());
 
-        if (networking == DockerNetworking.MACVLAN) { // TODO: Remove this else-if when migration to host-admin is complete
+        if (networking == DockerNetworking.MACVLAN) { // TODO: Remove this if when migration to host-admin is complete
             command.withIpAddress(ipV6Address);
-            command.withNetworkMode(DockerImpl.DOCKER_CUSTOM_MACVLAN_NETWORK_NAME);
             command.withSharedVolume("/etc/hosts", "/etc/hosts");
         } else if (networking == DockerNetworking.NPT) {
             InetAddress ipV6Prefix = InetAddresses.forString(IPV6_NPT_PREFIX);
