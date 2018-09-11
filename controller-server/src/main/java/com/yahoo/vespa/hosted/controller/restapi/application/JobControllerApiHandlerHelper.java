@@ -4,6 +4,7 @@ import com.google.common.base.Joiner;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
@@ -119,7 +120,7 @@ class JobControllerApiHandlerHelper {
 
         Cursor jobsObject = responseObject.setObject("jobs");
         steps.jobs().forEach(type -> {
-            jobTypeToSlime(jobsObject.setObject(type.jobName()),
+            jobTypeToSlime(jobsObject.setObject(shortNameOf(type, controller.system())),
                            controller,
                            application,
                            type,
@@ -241,11 +242,11 @@ class JobControllerApiHandlerHelper {
                 if ( ! controller.applications().deploymentTrigger().alreadyTriggered(application, versions)) {
                     if ( ! controller.applications().deploymentTrigger().testedIn(application, systemTest, versions)) {
                         pending++;
-                        pendingObject.setString(systemTest.jobName(), statusOf(controller, application.id(), systemTest, versions));
+                        pendingObject.setString(shortNameOf(systemTest, controller.system()), statusOf(controller, application.id(), systemTest, versions));
                     }
                     if ( ! controller.applications().deploymentTrigger().testedIn(application, stagingTest, versions)) {
                         pending++;
-                        pendingObject.setString(stagingTest.jobName(), statusOf(controller, application.id(), stagingTest, versions));
+                        pendingObject.setString(shortNameOf(stagingTest, controller.system()), statusOf(controller, application.id(), stagingTest, versions));
                     }
                 }
                 steps: for (DeploymentSpec.Step step : steps.production()) {
@@ -253,7 +254,7 @@ class JobControllerApiHandlerHelper {
                         break;
                     for (JobType stepType : steps.toJobs(step)) {
                         if (pendingProduction.containsKey(stepType)) {
-                            pendingObject.setString(stepType.jobName(), statusOf(controller, application.id(), stepType, versions));
+                            pendingObject.setString(shortNameOf(stepType, controller.system()), statusOf(controller, application.id(), stepType, versions));
                             if (++pending == 3)
                                 break steps;
                         }
@@ -278,6 +279,10 @@ class JobControllerApiHandlerHelper {
                          .filter(run -> type == systemTest || versions.sourcesMatchIfPresent(versions))
                          .map(JobControllerApiHandlerHelper::taskStatusOf)
                          .orElse("pending");
+    }
+
+    private static String shortNameOf(JobType type, SystemName system) {
+        return type.isProduction() ? type.zone(system).region().value() : type.jobName();
     }
 
     private static String taskStatusOf(Run run) {

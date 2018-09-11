@@ -319,7 +319,7 @@
       ],
       "url": "https://some.url:43/root/staging-test"
     },
-    "production-us-central-1": {
+    "us-central-1": {
       "runs": [
         {
           "id": 3,
@@ -408,7 +408,7 @@
       ],
       "url": "https://some.url:43/root/production-us-central-1"
     },
-    "production-us-west-1": {
+    "us-west-1": {
       "runs": [
         {
           "status": "pending",
@@ -433,7 +433,7 @@
             }
           },
           "tasks": {
-            "production-us-central-1": "running"
+            "us-central-1": "running"
           }
         },
         {
@@ -493,7 +493,7 @@
       ],
       "url": "https://some.url:43/root/production-us-west-1"
     },
-    "production-us-east-3": {
+    "us-east-3": {
       "runs": [
         {
           "status": "pending",
@@ -519,7 +519,7 @@
           },
           "tasks": {
             "staging-test": "failed",
-            "production-us-central-1": "running"
+            "us-central-1": "running"
           }
         },
         {
