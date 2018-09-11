@@ -62,16 +62,21 @@ public class ModelEvaluationTest {
     @Test
     public void testMl_serving_not_activated() throws SAXException, IOException {
         Path appDir = Path.fromString("src/test/cfg/application/ml_serving_not_activated");
-        ApplicationPackageTester tester = ApplicationPackageTester.create(appDir.toString());
-        VespaModel model = new VespaModel(tester.app());
-        ContainerCluster cluster = model.getContainerClusters().get("container");
-        assertNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluator.class.getName())));
+        try {
+            ApplicationPackageTester tester = ApplicationPackageTester.create(appDir.toString());
+            VespaModel model = new VespaModel(tester.app());
+            ContainerCluster cluster = model.getContainerClusters().get("container");
+            assertNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluator.class.getName())));
 
-        RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
-        cluster.getConfig(b);
-        RankProfilesConfig config = new RankProfilesConfig(b);
+            RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
+            cluster.getConfig(b);
+            RankProfilesConfig config = new RankProfilesConfig(b);
 
-        assertEquals(0, config.rankprofile().size());
+            assertEquals(0, config.rankprofile().size());
+        }
+        finally {
+            IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+        }
     }
 
     private void assertHasMlModels(VespaModel model) {
