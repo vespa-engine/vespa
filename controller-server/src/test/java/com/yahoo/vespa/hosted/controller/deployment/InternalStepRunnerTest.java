@@ -182,14 +182,6 @@ public class InternalStepRunnerTest {
     }
 
     @Test
-    public void testsFailIfTesterEndpointsVanish() {
-        RunId id = tester.startSystemTestTests();
-        tester.routing().removeEndpoints(new DeploymentId(testerOf(InternalDeploymentTester.appId), JobType.systemTest.zone(tester.tester().controller().system())));
-        tester.runner().run();
-        assertEquals(failed, tester.jobs().run(id).get().steps().get(Step.endTests));
-    }
-
-    @Test
     public void testsFailIfTesterRestarts() {
         RunId id = tester.startSystemTestTests();
         tester.cloud().set(TesterCloud.Status.NOT_STARTED);
