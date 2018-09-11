@@ -2,7 +2,6 @@
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.searchdefinition.FeatureNames;
-import com.yahoo.searchdefinition.MapEvaluationTypeContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
@@ -60,8 +59,8 @@ public class ConstantTensorTransformer extends ExpressionTransformer<RankProfile
         TensorValue tensorValue = (TensorValue)value;
         String featureName = CONSTANT + "(" + node.getName() + ")";
         String tensorType = tensorValue.asTensor().type().toString();
-        context.rankPropertiesOutput().put(featureName + ".value", tensorValue.toString());
-        context.rankPropertiesOutput().put(featureName + ".type", tensorType);
+        context.rankProperties().put(featureName + ".value", tensorValue.toString());
+        context.rankProperties().put(featureName + ".type", tensorType);
         // TODO: This allows us to reference constant "a" as "a" instead of "constant(a)", but we shouldn't allow that
         return new ReferenceNode(CONSTANT, Arrays.asList(new NameNode(node.getName())), null);
     }

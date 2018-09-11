@@ -768,16 +768,13 @@ public class RankProfile implements Serializable, Cloneable {
                                       Map<String, Macro> inlineMacros,
                                       ExpressionTransforms expressionTransforms) {
         if (expression == null) return null;
-        Map<String, String> rankPropertiesOutput = new HashMap<>();
-
         RankProfileTransformContext context = new RankProfileTransformContext(this,
                                                                               queryProfiles,
                                                                               importedModels,
                                                                               constants,
-                                                                              inlineMacros,
-                                                                              rankPropertiesOutput);
+                                                                              inlineMacros);
         expression = expressionTransforms.transform(expression, context);
-        for (Map.Entry<String, String> rankProperty : rankPropertiesOutput.entrySet()) {
+        for (Map.Entry<String, String> rankProperty : context.rankProperties().entrySet()) {
             addRankProperty(rankProperty.getKey(), rankProperty.getValue());
         }
         return expression;
