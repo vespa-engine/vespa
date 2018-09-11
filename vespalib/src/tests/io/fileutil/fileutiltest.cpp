@@ -405,7 +405,7 @@ TEST("require that vespalib::copy works")
     f.write(buffer.get(), 4096, 0);
     f.close();
     std::cerr << "Simple copy\n";
-        // Simple copy works (512b dividable file)
+        // Simple copy works (4096b dividable file)
     copy("myfile", "targetfile");
     ASSERT_TRUE(system("diff myfile targetfile") == 0);
     std::cerr << "Overwriting\n";
