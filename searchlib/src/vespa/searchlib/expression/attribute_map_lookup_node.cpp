@@ -245,8 +245,8 @@ AttributeMapLookupNode::AttributeMapLookupNode()
 
 AttributeMapLookupNode::AttributeMapLookupNode(const AttributeMapLookupNode &) = default;
 
-AttributeMapLookupNode::AttributeMapLookupNode(vespalib::stringref keyAttributeName, vespalib::stringref valueAttributeName, vespalib::stringref key, vespalib::stringref keySourceAttributeName)
-    : AttributeNode(""),
+AttributeMapLookupNode::AttributeMapLookupNode(vespalib::stringref name, vespalib::stringref keyAttributeName, vespalib::stringref valueAttributeName, vespalib::stringref key, vespalib::stringref keySourceAttributeName)
+    : AttributeNode(name),
       _keyAttributeName(keyAttributeName),
       _valueAttributeName(valueAttributeName),
       _key(key),
@@ -382,19 +382,20 @@ AttributeMapLookupNode::wireAttributes(const search::attribute::IAttributeContex
 
 Serializer & AttributeMapLookupNode::onSerialize(Serializer & os) const
 {
-    FunctionNode::onSerialize(os);
+    AttributeNode::onSerialize(os);
     return os << _keyAttributeName << _valueAttributeName << _key << _keySourceAttributeName;
 }
 
 Deserializer & AttributeMapLookupNode::onDeserialize(Deserializer & is)
 {
-    FunctionNode::onDeserialize(is);
+    AttributeNode::onDeserialize(is);
     return is >> _keyAttributeName >> _valueAttributeName >> _key >> _keySourceAttributeName;
 }
 
 void
 AttributeMapLookupNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
+    AttributeNode::visitMembers(visitor);
     visit(visitor, "keyAttributeName", _keyAttributeName);
     visit(visitor, "keySourceAttributeName", _keySourceAttributeName);
     visit(visitor, "valueAttributeName", _valueAttributeName);

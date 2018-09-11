@@ -33,7 +33,7 @@ public:
     DECLARE_NBO_SERIALIZE;
     DECLARE_EXPRESSIONNODE(AttributeMapLookupNode);
     AttributeMapLookupNode();
-    AttributeMapLookupNode(vespalib::stringref keyAttributeName, vespalib::stringref valueAttributeName, vespalib::stringref key, vespalib::stringref keySourceAttributeName);
+    AttributeMapLookupNode(vespalib::stringref name, vespalib::stringref keyAttributeName, vespalib::stringref valueAttributeName, vespalib::stringref key, vespalib::stringref keySourceAttributeName);
     AttributeMapLookupNode(const AttributeMapLookupNode &);
     AttributeMapLookupNode(AttributeMapLookupNode &&) = delete;
     ~AttributeMapLookupNode() override;
