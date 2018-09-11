@@ -53,7 +53,6 @@ import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.model.VespaModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -485,7 +484,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     // ---------------- Logs ----------------------------------------------------------------
 
     public HttpResponse getLogs(ApplicationId applicationId) {
-        String logServerHostName = getLogServerHostname(applicationId);
+        String logServerHostName = getLogServerURI(applicationId);
         LogRetriever logRetriever = new LogRetriever();
         return logRetriever.getLogs(logServerHostName);
     }
@@ -703,7 +702,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private String getLogServerHostname(ApplicationId applicationId) {
+    private String getLogServerURI(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
         Collection<HostInfo> hostInfos = application.getModel().getHosts();
 
