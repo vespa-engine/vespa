@@ -3,15 +3,19 @@ package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * @author hakonhall
@@ -24,15 +28,41 @@ public class Yum {
     private static final Pattern INSTALL_NOOP_PATTERN = NOTHING_TO_DO_PATTERN;
     private static final Pattern UPGRADE_NOOP_PATTERN = Pattern.compile("(?dm)^No packages marked for update$");
     private static final Pattern REMOVE_NOOP_PATTERN = Pattern.compile("(?dm)^No Packages marked for removal$");
-
-
     private static final Pattern UNKNOWN_PACKAGE_PATTERN = Pattern.compile(
             "(?dm)^No package ([^ ]+) available\\.$");
+
+
+    // WARNING: These must be in the same order as the supplier below
+    private static final String RPM_QUERYFORMAT = Stream.of("NAME", "EPOCH", "VERSION", "RELEASE", "ARCH")
+            .map(formatter -> "%{" + formatter + "}")
+            .collect(Collectors.joining("\\n"));
+    private static final Function<YumPackageName.Builder, List<Function<String, YumPackageName.Builder>>>
+            PACKAGE_NAME_BUILDERS_GENERATOR = builder -> Arrays.asList(
+                builder::setName, builder::setEpoch, builder::setVersion, builder::setRelease, builder::setArchitecture);
+
 
     private final Terminal terminal;
 
     public Yum(Terminal terminal) {
         this.terminal = terminal;
+    }
+
+    public Optional<YumPackageName> queryInstalled(TaskContext context, String packageName) {
+        CommandResult commandResult = terminal.newCommandLine(context)
+                .add("rpm", "-q", packageName, "--queryformat", RPM_QUERYFORMAT)
+                .ignoreExitCode()
+                .executeSilently();
+
+        if (commandResult.getExitCode() != 0) return Optional.empty();
+
+        YumPackageName.Builder builder = new YumPackageName.Builder();
+        List<Function<String, YumPackageName.Builder>> builders = PACKAGE_NAME_BUILDERS_GENERATOR.apply(builder);
+        List<Optional<String>> lines = commandResult.mapEachLine(line -> Optional.of(line).filter(s -> !"(none)".equals(s)));
+        if (lines.size() != builders.size()) throw new IllegalStateException(String.format(
+                "Unexpected response from rpm, expected %d lines, got %d" + builders.size(), commandResult.getOutput()));
+
+        IntStream.range(0, builders.size()).forEach(i -> lines.get(i).ifPresent(builders.get(i)::apply));
+        return Optional.of(builder.build());
     }
 
     /**
