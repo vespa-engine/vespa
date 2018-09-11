@@ -130,7 +130,7 @@
         </ssl>
       </server>
       <server port="4083" id="sslProvider">
-        <ssl-provider id="ssl-provider" class="com.yahoo.MySslProvider" bundle="mybundle"/>
+        <ssl-provider class="com.yahoo.MySslProvider" bundle="mybundle"/>
       </server>
     </http>
 

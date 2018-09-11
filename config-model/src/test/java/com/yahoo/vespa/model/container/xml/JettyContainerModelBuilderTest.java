@@ -265,21 +265,21 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 "</jdisc>");
 
         createModel(root, clusterElem);
-        ConnectorConfig minimalCfg = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/minimal/default-ssl-provider");
+        ConnectorConfig minimalCfg = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/minimal/default-ssl-provider@minimal");
         assertTrue(minimalCfg.ssl().enabled());
         assertThat(minimalCfg.ssl().privateKeyFile(), is(equalTo("/foo/key")));
         assertThat(minimalCfg.ssl().certificateFile(), is(equalTo("/foo/cert")));
         assertThat(minimalCfg.ssl().caCertificateFile(), is(equalTo("")));
         assertThat(minimalCfg.ssl().clientAuth(), is(equalTo(ConnectorConfig.Ssl.ClientAuth.Enum.DISABLED)));
 
-        ConnectorConfig withCaCerts = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/with-cacerts/default-ssl-provider");
+        ConnectorConfig withCaCerts = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/with-cacerts/default-ssl-provider@with-cacerts");
         assertTrue(withCaCerts.ssl().enabled());
         assertThat(withCaCerts.ssl().privateKeyFile(), is(equalTo("/foo/key")));
         assertThat(withCaCerts.ssl().certificateFile(), is(equalTo("/foo/cert")));
         assertThat(withCaCerts.ssl().caCertificateFile(), is(equalTo("/foo/cacerts")));
         assertThat(withCaCerts.ssl().clientAuth(), is(equalTo(ConnectorConfig.Ssl.ClientAuth.Enum.DISABLED)));
 
-        ConnectorConfig needClientAuth = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/need-client-auth/default-ssl-provider");
+        ConnectorConfig needClientAuth = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/need-client-auth/default-ssl-provider@need-client-auth");
         assertTrue(needClientAuth.ssl().enabled());
         assertThat(needClientAuth.ssl().privateKeyFile(), is(equalTo("/foo/key")));
         assertThat(needClientAuth.ssl().certificateFile(), is(equalTo("/foo/cert")));
@@ -288,16 +288,16 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
 
         ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
         List<ConnectorFactory> connectorFactories = cluster.getChildrenByTypeRecursive(ConnectorFactory.class);
-        connectorFactories.forEach(connectorFactory -> assertChildComponentExists(connectorFactory, DefaultSslProvider.COMPONENT_ID, DefaultSslProvider.COMPONENT_CLASS));
+        connectorFactories.forEach(connectorFactory -> assertChildComponentExists(connectorFactory, DefaultSslProvider.COMPONENT_CLASS));
     }
 
     @Test
-    public void verify_ssl_provider_configuration() {
+    public void verify_tht_ssl_provider_configuration_configures_correct_config() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0' jetty='true'>",
                 "    <http>",
                 "        <server port='9000' id='ssl'>",
-                "            <ssl-provider id='ssl-provider' class='com.yahoo.CustomSslProvider' bundle='mybundle'/>",
+                "            <ssl-provider class='com.yahoo.CustomSslProvider' bundle='mybundle'/>",
                 "        </server>",
                 "    </http>",
                 nodesXml,
@@ -305,14 +305,14 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 "</jdisc>");
 
         createModel(root, clusterElem);
-        ConnectorConfig sslProvider = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/ssl/ssl-provider");
+        ConnectorConfig sslProvider = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/ssl/ssl-provider@ssl");
 
         assertTrue(sslProvider.ssl().enabled());
 
         ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
         List<ConnectorFactory> connectorFactories = cluster.getChildrenByTypeRecursive(ConnectorFactory.class);
         ConnectorFactory connectorFactory = connectorFactories.get(0);
-        assertChildComponentExists(connectorFactory, "ssl-provider", "com.yahoo.CustomSslProvider");
+        assertChildComponentExists(connectorFactory, "com.yahoo.CustomSslProvider");
     }
 
     private static void assertConnectorHasInjectedComponents(ConnectorFactory connectorFactory, String... componentNames) {
@@ -334,11 +334,10 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         assertThat(spec.bundle.toString(), is(bundleName));
     }
 
-    private static void assertChildComponentExists(ConnectorFactory connectorFactory, String componentId, String className) {
+    private static void assertChildComponentExists(ConnectorFactory connectorFactory, String className) {
         Optional<SimpleComponent> simpleComponent = connectorFactory.getChildren().values().stream()
                 .map(z -> (SimpleComponent) z)
-                .filter(component -> component.getComponentId().stringValue().equals(componentId) &&
-                                     component.getClassId().stringValue().equals(className))
+                .filter(component -> component.getClassId().stringValue().equals(className))
                 .findFirst();
         assertTrue(simpleComponent.isPresent());
     }

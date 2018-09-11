@@ -54,15 +54,15 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
             Optional<String> caCertificateFile = XmlHelper.getOptionalChildValue(sslConfigurator, "ca-certificates-file");
             Optional<String> clientAuthentication = XmlHelper.getOptionalChildValue(sslConfigurator, "client-authentication");
             return new DefaultSslProvider(
+                    serverName,
                     privateKeyFile,
                     certificateFile,
                     caCertificateFile.orElse(null),
                     clientAuthentication.orElse(null));
         } else if (sslProviderConfigurator != null) {
-            String id = sslProviderConfigurator.getAttribute("id");
             String className = sslProviderConfigurator.getAttribute("class");
             String bundle = sslProviderConfigurator.getAttribute("bundle");
-            return new CustomSslProvider(id, className, bundle);
+            return new CustomSslProvider(serverName, className, bundle);
         } else {
             // No ssl config..
             return new DummySslProvider(serverName);

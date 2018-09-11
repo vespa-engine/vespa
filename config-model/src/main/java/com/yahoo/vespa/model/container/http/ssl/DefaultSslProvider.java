@@ -16,7 +16,7 @@ import static com.yahoo.component.ComponentSpecification.fromString;
  * @author mortent
  */
 public class DefaultSslProvider extends SimpleComponent implements ConnectorConfig.Producer {
-    public static final String COMPONENT_ID = "default-ssl-provider";
+    public static final String COMPONENT_ID_PREFIX = "default-ssl-provider@";
     public static final String COMPONENT_CLASS = DefaultSslContextFactoryProvider.class.getName();
     public static final String COMPONENT_BUNDLE = "jdisc_http_service";
 
@@ -25,9 +25,9 @@ public class DefaultSslProvider extends SimpleComponent implements ConnectorConf
     private final String caCertificatePath;
     private final ConnectorConfig.Ssl.ClientAuth.Enum clientAuthentication;
 
-    public DefaultSslProvider(String privateKeyPath, String certificatePath, String caCertificatePath, String clientAuthentication) {
+    public DefaultSslProvider(String servername, String privateKeyPath, String certificatePath, String caCertificatePath, String clientAuthentication) {
         super(new ComponentModel(
-                new BundleInstantiationSpecification(new ComponentId(COMPONENT_ID),
+                new BundleInstantiationSpecification(new ComponentId(COMPONENT_ID_PREFIX+servername),
                                                      fromString(COMPONENT_CLASS),
                                                      fromString(COMPONENT_BUNDLE))));
         this.privateKeyPath = privateKeyPath;
@@ -46,7 +46,7 @@ public class DefaultSslProvider extends SimpleComponent implements ConnectorConf
     }
 
     public SimpleComponent getComponent() {
-        return new SimpleComponent(new ComponentModel(COMPONENT_ID, COMPONENT_CLASS, COMPONENT_BUNDLE));
+        return new SimpleComponent(new ComponentModel(getComponentId().stringValue(), COMPONENT_CLASS, COMPONENT_BUNDLE));
     }
 
     private static ConnectorConfig.Ssl.ClientAuth.Enum mapToConfigEnum(String clientAuthValue) {

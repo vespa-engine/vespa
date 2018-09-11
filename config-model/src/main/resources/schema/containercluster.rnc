@@ -99,7 +99,7 @@ Ssl = element ssl {
 }
 
 SslProvider = element ssl-provider {
-    ComponentDefinition
+    BundleSpec
 }
 
 # REST-API:
