@@ -9,7 +9,6 @@ import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
@@ -20,7 +19,11 @@ import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.vespa.indexinglanguage.AdapterFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Simon Thoresen Hult
@@ -48,7 +51,7 @@ public class DocumentScript {
     }
 
     public DocumentUpdate execute(AdapterFactory adapterFactory, DocumentUpdate update) {
-        for (FieldUpdate fieldUpdate : update.getFieldUpdates()) {
+        for (FieldUpdate fieldUpdate : update.getFieldUpdatesCollection()) {
             requireThatFieldIsDeclaredInDocument(fieldUpdate.getField());
             for (ValueUpdate<?> valueUpdate : fieldUpdate.getValueUpdates()) {
                 removeAnyLinguisticsSpanTree(valueUpdate);

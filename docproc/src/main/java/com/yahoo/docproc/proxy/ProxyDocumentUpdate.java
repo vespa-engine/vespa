@@ -10,6 +10,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
 import com.yahoo.document.update.FieldUpdate;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +46,7 @@ public class ProxyDocumentUpdate extends DocumentUpdate implements DocumentOpera
     }
 
     @Override
+    @SuppressWarnings( "deprecation" )
     public FieldUpdate getFieldUpdate(int index) {
         return docU.getFieldUpdate(index);
     }
@@ -60,10 +62,14 @@ public class ProxyDocumentUpdate extends DocumentUpdate implements DocumentOpera
     }
 
     @Override
+    @SuppressWarnings( "deprecation" )
     public List<FieldUpdate> getFieldUpdates() {
         return docU.getFieldUpdates();
     }
-
+    @Override
+    public Collection<FieldUpdate> getFieldUpdatesCollection() {
+        return docU.getFieldUpdatesCollection();
+    }
     @Override
     public DocumentId getId() {
         return docU.getId();
