@@ -84,10 +84,13 @@ public class ConvertedModel {
     /**
      * Create and store a converted model for a rank profile given from either an imported model,
      * or (if unavailable) from stored application package data.
+     *
+     * @param modelPath the path to the model
+     * @param pathIsFile true if that path (this kind of model) is stored in a file, false if it is in a directory
      */
-    public static ConvertedModel fromSourceOrStore(Path modelPath, RankProfileTransformContext context) {
+    public static ConvertedModel fromSourceOrStore(Path modelPath, boolean pathIsFile, RankProfileTransformContext context) {
         File sourceModel = sourceModelFile(context.rankProfile().applicationPackage(), modelPath);
-        ModelName modelName = new ModelName(context.rankProfile().getName(), modelPath);
+        ModelName modelName = new ModelName(context.rankProfile().getName(), modelPath, pathIsFile);
         if (sourceModel.exists())
             return fromSource(modelName,
                               modelPath.toString(),
