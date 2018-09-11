@@ -5,7 +5,6 @@
     <staging/>
     <block-change revision='true' version='false' days="mon,tue" hours="14,15"/>
     <block-change days="mon,tue" hours="14,15" time-zone="CET"/>
-    <block-upgrade days="wed" hours="16" time-zone="CET"/><!-- Tests legacy name. Remove in Vespa 7 -->
     <prod global-service-id='qrs' athenz-service='other-service'>
         <region active='true'>us-west-1</region>
         <delay hours='3'/>
