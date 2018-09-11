@@ -36,7 +36,7 @@ public class MockedOperationHandler implements OperationHandler {
     @Override
     public void update(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException {
         log.append("UPDATE: " + data.getDocumentUpdate().getId());
-        log.append(data.getDocumentUpdate().getFieldUpdates().toString());
+        log.append(data.getDocumentUpdate().getFieldUpdatesCollection().toString());
         if (data.getDocumentUpdate().getCreateIfNonExistent()) {
             log.append("[CREATE IF NON EXISTENT IS TRUE]");
         }

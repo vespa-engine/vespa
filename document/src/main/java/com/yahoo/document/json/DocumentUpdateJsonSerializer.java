@@ -105,7 +105,7 @@ public class DocumentUpdateJsonSerializer
                 }
 
                 generator.writeObjectFieldStart("fields");
-                for (FieldUpdate up : update.getFieldUpdates()) {
+                for (FieldUpdate up : update.getFieldUpdatesCollection()) {
                     up.serialize(this);
                 }
 
