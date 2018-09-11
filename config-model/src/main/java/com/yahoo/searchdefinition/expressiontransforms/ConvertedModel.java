@@ -63,14 +63,14 @@ import java.util.stream.Collectors;
  */
 public class ConvertedModel {
 
-    private final String modelName;
+    private final ModelName modelName;
     private final String modelDescription;
     private final ImmutableMap<String, RankingExpression> expressions;
 
     /** The source importedModel, or empty if this was created from a stored converted model */
     private final Optional<ImportedModel> sourceModel;
 
-    private ConvertedModel(String modelName,
+    private ConvertedModel(ModelName modelName,
                            String modelDescription,
                            Map<String, RankingExpression> expressions,
                            Optional<ImportedModel> sourceModel) {
@@ -86,7 +86,7 @@ public class ConvertedModel {
      */
     public static ConvertedModel fromSourceOrStore(Path modelPath, RankProfileTransformContext context) {
         File sourceModel = sourceModelFile(context.rankProfile().applicationPackage(), modelPath);
-        String modelName = context.rankProfile().getName() + "." + toModelName(modelPath); // must be unique to each profile
+        ModelName modelName = new ModelName(context.rankProfile().getName(), modelPath);
         if (sourceModel.exists())
             return fromSource(modelName,
                               modelPath.toString(),
@@ -99,7 +99,7 @@ public class ConvertedModel {
                              context.rankProfile());
     }
 
-    public static ConvertedModel fromSource(String modelName,
+    public static ConvertedModel fromSource(ModelName modelName,
                                             String modelDescription,
                                             RankProfile rankProfile,
                                             QueryProfileRegistry queryProfileRegistry,
@@ -111,7 +111,7 @@ public class ConvertedModel {
                                   Optional.of(importedModel));
     }
 
-    public static ConvertedModel fromStore(String modelName,
+    public static ConvertedModel fromStore(ModelName modelName,
                                            String modelDescription,
                                            RankProfile rankProfile) {
         ModelStore modelStore = new ModelStore(rankProfile.applicationPackage(), modelName);
@@ -491,10 +491,6 @@ public class ConvertedModel {
             return new TensorValue(tensor);
     }
 
-    private static String toModelName(Path modelPath) {
-        return modelPath.toString().replace("/", "_");
-    }
-
     @Override
     public String toString() { return "model '" + modelName + "'"; }
 
@@ -513,7 +509,7 @@ public class ConvertedModel {
         private final ApplicationPackage application;
         private final ModelFiles modelFiles;
 
-        ModelStore(ApplicationPackage application, String modelName) {
+        ModelStore(ApplicationPackage application, ModelName modelName) {
             this.application = application;
             this.modelFiles = new ModelFiles(modelName);
         }
@@ -676,20 +672,20 @@ public class ConvertedModel {
 
     static class ModelFiles {
 
-        String modelName;
+        ModelName modelName;
 
-        public ModelFiles(String modelName) {
+        public ModelFiles(ModelName modelName) {
             this.modelName = modelName;
         }
 
         /** Files stored below this path will be replicated in zookeeper */
         public Path storedModelReplicatedPath() {
-            return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR.append(modelName);
+            return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR.append(modelName.fullName());
         }
 
         /** Files stored below this path will not be replicated in zookeeper */
         public Path storedModelPath() {
-            return ApplicationPackage.MODELS_GENERATED_DIR.append(modelName);
+            return ApplicationPackage.MODELS_GENERATED_DIR.append(modelName.fullName());
         }
 
         public Path expressionPath(String name) {
@@ -767,6 +763,49 @@ public class ConvertedModel {
         private static boolean isQuoteSign(int c) {
             return c == '\'' || c == '"';
         }
+
+    }
+
+    /**
+     * Models used in a rank profile has the rank profile name as name space while gGlobal model names have no namespace
+     */
+    public static class ModelName {
+
+        /** The namespace, or null if none */
+        private String namespace;
+        private String name;
+        private String fullName;
+
+        public ModelName(String name) {
+            this(null, name);
+        }
+
+        public ModelName(String namespace, Path modelPath) {
+            this(namespace, modelPath.toString().replace("/", "_"));
+        }
+
+        private ModelName(String namespace, String name) {
+            this.namespace = namespace;
+            this.name = name;
+            this.fullName = (namespace != null ? namespace + "." : "") + name;
+        }
+
+        public String namespace() { return namespace; }
+        public String localName() { return name; }
+        public String fullName() { return fullName; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if ( ! (o instanceof ModelName)) return false;
+            return ((ModelName)o).fullName.equals(this.fullName);
+        }
+
+        @Override
+        public int hashCode() { return fullName.hashCode(); }
+
+        @Override
+        public String toString() { return fullName; }
 
     }
 
