@@ -1,14 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.config.FileReference;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.utils.FileSender;
 
+import java.util.Collection;
 import java.util.Objects;
 
 /**
- * Represents a global ranking constant
+ * A global ranking constant distributed using file distribution.
+ * Ranking constants must be sent to some services to be useful - this is done
+ * by calling the sentTo method during the prepare phase of building models.
  *
  * @author arnej
+ * @author bratseth
  */
 public class RankingConstant {
 
@@ -49,13 +56,15 @@ public class RankingConstant {
         this.pathType = PathType.URI;
     }
 
-    /**
-     * Set the internally generated reference to this file used to identify this instance of the file for
-     * file distribution.
-     */
-    public void setFileReference(String fileReference) { this.fileReference = fileReference; }
-
     public void setType(TensorType tensorType) { this.tensorType = tensorType; }
+
+    /** Initiate sending of theis constant to some services over file distribution */
+    public void sendTo(Collection<? extends AbstractService> services) {
+        FileReference reference = (pathType == RankingConstant.PathType.FILE)
+                                  ? FileSender.sendFileToServices(path, services)
+                                  : FileSender.sendUriToServices(path, services);
+        this.fileReference = reference.value();
+    }
 
     public String getName() { return name; }
     public String getFileName() { return path; }
