@@ -21,7 +21,7 @@ public class RankProfileTransformContext extends TransformContext {
     private final QueryProfileRegistry queryProfiles;
     private final ImportedModels importedModels;
     private final Map<String, RankProfile.Macro> inlineMacros;
-    private final Map<String, String> rankProperties = new HashMap<String, String>();
+    private final Map<String, String> rankProperties = new HashMap<>();
 
     public RankProfileTransformContext(RankProfile rankProfile,
                                        QueryProfileRegistry queryProfiles,
