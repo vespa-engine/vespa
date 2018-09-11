@@ -112,7 +112,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     }
 
     private void addLogHandler(ContainerCluster cluster) {
-        Handler<?> logHandler = Handler.fromClassName("com.yahoo.container.handlerLogHandler");
+        Handler<?> logHandler = Handler.fromClassName("com.yahoo.container.handler.LogHandler");
         logHandler.addServerBindings("http://*/logs/", "https://*/logs/");
         cluster.addComponent(logHandler);
     }
