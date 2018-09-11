@@ -1,5 +1,7 @@
 package com.yahoo.vespa.athenz.tls;
 
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyUtils;
 import org.junit.Test;
 
 import javax.security.auth.x500.X500Principal;

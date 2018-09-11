@@ -1,5 +1,8 @@
 package com.yahoo.vespa.athenz.tls;
 
+import com.yahoo.security.Extension;
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyUtils;
 import org.junit.Test;
 
 import javax.security.auth.x500.X500Principal;
@@ -48,7 +51,7 @@ public class Pkcs10CsrTest {
                 .addSubjectAlternativeName("san")
                 .setBasicConstraints(true, true)
                 .build();
-        List<String> expected = Arrays.asList(Extension.BASIC_CONSTRAINS.getOId(), Extension.SUBJECT_ALTERNATIVE_NAMES.getOId());
+        List<String> expected = Arrays.asList(Extension.BASIC_CONSTRAINTS.getOId(), Extension.SUBJECT_ALTERNATIVE_NAMES.getOId());
         List<String> actual = csr.getExtensionOIds();
         assertEquals(expected, actual);
     }
