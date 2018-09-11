@@ -6,6 +6,7 @@ import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.container.handler.LogHandler;
 import com.yahoo.log.LogLevel;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.model.HostResource;
@@ -110,10 +111,9 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         admin.addAndInitializeService(hostResource, container);
     }
 
-    // TODO: Wire in handler for getting logs
     private void addLogHandler(ContainerCluster cluster) {
-        Handler<?> logHandler = Handler.fromClassName("TODO");
-        //logHandler.addServerBindings("http://*/logs/", "https://*/logs/");
+        Handler<?> logHandler = Handler.fromClassName("com.yahoo.container.handlerLogHandler");
+        logHandler.addServerBindings("http://*/logs/", "https://*/logs/");
         cluster.addComponent(logHandler);
     }
 
