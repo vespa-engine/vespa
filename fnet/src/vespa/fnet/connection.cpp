@@ -225,6 +225,7 @@ FNET_Connection::handshake()
     case vespalib::CryptoSocket::HandshakeResult::DONE: {
         EnableReadEvent(true);
         EnableWriteEvent(writePendingAfterConnect());
+        _flags._framed = (_socket->min_read_buffer_size() > 1);
         size_t chunk_size = std::max(size_t(FNET_READ_SIZE), _socket->min_read_buffer_size());
         ssize_t res = 0;
         do { // drain input pipeline
@@ -287,7 +288,7 @@ FNET_Connection::Read()
         _input.FreeToData((uint32_t)res);
         broken = !handle_packets();
         _input.resetIfEmpty();
-        if (broken || (_input.GetFreeLen() > 0) || (readCnt >= FNET_READ_REDO)) {
+        if (broken || ((_input.GetFreeLen() > 0) && !_flags._framed) || (readCnt >= FNET_READ_REDO)) {
             goto done_read;
         }
         _input.EnsureFree(chunk_size);
@@ -302,7 +303,6 @@ done_read:
         _input.EnsureFree(chunk_size);
         res = _socket->drain(_input.GetFree(), _input.GetFreeLen());
         my_errno = errno;
-        readCnt++;
         if (res > 0) {
             _input.FreeToData((uint32_t)res);
             broken = !handle_packets();
@@ -340,6 +340,7 @@ done_read:
 bool
 FNET_Connection::Write()
 {
+    size_t   chunk_size     = std::max(size_t(FNET_WRITE_SIZE), _socket->min_read_buffer_size());
     uint32_t my_write_work  = 0;
     int      writeCnt       = 0;     // write count
     bool     broken         = false; // is this conn broken ?
@@ -353,7 +354,7 @@ FNET_Connection::Write()
 
         // fill output buffer
 
-        while (_output.GetDataLen() < FNET_WRITE_SIZE) {
+        while (_output.GetDataLen() < chunk_size) {
             if (_myQueue.IsEmpty_NoLock())
                 break;
 

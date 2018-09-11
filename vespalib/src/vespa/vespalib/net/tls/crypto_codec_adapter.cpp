@@ -34,7 +34,7 @@ CryptoCodecAdapter::hs_try_fill()
 ssize_t
 CryptoCodecAdapter::fill_input()
 {
-    if (_input.get().size < _codec->min_encode_buffer_size()) {
+    if (_input.obtain().size < _codec->min_encode_buffer_size()) {
         auto dst = _input.reserve(_codec->min_encode_buffer_size());
         ssize_t res = _socket.read(dst.data, dst.size);
         if (res > 0) {
@@ -89,9 +89,9 @@ CryptoCodecAdapter::read(char *buf, size_t len)
     if (fill_res <= 0) {
         return fill_res;
     }
-    ssize_t res = drain(buf, len);
-    if (res != 0) {
-        return res;
+    auto drain_res = drain(buf, len);
+    if (drain_res != 0) {
+        return drain_res;
     }
     errno = EWOULDBLOCK;
     return -1;
@@ -113,8 +113,14 @@ CryptoCodecAdapter::drain(char *buf, size_t len)
 ssize_t
 CryptoCodecAdapter::write(const char *buf, size_t len)
 {
-    if (flush_all() < 0) {
-        return -1;
+    if (_output.obtain().size >= _codec->min_encode_buffer_size()) {
+        if (flush() < 0) {
+            return -1;
+        }
+        if (_output.obtain().size > 0) {
+            errno = EWOULDBLOCK;
+            return -1;
+        }
     }
     auto dst = _output.reserve(_codec->min_encode_buffer_size());
     auto res = _codec->encode(buf, len, dst.data, dst.size);
