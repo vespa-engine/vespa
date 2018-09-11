@@ -1,0 +1,18 @@
+search smallconstant {
+
+    document smallconstant {
+    }
+
+    rank-profile my_profile {
+        first-phase {
+            expression: sum(my_tensor)
+        }
+        constants {
+            my_tensor
+                value: { {x:1,y:2}:1, {x:2,y:1}:2 }
+                type: tensor(x{},y{})
+            }
+        }
+    }
+
+}

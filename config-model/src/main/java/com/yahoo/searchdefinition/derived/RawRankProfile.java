@@ -316,18 +316,18 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                     } catch (ParseException e) {
                         throw new IllegalArgumentException("Could not parse second phase expression", e);
                     }
-                    continue;
                 }
-                if ("rankingExpression(secondphase).rankingScript".equals(property.getName())) {
+                else if ("rankingExpression(secondphase).rankingScript".equals(property.getName())) {
                     try {
                         secondPhaseRanking = new RankingExpression(property.getValue());
                     } catch (ParseException e) {
                         throw new IllegalArgumentException("Could not parse second phase expression", e);
                     }
-                    continue;
                 }
-                properties.put(property.getName() + ".part" + i, property.getValue());
-                i++;
+                else {
+                    properties.put(property.getName() + ".part" + i, property.getValue());
+                    i++;
+                }
             }
             properties.putAll(deriveRankingPhaseRankProperties(firstPhaseRanking, "firstphase"));
             properties.putAll(deriveRankingPhaseRankProperties(secondPhaseRanking, "secondphase"));

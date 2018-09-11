@@ -624,7 +624,7 @@ public class ConvertedModel {
         private List<Pair<String, Tensor>> readSmallConstants() {
             try {
                 ApplicationFile file = application.getFile(modelFiles.smallConstantsPath());
-                if (!file.exists()) return Collections.emptyList();
+                if ( ! file.exists()) return Collections.emptyList();
 
                 List<Pair<String, Tensor>> constants = new ArrayList<>();
                 BufferedReader reader = new BufferedReader(file.createReader());
@@ -701,7 +701,7 @@ public class ConvertedModel {
         }
 
         public Path smallConstantsPath() {
-            return storedModelPath().append("constants.txt");
+            return storedModelReplicatedPath().append("constants.txt");
         }
 
         /** Path to the large (ranking) constants directory */
