@@ -1,4 +1,5 @@
-package com.yahoo.searchdefinition.expressiontransforms;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.model.ml;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.collections.Pair;
@@ -11,6 +12,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.FeatureNames;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankingConstant;
+import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
@@ -18,7 +20,6 @@ import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
-import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
@@ -63,14 +64,14 @@ import java.util.stream.Collectors;
  */
 public class ConvertedModel {
 
-    private final String modelName;
+    private final ModelName modelName;
     private final String modelDescription;
     private final ImmutableMap<String, RankingExpression> expressions;
 
     /** The source importedModel, or empty if this was created from a stored converted model */
     private final Optional<ImportedModel> sourceModel;
 
-    private ConvertedModel(String modelName,
+    private ConvertedModel(ModelName modelName,
                            String modelDescription,
                            Map<String, RankingExpression> expressions,
                            Optional<ImportedModel> sourceModel) {
@@ -86,7 +87,7 @@ public class ConvertedModel {
      */
     public static ConvertedModel fromSourceOrStore(Path modelPath, RankProfileTransformContext context) {
         File sourceModel = sourceModelFile(context.rankProfile().applicationPackage(), modelPath);
-        String modelName = context.rankProfile().getName() + "." + toModelName(modelPath); // must be unique to each profile
+        ModelName modelName = new ModelName(context.rankProfile().getName(), modelPath);
         if (sourceModel.exists())
             return fromSource(modelName,
                               modelPath.toString(),
@@ -99,7 +100,7 @@ public class ConvertedModel {
                              context.rankProfile());
     }
 
-    public static ConvertedModel fromSource(String modelName,
+    public static ConvertedModel fromSource(ModelName modelName,
                                             String modelDescription,
                                             RankProfile rankProfile,
                                             QueryProfileRegistry queryProfileRegistry,
@@ -111,7 +112,7 @@ public class ConvertedModel {
                                   Optional.of(importedModel));
     }
 
-    public static ConvertedModel fromStore(String modelName,
+    public static ConvertedModel fromStore(ModelName modelName,
                                            String modelDescription,
                                            RankProfile rankProfile) {
         ModelStore modelStore = new ModelStore(rankProfile.applicationPackage(), modelName);
@@ -240,9 +241,12 @@ public class ConvertedModel {
         profile.addConstant(constantName, asValue(constantValue));
     }
 
-    private static void transformLargeConstant(ModelStore store, RankProfile profile, QueryProfileRegistry queryProfiles,
-                                        Set<String> constantsReplacedByMacros,
-                                        String constantName, Tensor constantValue) {
+    private static void transformLargeConstant(ModelStore store,
+                                               RankProfile profile,
+                                               QueryProfileRegistry queryProfiles,
+                                               Set<String> constantsReplacedByMacros,
+                                               String constantName,
+                                               Tensor constantValue) {
         RankProfile.Macro macroOverridingConstant = profile.getMacros().get(constantName);
         if (macroOverridingConstant != null) {
             TensorType macroType = macroOverridingConstant.getRankingExpression().type(profile.typeContext(queryProfiles));
@@ -255,7 +259,7 @@ public class ConvertedModel {
             Path constantPath = store.writeLargeConstant(constantName, constantValue);
             if ( ! profile.rankingConstants().asMap().containsKey(constantName)) {
                 profile.rankingConstants().add(new RankingConstant(constantName, constantValue.type(),
-                                                           constantPath.toString()));
+                                                                   constantPath.toString()));
             }
         }
     }
@@ -491,10 +495,6 @@ public class ConvertedModel {
             return new TensorValue(tensor);
     }
 
-    private static String toModelName(Path modelPath) {
-        return modelPath.toString().replace("/", "_");
-    }
-
     @Override
     public String toString() { return "model '" + modelName + "'"; }
 
@@ -513,7 +513,7 @@ public class ConvertedModel {
         private final ApplicationPackage application;
         private final ModelFiles modelFiles;
 
-        ModelStore(ApplicationPackage application, String modelName) {
+        ModelStore(ApplicationPackage application, ModelName modelName) {
             this.application = application;
             this.modelFiles = new ModelFiles(modelName);
         }
@@ -616,8 +616,12 @@ public class ConvertedModel {
                        .writeFile(new StringReader(name + ":" + constant.type() + ":" + correct(constantPath)));
 
             // Write content explicitly as a file on the file system as this is distributed using file distribution
-            createIfNeeded(constantsPath);
-            IOUtils.writeFile(application.getFileReference(constantPath), TypedBinaryFormat.encode(constant));
+            // - but only if this is a global model to avoid writing the same constants for each rank profile
+            //   where they are used
+            if (modelFiles.modelName.isGlobal()) {
+                createIfNeeded(constantsPath);
+                IOUtils.writeFile(application.getFileReference(constantPath), TypedBinaryFormat.encode(constant));
+            }
             return correct(constantPath);
         }
 
@@ -676,20 +680,24 @@ public class ConvertedModel {
 
     static class ModelFiles {
 
-        String modelName;
+        ModelName modelName;
 
-        public ModelFiles(String modelName) {
+        public ModelFiles(ModelName modelName) {
             this.modelName = modelName;
         }
 
         /** Files stored below this path will be replicated in zookeeper */
         public Path storedModelReplicatedPath() {
-            return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR.append(modelName);
+            return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR.append(modelName.fullName());
         }
 
-        /** Files stored below this path will not be replicated in zookeeper */
-        public Path storedModelPath() {
-            return ApplicationPackage.MODELS_GENERATED_DIR.append(modelName);
+        /**
+         * Files stored below this path will not be replicated in zookeeper.
+         * Large constants are only stored under the global (not rank-profile-specific)
+         * path to avoid storing the same large constant multiple times.
+         */
+        public Path storedGlobalModelPath() {
+            return ApplicationPackage.MODELS_GENERATED_DIR.append(modelName.localName());
         }
 
         public Path expressionPath(String name) {
@@ -706,7 +714,7 @@ public class ConvertedModel {
 
         /** Path to the large (ranking) constants directory */
         public Path largeConstantsContentPath() {
-            return storedModelPath().append("constants");
+            return storedGlobalModelPath().append("constants");
         }
 
         /** Path to the large (ranking) constants directory */
@@ -717,55 +725,6 @@ public class ConvertedModel {
         /** Path to the macros file */
         public Path macrosPath() {
             return storedModelReplicatedPath().append("macros.txt");
-        }
-
-    }
-
-    /** Encapsulates the arguments of a specific model output */
-    static class FeatureArguments {
-
-        /** Optional arguments */
-        private final Optional<String> signature, output;
-
-        public FeatureArguments(Arguments arguments) {
-            this(optionalArgument(1, arguments),
-                 optionalArgument(2, arguments));
-        }
-
-        public FeatureArguments(Optional<String> signature, Optional<String> output) {
-            this.signature = signature;
-            this.output = output;
-        }
-
-        public Optional<String> signature() { return signature; }
-        public Optional<String> output() { return output; }
-
-        public String toName() {
-            return (signature.isPresent() ? signature.get() : "") +
-                   (output.isPresent() ? "." + output.get() : "");
-        }
-
-        private static Optional<String> optionalArgument(int argumentIndex, Arguments arguments) {
-            if (argumentIndex >= arguments.expressions().size())
-                return Optional.empty();
-            return Optional.of(asString(arguments.expressions().get(argumentIndex)));
-        }
-
-        public static String asString(ExpressionNode node) {
-            if ( ! (node instanceof ConstantNode))
-                throw new IllegalArgumentException("Expected a constant string as argument, but got '" + node);
-            return stripQuotes(((ConstantNode)node).sourceString());
-        }
-
-        private static String stripQuotes(String s) {
-            if ( ! isQuoteSign(s.codePointAt(0))) return s;
-            if ( ! isQuoteSign(s.codePointAt(s.length() - 1 )))
-                throw new IllegalArgumentException("argument [" + s + "] is missing endquote");
-            return s.substring(1, s.length()-1);
-        }
-
-        private static boolean isQuoteSign(int c) {
-            return c == '\'' || c == '"';
         }
 
     }

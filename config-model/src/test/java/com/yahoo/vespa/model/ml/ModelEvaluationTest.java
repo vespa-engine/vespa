@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.config.model;
+package com.yahoo.vespa.model.ml;
 
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
@@ -18,7 +18,6 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import org.junit.After;
 import org.junit.Test;
-import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.Set;
@@ -41,10 +40,9 @@ public class ModelEvaluationTest {
     }
 
     @Test
-    public void testMl_ServingApplication() throws SAXException, IOException {
-        ApplicationPackageTester tester = ApplicationPackageTester.create(appDir.toString());
-        VespaModel model = new VespaModel(tester.app());
-        assertHasMlModels(model);
+    public void testMl_ServingApplication() throws IOException {
+        ImportedModelTester tester = new ImportedModelTester("ml_serving", appDir);
+        assertHasMlModels(tester.createVespaModel());
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
         Path storedAppDir = appDir.append("copy");
@@ -53,9 +51,8 @@ public class ModelEvaluationTest {
             IOUtils.copy(appDir.append("services.xml").toString(), storedAppDir.append("services.xml").toString());
             IOUtils.copyDirectory(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                                   storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-            ApplicationPackageTester storedTester = ApplicationPackageTester.create(storedAppDir.toString());
-            VespaModel storedModel = new VespaModel(storedTester.app());
-            assertHasMlModels(storedModel);
+            ImportedModelTester storedTester = new ImportedModelTester("ml_serving", storedAppDir);
+            assertHasMlModels(storedTester.createVespaModel());
         }
         finally {
             IOUtils.recursiveDeleteDir(storedAppDir.toFile());
