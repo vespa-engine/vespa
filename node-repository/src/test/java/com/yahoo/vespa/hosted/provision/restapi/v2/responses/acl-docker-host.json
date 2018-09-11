@@ -79,5 +79,10 @@
       "trustedBy": "dockerhost1.yahoo.com"
     }
   ],
-  "trustedPorts": []
+  "trustedPorts": [
+    {
+      "port": 22,
+      "trustedBy": "dockerhost1.yahoo.com"
+    }
+  ]
 }

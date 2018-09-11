@@ -183,8 +183,10 @@ public class NodeRepository extends AbstractComponent {
         // For all cases below, trust:
         // - nodes in same application
         // - config servers
+        // - ssh
         node.allocation().ifPresent(allocation -> trustedNodes.addAll(candidates.owner(allocation.owner()).asList()));
         trustedNodes.addAll(candidates.nodeType(NodeType.config).asList());
+        trustedPorts.add(22);
 
         switch (node.type()) {
             case tenant:
