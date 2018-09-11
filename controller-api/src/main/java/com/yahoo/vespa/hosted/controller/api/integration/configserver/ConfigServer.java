@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
+import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -41,6 +42,7 @@ public interface ConfigServer {
 
     Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);
 
+    HttpResponse getLogs(DeploymentId deployment);
     /**
      * Set new status on en endpoint in one zone.
      *

@@ -10,6 +10,8 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.HostInfo;
+import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
@@ -36,6 +38,7 @@ import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
+import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -50,6 +53,7 @@ import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.model.VespaModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,6 +65,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -477,6 +482,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return convergeChecker.servicesToCheck(getApplication(applicationId), uri, timeout);
     }
 
+    // ---------------- Logs ----------------------------------------------------------------
+
+    public HttpResponse getLogs(ApplicationId applicationId) {
+        String logServerHostName = getLogServerHostname(applicationId);
+        LogRetriever logRetriever = new LogRetriever();
+        return logRetriever.getLogs(logServerHostName);
+    }
+
     // ---------------- Session operations ----------------------------------------------------------------
 
     /**
@@ -688,6 +701,29 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                        "Change(s) between active and new application that may require re-feed:\n" +
                                refeedActions.format());
         }
+    }
+
+    private String getLogServerHostname(ApplicationId applicationId) {
+        Application application = getApplication(applicationId);
+        VespaModel model = (VespaModel) application.getModel();
+        String logServerHostname = model.getAdmin().getLogserver().getHostName();
+        Collection<HostInfo> hostInfos = application.getModel().getHosts();
+
+        HostInfo logServerHostInfo = hostInfos.stream()
+                .filter(host -> host.getHostname().equals(logServerHostname))
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HostInfo"));
+
+        ServiceInfo serviceInfo = logServerHostInfo.getServices().stream()
+                .filter(service -> service.getServiceType().equals("container"))
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("No container running on logserver host"));
+
+        int port = serviceInfo.getPorts().stream()
+                .filter(portInfo -> portInfo.getTags().stream()
+                        .filter(tag -> tag.equalsIgnoreCase("http")).count() > 0)
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HTTP port"))
+                .getPort();
+
+        return logServerHostname + ":" + port + "/logs";
     }
 
     /** Returns version to use when deploying application in given environment */
