@@ -3,29 +3,20 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.ApplicationPackageTester;
-import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
-import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.yolean.Exceptions;
 import org.junit.After;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Optional;
 
 import com.yahoo.searchdefinition.processing.RankingExpressionWithTensorFlowTestCase.StoringApplicationPackage;
-import org.xml.sax.SAXException;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -45,7 +36,7 @@ public class RankingExpressionWithOnnxTestCase {
     }
 
     @Test
-    public void testGlobalOnnxModel() throws SAXException, IOException {
+    public void testGlobalOnnxModel() throws IOException {
         ImportedModelTester tester = new ImportedModelTester(name, applicationDir);
         VespaModel model = tester.createVespaModel();
         tester.assertLargeConstant(name + "_Variable_1", model, Optional.of(10L));
@@ -58,8 +49,8 @@ public class RankingExpressionWithOnnxTestCase {
             IOUtils.copy(applicationDir.append("services.xml").toString(), storedAppDir.append("services.xml").toString());
             IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                                   storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-            ApplicationPackageTester storedTester = ApplicationPackageTester.create(storedAppDir.toString());
-            VespaModel storedModel = new VespaModel(storedTester.app());
+            ImportedModelTester storedTester = new ImportedModelTester(name, storedAppDir);
+            VespaModel storedModel = storedTester.createVespaModel();
             tester.assertLargeConstant(name + "_Variable_1", storedModel, Optional.of(10L));
             tester.assertLargeConstant(name + "_Variable", storedModel, Optional.of(7840L));
         }

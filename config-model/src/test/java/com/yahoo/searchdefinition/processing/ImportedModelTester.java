@@ -19,6 +19,9 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 /**
+ * Helper for testing of imported models.
+ * More duplicated functionality across tests on imported models should be moved here
+ *
  * @author bratseth
  */
 public class ImportedModelTester {
