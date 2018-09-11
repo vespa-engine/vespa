@@ -53,7 +53,6 @@ import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.model.VespaModel;
 
 import java.io.File;
 import java.io.IOException;
@@ -485,7 +484,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     // ---------------- Logs ----------------------------------------------------------------
 
     public HttpResponse getLogs(ApplicationId applicationId) {
-        String logServerHostName = getLogServerHostname(applicationId);
+        String logServerHostName = getLogServerURI(applicationId);
         LogRetriever logRetriever = new LogRetriever();
         return logRetriever.getLogs(logServerHostName);
     }
@@ -703,27 +702,28 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    private String getLogServerHostname(ApplicationId applicationId) {
+    private String getLogServerURI(ApplicationId applicationId) {
         Application application = getApplication(applicationId);
-        VespaModel model = (VespaModel) application.getModel();
-        String logServerHostname = model.getAdmin().getLogserver().getHostName();
         Collection<HostInfo> hostInfos = application.getModel().getHosts();
 
         HostInfo logServerHostInfo = hostInfos.stream()
-                .filter(host -> host.getHostname().equals(logServerHostname))
-                .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HostInfo"));
+                .filter(host -> host.getServices().stream()
+                        .filter(serviceInfo ->
+                                        serviceInfo.getServiceType().equalsIgnoreCase("logserver"))
+                                .count() > 0)
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HostInfo for LogServer"));
 
-        ServiceInfo serviceInfo = logServerHostInfo.getServices().stream()
+        ServiceInfo containerServiceInfo = logServerHostInfo.getServices().stream()
                 .filter(service -> service.getServiceType().equals("container"))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("No container running on logserver host"));
 
-        int port = serviceInfo.getPorts().stream()
+        int port = containerServiceInfo.getPorts().stream()
                 .filter(portInfo -> portInfo.getTags().stream()
                         .filter(tag -> tag.equalsIgnoreCase("http")).count() > 0)
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HTTP port"))
                 .getPort();
 
-        return logServerHostname + ":" + port + "/logs";
+        return "http://" + logServerHostInfo.getHostname() + ":" + port + "/logs";
     }
 
     /** Returns version to use when deploying application in given environment */
