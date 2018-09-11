@@ -159,6 +159,12 @@ public class ReferenceFieldValueTestCase {
         ReferenceFieldValue rhs = new ReferenceFieldValue(referenceTypeFoo(), docId("id:ns:foo::toad"));
         assertEquals(lhs, rhs);
     }
+    @Test
+    public void references_with_same_type_and_no_id_are_equal() {
+        ReferenceFieldValue lhs = new ReferenceFieldValue(referenceTypeFoo());
+        ReferenceFieldValue rhs = new ReferenceFieldValue(referenceTypeFoo());
+        assertEquals(lhs, rhs);
+    }
 
     @Test
     public void hash_code_takes_type_and_id_into_account() {
@@ -200,6 +206,12 @@ public class ReferenceFieldValueTestCase {
     public void expose_wrapped_value_is_doc_id_for_non_empty_reference() {
         ReferenceFieldValue idRef = new ReferenceFieldValue(referenceTypeFoo(), docId("id:ns:foo::toad"));
         assertEquals(docId("id:ns:foo::toad"), idRef.getWrappedValue());
+    }
+
+    @Test
+    public void that_toString_provides_value() {
+        assertEquals("Optional.empty", new ReferenceFieldValue(referenceTypeFoo()).toString());
+        assertEquals("Optional[id:ns:foo::toad]", new ReferenceFieldValue(referenceTypeFoo(), docId("id:ns:foo::toad")).toString());
     }
 
 }
