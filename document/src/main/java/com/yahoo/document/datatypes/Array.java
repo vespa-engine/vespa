@@ -11,7 +11,14 @@ import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.document.serialization.XmlSerializationHelper;
 import com.yahoo.document.serialization.XmlStream;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.RandomAccess;
 
 /**
  * FieldValue which encapsulates a Array value
