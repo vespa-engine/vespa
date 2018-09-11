@@ -71,7 +71,6 @@ import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 import com.yahoo.vespa.hosted.controller.restapi.filter.SetBouncerPassthruHeaderFilter;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
-import com.yahoo.vespa.hosted.controller.tenant.Contact;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -938,16 +937,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
         if (tenant instanceof AthenzTenant) {
             AthenzTenant athenzTenant = (AthenzTenant) tenant;
-            Optional<Contact> contact = athenzTenant.contact();
-            if (!contact.isPresent()) { // TODO: Remove this fallback once all contacts have been written once
-                try {
-                    contact = controller.tenants().findContact(athenzTenant);
-                } catch (Exception e) {
-                    log.log(Level.WARNING, "Failed to fetch contact information for tenant " + athenzTenant +
-                                           ": " + Exceptions.toMessageString(e));
-                }
-            }
-            contact.ifPresent(c -> {
+            athenzTenant.contact().ifPresent(c -> {
                 object.setString("propertyUrl", c.propertyUrl().toString());
                 object.setString("contactsUrl", c.url().toString());
                 object.setString("issueCreationUrl", c.issueTrackerUrl().toString());

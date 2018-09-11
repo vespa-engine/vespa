@@ -132,7 +132,7 @@ public final class ControllerTester {
         this.organization = organization;
         this.controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
                                            athenzDb, nameService, artifactRepository, appStoreMock, entityService, buildService,
-                                           metricsService, routingGenerator, organization);
+                                           metricsService, routingGenerator);
 
         // Make root logger use time from manual clock
         configureDefaultLogHandler(handler -> handler.setFilter(
@@ -186,7 +186,7 @@ public final class ControllerTester {
     public final void createNewController() {
         controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry, athenzDb,
                                       nameService, artifactRepository, applicationStore, entityService, buildService, metricsService,
-                                      routingGenerator, organization);
+                                      routingGenerator);
     }
 
     /** Creates the given tenant and application and deploys it */
@@ -296,12 +296,11 @@ public final class ControllerTester {
                                                ArtifactRepository artifactRepository, ApplicationStore applicationStore,
                                                EntityService entityService,
                                                BuildService buildService, MetricsServiceMock metricsService,
-                                               RoutingGenerator routingGenerator, MockOrganization organization) {
+                                               RoutingGenerator routingGenerator) {
         Controller controller = new Controller(curator,
                                                rotationsConfig,
                                                gitHub,
                                                entityService,
-                                               organization,
                                                new MemoryGlobalRoutingService(),
                                                zoneRegistryMock,
                                                configServer,

@@ -10,11 +10,8 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Organization;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
-import com.yahoo.vespa.hosted.controller.tenant.Contact;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
@@ -44,13 +41,11 @@ public class TenantController {
     private final Controller controller;
     private final CuratorDb curator;
     private final AthenzClientFactory athenzClientFactory;
-    private final Organization organization;
 
-    public TenantController(Controller controller, CuratorDb curator, AthenzClientFactory athenzClientFactory, Organization organization) {
+    public TenantController(Controller controller, CuratorDb curator, AthenzClientFactory athenzClientFactory) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.curator = Objects.requireNonNull(curator, "curator must be non-null");
         this.athenzClientFactory = Objects.requireNonNull(athenzClientFactory, "athenzClientFactory must be non-null");
-        this.organization = Objects.requireNonNull(organization, "organization must be non-null");
 
         // Write all tenants to ensure persisted data uses latest serialization format
         Instant start = controller.clock().instant();
@@ -87,24 +82,6 @@ public class TenantController {
                                              userDomains.stream().anyMatch(domain -> inDomain(tenant, domain)))
                            .collect(Collectors.toList());
         }
-    }
-
-    /** Find contact information for given tenant */
-    // TODO: Move this to ContactInformationMaintainer
-    public Optional<Contact> findContact(AthenzTenant tenant) {
-        if (!tenant.propertyId().isPresent()) {
-            return Optional.empty();
-        }
-        List<List<String>> persons = organization.contactsFor(tenant.propertyId().get())
-                                                 .stream()
-                                                 .map(personList -> personList.stream()
-                                                                              .map(User::displayName)
-                                                                              .collect(Collectors.toList()))
-                                                 .collect(Collectors.toList());
-        return Optional.of(new Contact(organization.contactsUri(tenant.propertyId().get()),
-                                       organization.propertyUri(tenant.propertyId().get()),
-                                       organization.issueCreationUri(tenant.propertyId().get()),
-                                       persons));
     }
 
     /**
