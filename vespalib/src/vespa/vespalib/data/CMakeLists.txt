@@ -12,6 +12,7 @@ vespa_add_library(vespalib_vespalib_data OBJECT
     output.cpp
     output_writer.cpp
     simple_buffer.cpp
+    smart_buffer.cpp
     writable_memory.cpp
     DEPENDS
 )
