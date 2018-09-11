@@ -259,8 +259,8 @@ public class DocumentUpdateTestCase {
         update.addFieldUpdate(FieldUpdate.createAssign(field, new IntegerFieldValue(1)));
         update.addFieldUpdate(FieldUpdate.createAssign(field, new IntegerFieldValue(2)));
 
-        assertEquals(1, update.getFieldUpdates().size());
-        FieldUpdate fieldUpdate = update.getFieldUpdate(0);
+        assertEquals(1, update.getFieldUpdatesCollection().size());
+        FieldUpdate fieldUpdate = update.getFieldUpdate(field);
         assertNotNull(fieldUpdate);
         assertEquals(field, fieldUpdate.getField());
         assertEquals(2, fieldUpdate.getValueUpdates().size());
@@ -342,13 +342,16 @@ public class DocumentUpdateTestCase {
         assertEquals(new DocumentId("doc:update:test"), upd.getId());
         assertEquals(type, upd.getType());
 
-        FieldUpdate serAssignFU = upd.getFieldUpdate(0);
+        FieldUpdate serAssignFU = upd.getFieldUpdate(type.getField("intfield"));
         assertEquals(type.getField("intfield"), serAssignFU.getField());
         ValueUpdate serAssign = serAssignFU.getValueUpdate(0);
         assertEquals(ValueUpdate.ValueUpdateClassID.ASSIGN, serAssign.getValueUpdateClassID());
         assertEquals(new IntegerFieldValue(4), serAssign.getValue());
 
-        FieldUpdate serAddFU = upd.getFieldUpdate(2);
+        ValueUpdate serArith = serAssignFU.getValueUpdate(1);
+        assertEquals(ValueUpdate.ValueUpdateClassID.ARITHMETIC, serArith.getValueUpdateClassID());
+
+        FieldUpdate serAddFU = upd.getFieldUpdate(type.getField("arrayoffloatfield"));
         assertEquals(type.getField("arrayoffloatfield"), serAddFU.getField());
         ValueUpdate serAdd1 = serAddFU.getValueUpdate(0);
         assertEquals(ValueUpdate.ValueUpdateClassID.ADD, serAdd1.getValueUpdateClassID());
@@ -363,12 +366,7 @@ public class DocumentUpdateTestCase {
         FloatFieldValue addparam3 = (FloatFieldValue)serAdd3.getValue();
         assertEquals(new FloatFieldValue(-1.00f), addparam3);
 
-        FieldUpdate arithFU = upd.getFieldUpdate(3);
-        assertEquals(type.getField("intfield"), serAssignFU.getField());
-        ValueUpdate serArith = arithFU.getValueUpdate(0);
-        assertEquals(ValueUpdate.ValueUpdateClassID.ARITHMETIC, serArith.getValueUpdateClassID());
-
-        FieldUpdate wsetFU = upd.getFieldUpdate(4);
+        FieldUpdate wsetFU = upd.getFieldUpdate(type.getField("wsfield"));
         assertEquals(type.getField("wsfield"), wsetFU.getField());
         assertEquals(2, wsetFU.size());
         ValueUpdate mapUpd = wsetFU.getValueUpdate(0);
@@ -420,8 +418,8 @@ public class DocumentUpdateTestCase {
         barUpdate.addFieldUpdate(barField);
 
         fooUpdate.addAll(barUpdate);
-        assertEquals(1, fooUpdate.getFieldUpdates().size());
-        FieldUpdate fieldUpdate = fooUpdate.getFieldUpdate(0);
+        assertEquals(1, fooUpdate.getFieldUpdatesCollection().size());
+        FieldUpdate fieldUpdate = fooUpdate.getFieldUpdate(field);
         assertNotNull(fieldUpdate);
         assertEquals(field, fieldUpdate.getField());
         assertEquals(2, fieldUpdate.getValueUpdates().size());
@@ -493,14 +491,6 @@ public class DocumentUpdateTestCase {
 
 
         assertSame(fu1, documentUpdate.getFieldUpdate(f1));
-        assertSame(fu1, documentUpdate.getFieldUpdate(0));
-        assertSame(fu2, documentUpdate.getFieldUpdate(1));
-
-        documentUpdate.setFieldUpdate(0, fu2);
-        documentUpdate.setFieldUpdate(1, fu1);
-        assertEquals(2, documentUpdate.size());
-        assertSame(fu1, documentUpdate.getFieldUpdate(1));
-        assertSame(fu2, documentUpdate.getFieldUpdate(0));
 
         try {
             documentUpdate.setFieldUpdates(null);
@@ -515,12 +505,12 @@ public class DocumentUpdateTestCase {
 
         documentUpdate.setFieldUpdates(fus);
         assertEquals(2, documentUpdate.size());
-        assertSame(fu1, documentUpdate.getFieldUpdate(0));
-        assertSame(fu2, documentUpdate.getFieldUpdate(1));
+        assertSame(fu1, documentUpdate.getFieldUpdate(fu1.getField()));
+        assertSame(fu2, documentUpdate.getFieldUpdate(fu2.getField()));
 
-        documentUpdate.removeFieldUpdate(1);
+        documentUpdate.removeFieldUpdate(fu2.getField());
         assertEquals(1, documentUpdate.size());
-        assertSame(fu1, documentUpdate.getFieldUpdate(0));
+        assertSame(fu1, documentUpdate.getFieldUpdate(fu1.getField()));
 
 
         documentUpdate.toString();
