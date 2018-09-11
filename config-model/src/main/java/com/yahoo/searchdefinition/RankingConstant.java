@@ -58,7 +58,7 @@ public class RankingConstant {
 
     public void setType(TensorType tensorType) { this.tensorType = tensorType; }
 
-    /** Initiate sending of theis constant to some services over file distribution */
+    /** Initiate sending of this constant to some services over file distribution */
     public void sendTo(Collection<? extends AbstractService> services) {
         FileReference reference = (pathType == RankingConstant.PathType.FILE)
                                   ? FileSender.sendFileToServices(path, services)
