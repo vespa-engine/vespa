@@ -6,6 +6,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -104,6 +105,7 @@ public class FilebeatConfigProviderTest {
                 .system(system)
                 .logstashNodes(logstashNodes)
                 .cloud("mycloud")
+                .dockerNetworking(DockerNetworking.HOST_NETWORK)
                 .build();
     }
 

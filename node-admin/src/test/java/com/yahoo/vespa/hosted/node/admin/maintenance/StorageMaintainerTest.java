@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
@@ -41,8 +42,9 @@ public class StorageMaintainerTest {
             .region("us-east-1")
             .environment("prod")
             .system("main")
-            .pathResolver(new PathResolver())
             .cloud("mycloud")
+            .pathResolver(new PathResolver())
+            .dockerNetworking(DockerNetworking.HOST_NETWORK)
             .coredumpFeedEndpoint("http://domain.tld/docid")
             .build();
     private final DockerOperations docker = mock(DockerOperations.class);

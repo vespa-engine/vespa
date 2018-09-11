@@ -1,12 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.dockerapi;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Wrapper class for {@link com.github.dockerjava.api.model.Statistics} to prevent leaking from docker-java library.
  *
- * @author valerijf
+ * @author freva
  */
 public class ContainerStatsImpl implements Docker.ContainerStats {
     private final Map<String, Object> networks;
@@ -16,7 +18,8 @@ public class ContainerStatsImpl implements Docker.ContainerStats {
 
     public ContainerStatsImpl(Map<String, Object> networks, Map<String, Object> cpuStats,
                               Map<String, Object> memoryStats, Map<String, Object> blkioStats) {
-        this.networks = networks;
+        // Network stats are null when container uses host network
+        this.networks = Optional.ofNullable(networks).orElse(Collections.emptyMap());
         this.cpuStats = cpuStats;
         this.memoryStats = memoryStats;
         this.blkioStats = blkioStats;

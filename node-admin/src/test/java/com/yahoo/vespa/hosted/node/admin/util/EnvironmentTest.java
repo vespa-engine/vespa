@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -22,8 +23,9 @@ public class EnvironmentTest {
             .region("us-east-1")
             .environment("prod")
             .system("main")
-            .pathResolver(new PathResolver())
             .cloud("mycloud")
+            .pathResolver(new PathResolver())
+            .dockerNetworking(DockerNetworking.HOST_NETWORK)
             .build();
 
     @Test
