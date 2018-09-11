@@ -46,10 +46,10 @@ public class RankingExpressionWithOnnxTestCase {
 
     @Test
     public void testGlobalOnnxModel() throws SAXException, IOException {
-        ApplicationPackageTester tester = ApplicationPackageTester.create(applicationDir.toString());
-        VespaModel model = new VespaModel(tester.app());
-        assertLargeConstant(name + "_Variable_1", model, Optional.of(10L));
-        assertLargeConstant(name + "_Variable", model, Optional.of(7840L));
+        ImportedModelTester tester = new ImportedModelTester(name, applicationDir);
+        VespaModel model = new VespaModel(ApplicationPackageTester.create(applicationDir.toString()).app());
+        tester.assertLargeConstant(name + "_Variable_1", model, Optional.of(10L));
+        tester.assertLargeConstant(name + "_Variable", model, Optional.of(7840L));
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
         Path storedAppDir = applicationDir.append("copy");
@@ -60,8 +60,8 @@ public class RankingExpressionWithOnnxTestCase {
                                   storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             ApplicationPackageTester storedTester = ApplicationPackageTester.create(storedAppDir.toString());
             VespaModel storedModel = new VespaModel(storedTester.app());
-            assertLargeConstant(name + "_Variable_1", storedModel, Optional.of(10L));
-            assertLargeConstant(name + "_Variable", storedModel, Optional.of(7840L));
+            tester.assertLargeConstant(name + "_Variable_1", storedModel, Optional.of(10L));
+            tester.assertLargeConstant(name + "_Variable", storedModel, Optional.of(7840L));
         }
         finally {
             IOUtils.recursiveDeleteDir(storedAppDir.toFile());
@@ -260,31 +260,6 @@ public class RankingExpressionWithOnnxTestCase {
                        searchFromStored.search().rankingConstants().get( name + "_Variable"));
         } finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
-        }
-    }
-
-    /**
-     * Verifies that the constant with the given name exists, and - only if an expected size is given -
-     * that the content of the constant is available and has the expected size.
-     */
-    private void assertLargeConstant(String constantName, VespaModel model, Optional<Long> expectedSize) {
-        try {
-            Path constantApplicationPackagePath = Path.fromString("models.generated/" + name + "/constants").append(constantName + ".tbf");
-            RankingConstant rankingConstant = model.rankingConstants().get(constantName);
-            assertEquals(constantName, rankingConstant.getName());
-            assertTrue(rankingConstant.getFileName().endsWith(constantApplicationPackagePath.toString()));
-
-            if (expectedSize.isPresent()) {
-                Path constantPath = applicationDir.append(constantApplicationPackagePath);
-                assertTrue("Constant file '" + constantPath + "' has been written",
-                           constantPath.toFile().exists());
-                Tensor deserializedConstant = TypedBinaryFormat.decode(Optional.empty(),
-                                                                       GrowableByteBuffer.wrap(IOUtils.readFileBytes(constantPath.toFile())));
-                assertEquals(expectedSize.get().longValue(), deserializedConstant.size());
-            }
-        }
-        catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 

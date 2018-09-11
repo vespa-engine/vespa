@@ -61,8 +61,8 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @Test
     public void testGlobalTensorFlowModel() throws SAXException, IOException {
-        ApplicationPackageTester tester = ApplicationPackageTester.create(applicationDir.toString());
-        VespaModel model = new VespaModel(tester.app());
+        ImportedModelTester tester = new ImportedModelTester(name, applicationDir);
+        VespaModel model = new VespaModel(ApplicationPackageTester.create(applicationDir.toString()).app());
         assertLargeConstant(name + "_layer_Variable_1_read", model, Optional.of(10L));
         assertLargeConstant(name + "_layer_Variable_read", model, Optional.of(7840L));
 
@@ -75,8 +75,8 @@ public class RankingExpressionWithTensorFlowTestCase {
                                   storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             ApplicationPackageTester storedTester = ApplicationPackageTester.create(storedAppDir.toString());
             VespaModel storedModel = new VespaModel(storedTester.app());
-            assertLargeConstant(name + "_layer_Variable_1_read", storedModel, Optional.of(10L));
-            assertLargeConstant(name + "_layer_Variable_read", storedModel, Optional.of(7840L));
+            tester.assertLargeConstant(name + "_layer_Variable_1_read", storedModel, Optional.of(10L));
+            tester.assertLargeConstant(name + "_layer_Variable_read", storedModel, Optional.of(7840L));
         }
         finally {
             IOUtils.recursiveDeleteDir(storedAppDir.toFile());
