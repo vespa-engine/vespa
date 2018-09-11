@@ -3,8 +3,19 @@ package com.yahoo.jdisc.http.ssl;
 
 import com.yahoo.config.InnerNode;
 import com.yahoo.jdisc.http.ConnectorConfig;
+import com.yahoo.security.KeyStoreBuilder;
+import com.yahoo.security.KeyStoreType;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.X509CertificateUtils;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -34,9 +45,6 @@ public class DefaultSslContextFactoryProvider implements SslContextFactoryProvid
         ConnectorConfig.Ssl sslConfig = connectorConfig.ssl();
         SslContextFactory factory = new JDiscSslContextFactory();
 
-        sslKeyStoreConfigurator.configure(new DefaultSslKeyStoreContext(factory));
-        sslTrustStoreConfigurator.configure(new DefaultSslTrustStoreContext(factory));
-
         switch (sslConfig.clientAuth()) {
             case NEED_AUTH:
                 factory.setNeedClientAuth(true);
@@ -44,10 +52,6 @@ public class DefaultSslContextFactoryProvider implements SslContextFactoryProvid
             case WANT_AUTH:
                 factory.setWantClientAuth(true);
                 break;
-        }
-
-        if (!sslConfig.prng().isEmpty()) {
-            factory.setSecureRandomAlgorithm(sslConfig.prng());
         }
 
         // NOTE: All ciphers matching ^TLS_RSA_.*$ are disabled by default in Jetty 9.4.12+ (https://github.com/eclipse/jetty.project/issues/2807)
@@ -58,18 +62,59 @@ public class DefaultSslContextFactoryProvider implements SslContextFactoryProvid
                 .toArray(String[]::new);
         factory.setExcludeCipherSuites(excludedCiphersWithoutTlsRsaExclusion);
 
-        setStringArrayParameter(
-                factory, sslConfig.excludeProtocol(), ConnectorConfig.Ssl.ExcludeProtocol::name, SslContextFactory::setExcludeProtocols);
-        setStringArrayParameter(
-                factory, sslConfig.includeProtocol(), ConnectorConfig.Ssl.IncludeProtocol::name, SslContextFactory::setIncludeProtocols);
-        setStringArrayParameter(
-                factory, sslConfig.excludeCipherSuite(), ConnectorConfig.Ssl.ExcludeCipherSuite::name, SslContextFactory::setExcludeCipherSuites);
-        setStringArrayParameter(
-                factory, sslConfig.includeCipherSuite(), ConnectorConfig.Ssl.IncludeCipherSuite::name, SslContextFactory::setIncludeCipherSuites);
+        // Check if using new ssl syntax from services.xml
+        if (!sslConfig.privateKeyFile().isEmpty()) {
+            factory.setKeyStore(createKeystore(sslConfig));
+            if (!sslConfig.caCertificateFile().isEmpty()) {
+                factory.setTrustStore(createTruststore(sslConfig));
+            }
+            factory.setProtocol("TLS");
+        } else {
+            // TODO Remove SslKeyStoreConfigurator / SslTrustStoreConfigurator
+            sslKeyStoreConfigurator.configure(new DefaultSslKeyStoreContext(factory));
+            sslTrustStoreConfigurator.configure(new DefaultSslTrustStoreContext(factory));
 
-        factory.setKeyManagerFactoryAlgorithm(sslConfig.sslKeyManagerFactoryAlgorithm());
-        factory.setProtocol(sslConfig.protocol());
+            // TODO Remove support for deprecated ssl connector config
+            if (!sslConfig.prng().isEmpty()) {
+                factory.setSecureRandomAlgorithm(sslConfig.prng());
+            }
+
+            setStringArrayParameter(
+                    factory, sslConfig.excludeProtocol(), ConnectorConfig.Ssl.ExcludeProtocol::name, SslContextFactory::setExcludeProtocols);
+            setStringArrayParameter(
+                    factory, sslConfig.includeProtocol(), ConnectorConfig.Ssl.IncludeProtocol::name, SslContextFactory::setIncludeProtocols);
+            setStringArrayParameter(
+                    factory, sslConfig.excludeCipherSuite(), ConnectorConfig.Ssl.ExcludeCipherSuite::name, SslContextFactory::setExcludeCipherSuites);
+            setStringArrayParameter(
+                    factory, sslConfig.includeCipherSuite(), ConnectorConfig.Ssl.IncludeCipherSuite::name, SslContextFactory::setIncludeCipherSuites);
+
+            factory.setKeyManagerFactoryAlgorithm(sslConfig.sslKeyManagerFactoryAlgorithm());
+            factory.setProtocol(sslConfig.protocol());
+        }
         return factory;
+    }
+
+    private static KeyStore createTruststore(ConnectorConfig.Ssl sslConfig) {
+        List<X509Certificate> caCertificates = X509CertificateUtils.certificateListFromPem(readToString(sslConfig.caCertificateFile()));
+        KeyStoreBuilder truststoreBuilder = KeyStoreBuilder.withType(KeyStoreType.JKS);
+        for (int i = 0; i < caCertificates.size(); i++) {
+            truststoreBuilder.withCertificateEntry("entry-" + i, caCertificates.get(i));
+        }
+        return truststoreBuilder.build();
+    }
+
+    private static KeyStore createKeystore(ConnectorConfig.Ssl sslConfig) {
+        PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(readToString(sslConfig.privateKeyFile()));
+        List<X509Certificate> certificates = X509CertificateUtils.certificateListFromPem(readToString(sslConfig.certificateFile()));
+        return KeyStoreBuilder.withType(KeyStoreType.JKS).withKeyEntry("default", privateKey, certificates).build();
+    }
+
+    private static String readToString(String filename) {
+        try {
+            return new String(Files.readAllBytes(Paths.get(filename)));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static <T extends InnerNode> void setStringArrayParameter(SslContextFactory sslContextFactory,
