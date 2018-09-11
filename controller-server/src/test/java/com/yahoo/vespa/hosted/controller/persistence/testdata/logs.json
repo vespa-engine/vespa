@@ -3,13 +3,13 @@
   [
     {
       "id": 0,
-      "level": "info",
+      "type": "info",
       "at": 0,
       "message": "First"
     },
     {
       "id": 2,
-      "level": "debug",
+      "type": "debug",
       "at": 1000,
       "message": "Third"
     }
@@ -18,13 +18,13 @@
     [
       {
         "id": 1,
-        "level": "info",
+        "type": "info",
         "at": 0,
         "message": "Second"
       },
       {
         "id": 3,
-        "level": "warning",
+        "type": "warning",
         "at": 2000,
         "message": "Fourth"
       }

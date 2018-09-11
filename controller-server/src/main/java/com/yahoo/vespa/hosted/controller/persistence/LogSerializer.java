@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 class LogSerializer {
 
     private static final String idField = "id";
-    private static final String levelField = "level";
     private static final String typeField = "type";
     private static final String timestampField = "at";
     private static final String messageField = "message";
@@ -54,7 +53,6 @@ class LogSerializer {
     private void toSlime(LogEntry entry, Cursor entryObject) {
         entryObject.setLong(idField, entry.id());
         entryObject.setLong(timestampField, entry.at());
-        entryObject.setString(levelField, valueOf(entry.type())); // TODO jvenstad: Remove after one deployment.
         entryObject.setString(typeField, valueOf(entry.type()));
         entryObject.setString(messageField, entry.message());
     }
@@ -87,9 +85,7 @@ class LogSerializer {
     private LogEntry fromSlime(Inspector entryObject) {
         return new LogEntry(entryObject.field(idField).asLong(),
                             entryObject.field(timestampField).asLong(),
-                            entryObject.field(typeField).valid() // TODO jvenstad: Remove after one deployment.
-                                    ? typeOf(entryObject.field(typeField).asString())
-                                    : typeOf(entryObject.field(levelField).asString()),
+                            typeOf(entryObject.field(typeField).asString()),
                             entryObject.field(messageField).asString());
     }
 
@@ -105,7 +101,7 @@ class LogSerializer {
     }
 
     static Type typeOf(String type) {
-        switch (type.toLowerCase()) { // TODO jvenstad: Remove lowercasing after this has been deployed.
+        switch (type) {
             case "debug": return Type.debug;
             case "info": return Type.info;
             case "warning": return Type.warning;
