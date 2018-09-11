@@ -32,11 +32,21 @@ public class KeyUtilsTest {
     }
 
     @Test
-    public void can_serialize_deserialize_pem() {
+    public void can_serialize_and_deserialize_rsa_privatekey_using_pem_format() {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         String pem = KeyUtils.toPem(keyPair.getPrivate());
         assertThat(pem, containsString("BEGIN RSA PRIVATE KEY"));
         assertThat(pem, containsString("END RSA PRIVATE KEY"));
+        PrivateKey deserializedKey = KeyUtils.fromPemEncodedPrivateKey(pem);
+        assertEquals(keyPair.getPrivate(), deserializedKey);
+    }
+
+    @Test
+    public void can_serialize_and_deserialize_ec_privatekey_using_pem_format() {
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC);
+        String pem = KeyUtils.toPem(keyPair.getPrivate());
+        assertThat(pem, containsString("BEGIN EC PRIVATE KEY"));
+        assertThat(pem, containsString("END EC PRIVATE KEY"));
         PrivateKey deserializedKey = KeyUtils.fromPemEncodedPrivateKey(pem);
         assertEquals(keyPair.getPrivate(), deserializedKey);
     }
