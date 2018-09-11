@@ -296,38 +296,6 @@ public class DeploymentSpecTest {
         }
     }
 
-    @Test
-    public void deploymentSpecWithBlockUpgrade() {
-        StringReader r = new StringReader(
-                "<deployment>\n" +
-                "  <block-upgrade days='mon,tue' hours='15-16'/>\n" +
-                // version=false is ignored for block-upgrade
-                "  <block-upgrade version='false' days='sat' hours='10' time-zone='CET'/>\n" +
-                "  <prod>\n" +
-                "    <region active='true'>us-west-1</region>\n" +
-                "  </prod>\n" +
-                "</deployment>"
-        );
-        DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(2, spec.changeBlocker().size());
-        assertTrue(spec.changeBlocker().get(0).blocksVersions());
-        assertFalse(spec.changeBlocker().get(0).blocksRevisions());
-        assertEquals(ZoneId.of("UTC"), spec.changeBlocker().get(0).window().zone());
-
-        assertTrue(spec.changeBlocker().get(1).blocksVersions());
-        assertFalse(spec.changeBlocker().get(1).blocksRevisions());
-        assertEquals(ZoneId.of("CET"), spec.changeBlocker().get(1).window().zone());
-
-        assertTrue(spec.canUpgradeAt(Instant.parse("2017-09-18T14:15:30.00Z")));
-        assertFalse(spec.canUpgradeAt(Instant.parse("2017-09-18T15:15:30.00Z")));
-        assertFalse(spec.canUpgradeAt(Instant.parse("2017-09-18T16:15:30.00Z")));
-        assertTrue(spec.canUpgradeAt(Instant.parse("2017-09-18T17:15:30.00Z")));
-
-        assertTrue(spec.canUpgradeAt(Instant.parse("2017-09-23T09:15:30.00Z")));
-        assertFalse(spec.canUpgradeAt(Instant.parse("2017-09-23T08:15:30.00Z"))); // 10 in CET
-        assertTrue(spec.canUpgradeAt(Instant.parse("2017-09-23T10:15:30.00Z")));
-    }
-
     @Test(expected = IllegalArgumentException.class)
     public void deploymentSpecWithIllegallyOrderedDeploymentSpec1() {
         StringReader r = new StringReader(
