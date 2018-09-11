@@ -179,6 +179,7 @@ TEST("auto alloced mmap alloc can not be extended if no room") {
 }
 
 TEST("mmap alloc can be extended if room") {
+    Alloc dummy = Alloc::allocMMap(100);
     Alloc reserved = Alloc::allocMMap(100);
     Alloc buf = Alloc::allocMMap(100);
 
@@ -187,6 +188,7 @@ TEST("mmap alloc can be extended if room") {
 }
 
 TEST("mmap alloc can not be extended if no room") {
+    Alloc dummy = Alloc::allocMMap(100);
     Alloc reserved = Alloc::allocMMap(100);
     Alloc buf = Alloc::allocMMap(100);
 
