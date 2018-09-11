@@ -102,6 +102,7 @@ import com.yahoo.searchlib.expression.AddFunctionNode;
 import com.yahoo.searchlib.expression.AggregationRefNode;
 import com.yahoo.searchlib.expression.AndFunctionNode;
 import com.yahoo.searchlib.expression.ArrayAtLookupNode;
+import com.yahoo.searchlib.expression.AttributeMapLookupNode;
 import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.BucketResultNode;
 import com.yahoo.searchlib.expression.CatFunctionNode;
@@ -265,7 +266,14 @@ class ExpressionConverter {
             return addArguments(new AndFunctionNode(), (AndFunction)exp);
         }
         if (exp instanceof AttributeMapLookupValue) {
-            return new AttributeNode(((AttributeMapLookupValue)exp).getAttributeName());
+            AttributeMapLookupValue mapLookup = (AttributeMapLookupValue) exp;
+            if (mapLookup.hasKeySourceAttribute()) {
+                return AttributeMapLookupNode.fromKeySourceAttribute(mapLookup.getAttributeName(),
+                        mapLookup.getKeyAttribute(), mapLookup.getValueAttribute(), mapLookup.getKeySourceAttribute());
+            } else {
+                return AttributeMapLookupNode.fromKey(mapLookup.getAttributeName(),
+                        mapLookup.getKeyAttribute(), mapLookup.getValueAttribute(), mapLookup.getKey());
+            }
         }
         if (exp instanceof AttributeValue) {
             return new AttributeNode(((AttributeValue)exp).getAttributeName());
