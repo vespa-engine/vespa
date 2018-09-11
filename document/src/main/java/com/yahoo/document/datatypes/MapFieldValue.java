@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
-import com.yahoo.collections.CollectionComparator;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.FieldPath;
@@ -12,6 +11,7 @@ import com.yahoo.document.serialization.XmlSerializationHelper;
 import com.yahoo.document.serialization.XmlStream;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
@@ -81,7 +81,7 @@ public class MapFieldValue<K extends FieldValue, V extends FieldValue> extends C
      */
     public boolean equals(Object o) {
         if (!(o instanceof MapFieldValue)) return false;
-        return super.equals(o) && values.equals(((MapFieldValue) o).values);
+        return super.equals(o) && entrySet().equals(((MapFieldValue) o).entrySet());
     }
 
     @Override
@@ -290,8 +290,8 @@ public class MapFieldValue<K extends FieldValue, V extends FieldValue> extends C
         }
         Map.Entry<K,V> [] entries = entrySet().toArray(new Map.Entry[size()]);
         Map.Entry<K,V> [] rhsEntries = rhs.entrySet().toArray(new Map.Entry[rhs.size()]);
-        Arrays.sort(entries, (Map.Entry<K,V> a, Map.Entry<K,V> b) -> { return a.getKey().compareTo(b.getKey()); });
-        Arrays.sort(rhsEntries, (Map.Entry<K,V> a, Map.Entry<K,V> b) -> { return a.getKey().compareTo(b.getKey()); });
+        Arrays.sort(entries, Comparator.comparing(Map.Entry<K,V>::getKey));
+        Arrays.sort(rhsEntries, Comparator.comparing(Map.Entry<K,V>::getKey));
         for (int i = 0; i < entries.length; i++) {
             comp = entries[i].getKey().compareTo(rhsEntries[i].getKey());
             if (comp != 0) return comp;
