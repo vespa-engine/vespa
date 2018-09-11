@@ -40,11 +40,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -335,7 +333,7 @@ public class InternalStepRunner implements StepRunner {
         }
 
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
-        if (testerEndpoint.isPresent()) {
+        if (testerEndpoint.isPresent() && controller.jobController().cloud().ready(testerEndpoint.get())) {
             logger.log("Starting tests ...");
             controller.jobController().cloud().startTests(testerEndpoint.get(),
                                                           TesterCloud.Suite.of(id.type()),
@@ -358,13 +356,16 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(aborted);
         }
 
-        URI testerEndpoint = controller.jobController().testerEndpoint(id)
-                                       .orElseThrow(() -> new NoSuchElementException("Endpoint for tester vanished again before tests were complete!"));
+        Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
+        if ( ! testerEndpoint.isPresent()) {
+            logger.log("Endpoints for tester not found -- trying again later.");
+            return Optional.empty();
+        }
 
         controller.jobController().updateTestLog(id);
 
         RunStatus status;
-        TesterCloud.Status testStatus = controller.jobController().cloud().getStatus(testerEndpoint);
+        TesterCloud.Status testStatus = controller.jobController().cloud().getStatus(testerEndpoint.get());
         switch (testStatus) {
             case NOT_STARTED:
                 throw new IllegalStateException("Tester reports tests not started, even though they should have!");
@@ -559,16 +560,13 @@ public class InternalStepRunner implements StepRunner {
         }
 
         private void log(Level level, String message, Throwable thrown) {
-            LogRecord record = new LogRecord(level, prefix + message);
-            record.setThrown(thrown);
-            logger.log(record);
+            logger.log(level, message, thrown);
 
             if (thrown != null) {
                 ByteArrayOutputStream traceBuffer = new ByteArrayOutputStream();
                 thrown.printStackTrace(new PrintStream(traceBuffer));
                 message += "\n" + traceBuffer;
             }
-
             controller.jobController().log(id, step, level, message);
         }
 
