@@ -70,9 +70,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         log.log(LogLevel.DEBUG, "Configuring document manager with " + config.datatype().size() + " data types.");
         ArrayList<DocumentmanagerConfig.Datatype> failed = new ArrayList<>();
         failed.addAll(config.datatype());
-        int failCounter = 30;
         while (!failed.isEmpty()) {
-            --failCounter;
             ArrayList<DocumentmanagerConfig.Datatype> tmp = failed;
             failed = new ArrayList<>();
             for (int i = 0; i < tmp.size(); i++) {
@@ -82,9 +80,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                     registerTypeIdMapping(config, manager, thisDataType, id);
                 } catch (IllegalArgumentException e) {
                     failed.add(thisDataType);
-                    if (failCounter < 0) {
-                        throw e;
-                    }
                 }
             }
         }
