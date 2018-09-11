@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
+import com.yahoo.config.model.ApplicationPackageTester;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
@@ -8,6 +9,7 @@ import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.vespa.model.VespaModel;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -27,6 +29,18 @@ public class ImportedModelTester {
     public ImportedModelTester(String modelName, Path applicationDir) {
         this.modelName = modelName;
         this.applicationDir = applicationDir;
+    }
+
+    public VespaModel createVespaModel() {
+        try {
+            return new VespaModel(ApplicationPackageTester.create(applicationDir.toString()).app());
+        }
+        catch (SAXException e) {
+            throw new RuntimeException(e);
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

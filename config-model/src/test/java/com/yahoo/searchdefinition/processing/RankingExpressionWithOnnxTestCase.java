@@ -47,7 +47,7 @@ public class RankingExpressionWithOnnxTestCase {
     @Test
     public void testGlobalOnnxModel() throws SAXException, IOException {
         ImportedModelTester tester = new ImportedModelTester(name, applicationDir);
-        VespaModel model = new VespaModel(ApplicationPackageTester.create(applicationDir.toString()).app());
+        VespaModel model = tester.createVespaModel();
         tester.assertLargeConstant(name + "_Variable_1", model, Optional.of(10L));
         tester.assertLargeConstant(name + "_Variable", model, Optional.of(7840L));
 

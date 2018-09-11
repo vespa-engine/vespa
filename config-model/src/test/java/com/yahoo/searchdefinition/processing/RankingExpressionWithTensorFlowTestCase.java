@@ -62,7 +62,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     @Test
     public void testGlobalTensorFlowModel() throws SAXException, IOException {
         ImportedModelTester tester = new ImportedModelTester(name, applicationDir);
-        VespaModel model = new VespaModel(ApplicationPackageTester.create(applicationDir.toString()).app());
+        VespaModel model = tester.createVespaModel();
         assertLargeConstant(name + "_layer_Variable_1_read", model, Optional.of(10L));
         assertLargeConstant(name + "_layer_Variable_read", model, Optional.of(7840L));
 
