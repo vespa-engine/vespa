@@ -52,7 +52,7 @@ class FastSearcherTester {
         vipStatus = new VipStatus(clustersStatus);
         mockFS4ResourcePool = new MockFS4ResourcePool();
         mockDispatcher = new MockDispatcher(searchNodes, mockFS4ResourcePool, containerClusterSize, vipStatus);
-        fastSearcher = new FastSearcher(new MockBackend(Optional.empty(), selfHostname, 0L, true),
+        fastSearcher = new FastSearcher(new MockBackend(selfHostname, 0L, true),
                                         mockFS4ResourcePool,
                                         mockDispatcher,
                                         new SummaryParameters(null),

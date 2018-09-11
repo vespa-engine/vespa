@@ -9,12 +9,9 @@ import com.yahoo.container.search.Fs4Config;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.ConnectionPool;
 import com.yahoo.fs4.mplex.ListenerPool;
-import com.yahoo.io.Connection;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -61,14 +58,11 @@ public class FS4ResourcePool extends AbstractComponent {
     }
 
     public Backend getBackend(String host, int port) {
-        return getBackend(host, port, Optional.empty());
-    }
-    public Backend getBackend(String host, int port, Optional<Integer> distributionKey) {
         String key = host + ":" + port;
         synchronized (connectionPoolMap) {
             Backend pool = connectionPoolMap.get(key);
             if (pool == null) {
-                pool = new Backend(host, port, Server.get().getServerDiscriminator(), listeners, new ConnectionPool(timer), distributionKey);
+                pool = new Backend(host, port, Server.get().getServerDiscriminator(), listeners, new ConnectionPool(timer));
                 connectionPoolMap.put(key, pool);
             }
             return pool;

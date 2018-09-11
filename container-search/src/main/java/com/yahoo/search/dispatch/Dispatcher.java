@@ -288,7 +288,8 @@ public class Dispatcher extends AbstractComponent {
 
         return groupInCluster.flatMap(group -> {
             if(group.nodes().size() == 1) {
-                query.trace(false, 2, "Dispatching directly (anywhere) to ", group);
+                SearchCluster.Node node = group.nodes().iterator().next();
+                query.trace(false, 2, "Dispatching internally to ", group, " (", node.toString(), ")");
                 return Optional.of(new DispatchedChannel(fs4ResourcePool, loadBalancer, group));
             } else {
                 loadBalancer.releaseGroup(group);
