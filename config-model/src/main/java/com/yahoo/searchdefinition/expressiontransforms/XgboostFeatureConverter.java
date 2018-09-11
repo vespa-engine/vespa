@@ -2,13 +2,13 @@
 package com.yahoo.searchdefinition.expressiontransforms;
 
 import com.yahoo.path.Path;
-import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.integration.ml.XGBoostImporter;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
+import com.yahoo.vespa.model.ml.ConvertedModel;
+import com.yahoo.vespa.model.ml.FeatureArguments;
 
 import java.io.UncheckedIOException;
 import java.util.HashMap;
@@ -41,7 +41,7 @@ public class XgboostFeatureConverter extends ExpressionTransformer<RankProfileTr
         if ( ! feature.getName().equals("xgboost")) return feature;
 
         try {
-            Path modelPath = Path.fromString(ConvertedModel.FeatureArguments.asString(feature.getArguments().expressions().get(0)));
+            Path modelPath = Path.fromString(FeatureArguments.asString(feature.getArguments().expressions().get(0)));
             ConvertedModel convertedModel =
                     convertedXGBoostModels.computeIfAbsent(modelPath, __ -> ConvertedModel.fromSourceOrStore(modelPath, context));
             return convertedModel.expression(asFeatureArguments(feature.getArguments()), context);
@@ -50,11 +50,11 @@ public class XgboostFeatureConverter extends ExpressionTransformer<RankProfileTr
         }
     }
 
-    private ConvertedModel.FeatureArguments asFeatureArguments(Arguments arguments) {
+    private FeatureArguments asFeatureArguments(Arguments arguments) {
         if (arguments.size() != 1)
             throw new IllegalArgumentException("An xgboost node must take a single argument pointing to " +
                                                "the xgboost model directory under [application]/models");
-        return new ConvertedModel.FeatureArguments(arguments);
+        return new FeatureArguments(arguments);
     }
 
 }

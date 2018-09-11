@@ -40,12 +40,7 @@ public class RankingConstants {
 
     /** Initiate sending of these constants to some services over file distribution */
     public void sendTo(Collection<? extends AbstractService> services) {
-        for (RankingConstant constant : constants.values()) {
-            FileReference reference = (constant.getPathType() == RankingConstant.PathType.FILE)
-                                      ? FileSender.sendFileToServices(constant.getFileName(), services)
-                                      : FileSender.sendUriToServices(constant.getUri(), services);
-            constant.setFileReference(reference.value());
-        }
+        constants.values().forEach(constant -> constant.sendTo(services));
     }
 
 }

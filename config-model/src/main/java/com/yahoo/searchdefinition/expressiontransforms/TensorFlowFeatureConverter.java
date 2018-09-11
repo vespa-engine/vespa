@@ -7,8 +7,9 @@ import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
+import com.yahoo.vespa.model.ml.ConvertedModel;
+import com.yahoo.vespa.model.ml.FeatureArguments;
 
-import java.io.File;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +40,7 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         if ( ! feature.getName().equals("tensorflow")) return feature;
 
         try {
-            Path modelPath = Path.fromString(ConvertedModel.FeatureArguments.asString(feature.getArguments().expressions().get(0)));
+            Path modelPath = Path.fromString(FeatureArguments.asString(feature.getArguments().expressions().get(0)));
             ConvertedModel convertedModel =
                     convertedTensorFlowModels.computeIfAbsent(modelPath, __ -> ConvertedModel.fromSourceOrStore(modelPath, context));
             return convertedModel.expression(asFeatureArguments(feature.getArguments()), context);
@@ -49,14 +50,14 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
         }
     }
 
-    private ConvertedModel.FeatureArguments asFeatureArguments(Arguments arguments) {
+    private FeatureArguments asFeatureArguments(Arguments arguments) {
         if (arguments.isEmpty())
             throw new IllegalArgumentException("A tensorflow node must take an argument pointing to " +
                                                "the tensorflow model directory under [application]/models");
         if (arguments.expressions().size() > 3)
             throw new IllegalArgumentException("A tensorflow feature can have at most 3 arguments");
 
-        return new ConvertedModel.FeatureArguments(arguments);
+        return new FeatureArguments(arguments);
     }
 
 }

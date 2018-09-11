@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.config.model;
+package com.yahoo.vespa.model.ml;
 
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
@@ -18,7 +18,6 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import org.junit.Test;
-import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.Set;
@@ -35,22 +34,20 @@ import static org.junit.Assert.assertTrue;
 public class ModelEvaluationTest {
 
     @Test
-    public void testMl_serving() throws SAXException, IOException {
+    public void testMl_serving() throws IOException {
         Path appDir = Path.fromString("src/test/cfg/application/ml_serving");
         Path storedAppDir = appDir.append("copy");
         try {
-            ApplicationPackageTester tester = ApplicationPackageTester.create(appDir.toString());
-            VespaModel model = new VespaModel(tester.app());
-            assertHasMlModels(model);
+            ImportedModelTester tester = new ImportedModelTester("ml_serving", appDir);
+            assertHasMlModels(tester.createVespaModel());
 
             // At this point the expression is stored - copy application to another location which do not have a models dir
             storedAppDir.toFile().mkdirs();
             IOUtils.copy(appDir.append("services.xml").toString(), storedAppDir.append("services.xml").toString());
             IOUtils.copyDirectory(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                                   storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-            ApplicationPackageTester storedTester = ApplicationPackageTester.create(storedAppDir.toString());
-            VespaModel storedModel = new VespaModel(storedTester.app());
-            assertHasMlModels(storedModel);
+            ImportedModelTester storedTester = new ImportedModelTester("ml_serving", storedAppDir);
+            assertHasMlModels(storedTester.createVespaModel());
         }
         finally {
             IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
@@ -60,11 +57,11 @@ public class ModelEvaluationTest {
 
     /** Tests that we do not load models (which will waste memory) when not requested */
     @Test
-    public void testMl_serving_not_activated() throws SAXException, IOException {
+    public void testMl_serving_not_activated() throws IOException {
         Path appDir = Path.fromString("src/test/cfg/application/ml_serving_not_activated");
         try {
-            ApplicationPackageTester tester = ApplicationPackageTester.create(appDir.toString());
-            VespaModel model = new VespaModel(tester.app());
+            ImportedModelTester tester = new ImportedModelTester("ml_serving", appDir);
+            VespaModel model = tester.createVespaModel();
             ContainerCluster cluster = model.getContainerClusters().get("container");
             assertNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluator.class.getName())));
 
