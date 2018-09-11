@@ -139,7 +139,7 @@ public abstract class ModelImporter {
 
         Value value = operation.getConstantValue().orElseThrow(() ->
                 new IllegalArgumentException("Operation '" + operation.vespaName() + "' " +
-                        "is constant but does not have a value."));
+                                             "is constant but does not have a value."));
         if ( ! (value instanceof TensorValue)) {
             return operation.function(); // scalar values are inserted directly into the expression
         }
