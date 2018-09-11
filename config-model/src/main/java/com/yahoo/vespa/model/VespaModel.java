@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.collections.Pair;
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
@@ -33,7 +32,7 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstants;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RankProfileList;
-import com.yahoo.searchdefinition.expressiontransforms.ConvertedModel;
+import com.yahoo.vespa.model.ml.ConvertedModel;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
@@ -54,6 +53,7 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributor;
 import com.yahoo.vespa.model.generic.service.ServiceCluster;
+import com.yahoo.vespa.model.ml.ModelName;
 import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
@@ -233,7 +233,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             for (ImportedModel model : importedModels.all()) {
                 RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry);
                 rankProfileRegistry.add(profile);
-                ConvertedModel convertedModel = ConvertedModel.fromSource(new ConvertedModel.ModelName(model.name()),
+                ConvertedModel convertedModel = ConvertedModel.fromSource(new ModelName(model.name()),
                                                                           model.name(), profile, queryProfiles, model);
                 for (Map.Entry<String, RankingExpression> entry : convertedModel.expressions().entrySet()) {
                     profile.addMacro(entry.getKey(), false).setRankingExpression(entry.getValue());
@@ -246,7 +246,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                 String modelName = generatedModelDir.getPath().last();
                 RankProfile profile = new RankProfile(modelName, this, rankProfileRegistry);
                 rankProfileRegistry.add(profile);
-                ConvertedModel convertedModel = ConvertedModel.fromStore(new ConvertedModel.ModelName(modelName), modelName, profile);
+                ConvertedModel convertedModel = ConvertedModel.fromStore(new ModelName(modelName), modelName, profile);
                 for (Map.Entry<String, RankingExpression> entry : convertedModel.expressions().entrySet()) {
                     profile.addMacro(entry.getKey(), false).setRankingExpression(entry.getValue());
                 }

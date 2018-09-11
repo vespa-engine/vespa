@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.searchdefinition.processing;
+package com.yahoo.vespa.model.ml;
 
 import com.yahoo.config.model.ApplicationPackageTester;
 import com.yahoo.io.GrowableByteBuffer;
@@ -38,10 +38,7 @@ public class ImportedModelTester {
         try {
             return new VespaModel(ApplicationPackageTester.create(applicationDir.toString()).app());
         }
-        catch (SAXException e) {
-            throw new RuntimeException(e);
-        }
-        catch (IOException e) {
+        catch (SAXException | IOException e) {
             throw new RuntimeException(e);
         }
     }

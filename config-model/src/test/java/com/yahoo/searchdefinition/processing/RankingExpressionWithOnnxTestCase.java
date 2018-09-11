@@ -1,5 +1,4 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -8,6 +7,7 @@ import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.ml.ImportedModelTester;
 import com.yahoo.yolean.Exceptions;
 import org.junit.After;
 import org.junit.Test;

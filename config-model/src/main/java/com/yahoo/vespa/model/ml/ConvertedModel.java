@@ -1,4 +1,5 @@
-package com.yahoo.searchdefinition.expressiontransforms;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.model.ml;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.collections.Pair;
@@ -11,6 +12,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.FeatureNames;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankingConstant;
+import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
@@ -18,7 +20,6 @@ import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
-import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
@@ -725,103 +726,6 @@ public class ConvertedModel {
         public Path macrosPath() {
             return storedModelReplicatedPath().append("macros.txt");
         }
-
-    }
-
-    /** Encapsulates the arguments of a specific model output */
-    static class FeatureArguments {
-
-        /** Optional arguments */
-        private final Optional<String> signature, output;
-
-        public FeatureArguments(Arguments arguments) {
-            this(optionalArgument(1, arguments),
-                 optionalArgument(2, arguments));
-        }
-
-        public FeatureArguments(Optional<String> signature, Optional<String> output) {
-            this.signature = signature;
-            this.output = output;
-        }
-
-        public Optional<String> signature() { return signature; }
-        public Optional<String> output() { return output; }
-
-        public String toName() {
-            return (signature.isPresent() ? signature.get() : "") +
-                   (output.isPresent() ? "." + output.get() : "");
-        }
-
-        private static Optional<String> optionalArgument(int argumentIndex, Arguments arguments) {
-            if (argumentIndex >= arguments.expressions().size())
-                return Optional.empty();
-            return Optional.of(asString(arguments.expressions().get(argumentIndex)));
-        }
-
-        public static String asString(ExpressionNode node) {
-            if ( ! (node instanceof ConstantNode))
-                throw new IllegalArgumentException("Expected a constant string as argument, but got '" + node);
-            return stripQuotes(((ConstantNode)node).sourceString());
-        }
-
-        private static String stripQuotes(String s) {
-            if ( ! isQuoteSign(s.codePointAt(0))) return s;
-            if ( ! isQuoteSign(s.codePointAt(s.length() - 1 )))
-                throw new IllegalArgumentException("argument [" + s + "] is missing endquote");
-            return s.substring(1, s.length()-1);
-        }
-
-        private static boolean isQuoteSign(int c) {
-            return c == '\'' || c == '"';
-        }
-
-    }
-
-    /**
-     * Models used in a rank profile has the rank profile name as name space while gGlobal model names have no namespace
-     */
-    public static class ModelName {
-
-        /** The namespace, or null if none */
-        private String namespace;
-        private String name;
-        private String fullName;
-
-        public ModelName(String name) {
-            this(null, name);
-        }
-
-        public ModelName(String namespace, Path modelPath) {
-            this(namespace, modelPath.toString().replace("/", "_"));
-        }
-
-        private ModelName(String namespace, String name) {
-            this.namespace = namespace;
-            this.name = name;
-            this.fullName = (namespace != null ? namespace + "." : "") + name;
-        }
-
-        /** Returns true if the local name of this is not in a namespace */
-        public boolean isGlobal() { return namespace == null; }
-
-        /** Returns the namespace, or null if this is global */
-        public String namespace() { return namespace; }
-        public String localName() { return name; }
-        public String fullName() { return fullName; }
-
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) return true;
-            if ( ! (o instanceof ModelName)) return false;
-            return ((ModelName)o).fullName.equals(this.fullName);
-        }
-
-        @Override
-        public int hashCode() { return fullName.hashCode(); }
-
-        @Override
-        public String toString() { return fullName; }
 
     }
 
