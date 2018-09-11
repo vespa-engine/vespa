@@ -43,7 +43,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -561,16 +560,13 @@ public class InternalStepRunner implements StepRunner {
         }
 
         private void log(Level level, String message, Throwable thrown) {
-            LogRecord record = new LogRecord(level, prefix + message);
-            record.setThrown(thrown);
-            logger.log(record);
+            logger.log(level, message, thrown);
 
             if (thrown != null) {
                 ByteArrayOutputStream traceBuffer = new ByteArrayOutputStream();
                 thrown.printStackTrace(new PrintStream(traceBuffer));
                 message += "\n" + traceBuffer;
             }
-
             controller.jobController().log(id, step, level, message);
         }
 
