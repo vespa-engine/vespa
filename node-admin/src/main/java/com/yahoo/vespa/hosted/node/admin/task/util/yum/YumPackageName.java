@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
+import com.google.common.base.Strings;
+
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,6 +58,8 @@ public class YumPackageName {
         private Optional<String> release = Optional.empty();
         private Optional<String> architecture = Optional.empty();
 
+        public Builder() { }
+
         public Builder(String name) {
             this.name = name;
         }
@@ -83,6 +87,9 @@ public class YumPackageName {
                            Optional<String> version,
                            Optional<String> release,
                            Optional<String> architecture) {
+        if (Strings.isNullOrEmpty(name))
+            throw new IllegalArgumentException("name cannot be null or empty");
+
         this.epoch = epoch;
         this.name = name;
         this.version = version;
@@ -235,6 +242,14 @@ public class YumPackageName {
                 "*");
     }
 
+    public boolean isSubsetOf(YumPackageName other) {
+        return Objects.equals(name, other.name) &&
+                (!epoch.isPresent() || Objects.equals(epoch, other.epoch)) &&
+                (!version.isPresent() || Objects.equals(version, other.version)) &&
+                (!release.isPresent() || Objects.equals(release, other.release)) &&
+                (!architecture.isPresent() || Objects.equals(architecture, other.architecture));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -249,7 +264,6 @@ public class YumPackageName {
 
     @Override
     public int hashCode() {
-
         return Objects.hash(epoch, name, version, release, architecture);
     }
 }

@@ -9,6 +9,7 @@ import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class YumPackageNameTest {
@@ -148,5 +149,23 @@ public class YumPackageNameTest {
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), containsStringIgnoringCase("epoch"));
         }
+    }
+
+    @Test
+    public void testSubset() {
+        YumPackageName yumPackage = new YumPackageName.Builder("docker")
+                .setVersion("1.12.6")
+                .build();
+
+        assertTrue(yumPackage.isSubsetOf(yumPackage));
+        assertTrue(yumPackage.isSubsetOf(new YumPackageName.Builder("docker")
+                .setVersion("1.12.6")
+                .setEpoch("2")
+                .setRelease("71.git3e8e77d.el7.centos.1")
+                .setArchitecture("x86_64")
+                .build()));
+        assertFalse(yumPackage.isSubsetOf(new YumPackageName.Builder("docker")
+                .setVersion("1.13.1")
+                .build()));
     }
 }
