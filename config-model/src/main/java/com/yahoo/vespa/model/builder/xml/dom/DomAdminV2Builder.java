@@ -90,10 +90,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         if (standaloneZooKeeper) {
             parent = new ClusterControllerCluster(parent, "standalone");
         }
-        ContainerCluster cluster = new ContainerCluster(parent,
-                                                        "cluster-controllers",
-                                                        "cluster-controllers",
-                                                        new ClusterControllerClusterVerifier());
+        ContainerCluster cluster = new ContainerCluster(parent, "cluster-controllers", "cluster-controllers", new ClusterControllerClusterVerifier(), RankProfileList.empty);
         ContainerModelBuilder.addDefaultHandler_legacyBuilder(cluster);
 
         List<Container> containers = new ArrayList<>();

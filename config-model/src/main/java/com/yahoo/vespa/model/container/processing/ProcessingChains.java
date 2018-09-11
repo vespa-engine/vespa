@@ -12,14 +12,14 @@ import java.util.List;
  * Root config producer for processing
  *
  * @author  bratseth
+ * @since   5.1.6
  */
 public class ProcessingChains extends Chains<ProcessingChain> {
-
-    public static final String[] defaultBindings = new String[] {"http://*/processing/*", "https://*/processing/*"};
+    public static final String[] defaultBindings = new String[]
+            {"http://*/processing/*", "https://*/processing/*"};
 
 
     public ProcessingChains(AbstractConfigProducer parent, String subId) {
         super(parent, subId);
     }
-
 }

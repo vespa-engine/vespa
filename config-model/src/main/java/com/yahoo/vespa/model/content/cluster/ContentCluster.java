@@ -443,7 +443,8 @@ public class ContentCluster extends AbstractConfigProducer implements
             ContainerCluster clusterControllers = new ContainerCluster(parent,
                                                                        name,
                                                                        name,
-                                                                       new ClusterControllerClusterVerifier());
+                                                                       new ClusterControllerClusterVerifier(),
+                                                                       RankProfileList.empty);
             List<Container> containers = new ArrayList<>();
             // Add a cluster controller on each config server (there is always at least one).
             if (clusterControllers.getContainers().isEmpty()) {
