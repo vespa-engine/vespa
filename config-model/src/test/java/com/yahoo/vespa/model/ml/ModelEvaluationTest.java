@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.ml;
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import ai.vespa.models.evaluation.RankProfilesConfigImporter;
+import com.yahoo.component.ComponentId;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
@@ -16,7 +17,6 @@ import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
-import org.junit.After;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -32,21 +33,15 @@ import static org.junit.Assert.assertTrue;
  */
 public class ModelEvaluationTest {
 
-    private static final Path appDir = Path.fromString("src/test/cfg/application/ml_serving");
-
-    @After
-    public void removeGeneratedModelFiles() {
-        IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-    }
-
     @Test
-    public void testMl_ServingApplication() throws IOException {
-        ImportedModelTester tester = new ImportedModelTester("ml_serving", appDir);
-        assertHasMlModels(tester.createVespaModel());
-
-        // At this point the expression is stored - copy application to another location which do not have a models dir
+    public void testMl_serving() throws IOException {
+        Path appDir = Path.fromString("src/test/cfg/application/ml_serving");
         Path storedAppDir = appDir.append("copy");
         try {
+            ImportedModelTester tester = new ImportedModelTester("ml_serving", appDir);
+            assertHasMlModels(tester.createVespaModel());
+
+            // At this point the expression is stored - copy application to another location which do not have a models dir
             storedAppDir.toFile().mkdirs();
             IOUtils.copy(appDir.append("services.xml").toString(), storedAppDir.append("services.xml").toString());
             IOUtils.copyDirectory(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
@@ -55,12 +50,35 @@ public class ModelEvaluationTest {
             assertHasMlModels(storedTester.createVespaModel());
         }
         finally {
+            IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             IOUtils.recursiveDeleteDir(storedAppDir.toFile());
+        }
+    }
+
+    /** Tests that we do not load models (which will waste memory) when not requested */
+    @Test
+    public void testMl_serving_not_activated() throws IOException {
+        Path appDir = Path.fromString("src/test/cfg/application/ml_serving_not_activated");
+        try {
+            ImportedModelTester tester = new ImportedModelTester("ml_serving", appDir);
+            VespaModel model = tester.createVespaModel();
+            ContainerCluster cluster = model.getContainerClusters().get("container");
+            assertNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluator.class.getName())));
+
+            RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
+            cluster.getConfig(b);
+            RankProfilesConfig config = new RankProfilesConfig(b);
+
+            assertEquals(0, config.rankprofile().size());
+        }
+        finally {
+            IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
         }
     }
 
     private void assertHasMlModels(VespaModel model) {
         ContainerCluster cluster = model.getContainerClusters().get("container");
+        assertNotNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluator.class.getName())));
 
         RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
         cluster.getConfig(b);

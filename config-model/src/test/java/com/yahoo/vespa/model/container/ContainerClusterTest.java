@@ -81,7 +81,7 @@ public class ContainerClusterTest {
                                                      .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region")))
                                                      .build();
         MockRoot root = new MockRoot("foo", state);
-        ContainerCluster cluster = new ContainerCluster(root, "container0", "container1", RankProfileList.empty);
+        ContainerCluster cluster = new ContainerCluster(root, "container0", "container1");
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
         cluster.getConfig(builder);
         ConfigserverConfig config = new ConfigserverConfig(builder);
@@ -112,8 +112,8 @@ public class ContainerClusterTest {
         MockRoot root = new MockRoot("foo", state);
 
         ContainerCluster cluster = extraComponents.isPresent()
-                ? new ContainerCluster(root, "container0", "container1", extraComponents.get(), RankProfileList.empty)
-                : new ContainerCluster(root, "container0", "container1", RankProfileList.empty);
+                ? new ContainerCluster(root, "container0", "container1", extraComponents.get())
+                : new ContainerCluster(root, "container0", "container1");
         if (isCombinedCluster)
             cluster.setHostClusterId("test-content-cluster");
         cluster.setMemoryPercentage(memoryPercentage);
@@ -258,7 +258,7 @@ public class ContainerClusterTest {
     public void requireThatRoutingProviderIsDisabledForNonHosted() {
         DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(false).build()).build();
         MockRoot root = new MockRoot("foo", state);
-        ContainerCluster cluster = new ContainerCluster(root, "container0", "container1", RankProfileList.empty);
+        ContainerCluster cluster = new ContainerCluster(root, "container0", "container1");
         RoutingProviderConfig.Builder builder = new RoutingProviderConfig.Builder();
         cluster.getConfig(builder);
         RoutingProviderConfig config = new RoutingProviderConfig(builder);
@@ -282,7 +282,7 @@ public class ContainerClusterTest {
     }
 
     private static ContainerCluster newContainerCluster() {
-        ContainerCluster cluster = new ContainerCluster(null, "subId", "name", RankProfileList.empty);
+        ContainerCluster cluster = new ContainerCluster(null, "subId", "name");
         addContainer(cluster, "c1", "host-c1");
         addContainer(cluster, "c2", "host-c2");
         return cluster;

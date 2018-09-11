@@ -8,7 +8,6 @@ import com.yahoo.vespa.model.container.component.chain.Chain;
  * Represents a processing chain in the config model
  *
  * @author  bratseth
- * @since   5.1.6
  */
 public class ProcessingChain extends Chain<Processor> {
 
