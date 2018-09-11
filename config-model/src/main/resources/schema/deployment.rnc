@@ -12,7 +12,6 @@ start = element deployment {
    Notifications? &
    Test? &
    Staging? &
-   BlockUpgrade* &
    Prod*
 }
 
@@ -23,12 +22,6 @@ Upgrade = element upgrade {
 BlockChange = element block-change {
     attribute revision { xsd:boolean }? &
     attribute version { xsd:boolean }? &
-    attribute days { xsd:string } &
-    attribute hours { xsd:string } &
-    attribute time-zone { xsd:string }?
-}
-
-BlockUpgrade = element block-upgrade { # Legacy name - remove on Vespa 7
     attribute days { xsd:string } &
     attribute hours { xsd:string } &
     attribute time-zone { xsd:string }?
