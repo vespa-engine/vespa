@@ -240,9 +240,12 @@ public class ConvertedModel {
         profile.addConstant(constantName, asValue(constantValue));
     }
 
-    private static void transformLargeConstant(ModelStore store, RankProfile profile, QueryProfileRegistry queryProfiles,
-                                        Set<String> constantsReplacedByMacros,
-                                        String constantName, Tensor constantValue) {
+    private static void transformLargeConstant(ModelStore store,
+                                               RankProfile profile,
+                                               QueryProfileRegistry queryProfiles,
+                                               Set<String> constantsReplacedByMacros,
+                                               String constantName,
+                                               Tensor constantValue) {
         RankProfile.Macro macroOverridingConstant = profile.getMacros().get(constantName);
         if (macroOverridingConstant != null) {
             TensorType macroType = macroOverridingConstant.getRankingExpression().type(profile.typeContext(queryProfiles));
@@ -255,7 +258,7 @@ public class ConvertedModel {
             Path constantPath = store.writeLargeConstant(constantName, constantValue);
             if ( ! profile.rankingConstants().asMap().containsKey(constantName)) {
                 profile.rankingConstants().add(new RankingConstant(constantName, constantValue.type(),
-                                                           constantPath.toString()));
+                                                                   constantPath.toString()));
             }
         }
     }
@@ -612,8 +615,12 @@ public class ConvertedModel {
                        .writeFile(new StringReader(name + ":" + constant.type() + ":" + correct(constantPath)));
 
             // Write content explicitly as a file on the file system as this is distributed using file distribution
-            createIfNeeded(constantsPath);
-            IOUtils.writeFile(application.getFileReference(constantPath), TypedBinaryFormat.encode(constant));
+            // - but only if this is a global model to avoid writing the same constants for each rank profile
+            //   where they are used
+            if (modelFiles.modelName.isGlobal()) {
+                createIfNeeded(constantsPath);
+                IOUtils.writeFile(application.getFileReference(constantPath), TypedBinaryFormat.encode(constant));
+            }
             return correct(constantPath);
         }
 
@@ -683,9 +690,13 @@ public class ConvertedModel {
             return ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR.append(modelName.fullName());
         }
 
-        /** Files stored below this path will not be replicated in zookeeper */
-        public Path storedModelPath() {
-            return ApplicationPackage.MODELS_GENERATED_DIR.append(modelName.fullName());
+        /**
+         * Files stored below this path will not be replicated in zookeeper.
+         * Large constants are only stored under the global (not rank-profile-specific)
+         * path to avoid storing the same large constant multiple times.
+         */
+        public Path storedGlobalModelPath() {
+            return ApplicationPackage.MODELS_GENERATED_DIR.append(modelName.localName());
         }
 
         public Path expressionPath(String name) {
@@ -702,7 +713,7 @@ public class ConvertedModel {
 
         /** Path to the large (ranking) constants directory */
         public Path largeConstantsContentPath() {
-            return storedModelPath().append("constants");
+            return storedGlobalModelPath().append("constants");
         }
 
         /** Path to the large (ranking) constants directory */
@@ -790,9 +801,14 @@ public class ConvertedModel {
             this.fullName = (namespace != null ? namespace + "." : "") + name;
         }
 
+        /** Returns true if the local name of this is not in a namespace */
+        public boolean isGlobal() { return namespace == null; }
+
+        /** Returns the namespace, or null if this is global */
         public String namespace() { return namespace; }
         public String localName() { return name; }
         public String fullName() { return fullName; }
+
 
         @Override
         public boolean equals(Object o) {

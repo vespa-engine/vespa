@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.ApplicationPackageTester;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;
@@ -15,9 +16,11 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.yolean.Exceptions;
 import org.junit.After;
 import org.junit.Test;
+import org.xml.sax.SAXException;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -36,6 +39,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.*;
 
 /**
@@ -56,12 +60,34 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
+    public void testGlobalTensorFlowModel() throws SAXException, IOException {
+        ApplicationPackageTester tester = ApplicationPackageTester.create(applicationDir.toString());
+        VespaModel model = new VespaModel(tester.app());
+        assertLargeConstant(name + "_layer_Variable_1_read", model, Optional.of(10L));
+        assertLargeConstant(name + "_layer_Variable_read", model, Optional.of(7840L));
+
+        // At this point the expression is stored - copy application to another location which do not have a models dir
+        Path storedAppDir = applicationDir.append("copy");
+        try {
+            storedAppDir.toFile().mkdirs();
+            IOUtils.copy(applicationDir.append("services.xml").toString(), storedAppDir.append("services.xml").toString());
+            IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
+                                  storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+            ApplicationPackageTester storedTester = ApplicationPackageTester.create(storedAppDir.toString());
+            VespaModel storedModel = new VespaModel(storedTester.app());
+            assertLargeConstant(name + "_layer_Variable_1_read", storedModel, Optional.of(10L));
+            assertLargeConstant(name + "_layer_Variable_read", storedModel, Optional.of(7840L));
+        }
+        finally {
+            IOUtils.recursiveDeleteDir(storedAppDir.toFile());
+        }
+    }
+
+    @Test
     public void testTensorFlowReference() {
         RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                                                       "tensorflow('mnist_softmax/saved')");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant(name + "_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant(name + "_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -71,8 +97,6 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "constant mytensor { file: ignored\ntype: tensor(d0[7],d1[784]) }",
                                                       null);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant(name + "_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant(name + "_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -91,8 +115,6 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "Placeholder",
                                                       application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant(name + "_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant(name + "_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -105,8 +127,6 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "Placeholder",
                                                       application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant(name + "_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant(name + "_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -125,8 +145,6 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "Placeholder",
                                                       application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant(name + "_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant(name + "_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -134,8 +152,6 @@ public class RankingExpressionWithTensorFlowTestCase {
         RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                                                       "5 + sum(tensorflow('mnist_softmax/saved'))");
         search.assertFirstPhaseExpression("5 + reduce(" + vespaExpression + ", sum)", "my_profile");
-        assertLargeConstant(name + "_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant(name + "_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -233,9 +249,6 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "tensorflow('mnist_softmax/saved')");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
 
-        assertLargeConstant(name + "_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant(name + "_layer_Variable_read", search, Optional.of(7840L));
-
         // At this point the expression is stored - copy application to another location which do not have a models dir
         Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
         try {
@@ -250,10 +263,6 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                                     "Placeholder",
                                                                     storedApplication);
             searchFromStored.assertFirstPhaseExpression(vespaExpression, "my_profile");
-            // Verify that the constants exists, but don't verify the content as we are not
-            // simulating file distribution in this test
-            assertLargeConstant(name + "_layer_Variable_1_read", searchFromStored, Optional.empty());
-            assertLargeConstant(name + "_layer_Variable_read", searchFromStored, Optional.empty());
         }
         finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
@@ -287,7 +296,6 @@ public class RankingExpressionWithTensorFlowTestCase {
 
         assertNull("Constant overridden by macro is not added",
                    search.search().rankingConstants().get("mnist_softmax_saved_layer_Variable_read"));
-        assertLargeConstant(name + "_layer_Variable_1_read", search, Optional.of(10L));
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
         Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
@@ -303,7 +311,6 @@ public class RankingExpressionWithTensorFlowTestCase {
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile_child");
             assertNull("Constant overridden by macro is not added",
                        searchFromStored.search().rankingConstants().get("mnist_softmax_saved_layer_Variable_read"));
-            assertLargeConstant(name + "_layer_Variable_1_read", searchFromStored, Optional.of(10L));
         }
         finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
@@ -316,8 +323,6 @@ public class RankingExpressionWithTensorFlowTestCase {
         RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
                                                       "tensorflow('mnist_softmax/saved')");
         search.assertFirstPhaseExpression(expression, "my_profile");
-        assertLargeConstant(name + "_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant(name + "_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -401,11 +406,11 @@ public class RankingExpressionWithTensorFlowTestCase {
      * Verifies that the constant with the given name exists, and - only if an expected size is given -
      * that the content of the constant is available and has the expected size.
      */
-    private void assertLargeConstant(String name, RankProfileSearchFixture search, Optional<Long> expectedSize) {
+    private void assertLargeConstant(String constantName, VespaModel model, Optional<Long> expectedSize) {
         try {
-            Path constantApplicationPackagePath = Path.fromString("models.generated/my_profile.mnist_softmax_saved/constants").append(name + ".tbf");
-            RankingConstant rankingConstant = search.search().rankingConstants().get(name);
-            assertEquals(name, rankingConstant.getName());
+            Path constantApplicationPackagePath = Path.fromString("models.generated/" + name + "/constants").append(constantName + ".tbf");
+            RankingConstant rankingConstant = model.rankingConstants().get(constantName);
+            assertEquals(constantName, rankingConstant.getName());
             assertTrue(rankingConstant.getFileName().endsWith(constantApplicationPackagePath.toString()));
 
             if (expectedSize.isPresent()) {
