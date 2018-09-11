@@ -1,11 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.config.model;
+package com.yahoo.vespa.model.ml;
 
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import ai.vespa.models.evaluation.RankProfilesConfigImporter;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.ApplicationPackageTester;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.io.IOUtils;
