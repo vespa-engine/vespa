@@ -123,6 +123,19 @@ public class NodesSpecification {
                                       Optional.empty());
     }
 
+    /** Returns a requirement from <code>count</code> dedicated nodes in one group */
+    public static NodesSpecification dedicated(int count, ConfigModelContext context) {
+        return new NodesSpecification(true,
+                                      count,
+                                      1,
+                                      context.getDeployState().getWantedNodeVespaVersion(),
+                                      false,
+                                      ! context.getDeployState().getProperties().isBootstrap(),
+                                      false,
+                                      Optional.empty(),
+                                      Optional.empty());
+    }
+
     /**
      * Returns whether this requires dedicated nodes.
      * Otherwise the model encountering this request should reuse nodes requested for other purposes whenever possible.

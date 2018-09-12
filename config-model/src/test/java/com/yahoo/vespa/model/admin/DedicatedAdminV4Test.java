@@ -78,7 +78,8 @@ public class DedicatedAdminV4Test {
 
         assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd");
         assertHostContainsServices(model, "hosts/myhost1", "slobrok", "logd");
-        assertHostContainsServices(model, "hosts/myhost2", "logserver", "logd");
+        // Note: A container is always added on logserver host
+        assertHostContainsServices(model, "hosts/myhost2", "logserver", "logd", "container");
 
         Monitoring monitoring = model.getAdmin().getMonitoring();
         assertEquals("vespa.routing", monitoring.getClustername());
@@ -160,7 +161,8 @@ public class DedicatedAdminV4Test {
 
         assertHostContainsServices(model, "hosts/myhost0", "logd", "logforwarder", "slobrok");
         assertHostContainsServices(model, "hosts/myhost1", "logd", "logforwarder", "slobrok");
-        assertHostContainsServices(model, "hosts/myhost2", "logd", "logforwarder", "logserver");
+        // Note: A container is always added on logserver host
+        assertHostContainsServices(model, "hosts/myhost2", "logd", "logforwarder", "logserver", "container");
 
         Set<String> configIds = model.getConfigIds();
         // 1 logforwarder on each host
