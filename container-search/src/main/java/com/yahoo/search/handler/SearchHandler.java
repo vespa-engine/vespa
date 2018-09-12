@@ -13,7 +13,6 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
-import com.yahoo.container.core.QrTemplatesConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -161,47 +160,6 @@ public class SearchHandler extends LoggingRequestHandler {
         
         this.hostResponseHeaderKey = containerHttpConfig.hostResponseHeaderKey().equals("") ?
                                      Optional.empty() : Optional.of( containerHttpConfig.hostResponseHeaderKey());
-    }
-
-    /** @deprecated use the constructor with ContainerHttpConfig */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public SearchHandler(
-            final ChainsConfig chainsConfig,
-            final IndexInfoConfig indexInfo,
-            final QrSearchersConfig clusters,
-            final SpecialtokensConfig specialtokens,
-            final Statistics statistics,
-            final Linguistics linguistics,
-            final Metric metric,
-            final ComponentRegistry<Renderer> renderers,
-            final Executor executor,
-            final AccessLog accessLog,
-            final QueryProfilesConfig queryProfileConfig,
-            final ComponentRegistry<Searcher> searchers) {
-        this (chainsConfig, indexInfo, clusters, specialtokens, statistics, linguistics, metric, renderers, executor,
-              accessLog, queryProfileConfig, searchers, new ContainerHttpConfig(new ContainerHttpConfig.Builder()));
-    }
-
-    /** @deprecated use the constructor without deprecated parameters */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public SearchHandler(
-            final ChainsConfig chainsConfig,
-            final IndexInfoConfig indexInfo,
-            final QrSearchersConfig clusters,
-            final SpecialtokensConfig specialTokens,
-            final QrTemplatesConfig ignored,
-            final Statistics statistics,
-            final Linguistics linguistics,
-            final Metric metric,
-            final ComponentRegistry<Renderer> renderers,
-            final Executor executor,
-            final AccessLog accessLog,
-            final QueryProfilesConfig queryProfileConfig,
-            final ComponentRegistry<Searcher> searchers) {
-        this(chainsConfig, indexInfo, clusters, specialTokens, statistics, linguistics, metric, renderers,
-             executor, accessLog, queryProfileConfig, searchers);
     }
 
     @Override
