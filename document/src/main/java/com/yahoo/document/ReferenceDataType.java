@@ -75,6 +75,7 @@ public class ReferenceDataType extends DataType {
                     "type in ReferenceDataType instance (type is '%s')", this.targetType.getName()));
         }
         this.targetType = targetType;
+        setName(buildTypeName(targetType));
     }
 
     @Override
