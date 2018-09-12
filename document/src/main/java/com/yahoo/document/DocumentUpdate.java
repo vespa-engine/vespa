@@ -46,7 +46,8 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     public static final int CLASSID = 0x1000 + 6;
 
     private DocumentId docId;
-    private Map<Integer, FieldUpdate> fieldUpdates;
+    private List<FieldUpdate> fieldUpdates;
+    private final Map<Integer, FieldUpdate> id2FieldUpdateMap;
     private List<FieldPathUpdate> fieldPathUpdates;
     private DocumentType documentType;
     private Optional<Boolean> createIfNonExistent = Optional.empty();
@@ -58,7 +59,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * @param docType the document type that this update is valid for
      */
     public DocumentUpdate(DocumentType docType, DocumentId docId) {
-        this(docType, docId, new HashMap<Integer, FieldUpdate>());
+        this(docType, docId, new HashMap<>());
     }
 
     /**
@@ -67,7 +68,8 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     public DocumentUpdate(DocumentUpdateReader reader) {
         docId = null;
         documentType = null;
-        fieldUpdates = new HashMap<>();
+        fieldUpdates = new ArrayList<>();
+        id2FieldUpdateMap = new HashMap<>();
         fieldPathUpdates = new ArrayList<>();
         reader.read(this);
     }
@@ -82,10 +84,11 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
         this(docType, new DocumentId(docId));
     }
 
-    private DocumentUpdate(DocumentType docType, DocumentId docId, Map<Integer, FieldUpdate> fieldUpdates) {
+    private DocumentUpdate(DocumentType docType, DocumentId docId, Map<Integer, FieldUpdate> id2fieldUpdateMap) {
         this.docId = docId;
         this.documentType = docType;
-        this.fieldUpdates = fieldUpdates;
+        this.fieldUpdates = new ArrayList<>(id2fieldUpdateMap.values());
+        id2FieldUpdateMap = id2fieldUpdateMap;
         this.fieldPathUpdates = new ArrayList<>();
     }
 
@@ -117,7 +120,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     public DocumentUpdate applyTo(Document doc) {
         verifyType(doc);
 
-        for (FieldUpdate fieldUpdate : fieldUpdates.values()) {
+        for (FieldUpdate fieldUpdate : id2FieldUpdateMap.values()) {
             fieldUpdate.applyTo(doc);
         }
         for (FieldPathUpdate fieldPathUpdate : fieldPathUpdates) {
@@ -135,7 +138,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     public DocumentUpdate prune(Document doc) {
         verifyType(doc);
 
-        for (Iterator<Map.Entry<Integer, FieldUpdate>> iter = fieldUpdates.entrySet().iterator(); iter.hasNext();) {
+        for (Iterator<Map.Entry<Integer, FieldUpdate>> iter = id2FieldUpdateMap.entrySet().iterator(); iter.hasNext();) {
             Map.Entry<Integer, FieldUpdate> entry = iter.next();
             FieldUpdate update = entry.getValue();
             if (!update.isEmpty()) {
@@ -169,7 +172,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      */
     @Deprecated
     public List<FieldUpdate> getFieldUpdates() {
-        return Collections.unmodifiableList(new ArrayList<>(fieldUpdates.values()));
+        return Collections.unmodifiableList(fieldUpdates);
     }
 
     /**
@@ -178,7 +181,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * @return a list of all FieldUpdates in this DocumentUpdate
      */
     public Collection<FieldUpdate> getFieldUpdatesCollection() {
-        return Collections.unmodifiableCollection(fieldUpdates.values());
+        return Collections.unmodifiableCollection(id2FieldUpdateMap.values());
     }
 
     /**
@@ -215,15 +218,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      */
     @Deprecated
     public FieldUpdate getFieldUpdate(int index) {
-        if (index < 0 || index >= fieldUpdates.size()) {
-            throw new IndexOutOfBoundsException("Index " + index + " is outside of [" + 0 + ", " + fieldUpdates.size() + ">");
-        }
-        for (FieldUpdate fieldUpdate : fieldUpdates.values()) {
-            if (index-- == 0) {
-                return fieldUpdate;
-            }
-        }
-        return null;
+        return fieldUpdates.get(index);
     }
 
     /**
@@ -236,16 +231,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      */
     @Deprecated
     public FieldUpdate setFieldUpdate(int index, FieldUpdate upd) {
-        if (index < 0 || index >= fieldUpdates.size()) {
-            throw new IndexOutOfBoundsException("Index " + index + " is outside of [" + 0 + ", " + fieldUpdates.size() + ">");
-        }
-        for (FieldUpdate fieldUpdate : fieldUpdates.values()) {
-            if (index-- == 0) {
-                addFieldUpdateNoCheck(fieldUpdate);
-                return fieldUpdate;
-            }
-        }
-        return null;
+        return fieldUpdates.set(index, upd);
     }
 
     /**
@@ -261,6 +247,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     /** Removes all field updates from the list for field updates. */
     public void clearFieldUpdates() {
         fieldUpdates.clear();
+        id2FieldUpdateMap.clear();
     }
 
     /**
@@ -270,14 +257,14 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * @return the update for the field, or null if that field has no update in this
      */
     public FieldUpdate getFieldUpdate(String fieldName) {
-        for (FieldUpdate fieldUpdate : fieldUpdates.values()) {
+        for (FieldUpdate fieldUpdate : id2FieldUpdateMap.values()) {
             if (fieldUpdate.getField().getName().equals(fieldName))
                 return fieldUpdate;
         }
         return null;
     }
     private FieldUpdate getFieldUpdateById(Integer fieldId) {
-        return fieldUpdates.get(fieldId);
+        return id2FieldUpdateMap.get(fieldId);
     }
 
     /**
@@ -293,7 +280,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
             throw new NullPointerException("The field updates of a document update can not be null");
         }
         for (FieldUpdate fieldUpdate : fieldUpdates) {
-            this.fieldUpdates.put(fieldUpdate.getField().getId(), fieldUpdate);
+            addFieldUpdate(fieldUpdate);
         }
     }
 
@@ -303,7 +290,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * @return the size of the List of FieldUpdates
      */
     public int size() {
-        return fieldUpdates.size();
+        return id2FieldUpdateMap.size();
     }
 
     /**
@@ -316,16 +303,17 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      *                                  field.
      */
     public DocumentUpdate addFieldUpdate(FieldUpdate update) {
-        String fieldName = update.getField().getName();
-        if (!documentType.hasField(fieldName)) {
-            throw new IllegalArgumentException("Document type '" + documentType.getName() + "' does not have field '" + fieldName + "'.");
+        Integer fieldId = update.getField().getId();
+        if (documentType.getField(fieldId) == null) {
+            throw new IllegalArgumentException("Document type '" + documentType.getName() + "' does not have field '" + update.getField().getName() + "'.");
         }
-        FieldUpdate prevUpdate = getFieldUpdate(fieldName);
+        FieldUpdate prevUpdate = getFieldUpdateById(fieldId);
         if (prevUpdate != update) {
             if (prevUpdate != null) {
                 prevUpdate.addAll(update);
             } else {
-                fieldUpdates.put(update.getField().getId(), update);
+                fieldUpdates.add(update);
+                id2FieldUpdateMap.put(fieldId, update);
             }
         }
         return this;
@@ -339,12 +327,6 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     public DocumentUpdate addFieldPathUpdate(FieldPathUpdate fieldPathUpdate) {
         fieldPathUpdates.add(fieldPathUpdate);
         return this;
-    }
-
-    // TODO: Remove this when we figure out correct behaviour.
-
-    public void addFieldUpdateNoCheck(FieldUpdate fieldUpdate) {
-        fieldUpdates.put(fieldUpdate.getField().getId(), fieldUpdate);
     }
 
     /**
@@ -365,7 +347,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
         if (!documentType.equals(update.documentType)) {
             throw new IllegalArgumentException("Expected " + documentType + ", got " + update.documentType + ".");
         }
-        for (FieldUpdate fieldUpd : update.fieldUpdates.values()) {
+        for (FieldUpdate fieldUpd : update.id2FieldUpdateMap.values()) {
             addFieldUpdate(fieldUpd);
         }
         for (FieldPathUpdate pathUpd : update.fieldPathUpdates) {
@@ -383,11 +365,12 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     @Deprecated
     public FieldUpdate removeFieldUpdate(int index) {
         FieldUpdate prev = getFieldUpdate(index);
+        fieldUpdates.remove(index);
         return removeFieldUpdate(prev.getField());
     }
 
     public FieldUpdate removeFieldUpdate(Field field) {
-        return fieldUpdates.remove(field.getId());
+        return id2FieldUpdateMap.remove(field.getId());
     }
 
     /**
@@ -427,7 +410,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     @Override
     public int hashCode() {
         int result = docId != null ? docId.hashCode() : 0;
-        result = 31 * result + (fieldUpdates != null ? fieldUpdates.hashCode() : 0);
+        result = 31 * result + (id2FieldUpdateMap != null ? id2FieldUpdateMap.hashCode() : 0);
         result = 31 * result + (fieldPathUpdates != null ? fieldPathUpdates.hashCode() : 0);
         result = 31 * result + (documentType != null ? documentType.hashCode() : 0);
         return result;
@@ -444,7 +427,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
         string.append(": ");
         string.append("[");
 
-        for (Iterator<FieldUpdate> i = fieldUpdates.values().iterator(); i.hasNext();) {
+        for (Iterator<FieldUpdate> i = id2FieldUpdateMap.values().iterator(); i.hasNext();) {
             FieldUpdate fieldUpdate = i.next();
             string.append(fieldUpdate);
             if (i.hasNext()) {
@@ -474,7 +457,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * @return True if this update is empty.
      */
     public boolean isEmpty() {
-        return fieldUpdates.isEmpty() && fieldPathUpdates.isEmpty();
+        return id2FieldUpdateMap.isEmpty() && fieldPathUpdates.isEmpty();
     }
 
     /**
