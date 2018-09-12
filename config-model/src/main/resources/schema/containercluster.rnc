@@ -16,6 +16,7 @@ ContainerServices =
     SearchInContainer? &
     DocprocInContainer? &
     ProcessingInContainer? &
+    ModelEvaluation? &
     DocumentApi? &
     Components* &
     Component* &
@@ -83,6 +84,10 @@ SecretStore = element secret-store {
       attribute name { string } &
       attribute environment { string "alpha" | string "corp" | string "prod" | string "aws" | string "aws_stage" }
     } +
+}
+
+ModelEvaluation = element model-evaluation {
+    empty
 }
 
 # REST-API:
