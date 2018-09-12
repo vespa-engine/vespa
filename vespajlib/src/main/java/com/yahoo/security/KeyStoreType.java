@@ -11,7 +11,7 @@ import java.security.KeyStoreException;
 public enum KeyStoreType {
     JKS {
         KeyStore createKeystore() throws KeyStoreException {
-            return KeyStore.getInstance("BKS", BouncyCastleProviderHolder.getInstance());
+            return KeyStore.getInstance("JKS");
         }
     },
     PKCS12 {
