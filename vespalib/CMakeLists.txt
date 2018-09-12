@@ -33,6 +33,7 @@ vespa_define_module(
     src/tests/data/memory_input
     src/tests/data/output_writer
     src/tests/data/simple_buffer
+    src/tests/data/smart_buffer
     src/tests/delegatelist
     src/tests/dotproduct
     src/tests/dual_merge_director
