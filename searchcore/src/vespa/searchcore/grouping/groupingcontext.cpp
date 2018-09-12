@@ -22,8 +22,6 @@ GroupingContext::deserialize(const char *groupSpec, uint32_t groupSpecLen)
         for (size_t i = 0; i < numGroupings; i++) {
             GroupingPtr grouping(new search::aggregation::Grouping);
             grouping->deserialize(nis);
-            aggregation::Attribute2AttributeKeyed attr2AttrKeyed;
-            grouping->select(attr2AttrKeyed, attr2AttrKeyed);
             grouping->setClock(&_clock);
             grouping->setTimeOfDoom(_timeOfDoom);
             _groupingList.push_back(grouping);

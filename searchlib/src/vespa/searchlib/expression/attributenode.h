@@ -55,7 +55,6 @@ public:
 
     void useEnumOptimization(bool use=true) { _useEnumOptimization = use; }
     bool hasMultiValue() const { return _hasMultiValue; }
-    virtual bool isKeyed() const { return false; }
 public:
     class Handler
     {
