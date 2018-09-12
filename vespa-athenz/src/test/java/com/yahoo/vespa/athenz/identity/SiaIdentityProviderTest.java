@@ -39,7 +39,7 @@ public class SiaIdentityProviderTest {
     @Test
     public void constructs_ssl_context_from_file() throws IOException {
         File keyFile = tempDirectory.newFile();
-        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.EC);
+        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         createPrivateKeyFile(keyFile, keypair);
 
         X509Certificate certificate = createCertificate(keypair);
@@ -78,7 +78,7 @@ public class SiaIdentityProviderTest {
                         new X500Principal("CN=subject"),
                         now,
                         now.plus(Duration.ofDays(1)),
-                        SignatureAlgorithm.SHA256_WITH_ECDSA,
+                        SignatureAlgorithm.SHA256_WITH_RSA,
                         BigInteger.ONE)
                 .build();
     }
