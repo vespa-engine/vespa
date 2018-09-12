@@ -155,7 +155,7 @@ public class CfgConfigPayloadBuilder {
     }
 
     private boolean isArray(String name) {
-        return name.endsWith("]");
+        return name.endsWith("]") && !name.startsWith("[");
     }
 
     private boolean isMap(String name) {
