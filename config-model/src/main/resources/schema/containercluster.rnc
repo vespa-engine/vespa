@@ -64,8 +64,6 @@ HttpServer =  element server {
     attribute port { xsd:nonNegativeInteger } &
     ComponentId &
     (Ssl | SslProvider)? &
-    element ssl-keystore-configurator { BundleSpec }? & # FOR INTERNAL USE ONLY - SUBJECT TO CHANGE
-    element ssl-truststore-configurator { BundleSpec }? & # FOR INTERNAL USE ONLY - SUBJECT TO CHANGE
     GenericConfig*
 }
 
