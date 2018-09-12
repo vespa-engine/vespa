@@ -20,6 +20,7 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.application.provider.StaticConfigDefinitionRepo;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.builder.xml.XmlHelper;
+import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.di.config.SubscriberFactory;
@@ -209,17 +210,22 @@ public class StandaloneContainerApplication implements Application {
     }
 
     private static ContainerModelBuilder newContainerModelBuilder(Networking networkingOption) {
+        return isConfigServer() ?
+                new ConfigServerContainerModelBuilder(new CloudConfigInstallVariables()) :
+                new ContainerModelBuilder(true, networkingOption);
+    }
+
+    private static boolean isConfigServer() {
         Optional<String> profile = optionalInstallVariable(DEPLOYMENT_PROFILE_INSTALL_VARIABLE);
         if (profile.isPresent()) {
             String profileName = profile.get();
-            if ("configserver".equals(profileName)) {
-                return new ConfigServerContainerModelBuilder(new CloudConfigInstallVariables());
-            } else {
+            if (profileName.equals("configserver"))
+                return true;
+            else
                 throw new RuntimeException("Invalid deployment profile '" + profileName + "'");
-            }
-        } else {
-            return new ContainerModelBuilder(true, networkingOption);
         }
+
+        return false;
     }
 
     static Pair<VespaModel, Container> createContainerModel(Path applicationPath, FileRegistry fileRegistry,
@@ -229,8 +235,7 @@ public class StandaloneContainerApplication implements Application {
                 .includeSourceFiles(true).preprocessedDir(preprocessedApplicationDir).build();
         ApplicationPackage applicationPackage = rawApplicationPackage.preprocess(Zone.defaultZone(), logger);
         validateApplication(applicationPackage);
-        DeployState deployState = new DeployState.Builder().applicationPackage(applicationPackage).fileRegistry(fileRegistry)
-                .deployLogger(logger).configDefinitionRepo(configDefinitionRepo).build();
+        DeployState deployState = createDeployState(applicationPackage, fileRegistry, logger);
 
         VespaModel root = VespaModel.createIncomplete(deployState);
         ApplicationConfigProducerRoot vespaRoot = new ApplicationConfigProducerRoot(root, "vespa", deployState.getDocumentModel(),
@@ -250,6 +255,20 @@ public class StandaloneContainerApplication implements Application {
 
         root.freezeModelTopology();
         return new Pair<>(root, container);
+    }
+
+    private static DeployState createDeployState(ApplicationPackage applicationPackage, FileRegistry fileRegistry, DeployLogger logger) {
+        DeployState.Builder builder = new DeployState.Builder()
+                .applicationPackage(applicationPackage)
+                .fileRegistry(fileRegistry)
+                .deployLogger(logger)
+                .configDefinitionRepo(configDefinitionRepo);
+        if (isConfigServer())
+            builder.properties(new DeployProperties.Builder()
+                                       .hostedVespa(new CloudConfigInstallVariables().hostedVespa().orElse(Boolean.FALSE))
+                                       .build());
+
+        return builder.build();
     }
 
     private static void initializeContainer(Container container, Element spec) {
