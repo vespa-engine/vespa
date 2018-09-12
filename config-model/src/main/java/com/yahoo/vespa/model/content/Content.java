@@ -238,10 +238,8 @@ public class Content extends ConfigModel {
             IndexedSearchCluster indexedSearchCluster = content.getCluster().getSearch().getIndexed();
             if (indexedSearchCluster.hasExplicitIndexingCluster()) {
                 setExistingIndexingCluster(indexedSearchCluster, content.containers);
-            } else if (content.isHosted) {
-                setContainerAsIndexingCluster(indexedSearchCluster, content, modelContext, root);
             } else {
-                createImplicitIndexingCluster(indexedSearchCluster, content, modelContext, root);
+                setContainerAsIndexingCluster(indexedSearchCluster, content, modelContext, root);
             }
         }
 
