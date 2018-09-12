@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
@@ -36,12 +35,6 @@ public class OsUpgrader extends InfrastructureUpgrader {
     public OsUpgrader(Controller controller, Duration interval, JobControl jobControl, CloudName cloud) {
         super(controller, interval, jobControl, controller.zoneRegistry().osUpgradePolicy(cloud), name(cloud));
         this.cloud = cloud;
-    }
-
-    @Override
-    protected void maintain() {
-        if (controller().system() != SystemName.cd) return; // TODO: Enable in all systems
-        super.maintain();
     }
 
     @Override

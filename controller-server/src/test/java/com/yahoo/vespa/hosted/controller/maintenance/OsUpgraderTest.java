@@ -119,33 +119,6 @@ public class OsUpgraderTest {
                                                         .allMatch(node -> node.version().equals(version1)));
     }
 
-    // TODO: Remove once enabled in all systems
-    @Test
-    public void os_upgrade_in_main_does_nothing() {
-        OsUpgrader osUpgrader = osUpgrader(
-                UpgradePolicy.create()
-                             .upgrade(zone1)
-                             .upgradeInParallel(zone2, zone3)
-                             .upgrade(zone4),
-                SystemName.main
-        );
-
-        // Bootstrap system
-        tester.configServer().bootstrap(Arrays.asList(zone1, zone2, zone3, zone4, zone5),
-                                        singletonList(SystemApplication.zone),
-                                        Optional.of(NodeType.host));
-
-        // New OS is released
-        CloudName cloud = CloudName.defaultName();
-        Version version1 = Version.fromString("7.1");
-        tester.controller().upgradeOsIn(cloud, version1);
-        statusUpdater.maintain();
-
-        // Nothing happens as main is explicitly disabled
-        osUpgrader.maintain();
-        assertWanted(Version.emptyVersion, SystemApplication.zone, zone1);
-    }
-
     private List<OsVersionStatus.Node> nodesOn(Version version) {
         return tester.controller().osVersionStatus().versions().entrySet().stream()
                      .filter(entry -> entry.getKey().version().equals(version))
