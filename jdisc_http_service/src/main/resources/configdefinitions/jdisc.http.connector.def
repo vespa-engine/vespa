@@ -44,6 +44,23 @@ tcpNoDelay                          bool     default=true
 # Whether to enable SSL for this connector.
 ssl.enabled                         bool     default=false
 
+# File with private key in PEM format
+ssl.privateKeyFile                  string   default=""
+
+# File with certificate in PEM format
+ssl.certificateFile                 string   default=""
+
+# with trusted CA certificates in PEM format. Used to verify clients
+ssl.caCertificateFile               string default=""
+
+# Client authentication mode. See SSLEngine.getNeedClientAuth()/getWantClientAuth() for details.
+ssl.clientAuth                      enum { DISABLED, WANT_AUTH, NEED_AUTH }  default=DISABLED
+
+
+#########################################################################################
+# Config below is deprecated. Do not use
+#########################################################################################
+
 # The name of the key to the password to the key store if in the secret store, if JKS is used.
 # Must be empty with PEM
 # By default this is also used to look up the password to the trust store.
@@ -89,11 +106,9 @@ ssl.sslKeyManagerFactoryAlgorithm   string   default="SunX509"
 # The SSL protocol passed to SSLContext.getInstance()
 ssl.protocol                        string   default="TLS"
 
-# Client authentication mode. See SSLEngine.getNeedClientAuth()/getWantClientAuth() for details.
-ssl.clientAuth                      enum { DISABLED, WANT_AUTH, NEED_AUTH }  default=DISABLED
-
 # The SecureRandom implementation passed to SSLEngine.init()
 # Java have a default pseudo-random number generator (PRNG) for crypto operations. This default may have performance
 # issues on some platform (e.g. NativePRNG in Linux utilizes a global lock). Changing the generator to SHA1PRNG may
 # improve performance. Set value to empty string to use the default generator.
 ssl.prng                            string   default=""
+

@@ -5,7 +5,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Metric.Context;
 
 import com.yahoo.jdisc.http.server.jetty.JettyHttpServer.Metrics;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -16,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MetricReporter {
     private final Metric metric;
-    private final @Nullable Context context;
+    private final Context context;
 
     private final long requestStartTime;
 
@@ -24,7 +23,7 @@ public class MetricReporter {
     private final AtomicBoolean firstSetOfTimeToFirstByte = new AtomicBoolean(true);
 
 
-    public MetricReporter(Metric metric, @Nullable Context context, long requestStartTime) {
+    public MetricReporter(Metric metric, Context context, long requestStartTime) {
         this.metric = metric;
         this.context = context;
         this.requestStartTime = requestStartTime;

@@ -121,6 +121,17 @@
           <maxChunkSize>9999</maxChunkSize>
         </config>
       </server>
+      <server port="4082" id="defaultSsl">
+        <ssl>
+          <private-key-file>/foo/key</private-key-file>
+          <certificate-file>/foo/cert</certificate-file>
+          <ca-certificates-file>/foo/cacerts</ca-certificates-file>
+          <client-authentication>want</client-authentication>
+        </ssl>
+      </server>
+      <server port="4083" id="sslProvider">
+        <ssl-provider class="com.yahoo.MySslProvider" bundle="mybundle"/>
+      </server>
     </http>
 
     <accesslog type='json'
