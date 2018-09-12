@@ -45,7 +45,6 @@ import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
-import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.IdentityProvider;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
@@ -149,7 +148,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return new VespaDomBuilder.DomConfigProducerBuilder<ContainerCluster>() {
             @Override
             protected ContainerCluster doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
-                return new ContainerCluster(ancestor, modelContext.getProducerId(), modelContext.getProducerId());
+                return new ContainerCluster(ancestor,
+                                            modelContext.getProducerId(),
+                                            modelContext.getProducerId(),
+                                            modelContext.vespaModel() != null ? modelContext.vespaModel().rankProfileList()
+                                                                              : RankProfileList.empty);
             }
         }.build(modelContext.getParentProducer(), spec);
     }
@@ -163,7 +166,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addServlets(spec, cluster);
         addProcessing(spec, cluster);
         addSearch(spec, cluster, context.getDeployState().getQueryProfiles(), context.getDeployState().getSemanticRules());
-        addModelEvaluation(spec, cluster, context);
         addDocproc(spec, cluster);
         addDocumentApi(spec, cluster);  // NOTE: Must be done after addSearch
 
@@ -353,56 +355,50 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addServlets(Element spec, ContainerCluster cluster) {
-        for (Element servletElem : XML.getChildren(spec, "servlet"))
-            cluster.addServlet(new ServletBuilder().build(cluster, servletElem));
+        for (Element servletElem : XML.getChildren(spec, "servlet")) {
+            cluster.addServlet(
+                    new ServletBuilder().build(cluster, servletElem));
+        }
     }
 
     private void addDocumentApi(Element spec, ContainerCluster cluster) {
         ContainerDocumentApi containerDocumentApi = buildDocumentApi(cluster, spec);
-        if (containerDocumentApi == null) return;
-
-        cluster.setDocumentApi(containerDocumentApi);
+        if (containerDocumentApi != null) {
+            cluster.setDocumentApi(containerDocumentApi);
+        }
     }
 
     private void addDocproc(Element spec, ContainerCluster cluster) {
         ContainerDocproc containerDocproc = buildDocproc(cluster, spec);
-        if (containerDocproc == null) return;
-        cluster.setDocproc(containerDocproc);
+        if (containerDocproc != null) {
+            cluster.setDocproc(containerDocproc);
 
-        ContainerDocproc.Options docprocOptions = containerDocproc.options;
-        cluster.setMbusParams(new ContainerCluster.MbusParams(
-                docprocOptions.maxConcurrentFactor, docprocOptions.documentExpansionFactor, docprocOptions.containerCoreMemory));
+            ContainerDocproc.Options docprocOptions = containerDocproc.options;
+            cluster.setMbusParams(new ContainerCluster.MbusParams(
+                    docprocOptions.maxConcurrentFactor, docprocOptions.documentExpansionFactor, docprocOptions.containerCoreMemory));
+        }
     }
 
     private void addSearch(Element spec, ContainerCluster cluster, QueryProfiles queryProfiles, SemanticRules semanticRules) {
         Element searchElement = XML.getChild(spec, "search");
-        if (searchElement == null) return;
+        if (searchElement != null) {
+            addIncludes(searchElement);
+            cluster.setSearch(buildSearch(cluster, searchElement, queryProfiles, semanticRules));
 
-        addIncludes(searchElement);
-        cluster.setSearch(buildSearch(cluster, searchElement, queryProfiles, semanticRules));
-
-        addSearchHandler(cluster, searchElement);
-        addGUIHandler(cluster);
-        validateAndAddConfiguredComponents(cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
-    }
-
-    private void addModelEvaluation(Element spec, ContainerCluster cluster, ConfigModelContext context) {
-        Element modelEvaluationElement = XML.getChild(spec, "model-evaluation");
-        if (modelEvaluationElement == null) return;
-
-        RankProfileList profiles =
-                context.vespaModel() != null ? context.vespaModel().rankProfileList() : RankProfileList.empty;
-        cluster.setModelEvaluation(new ContainerModelEvaluation(cluster, profiles));
+            addSearchHandler(cluster, searchElement);
+            addGUIHandler(cluster);
+            validateAndAddConfiguredComponents(cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
+        }
     }
 
     private void addProcessing(Element spec, ContainerCluster cluster) {
         Element processingElement = XML.getChild(spec, "processing");
-        if (processingElement == null) return;
-
-        addIncludes(processingElement);
-        cluster.setProcessingChains(new DomProcessingBuilder(null).build(cluster, processingElement),
-                                    serverBindings(processingElement, ProcessingChains.defaultBindings));
-        validateAndAddConfiguredComponents(cluster, processingElement, "renderer", ContainerModelBuilder::validateRendererElement);
+        if (processingElement != null) {
+            addIncludes(processingElement);
+            cluster.setProcessingChains(new DomProcessingBuilder(null).build(cluster, processingElement),
+                    serverBindings(processingElement, ProcessingChains.defaultBindings));
+            validateAndAddConfiguredComponents(cluster, processingElement, "renderer", ContainerModelBuilder::validateRendererElement);
+        }
     }
 
     private ContainerSearch buildSearch(ContainerCluster containerCluster, Element producerSpec,

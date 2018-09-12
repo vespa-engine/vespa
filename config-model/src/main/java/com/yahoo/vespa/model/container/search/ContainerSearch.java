@@ -35,10 +35,11 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     	QrStartConfig.Producer,
     	QueryProfilesConfig.Producer,
         SemanticRulesConfig.Producer,
-    	PageTemplatesConfig.Producer {
+    	PageTemplatesConfig.Producer
+{
 
     private final List<AbstractSearchCluster> systems = new LinkedList<>();
-    private final Options options;
+    private Options options = null;
 
     // For legacy qrs clusters only.
     private BinaryScaledAmount totalCacheSize = new BinaryScaledAmount();
