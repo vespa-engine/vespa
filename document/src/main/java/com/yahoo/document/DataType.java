@@ -246,9 +246,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
     }
 
     public boolean equals(Object other) {
-        if (!(other instanceof DataType)) return false;
-        DataType type = (DataType)other;
-        return (name.equals(type.name) && dataTypeId == type.dataTypeId);
+        return (other instanceof DataType) && (dataTypeId == ((DataType)other).dataTypeId);
     }
 
     public String toString() {

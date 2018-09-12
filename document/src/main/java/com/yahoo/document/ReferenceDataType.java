@@ -98,4 +98,19 @@ public class ReferenceDataType extends DataType {
         ReferenceFieldValue rhs = (ReferenceFieldValue)value;
         return rhs.getDataType().equals(this);
     }
+
+    @Override
+    public int compareTo(DataType rhs) {
+        int cmp = super.compareTo(rhs);
+        return (cmp != 0)
+                ? cmp
+                : (rhs instanceof ReferenceDataType) ? targetType.compareTo(((ReferenceDataType) rhs).targetType) : 0;
+    }
+
+    @Override
+    public boolean equals(Object rhs) {
+        return  super.equals(rhs)
+                && (rhs instanceof ReferenceDataType)
+                && targetType.equals(((ReferenceDataType) rhs).targetType);
+    }
 }
