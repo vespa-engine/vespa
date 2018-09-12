@@ -19,7 +19,6 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.container.protect.FreezeDetector;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.language.Linguistics;
@@ -193,7 +192,6 @@ public class SearchHandler extends LoggingRequestHandler {
             final QrSearchersConfig clusters,
             final SpecialtokensConfig specialTokens,
             final QrTemplatesConfig ignored,
-            final FreezeDetector ignored2,
             final Statistics statistics,
             final Linguistics linguistics,
             final Metric metric,
