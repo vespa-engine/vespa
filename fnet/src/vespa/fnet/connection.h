@@ -70,12 +70,14 @@ private:
             _gotheader(false),
             _inCallback(false),
             _callbackWait(false),
-            _discarding(false)
+            _discarding(false),
+            _framed(false)
         { }
         bool _gotheader;
         bool _inCallback;
         bool _callbackWait;
         bool _discarding;
+        bool _framed;
     };
     struct ResolveHandler : public vespalib::AsyncResolver::ResultHandler {
         FNET_Connection *connection;
