@@ -148,9 +148,6 @@ public class HandlersConfigurerDi {
             protected void configure() {
                 bind(com.yahoo.container.Container.class).toInstance(vespaContainer);
                 bind(com.yahoo.statistics.Statistics.class).toInstance(Statistics.nullImplementation);
-                bind(com.yahoo.container.protect.FreezeDetector.class).toInstance(
-                        new com.yahoo.container.protect.FreezeDetector(
-                                new DiagnosticsConfig(new DiagnosticsConfig.Builder().disabled(true))));
                 bind(AccessLog.class).toInstance(new AccessLog(new ComponentRegistry<>()));
                 bind(Executor.class).toInstance(Executors.newCachedThreadPool(ThreadFactoryFactory.getThreadFactory("HandlersConfigurerDI")));
 
