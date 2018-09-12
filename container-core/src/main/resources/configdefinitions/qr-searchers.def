@@ -74,8 +74,5 @@ searchcluster[].storagecluster.routespec string default=""
 searchcluster[].dispatcher[].host string
 searchcluster[].dispatcher[].port int
 
-## Not used. TODO: Remove on Vespa 7
-searchcluster[].rowbits int default=0
-
 # Per dispatcher config-id might be nice to have, remove it until needed.
 # searchcluster[].dispatcher[].configid reference
