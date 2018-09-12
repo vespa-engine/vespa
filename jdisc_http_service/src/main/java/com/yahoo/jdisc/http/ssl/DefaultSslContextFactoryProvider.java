@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.ssl;
 
 import com.yahoo.config.InnerNode;
 import com.yahoo.jdisc.http.ConnectorConfig;
+import com.yahoo.jdisc.http.ssl.pem.PemSslKeyStore;
 import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyUtils;
@@ -12,6 +13,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -20,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 /**
  * JDisc's default implementation of {@link SslContextFactoryProvider} that uses the {@link ConnectorConfig} to construct a {@link SslContextFactory}.
@@ -28,16 +31,17 @@ import java.util.function.Function;
  */
 public class DefaultSslContextFactoryProvider implements SslContextFactoryProvider {
 
+    private static final Logger log = Logger.getLogger(DefaultSslContextFactoryProvider.class.getName());
+
     private final ConnectorConfig connectorConfig;
-    private final SslKeyStoreConfigurator sslKeyStoreConfigurator;
-    private final SslTrustStoreConfigurator sslTrustStoreConfigurator;
+    @SuppressWarnings("deprecation")
+    private final com.yahoo.jdisc.http.SecretStore secretStore;
 
     public DefaultSslContextFactoryProvider(ConnectorConfig connectorConfig,
-                                            SslKeyStoreConfigurator sslKeyStoreConfigurator,
-                                            SslTrustStoreConfigurator sslTrustStoreConfigurator) {
+                                            @SuppressWarnings("deprecation") com.yahoo.jdisc.http.SecretStore secretStore) {
+        validateConfig(connectorConfig.ssl());
         this.connectorConfig = connectorConfig;
-        this.sslKeyStoreConfigurator = sslKeyStoreConfigurator;
-        this.sslTrustStoreConfigurator = sslTrustStoreConfigurator;
+        this.secretStore = secretStore;
     }
 
     @Override
@@ -69,29 +73,100 @@ public class DefaultSslContextFactoryProvider implements SslContextFactoryProvid
                 factory.setTrustStore(createTruststore(sslConfig));
             }
             factory.setProtocol("TLS");
-        } else {
-            // TODO Remove SslKeyStoreConfigurator / SslTrustStoreConfigurator
-            sslKeyStoreConfigurator.configure(new DefaultSslKeyStoreContext(factory));
-            sslTrustStoreConfigurator.configure(new DefaultSslTrustStoreContext(factory));
-
-            // TODO Remove support for deprecated ssl connector config
-            if (!sslConfig.prng().isEmpty()) {
-                factory.setSecureRandomAlgorithm(sslConfig.prng());
-            }
-
-            setStringArrayParameter(
-                    factory, sslConfig.excludeProtocol(), ConnectorConfig.Ssl.ExcludeProtocol::name, SslContextFactory::setExcludeProtocols);
-            setStringArrayParameter(
-                    factory, sslConfig.includeProtocol(), ConnectorConfig.Ssl.IncludeProtocol::name, SslContextFactory::setIncludeProtocols);
-            setStringArrayParameter(
-                    factory, sslConfig.excludeCipherSuite(), ConnectorConfig.Ssl.ExcludeCipherSuite::name, SslContextFactory::setExcludeCipherSuites);
-            setStringArrayParameter(
-                    factory, sslConfig.includeCipherSuite(), ConnectorConfig.Ssl.IncludeCipherSuite::name, SslContextFactory::setIncludeCipherSuites);
-
-            factory.setKeyManagerFactoryAlgorithm(sslConfig.sslKeyManagerFactoryAlgorithm());
-            factory.setProtocol(sslConfig.protocol());
+        } else { // TODO Vespa 7: Remove support for deprecated ssl connector config
+            configureUsingDeprecatedConnectorConfig(sslConfig, factory);
         }
         return factory;
+    }
+
+    private void configureUsingDeprecatedConnectorConfig(ConnectorConfig.Ssl sslConfig, SslContextFactory factory) {
+        switch (sslConfig.keyStoreType()) {
+            case JKS:
+                factory.setKeyStorePath(sslConfig.keyStorePath());
+                factory.setKeyStoreType("JKS");
+                factory.setKeyStorePassword(secretStore.getSecret(sslConfig.keyDbKey()));
+                break;
+            case PEM:
+                factory.setKeyStorePath(sslConfig.keyStorePath());
+                factory.setKeyStore(createPemKeyStore(sslConfig.pemKeyStore()));
+                break;
+        }
+
+        if (!sslConfig.trustStorePath().isEmpty()) {
+            factory.setTrustStorePath(sslConfig.trustStorePath());
+            factory.setTrustStoreType(sslConfig.trustStoreType().toString());
+            if (sslConfig.useTrustStorePassword()) {
+                factory.setTrustStorePassword(secretStore.getSecret(sslConfig.keyDbKey()));
+            }
+        }
+
+        if (!sslConfig.prng().isEmpty()) {
+            factory.setSecureRandomAlgorithm(sslConfig.prng());
+        }
+
+        setStringArrayParameter(
+                factory, sslConfig.excludeProtocol(), ConnectorConfig.Ssl.ExcludeProtocol::name, SslContextFactory::setExcludeProtocols);
+        setStringArrayParameter(
+                factory, sslConfig.includeProtocol(), ConnectorConfig.Ssl.IncludeProtocol::name, SslContextFactory::setIncludeProtocols);
+        setStringArrayParameter(
+                factory, sslConfig.excludeCipherSuite(), ConnectorConfig.Ssl.ExcludeCipherSuite::name, SslContextFactory::setExcludeCipherSuites);
+        setStringArrayParameter(
+                factory, sslConfig.includeCipherSuite(), ConnectorConfig.Ssl.IncludeCipherSuite::name, SslContextFactory::setIncludeCipherSuites);
+
+        factory.setKeyManagerFactoryAlgorithm(sslConfig.sslKeyManagerFactoryAlgorithm());
+        factory.setProtocol(sslConfig.protocol());
+    }
+
+    private static void validateConfig(ConnectorConfig.Ssl config) {
+        if (!config.enabled()) return;
+        switch (config.keyStoreType()) {
+            case JKS:
+                validateJksConfig(config);
+                break;
+            case PEM:
+                validatePemConfig(config);
+                break;
+        }
+        if (!config.trustStorePath().isEmpty() && config.useTrustStorePassword() && config.keyDbKey().isEmpty()) {
+            throw new IllegalArgumentException("Missing password for JKS truststore");
+        }
+    }
+
+    private static void validateJksConfig(ConnectorConfig.Ssl ssl) {
+        if (!ssl.pemKeyStore().keyPath().isEmpty() || ! ssl.pemKeyStore().certificatePath().isEmpty()) {
+            throw new IllegalArgumentException("pemKeyStore attributes can not be set when keyStoreType is JKS.");
+        }
+        if (ssl.keyDbKey().isEmpty()) {
+            throw new IllegalArgumentException("Missing password for JKS keystore");
+        }
+    }
+
+    private static void validatePemConfig(ConnectorConfig.Ssl ssl) {
+        if (! ssl.keyStorePath().isEmpty()) {
+            throw new IllegalArgumentException("keyStorePath can not be set when keyStoreType is PEM");
+        }
+        if (!ssl.keyDbKey().isEmpty()) {
+            // TODO Make an error once there are separate passwords for truststore and keystore
+            log.warning("Encrypted PEM key stores are not supported. Password is only applied to truststore");
+        }
+        if (ssl.pemKeyStore().certificatePath().isEmpty()) {
+            throw new IllegalArgumentException("Missing certificate path.");
+        }
+        if (ssl.pemKeyStore().keyPath().isEmpty()) {
+            throw new IllegalArgumentException("Missing key path.");
+        }
+    }
+
+    private static KeyStore createPemKeyStore(ConnectorConfig.Ssl.PemKeyStore pemKeyStore) {
+        try {
+            Path certificatePath = Paths.get(pemKeyStore.certificatePath());
+            Path keyPath = Paths.get(pemKeyStore.keyPath());
+            return new PemSslKeyStore(certificatePath, keyPath).loadJavaKeyStore();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed setting up key store for " + pemKeyStore.keyPath() + ", " + pemKeyStore.certificatePath(), e);
+        }
     }
 
     private static KeyStore createTruststore(ConnectorConfig.Ssl sslConfig) {
