@@ -35,7 +35,6 @@ import static com.yahoo.security.KeyAlgorithm.RSA;
 /**
  * @author bjorncs
  */
-// TODO Support serialization of EC private keys
 public class KeyUtils {
     private KeyUtils() {}
 
@@ -88,7 +87,7 @@ public class KeyUtils {
             } else if (pemObject instanceof PEMKeyPair) {
                 PEMKeyPair pemKeypair = (PEMKeyPair) pemObject;
                 PrivateKeyInfo keyInfo = pemKeypair.getPrivateKeyInfo();
-                JcaPEMKeyConverter pemConverter = new JcaPEMKeyConverter();
+                JcaPEMKeyConverter pemConverter = new JcaPEMKeyConverter().setProvider(BouncyCastleProviderHolder.getInstance());
                 return pemConverter.getPrivateKey(keyInfo);
             }
             throw new IllegalArgumentException("Unexpected type of PEM type: " + pemObject);
@@ -101,8 +100,17 @@ public class KeyUtils {
 
     public static String toPem(PrivateKey privateKey) {
         try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
+            String algorithm = privateKey.getAlgorithm();
             // Note: Encoding using PKCS#1 as this is to be read by tools only supporting PKCS#1
-            pemWriter.writeObject(new PemObject("RSA PRIVATE KEY", getPkcs1Bytes(privateKey)));
+            String type;
+            if (algorithm.equals(RSA.getAlgorithmName())) {
+                type = "RSA PRIVATE KEY";
+            } else if (algorithm.equals(EC.getAlgorithmName())) {
+                type = "EC PRIVATE KEY";
+            } else {
+                throw new IllegalArgumentException("Unexpected key algorithm: " + algorithm);
+            }
+            pemWriter.writeObject(new PemObject(type, getPkcs1Bytes(privateKey)));
             pemWriter.flush();
             return stringWriter.toString();
         } catch (IOException e) {
