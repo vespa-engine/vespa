@@ -215,6 +215,37 @@ public class ExpressionTestCase {
     }
 
     @Test
+    public void testAttributeMapLookupNode() {
+        assertEquals(AttributeMapLookupNode.fromKey("map{\"my_key\"}", "map.key", "map.value", "my_key"),
+                     AttributeMapLookupNode.fromKey("map{\"my_key\"}", "map.key", "map.value", "my_key"));
+        assertNotEquals(AttributeMapLookupNode.fromKey("map{\"my_key\"}", "map.key", "map.value", "my_key"),
+                        AttributeMapLookupNode.fromKey("null", "map.key", "map.value", "my_key"));
+        assertNotEquals(AttributeMapLookupNode.fromKey("map{\"my_key\"}", "map.key", "map.value", "my_key"),
+                        AttributeMapLookupNode.fromKey("map{\"my_key\"}", "null", "map.value", "my_key"));
+        assertNotEquals(AttributeMapLookupNode.fromKey("map{\"my_key\"}", "map.key", "map.value", "my_key"),
+                        AttributeMapLookupNode.fromKey("map{\"my_key\"}", "map.key", "null", "my_key"));
+        assertNotEquals(AttributeMapLookupNode.fromKey("map{\"my_key\"}", "map.key", "map.value", "my_key"),
+                        AttributeMapLookupNode.fromKey("map{\"my_key\"}", "map.key", "map.value", "null"));
+
+        assertEquals(AttributeMapLookupNode.fromKeySourceAttribute("map{attribute(key_source)}", "map.key", "map.value", "key_source"),
+                     AttributeMapLookupNode.fromKeySourceAttribute("map{attribute(key_source)}", "map.key", "map.value", "key_source"));
+        assertNotEquals(AttributeMapLookupNode.fromKeySourceAttribute("map{attribute(key_source)}", "map.key", "map.value", "key_source"),
+                        AttributeMapLookupNode.fromKeySourceAttribute("map{attribute(key_source)}", "map.key", "map.value", "null"));
+
+        assertAttributeMapLookupNodeSerialize(
+                AttributeMapLookupNode.fromKey("map{\"my_key\"}", "map.key", "map.value", "my_key"));
+        assertAttributeMapLookupNodeSerialize(
+                AttributeMapLookupNode.fromKeySourceAttribute("map{attribute(key_source)}", "map.key", "map.value", "key_source"));
+    }
+
+    private static void assertAttributeMapLookupNodeSerialize(AttributeMapLookupNode a) {
+        AttributeMapLookupNode b = (AttributeMapLookupNode)assertSerialize(a);
+        assertEquals(a, b);
+        AttributeMapLookupNode c = (AttributeMapLookupNode)assertSerialize(b);
+        assertEquals(a, c);
+    }
+
+    @Test
     public void testInterpolatedLookupNode() {
         ExpressionNode argA = new ConstantNode(new FloatResultNode(2.71828182846));
         ExpressionNode argB = new ConstantNode(new FloatResultNode(3.14159265359));

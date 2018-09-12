@@ -6,6 +6,7 @@ package com.yahoo.search.grouping.request;
  *
  * It evaluates to the value found using the given key for the lookup in that attribute.
  * The key is either specified explicitly or found via a key source attribute.
+ * Two underlying attributes are used to represent the map attribute (the key and value attributes).
  *
  * @author geirst
  */
