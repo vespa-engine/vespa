@@ -89,7 +89,7 @@ void Repo::inherit(const Repo &parent) {
 bool Repo::addDataType(const DataType &type) {
     const DataType *& data_type = _types[type.getId()];
     if (data_type) {
-        if (*data_type == type) {
+        if ((*data_type == type) && (data_type->getName() == type.getName())) {
             return false;  // Redefinition of identical type is ok.
         }
         throw IllegalArgumentException(
