@@ -105,7 +105,7 @@ public class SuperModelControllerTest {
         assertThat(lbc.tenants("t1").applications().size(), is(2));
         assertThat(lbc.tenants("t2").applications().size(), is(1));
         assertThat(lbc.tenants("t2").applications("minetooadvancedapp:prod:default:default").hosts().size(), is(1));
-        assertQrServer(lbc.tenants("t2").applications("minetooadvancedapp:prod:default:default"));
+        assertContainer(lbc.tenants("t2").applications("minetooadvancedapp:prod:default:default"));
     }
 
     @Test
@@ -140,21 +140,23 @@ public class SuperModelControllerTest {
         return ApplicationId.from(tenantName, ApplicationName.from(applicationName), InstanceName.defaultName());
     }
 
-    private void assertQrServer(Applications app) {
+    private void assertContainer(Applications app) {
         String host = app.hosts().keySet().iterator().next();
         Applications.Hosts hosts = app.hosts(host);
         assertThat(hosts.hostname(), is(host));
         for (Map.Entry<String, Applications.Hosts.Services> e : app.hosts(host).services().entrySet()) {
-            System.out.println(e);
-            if ("qrserver".equals(e.getKey())) {
+            System.out.println(e.getKey());
+            if ("container".equals(e.getKey())) {
                 Applications.Hosts.Services s = e.getValue();
-                assertThat(s.type(), is("qrserver"));
+                System.out.println(s);
+                assertThat(s.type(), is("container"));
                 assertThat(s.ports().size(), is(4));
+                assertThat(s.ports().get(0).number(), is(8000));
                 assertThat(s.index(), is(0));
                 return;
             }
         }
-        org.junit.Assert.fail("No qrserver service in config");
+        org.junit.Assert.fail("No container service in config");
     }
 
     private DeployState createDeployState(File applicationPackage, ApplicationId applicationId) {
@@ -170,6 +172,3 @@ public class SuperModelControllerTest {
     }
 
 }
-
-
-
