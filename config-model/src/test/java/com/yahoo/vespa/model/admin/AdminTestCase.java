@@ -218,14 +218,8 @@ public class AdminTestCase {
     public void testContainerMetricsSnapshotInterval() {
         VespaModel vespaModel = getVespaModel(TESTDIR + "metricconfig");
 
-        ContainerCluster docprocCluster = vespaModel.getContainerClusters().get("cluster.music.indexing");
-        HealthMonitorConfig.Builder builder = new HealthMonitorConfig.Builder();
-        docprocCluster.getConfig(builder);
-        HealthMonitorConfig docprocConfig = new HealthMonitorConfig(builder);
-        assertEquals(60, (int) docprocConfig.snapshot_interval());
-
         ContainerCluster qrCluster = vespaModel.getContainerClusters().get("container");
-        builder = new HealthMonitorConfig.Builder();
+        HealthMonitorConfig.Builder builder = new HealthMonitorConfig.Builder();
         qrCluster.getConfig(builder);
         HealthMonitorConfig qrClusterConfig = new HealthMonitorConfig(builder);
         assertEquals(60, (int) qrClusterConfig.snapshot_interval());
