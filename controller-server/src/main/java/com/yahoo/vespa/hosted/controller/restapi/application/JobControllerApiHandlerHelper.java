@@ -147,9 +147,9 @@ class JobControllerApiHandlerHelper {
         lastPlatformObject.setLong("at", lastVespa.committedAt().toEpochMilli());
         long completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), application, type)).count();
         if (Optional.of(lastPlatform).equals(change.platform()))
-            lastPlatformObject.setString("deploying", completed + " of " + steps.productionJobs().size() + "complete");
+            lastPlatformObject.setString("deploying", completed + " of " + steps.productionJobs().size() + " complete");
         else if (completed == steps.productionJobs().size())
-            lastPlatformObject.setString("completed", completed + " of " + steps.productionJobs().size() + "complete");
+            lastPlatformObject.setString("completed", completed + " of " + steps.productionJobs().size() + " complete");
         else if ( ! application.deploymentSpec().canUpgradeAt(controller.clock().instant())) {
             lastPlatformObject.setString("blocked", application.deploymentSpec().changeBlocker().stream()
                                                                .filter(blocker -> blocker.blocksVersions())
@@ -157,7 +157,10 @@ class JobControllerApiHandlerHelper {
                                                                .findAny().map(blocker -> blocker.window().toString()).get());
         }
         else
-            lastPlatformObject.setString("pending", "Waiting for current deployment to complete");
+            lastPlatformObject.setString("pending",
+                                         application.changeAt(controller.clock().instant()).isPresent()
+                                                 ? "Waiting for current deployment to complete"
+                                                 : "Waiting for upgrade slot");
     }
 
     private static void lastApplicationToSlime(Cursor lastApplicationObject, Application application, Change change, DeploymentSteps steps, Controller controller) {
