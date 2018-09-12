@@ -41,6 +41,12 @@ public class SystemCtl {
         this.terminal = terminal;
     }
 
+    public void daemonReload(TaskContext taskContext) {
+        terminal.newCommandLine(taskContext)
+                .add("systemctl", "daemon-reload")
+                .execute();
+    }
+
     public SystemCtlEnable enable(String unit) { return new SystemCtlEnable(unit); }
     public SystemCtlDisable disable(String unit) { return new SystemCtlDisable(unit); }
     public SystemCtlStart start(String unit) { return new SystemCtlStart(unit); }
