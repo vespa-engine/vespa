@@ -151,8 +151,8 @@ public class IndexedTest extends ContentBaseTest {
         DocumentProtocol protocol = (DocumentProtocol) routing.getProtocols().get(0);
         RoutingTableSpec spec = protocol.getRoutingTableSpec();
         assertEquals(2, spec.getNumHops());
-        assertEquals("docproc/cluster.test.indexing/chain.indexing", spec.getHop(0).getName());
-        assertEquals("indexing", spec.getHop(1).getName());
+        assertEquals("indexing", spec.getHop(0).getName());
+        assertEquals("jdisc/chain.indexing", spec.getHop(1).getName());
 
         RouteSpec r;
         r = spec.getRoute(0);
@@ -174,7 +174,7 @@ public class IndexedTest extends ContentBaseTest {
         r = spec.getRoute(4);
         assertEquals("test-index", r.getName());
         assertEquals(2, r.getNumHops());
-        assertEquals("docproc/cluster.test.indexing/chain.indexing", r.getHop(0));
+        assertEquals("jdisc/chain.indexing", r.getHop(0));
         assertEquals("[Content:cluster=test]", r.getHop(1));
     }
     @Test
@@ -281,7 +281,7 @@ public class IndexedTest extends ContentBaseTest {
     @Test
     public void requireThatIndexingDocprocGetsConfigIdBasedOnDistributionKey() {
         VespaModel model = getIndexedVespaModel();
-        ContainerCluster cluster = model.getContainerClusters().get("cluster.test.indexing");
-        assertEquals("docproc/cluster.test.indexing/3", cluster.getContainers().get(0).getConfigId());
+        ContainerCluster cluster = model.getContainerClusters().get("jdisc");
+        assertEquals("jdisc/container.0", cluster.getContainers().get(0).getConfigId());
     }
 }
