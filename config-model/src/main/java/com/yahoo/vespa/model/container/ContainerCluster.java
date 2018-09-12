@@ -232,7 +232,6 @@ public final class ContainerCluster
         addSimpleComponent(com.yahoo.metrics.simple.jdisc.JdiscMetricsFactory.class.getName(), null, MetricProperties.BUNDLE_SYMBOLIC_NAME);
         addSimpleComponent("com.yahoo.container.jdisc.state.StateMonitor");
         addSimpleComponent("com.yahoo.container.jdisc.ContainerThreadFactory");
-        addSimpleComponent("com.yahoo.container.protect.FreezeDetector");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
         addSimpleComponent(DefaultJrtFactory.class);
