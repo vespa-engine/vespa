@@ -6,9 +6,7 @@ import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.container.handler.LogHandler;
 import com.yahoo.log.LogLevel;
-import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
@@ -60,7 +58,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
                 NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("logservers"), context);
 
         assignSlobroks(requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
-        assignLogserver(requestedLogservers.orElse(NodesSpecification.nonDedicated(1, context)), admin);
+        assignLogserver(requestedLogservers.orElse(createNodesSpecificationForLogserver()), admin);
 
         addLogForwarders(adminElement.getChild("logforwarding"), admin);
     }
@@ -82,9 +80,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
             if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
 
             Logserver logserver = createLogserver(admin, hosts);
-            // TODO: Enable for main system as well
-            if (context.getDeployState().isHosted() && context.getDeployState().zone().system() == SystemName.cd)
-                createAdditionalContainerOnLogserverHost(admin, logserver.getHostResource());
+            createAdditionalContainerOnLogserverHost(admin, logserver.getHostResource());
         } else if (containerModels.iterator().hasNext()) {
             List<HostResource> hosts = sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.count(), false);
             if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
@@ -93,6 +89,14 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         } else {
             context.getDeployLogger().log(LogLevel.INFO, "No container host available to use for running logserver");
         }
+    }
+
+    private NodesSpecification createNodesSpecificationForLogserver() {
+        // TODO: Enable for main system as well
+        if (context.getDeployState().isHosted() && context.getDeployState().zone().system() == SystemName.cd)
+            return NodesSpecification.dedicated(1, context);
+        else
+            return NodesSpecification.nonDedicated(1, context);
     }
 
     // Creates a container cluster 'logserver-cluster' with 1 container on logserver host
