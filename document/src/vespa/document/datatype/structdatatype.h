@@ -71,10 +71,10 @@ public:
     DECLARE_IDENTIFIABLE(StructDataType);
 
 private:
-    typedef vespalib::hash_map<vespalib::string, Field::SP> StringFieldMap;
-    typedef vespalib::hash_map<int32_t, Field::SP> IntFieldMap;
-    StringFieldMap _nameFieldMap;
-    IntFieldMap    _idFieldMap;
+    using StringFieldMap = vespalib::hash_map<vespalib::string, Field::SP>;
+    using IntFieldMap = vespalib::hash_map<int32_t, Field::SP>;
+    StringFieldMap    _nameFieldMap;
+    IntFieldMap       _idFieldMap;
     CompressionConfig _compressionConfig;
 
     /** @return "" if not conflicting. Error message otherwise. */
