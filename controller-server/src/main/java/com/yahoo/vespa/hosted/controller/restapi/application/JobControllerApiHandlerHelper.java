@@ -157,7 +157,10 @@ class JobControllerApiHandlerHelper {
                                                                .findAny().map(blocker -> blocker.window().toString()).get());
         }
         else
-            lastPlatformObject.setString("pending", "Waiting for current deployment to complete");
+            lastPlatformObject.setString("pending",
+                                         application.changeAt(controller.clock().instant()).isPresent()
+                                                 ? "Waiting for current deployment to complete"
+                                                 : "Waiting for upgrade slot");
     }
 
     private static void lastApplicationToSlime(Cursor lastApplicationObject, Application application, Change change, DeploymentSteps steps, Controller controller) {
