@@ -528,6 +528,16 @@ search annotationsimplicitstruct {
     }
 
     @Test
+    public void no_temporary_targets_in_references_or_names() {
+        DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.replaced_temporary.cfg");
+        DocumentType docType = manager.getDocumentType("ad");
+        Field f = docType.getField("campaign_ref");
+        assertTrue(f.getDataType() instanceof ReferenceDataType);
+        assertFalse(((ReferenceDataType)f.getDataType()).getTargetType() instanceof TemporaryStructuredDataType);
+        assertEquals("Reference<mystiqueCampaign>", f.getDataType().getName());
+    }
+
+    @Test
     public void can_have_reference_type_pointing_to_own_document_type() {
         DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.selfreference.cfg");
 
