@@ -247,7 +247,16 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      */
     @Deprecated
     public FieldUpdate setFieldUpdate(int index, FieldUpdate upd) {
-        return fieldUpdates.set(index, upd);
+        FieldUpdate old = fieldUpdates.get(index);
+        if (old.getField().equals(upd.getField())) {
+            fieldUpdates.set(index, upd);
+            id2FieldUpdateMap.put(upd.getField().getId(), upd);
+        } else {
+            throw new IllegalArgumentException("You can not replace a FieldUpdate for field '" + old.getField() +
+                                               "' with an update for field '" + upd.getField() + "'");
+        }
+
+        return old;
     }
 
     /**
