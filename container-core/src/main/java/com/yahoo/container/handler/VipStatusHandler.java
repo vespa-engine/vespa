@@ -38,7 +38,6 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
     private final boolean accessDisk;
     private final File statusFile;
     private final VipStatus vipStatus;
-    private final boolean noSearchBackendsImpliesOutOfService;
 
     private volatile boolean previouslyInRotation = true;
 
@@ -57,7 +56,7 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
 
         private StatusResponse() {
             super(com.yahoo.jdisc.http.HttpResponse.Status.OK); // status may be overwritten below
-            if (noSearchBackendsImpliesOutOfService && !vipStatus.isInRotation()) {
+            if (vipStatus != null && ! vipStatus.isInRotation()) {
                 searchContainerOutOfService();
             } else if (accessDisk) {
                 preSlurpFile();
@@ -179,7 +178,6 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
         super(executor, metric);
         this.accessDisk = vipConfig.accessdisk();
         this.statusFile = new File(Defaults.getDefaults().underVespaHome(vipConfig.statusfile()));
-        this.noSearchBackendsImpliesOutOfService = vipConfig.noSearchBackendsImpliesOutOfService();
         this.vipStatus = vipStatus;
     }
 
@@ -187,9 +185,8 @@ public final class VipStatusHandler extends ThreadedHttpRequestHandler {
     public HttpResponse handle(HttpRequest request) {
         if (metric != null)
             metric.add(NUM_REQUESTS_METRIC, 1, null);
-        if (noSearchBackendsImpliesOutOfService) {
+        if (vipStatus != null)
             updateAndLogRotationState();
-        }
         return new StatusResponse();
     }
 
