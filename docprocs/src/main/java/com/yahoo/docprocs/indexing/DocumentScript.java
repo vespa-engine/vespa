@@ -57,7 +57,7 @@ public class DocumentScript {
                 removeAnyLinguisticsSpanTree(valueUpdate);
             }
         }
-        for (FieldPathUpdate fieldUpdate : update.getFieldPathUpdates()) {
+        for (FieldPathUpdate fieldUpdate : update.fieldPathUpdates()) {
             requireThatFieldIsDeclaredInDocument(fieldUpdate.getFieldPath().get(0).getFieldRef());
             if (fieldUpdate instanceof AssignFieldPathUpdate) {
                 removeAnyLinguisticsSpanTree(((AssignFieldPathUpdate)fieldUpdate).getFieldValue());

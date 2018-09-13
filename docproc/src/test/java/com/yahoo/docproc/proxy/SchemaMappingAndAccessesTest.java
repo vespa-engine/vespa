@@ -328,7 +328,8 @@ public class SchemaMappingAndAccessesTest {
         Document doc = getDoc();
         DocumentType type = doc.getDataType();
         DocumentUpdate dud = new DocumentUpdate(type, new DocumentId("doc:map:test:1"));
-        FieldUpdate assignSingle = FieldUpdate.createAssign(type.getField("title"), new StringFieldValue("something"));
+        com.yahoo.document.Field title = type.getField("title");
+        FieldUpdate assignSingle = FieldUpdate.createAssign(title, new StringFieldValue("something"));
         Map<String, String> fieldMap = new HashMap<>();
         fieldMap.put("t", "title");
         fieldMap.put("a", "artist");
@@ -336,8 +337,8 @@ public class SchemaMappingAndAccessesTest {
         pup.addFieldUpdate(assignSingle);
         assertEquals(pup.fieldUpdates().toString(), dud.fieldUpdates().toString());
         assertEquals(pup.getDocumentType(), dud.getDocumentType());
-        assertEquals(pup.getFieldUpdate(new com.yahoo.document.Field("title")).size(), 1);
-        assertEquals(pup.getFieldUpdate(0), dud.fieldUpdates().iterator().next());
+        assertEquals(pup.getFieldUpdate(title).size(), 1);
+        assertEquals(pup.getFieldUpdate(title), dud.fieldUpdates().iterator().next());
         assertEquals(pup.getFieldUpdate("title"), dud.getFieldUpdate("title"));
         assertEquals(pup.getId(), dud.getId());
         assertEquals(pup.getType(), dud.getType());

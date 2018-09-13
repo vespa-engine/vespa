@@ -29,8 +29,8 @@ public class DocumentToPathUpdateTestCase {
 
         DocumentUpdate docUpd = new FieldPathUpdateAdapter(new SimpleDocumentAdapter(null, doc), upd).getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldPathUpdates().size());
-        assertNotNull(upd = docUpd.getFieldPathUpdates().get(0));
+        assertEquals(1, docUpd.fieldPathUpdates().size());
+        assertNotNull(upd = docUpd.fieldPathUpdates().iterator().next());
 
         assertTrue(upd instanceof AssignFieldPathUpdate);
         assertEquals("my_int", upd.getOriginalFieldPath());
@@ -49,8 +49,8 @@ public class DocumentToPathUpdateTestCase {
 
         DocumentUpdate docUpd = new FieldPathUpdateAdapter(new SimpleDocumentAdapter(null, doc), upd).getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldPathUpdates().size());
-        assertNotNull(upd = docUpd.getFieldPathUpdates().get(0));
+        assertEquals(1, docUpd.fieldPathUpdates().size());
+        assertNotNull(upd = docUpd.fieldPathUpdates().iterator().next());
 
         assertTrue(upd instanceof AssignFieldPathUpdate);
         assertEquals("my_str", upd.getOriginalFieldPath());
@@ -77,8 +77,8 @@ public class DocumentToPathUpdateTestCase {
 
         DocumentUpdate docUpd = new FieldPathUpdateAdapter(new SimpleDocumentAdapter(null, doc), upd).getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldPathUpdates().size());
-        assertNotNull(upd = docUpd.getFieldPathUpdates().get(0));
+        assertEquals(1, docUpd.fieldPathUpdates().size());
+        assertNotNull(upd = docUpd.fieldPathUpdates().iterator().next());
 
         assertTrue(upd instanceof AssignFieldPathUpdate);
         assertEquals("a", upd.getOriginalFieldPath());
@@ -103,8 +103,8 @@ public class DocumentToPathUpdateTestCase {
 
         DocumentUpdate docUpd = new FieldPathUpdateAdapter(new SimpleDocumentAdapter(null, doc), upd).getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldPathUpdates().size());
-        assertNotNull(upd = docUpd.getFieldPathUpdates().get(0));
+        assertEquals(1, docUpd.fieldPathUpdates().size());
+        assertNotNull(upd = docUpd.fieldPathUpdates().iterator().next());
 
         assertTrue(upd instanceof AssignFieldPathUpdate);
         assertEquals("a.b", upd.getOriginalFieldPath());

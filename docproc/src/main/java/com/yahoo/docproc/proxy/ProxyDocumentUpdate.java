@@ -41,9 +41,8 @@ public class ProxyDocumentUpdate extends DocumentUpdate implements DocumentOpera
     }
 
     @Override
-    @Deprecated
     public FieldUpdate getFieldUpdate(Field field) {
-        return getFieldUpdate(field.getName());
+        return docU.getFieldUpdate(field);
     }
 
     @Override
