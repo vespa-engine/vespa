@@ -278,8 +278,8 @@ class JobControllerApiHandlerHelper {
 
     private static String statusOf(Controller controller, ApplicationId id, JobType type, Versions versions) {
         return controller.jobController().last(id, type)
-                         .filter(run -> versions.targetsMatch(versions))
-                         .filter(run -> type == systemTest || versions.sourcesMatchIfPresent(versions))
+                         .filter(run -> run.versions().targetsMatch(versions))
+                         .filter(run -> type == systemTest || run.versions().sourcesMatchIfPresent(versions))
                          .map(JobControllerApiHandlerHelper::taskStatusOf)
                          .orElse("pending");
     }
