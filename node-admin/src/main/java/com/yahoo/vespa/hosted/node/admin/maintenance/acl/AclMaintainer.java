@@ -52,6 +52,8 @@ public class AclMaintainer implements Runnable {
 
     private void applyRedirect(Container container, InetAddress address) {
         IPVersion ipVersion = IPVersion.get(address);
+        // Necessary to avoid the routing packets destined for the node's own public IP address
+        // via the bridge, which is illegal.
         String redirectRule = "-A OUTPUT -d " + InetAddresses.toAddrString(address) + ipVersion.singleHostCidr() + " -j REDIRECT";
         IPTablesEditor.editLogOnError(dockerOperations, container.name, ipVersion, "nat", NatTableLineEditor.from(redirectRule));
     }
