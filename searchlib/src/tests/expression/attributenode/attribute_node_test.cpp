@@ -10,8 +10,8 @@
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/expression/attributenode.h>
-#include <vespa/searchlib/expression/attribute_map_lookup_node.h>
 #include <vespa/searchlib/expression/resultvector.h>
+#include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -31,7 +31,6 @@ using search::attribute::Config;
 using search::attribute::IAttributeVector;
 using search::attribute::getUndefined;
 using search::expression::AttributeNode;
-using search::expression::AttributeMapLookupNode;
 using search::expression::EnumResultNode;
 using search::expression::EnumResultNodeVector;
 using search::expression::FloatResultNode;
@@ -44,6 +43,7 @@ using search::expression::ResultNode;
 using search::expression::ResultNodeVector;
 using search::expression::StringResultNode;
 using search::expression::StringResultNodeVector;
+using search::expression::test::makeAttributeMapLookupNode;
 using vespalib::BufferRef;
 
 namespace {
@@ -58,31 +58,6 @@ vespalib::string stringValue(const ResultNode &result, const IAttributeVector &a
     BufferRef bref(&buf[0], sizeof(buf));
     auto sbuf = result.getString(bref);
     return vespalib::string(sbuf.c_str(), sbuf.c_str() + sbuf.size());
-}
-
-vespalib::string indirectKeyMarker("attribute(");
-
-std::unique_ptr<AttributeNode>
-makeAttributeMapLookupNode(const vespalib::string attributeName)
-{
-    vespalib::asciistream keyName;
-    vespalib::asciistream valueName;
-    auto leftBracePos = attributeName.find('{');
-    auto baseName = attributeName.substr(0, leftBracePos);
-    auto rightBracePos = attributeName.rfind('}');
-    keyName << baseName << ".key";
-    valueName << baseName << ".value" << attributeName.substr(rightBracePos + 1);
-    if (rightBracePos != vespalib::string::npos && rightBracePos > leftBracePos) {
-        if (attributeName[leftBracePos + 1] == '"' && attributeName[rightBracePos - 1] == '"') {
-            vespalib::string key = attributeName.substr(leftBracePos + 2, rightBracePos - leftBracePos - 3);
-            return std::make_unique<AttributeMapLookupNode>(attributeName, keyName.str(), valueName.str(), key, "");
-        } else if (attributeName.substr(leftBracePos + 1, indirectKeyMarker.size()) == indirectKeyMarker && attributeName[rightBracePos - 1] == ')') {
-            auto startPos = leftBracePos + 1 + indirectKeyMarker.size();
-            vespalib::string keySourceAttributeName = attributeName.substr(startPos, rightBracePos - 1 - startPos);
-            return std::make_unique<AttributeMapLookupNode>(attributeName, keyName.str(), valueName.str(), "", keySourceAttributeName);
-        }
-    }
-    return std::unique_ptr<AttributeNode>();
 }
 
 struct AttributeManagerFixture

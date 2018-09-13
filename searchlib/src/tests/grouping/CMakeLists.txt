@@ -4,6 +4,7 @@ vespa_add_executable(searchlib_grouping_test_app TEST
     grouping_test.cpp
     DEPENDS
     searchlib
+    searchlib_test
 )
 vespa_add_test(NAME searchlib_grouping_test_app COMMAND searchlib_grouping_test_app)
 vespa_add_executable(searchlib_hyperloglog_test_app TEST

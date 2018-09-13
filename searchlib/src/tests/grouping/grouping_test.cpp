@@ -9,6 +9,8 @@
 #include <vespa/searchlib/aggregation/fs4hit.h>
 #include <vespa/searchlib/aggregation/predicates.h>
 #include <vespa/searchlib/expression/fixedwidthbucketfunctionnode.h>
+#include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
+#include <vespa/searchcommon/common/undefinedvalues.h>
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -21,6 +23,13 @@ using namespace search;
 using namespace search::aggregation;
 using namespace search::attribute;
 using namespace search::expression;
+using search::expression::test::makeAttributeMapLookupNode;
+
+namespace {
+
+const int64_t undefinedInteger = getUndefined<int64_t>();
+
+}
 
 //-----------------------------------------------------------------------------
 
@@ -61,6 +70,14 @@ public:
         _attr->add(value);
         return *this;
     }
+    AttrBuilder &add(std::vector<T> values) {
+        DocId ignore;
+        _attr->addDoc(ignore);
+        for (T value : values) {
+            _attr->add(value);
+        }
+        return *this;
+    }
     AttributeVector::SP sp() const {
         return _attrSP;
     }
@@ -69,6 +86,9 @@ public:
 typedef AttrBuilder<SingleIntegerExtAttribute, int64_t> IntAttrBuilder;
 typedef AttrBuilder<SingleFloatExtAttribute, double> FloatAttrBuilder;
 typedef AttrBuilder<SingleStringExtAttribute, const char *> StringAttrBuilder;
+
+using StringArrayAttrBuilder = AttrBuilder<MultiStringExtAttribute, const char *>;
+using IntArrayAttrBuilder = AttrBuilder<MultiIntegerExtAttribute, int64_t>;
 
 //-----------------------------------------------------------------------------
 
@@ -164,8 +184,10 @@ public:
     void testFixedWidthBuckets();
     void testThatNanIsConverted();
     void testNanSorting();
+    void testAttributeMapLookup();
     int Main() override;
 private:
+    void testAggregationSimple(AggregationContext & ctx, const AggregationResult & aggr, const ResultNode & ir, const vespalib::string &name);
     void testAggregationSimpleSum(AggregationContext & ctx, const AggregationResult & aggr, const ResultNode & ir, const ResultNode & fr, const ResultNode & sr);
     class CheckAttributeReferences : public vespalib::ObjectOperation, public vespalib::ObjectPredicate
     {
@@ -313,6 +335,18 @@ prepareAggr(const AggregationResult & aggr, ExpressionNode::UP expr, const Resul
     prepared->setResult(r);
     return prepared;
 }
+
+void Test::testAggregationSimple(AggregationContext & ctx, const AggregationResult & aggr, const ResultNode & ir, const vespalib::string &name)
+{
+    ExpressionNode::CP clone(aggr);
+    Grouping request;
+    request.setRoot(Group().addResult(prepareAggr(aggr, makeAttributeMapLookupNode(name))));
+
+    Group expect;
+    expect.addResult(prepareAggr(aggr, makeAttributeMapLookupNode(name), ir));
+    EXPECT_TRUE(testAggregation(ctx, request, expect));
+}
+
 void Test::testAggregationSimpleSum(AggregationContext & ctx, const AggregationResult & aggr, const ResultNode & ir, const ResultNode & fr, const ResultNode & sr)
 {
     ExpressionNode::CP clone(aggr);
@@ -1884,6 +1918,28 @@ Test::testThatNanIsConverted()
     ASSERT_EQUAL(g.getRank(), g.getRank());
 }
 
+void
+Test::testAttributeMapLookup()
+{
+    AggregationContext ctx;
+    ctx.result().add(0).add(1);
+    ctx.add(StringArrayAttrBuilder("smap.key").add({"k1", "k2"}).add({"k3", "k4"}).sp());
+    ctx.add(IntArrayAttrBuilder("smap.value.weight").add({10, 20}).add({100, 200}).sp());
+    ctx.add(StringAttrBuilder("key1").add("k1").add("k4").sp());
+    ctx.add(StringAttrBuilder("key2").add("k2").add("k3").sp());
+    ctx.add(StringAttrBuilder("key3").add("k3").add("k2").sp());
+    testAggregationSimple(ctx, SumAggregationResult(), Int64ResultNode(10 + undefinedInteger), "smap{\"k1\"}.weight");
+    testAggregationSimple(ctx, SumAggregationResult(), Int64ResultNode(20 + undefinedInteger), "smap{\"k2\"}.weight");
+    testAggregationSimple(ctx, SumAggregationResult(), Int64ResultNode(2 * undefinedInteger), "smap{\"k5\"}.weight");
+    testAggregationSimple(ctx, SumAggregationResult(), Int64ResultNode(210), "smap{attribute(key1)}.weight");
+    testAggregationSimple(ctx, SumAggregationResult(), Int64ResultNode(120), "smap{attribute(key2)}.weight");
+    testAggregationSimple(ctx, SumAggregationResult(), Int64ResultNode(2 * undefinedInteger), "smap{attribute(key3)}.weight");
+    testAggregationSimple(ctx, MinAggregationResult(), Int64ResultNode(10), "smap{attribute(key1)}.weight");
+    testAggregationSimple(ctx, MinAggregationResult(), Int64ResultNode(20), "smap{attribute(key2)}.weight");
+    testAggregationSimple(ctx, MaxAggregationResult(), Int64ResultNode(200), "smap{attribute(key1)}.weight");
+    testAggregationSimple(ctx, MaxAggregationResult(), Int64ResultNode(100), "smap{attribute(key2)}.weight");
+}
+
 //-----------------------------------------------------------------------------
 
 struct RunDiff { ~RunDiff() { system("diff -u lhs.out rhs.out > diff.txt"); }};
@@ -1916,6 +1972,7 @@ Test::Main()
     testTopN();
     testThatNanIsConverted();
     testNanSorting();
+    testAttributeMapLookup();
     TEST_DONE();
 }
 
