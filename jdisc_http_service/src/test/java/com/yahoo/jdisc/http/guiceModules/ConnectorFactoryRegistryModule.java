@@ -10,8 +10,7 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ConnectorConfig.Builder;
 
 import com.yahoo.jdisc.http.server.jetty.ConnectorFactory;
-import com.yahoo.jdisc.http.server.jetty.TestDrivers;
-import com.yahoo.jdisc.http.ssl.DefaultSslContextFactoryProvider;
+import com.yahoo.jdisc.http.ssl.impl.DefaultSslContextFactoryProvider;
 
 /**
  * Guice module for test ConnectorFactories

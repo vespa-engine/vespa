@@ -5,7 +5,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
-import com.yahoo.jdisc.http.ssl.LegacySslContextFactoryProvider;
+import com.yahoo.jdisc.http.ssl.impl.LegacySslContextFactoryProvider;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
