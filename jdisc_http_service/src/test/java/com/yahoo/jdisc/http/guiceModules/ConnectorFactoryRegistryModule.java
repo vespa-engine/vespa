@@ -47,17 +47,7 @@ public class ConnectorFactoryRegistryModule implements Module {
     private static class StaticKeyDbConnectorFactory extends ConnectorFactory {
 
         public StaticKeyDbConnectorFactory(ConnectorConfig connectorConfig) {
-            super(connectorConfig, new DefaultSslContextFactoryProvider(connectorConfig, new MockSecretStore()));
-        }
-
-    }
-
-    @SuppressWarnings("deprecation")
-    private static final class MockSecretStore implements com.yahoo.jdisc.http.SecretStore {
-
-        @Override
-        public String getSecret(String key) {
-            return TestDrivers.KEY_STORE_PASSWORD;
+            super(connectorConfig, new DefaultSslContextFactoryProvider(connectorConfig));
         }
 
     }
