@@ -7,7 +7,6 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ssl.LegacySslProvider;
-import org.w3c.dom.Element;
 
 import static com.yahoo.component.ComponentSpecification.fromString;
 
@@ -53,33 +52,6 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
 
     public int getListenPort() {
         return listenPort;
-    }
-
-<
-    private void addSslKeyStoreConfigurator(String name, Element sslKeystoreConfigurator) {
-        addSslConfigurator("ssl-keystore-configurator@" + name,
-                           DefaultSslKeyStoreConfigurator.class,
-                           sslKeystoreConfigurator);
-    }
-
-    private void addSslTrustStoreConfigurator(String name, Element sslKeystoreConfigurator) {
-        addSslConfigurator("ssl-truststore-configurator@" + name,
-                           DefaultSslTrustStoreConfigurator.class,
-                           sslKeystoreConfigurator);
-    }
-
-    private void addSslConfigurator(String idSpec, Class<?> defaultImplementation, Element configuratorElement) {
-        SimpleComponent configuratorComponent;
-        if (configuratorElement != null) {
-            String className = configuratorElement.getAttribute("class");
-            String bundleName = configuratorElement.getAttribute("bundle");
-            configuratorComponent = new SimpleComponent(new ComponentModel(idSpec, className, bundleName));
-        } else {
-            configuratorComponent =
-                    new SimpleComponent(new ComponentModel(idSpec, defaultImplementation.getName(), "jdisc_http_service"));
-        }
-        addChild(configuratorComponent);
-        inject(configuratorComponent);
     }
 
 }
