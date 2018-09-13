@@ -53,8 +53,7 @@ public class VipStatusHandlerTestCase {
 
     @Test
     public void testHandleRequest() {
-        VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(false)
-                .noSearchBackendsImpliesOutOfService(false));
+        VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(false));
         VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config, metric);
         MockResponseHandler responseHandler = new MockResponseHandler();
         HttpRequest request = createRequest();
@@ -81,8 +80,7 @@ public class VipStatusHandlerTestCase {
     @Test
     public void testFileNotFound() {
         VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(true)
-                .statusfile("/VipStatusHandlerTestCaseFileThatReallyReallyShouldNotExist")
-                .noSearchBackendsImpliesOutOfService(false));
+                .statusfile("/VipStatusHandlerTestCaseFileThatReallyReallyShouldNotExist"));
         VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config, metric);
         NotFoundResponseHandler responseHandler = new NotFoundResponseHandler();
         HttpRequest request = createRequest();
@@ -104,8 +102,10 @@ public class VipStatusHandlerTestCase {
             String OK = "OK\n";
             writer.write(OK);
             writer.close();
-            VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(true)
-                    .statusfile(statusFile.getAbsolutePath()).noSearchBackendsImpliesOutOfService(false));
+            VipStatusConfig config = new VipStatusConfig(
+                    new VipStatusConfig.Builder()
+                            .accessdisk(true)
+                            .statusfile(statusFile.getAbsolutePath()));
             VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config, metric);
             MockResponseHandler responseHandler = new MockResponseHandler();
             HttpRequest request = createRequest();
@@ -123,8 +123,7 @@ public class VipStatusHandlerTestCase {
     @Test
     public void testExplicitlyRotationControl() {
         VipStatus vipStatus = new VipStatus();
-        VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(false)
-                .noSearchBackendsImpliesOutOfService(true));
+        VipStatusConfig config = new VipStatusConfig(new VipStatusConfig.Builder().accessdisk(false));
         VipStatusHandler handler = new VipStatusHandler(Executors.newCachedThreadPool(), config,  metric, vipStatus);
 
         vipStatus.setInRotation(false);
