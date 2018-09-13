@@ -119,6 +119,16 @@ public class DefaultSslContextFactoryProvider implements SslContextFactoryProvid
 
     private static void validateConfig(ConnectorConfig.Ssl config) {
         if (!config.enabled()) return;
+        if (!config.privateKeyFile().isEmpty()) {
+            if (config.certificateFile().isEmpty()) {
+                throw new IllegalArgumentException("Missing certificate file.");
+            }
+        } else {
+            validateConfigUsingDeprecatedConnectorConfig(config);
+        }
+    }
+
+    private static void validateConfigUsingDeprecatedConnectorConfig(ConnectorConfig.Ssl config) {
         switch (config.keyStoreType()) {
             case JKS:
                 validateJksConfig(config);
