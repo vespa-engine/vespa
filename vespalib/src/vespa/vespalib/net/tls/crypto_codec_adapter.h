@@ -4,7 +4,7 @@
 
 #include <vespa/vespalib/net/crypto_socket.h>
 #include <vespa/vespalib/net/socket_handle.h>
-#include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/data/smart_buffer.h>
 #include "crypto_codec.h"
 
 namespace vespalib::net::tls {
@@ -19,8 +19,8 @@ namespace vespalib::net::tls {
 class CryptoCodecAdapter : public CryptoSocket
 {
 private:
-    SimpleBuffer                 _input;
-    SimpleBuffer                 _output;
+    SmartBuffer                  _input;
+    SmartBuffer                  _output;
     SocketHandle                 _socket;
     std::unique_ptr<CryptoCodec> _codec;
 
@@ -33,7 +33,7 @@ private:
     ssize_t flush_all();  // -1/0 -> error/ok
 public:
     CryptoCodecAdapter(SocketHandle socket, std::unique_ptr<CryptoCodec> codec)
-        : _socket(std::move(socket)), _codec(std::move(codec)) {}
+        : _input(64 * 1024), _output(64 * 1024), _socket(std::move(socket)), _codec(std::move(codec)) {}
     int get_fd() const override { return _socket.get(); }
     HandshakeResult handshake() override;
     size_t min_read_buffer_size() const override { return _codec->min_decode_buffer_size(); }

@@ -13,7 +13,6 @@ FNET_DataBuffer::FNET_DataBuffer(uint32_t len)
 
     if (len > 0) {
        Alloc::alloc(len).swap(_ownedBuf);
-       memset(_ownedBuf.get(), 0x55, len);
         _bufstart = static_cast<char *>(_ownedBuf.get());
         assert(_bufstart != nullptr);
     } else { // len == 0
@@ -70,7 +69,6 @@ FNET_DataBuffer::Shrink(uint32_t newsize)
     }
     
     Alloc newBuf(Alloc::alloc(newsize));
-    memset(newBuf.get(), 0x55, newsize);
     memcpy(newBuf.get(), _datapt, GetDataLen());
     _ownedBuf.swap(newBuf);
     _bufstart = static_cast<char *>(_ownedBuf.get());
@@ -95,7 +93,6 @@ FNET_DataBuffer::Pack(uint32_t needbytes)
             bufsize *= 2;
 
         Alloc newBuf(Alloc::alloc(bufsize));
-        memset(newBuf.get(), 0x55, bufsize);
         memcpy(newBuf.get(), _datapt, GetDataLen());
         _ownedBuf.swap(newBuf);
         _bufstart = static_cast<char *>(_ownedBuf.get());
