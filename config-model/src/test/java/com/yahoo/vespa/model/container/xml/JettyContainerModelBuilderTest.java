@@ -268,6 +268,27 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         assertChildComponentExists(connectorFactory, "com.yahoo.CustomSslProvider");
     }
 
+    @Test
+    public void verify_that_container_factory_sees_same_config(){
+        Element clusterElem = DomBuilderTest.parse(
+                "<jdisc id='default' version='1.0' jetty='true'>",
+                "    <http>",
+                "        <server port='9000' id='ssl'>",
+                "            <ssl>",
+                "                <private-key-file>/foo/key</private-key-file>",
+                "                <certificate-file>/foo/cert</certificate-file>",
+                "            </ssl>",
+                "        </server>",
+                "    </http>",
+                nodesXml,
+                "",
+                "</jdisc>");
+
+        createModel(root, clusterElem);
+        ConnectorConfig sslProvider = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/ssl");
+        assertTrue(sslProvider.ssl().enabled());
+    }
+
     private static void assertChildComponentExists(ConnectorFactory connectorFactory, String className) {
         Optional<SimpleComponent> simpleComponent = connectorFactory.getChildren().values().stream()
                 .map(z -> (SimpleComponent) z)
