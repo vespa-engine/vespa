@@ -99,12 +99,14 @@ public class ReferenceDataType extends DataType {
         return rhs.getDataType().equals(this);
     }
 
+    private int compareTargetType(DataType rhs) {
+        return (rhs instanceof ReferenceDataType) ? targetType.compareTo(((ReferenceDataType) rhs).targetType) : 0;
+    }
+
     @Override
     public int compareTo(DataType rhs) {
         int cmp = super.compareTo(rhs);
-        return (cmp != 0)
-                ? cmp
-                : (rhs instanceof ReferenceDataType) ? targetType.compareTo(((ReferenceDataType) rhs).targetType) : 0;
+        return (cmp != 0) ? cmp : compareTargetType(rhs);
     }
 
     @Override
