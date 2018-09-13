@@ -130,6 +130,7 @@ public class ConfigserverSslContextFactoryProvider extends AbstractComponent imp
                 tryReadKeystoreFile(configserverIdentity, updatePeriod)
                         .orElseGet(() -> updateKeystore(configserverIdentity, generateKeystorePassword(), keyProvider, ztsClient, zoneConfig));
         factory.setKeyStore(keyStore);
+        factory.setKeyStorePassword("");
         return factory;
     }
 
