@@ -105,7 +105,7 @@ public class ConnectorFactoryTest {
     }
 
     private static ConnectorFactory createConnectorFactory(ConnectorConfig config) {
-        return new ConnectorFactory(config, new DefaultSslContextFactoryProvider(config, new ThrowingSecretStore()));
+        return new ConnectorFactory(config, new DefaultSslContextFactoryProvider(config));
     }
 
     private static class HelloWorldHandler extends AbstractHandler {
@@ -132,16 +132,6 @@ public class ConnectorFactoryTest {
     }
 
     private static class DummyContext implements Metric.Context {
-    }
-
-    @SuppressWarnings("deprecation")
-    private static final class ThrowingSecretStore implements com.yahoo.jdisc.http.SecretStore {
-
-        @Override
-        public String getSecret(String key) {
-            throw new UnsupportedOperationException("A secret store is not available");
-        }
-
     }
 
 }

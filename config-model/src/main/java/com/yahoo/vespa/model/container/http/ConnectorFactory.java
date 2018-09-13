@@ -7,7 +7,7 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
-import com.yahoo.vespa.model.container.http.ssl.DummySslProvider;
+import com.yahoo.vespa.model.container.http.ssl.LegacySslProvider;
 import org.w3c.dom.Element;
 
 import static com.yahoo.component.ComponentSpecification.fromString;
@@ -26,7 +26,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     private final SimpleComponent sslProviderComponent;
 
     public ConnectorFactory(String name, int listenPort) {
-        this(name, listenPort, null, new DummySslProvider(name));
+        this(name, listenPort, null, new LegacySslProvider(name));
     }
 
     public ConnectorFactory(String name,
