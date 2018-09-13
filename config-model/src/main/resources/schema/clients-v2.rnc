@@ -1,46 +1,13 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 Clients20 =
    attribute version { "2.0" } &
-   LoadTypes? &
-   Spoolers20?
+   LoadTypes?
 
 LoadTypes = element load-types {
     element type {
         attribute name { text } &
         attribute default-priority { text }?
     }*
-}
-
-Spoolers20 = element spoolers {
-   attribute jvmargs { text }? &
-   SpoolMaster20* &
-   FeederOptions20? &
-   Spooler20+
-}
-
-Spooler20 = element spooler {
-   service.attlist? &
-   attribute id { xsd:string }? &
-   attribute directory { xsd:string }? &
-   attribute keepsuccess { xsd:boolean }? &
-   attribute maxfailuresize { xsd:integer }? &
-   attribute maxfatalfailuresize { xsd:integer }? &
-   attribute threads { xsd:integer }? &
-   attribute maxretries { xsd:integer }? &
-   FeederOptionsOpts20? &
-   element parsers {
-      element parser {
-         attribute type { text } &
-         element parameter {
-            attribute key { xsd:string { minLength = "1" } } &
-            attribute value { xsd:string { minLength = "1" } }
-         }*
-      }+
-   }?
-}
-
-SpoolMaster20 = element spoolmaster {
-   service.attlist?
 }
 
 FeederOptions20 = element feederoptions {
