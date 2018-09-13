@@ -1,9 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.yahoo.document.datatypes.*;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.FloatFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
-import com.yahoo.document.serialization.*;
+import com.yahoo.document.serialization.DocumentDeserializer;
+import com.yahoo.document.serialization.DocumentDeserializerFactory;
+import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
+import com.yahoo.document.serialization.DocumentUpdateFlags;
+import com.yahoo.document.serialization.DocumentUpdateWriter;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;

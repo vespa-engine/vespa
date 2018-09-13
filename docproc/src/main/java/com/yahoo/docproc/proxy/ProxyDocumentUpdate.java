@@ -19,6 +19,7 @@ import java.util.Map;
  * 
  * @author vegardh
  */
+// TODO Vespa 7 Remove all deprecated methods
 public class ProxyDocumentUpdate extends DocumentUpdate implements DocumentOperationWrapper {
 
     private DocumentUpdate docU;
