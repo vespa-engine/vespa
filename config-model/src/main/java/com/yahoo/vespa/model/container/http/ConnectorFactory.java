@@ -23,6 +23,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     private final String name;
     private final int listenPort;
     private final Element legacyConfig;
+    private final SimpleComponent sslProviderComponent;
 
     public ConnectorFactory(String name, int listenPort) {
         this(name, listenPort, null, new DummySslProvider(name));
@@ -39,6 +40,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         this.name = name;
         this.listenPort = listenPort;
         this.legacyConfig = legacyConfig;
+        this.sslProviderComponent = sslProviderComponent;
         addChild(sslProviderComponent);
         inject(sslProviderComponent);
     }
@@ -48,6 +50,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         configureWithLegacyHttpConfig(legacyConfig, connectorBuilder);
         connectorBuilder.listenPort(listenPort);
         connectorBuilder.name(name);
+        ((ConnectorConfig.Producer)sslProviderComponent).getConfig(connectorBuilder);
     }
 
     public String getName() {
