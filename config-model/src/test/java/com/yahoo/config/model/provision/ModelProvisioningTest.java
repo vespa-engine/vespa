@@ -1672,6 +1672,9 @@ public class ModelProvisioningTest {
                 "    <nodes count='1' flavor='content-test-flavor'/>",
                 "    <engine>",
                 "      <proton>",
+                "        <resource-limits>",
+                "          <memory>0.6</memory>",
+                "        </resource-limits>",
                 "        <tuning>",
                 "          <searchnode>",
                 "            <flushstrategy>",
@@ -1690,13 +1693,14 @@ public class ModelProvisioningTest {
 
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts("default", 1);
-        tester.addHosts(createFlavorFromMemoryAndDisk("content-test-flavor", 128, 100), 1);
+        tester.addHosts(createFlavorFromMemoryAndDisk("content-test-flavor", 8, 100), 1);
         VespaModel model = tester.createModel(services, true, 0);
         ContentSearchCluster cluster = model.getContentClusters().get("test").getSearch();
         ProtonConfig cfg = getProtonConfig(model, cluster.getSearchNodes().get(0).getConfigId());
         assertEquals(2000, cfg.flush().memory().maxtlssize()); // from config override
         assertEquals(1000, cfg.flush().memory().maxmemory()); // from explicit tuning
-        assertEquals((long) 16 * GB, cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
+        assertEquals(0.6, cfg.writefilter().memorylimit(), 0.000001); // from explicit resource-limits
+        assertEquals((long) 1 * GB, cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
     }
 
     private static long GB = 1024 * 1024 * 1024;
