@@ -40,7 +40,7 @@ StructDataType::StructDataType(vespalib::stringref name, int32_t dataTypeId)
       _compressionConfig()
 { }
 
-StructDataType::~StructDataType() { }
+StructDataType::~StructDataType() = default;
 
 StructDataType*
 StructDataType::clone() const {

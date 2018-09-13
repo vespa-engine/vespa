@@ -159,7 +159,7 @@ DataType::~DataType() = default;
 bool
 DataType::operator==(const DataType& other) const
 {
-    return _dataTypeId == other._dataTypeId && _name == other._name;
+    return _dataTypeId == other._dataTypeId;
 }
 
 bool

@@ -9,8 +9,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <cassert>
 
-namespace document {
-namespace config_builder {
+namespace document::config_builder {
 
 class TypeOrId;
 
@@ -143,6 +142,6 @@ public:
 
     ::document::DocumenttypesConfigBuilder &config() { return _config; }
 };
-}  // namespace config_builder
-}  // namespace document
+
+}
 

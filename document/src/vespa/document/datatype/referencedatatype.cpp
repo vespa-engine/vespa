@@ -41,4 +41,10 @@ void ReferenceDataType::onBuildFieldPath(FieldPath &, vespalib::stringref remain
 
 }
 
+bool ReferenceDataType::operator==(const DataType &rhs) const {
+    return DataType::operator==(rhs)
+           && rhs.inherits(classId)
+           && (_targetDocType == static_cast<const ReferenceDataType &>(rhs)._targetDocType);
+}
+
 } // document

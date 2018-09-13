@@ -24,6 +24,8 @@ public:
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     ReferenceDataType* clone() const override;
     void onBuildFieldPath(FieldPath & path, vespalib::stringref remainingFieldName) const override;
+
+    bool operator==(const DataType &type) const override;
 };
 
 } // document
