@@ -22,23 +22,10 @@ import java.util.List;
 public class Clients extends ConfigModel {
 
     private static final long serialVersionUID = 1L;
-    private List<VespaSpoolerService> vespaSpoolers = new LinkedList<>();
     private LoadTypeSet loadTypes = new LoadTypeSet();
     
-    private final AbstractConfigProducer parent;
-
     public Clients(ConfigModelContext modelContext) {
         super(modelContext);
-        this.parent = modelContext.getParentProducer();
-    }
-
-    public AbstractConfigProducer getConfigProducer() {
-        return parent;
-    }
-
-    /** Returns the mutable list of spoolers which is then used to add spoolers */
-    public List<VespaSpoolerService> getVespaSpoolers() {
-        return vespaSpoolers;
     }
 
     public LoadTypeSet getLoadTypes() {
