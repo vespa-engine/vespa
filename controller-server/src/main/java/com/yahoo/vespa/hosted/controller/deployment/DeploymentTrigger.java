@@ -412,10 +412,13 @@ public class DeploymentTrigger {
      */
     public boolean isComplete(Change change, Application application, JobType jobType) {
         Optional<Deployment> existingDeployment = deploymentFor(application, jobType);
-        return    successOn(application, jobType, Versions.from(change, application, existingDeployment, controller.systemVersion())).isPresent()
+        return       application.deploymentJobs().statusOf(jobType).flatMap(JobStatus::lastSuccess)
+                                .map(job ->    change.platform().map(job.platform()::equals).orElse(true)
+                                            && change.application().map(job.application()::equals).orElse(true))
+                                .orElse(false)
                ||    jobType.isProduction()
                   && existingDeployment.map(deployment -> ! isUpgrade(change, deployment) && isDowngrade(application.change(), deployment))
-                                       .orElse(false);
+                                          .orElse(false);
     }
 
     private static boolean isUpgrade(Change change, Deployment deployment) {
