@@ -1,12 +1,6 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=container.core
 
-## If there is a Vespa search backend connected to this container, and that
-## backend is out of service, automatically remove this container from VIP
-## rotation, ignoring any status file.
-## TODO VESPA 7: This is always true and can be removed
-noSearchBackendsImpliesOutOfService bool default=true
-
 ## Whether to return hard-coded reply or serve "status.html" from disk
 accessdisk bool default=false
 
