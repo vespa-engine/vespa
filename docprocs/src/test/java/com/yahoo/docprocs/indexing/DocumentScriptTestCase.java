@@ -230,7 +230,7 @@ public class DocumentScriptTestCase {
         DocumentUpdate update = f.executeWithUpdate("structfield", new AssignFieldPathUpdate(f.type, "structfield.title", newTitleValue));
 
         assertEquals(1, update.getFieldPathUpdates().size());
-        assertEquals(0, update.getFieldUpdatesCollection().size());
+        assertEquals(0, update.fieldUpdates().size());
         assertTrue(update.getFieldPathUpdates().get(0) instanceof AssignFieldPathUpdate);
         AssignFieldPathUpdate assignUpdate = (AssignFieldPathUpdate)update.getFieldPathUpdates().get(0);
         assertEquals("structfield.title", assignUpdate.getOriginalFieldPath());

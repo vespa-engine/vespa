@@ -46,8 +46,8 @@ public class UriParserTestCase {
 
         DocumentUpdate upd = nextUpdate(it);
         assertNotNull(upd);
-        assertEquals(1, upd.getFieldUpdatesCollection().size());
-        FieldUpdate fieldUpd = upd.getFieldUpdatesCollection().iterator().next();
+        assertEquals(1, upd.fieldUpdates().size());
+        FieldUpdate fieldUpd = upd.fieldUpdates().iterator().next();
         assertNotNull(fieldUpd);
         assertEquals(docType.getField("my_arr"), fieldUpd.getField());
         assertEquals(1, fieldUpd.getValueUpdates().size());

@@ -40,6 +40,8 @@ import java.util.Optional;
  * @see com.yahoo.document.update.FieldUpdate
  * @see com.yahoo.document.update.ValueUpdate
  */
+//TODO Vespa 7 Remove all deprecated methods
+
 public class DocumentUpdate extends DocumentOperation implements Iterable<FieldPathUpdate> {
 
     //see src/vespa/document/util/identifiableid.h
@@ -169,6 +171,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * Get an unmodifiable list of all field updates that this document update specifies.
      *
      * @return a list of all FieldUpdates in this DocumentUpdate
+     * @deprecated Use fieldUpdates() instead.
      */
     @Deprecated
     public List<FieldUpdate> getFieldUpdates() {
@@ -178,9 +181,9 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     /**
      * Get an unmodifiable collection of all field updates that this document update specifies.
      *
-     * @return a list of all FieldUpdates in this DocumentUpdate
+     * @return a collection of all FieldUpdates in this DocumentUpdate
      */
-    public Collection<FieldUpdate> getFieldUpdatesCollection() {
+    public Collection<FieldUpdate> fieldUpdates() {
         return Collections.unmodifiableCollection(id2FieldUpdateMap.values());
     }
 
@@ -188,9 +191,20 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * Get an unmodifiable list of all field path updates this document update specifies.
      *
      * @return Returns a list of all field path updates in this document update.
+     * @deprecated Use fieldPathUpdates() instead.
      */
+    @Deprecated
     public List<FieldPathUpdate> getFieldPathUpdates() {
         return Collections.unmodifiableList(fieldPathUpdates);
+    }
+
+    /**
+     * Get an unmodifiable collection of all field path updates that this document update specifies.
+     *
+     * @return a collection of all FieldPathUpdates in this DocumentUpdate
+     */
+    public Collection<FieldPathUpdate> fieldPathUpdates() {
+        return Collections.unmodifiableCollection(fieldPathUpdates);
     }
 
     /** Returns the type of the document this updates
@@ -215,6 +229,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * @param index the index of the FieldUpdate to return
      * @return the FieldUpdate at the specified index
      * @throws IndexOutOfBoundsException if index is out of range
+     * @deprecated use getFieldUpdate(Field field) instead.
      */
     @Deprecated
     public FieldUpdate getFieldUpdate(int index) {
@@ -228,6 +243,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * @param upd   the FieldUpdate to be stored at the specified position
      * @return the FieldUpdate previously at the specified position
      * @throws IndexOutOfBoundsException if index is out of range
+     * @deprecated Use removeFieldUpdate/addFieldUpdate instead
      */
     @Deprecated
     public FieldUpdate setFieldUpdate(int index, FieldUpdate upd) {
@@ -274,11 +290,14 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      *
      * @param fieldUpdates the new list of updates of this
      * @throws NullPointerException if the argument passed is null
+     * @deprecated Iterate and use addFieldUpdate instead
      */
+    @Deprecated
     public void setFieldUpdates(Collection<FieldUpdate> fieldUpdates) {
         if (fieldUpdates == null) {
             throw new NullPointerException("The field updates of a document update can not be null");
         }
+        fieldUpdates.clear();
         for (FieldUpdate fieldUpdate : fieldUpdates) {
             addFieldUpdate(fieldUpdate);
         }
@@ -347,7 +366,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
         if (!documentType.equals(update.documentType)) {
             throw new IllegalArgumentException("Expected " + documentType + ", got " + update.documentType + ".");
         }
-        for (FieldUpdate fieldUpd : update.id2FieldUpdateMap.values()) {
+        for (FieldUpdate fieldUpd : update.fieldUpdates()) {
             addFieldUpdate(fieldUpd);
         }
         for (FieldPathUpdate pathUpd : update.fieldPathUpdates) {
@@ -361,6 +380,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * @param index the index of the FieldUpdate to remove
      * @return the FieldUpdate previously at the specified position
      * @throws IndexOutOfBoundsException if index is out of range
+     * @deprecated use removeFieldUpdate(Field field) instead.
      */
     @Deprecated
     public FieldUpdate removeFieldUpdate(int index) {

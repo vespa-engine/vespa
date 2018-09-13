@@ -334,10 +334,10 @@ public class SchemaMappingAndAccessesTest {
         fieldMap.put("a", "artist");
         ProxyDocumentUpdate pup = new ProxyDocumentUpdate(dud, fieldMap);
         pup.addFieldUpdate(assignSingle);
-        assertEquals(pup.getFieldUpdatesCollection().toString(), dud.getFieldUpdatesCollection().toString());
+        assertEquals(pup.fieldUpdates().toString(), dud.fieldUpdates().toString());
         assertEquals(pup.getDocumentType(), dud.getDocumentType());
         assertEquals(pup.getFieldUpdate(new com.yahoo.document.Field("title")).size(), 1);
-        assertEquals(pup.getFieldUpdate(0), dud.getFieldUpdatesCollection().iterator().next());
+        assertEquals(pup.getFieldUpdate(0), dud.fieldUpdates().iterator().next());
         assertEquals(pup.getFieldUpdate("title"), dud.getFieldUpdate("title"));
         assertEquals(pup.getId(), dud.getId());
         assertEquals(pup.getType(), dud.getType());

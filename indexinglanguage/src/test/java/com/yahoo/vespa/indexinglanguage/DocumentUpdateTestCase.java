@@ -33,9 +33,9 @@ public class DocumentUpdateTestCase {
 
         assertNotNull(docUpdate);
         assertEquals(0, docUpdate.getFieldPathUpdates().size());
-        assertEquals(1, docUpdate.getFieldUpdatesCollection().size());
+        assertEquals(1, docUpdate.fieldUpdates().size());
 
-        FieldUpdate fieldUpd = docUpdate.getFieldUpdatesCollection().iterator().next();
+        FieldUpdate fieldUpd = docUpdate.fieldUpdates().iterator().next();
         assertNotNull(fieldUpd);
         assertEquals(docType.getField("my_pos"), fieldUpd.getField());
         assertEquals(1, fieldUpd.getValueUpdates().size());

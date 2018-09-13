@@ -3,7 +3,6 @@ package com.yahoo.document;
 
 import com.yahoo.document.datatypes.*;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
-import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.serialization.*;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
@@ -259,7 +258,7 @@ public class DocumentUpdateTestCase {
         update.addFieldUpdate(FieldUpdate.createAssign(field, new IntegerFieldValue(1)));
         update.addFieldUpdate(FieldUpdate.createAssign(field, new IntegerFieldValue(2)));
 
-        assertEquals(1, update.getFieldUpdatesCollection().size());
+        assertEquals(1, update.fieldUpdates().size());
         FieldUpdate fieldUpdate = update.getFieldUpdate(field);
         assertNotNull(fieldUpdate);
         assertEquals(field, fieldUpdate.getField());
@@ -418,7 +417,7 @@ public class DocumentUpdateTestCase {
         barUpdate.addFieldUpdate(barField);
 
         fooUpdate.addAll(barUpdate);
-        assertEquals(1, fooUpdate.getFieldUpdatesCollection().size());
+        assertEquals(1, fooUpdate.fieldUpdates().size());
         FieldUpdate fieldUpdate = fooUpdate.getFieldUpdate(field);
         assertNotNull(fieldUpdate);
         assertEquals(field, fieldUpdate.getField());
@@ -463,6 +462,7 @@ public class DocumentUpdateTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testFieldUpdatesInDocUp() {
         DocumentType t1 = new DocumentType("doo");
         Field f1 = new Field("field1", DataType.STRING);

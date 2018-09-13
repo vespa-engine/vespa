@@ -292,8 +292,8 @@ public class JsonReaderTestCase {
                         + "\"skuggsjaa\": {"
                         + "\"assign\": { \"sandra\": \"person\","
                         + " \"cloud\": \"another person\"}}}}");
-        assertEquals(1, put.getFieldUpdatesCollection().size());
-        FieldUpdate fu = put.getFieldUpdatesCollection().iterator().next();
+        assertEquals(1, put.fieldUpdates().size());
+        FieldUpdate fu = put.fieldUpdates().iterator().next();
         assertEquals(1, fu.getValueUpdates().size());
         ValueUpdate vu = fu.getValueUpdate(0);
         assertTrue(vu instanceof AssignValueUpdate);
@@ -315,8 +315,8 @@ public class JsonReaderTestCase {
                         + " \"fields\": { "
                         + "\"skuggsjaa\": {"
                         + "\"assign\": { }}}}");
-        assertEquals(1, put.getFieldUpdatesCollection().size());
-        FieldUpdate fu = put.getFieldUpdatesCollection().iterator().next();
+        assertEquals(1, put.fieldUpdates().size());
+        FieldUpdate fu = put.fieldUpdates().iterator().next();
         assertEquals(1, fu.getValueUpdates().size());
         ValueUpdate vu = fu.getValueUpdate(0);
         assertTrue(vu instanceof AssignValueUpdate);

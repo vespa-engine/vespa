@@ -51,7 +51,7 @@ public class DocumentScript {
     }
 
     public DocumentUpdate execute(AdapterFactory adapterFactory, DocumentUpdate update) {
-        for (FieldUpdate fieldUpdate : update.getFieldUpdatesCollection()) {
+        for (FieldUpdate fieldUpdate : update.fieldUpdates()) {
             requireThatFieldIsDeclaredInDocument(fieldUpdate.getField());
             for (ValueUpdate<?> valueUpdate : fieldUpdate.getValueUpdates()) {
                 removeAnyLinguisticsSpanTree(valueUpdate);

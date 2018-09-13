@@ -41,11 +41,13 @@ public class ProxyDocumentUpdate extends DocumentUpdate implements DocumentOpera
     }
 
     @Override
+    @Deprecated
     public FieldUpdate getFieldUpdate(Field field) {
         return getFieldUpdate(field.getName());
     }
 
     @Override
+    @Deprecated
     @SuppressWarnings( "deprecation" )
     public FieldUpdate getFieldUpdate(int index) {
         return docU.getFieldUpdate(index);
@@ -62,13 +64,14 @@ public class ProxyDocumentUpdate extends DocumentUpdate implements DocumentOpera
     }
 
     @Override
+    @Deprecated
     @SuppressWarnings( "deprecation" )
     public List<FieldUpdate> getFieldUpdates() {
         return docU.getFieldUpdates();
     }
     @Override
-    public Collection<FieldUpdate> getFieldUpdatesCollection() {
-        return docU.getFieldUpdatesCollection();
+    public Collection<FieldUpdate> fieldUpdates() {
+        return docU.fieldUpdates();
     }
     @Override
     public DocumentId getId() {

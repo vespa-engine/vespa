@@ -40,8 +40,8 @@ public class DocumentToValueUpdateTestCase {
         UpdateAdapter adapter = FieldUpdateAdapter.fromPartialUpdate(new SimpleDocumentAdapter(null, doc), valueUpd);
         DocumentUpdate docUpd = adapter.getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldUpdatesCollection().size());
-        assertEquals("my_int", docUpd.getFieldUpdatesCollection().iterator().next().getField().getName());
+        assertEquals(1, docUpd.fieldUpdates().size());
+        assertEquals("my_int", docUpd.fieldUpdates().iterator().next().getField().getName());
     }
 
     @Test
@@ -56,9 +56,9 @@ public class DocumentToValueUpdateTestCase {
         UpdateAdapter adapter = FieldUpdateAdapter.fromPartialUpdate(new SimpleDocumentAdapter(null, doc), valueUpd);
         DocumentUpdate docUpd = adapter.getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldUpdatesCollection().size());
+        assertEquals(1, docUpd.fieldUpdates().size());
 
-        FieldUpdate fieldUpd = docUpd.getFieldUpdatesCollection().iterator().next();
+        FieldUpdate fieldUpd = docUpd.fieldUpdates().iterator().next();
         assertNotNull(fieldUpd);
 
         assertEquals(docType.getField("my_int"), fieldUpd.getField());
@@ -80,9 +80,9 @@ public class DocumentToValueUpdateTestCase {
         UpdateAdapter adapter = FieldUpdateAdapter.fromPartialUpdate(new SimpleDocumentAdapter(null, doc), valueUpd);
         DocumentUpdate docUpd = adapter.getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldUpdatesCollection().size());
+        assertEquals(1, docUpd.fieldUpdates().size());
 
-        FieldUpdate fieldUpd = docUpd.getFieldUpdatesCollection().iterator().next();
+        FieldUpdate fieldUpd = docUpd.fieldUpdates().iterator().next();
         assertNotNull(fieldUpd);
 
         assertEquals(docType.getField("my_int"), fieldUpd.getField());
@@ -103,9 +103,9 @@ public class DocumentToValueUpdateTestCase {
         UpdateAdapter adapter = FieldUpdateAdapter.fromPartialUpdate(new SimpleDocumentAdapter(null, doc), valueUpd);
         DocumentUpdate docUpd = adapter.getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldUpdatesCollection().size());
+        assertEquals(1, docUpd.fieldUpdates().size());
 
-        FieldUpdate fieldUpd = docUpd.getFieldUpdatesCollection().iterator().next();
+        FieldUpdate fieldUpd = docUpd.fieldUpdates().iterator().next();
         assertNotNull(fieldUpd);
 
         assertEquals(docType.getField("my_str"), fieldUpd.getField());
@@ -136,9 +136,9 @@ public class DocumentToValueUpdateTestCase {
         UpdateAdapter adapter = FieldUpdateAdapter.fromPartialUpdate(new SimpleDocumentAdapter(null, doc), valueUpd);
         DocumentUpdate docUpd = adapter.getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldUpdatesCollection().size());
+        assertEquals(1, docUpd.fieldUpdates().size());
 
-        FieldUpdate fieldUpd = docUpd.getFieldUpdatesCollection().iterator().next();
+        FieldUpdate fieldUpd = docUpd.fieldUpdates().iterator().next();
         assertNotNull(fieldUpd);
 
         assertEquals(docType.getField("a"), fieldUpd.getField());
@@ -166,9 +166,9 @@ public class DocumentToValueUpdateTestCase {
         UpdateAdapter adapter = FieldUpdateAdapter.fromPartialUpdate(new SimpleDocumentAdapter(null, doc), valueUpd);
         DocumentUpdate docUpd = adapter.getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldUpdatesCollection().size());
+        assertEquals(1, docUpd.fieldUpdates().size());
 
-        FieldUpdate fieldUpd = docUpd.getFieldUpdatesCollection().iterator().next();
+        FieldUpdate fieldUpd = docUpd.fieldUpdates().iterator().next();
         assertNotNull(fieldUpd);
 
         assertEquals(docType.getField("my_arr"), fieldUpd.getField());
@@ -196,9 +196,9 @@ public class DocumentToValueUpdateTestCase {
         UpdateAdapter adapter = FieldUpdateAdapter.fromPartialUpdate(new SimpleDocumentAdapter(null, doc), valueUpd);
         DocumentUpdate docUpd = adapter.getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldUpdatesCollection().size());
+        assertEquals(1, docUpd.fieldUpdates().size());
 
-        FieldUpdate fieldUpd = docUpd.getFieldUpdatesCollection().iterator().next();
+        FieldUpdate fieldUpd = docUpd.fieldUpdates().iterator().next();
         assertNotNull(fieldUpd);
 
         assertEquals(docType.getField("my_arr"), fieldUpd.getField());
@@ -231,9 +231,9 @@ public class DocumentToValueUpdateTestCase {
         UpdateAdapter adapter = FieldUpdateAdapter.fromPartialUpdate(new SimpleDocumentAdapter(null, doc), valueUpd);
         DocumentUpdate docUpd = adapter.getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldUpdatesCollection().size());
+        assertEquals(1, docUpd.fieldUpdates().size());
 
-        FieldUpdate fieldUpd = docUpd.getFieldUpdatesCollection().iterator().next();
+        FieldUpdate fieldUpd = docUpd.fieldUpdates().iterator().next();
         assertNotNull(fieldUpd);
 
         assertEquals(docType.getField("a"), fieldUpd.getField());
@@ -261,9 +261,9 @@ public class DocumentToValueUpdateTestCase {
         UpdateAdapter adapter = FieldUpdateAdapter.fromPartialUpdate(new SimpleDocumentAdapter(null, doc), valueUpd);
         DocumentUpdate docUpd = adapter.getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldUpdatesCollection().size());
+        assertEquals(1, docUpd.fieldUpdates().size());
 
-        FieldUpdate fieldUpd = docUpd.getFieldUpdatesCollection().iterator().next();
+        FieldUpdate fieldUpd = docUpd.fieldUpdates().iterator().next();
         assertNotNull(fieldUpd);
 
         assertEquals(docType.getField("my_wset"), fieldUpd.getField());
@@ -294,9 +294,9 @@ public class DocumentToValueUpdateTestCase {
         UpdateAdapter adapter = FieldUpdateAdapter.fromPartialUpdate(new SimpleDocumentAdapter(null, doc), valueUpd);
         DocumentUpdate docUpd = adapter.getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldUpdatesCollection().size());
+        assertEquals(1, docUpd.fieldUpdates().size());
 
-        FieldUpdate fieldUpd = docUpd.getFieldUpdatesCollection().iterator().next();
+        FieldUpdate fieldUpd = docUpd.fieldUpdates().iterator().next();
         assertNotNull(fieldUpd);
 
         assertEquals(docType.getField("my_wset"), fieldUpd.getField());
@@ -326,9 +326,9 @@ public class DocumentToValueUpdateTestCase {
         UpdateAdapter adapter = FieldUpdateAdapter.fromPartialUpdate(new SimpleDocumentAdapter(null, doc), valueUpd);
         DocumentUpdate docUpd = adapter.getOutput();
         assertNotNull(docUpd);
-        assertEquals(1, docUpd.getFieldUpdatesCollection().size());
+        assertEquals(1, docUpd.fieldUpdates().size());
 
-        FieldUpdate fieldUpd = docUpd.getFieldUpdatesCollection().iterator().next();
+        FieldUpdate fieldUpd = docUpd.fieldUpdates().iterator().next();
         assertNotNull(fieldUpd);
 
         assertEquals(docType.getField("my_wset"), fieldUpd.getField());

@@ -13,7 +13,6 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import org.junit.Test;
@@ -63,7 +62,7 @@ public class IndexingProcessorTestCase {
         assertTrue(output instanceof DocumentUpdate);
         DocumentUpdate docUpdate = (DocumentUpdate) output;
 
-        assertEquals(3, docUpdate.getFieldUpdatesCollection().size());
+        assertEquals(3, docUpdate.fieldUpdates().size());
         {
             FieldUpdate fieldUpdate = docUpdate.getFieldUpdate("song");
             assertEquals("song", fieldUpdate.getField().getName());
