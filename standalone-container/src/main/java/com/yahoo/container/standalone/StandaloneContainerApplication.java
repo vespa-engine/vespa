@@ -263,10 +263,13 @@ public class StandaloneContainerApplication implements Application {
                 .fileRegistry(fileRegistry)
                 .deployLogger(logger)
                 .configDefinitionRepo(configDefinitionRepo);
+
+        /* Temporarily disable until we know how status.html is updated for config servers/controllers
         if (isConfigServer())
             builder.properties(new DeployProperties.Builder()
                                        .hostedVespa(new CloudConfigInstallVariables().hostedVespa().orElse(Boolean.FALSE))
                                        .build());
+        */
 
         return builder.build();
     }
