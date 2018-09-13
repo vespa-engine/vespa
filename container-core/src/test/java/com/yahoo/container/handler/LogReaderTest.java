@@ -20,7 +20,8 @@ public class LogReaderTest {
     @Test
     public void testThatFilesAreWrittenCorrectlyToOutputStream() throws Exception{
         String logDirectory = "src/test/resources/logfolder/";
-        JSONObject json = LogReader.readLogs(logDirectory);
+        LogReader logReader = new LogReader(2);
+        JSONObject json = logReader.readLogs(logDirectory);
         String expected = "{\"subfolder\":{\"log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxl\"},\"log1.log\":\"VGhpcyBpcyBvbmUgbG9nIGZpbGU=\"}";
         String actual = json.toString();
         assertEquals(expected, actual);

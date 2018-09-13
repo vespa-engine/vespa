@@ -97,7 +97,8 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isLogRequest(request)) {
-            return applicationRepository.getLogs(applicationId);
+            String apiParams = request.hasProperty("numberOf") ? request.getProperty("numberOfLogs") : "";
+            return applicationRepository.getLogs(applicationId, apiParams);
         }
 
         return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(applicationId));

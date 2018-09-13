@@ -24,9 +24,16 @@ public class LogHandler extends ThreadedHttpRequestHandler {
     @Override
     public HttpResponse handle(HttpRequest request) {
         JSONObject logJson;
+        LogReader logReader;
 
         try {
-            logJson = LogReader.readLogs(LOG_DIRECTORY);
+            if (request.hasProperty("numberOfLogs")) {
+                int numberOfLogs = (Integer.valueOf(request.getProperty("numberOfLogs")));
+                logReader = new LogReader(numberOfLogs);
+            } else {
+                logReader = new LogReader();
+            }
+            logJson = logReader.readLogs(LOG_DIRECTORY);
         } catch (IOException | JSONException e) {
             return new HttpResponse(404) {
                 @Override
