@@ -38,7 +38,7 @@ class HttpRequestFactory {
     }
 
     public static URI getUri(HttpServletRequest servletRequest) {
-        String query = extraQuote(servletRequest.getQueryString());
+        String query = servletRequest.getQueryString();
         try {
             return URI.create(servletRequest.getRequestURL() + (query != null ? '?' + query : ""));
         } catch (IllegalArgumentException e) {
@@ -56,54 +56,6 @@ class HttpRequestFactory {
             for (Enumeration<String> value = from.getHeaders(key); value.hasMoreElements(); ) {
                 to.headers().add(key, value.nextElement());
             }
-        }
-    }
-
-    // TODO Remove this ugly, non-complete escaping in Vespa 7
-    private static String extraQuote(String queryString) {
-        // TODO: Use an URI builder
-        if (queryString == null) return null;
-
-        int toAndIncluding = -1;
-        for (int i = 0; i < queryString.length(); ++i) {
-            if (quote(queryString.charAt(i)) != null) {
-                break;
-            }
-            toAndIncluding = i;
-        }
-
-        String washed;
-        if (toAndIncluding != (queryString.length() - 1)) {
-            StringBuilder w = new StringBuilder(queryString.substring(0, toAndIncluding + 1));
-            for (int i = toAndIncluding + 1; i < queryString.length(); ++i) {
-                String s = quote(queryString.charAt(i));
-                if (s == null) {
-                    w.append(queryString.charAt(i));
-                } else {
-                    w.append(s);
-                }
-            }
-            washed = w.toString();
-        } else {
-            washed = queryString;
-        }
-        return washed;
-    }
-
-    private static String quote(char c) {
-        switch(c) {
-        case '\\':
-            return "%5C";
-        case '^':
-            return "%5E";
-        case '{':
-            return "%7B";
-        case '|':
-            return "%7C";
-        case '}':
-            return "%7D";
-        default:
-            return null;
         }
     }
 
