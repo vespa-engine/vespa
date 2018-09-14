@@ -51,7 +51,7 @@ search music {
    }
 
    field didinteger type array<int> {
-      indexing: input did | split " " | for_each { to_int } | attribute
+      indexing: input did | split " " | attribute
    }
 
    rank-profile default {

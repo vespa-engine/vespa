@@ -109,7 +109,7 @@ public class DocumentGenMojo extends AbstractMojo {
             public boolean accept(File dir, String name) {
                 return name.endsWith(".sd");
             }});
-        SearchBuilder builder = new SearchBuilder();
+        SearchBuilder builder = new UnprocessingSearchBuilder();
         for (File f : sdFiles) {
             try {
                 long modTime = f.lastModified();
