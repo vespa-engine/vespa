@@ -12,7 +12,6 @@
 #include <vespa/searchcore/proton/feedoperation/putoperation.h>
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchcore/proton/feedoperation/splitbucketoperation.h>
-#include <vespa/searchcore/proton/feedoperation/spoolerreplayoperation.h>
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
 #include <vespa/searchcore/proton/feedoperation/wipehistoryoperation.h>
 #include <vespa/searchlib/query/base.h>
@@ -212,17 +211,6 @@ TEST("require that toString() on derived classes are meaningful")
                  "target2=BucketId(0x000000000000002c), serialNum=0)",
                  SplitBucketOperation(bucket_id1, bucket_id2, bucket_id3)
                  .toString());
-
-    EXPECT_EQUAL("SpoolerReplayStart(spoolerSerialNum=0, serialNum=0)",
-                 SpoolerReplayStartOperation().toString());
-    EXPECT_EQUAL("SpoolerReplayStart(spoolerSerialNum=20, serialNum=10)",
-                 SpoolerReplayStartOperation(10, 20).toString());
-
-    EXPECT_EQUAL("SpoolerReplayComplete(spoolerSerialNum=0, serialNum=0)",
-                 SpoolerReplayCompleteOperation().toString());
-    EXPECT_EQUAL("SpoolerReplayComplete(spoolerSerialNum=2, serialNum=1)",
-                 SpoolerReplayCompleteOperation(1, 2).toString());
-
     EXPECT_EQUAL("Update(NULL, BucketId(0x0000000000000000), timestamp=0, dbdId=(subDbId=0, lid=0), "
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
                  UpdateOperation().toString());

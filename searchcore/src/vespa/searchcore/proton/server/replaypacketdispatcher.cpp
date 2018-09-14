@@ -74,14 +74,6 @@ ReplayPacketDispatcher::replayEntry(const Packet::Entry &entry)
         PruneRemovedDocumentsOperation op;
         replay(op, is, entry);
         break;
-    } case FeedOperation::SPOOLER_REPLAY_START: {
-        SpoolerReplayStartOperation op;
-        replay(op, is, entry);
-        break;
-    } case FeedOperation::SPOOLER_REPLAY_COMPLETE: {
-        SpoolerReplayCompleteOperation op;
-        replay(op, is, entry);
-        break;
     } case FeedOperation::MOVE: {
         MoveOperation op;
         replay(op, is, entry);

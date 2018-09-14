@@ -192,8 +192,6 @@ public:
     virtual void replay(const SplitBucketOperation &op) override { print(op); }
     virtual void replay(const JoinBucketsOperation &op) override { print(op); }
     virtual void replay(const PruneRemovedDocumentsOperation &op) override { print(op); }
-    virtual void replay(const SpoolerReplayStartOperation &op) override { print(op); }
-    virtual void replay(const SpoolerReplayCompleteOperation &op) override { print(op); }
     virtual void replay(const MoveOperation &op) override { print(op); }
     virtual void replay(const CreateBucketOperation &op) override { print(op); }
     virtual void replay(const CompactLidSpaceOperation &op) override { print(op); }
@@ -275,8 +273,6 @@ public:
     virtual void replay(const SplitBucketOperation &) override { }
     virtual void replay(const JoinBucketsOperation &) override { }
     virtual void replay(const PruneRemovedDocumentsOperation &) override { }
-    virtual void replay(const SpoolerReplayStartOperation &) override { }
-    virtual void replay(const SpoolerReplayCompleteOperation &) override { }
     virtual void replay(const MoveOperation &) override { }
     virtual void replay(const CreateBucketOperation &) override { }
 };
