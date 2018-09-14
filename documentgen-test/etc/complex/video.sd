@@ -32,7 +32,7 @@ search video {
 
    field sw1 type float {
       indexing {
-        input weight * 6 + input w1 + input w2 | summary;
+        input weight_src * 6 + input w1_src + input w2_src | summary;
       }
    }
 
