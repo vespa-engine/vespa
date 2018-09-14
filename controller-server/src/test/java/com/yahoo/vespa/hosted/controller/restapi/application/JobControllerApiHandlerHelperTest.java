@@ -101,7 +101,7 @@ public class JobControllerApiHandlerHelperTest {
         tester.tester().upgradeSystem(platform);
 
         // us-central-1 has started, deployed, and is installing. Deployment is not yet verified.
-        // us-east-3 is pending the failed staging test, while us-east-3 is pending us-central-1.
+        // us-east-3 is waiting for the failed staging test and us-central-1, while us-west-1 is waiting only for us-central-1.
         // Only us-east-3 is verified, on revision1.
         // staging-test has 4 runs: one success without sources on revision1, one success from revision1 to revision2,
         // one success from revision2 to revision3 and one failure from revision1 to revision3.

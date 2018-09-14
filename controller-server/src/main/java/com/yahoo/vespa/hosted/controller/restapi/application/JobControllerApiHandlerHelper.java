@@ -257,7 +257,11 @@ class JobControllerApiHandlerHelper {
                         break;
                     for (JobType stepType : steps.toJobs(step)) {
                         if (pendingProduction.containsKey(stepType)) {
-                            pendingObject.setString(shortNameOf(stepType, controller.system()), statusOf(controller, application.id(), stepType, versions));
+                            Versions jobVersions = Versions.from(application.changeAt(controller.clock().instant()),
+                                                                 application,
+                                                                 Optional.ofNullable(application.deployments().get(stepType.zone(controller.system()))),
+                                                                 controller.systemVersion());
+                            pendingObject.setString(shortNameOf(stepType, controller.system()), statusOf(controller, application.id(), stepType, jobVersions));
                             if (++pending == 3)
                                 break steps;
                         }
@@ -278,8 +282,8 @@ class JobControllerApiHandlerHelper {
 
     private static String statusOf(Controller controller, ApplicationId id, JobType type, Versions versions) {
         return controller.jobController().last(id, type)
-                         .filter(run -> versions.targetsMatch(versions))
-                         .filter(run -> type == systemTest || versions.sourcesMatchIfPresent(versions))
+                         .filter(run -> run.versions().targetsMatch(versions))
+                         .filter(run -> type != stagingTest || run.versions().sourcesMatchIfPresent(versions))
                          .map(JobControllerApiHandlerHelper::taskStatusOf)
                          .orElse("pending");
     }
