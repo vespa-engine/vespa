@@ -7,7 +7,6 @@ import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;
 
-@SuppressWarnings("deprecation")
 public class JDiscCookieWrapperTest {
 
     @Test
@@ -15,19 +14,15 @@ public class JDiscCookieWrapperTest {
         Cookie cookie = new Cookie("name", "value");
         JDiscCookieWrapper wrapper = JDiscCookieWrapper.wrap(cookie);
 
-        wrapper.setComment("comment");
         wrapper.setDomain("yahoo.com");
         wrapper.setMaxAge(10);
         wrapper.setPath("/path");
-        wrapper.setVersion(1);
 
         Assert.assertEquals(wrapper.getName(), cookie.getName());
         Assert.assertEquals(wrapper.getValue(), cookie.getValue());
         Assert.assertEquals(wrapper.getDomain(), cookie.getDomain());
-        Assert.assertEquals(wrapper.getComment(), cookie.getComment());
         Assert.assertEquals(wrapper.getMaxAge(), cookie.getMaxAge(TimeUnit.SECONDS));
         Assert.assertEquals(wrapper.getPath(), cookie.getPath());
-        Assert.assertEquals(wrapper.getVersion(), cookie.getVersion());
         Assert.assertEquals(wrapper.getSecure(), cookie.isSecure());
 
     }

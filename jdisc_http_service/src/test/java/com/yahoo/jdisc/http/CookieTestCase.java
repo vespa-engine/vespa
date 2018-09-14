@@ -131,7 +131,6 @@ public class CookieTestCase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void requireThatSetCookieCanBeDecoded() {
         final Cookie foo = new Cookie();
         foo.setName("foo.name");
@@ -141,7 +140,6 @@ public class CookieTestCase {
         foo.setMaxAge(0, TimeUnit.SECONDS);
         foo.setSecure(true);
         foo.setHttpOnly(true);
-        foo.setVersion(1);
         assertDecodeSetCookie(foo, "foo.name=foo.value;Max-Age=0;Path=path;Domain=domain;Secure;HTTPOnly;");
 
         final Cookie bar = new Cookie();
@@ -150,7 +148,6 @@ public class CookieTestCase {
         bar.setPath("path");
         bar.setDomain("domain");
         bar.setMaxAge(0, TimeUnit.SECONDS);
-        bar.setVersion(1);
         assertDecodeSetCookie(bar, "bar.name=bar.value;Max-Age=0;Path=path;Domain=domain;");
     }
 
@@ -193,11 +190,13 @@ public class CookieTestCase {
     }
 
     private static void assertEncodeCookie(String expectedResult, List<Cookie> cookies) {
-        assertThat(Cookie.toCookieHeader(cookies), equalTo(expectedResult));
+        String actual = Cookie.toCookieHeader(cookies);
+        String expectedResult1 = expectedResult;
+        assertThat(actual, equalTo(expectedResult1));
     }
 
     private static void assertEncodeSetCookie(List<String> expectedResult, List<Cookie> cookies) {
-        assertThat(Cookie.toSetCookieHeaderAll(cookies), containsInAnyOrder(expectedResult.toArray()));
+        assertThat(Cookie.toSetCookieHeaders(cookies), containsInAnyOrder(expectedResult.toArray()));
     }
 
     private static void assertDecodeCookie(List<Cookie> expected, String toDecode) {
@@ -205,7 +204,7 @@ public class CookieTestCase {
     }
 
     private static void assertDecodeSetCookie(final Cookie expected, String toDecode) {
-        assertThat(Cookie.fromSetCookieHeader(toDecode), containsInAnyOrder(expected));
+        assertThat(Cookie.fromSetCookieHeader(toDecode), equalTo(expected));
     }
 
     private static Cookie newCookie(final String name) {

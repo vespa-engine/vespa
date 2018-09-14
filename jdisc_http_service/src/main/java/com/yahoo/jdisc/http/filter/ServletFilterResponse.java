@@ -12,8 +12,6 @@ import java.util.List;
 
 /**
  * Servlet implementation for JDisc filter responses.
- * 
- * @since 5.27
  */
 class ServletFilterResponse extends DiscFilterResponse {
 
@@ -77,7 +75,7 @@ class ServletFilterResponse extends DiscFilterResponse {
     @Override
     public void setCookies(List<Cookie> cookies) {
         removeHeaders(HttpHeaders.Names.SET_COOKIE);
-        List<String> setCookieHeaders = Cookie.toSetCookieHeaderAll(cookies);
+        List<String> setCookieHeaders = Cookie.toSetCookieHeaders(cookies);
         setCookieHeaders.forEach(cookie -> addHeader(HttpHeaders.Names.SET_COOKIE, cookie));
     }
 }
