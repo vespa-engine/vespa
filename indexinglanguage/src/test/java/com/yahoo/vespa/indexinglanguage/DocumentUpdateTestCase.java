@@ -32,10 +32,10 @@ public class DocumentUpdateTestCase {
         docUpdate = Expression.execute(Expression.fromString("input my_str | for_each { to_pos } | index my_pos"), docUpdate);
 
         assertNotNull(docUpdate);
-        assertEquals(0, docUpdate.getFieldPathUpdates().size());
-        assertEquals(1, docUpdate.getFieldUpdates().size());
+        assertEquals(0, docUpdate.fieldPathUpdates().size());
+        assertEquals(1, docUpdate.fieldUpdates().size());
 
-        FieldUpdate fieldUpd = docUpdate.getFieldUpdate(0);
+        FieldUpdate fieldUpd = docUpdate.fieldUpdates().iterator().next();
         assertNotNull(fieldUpd);
         assertEquals(docType.getField("my_pos"), fieldUpd.getField());
         assertEquals(1, fieldUpd.getValueUpdates().size());
