@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.SearchCluster.Group;
 
@@ -21,7 +22,9 @@ public class LoadBalancer {
     // The implementation here is a simplistic least queries in flight + round-robin load balancer
     // TODO: consider the options in com.yahoo.vespa.model.content.TuningDispatch
 
-    private final static Logger log = Logger.getLogger(LoadBalancer.class.getName());
+    private static final Logger log = Logger.getLogger(LoadBalancer.class.getName());
+
+    private static final CompoundName QUERY_NODE_GROUP_AFFINITY = new CompoundName("loadbalancer.group.affinity");
 
     private final boolean isInternallyDispatchable;
     private final List<GroupSchedule> scoreboard;
@@ -44,9 +47,9 @@ public class LoadBalancer {
 
     /**
      * Select and allocate the search cluster group which is to be used for the provided query. Callers <b>must</b> call
-     * {@link #releaseGroup(Group)} symmetrically for each taken allocation.
+     * {@link #releaseGroup} symmetrically for each taken allocation.
      *
-     * @param query
+     * @param query The query for which this allocation is made.
      * @return The node group to target, or <i>empty</i> if the internal dispatch logic cannot be used
      */
     public Optional<Group> takeGroupForQuery(Query query) {
@@ -54,7 +57,16 @@ public class LoadBalancer {
             return Optional.empty();
         }
 
-        return allocateNextGroup();
+        Integer groupAffinity = query.properties().getInteger(QUERY_NODE_GROUP_AFFINITY);
+        if (groupAffinity != null) {
+            Optional<Group> previouslyChosen = allocateFromGroup(groupAffinity);
+            if (previouslyChosen.isPresent()) {
+                return previouslyChosen;
+            }
+        }
+        Optional<Group> allocatedGroup = allocateNextGroup();
+        allocatedGroup.ifPresent(group -> query.properties().set(QUERY_NODE_GROUP_AFFINITY, group.id()));
+        return allocatedGroup;
     }
 
     /**
@@ -72,6 +84,18 @@ public class LoadBalancer {
                 }
             }
         }
+    }
+
+    private Optional<Group> allocateFromGroup(int groupId) {
+        synchronized (this) {
+            for (GroupSchedule schedule : scoreboard) {
+                if (schedule.group.id() == groupId) {
+                    schedule.adjustScore(1);
+                    return Optional.of(schedule.group);
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     private Optional<Group> allocateNextGroup() {
