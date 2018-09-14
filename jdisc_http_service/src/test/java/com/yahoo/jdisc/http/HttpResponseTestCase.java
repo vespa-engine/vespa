@@ -92,7 +92,7 @@ public class HttpResponseTestCase {
         response.encodeSetCookieHeader(cookies);
         final List<String> headers = response.headers().get(HttpHeaders.Names.SET_COOKIE);
         assertEquals(1, headers.size());
-        assertEquals(Cookie.toSetCookieHeaderAll(cookies), headers);
+        assertEquals(Cookie.toSetCookieHeaders(cookies), headers);
     }
 
     @Test
@@ -102,7 +102,7 @@ public class HttpResponseTestCase {
         response.encodeSetCookieHeader(cookies);
         final List<String> headers = response.headers().get(HttpHeaders.Names.SET_COOKIE);
         assertEquals(2, headers.size());
-        assertEquals(Cookie.toSetCookieHeaderAll(Arrays.asList(new Cookie("foo", "bar"), new Cookie("baz", "cox"))),
+        assertEquals(Cookie.toSetCookieHeaders(Arrays.asList(new Cookie("foo", "bar"), new Cookie("baz", "cox"))),
                      headers);
     }
 
