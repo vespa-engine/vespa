@@ -17,39 +17,12 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Map;
 
-import static com.yahoo.jdisc.http.ConnectorConfig.Ssl;
-import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType.Enum.JKS;
-import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType.Enum.PEM;
 import static org.hamcrest.CoreMatchers.equalTo;
 
 /**
  * @author Einar M R Rosenvinge
  */
 public class ConnectorFactoryTest {
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void ssl_jks_config_is_validated() {
-        ConnectorConfig config = new ConnectorConfig(
-                new ConnectorConfig.Builder()
-                        .ssl(new Ssl.Builder()
-                                     .enabled(true)
-                                     .keyStoreType(JKS)
-                                     .pemKeyStore(
-                                             new Ssl.PemKeyStore.Builder()
-                                                     .keyPath("nonEmpty"))));
-        ConnectorFactory willThrowException = createConnectorFactory(config);
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void ssl_pem_config_is_validated() {
-        ConnectorConfig config = new ConnectorConfig(
-                new ConnectorConfig.Builder()
-                        .ssl(new Ssl.Builder()
-                                     .enabled(true)
-                                     .keyStoreType(PEM)
-                                     .keyStorePath("nonEmpty")));
-        ConnectorFactory willThrowException = createConnectorFactory(config);
-    }
 
     @Test
     public void requireThatNoPreBoundChannelWorks() throws Exception {
