@@ -50,11 +50,6 @@ public final class ErrorCode {
     /** No services found for the message route. */
     public static final int NO_SERVICES_FOR_ROUTE  = FATAL_ERROR + 3;
 
-    /** The selected service was out of service.
-     */
-    @Deprecated // Unused and will be removed
-    public static final int SERVICE_OOS            = FATAL_ERROR + 4;
-
     /** An error occured while encoding the message. */
     public static final int ENCODE_ERROR           = FATAL_ERROR + 5;
 
@@ -118,7 +113,6 @@ public final class ErrorCode {
         case SEND_QUEUE_CLOSED      : return "SEND_QUEUE_CLOSED";
         case SEND_QUEUE_FULL        : return "SEND_QUEUE_FULL";
         case SEQUENCE_ERROR         : return "SEQUENCE_ERROR";
-        case SERVICE_OOS            : return "SERVICE_OOS";
         case SESSION_BUSY           : return "SESSION_BUSY";
         case TIMEOUT                : return "TIMEOUT";
         case TRANSIENT_ERROR        : return "TRANSIENT_ERROR";
