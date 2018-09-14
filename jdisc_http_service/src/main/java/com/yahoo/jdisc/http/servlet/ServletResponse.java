@@ -18,8 +18,6 @@ import java.util.Map;
 /**
  * JDisc wrapper to use a {@link javax.servlet.http.HttpServletResponse}
  * with JDisc security filters.
- *
- * @since 5.26
  */
 public class ServletResponse extends HttpServletResponseWrapper implements ServletOrJdiscHttpResponse {
 
@@ -60,7 +58,7 @@ public class ServletResponse extends HttpServletResponseWrapper implements Servl
         }
         List<Cookie> ret = new LinkedList<>();
         for (String cookie : cookies) {
-            ret.addAll(Cookie.fromSetCookieHeader(cookie));
+            ret.add(Cookie.fromSetCookieHeader(cookie));
         }
         return ret;
     }
