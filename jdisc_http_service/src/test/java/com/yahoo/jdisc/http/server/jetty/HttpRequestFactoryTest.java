@@ -492,16 +492,6 @@ public class HttpRequestFactoryTest {
     }
 
     @Test
-    public final void test() {
-        String noise = "query=a" + "\\" + "^{|}&other=madeit";
-        HttpServletRequest servletRequest = new MockRequest(
-                "http://yahoo.com/search?" + noise);
-        HttpRequest request = HttpRequestFactory.newJDiscRequest(
-                new MockContainer(), servletRequest);
-        assertThat(request.getUri().getQuery(), equalTo(noise));
-    }
-
-    @Test
     public final void testIllegalQuery() {
         try {
             HttpRequestFactory.newJDiscRequest(
