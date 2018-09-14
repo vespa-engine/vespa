@@ -45,7 +45,7 @@ import static org.testng.AssertJUnit.fail;
 
 /**
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class HttpRequestFactoryTest {
 
@@ -489,16 +489,6 @@ public class HttpRequestFactoryTest {
             return null;
         }
 
-    }
-
-    @Test
-    public final void test() {
-        String noise = "query=a" + "\\" + "^{|}&other=madeit";
-        HttpServletRequest servletRequest = new MockRequest(
-                "http://yahoo.com/search?" + noise);
-        HttpRequest request = HttpRequestFactory.newJDiscRequest(
-                new MockContainer(), servletRequest);
-        assertThat(request.getUri().getQuery(), equalTo(noise));
     }
 
     @Test
