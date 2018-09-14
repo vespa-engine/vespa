@@ -461,7 +461,11 @@ FNET_TransportThread::handle_wakeup()
             break;
         case FNET_ControlPacket::FNET_CMD_IOC_ENABLE_WRITE:
             context._value.IOC->EnableWriteEvent(true);
-            context._value.IOC->SubRef();
+            if (context._value.IOC->HandleWriteEvent()) {
+                context._value.IOC->SubRef();
+            } else {
+                handle_close_cmd(context._value.IOC);
+            }
             break;
         case FNET_ControlPacket::FNET_CMD_IOC_DISABLE_WRITE:
             context._value.IOC->EnableWriteEvent(false);
