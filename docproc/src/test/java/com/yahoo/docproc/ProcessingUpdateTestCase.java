@@ -37,10 +37,8 @@ public class ProcessingUpdateTestCase {
     @Test
     public void testProcessingUpdates() {
         DocumentType articleType = new DocumentType("article");
-        Field bodyField = new Field("body", DataType.STRING, true);
-        Field titleField = new Field("title", DataType.STRING, true);
-        articleType.addField(bodyField);
-        articleType.addField(titleField);
+        articleType.addField(new Field("body", DataType.STRING, true));
+        articleType.addField(new Field("title", DataType.STRING, true));
         dtm = new DocumentTypeManager();
         dtm.registerDocumentType(articleType);
 
@@ -71,12 +69,12 @@ public class ProcessingUpdateTestCase {
         assertEquals(new StringFieldValue("body blah blah blah "), first.getFieldValue("title"));
 
         DocumentUpdate second = (DocumentUpdate) operations.get(1);
-        FieldUpdate firstUpd = second.getFieldUpdate(bodyField);
+        FieldUpdate firstUpd = second.getFieldUpdate(0);
         assertEquals(ValueUpdate.ValueUpdateClassID.ASSIGN, firstUpd.getValueUpdate(0).getValueUpdateClassID());
         assertEquals(new StringFieldValue("this is the updated body of the article, blahdi blahdi blahdi"), firstUpd.getValueUpdate(0)
                                                                                               .getValue());
 
-        FieldUpdate secondUpd = second.getFieldUpdate(titleField);
+        FieldUpdate secondUpd = second.getFieldUpdate(1);
         assertEquals(ValueUpdate.ValueUpdateClassID.ASSIGN, secondUpd.getValueUpdate(0).getValueUpdateClassID());
         assertEquals(new StringFieldValue("body blahdi blahdi blahdi "), secondUpd.getValueUpdate(0).getValue());
     }

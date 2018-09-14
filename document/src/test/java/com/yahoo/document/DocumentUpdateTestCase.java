@@ -1,19 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.yahoo.document.datatypes.Array;
-import com.yahoo.document.datatypes.FloatFieldValue;
-import com.yahoo.document.datatypes.IntegerFieldValue;
-import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.datatypes.TensorFieldValue;
-import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.datatypes.*;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
-import com.yahoo.document.serialization.DocumentDeserializer;
-import com.yahoo.document.serialization.DocumentDeserializerFactory;
-import com.yahoo.document.serialization.DocumentSerializer;
-import com.yahoo.document.serialization.DocumentSerializerFactory;
-import com.yahoo.document.serialization.DocumentUpdateFlags;
-import com.yahoo.document.serialization.DocumentUpdateWriter;
+import com.yahoo.document.select.parser.ParseException;
+import com.yahoo.document.serialization.*;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
@@ -268,8 +259,8 @@ public class DocumentUpdateTestCase {
         update.addFieldUpdate(FieldUpdate.createAssign(field, new IntegerFieldValue(1)));
         update.addFieldUpdate(FieldUpdate.createAssign(field, new IntegerFieldValue(2)));
 
-        assertEquals(1, update.fieldUpdates().size());
-        FieldUpdate fieldUpdate = update.getFieldUpdate(field);
+        assertEquals(1, update.getFieldUpdates().size());
+        FieldUpdate fieldUpdate = update.getFieldUpdate(0);
         assertNotNull(fieldUpdate);
         assertEquals(field, fieldUpdate.getField());
         assertEquals(2, fieldUpdate.getValueUpdates().size());
@@ -351,16 +342,13 @@ public class DocumentUpdateTestCase {
         assertEquals(new DocumentId("doc:update:test"), upd.getId());
         assertEquals(type, upd.getType());
 
-        FieldUpdate serAssignFU = upd.getFieldUpdate(type.getField("intfield"));
+        FieldUpdate serAssignFU = upd.getFieldUpdate(0);
         assertEquals(type.getField("intfield"), serAssignFU.getField());
         ValueUpdate serAssign = serAssignFU.getValueUpdate(0);
         assertEquals(ValueUpdate.ValueUpdateClassID.ASSIGN, serAssign.getValueUpdateClassID());
         assertEquals(new IntegerFieldValue(4), serAssign.getValue());
 
-        ValueUpdate serArith = serAssignFU.getValueUpdate(1);
-        assertEquals(ValueUpdate.ValueUpdateClassID.ARITHMETIC, serArith.getValueUpdateClassID());
-
-        FieldUpdate serAddFU = upd.getFieldUpdate(type.getField("arrayoffloatfield"));
+        FieldUpdate serAddFU = upd.getFieldUpdate(2);
         assertEquals(type.getField("arrayoffloatfield"), serAddFU.getField());
         ValueUpdate serAdd1 = serAddFU.getValueUpdate(0);
         assertEquals(ValueUpdate.ValueUpdateClassID.ADD, serAdd1.getValueUpdateClassID());
@@ -375,7 +363,12 @@ public class DocumentUpdateTestCase {
         FloatFieldValue addparam3 = (FloatFieldValue)serAdd3.getValue();
         assertEquals(new FloatFieldValue(-1.00f), addparam3);
 
-        FieldUpdate wsetFU = upd.getFieldUpdate(type.getField("wsfield"));
+        FieldUpdate arithFU = upd.getFieldUpdate(3);
+        assertEquals(type.getField("intfield"), serAssignFU.getField());
+        ValueUpdate serArith = arithFU.getValueUpdate(0);
+        assertEquals(ValueUpdate.ValueUpdateClassID.ARITHMETIC, serArith.getValueUpdateClassID());
+
+        FieldUpdate wsetFU = upd.getFieldUpdate(4);
         assertEquals(type.getField("wsfield"), wsetFU.getField());
         assertEquals(2, wsetFU.size());
         ValueUpdate mapUpd = wsetFU.getValueUpdate(0);
@@ -427,8 +420,8 @@ public class DocumentUpdateTestCase {
         barUpdate.addFieldUpdate(barField);
 
         fooUpdate.addAll(barUpdate);
-        assertEquals(1, fooUpdate.fieldUpdates().size());
-        FieldUpdate fieldUpdate = fooUpdate.getFieldUpdate(field);
+        assertEquals(1, fooUpdate.getFieldUpdates().size());
+        FieldUpdate fieldUpdate = fooUpdate.getFieldUpdate(0);
         assertNotNull(fieldUpdate);
         assertEquals(field, fieldUpdate.getField());
         assertEquals(2, fieldUpdate.getValueUpdates().size());
@@ -472,7 +465,6 @@ public class DocumentUpdateTestCase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testFieldUpdatesInDocUp() {
         DocumentType t1 = new DocumentType("doo");
         Field f1 = new Field("field1", DataType.STRING);
@@ -501,6 +493,14 @@ public class DocumentUpdateTestCase {
 
 
         assertSame(fu1, documentUpdate.getFieldUpdate(f1));
+        assertSame(fu1, documentUpdate.getFieldUpdate(0));
+        assertSame(fu2, documentUpdate.getFieldUpdate(1));
+
+        documentUpdate.setFieldUpdate(0, fu2);
+        documentUpdate.setFieldUpdate(1, fu1);
+        assertEquals(2, documentUpdate.size());
+        assertSame(fu1, documentUpdate.getFieldUpdate(1));
+        assertSame(fu2, documentUpdate.getFieldUpdate(0));
 
         try {
             documentUpdate.setFieldUpdates(null);
@@ -515,12 +515,12 @@ public class DocumentUpdateTestCase {
 
         documentUpdate.setFieldUpdates(fus);
         assertEquals(2, documentUpdate.size());
-        assertSame(fu1, documentUpdate.getFieldUpdate(fu1.getField()));
-        assertSame(fu2, documentUpdate.getFieldUpdate(fu2.getField()));
+        assertSame(fu1, documentUpdate.getFieldUpdate(0));
+        assertSame(fu2, documentUpdate.getFieldUpdate(1));
 
-        documentUpdate.removeFieldUpdate(fu2.getField());
+        documentUpdate.removeFieldUpdate(1);
         assertEquals(1, documentUpdate.size());
-        assertSame(fu1, documentUpdate.getFieldUpdate(fu1.getField()));
+        assertSame(fu1, documentUpdate.getFieldUpdate(0));
 
 
         documentUpdate.toString();
