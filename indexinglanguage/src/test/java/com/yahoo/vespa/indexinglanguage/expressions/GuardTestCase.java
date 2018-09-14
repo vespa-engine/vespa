@@ -72,10 +72,10 @@ public class GuardTestCase {
         docUpdate.addFieldUpdate(FieldUpdate.createAssign(docType.getField("my_str"), new StringFieldValue("69")));
         assertNotNull(docUpdate = Expression.execute(Expression.fromString("guard { input my_str | to_int | attribute my_lng }"), docUpdate));
 
-        assertEquals(0, docUpdate.fieldPathUpdates().size());
-        assertEquals(1, docUpdate.fieldUpdates().size());
+        assertEquals(0, docUpdate.getFieldPathUpdates().size());
+        assertEquals(1, docUpdate.getFieldUpdates().size());
 
-        FieldUpdate fieldUpd = docUpdate.fieldUpdates().iterator().next();
+        FieldUpdate fieldUpd = docUpdate.getFieldUpdate(0);
         assertNotNull(fieldUpd);
         assertEquals(docType.getField("my_lng"), fieldUpd.getField());
         assertEquals(1, fieldUpd.getValueUpdates().size());

@@ -29,7 +29,7 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer42 {
 
         for (int i = 0; i < size; i++) {
             // TODO: Should use checked method, but doesn't work according to test now.
-            update.addFieldUpdate(new FieldUpdate(this, update.getDocumentType(), 8));
+            update.addFieldUpdateNoCheck(new FieldUpdate(this, update.getDocumentType(), 8));
         }
 
         int sizeAndFlags = getInt(null);
