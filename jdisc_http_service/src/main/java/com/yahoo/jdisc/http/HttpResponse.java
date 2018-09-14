@@ -69,7 +69,7 @@ public class HttpResponse extends Response implements ServletOrJdiscHttpResponse
         }
         List<Cookie> ret = new LinkedList<>();
         for (String cookie : cookies) {
-            ret.addAll(Cookie.fromSetCookieHeader(cookie));
+            ret.add(Cookie.fromSetCookieHeader(cookie));
         }
         return ret;
     }
@@ -77,7 +77,7 @@ public class HttpResponse extends Response implements ServletOrJdiscHttpResponse
     public void encodeSetCookieHeader(List<Cookie> cookies) {
         headers().remove(HttpHeaders.Names.SET_COOKIE);
         for (Cookie cookie : cookies) {
-            headers().add(HttpHeaders.Names.SET_COOKIE, Cookie.toSetCookieHeaderAll(Arrays.asList(cookie)));
+            headers().add(HttpHeaders.Names.SET_COOKIE, Cookie.toSetCookieHeaders(Arrays.asList(cookie)));
         }
     }
 
