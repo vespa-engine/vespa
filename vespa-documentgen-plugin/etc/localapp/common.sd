@@ -17,13 +17,19 @@ search common {
          indexing: summary
       }
       field weight type float {
-         indexing: attribute|summary
+         indexing {
+            input weight * 10 | attribute | summary;
+         }
       }
       field w1 type float {
-         indexing: summary
+         indexing {
+            input weight * 6 + input w1 | summary;
+         }
       }
       field w2 type float {
-         indexing: summary
+         indexing {
+            input w2 + input weight | summary;
+         }
       }
       field did type string {
          indexing: attribute|index|summary
