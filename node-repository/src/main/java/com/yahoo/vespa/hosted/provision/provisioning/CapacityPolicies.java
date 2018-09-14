@@ -48,6 +48,8 @@ public class CapacityPolicies {
             return flavors.getFlavorOrThrow(requestedFlavor.get());
 
         String defaultFlavorName = zone.defaultFlavor(cluster.type());
+        if (zone.system() == SystemName.cd)
+            return flavors.getFlavorOrThrow(requestedFlavor.orElse(defaultFlavorName));
         switch(zone.environment()) {
             case dev : case test : case staging : return flavors.getFlavorOrThrow(defaultFlavorName);
             default : return flavors.getFlavorOrThrow(requestedFlavor.orElse(defaultFlavorName));
