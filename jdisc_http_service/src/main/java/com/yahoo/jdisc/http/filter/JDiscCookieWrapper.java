@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Wrapper of Cookie.
  *
- * @author tejalk
+ * @author Tejal Knot
  *
  */
 public class JDiscCookieWrapper {
@@ -21,11 +21,6 @@ public class JDiscCookieWrapper {
 
     public static JDiscCookieWrapper wrap(Cookie cookie) {
         return new JDiscCookieWrapper(cookie);
-    }
-
-    @Deprecated
-    public String getComment() {
-        return cookie.getComment();
     }
 
     public String getDomain() {
@@ -52,16 +47,6 @@ public class JDiscCookieWrapper {
         return cookie.getValue();
     }
 
-    @Deprecated
-    public int getVersion() {
-        return cookie.getVersion();
-    }
-
-    @Deprecated
-    public void setComment(String purpose) {
-        cookie.setComment(purpose);
-    }
-
     public void setDomain(String pattern) {
         cookie.setDomain(pattern);
     }
@@ -80,11 +65,6 @@ public class JDiscCookieWrapper {
 
     public void setValue(String newValue) {
        cookie.setValue(newValue);
-    }
-
-    @Deprecated
-    public void setVersion(int version) {
-       cookie.setVersion(version);
     }
 
     /**
