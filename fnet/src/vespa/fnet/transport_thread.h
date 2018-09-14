@@ -143,6 +143,9 @@ private:
     FNET_Config *GetConfig() { return &_config; }
 
 
+    void handle_add_cmd(FNET_IOComponent *ioc);
+    void handle_close_cmd(FNET_IOComponent *ioc);
+
 public:
     /**
      * Construct a transport object. To activate your newly created

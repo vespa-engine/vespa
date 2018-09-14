@@ -151,6 +151,32 @@ FNET_TransportThread::DiscardEvent(FNET_ControlPacket *cpacket,
 }
 
 
+void
+FNET_TransportThread::handle_add_cmd(FNET_IOComponent *ioc)
+{
+    if (ioc->handle_add_event()) {
+        AddComponent(ioc);
+        ioc->_flags._ioc_added = true;
+        ioc->attach_selector(_selector);
+    } else {
+        ioc->Close();
+        AddDeleteComponent(ioc);
+    }
+}
+
+
+void
+FNET_TransportThread::handle_close_cmd(FNET_IOComponent *ioc)
+{
+    if (ioc->_flags._ioc_added) {
+        RemoveComponent(ioc);
+        ioc->SubRef();
+    }
+    ioc->Close();
+    AddDeleteComponent(ioc);
+}
+
+
 extern "C" {
 
     static void pipehandler(int)
@@ -423,14 +449,7 @@ FNET_TransportThread::handle_wakeup()
 
         switch (packet->GetCommand()) {
         case FNET_ControlPacket::FNET_CMD_IOC_ADD:
-            if (context._value.IOC->handle_add_event()) {
-                AddComponent(context._value.IOC);
-                context._value.IOC->_flags._ioc_added = true;
-                context._value.IOC->attach_selector(_selector);
-            } else {
-                context._value.IOC->Close();
-                AddDeleteComponent(context._value.IOC);
-            }
+            handle_add_cmd(context._value.IOC);
             break;
         case FNET_ControlPacket::FNET_CMD_IOC_ENABLE_READ:
             context._value.IOC->EnableReadEvent(true);
@@ -449,12 +468,7 @@ FNET_TransportThread::handle_wakeup()
             context._value.IOC->SubRef();
             break;
         case FNET_ControlPacket::FNET_CMD_IOC_CLOSE:
-            if (context._value.IOC->_flags._ioc_added) {
-                RemoveComponent(context._value.IOC);
-                context._value.IOC->SubRef();
-            }
-            context._value.IOC->Close();
-            AddDeleteComponent(context._value.IOC);
+            handle_close_cmd(context._value.IOC);
             break;
         }
     }
