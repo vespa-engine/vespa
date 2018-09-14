@@ -2,6 +2,7 @@
 package com.yahoo;
 
 import com.yahoo.osgi.maven.ProjectBundleClassPaths;
+import com.yahoo.vespa.config.VespaVersion;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -64,9 +65,12 @@ public class BundleIT {
     }
 
     @Test
-    @Ignore  // TODO Vespa 7: Should we fix this? Why not?
-    public void require_that_bundle_version_matches_pom_version() {
-        assertThat(mainAttributes.getValue("Bundle-Version"), is("5.1.0"));
+    public void require_that_bundle_version_is_added_to_manifest() {
+        String bundleVersion = mainAttributes.getValue("Bundle-Version");
+
+        // Because of snapshot builds, we can only verify the major version.
+        int majorBundleVersion = Integer.valueOf(bundleVersion.substring(0, bundleVersion.indexOf('.')));
+        assertThat(majorBundleVersion, is(VespaVersion.major));
     }
 
     @Test

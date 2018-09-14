@@ -93,9 +93,9 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
     private NodesSpecification createNodesSpecificationForLogserver() {
         // TODO: Enable for main system as well
-        if (context.getDeployState().isHosted() && context.getDeployState().zone().system() == SystemName.cd)
-            return NodesSpecification.dedicated(1, context);
-        else
+        //if (context.getDeployState().isHosted() && context.getDeployState().zone().system() == SystemName.cd)
+        //    return NodesSpecification.dedicated(1, context);
+        //else
             return NodesSpecification.nonDedicated(1, context);
     }
 
