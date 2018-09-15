@@ -44,8 +44,8 @@ public class AllocationSimulator {
         // Setup flavors
         //
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("host-large", 8., 8., 8, Flavor.Type.BARE_METAL).idealHeadroom(1);
-        b.addFlavor("host-small", 5., 5., 5, Flavor.Type.BARE_METAL).idealHeadroom(2);
+        b.addFlavor("host-large", 8., 8., 8, Flavor.Type.BARE_METAL);
+        b.addFlavor("host-small", 5., 5., 5, Flavor.Type.BARE_METAL);
         b.addFlavor("d-1", 1, 1., 1, Flavor.Type.DOCKER_CONTAINER);
         b.addFlavor("d-2", 2, 2., 2, Flavor.Type.DOCKER_CONTAINER);
         b.addFlavor("d-3", 3, 3., 3, Flavor.Type.DOCKER_CONTAINER);

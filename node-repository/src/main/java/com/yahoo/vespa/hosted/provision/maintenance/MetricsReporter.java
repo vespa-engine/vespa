@@ -234,7 +234,6 @@ public class MetricsReporter extends Maintainer {
         for (Flavor flavor : dockerFlavors) {
             Metric.Context context = getContextAt("flavor", flavor.name());
             metric.set("hostedVespa.docker.freeCapacityFlavor", capacity.freeCapacityInFlavorEquivalence(flavor), context);
-            metric.set("hostedVespa.docker.idealHeadroomFlavor", flavor.getIdealHeadroom(), context);
             metric.set("hostedVespa.docker.hostsAvailableFlavor", capacity.getNofHostsAvailableFor(flavor), context);
         }
 
