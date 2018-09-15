@@ -63,7 +63,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         this.failOnValidateXml = failOnValidateXml;
         queryProfileRegistry = new QueryProfileXMLReader().read(asNamedReaderList(queryProfileType),
                                                                 asNamedReaderList(queryProfile));
-        applicationMetaData = new ApplicationMetaData("user", "dir", 0L, false, "application", "checksum", 0L, 0L);
+        applicationMetaData = new ApplicationMetaData("user", "dir", 0L, false, "application", "checksum", 1L, 0L);
     }
 
     /** Returns the root of this application package relative to the current dir */
