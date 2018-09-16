@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
+import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import org.junit.Test;
 
@@ -45,7 +46,7 @@ public class RankProfileRegistryTest {
         for (String rankProfileName : RankProfileRegistry.overridableRankProfileNames) {
             assertNull(rankProfileRegistry.get(search, rankProfileName).getMacros().get("foo"));
             RankProfile rankProfileWithAddedMacro = new RankProfile(rankProfileName, search, rankProfileRegistry);
-            rankProfileWithAddedMacro.addMacro("foo", true);
+            rankProfileWithAddedMacro.addMacro("foo", RankingExpression.from("1+2"), true);
             rankProfileRegistry.add(rankProfileWithAddedMacro);
             assertNotNull(rankProfileRegistry.get(search, rankProfileName).getMacros().get("foo"));
         }

@@ -95,11 +95,11 @@ public class RankProfile implements Serializable, Cloneable {
     /** The properties of this - a multimap */
     private Map<String, List<RankProperty>> rankProperties = new LinkedHashMap<>();
 
-    private Boolean ignoreDefaultRankFeatures=null;
+    private Boolean ignoreDefaultRankFeatures = null;
 
-    private String secondPhaseRankingString=null;
+    private String secondPhaseRankingString = null;
 
-    private String firstPhaseRankingString=null;
+    private String firstPhaseRankingString = null;
 
     private Map<String, Macro> macros= new LinkedHashMap<>();
 
@@ -339,8 +339,8 @@ public class RankProfile implements Serializable, Cloneable {
      * Returns null if no expression is set.
      */
     public RankingExpression getFirstPhaseRanking() {
-        if (firstPhaseRanking!=null) return firstPhaseRanking;
-        if (getInherited()!=null) return getInherited().getFirstPhaseRanking();
+        if (firstPhaseRanking != null) return firstPhaseRanking;
+        if (getInherited() != null) return getInherited().getFirstPhaseRanking();
         return null;
     }
 
@@ -353,13 +353,13 @@ public class RankProfile implements Serializable, Cloneable {
      * Returns null if no expression is set.
      */
     public RankingExpression getSecondPhaseRanking() {
-        if (secondPhaseRanking!=null) return secondPhaseRanking;
-        if (getInherited()!=null) return getInherited().getSecondPhaseRanking();
+        if (secondPhaseRanking != null) return secondPhaseRanking;
+        if (getInherited() != null) return getInherited().getSecondPhaseRanking();
         return null;
     }
 
     public void setSecondPhaseRanking(RankingExpression rankingExpression) {
-        this.secondPhaseRanking=rankingExpression;
+        this.secondPhaseRanking = rankingExpression;
     }
 
     /**
@@ -412,8 +412,8 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     public void addRankFeature(ReferenceNode feature) {
-        if (rankFeatures==null)
-            rankFeatures=new LinkedHashSet<>();
+        if (rankFeatures == null)
+            rankFeatures = new LinkedHashSet<>();
         rankFeatures.add(feature);
     }
 
@@ -548,9 +548,24 @@ public class RankProfile implements Serializable, Cloneable {
         return null;
     }
 
-    /** Creates a new (empty) macro and returns it */
-    public Macro addMacro(String name, boolean inline) {
-        Macro macro = new Macro(name, inline);
+    /** Adds a new macro and returns it */
+    public Macro addMacro(String name, RankingExpression expression, boolean inline) {
+        return addMacro(name, Collections.emptyList(), expression, inline);
+    }
+
+    /** Adds a new macro and returns it */
+    public Macro addMacro(String name, List<String> arguments, String expression, boolean inline) {
+        try {
+            return addMacro(name, arguments, parseRankingExpression(name, expression), inline);
+        }
+        catch (ParseException e) {
+            throw new IllegalArgumentException("Could not parse macro '" + name + "'", e);
+        }
+    }
+
+    /** Adds a new macro and returns it */
+    public Macro addMacro(String name, List<String> arguments, RankingExpression expression, boolean inline) {
+        Macro macro = new Macro(name, arguments, expression, inline);
         macros.put(name, macro);
         return macro;
     }
@@ -622,10 +637,6 @@ public class RankProfile implements Serializable, Cloneable {
         }
     }
 
-    /**
-     * Passes the contents of macros on to parser. Then put all the implied rank properties
-     * from those macros into the profile's props map.
-     */
     private void parseMacros() throws ParseException {
         for (Map.Entry<String, Macro> e : getMacros().entrySet()) {
             String macroName = e.getKey();
@@ -650,15 +661,15 @@ public class RankProfile implements Serializable, Cloneable {
             setSecondPhaseRanking(parseRankingExpression("secondphase", getSecondPhaseRankingString()));
     }
 
-    private RankingExpression parseRankingExpression(String expressionName, String exp) throws ParseException {
-        if (exp.trim().length() == 0)
+    private RankingExpression parseRankingExpression(String expressionName, String expression) throws ParseException {
+        if (expression.trim().length() == 0)
             throw new ParseException("Encountered an empty ranking expression in " + getName()+ ", " + expressionName + ".");
 
-        try (Reader rankingExpressionReader = openRankingExpressionReader(expressionName, exp.trim())) {
+        try (Reader rankingExpressionReader = openRankingExpressionReader(expressionName, expression.trim())) {
             return new RankingExpression(expressionName, rankingExpressionReader);
         }
         catch (com.yahoo.searchlib.rankingexpression.parser.ParseException e) {
-            ParseException exception = new ParseException("Could not parse ranking expression '" + exp.trim() +
+            ParseException exception = new ParseException("Could not parse ranking expression '" + expression.trim() +
                                                           "' in " + getName()+ ", " + expressionName + ".");
             throw (ParseException)exception.initCause(e);
         }
@@ -936,7 +947,7 @@ public class RankProfile implements Serializable, Cloneable {
 
         @Override
         public int hashCode() {
-            return name.hashCode() + 17*value.hashCode();
+            return name.hashCode() + 17 * value.hashCode();
         }
 
         @Override
@@ -960,23 +971,26 @@ public class RankProfile implements Serializable, Cloneable {
 
         private final String name;
         private String textualExpression = null;
-        private RankingExpression expression = null;
-        private List<String> formalParams = new ArrayList<>();
+        private RankingExpression expression;
+        private List<String> arguments;
 
         /** True if this should be inlined into calling expressions. Useful for very cheap macros. */
         private final boolean inline;
 
-        public Macro(String name, boolean inline) {
+        public Macro(String name, List<String> arguments, RankingExpression expression, boolean inline) {
             this.name = name;
+            this.arguments = arguments;
+            this.textualExpression = expression.getRoot().toString();
+            this.expression = expression;
             this.inline = inline;
         }
 
         public void addParam(String name) {
-            formalParams.add(name);
+            arguments.add(name);
         }
 
         public List<String> getFormalParams() {
-            return formalParams;
+            return arguments;
         }
 
         public String getTextualExpression() {
@@ -1000,7 +1014,7 @@ public class RankProfile implements Serializable, Cloneable {
         }
 
         public boolean getInline() {
-            return inline && formalParams.size() == 0; // only inline no-arg macros;
+            return inline && arguments.size() == 0; // only inline no-arg macros;
         }
 
         public ExpressionFunction asExpressionFunction() {

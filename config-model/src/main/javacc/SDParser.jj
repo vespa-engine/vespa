@@ -58,6 +58,8 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.query.ranking.Diversity;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import org.apache.commons.lang.StringUtils;
@@ -1920,17 +1922,18 @@ void inheritsRankProfile(RankProfile profile) :
  */
 void macro(RankProfile profile) :
 {
-    String macro, param, expr;
+    String name, expression, parameter;
+    List parameters = new ArrayList();
     boolean inline = false;
 }
 {
-    ( <MACRO> inline = inline() macro = identifier() [ "$" { macro = macro + token.image; } ]
-      "("                                { profile.addMacro(macro, inline); }
-          [ param = identifier()         { profile.getMacros().get(macro).addParam(param); }
-          ( <COMMA> param = identifier() { profile.getMacros().get(macro).addParam(param); } )* ]
+    ( <MACRO> inline = inline() name = identifier() [ "$" { name = name + token.image; } ]
+      "("
+          [ parameter = identifier()         { parameters.add(parameter); }
+          ( <COMMA> parameter = identifier() { parameters.add(parameter); } )* ]
       ")"
-      lbrace() expr = expression() (<NL>)* <RBRACE> )
-    { profile.getMacros().get(macro).setTextualExpression(expr); }
+      lbrace() expression = expression() (<NL>)* <RBRACE> )
+    { profile.addMacro(name, parameters, expression, inline); }
 }
 
 boolean inline() :

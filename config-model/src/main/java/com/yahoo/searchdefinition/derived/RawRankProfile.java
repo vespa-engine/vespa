@@ -193,6 +193,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             if (secondPhaseRanking != null) {
                 macroProperties.putAll(secondPhaseRanking.getRankProperties(new ArrayList<>(expressionMacros.values())));
             }
+
             for (Map.Entry<String, String> e : macroProperties.entrySet()) {
                 rankProperties.add(new RankProfile.RankProperty(e.getKey(), e.getValue()));
             }
@@ -205,7 +206,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             for (Map.Entry<String, ExpressionFunction> e : eMacros.entrySet()) {
                 String expression = e.getValue().getBody().getRoot().toString(new StringBuilder(), context, null, null).toString();
                 context.addFunctionSerialization(RankingExpression.propertyName(e.getKey()), expression);
-
             }
             return context.serializedFunctions();
         }

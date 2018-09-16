@@ -285,9 +285,7 @@ public class ConvertedModel {
                                                    "\nwant to add " + expression + "\n");
             return;
         }
-        RankProfile.Macro macro = profile.addMacro(macroName, false);  // TODO: Inline if only used once
-        macro.setRankingExpression(expression);
-        macro.setTextualExpression(expression.getRoot().toString());
+        profile.addMacro(macroName, expression, false);  // TODO: Inline if only used once
     }
 
     /**
