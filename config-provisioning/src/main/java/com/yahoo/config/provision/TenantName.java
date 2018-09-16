@@ -6,8 +6,7 @@ import java.util.Objects;
 /**
  * Represents a tenant in the provision API.
  *
- * @author lulf
- * @since 5.12
+ * @author Ulf Lilleengen
  */
 public class TenantName implements Comparable<TenantName> {
 

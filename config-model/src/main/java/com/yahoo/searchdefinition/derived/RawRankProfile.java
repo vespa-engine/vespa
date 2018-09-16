@@ -50,17 +50,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
      */
     public RawRankProfile(RankProfile rankProfile, QueryProfileRegistry queryProfiles, ImportedModels importedModels, AttributeFields attributeFields) {
         this.name = rankProfile.getName();
-        compressedProperties = compress(removePartFromKeys(new Deriver(rankProfile, queryProfiles, importedModels, attributeFields).derive()));
-    }
-    
-    private List<Pair<String, String>> removePartFromKeys(Map<String, String> map) {
-        ImmutableList.Builder<Pair<String, String>> replaced = new ImmutableList.Builder<>();
-        for (Map.Entry<String, String> e : map.entrySet()) {
-            String key = e.getKey().replaceFirst(".part\\d+$", "");
-            String val = e.getValue();
-            replaced.add(new Pair<>(key, val));
-        }
-        return replaced.build();
+        compressedProperties = compress(new Deriver(rankProfile, queryProfiles, importedModels, attributeFields).derive());
     }
     
     private Compressor.Compression compress(List<Pair<String, String>> properties) {
@@ -300,14 +290,9 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             return settings;
         }
 
-        /**
-         * Derives the properties this produces. Equal keys are suffixed with .part0 etc, remove when exporting to file
-         *
-         * @return map of the derived properties
-         */
-        public Map<String, String> derive() {
-            Map<String, String> properties = new LinkedHashMap<>();
-            int i = 0;
+        /** Derives the properties this produces */
+        public List<Pair<String, String>>  derive() {
+            List<Pair<String, String>>  properties = new ArrayList<>();
             for (RankProfile.RankProperty property : rankProperties) {
                 if ("rankingExpression(firstphase).rankingScript".equals(property.getName())) {
                     // Could have been set by macro expansion. Set expressions, then skip this property.
@@ -325,100 +310,92 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                     }
                 }
                 else {
-                    properties.put(property.getName() + ".part" + i, property.getValue());
-                    i++;
+                    properties.add(new Pair<>(property.getName(), property.getValue()));
                 }
             }
-            properties.putAll(deriveRankingPhaseRankProperties(firstPhaseRanking, "firstphase"));
-            properties.putAll(deriveRankingPhaseRankProperties(secondPhaseRanking, "secondphase"));
+            properties.addAll(deriveRankingPhaseRankProperties(firstPhaseRanking, "firstphase"));
+            properties.addAll(deriveRankingPhaseRankProperties(secondPhaseRanking, "secondphase"));
             for (FieldRankSettings settings : fieldRankSettings.values()) {
-                properties.putAll(settings.deriveRankProperties(i));
+                properties.addAll(settings.deriveRankProperties());
             }
-            i = 0;
             for (RankProfile.RankProperty property : boostAndWeightRankProperties) {
-                properties.put(property.getName() + ".part" + i, property.getValue());
-                i++;
+                properties.add(new Pair<>(property.getName(), property.getValue()));
             }
-            i = 0;
             for (ReferenceNode feature : summaryFeatures) {
-                properties.put(summaryFeatureFefPropertyPrefix + ".part" + i, feature.toString());
-                i++;
+                properties.add(new Pair<>(summaryFeatureFefPropertyPrefix, feature.toString()));
             }
-            i = 0;
             for (ReferenceNode feature : rankFeatures) {
-                properties.put(rankFeatureFefPropertyPrefix + ".part" + i, feature.toString());
-                i++;
+                properties.add(new Pair<>(rankFeatureFefPropertyPrefix, feature.toString()));
             }
             if (numThreadsPerSearch > 0) {
-                properties.put("vespa.matching.numthreadspersearch", numThreadsPerSearch + "");
+                properties.add(new Pair<>("vespa.matching.numthreadspersearch", numThreadsPerSearch + ""));
             }
             if (minHitsPerThread > 0) {
-                properties.put("vespa.matching.minhitsperthread", minHitsPerThread + "");
+                properties.add(new Pair<>("vespa.matching.minhitsperthread", minHitsPerThread + ""));
             }
             if (numSearchPartitions >= 0) {
-                properties.put("vespa.matching.numsearchpartitions", numSearchPartitions + "");
+                properties.add(new Pair<>("vespa.matching.numsearchpartitions", numSearchPartitions + ""));
             }
             if (termwiseLimit < 1.0) {
-                properties.put("vespa.matching.termwise_limit", termwiseLimit + "");
+                properties.add(new Pair<>("vespa.matching.termwise_limit", termwiseLimit + ""));
             }
             if (matchPhaseSettings != null) {
-                properties.put("vespa.matchphase.degradation.attribute", matchPhaseSettings.getAttribute());
-                properties.put("vespa.matchphase.degradation.ascendingorder", matchPhaseSettings.getAscending() + "");
-                properties.put("vespa.matchphase.degradation.maxhits", matchPhaseSettings.getMaxHits() + "");
-                properties.put("vespa.matchphase.degradation.maxfiltercoverage", matchPhaseSettings.getMaxFilterCoverage() + "");
-                properties.put("vespa.matchphase.degradation.samplepercentage", matchPhaseSettings.getEvaluationPoint() + "");
-                properties.put("vespa.matchphase.degradation.postfiltermultiplier", matchPhaseSettings.getPrePostFilterTippingPoint() + "");
+                properties.add(new Pair<>("vespa.matchphase.degradation.attribute", matchPhaseSettings.getAttribute()));
+                properties.add(new Pair<>("vespa.matchphase.degradation.ascendingorder", matchPhaseSettings.getAscending() + ""));
+                properties.add(new Pair<>("vespa.matchphase.degradation.maxhits", matchPhaseSettings.getMaxHits() + ""));
+                properties.add(new Pair<>("vespa.matchphase.degradation.maxfiltercoverage", matchPhaseSettings.getMaxFilterCoverage() + ""));
+                properties.add(new Pair<>("vespa.matchphase.degradation.samplepercentage", matchPhaseSettings.getEvaluationPoint() + ""));
+                properties.add(new Pair<>("vespa.matchphase.degradation.postfiltermultiplier", matchPhaseSettings.getPrePostFilterTippingPoint() + ""));
                 RankProfile.DiversitySettings diversitySettings = matchPhaseSettings.getDiversity();
                 if (diversitySettings != null) {
-                    properties.put("vespa.matchphase.diversity.attribute", diversitySettings.getAttribute());
-                    properties.put("vespa.matchphase.diversity.mingroups", String.valueOf(diversitySettings.getMinGroups()));
-                    properties.put("vespa.matchphase.diversity.cutoff.factor", String.valueOf(diversitySettings.getCutoffFactor()));
-                    properties.put("vespa.matchphase.diversity.cutoff.strategy", String.valueOf(diversitySettings.getCutoffStrategy()));
+                    properties.add(new Pair<>("vespa.matchphase.diversity.attribute", diversitySettings.getAttribute()));
+                    properties.add(new Pair<>("vespa.matchphase.diversity.mingroups", String.valueOf(diversitySettings.getMinGroups())));
+                    properties.add(new Pair<>("vespa.matchphase.diversity.cutoff.factor", String.valueOf(diversitySettings.getCutoffFactor())));
+                    properties.add(new Pair<>("vespa.matchphase.diversity.cutoff.strategy", String.valueOf(diversitySettings.getCutoffStrategy())));
                 }
             }
             if (rerankCount > -1) {
-                properties.put("vespa.hitcollector.heapsize", rerankCount + "");
+                properties.add(new Pair<>("vespa.hitcollector.heapsize", rerankCount + ""));
             }
             if (keepRankCount > -1) {
-                properties.put("vespa.hitcollector.arraysize", keepRankCount + "");
+                properties.add(new Pair<>("vespa.hitcollector.arraysize", keepRankCount + ""));
             }
             if (rankScoreDropLimit > -Double.MAX_VALUE) {
-                properties.put("vespa.hitcollector.rankscoredroplimit", rankScoreDropLimit + "");
+                properties.add(new Pair<>("vespa.hitcollector.rankscoredroplimit", rankScoreDropLimit + ""));
             }
             if (ignoreDefaultRankFeatures) {
-                properties.put("vespa.dump.ignoredefaultfeatures", String.valueOf(true));
+                properties.add(new Pair<>("vespa.dump.ignoredefaultfeatures", String.valueOf(true)));
             }
             Iterator filterFieldsIterator = filterFields.iterator();
             while (filterFieldsIterator.hasNext()) {
                 String fieldName = (String) filterFieldsIterator.next();
-                properties.put("vespa.isfilterfield." + fieldName + ".part42", String.valueOf(true));
+                properties.add(new Pair<>("vespa.isfilterfield." + fieldName, String.valueOf(true)));
             }
             for (Map.Entry<String, String> attributeType : attributeTypes.entrySet()) {
-                properties.put("vespa.type.attribute." + attributeType.getKey(), attributeType.getValue());
+                properties.add(new Pair<>("vespa.type.attribute." + attributeType.getKey(), attributeType.getValue()));
             }
             for (Map.Entry<String, String> queryFeatureType : queryFeatureTypes.entrySet()) {
-                properties.put("vespa.type.query." + queryFeatureType.getKey(), queryFeatureType.getValue());
+                properties.add(new Pair<>("vespa.type.query." + queryFeatureType.getKey(), queryFeatureType.getValue()));
             }
             if (properties.size() >= 1000000) throw new RuntimeException("Too many rank properties");
             return properties;
         }
 
-        private Map<String, String> deriveRankingPhaseRankProperties(RankingExpression expression, String phase) {
-            Map<String, String> ret = new LinkedHashMap<>();
-            if (expression == null) {
-                return ret;
-            }
+        private List<Pair<String, String>>  deriveRankingPhaseRankProperties(RankingExpression expression, String phase) {
+            List<Pair<String, String>> properties = new ArrayList<>();
+            if (expression == null) return properties;
+
             String name = expression.getName();
-            if ("".equals(name)) {
+            if ("".equals(name))
                 name = phase;
-            }
+
             if (expression.getRoot() instanceof ReferenceNode) {
-                ret.put("vespa.rank." + phase, expression.getRoot().toString());
+                properties.add(new Pair<>("vespa.rank." + phase, expression.getRoot().toString()));
             } else {
-                ret.put("vespa.rank." + phase, "rankingExpression(" + name + ")");
-                ret.put("rankingExpression(" + name + ").rankingScript", expression.getRoot().toString());
+                properties.add(new Pair<>("vespa.rank." + phase, "rankingExpression(" + name + ")"));
+                properties.add(new Pair<>("rankingExpression(" + name + ").rankingScript", expression.getRoot().toString()));
             }
-            return ret;
+            return properties;
         }
 
     }
