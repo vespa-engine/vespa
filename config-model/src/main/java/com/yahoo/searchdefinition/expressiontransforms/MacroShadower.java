@@ -49,7 +49,7 @@ public class MacroShadower extends ExpressionTransformer<RankProfileTransformCon
         }
 
         int functionArity = function.getFunction().arity();
-        int macroArity = macro.getFormalParams() != null ? macro.getFormalParams().size() : 0;
+        int macroArity = macro.getArguments() != null ? macro.getArguments().size() : 0;
         if (functionArity != macroArity) {
             return transformChildren(function, context);
         }

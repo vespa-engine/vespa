@@ -631,21 +631,8 @@ public class RankProfile implements Serializable, Cloneable {
     public void parseExpressions() {
         try {
             parseRankingExpressions();
-            parseMacros();
         } catch (ParseException e) {
             throw new IllegalArgumentException(e);
-        }
-    }
-
-    private void parseMacros() throws ParseException {
-        for (Map.Entry<String, Macro> e : getMacros().entrySet()) {
-            String macroName = e.getKey();
-            Macro macro = e.getValue();
-            if (macro.getRankingExpression() == null) {
-                RankingExpression expr = parseRankingExpression(macroName, macro.getTextualExpression());
-                macro.setRankingExpression(expr);
-                macro.setTextualExpression(expr.getRoot().toString());
-            }
         }
     }
 
@@ -970,7 +957,6 @@ public class RankProfile implements Serializable, Cloneable {
     public static class Macro implements Serializable, Cloneable {
 
         private final String name;
-        private String textualExpression = null;
         private RankingExpression expression;
         private List<String> arguments;
 
@@ -980,25 +966,12 @@ public class RankProfile implements Serializable, Cloneable {
         public Macro(String name, List<String> arguments, RankingExpression expression, boolean inline) {
             this.name = name;
             this.arguments = arguments;
-            this.textualExpression = expression.getRoot().toString();
             this.expression = expression;
             this.inline = inline;
         }
 
-        public void addParam(String name) {
-            arguments.add(name);
-        }
-
-        public List<String> getFormalParams() {
+        public List<String> getArguments() {
             return arguments;
-        }
-
-        public String getTextualExpression() {
-            return textualExpression;
-        }
-
-        public void setTextualExpression(String textualExpression) {
-            this.textualExpression = textualExpression;
         }
 
         public void setRankingExpression(RankingExpression expr) {
@@ -1018,7 +991,7 @@ public class RankProfile implements Serializable, Cloneable {
         }
 
         public ExpressionFunction asExpressionFunction() {
-            return new ExpressionFunction(getName(), getFormalParams(), getRankingExpression());
+            return new ExpressionFunction(getName(), getArguments(), getRankingExpression());
         }
 
         @Override
