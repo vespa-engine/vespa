@@ -155,7 +155,7 @@ public class IndexingScriptRewriterTestCase extends SearchDefinitionTestCase {
         sdoc.addField(unprocessedField);
         Search search = new Search("test", null);
         search.addDocument(sdoc);
-        Processing.process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true);
+        new Processing().process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true);
         return unprocessedField.getIndexingScript();
     }
 
