@@ -21,7 +21,7 @@ public class LogRetriever {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
             org.apache.http.HttpResponse response = httpClient.execute(get);
             String responseBody = EntityUtils.toString(response.getEntity(), "UTF-8");
-            return new HttpResponse(response.getStatusLine().getStatusCode()) {
+            return new LogsResponse(response.getStatusLine().getStatusCode()) {
                 @Override
                 public void render(OutputStream outputStream) throws IOException {
                     if (response.getEntity() != null ) outputStream.write(responseBody.getBytes());
@@ -29,18 +29,26 @@ public class LogRetriever {
             };
         } catch (IOException e) {
             log.log(Level.WARNING, "Failed to retrieve logs from log server", e);
-            return new HttpResponse(404) {
+            return new LogsResponse(404) {
                 @Override
                 public void render(OutputStream outputStream) throws IOException {
                     outputStream.write(e.toString().getBytes());
                 }
 
-                @Override
-                public String getContentType() {
-                    return "application/json";
-                }
             };
         }
 
+    }
+
+    private abstract static class LogsResponse extends HttpResponse {
+
+        LogsResponse(int status) {
+            super(status);
+        }
+
+        @Override
+        public String getContentType() {
+            return "application/json";
+        }
     }
 }
