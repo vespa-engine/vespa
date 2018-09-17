@@ -2,6 +2,8 @@
 
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
@@ -11,7 +13,7 @@ import java.util.Optional;
  */
 // @Immutable
 public class PartialFileData {
-    private final Optional<String> content;
+    private final Optional<byte[]> content;
     private final Optional<String> owner;
     private final Optional<String> group;
     private final Optional<String> permissions;
@@ -20,17 +22,17 @@ public class PartialFileData {
         return new Builder();
     }
 
-    public PartialFileData(Optional<String> content,
-                           Optional<String> owner,
-                           Optional<String> group,
-                           Optional<String> permissions) {
+    private PartialFileData(Optional<byte[]> content,
+                            Optional<String> owner,
+                            Optional<String> group,
+                            Optional<String> permissions) {
         this.content = content;
         this.owner = owner;
         this.group = group;
         this.permissions = permissions;
     }
 
-    public Optional<String> getContent() {
+    public Optional<byte[]> getContent() {
         return content;
     }
 
@@ -47,12 +49,14 @@ public class PartialFileData {
     }
 
     public static class Builder {
-        private Optional<String> content = Optional.empty();
+        private Optional<byte[]> content = Optional.empty();
         private Optional<String> owner = Optional.empty();
         private Optional<String> group = Optional.empty();
         private Optional<String> permissions = Optional.empty();
 
-        public Builder withContent(String content) { this.content = Optional.of(content); return this; }
+        public Builder withContent(byte[] content) { this.content = Optional.of(content); return this; }
+        public Builder withContent(String content, Charset charset) { return withContent(content.getBytes(charset)); }
+        public Builder withContent(String content) { return withContent(content, StandardCharsets.UTF_8); }
         public Builder withOwner(String owner) { this.owner = Optional.of(owner); return this; }
         public Builder withGroup(String group) { this.group = Optional.of(group); return this; }
         public Builder withPermissions(String permissions) { this.permissions = Optional.of(permissions); return this; }

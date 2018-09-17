@@ -52,13 +52,19 @@ public class UnixPath {
     }
 
     public String readUtf8File() {
-        byte[] byteContent = uncheck(() -> Files.readAllBytes(path));
-        return new String(byteContent, StandardCharsets.UTF_8);
+        return new String(readBytes(), StandardCharsets.UTF_8);
+    }
+
+    public byte[] readBytes() {
+        return uncheck(() -> Files.readAllBytes(path));
     }
 
     public void writeUtf8File(String content, OpenOption... options) {
-        byte[] contentInUtf8 = content.getBytes(StandardCharsets.UTF_8);
-        uncheck(() -> Files.write(path, contentInUtf8, options));
+        writeBytes(content.getBytes(StandardCharsets.UTF_8), options);
+    }
+
+    public void writeBytes(byte[] content, OpenOption... options) {
+        uncheck(() -> Files.write(path, content, options));
     }
 
     public String getPermissions() {
