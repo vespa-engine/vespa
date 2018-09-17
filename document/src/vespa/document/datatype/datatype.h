@@ -46,7 +46,7 @@ protected:
     explicit DataType(vespalib::stringref name);
 
 public:
-    virtual ~DataType();
+    ~DataType() override;
     typedef std::unique_ptr<DataType> UP;
     typedef std::shared_ptr<DataType> SP;
     typedef vespalib::CloneablePtr<DataType> CP;

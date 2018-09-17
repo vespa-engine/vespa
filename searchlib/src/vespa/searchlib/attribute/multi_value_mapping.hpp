@@ -6,8 +6,7 @@
 #include <vespa/searchlib/datastore/array_store.hpp>
 #include <vespa/searchlib/common/rcuvector.hpp>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 template <typename EntryT, typename RefT>
 MultiValueMapping<EntryT,RefT>::MultiValueMapping(const datastore::ArrayStoreConfig &storeCfg, const GrowStrategy &gs)
@@ -17,9 +16,7 @@ MultiValueMapping<EntryT,RefT>::MultiValueMapping(const datastore::ArrayStoreCon
 }
 
 template <typename EntryT, typename RefT>
-MultiValueMapping<EntryT,RefT>::~MultiValueMapping()
-{
-}
+MultiValueMapping<EntryT,RefT>::~MultiValueMapping() = default;
 
 template <typename EntryT, typename RefT>
 void
@@ -52,8 +49,7 @@ MultiValueMapping<EntryT,RefT>::compactWorst(bool compactMemory, bool compactAdd
 {
     datastore::ICompactionContext::UP compactionContext(_store.compactWorst(compactMemory, compactAddressSpace));
     if (compactionContext) {
-        compactionContext->compact(vespalib::ArrayRef<EntryRef>(&_indices[0],
-                                                                _indices.size()));
+        compactionContext->compact(vespalib::ArrayRef<EntryRef>(&_indices[0], _indices.size()));
     }
 }
 
@@ -81,5 +77,4 @@ MultiValueMapping<EntryT, RefT>::optimizedConfigForHugePage(size_t maxSmallArray
     return ArrayStore::optimizedConfigForHugePage(maxSmallArraySize, hugePageSize, smallPageSize, minNumArraysForNewBuffer, allocGrowFactor);
 }
 
-} // namespace search::attribute
-} // namespace search
+}

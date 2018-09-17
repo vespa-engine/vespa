@@ -14,7 +14,7 @@ class ReferenceDataType : public DataType {
     const DocumentType& _targetDocType;
 public:
     ReferenceDataType(const DocumentType& targetDocType, int id);
-    ~ReferenceDataType();
+    ~ReferenceDataType() override;
 
     const DocumentType& getTargetType() const noexcept {
         return _targetDocType;

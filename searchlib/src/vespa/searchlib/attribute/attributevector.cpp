@@ -143,7 +143,6 @@ void AttributeVector::updateStat(bool force) {
 }
 
 bool AttributeVector::hasEnum() const { return _hasEnum; }
-bool AttributeVector::hasEnum2Value() const { return false; }
 uint32_t AttributeVector::getMaxValueCount() const { return _highestValueCount; }
 
 bool
