@@ -29,7 +29,7 @@ import java.util.function.Function;
  */
 public abstract class IntermediateOperation {
 
-    private final static String MACRO_PREFIX = "imported_ml_macro_";
+    private final static String FUNCTION_PREFIX = "imported_ml_function_";
 
     protected final String name;
     protected final String modelName;
@@ -132,7 +132,7 @@ public abstract class IntermediateOperation {
     public String vespaName(String name) { return name != null ? namePartOf(name).replace('/', '_') : null; }
 
     /** Retrieve the valid Vespa name of this node if it is a macro */
-    public String macroName() { return vespaName() != null ? MACRO_PREFIX + modelName + "_" + vespaName() : null; }
+    public String macroName() { return vespaName() != null ? FUNCTION_PREFIX + modelName + "_" + vespaName() : null; }
 
     /** Retrieve the list of warnings produced during its lifetime */
     public List<String> warnings() { return Collections.unmodifiableList(importWarnings); }

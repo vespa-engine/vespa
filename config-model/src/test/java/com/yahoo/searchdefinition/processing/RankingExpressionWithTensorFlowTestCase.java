@@ -319,9 +319,9 @@ public class RankingExpressionWithTensorFlowTestCase {
     @Test
     public void testFunctionGeneration() {
         final String name = "mnist_saved";
-        final String expression = "join(join(reduce(join(join(join(imported_ml_macro_" + name + "_dnn_hidden2_add, reduce(constant(" + name + "_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), imported_ml_macro_" + name + "_dnn_hidden2_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
+        final String expression = "join(join(reduce(join(join(join(imported_ml_function_" + name + "_dnn_hidden2_add, reduce(constant(" + name + "_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden2_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
         final String functionExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(" + name + "_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(" + name + "_dnn_hidden1_bias_read), f(a,b)(a + b))";
-        final String functionExpression2 = "join(reduce(join(join(join(imported_ml_macro_" + name + "_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), imported_ml_macro_" + name + "_dnn_hidden1_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(" + name + "_dnn_hidden2_bias_read), f(a,b)(a + b))";
+        final String functionExpression2 = "join(reduce(join(join(join(imported_ml_function_" + name + "_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden1_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(" + name + "_dnn_hidden2_bias_read), f(a,b)(a + b))";
 
         RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
                                     "tensorflow('mnist/saved')",
@@ -330,8 +330,8 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "input",
                                                       new StoringApplicationPackage(applicationDir));
         search.assertFirstPhaseExpression(expression, "my_profile");
-        search.assertFunction(functionExpression1, "imported_ml_macro_" + name + "_dnn_hidden1_add", "my_profile");
-        search.assertFunction(functionExpression2, "imported_ml_macro_" + name + "_dnn_hidden2_add", "my_profile");
+        search.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile");
+        search.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile");
     }
 
     @Test
@@ -349,9 +349,9 @@ public class RankingExpressionWithTensorFlowTestCase {
                 "  rank-profile my_profile_child inherits my_profile {\n" +
                 "  }";
 
-        final String expression = "join(join(reduce(join(join(join(imported_ml_macro_" + name + "_dnn_hidden2_add, reduce(constant(" + name + "_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), imported_ml_macro_" + name + "_dnn_hidden2_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
+        final String expression = "join(join(reduce(join(join(join(imported_ml_function_" + name + "_dnn_hidden2_add, reduce(constant(" + name + "_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden2_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
         final String functionExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(" + name + "_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(" + name + "_dnn_hidden1_bias_read), f(a,b)(a + b))";
-        final String functionExpression2 = "join(reduce(join(join(join(imported_ml_macro_" + name + "_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), imported_ml_macro_" + name + "_dnn_hidden1_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(" + name + "_dnn_hidden2_bias_read), f(a,b)(a + b))";
+        final String functionExpression2 = "join(reduce(join(join(join(imported_ml_function_" + name + "_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden1_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(" + name + "_dnn_hidden2_bias_read), f(a,b)(a + b))";
 
         RankProfileSearchFixture search = fixtureWithUncompiled(rankProfiles, new StoringApplicationPackage(applicationDir));
         search.compileRankProfile("my_profile", applicationDir.append("models"));
@@ -359,10 +359,10 @@ public class RankingExpressionWithTensorFlowTestCase {
         search.assertFirstPhaseExpression(expression, "my_profile");
         search.assertFirstPhaseExpression(expression, "my_profile_child");
         assertSmallConstant(name + "_dnn_hidden1_mul_x", TensorType.fromSpec("tensor()"), search);
-        search.assertFunction(functionExpression1, "imported_ml_macro_" + name + "_dnn_hidden1_add", "my_profile");
-        search.assertFunction(functionExpression1, "imported_ml_macro_" + name + "_dnn_hidden1_add", "my_profile_child");
-        search.assertFunction(functionExpression2, "imported_ml_macro_" + name + "_dnn_hidden2_add", "my_profile");
-        search.assertFunction(functionExpression2, "imported_ml_macro_" + name + "_dnn_hidden2_add", "my_profile_child");
+        search.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile");
+        search.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile_child");
+        search.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile");
+        search.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile_child");
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
         Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
@@ -377,10 +377,10 @@ public class RankingExpressionWithTensorFlowTestCase {
             searchFromStored.assertFirstPhaseExpression(expression, "my_profile");
             searchFromStored.assertFirstPhaseExpression(expression, "my_profile_child");
             assertSmallConstant(name + "_dnn_hidden1_mul_x", TensorType.fromSpec("tensor()"), search);
-            searchFromStored.assertFunction(functionExpression1, "imported_ml_macro_" + name + "_dnn_hidden1_add", "my_profile");
-            searchFromStored.assertFunction(functionExpression1, "imported_ml_macro_" + name + "_dnn_hidden1_add", "my_profile_child");
-            searchFromStored.assertFunction(functionExpression2, "imported_ml_macro_" + name + "_dnn_hidden2_add", "my_profile");
-            searchFromStored.assertFunction(functionExpression2, "imported_ml_macro_" + name + "_dnn_hidden2_add", "my_profile_child");
+            searchFromStored.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile");
+            searchFromStored.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile_child");
+            searchFromStored.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile");
+            searchFromStored.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile_child");
         }
         finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
