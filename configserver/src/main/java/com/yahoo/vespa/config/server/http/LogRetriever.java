@@ -34,6 +34,11 @@ public class LogRetriever {
                 public void render(OutputStream outputStream) throws IOException {
                     outputStream.write(e.toString().getBytes());
                 }
+
+                @Override
+                public String getContentType() {
+                    return "application/json";
+                }
             };
         }
 
