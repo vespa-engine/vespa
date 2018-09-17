@@ -619,32 +619,6 @@ public class RankProfile implements Serializable, Cloneable {
         return retval;
     }
 
-    /**
-     * Will take the parser-set textual ranking expressions and turn into ranking expression objects,
-     * if not already done
-     */
-    // TODO: There doesn't appear to be any good reason to defer parsing of ranking expressions
-    //       until this is called. Simplify by parsing them right away.
-    public void parseExpressions() {
-        try {
-            parseRankingExpressions();
-        } catch (ParseException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    /**
-     * Passes ranking expressions on to parser
-     *
-     * @throws ParseException if either of the ranking expressions could not be parsed
-     */
-    private void parseRankingExpressions() throws ParseException {
-        if (getFirstPhaseRankingString() != null && firstPhaseRanking == null)
-            setFirstPhaseRanking(parseRankingExpression("firstphase", getFirstPhaseRankingString()));
-        if (getSecondPhaseRankingString() != null && secondPhaseRanking == null)
-            setSecondPhaseRanking(parseRankingExpression("secondphase", getSecondPhaseRankingString()));
-    }
-
     private RankingExpression parseRankingExpression(String expressionName, String expression) throws ParseException {
         if (expression.trim().length() == 0)
             throw new ParseException("Encountered an empty ranking expression in " + getName()+ ", " + expressionName + ".");
@@ -713,7 +687,6 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     private void compileThis(QueryProfileRegistry queryProfiles, ImportedModels importedModels) {
-        parseExpressions();
         checkNameCollisions(getFunctions(), getConstants());
         ExpressionTransforms expressionTransforms = new ExpressionTransforms();
 

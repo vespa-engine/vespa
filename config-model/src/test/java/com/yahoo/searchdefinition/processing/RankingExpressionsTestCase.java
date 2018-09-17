@@ -26,7 +26,6 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
                                                           rankProfileRegistry,
                                                           new QueryProfileRegistry()).getSearch();
         RankProfile functionsRankProfile = rankProfileRegistry.get(search, "macros");
-        functionsRankProfile.parseExpressions();
         Map<String, RankProfile.RankingExpressionFunction> functions = functionsRankProfile.getFunctions();
         assertEquals(2, functions.get("titlematch$").function().arguments().size());
         assertEquals("var1", functions.get("titlematch$").function().arguments().get(0));

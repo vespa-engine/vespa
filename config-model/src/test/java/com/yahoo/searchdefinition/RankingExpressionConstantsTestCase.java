@@ -141,7 +141,6 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         builder.build();
         Search s = builder.getSearch();
         RankProfile profile = rankProfileRegistry.get(s, "test");
-        profile.parseExpressions(); // TODO: Do differently
         assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)", profile.getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
     }
 
@@ -170,7 +169,6 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         builder.build();
         Search s = builder.getSearch();
         RankProfile profile = rankProfileRegistry.get(s, "test");
-        profile.parseExpressions(); // TODO: Do differently
         assertEquals("safeLog(popShareSlowDecaySignal,myValue)", profile.getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
         assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)",
                      profile.compile(new QueryProfileRegistry(), new ImportedModels()).getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
