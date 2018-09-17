@@ -51,7 +51,7 @@ SSH agent forwarding is enabled to ensure easy interaction with GitHub inside th
 
     vagrant ssh
 
-#### 5. Checkout vespa source inside virtual machine
+#### 6. Checkout vespa source inside virtual machine
 This is needed in order to compile and run tests fast on the local file system inside the virtual machine.
 
     git clone git@github.com:vespa-engine/vespa.git
@@ -97,6 +97,9 @@ Under *Build Options* specify "-j 4" and click *Apply*.
 
 (Some of the changes made by it are undone by clion on the first startup.)
 
-#### 5. Build all modules
+#### 6. Build all modules
 Choose target **all_modules** from the set of build targets at the top right and click build.
 
+## Starting and stopping the Vagrant machine
+Use `vagrant suspend` to suspend the machine and then `vagrant resume` to resume it later on.
+Alternatively use `vagrant halt` + `vagrant up` to shutdown and reboot. Latter approach is slower but requires less disk space since RAM content is not persisted to host.
