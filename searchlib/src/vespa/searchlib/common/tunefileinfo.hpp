@@ -1,3 +1,4 @@
+
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
@@ -17,6 +18,12 @@ TuneFileRandRead::setFromConfig(const enum TuneControlConfig::Io & tuneControlCo
         case TuneControlConfig::MMAP:     _tuneControl = MMAP; break;
         default:                          _tuneControl = NORMAL; break;
     }
+    setFromMmapConfig(mmapFlags);
+}
+
+template <typename MMapConfig>
+void
+TuneFileRandRead::setFromMmapConfig(const MMapConfig & mmapFlags) {
     for (size_t i(0), m(mmapFlags.options.size()); i < m; i++) {
         switch (mmapFlags.options[i]) {
             case MMapConfig::MLOCK:    _mmapFlags |= MAP_LOCKED; break;
