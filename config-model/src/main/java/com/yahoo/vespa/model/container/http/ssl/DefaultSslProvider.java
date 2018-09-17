@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.container.http.ssl;
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.ssl.DefaultSslContextFactoryProvider;
+import com.yahoo.jdisc.http.ssl.impl.DefaultSslContextFactoryProvider;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 

@@ -1,8 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.jdisc.http.ssl;
+package com.yahoo.jdisc.http.ssl.impl;
 
 import com.yahoo.config.InnerNode;
 import com.yahoo.jdisc.http.ConnectorConfig;
+import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
 import com.yahoo.jdisc.http.ssl.pem.PemSslKeyStore;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
