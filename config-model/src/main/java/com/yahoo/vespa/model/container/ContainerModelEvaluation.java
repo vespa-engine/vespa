@@ -2,9 +2,12 @@
 package com.yahoo.vespa.model.container;
 
 import ai.vespa.models.evaluation.ModelsEvaluator;
+import ai.vespa.models.handler.ModelsEvaluationHandler;
+import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
+import com.yahoo.vespa.model.container.component.Handler;
 
 import java.util.List;
 import java.util.Objects;
@@ -16,12 +19,17 @@ import java.util.Objects;
  */
 public class ContainerModelEvaluation implements RankProfilesConfig.Producer, RankingConstantsConfig.Producer {
 
+    private final static String EVALUATOR_NAME = ModelsEvaluator.class.getName();
+    private final static String REST_HANDLER_NAME = ModelsEvaluationHandler.class.getName();
+    private final static String BUNDLE_NAME = "model-evaluation";
+
     /** Global rank profiles, aka models */
     private final RankProfileList rankProfileList;
 
     public ContainerModelEvaluation(ContainerCluster cluster, RankProfileList rankProfileList) {
         this.rankProfileList = Objects.requireNonNull(rankProfileList, "rankProfileList cannot be null");
-        cluster.addSimpleComponent(ModelsEvaluator.class.getName(), null, "model-evaluation");
+        cluster.addSimpleComponent(EVALUATOR_NAME, null, BUNDLE_NAME);
+        cluster.addComponent(ContainerModelEvaluation.getHandler());
     }
 
     public void prepare(List<Container> containers) {
@@ -36,6 +44,16 @@ public class ContainerModelEvaluation implements RankProfilesConfig.Producer, Ra
     @Override
     public void getConfig(RankingConstantsConfig.Builder builder) {
         rankProfileList.getConfig(builder);
+    }
+
+    public static Handler<?> getHandler() {
+        Handler<?> handler = new Handler<>(new ComponentModel(REST_HANDLER_NAME, null, BUNDLE_NAME));
+        String binding = ModelsEvaluationHandler.API_ROOT + "/" + ModelsEvaluationHandler.VERSION_V1;
+        handler.addServerBindings("http://*/" + binding,
+                                  "https://*/" + binding,
+                                  "http://*/" + binding + "/*",
+                                  "https://*/" + binding + "/*");
+        return handler;
     }
 
 }
