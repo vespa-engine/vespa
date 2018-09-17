@@ -76,7 +76,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
 
         RankProfile child2 = rankProfileRegistry.get(s, "child2").compile(queryProfileRegistry, new ImportedModels());
         assertEquals("16.6", child2.getFirstPhaseRanking().getRoot().toString());
-        assertEquals("foo: 14.0", child2.getMacros().get("foo").function().getBody().toString());
+        assertEquals("foo: 14.0", child2.getFunctions().get("foo").function().getBody().toString());
         List<Pair<String, String>> rankProperties = new RawRankProfile(child2,
                                                                        queryProfileRegistry,
                                                                        new ImportedModels(),
@@ -114,7 +114,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
             fail("Should have caused an exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Rank profile 'test' is invalid: Cannot have both a constant and macro named 'c'",
+            assertEquals("Rank profile 'test' is invalid: Cannot have both a constant and function named 'c'",
                          Exceptions.toMessageString(e));
         }
     }
@@ -142,7 +142,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         Search s = builder.getSearch();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         profile.parseExpressions(); // TODO: Do differently
-        assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)", profile.getMacros().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
+        assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)", profile.getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
     }
 
     @Test
@@ -171,9 +171,9 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         Search s = builder.getSearch();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         profile.parseExpressions(); // TODO: Do differently
-        assertEquals("safeLog(popShareSlowDecaySignal,myValue)", profile.getMacros().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
+        assertEquals("safeLog(popShareSlowDecaySignal,myValue)", profile.getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
         assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)",
-                     profile.compile(new QueryProfileRegistry(), new ImportedModels()).getMacros().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
+                     profile.compile(new QueryProfileRegistry(), new ImportedModels()).getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
     }
 
     @Test
@@ -196,7 +196,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         Search s = builder.getSearch();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("k1 + (k2 + k3) / 100000000.0",
-                     profile.compile(new QueryProfileRegistry(), new ImportedModels()).getMacros().get("rank_default").function().getBody().getRoot().toString());
+                     profile.compile(new QueryProfileRegistry(), new ImportedModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());
     }
 
     @Test
@@ -222,7 +222,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         Search s = builder.getSearch();
         RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("0.5 + 50 * (attribute(rating_yelp) - 3)",
-                     profile.compile(new QueryProfileRegistry(), new ImportedModels()).getMacros().get("rank_default").function().getBody().getRoot().toString());
+                     profile.compile(new QueryProfileRegistry(), new ImportedModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());
     }
 
 }

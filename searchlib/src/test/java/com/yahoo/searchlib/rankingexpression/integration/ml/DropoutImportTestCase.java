@@ -19,10 +19,10 @@ public class DropoutImportTestCase {
         TestableTensorFlowModel model = new TestableTensorFlowModel("test", "src/test/files/integration/tensorflow/dropout/saved");
 
         // Check required macros
-        assertEquals(1, model.get().requiredMacros().size());
-        assertTrue(model.get().requiredMacros().containsKey("X"));
+        assertEquals(1, model.get().requiredFunctions().size());
+        assertTrue(model.get().requiredFunctions().containsKey("X"));
         assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(),
-                     model.get().requiredMacros().get("X"));
+                     model.get().requiredFunctions().get("X"));
 
         ImportedModel.Signature signature = model.get().signature("serving_default");
 

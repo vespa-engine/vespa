@@ -237,7 +237,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                 ConvertedModel convertedModel = ConvertedModel.fromSource(new ModelName(model.name()),
                                                                           model.name(), profile, queryProfiles, model);
                 for (Map.Entry<String, RankingExpression> entry : convertedModel.expressions().entrySet()) {
-                    profile.addMacro(new ExpressionFunction(entry.getKey(), entry.getValue()), false);
+                    profile.addFunction(new ExpressionFunction(entry.getKey(), entry.getValue()), false);
                 }
             }
         }
@@ -249,7 +249,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                 rankProfileRegistry.add(profile);
                 ConvertedModel convertedModel = ConvertedModel.fromStore(new ModelName(modelName), modelName, profile);
                 for (Map.Entry<String, RankingExpression> entry : convertedModel.expressions().entrySet()) {
-                    profile.addMacro(new ExpressionFunction(entry.getKey(), entry.getValue()), false);
+                    profile.addFunction(new ExpressionFunction(entry.getKey(), entry.getValue()), false);
                 }
             }
         }

@@ -175,57 +175,57 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             rankScoreDropLimit = rankProfile.getRankScoreDropLimit();
             ignoreDefaultRankFeatures = rankProfile.getIgnoreDefaultRankFeatures();
             rankProperties = new ArrayList<>(rankProfile.getRankProperties());
-            derivePropertiesAndSummaryFeaturesFromMacros(rankProfile.getMacros());
+            derivePropertiesAndSummaryFeaturesFromFunctions(rankProfile.getFunctions());
         }
 
-        private void derivePropertiesAndSummaryFeaturesFromMacros(Map<String, RankProfile.RankingExpressionFunction> macros) {
-            if (macros.isEmpty()) return;
-            Map<String, ExpressionFunction> expressionMacros = new LinkedHashMap<>();
-            for (Map.Entry<String, RankProfile.RankingExpressionFunction> macro : macros.entrySet()) {
-                expressionMacros.put(macro.getKey(), macro.getValue().function());
+        private void derivePropertiesAndSummaryFeaturesFromFunctions(Map<String, RankProfile.RankingExpressionFunction> functions) {
+            if (functions.isEmpty()) return;
+            Map<String, ExpressionFunction> expressionFunctions = new LinkedHashMap<>();
+            for (Map.Entry<String, RankProfile.RankingExpressionFunction> function : functions.entrySet()) {
+                expressionFunctions.put(function.getKey(), function.getValue().function());
             }
 
-            Map<String, String> macroProperties = new LinkedHashMap<>();
-            macroProperties.putAll(deriveMacroProperties(expressionMacros));
+            Map<String, String> functionProperties = new LinkedHashMap<>();
+            functionProperties.putAll(deriveFunctionProperties(expressionFunctions));
             if (firstPhaseRanking != null) {
-                macroProperties.putAll(firstPhaseRanking.getRankProperties(new ArrayList<>(expressionMacros.values())));
+                functionProperties.putAll(firstPhaseRanking.getRankProperties(new ArrayList<>(expressionFunctions.values())));
             }
             if (secondPhaseRanking != null) {
-                macroProperties.putAll(secondPhaseRanking.getRankProperties(new ArrayList<>(expressionMacros.values())));
+                functionProperties.putAll(secondPhaseRanking.getRankProperties(new ArrayList<>(expressionFunctions.values())));
             }
 
-            for (Map.Entry<String, String> e : macroProperties.entrySet()) {
+            for (Map.Entry<String, String> e : functionProperties.entrySet()) {
                 rankProperties.add(new RankProfile.RankProperty(e.getKey(), e.getValue()));
             }
-            SerializationContext context = new SerializationContext(expressionMacros.values(), null, macroProperties);
-            replaceMacroSummaryFeatures(context);
+            SerializationContext context = new SerializationContext(expressionFunctions.values(), null, functionProperties);
+            replaceFunctionSummaryFeatures(context);
         }
 
-        private Map<String, String> deriveMacroProperties(Map<String, ExpressionFunction> eMacros) {
-            SerializationContext context = new SerializationContext(eMacros);
-            for (Map.Entry<String, ExpressionFunction> e : eMacros.entrySet()) {
+        private Map<String, String> deriveFunctionProperties(Map<String, ExpressionFunction> functions) {
+            SerializationContext context = new SerializationContext(functions);
+            for (Map.Entry<String, ExpressionFunction> e : functions.entrySet()) {
                 String expression = e.getValue().getBody().getRoot().toString(new StringBuilder(), context, null, null).toString();
                 context.addFunctionSerialization(RankingExpression.propertyName(e.getKey()), expression);
             }
             return context.serializedFunctions();
         }
 
-        private void replaceMacroSummaryFeatures(SerializationContext context) {
+        private void replaceFunctionSummaryFeatures(SerializationContext context) {
             if (summaryFeatures == null) return;
-            Map<String, ReferenceNode> macroSummaryFeatures = new LinkedHashMap<>();
+            Map<String, ReferenceNode> functionSummaryFeatures = new LinkedHashMap<>();
             for (Iterator<ReferenceNode> i = summaryFeatures.iterator(); i.hasNext(); ) {
                 ReferenceNode referenceNode = i.next();
-                // Is the feature a macro?
+                // Is the feature a function?
                 if (context.getFunction(referenceNode.getName()) != null) {
                     context.addFunctionSerialization(RankingExpression.propertyName(referenceNode.getName()),
                                                      referenceNode.toString(new StringBuilder(), context, null, null).toString());
                     ReferenceNode newReferenceNode = new ReferenceNode("rankingExpression(" + referenceNode.getName() + ")", referenceNode.getArguments().expressions(), referenceNode.getOutput());
-                    macroSummaryFeatures.put(referenceNode.getName(), newReferenceNode);
+                    functionSummaryFeatures.put(referenceNode.getName(), newReferenceNode);
                     i.remove(); // Will add the expanded one in next block
                 }
             }
-            // Then, replace the summary features that were macros
-            for (Map.Entry<String, ReferenceNode> e : macroSummaryFeatures.entrySet()) {
+            // Then, replace the summary features that were functions
+            for (Map.Entry<String, ReferenceNode> e : functionSummaryFeatures.entrySet()) {
                 summaryFeatures.add(e.getValue());
             }
         }
@@ -295,7 +295,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             List<Pair<String, String>>  properties = new ArrayList<>();
             for (RankProfile.RankProperty property : rankProperties) {
                 if ("rankingExpression(firstphase).rankingScript".equals(property.getName())) {
-                    // Could have been set by macro expansion. Set expressions, then skip this property.
+                    // Could have been set by function expansion. Set expressions, then skip this property.
                     try {
                         firstPhaseRanking = new RankingExpression(property.getValue());
                     } catch (ParseException e) {

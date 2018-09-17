@@ -74,7 +74,7 @@ public class Processing {
                 RankProfileTypeSettingsProcessor::new,
                 ReferenceFieldsProcessor::new,
                 FastAccessValidator::new,
-                ReservedMacroNames::new,
+                ReservedFunctionNames::new,
                 RankingExpressionTypeValidator::new,
 
                 // These should be last.

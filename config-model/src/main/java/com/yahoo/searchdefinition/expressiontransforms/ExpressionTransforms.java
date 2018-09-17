@@ -28,8 +28,8 @@ public class ExpressionTransforms {
                                  new XgboostFeatureConverter(),
                                  new ConstantDereferencer(),
                                  new ConstantTensorTransformer(),
-                                 new MacroInliner(),
-                                 new MacroShadower(),
+                                 new FunctionInliner(),
+                                 new FunctionShadower(),
                                  new TensorTransformer(),
                                  new Simplifier());
     }

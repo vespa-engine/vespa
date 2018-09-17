@@ -20,25 +20,25 @@ public class RankProfileTransformContext extends TransformContext {
     private final RankProfile rankProfile;
     private final QueryProfileRegistry queryProfiles;
     private final ImportedModels importedModels;
-    private final Map<String, RankProfile.RankingExpressionFunction> inlineMacros;
+    private final Map<String, RankProfile.RankingExpressionFunction> inlineFunctions;
     private final Map<String, String> rankProperties = new HashMap<>();
 
     public RankProfileTransformContext(RankProfile rankProfile,
                                        QueryProfileRegistry queryProfiles,
                                        ImportedModels importedModels,
                                        Map<String, Value> constants,
-                                       Map<String, RankProfile.RankingExpressionFunction> inlineMacros) {
+                                       Map<String, RankProfile.RankingExpressionFunction> inlineFunctions) {
         super(constants);
         this.rankProfile = rankProfile;
         this.queryProfiles = queryProfiles;
         this.importedModels = importedModels;
-        this.inlineMacros = inlineMacros;
+        this.inlineFunctions = inlineFunctions;
     }
 
     public RankProfile rankProfile() { return rankProfile; }
     public QueryProfileRegistry queryProfiles() { return queryProfiles; }
     public ImportedModels importedModels() { return importedModels; }
-    public Map<String, RankProfile.RankingExpressionFunction> inlineMacros() { return inlineMacros; }
+    public Map<String, RankProfile.RankingExpressionFunction> inlineFunctions() { return inlineFunctions; }
     public Map<String, String> rankProperties() { return rankProperties; }
 
 }

@@ -45,11 +45,11 @@ public class RankProfileRegistryTest {
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
 
         for (String rankProfileName : RankProfileRegistry.overridableRankProfileNames) {
-            assertNull(rankProfileRegistry.get(search, rankProfileName).getMacros().get("foo"));
+            assertNull(rankProfileRegistry.get(search, rankProfileName).getFunctions().get("foo"));
             RankProfile rankProfileWithAddedMacro = new RankProfile(rankProfileName, search, rankProfileRegistry);
-            rankProfileWithAddedMacro.addMacro(new ExpressionFunction("foo", RankingExpression.from("1+2")), true);
+            rankProfileWithAddedMacro.addFunction(new ExpressionFunction("foo", RankingExpression.from("1+2")), true);
             rankProfileRegistry.add(rankProfileWithAddedMacro);
-            assertNotNull(rankProfileRegistry.get(search, rankProfileName).getMacros().get("foo"));
+            assertNotNull(rankProfileRegistry.get(search, rankProfileName).getFunctions().get("foo"));
         }
     }
 

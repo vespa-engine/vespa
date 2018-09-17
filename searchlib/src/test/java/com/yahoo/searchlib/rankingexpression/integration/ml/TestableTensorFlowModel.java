@@ -48,7 +48,7 @@ public class TestableTensorFlowModel {
         Tensor placeholder = placeholderArgument();
         context.put(inputName, new TensorValue(placeholder));
 
-        model.macros().forEach((k,v) -> evaluateMacro(context, model, k));
+        model.functions().forEach((k, v) -> evaluateMacro(context, model, k));
 
         Tensor vespaResult = model.expressions().get(operationName).evaluate(context).asTensor();
         assertEquals("Operation '" + operationName + "' produces equal results",
@@ -62,7 +62,7 @@ public class TestableTensorFlowModel {
         Tensor placeholder = placeholderArgument();
         context.put(inputName, new TensorValue(placeholder));
 
-        model.macros().forEach((k,v) -> evaluateMacro(context, model, k));
+        model.functions().forEach((k, v) -> evaluateMacro(context, model, k));
 
         Tensor vespaResult = model.expressions().get(operationName).evaluate(context).asTensor();
         assertEquals("Operation '" + operationName + "' produces equal results", tfResult, vespaResult);
@@ -98,7 +98,7 @@ public class TestableTensorFlowModel {
 
     private void evaluateMacro(Context context, ImportedModel model, String macroName) {
         if (!context.names().contains(macroName)) {
-            RankingExpression e = model.macros().get(macroName);
+            RankingExpression e = model.functions().get(macroName);
             evaluateMacroDependencies(context, model, e.getRoot());
             context.put(macroName, new TensorValue(e.evaluate(context).asTensor()));
         }
@@ -107,7 +107,7 @@ public class TestableTensorFlowModel {
     private void evaluateMacroDependencies(Context context, ImportedModel model, ExpressionNode node) {
         if (node instanceof ReferenceNode) {
             String name = node.toString();
-            if (model.macros().containsKey(name)) {
+            if (model.functions().containsKey(name)) {
                 evaluateMacro(context, model, name);
             }
         }

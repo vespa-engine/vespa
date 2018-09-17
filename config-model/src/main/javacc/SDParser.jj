@@ -1887,7 +1887,7 @@ Object rankProfileItem(RankProfile profile) : { }
       | fieldRankFilter(profile)
       | firstPhase(profile)
       | matchPhase(profile)
-      | macro(profile)
+      | function(profile)
       | ignoreRankFeatures(profile)
       | numThreadsPerSearch(profile)
       | minHitsPerThread(profile)
@@ -1920,7 +1920,7 @@ void inheritsRankProfile(RankProfile profile) :
  *
  * @param profile The profile to modify.
  */
-void macro(RankProfile profile) :
+void function(RankProfile profile) :
 {
     String name, expression, parameter;
     List parameters = new ArrayList();
@@ -1933,7 +1933,7 @@ void macro(RankProfile profile) :
           ( <COMMA> parameter = identifier() { parameters.add(parameter); } )* ]
       ")"
       lbrace() expression = expression() (<NL>)* <RBRACE> )
-    { profile.addMacro(name, parameters, expression, inline); }
+    { profile.addFunction(name, parameters, expression, inline); }
 }
 
 boolean inline() :

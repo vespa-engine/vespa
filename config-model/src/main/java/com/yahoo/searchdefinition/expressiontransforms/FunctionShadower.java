@@ -10,19 +10,19 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.transform.ExpressionTransformer;
 
 /**
- * Transforms function nodes to reference nodes if a macro shadows a built-in function.
- * This has the effect of allowing macros to redefine built-in functions.
- * Another effect is that we can more or less add built-in functions over time
- * without fear of breaking existing users' macros with the same name.
+ * Transforms function nodes to reference nodes if a rank profile function shadows a built-in function.
+ * This has the effect of allowing rank profile functions to redefine built-in functions.
+ * Another effect is that we can add built-in functions over time
+ * without fear of breaking existing users' functions with the same name.
  *
- * However, there is a (largish) caveat. If a user has a macro with a certain number
+ * However, there is a (largish) caveat. If a user has a function with a certain number
  * of arguments, and we add in a built-in function with a different arity,
  * this will cause parse errors as the Java parser gives precedence to
  * built-in functions.
  *
  * @author lesters
  */
-public class MacroShadower extends ExpressionTransformer<RankProfileTransformContext> {
+public class FunctionShadower extends ExpressionTransformer<RankProfileTransformContext> {
 
     @Override
     public RankingExpression transform(RankingExpression expression, RankProfileTransformContext context) {
@@ -43,7 +43,7 @@ public class MacroShadower extends ExpressionTransformer<RankProfileTransformCon
 
     private ExpressionNode transformFunctionNode(FunctionNode function, RankProfileTransformContext context) {
         String name = function.getFunction().toString();
-        RankProfile.RankingExpressionFunction rankingExpressionFunction = context.rankProfile().getMacros().get(name);
+        RankProfile.RankingExpressionFunction rankingExpressionFunction = context.rankProfile().getFunctions().get(name);
         if (rankingExpressionFunction == null) {
             return transformChildren(function, context);
         }

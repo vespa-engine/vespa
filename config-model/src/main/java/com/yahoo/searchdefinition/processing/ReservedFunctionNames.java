@@ -13,16 +13,16 @@ import java.util.Set;
 import java.util.logging.Level;
 
 /**
- * Issues a warning if some macro has a reserved name. This is not necessarily
- * an error, as a macro can shadow a built-in function.
+ * Issues a warning if some function has a reserved name. This is not necessarily
+ * an error, as a rank profile function can shadow a built-in function.
  *
  * @author lesters
  */
-public class ReservedMacroNames extends Processor {
+public class ReservedFunctionNames extends Processor {
 
     private static Set<String> reservedNames = getReservedNames();
 
-    public ReservedMacroNames(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+    public ReservedFunctionNames(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
@@ -31,11 +31,11 @@ public class ReservedMacroNames extends Processor {
         if ( ! validate) return;
 
         for (RankProfile rp : rankProfileRegistry.all()) {
-            for (String macroName : rp.getMacros().keySet()) {
-                if (reservedNames.contains(macroName)) {
-                    deployLogger.log(Level.WARNING, "Macro \"" + macroName + "\" " +
-                                                    "in rank profile \"" + rp.getName() + "\" " +
-                                                    "has a reserved name. This might mean that the macro shadows " +
+            for (String functionName : rp.getFunctions().keySet()) {
+                if (reservedNames.contains(functionName)) {
+                    deployLogger.log(Level.WARNING, "Funcion '" + functionName + "' " +
+                                                    "in rank profile '" + rp.getName() + "' " +
+                                                    "has a reserved name. This might mean that the function shadows " +
                                                     "the built-in function with the same name."
                     );
                 }

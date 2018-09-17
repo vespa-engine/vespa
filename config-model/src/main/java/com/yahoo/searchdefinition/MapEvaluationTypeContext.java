@@ -70,7 +70,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                                                currentResolutionCallStack.stream().map(Reference::toString).collect(Collectors.joining(" -> ")) +
                                                " -> " + reference);
 
-        // A reference to a macro argument?
+        // A reference to a function argument?
         Optional<String> binding = boundIdentifier(reference);
         if (binding.isPresent()) {
             try {

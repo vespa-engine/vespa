@@ -80,10 +80,10 @@ public class ImportedModel {
      * Returns an immutable map of macros that are part of this model.
      * Note that the macros themselves are *not* copies and *not* immutable - they must be copied before modification.
      */
-    public Map<String, RankingExpression> macros() { return Collections.unmodifiableMap(macros); }
+    public Map<String, RankingExpression> functions() { return Collections.unmodifiableMap(macros); }
 
     /** Returns an immutable map of the macros that must be provided by the environment running this model */
-    public Map<String, TensorType> requiredMacros() { return Collections.unmodifiableMap(requiredMacros); }
+    public Map<String, TensorType> requiredFunctions() { return Collections.unmodifiableMap(requiredMacros); }
 
     /** Returns an immutable map of the signatures of this */
     public Map<String, Signature> signatures() { return Collections.unmodifiableMap(signatures); }

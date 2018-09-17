@@ -74,7 +74,7 @@ class RankProfileSearchFixture {
 
     public void assertMacro(String expexctedExpression, String macroName, String rankProfile) {
         assertEquals(expexctedExpression,
-                     compiledRankProfile(rankProfile).getMacros().get(macroName).function().getBody().getRoot().toString());
+                     compiledRankProfile(rankProfile).getFunctions().get(macroName).function().getBody().getRoot().toString());
     }
 
     public RankProfile compileRankProfile(String rankProfile) {
