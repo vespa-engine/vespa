@@ -56,6 +56,6 @@ public class FunctionEvaluator {
         return function.getBody().evaluate(context).asTensor();
     }
 
-    LazyArrayContext context() { return context; }
+    public LazyArrayContext context() { return context; }
 
 }

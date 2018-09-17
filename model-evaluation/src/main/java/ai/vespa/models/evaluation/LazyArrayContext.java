@@ -26,7 +26,7 @@ import java.util.Set;
  *
  * @author bratseth
  */
-final class LazyArrayContext extends Context implements ContextIndex {
+public final class LazyArrayContext extends Context implements ContextIndex {
 
     private final IndexedBindings indexedBindings;
 
