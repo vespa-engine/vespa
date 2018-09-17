@@ -341,7 +341,7 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     public void setFirstPhaseRanking(RankingExpression rankingExpression) {
-        this.firstPhaseRanking=rankingExpression;
+        this.firstPhaseRanking = rankingExpression;
     }
 
     public void setFirstPhaseRanking(String expression) {
@@ -518,8 +518,8 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     public boolean getIgnoreDefaultRankFeatures() {
-        if (ignoreDefaultRankFeatures!=null) return ignoreDefaultRankFeatures;
-        return (getInherited()!=null) && getInherited().getIgnoreDefaultRankFeatures();
+        if (ignoreDefaultRankFeatures != null) return ignoreDefaultRankFeatures;
+        return (getInherited() != null) && getInherited().getIgnoreDefaultRankFeatures();
     }
 
     /** Adds a function and returns it */
@@ -563,8 +563,8 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     public double getRankScoreDropLimit() {
-        if (rankScoreDropLimit>-Double.MAX_VALUE) return rankScoreDropLimit;
-        if (getInherited()!=null) return getInherited().getRankScoreDropLimit();
+        if (rankScoreDropLimit >- Double.MAX_VALUE) return rankScoreDropLimit;
+        if (getInherited() != null) return getInherited().getRankScoreDropLimit();
         return rankScoreDropLimit;
     }
 
@@ -793,11 +793,11 @@ public class RankProfile implements Serializable, Cloneable {
             /** True if this setting really pertains to an index, not a field within an index */
             private boolean isIndexLevel;
 
-            private Type(String name) {
+            Type(String name) {
                 this(name,false);
             }
 
-            private Type(String name,boolean isIndexLevel) {
+            Type(String name,boolean isIndexLevel) {
                 this.name = name;
                 this.isIndexLevel=isIndexLevel;
             }
@@ -805,7 +805,7 @@ public class RankProfile implements Serializable, Cloneable {
             /** True if this setting really pertains to an index, not a field within an index */
             public boolean isIndexLevel() { return isIndexLevel; }
 
-            /** @return The name of this type */
+            /** Returns the name of this type */
             public String getName() {
                 return name;
             }
@@ -838,10 +838,12 @@ public class RankProfile implements Serializable, Cloneable {
             }
         }
 
+        @Override
         public int hashCode() {
             return fieldName.hashCode() + 17 * type.hashCode();
         }
 
+        @Override
         public boolean equals(Object object) {
             if (!(object instanceof RankSetting)) {
                 return false;
@@ -852,6 +854,7 @@ public class RankProfile implements Serializable, Cloneable {
                     type.equals(other.type);
         }
 
+        @Override
         public String toString() {
             return type + " setting " + fieldName + ": " + value;
         }
@@ -1004,6 +1007,7 @@ public class RankProfile implements Serializable, Cloneable {
         public Map<String, String> getTypes() {
             return Collections.unmodifiableMap(types);
         }
+
     }
 
 }
