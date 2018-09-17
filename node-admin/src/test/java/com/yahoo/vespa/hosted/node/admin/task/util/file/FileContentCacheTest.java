@@ -4,9 +4,10 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -17,41 +18,44 @@ public class FileContentCacheTest {
     private final UnixPath unixPath = mock(UnixPath.class);
     private final FileContentCache cache = new FileContentCache(unixPath);
 
+    private final byte[] content = "content".getBytes(StandardCharsets.UTF_8);
+    private final byte[] newContent = "new-content".getBytes(StandardCharsets.UTF_8);
+
     @Test
     public void get() {
-        when(unixPath.readUtf8File()).thenReturn("content");
-        assertEquals("content", cache.get(Instant.ofEpochMilli(0)));
-        verify(unixPath, times(1)).readUtf8File();
+        when(unixPath.readBytes()).thenReturn(content);
+        assertArrayEquals(content, cache.get(Instant.ofEpochMilli(0)));
+        verify(unixPath, times(1)).readBytes();
         verifyNoMoreInteractions(unixPath);
 
         // cache hit
-        assertEquals("content", cache.get(Instant.ofEpochMilli(0)));
-        verify(unixPath, times(1)).readUtf8File();
+        assertArrayEquals(content, cache.get(Instant.ofEpochMilli(0)));
+        verify(unixPath, times(1)).readBytes();
         verifyNoMoreInteractions(unixPath);
 
         // cache miss
-        when(unixPath.readUtf8File()).thenReturn("new-content");
-        assertEquals("new-content", cache.get(Instant.ofEpochMilli(1)));
-        verify(unixPath, times(1 + 1)).readUtf8File();
+        when(unixPath.readBytes()).thenReturn(newContent);
+        assertArrayEquals(newContent, cache.get(Instant.ofEpochMilli(1)));
+        verify(unixPath, times(1 + 1)).readBytes();
         verifyNoMoreInteractions(unixPath);
 
         // cache hit both at times 0 and 1
-        assertEquals("new-content", cache.get(Instant.ofEpochMilli(0)));
-        verify(unixPath, times(1 + 1)).readUtf8File();
+        assertArrayEquals(newContent, cache.get(Instant.ofEpochMilli(0)));
+        verify(unixPath, times(1 + 1)).readBytes();
         verifyNoMoreInteractions(unixPath);
-        assertEquals("new-content", cache.get(Instant.ofEpochMilli(1)));
-        verify(unixPath, times(1 + 1)).readUtf8File();
+        assertArrayEquals(newContent, cache.get(Instant.ofEpochMilli(1)));
+        verify(unixPath, times(1 + 1)).readBytes();
         verifyNoMoreInteractions(unixPath);
     }
 
     @Test
     public void updateWith() {
-        cache.updateWith("content", Instant.ofEpochMilli(2));
-        assertEquals("content", cache.get(Instant.ofEpochMilli(2)));
+        cache.updateWith(content, Instant.ofEpochMilli(2));
+        assertArrayEquals(content, cache.get(Instant.ofEpochMilli(2)));
         verifyNoMoreInteractions(unixPath);
 
-        cache.updateWith("new-content", Instant.ofEpochMilli(4));
-        assertEquals("new-content", cache.get(Instant.ofEpochMilli(4)));
+        cache.updateWith(newContent, Instant.ofEpochMilli(4));
+        assertArrayEquals(newContent, cache.get(Instant.ofEpochMilli(4)));
         verifyNoMoreInteractions(unixPath);
     }
 

@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -64,7 +65,7 @@ public class FileSyncTest {
         assertTrue(fileSync.convergeTo(taskContext, fileData));
 
         assertTrue(Files.isRegularFile(path));
-        fileData.getContent().ifPresent(content -> assertEquals(content, unixPath.readUtf8File()));
+        fileData.getContent().ifPresent(content -> assertArrayEquals(content, unixPath.readBytes()));
         fileData.getOwner().ifPresent(owner -> assertEquals(owner, unixPath.getOwner()));
         fileData.getGroup().ifPresent(group -> assertEquals(group, unixPath.getGroup()));
         fileData.getPermissions().ifPresent(permissions -> assertEquals(permissions, unixPath.getPermissions()));
