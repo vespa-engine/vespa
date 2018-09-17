@@ -549,14 +549,9 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     /** Adds a new macro and returns it */
-    public Macro addMacro(String name, RankingExpression expression, boolean inline) {
-        return addMacro(name, Collections.emptyList(), expression, inline);
-    }
-
-    /** Adds a new macro and returns it */
     public Macro addMacro(String name, List<String> arguments, String expression, boolean inline) {
         try {
-            return addMacro(name, arguments, parseRankingExpression(name, expression), inline);
+            return addMacro(new ExpressionFunction(name, arguments, parseRankingExpression(name, expression)), inline);
         }
         catch (ParseException e) {
             throw new IllegalArgumentException("Could not parse macro '" + name + "'", e);
@@ -564,9 +559,9 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     /** Adds a new macro and returns it */
-    public Macro addMacro(String name, List<String> arguments, RankingExpression expression, boolean inline) {
-        Macro macro = new Macro(name, arguments, expression, inline);
-        macros.put(name, macro);
+    public Macro addMacro(ExpressionFunction function, boolean inline) {
+        Macro macro = new Macro(function, inline);
+        macros.put(function.getName(), macro);
         return macro;
     }
 
@@ -753,7 +748,7 @@ public class RankProfile implements Serializable, Cloneable {
         for (Map.Entry<String, Macro> entry : macros.entrySet()) {
             Macro macro = entry.getValue();
             RankingExpression compiled = compile(macro.function().getBody(), queryProfiles, importedModels, getConstants(), inlineMacros, expressionTransforms);
-            compiledMacros.put(entry.getKey(), macro.withExpression(compiled));
+            compiledMacros.put(entry.getKey(), macro.withBody(compiled));
         }
         return compiledMacros;
     }
@@ -951,7 +946,7 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     /**
-     * Represents a declared macro in the profile. It is, after parsing, transformed into ExpressionMacro
+     * A function in a rank profile
      */
     public static class Macro {
 
@@ -960,38 +955,24 @@ public class RankProfile implements Serializable, Cloneable {
         /** True if this should be inlined into calling expressions. Useful for very cheap macros. */
         private final boolean inline;
 
-        public Macro(String name, List<String> arguments, RankingExpression expression, boolean inline) {
-            this.function = new ExpressionFunction(name, arguments, expression);
+        public Macro(ExpressionFunction function, boolean inline) {
+            this.function = function;
             this.inline = inline;
         }
 
-        public List<String> getArguments() {
-            return function.arguments();
-        }
-
-        public Macro withExpression(RankingExpression expression) {
-            return new Macro(function.getName(), function.arguments(), expression, inline);
-        }
-
-        public RankingExpression getRankingExpression() {
-            return function.getBody();
-        }
-
-        public String getName() {
-            return function.getName();
-        }
+        public ExpressionFunction function() { return function; }
 
         public boolean inline() {
             return inline && function.arguments().isEmpty(); // only inline no-arg macros;
         }
 
-        public ExpressionFunction function() {
-            return function;
+        public Macro withBody(RankingExpression expression) {
+            return new Macro(function.withBody(expression), inline);
         }
 
         @Override
         public String toString() {
-            return "macro " + getName() + ": " + function().getBody();
+            return "function " + function;
         }
 
     }

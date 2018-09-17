@@ -13,6 +13,7 @@ import com.yahoo.searchdefinition.FeatureNames;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
+import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
@@ -285,7 +286,7 @@ public class ConvertedModel {
                                                    "\nwant to add " + expression + "\n");
             return;
         }
-        profile.addMacro(macroName, expression, false);  // TODO: Inline if only used once
+        profile.addMacro(new ExpressionFunction(macroName, expression), false);  // TODO: Inline if only used once
     }
 
     /**

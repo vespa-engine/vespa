@@ -28,13 +28,13 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
         final RankProfile macrosRankProfile = rankProfileRegistry.get(search, "macros");
         macrosRankProfile.parseExpressions();
         final Map<String, RankProfile.Macro> macros = macrosRankProfile.getMacros();
-        assertEquals(2, macros.get("titlematch$").getArguments().size());
-        assertEquals("var1", macros.get("titlematch$").getArguments().get(0));
-        assertEquals("var2", macros.get("titlematch$").getArguments().get(1));
+        assertEquals(2, macros.get("titlematch$").function().arguments().size());
+        assertEquals("var1", macros.get("titlematch$").function().arguments().get(0));
+        assertEquals("var2", macros.get("titlematch$").function().arguments().get(1));
         assertEquals("var1 * var2 + 890", macros.get("titlematch$").function().getBody().getRoot().toString());
         assertEquals("0.8+0.2*titlematch$(4,5)+0.8*titlematch$(7,8)*closeness(distance)", macrosRankProfile.getFirstPhaseRankingString().trim());
         assertEquals("78 + closeness(distance)", macros.get("artistmatch").function().getBody().getRoot().toString());
-        assertEquals(0, macros.get("artistmatch").getArguments().size());
+        assertEquals(0, macros.get("artistmatch").function().arguments().size());
 
         List<Pair<String, String>> rankProperties = new RawRankProfile(macrosRankProfile,
                                                                        new QueryProfileRegistry(),

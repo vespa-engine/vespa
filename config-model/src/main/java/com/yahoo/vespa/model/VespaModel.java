@@ -32,6 +32,7 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstants;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RankProfileList;
+import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.vespa.model.ml.ConvertedModel;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
@@ -236,7 +237,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                 ConvertedModel convertedModel = ConvertedModel.fromSource(new ModelName(model.name()),
                                                                           model.name(), profile, queryProfiles, model);
                 for (Map.Entry<String, RankingExpression> entry : convertedModel.expressions().entrySet()) {
-                    profile.addMacro(entry.getKey(), entry.getValue(), false);
+                    profile.addMacro(new ExpressionFunction(entry.getKey(), entry.getValue()), false);
                 }
             }
         }
@@ -248,7 +249,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                 rankProfileRegistry.add(profile);
                 ConvertedModel convertedModel = ConvertedModel.fromStore(new ModelName(modelName), modelName, profile);
                 for (Map.Entry<String, RankingExpression> entry : convertedModel.expressions().entrySet()) {
-                    profile.addMacro(entry.getKey(), entry.getValue(), false);
+                    profile.addMacro(new ExpressionFunction(entry.getKey(), entry.getValue()), false);
                 }
             }
         }
