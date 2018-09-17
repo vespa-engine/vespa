@@ -79,10 +79,12 @@ Open a terminal inside the virtual CentOS desktop (password is "vagrant") and ru
 
     clion
 
-When promoted, configure c and cpp compilers to 
+When prompted, configure toolchains as follows:
 
-    /opt/rh/devtoolset-7/root/usr/bin/cc
-    /opt/rh/devtoolset-7/root/usr/bin/c++    
+    CMake: /usr/bin/cmake3
+    Make: /usr/bin/make
+    C Compiler: /opt/rh/devtoolset-7/root/usr/bin/cc
+    C++ Compiler: /opt/rh/devtoolset-7/root/usr/bin/c++
 
 #### 3. Open the Vespa Project
 Go to *File* -> *Open* and choose &lt;vespa-source>&gt;/CMakeLists.txt.
