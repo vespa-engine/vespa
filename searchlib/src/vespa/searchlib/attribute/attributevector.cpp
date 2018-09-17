@@ -138,7 +138,7 @@ void AttributeVector::updateStat(bool force) {
         onUpdateStat();
     } else if (_nextStatUpdateTime < fastos::ClockSystem::now()) {
         onUpdateStat();
-        _nextStatUpdateTime = fastos::ClockSystem::now() + fastos::TimeStamp::SEC;
+        _nextStatUpdateTime = fastos::ClockSystem::now() + 5ul * fastos::TimeStamp::SEC;
     }
 }
 
