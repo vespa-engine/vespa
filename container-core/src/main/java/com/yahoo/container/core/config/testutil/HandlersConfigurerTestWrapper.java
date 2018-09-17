@@ -4,6 +4,7 @@ package com.yahoo.container.core.config.testutil;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Scopes;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.subscription.ConfigSourceSet;
@@ -134,7 +135,7 @@ public class HandlersConfigurerTestWrapper {
             @Override
             protected void configure() {
                 // Needed by e.g. SearchHandler
-                bind(Linguistics.class).toInstance(new SimpleLinguistics());
+                bind(Linguistics.class).to(SimpleLinguistics.class).in(Scopes.SINGLETON);
             }
         });
     }
