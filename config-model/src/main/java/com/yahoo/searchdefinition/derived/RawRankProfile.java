@@ -182,7 +182,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             if (macros.isEmpty()) return;
             Map<String, ExpressionFunction> expressionMacros = new LinkedHashMap<>();
             for (Map.Entry<String, RankProfile.Macro> macro : macros.entrySet()) {
-                expressionMacros.put(macro.getKey(), macro.getValue().asExpressionFunction());
+                expressionMacros.put(macro.getKey(), macro.getValue().function());
             }
 
             Map<String, String> macroProperties = new LinkedHashMap<>();

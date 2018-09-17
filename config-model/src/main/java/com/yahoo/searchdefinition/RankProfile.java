@@ -740,7 +740,7 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     private Map<String, Macro> getInlineMacros() {
-        return getMacros().entrySet().stream().filter(x -> x.getValue().getInline())
+        return getMacros().entrySet().stream().filter(x -> x.getValue().inline())
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
@@ -752,7 +752,7 @@ public class RankProfile implements Serializable, Cloneable {
         Map<String, Macro> compiledMacros = new LinkedHashMap<>();
         for (Map.Entry<String, Macro> entry : macros.entrySet()) {
             Macro macro = entry.getValue();
-            RankingExpression compiled = compile(macro.getRankingExpression(), queryProfiles, importedModels, getConstants(), inlineMacros, expressionTransforms);
+            RankingExpression compiled = compile(macro.function().getBody(), queryProfiles, importedModels, getConstants(), inlineMacros, expressionTransforms);
             compiledMacros.put(entry.getKey(), macro.withExpression(compiled));
         }
         return compiledMacros;
@@ -783,7 +783,7 @@ public class RankProfile implements Serializable, Cloneable {
      */
     public TypeContext<Reference> typeContext(QueryProfileRegistry queryProfiles) {
         MapEvaluationTypeContext context = new MapEvaluationTypeContext(getMacros().values().stream()
-                                                                                   .map(Macro::asExpressionFunction)
+                                                                                   .map(Macro::function)
                                                                                    .collect(Collectors.toList()));
 
         // Add small and large constants, respectively
@@ -981,17 +981,17 @@ public class RankProfile implements Serializable, Cloneable {
             return function.getName();
         }
 
-        public boolean getInline() {
+        public boolean inline() {
             return inline && function.arguments().isEmpty(); // only inline no-arg macros;
         }
 
-        public ExpressionFunction asExpressionFunction() {
-            return new ExpressionFunction(getName(), getArguments(), getRankingExpression());
+        public ExpressionFunction function() {
+            return function;
         }
 
         @Override
         public String toString() {
-            return "macro " + getName() + ": " + getRankingExpression();
+            return "macro " + getName() + ": " + function().getBody();
         }
 
     }

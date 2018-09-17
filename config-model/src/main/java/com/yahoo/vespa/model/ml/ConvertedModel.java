@@ -204,7 +204,7 @@ public class ConvertedModel {
         // and must use the macro expression added to the profile, which may differ from the one saved in the model,
         // after rewrite
         model.macros().forEach((k, v) -> transformGeneratedMacro(store, constantsReplacedByMacros, k,
-                                                                 profile.getMacros().get(k).getRankingExpression()));
+                                                                 profile.getMacros().get(k).function().getBody()));
 
         return expressions;
     }
@@ -252,7 +252,7 @@ public class ConvertedModel {
                                                Tensor constantValue) {
         RankProfile.Macro macroOverridingConstant = profile.getMacros().get(constantName);
         if (macroOverridingConstant != null) {
-            TensorType macroType = macroOverridingConstant.getRankingExpression().type(profile.typeContext(queryProfiles));
+            TensorType macroType = macroOverridingConstant.function().getBody().type(profile.typeContext(queryProfiles));
             if ( ! macroType.equals(constantValue.type()))
                 throw new IllegalArgumentException("Macro '" + constantName + "' replaces the constant with this name. " +
                                                    typeMismatchExplanation(constantValue.type(), macroType));
@@ -278,10 +278,10 @@ public class ConvertedModel {
 
     private static void addGeneratedMacroToProfile(RankProfile profile, String macroName, RankingExpression expression) {
         if (profile.getMacros().containsKey(macroName)) {
-            if ( ! profile.getMacros().get(macroName).getRankingExpression().equals(expression))
+            if ( ! profile.getMacros().get(macroName).function().getBody().equals(expression))
                 throw new IllegalArgumentException("Generated macro '" + macroName + "' already exists in " + profile +
                                                    " - with a different definition" +
-                                                   ": Has\n" + profile.getMacros().get(macroName).getRankingExpression() +
+                                                   ": Has\n" + profile.getMacros().get(macroName).function().getBody() +
                                                    "\nwant to add " + expression + "\n");
             return;
         }
@@ -309,7 +309,7 @@ public class ConvertedModel {
             // phase and summary features), as it may only resolve correctly given those bindings
             // Or, probably better, annotate the macros with type constraints here and verify during general
             // type verification
-            TensorType actualType = macro.getRankingExpression().getRoot().type(profile.typeContext(queryProfiles));
+            TensorType actualType = macro.function().getBody().getRoot().type(profile.typeContext(queryProfiles));
             if ( actualType == null)
                 throw new IllegalArgumentException("Model refers input '" + macroName +
                                                    "' of type " + requiredType +
@@ -356,7 +356,7 @@ public class ConvertedModel {
                 throw new IllegalArgumentException("Model refers to generated macro '" + macroName +
                                                    "but this macro is not present in " + profile);
             }
-            RankingExpression macroExpression = macro.getRankingExpression();
+            RankingExpression macroExpression = macro.function().getBody();
             macroExpression.setRoot(reduceBatchDimensionsAtInput(macroExpression.getRoot(), model, typeContext));
         }
 

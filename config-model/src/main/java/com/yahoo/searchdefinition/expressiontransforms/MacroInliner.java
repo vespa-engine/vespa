@@ -26,7 +26,7 @@ public class MacroInliner extends ExpressionTransformer<RankProfileTransformCont
     private ExpressionNode transformFeatureNode(ReferenceNode feature, RankProfileTransformContext context) {
         RankProfile.Macro macro = context.inlineMacros().get(feature.getName());
         if (macro == null) return feature;
-        return transform(macro.getRankingExpression().getRoot(), context); // inline recursively and return
+        return transform(macro.function().getBody().getRoot(), context); // inline recursively and return
     }
 
 }
