@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  * ranking expressions. The general mechanism for import is for the
  * specific ML platform import implementations to create an
  * IntermediateGraph. This class offers common code to convert the
- * IntermediateGraph to Vespa ranking expressions and macros.
+ * IntermediateGraph to Vespa ranking expressions and functions.
  *
  * @author lesters
  */
@@ -122,7 +122,7 @@ public abstract class ModelImporter {
         importExpressionInputs(operation, model);
         importRankingExpression(operation, model);
         importArgumentExpression(operation, model);
-        importMacroExpression(operation, model);
+        importFunctionExpression(operation, model);
 
         return operation.function();
     }
@@ -188,15 +188,15 @@ public abstract class ModelImporter {
             // All inputs must have dimensions with standard naming convention: d0, d1, ...
             OrderedTensorType standardNamingConvention = OrderedTensorType.standardType(operation.type().get());
             model.argument(operation.vespaName(), standardNamingConvention.type());
-            model.requiredMacro(operation.vespaName(), standardNamingConvention.type());
+            model.requiredFunction(operation.vespaName(), standardNamingConvention.type());
         }
     }
 
-    private static void importMacroExpression(IntermediateOperation operation, ImportedModel model) {
+    private static void importFunctionExpression(IntermediateOperation operation, ImportedModel model) {
         if (operation.macro().isPresent()) {
             TensorFunction function = operation.macro().get();
             try {
-                model.macro(operation.macroName(), new RankingExpression(operation.macroName(), function.toString()));
+                model.function(operation.macroName(), new RankingExpression(operation.macroName(), function.toString()));
             }
             catch (ParseException e) {
                 throw new RuntimeException("Tensorflow function " + function +

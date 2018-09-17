@@ -15,7 +15,7 @@ import java.util.Deque;
 import java.util.List;
 
 /**
- * A node referring either to a value in the context or to a named ranking expression (function aka macro).
+ * A node referring either to a value in the context or to a named ranking expression function.
  *
  * @author bratseth
  */

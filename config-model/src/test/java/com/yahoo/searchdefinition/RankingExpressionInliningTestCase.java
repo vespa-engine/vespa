@@ -44,18 +44,18 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
                         "        first-phase {\n" +
                         "            expression: p1 * add\n" +
                         "        }\n" +
-                        "        macro inline add() {\n" +
+                        "        function inline add() {\n" +
                         "            expression: 3 + attribute(a) + attribute(b) * mul3\n" +
                         "        }\n" +
-                        "        macro inline mul3() {\n" +
+                        "        function inline mul3() {\n" +
                         "            expression: attribute(a) * 3 + singleif\n" +
                         "        }\n" +
-                        "        macro inline singleif() {\n" +
+                        "        function inline singleif() {\n" +
                         "            expression: if (p1 < attribute(a), 1, 2) == 0\n" +
                         "        }\n" +
                         "    }\n" +
                         "    rank-profile child inherits parent {\n" +
-                        "        macro inline add() {\n" +
+                        "        function inline add() {\n" +
                         "            expression: 9 + attribute(a)\n" +
                         "        }\n" +
                         "    }\n" +
@@ -95,7 +95,7 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
                         "        second-phase {\n" +
                         "            expression: p2 * foo\n" +
                         "        }\n" +
-                        "        macro inline foo() {\n" +
+                        "        function inline foo() {\n" +
                         "            expression: 3 + p1 + p2\n" +
                         "        }\n" +
                         "    }\n" +
@@ -106,16 +106,16 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
                         "        constants {\n" +
                         "            p2: 2.0 \n" +
                         "        }\n" +
-                        "        macro bar() {\n" +
+                        "        function bar() {\n" +
                         "            expression: p2*p1\n" +
                         "        }\n" +
-                        "        macro inline baz() {\n" +
+                        "        function inline baz() {\n" +
                         "            expression: p2+p1+boz\n" +
                         "        }\n" +
-                        "        macro inline boz() {\n" +
+                        "        function inline boz() {\n" +
                         "            expression: 3.0\n" +
                         "        }\n" +
-                        "        macro inline arg(a1) {\n" +
+                        "        function inline arg(a1) {\n" +
                         "            expression: a1*2\n" +
                         "        }\n" +
                         "    }\n" +
@@ -162,16 +162,16 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
                         "        first-phase {\n" +
                         "            expression: A + C + D\n" +
                         "        }\n" +
-                        "        macro inline D() {\n" +
+                        "        function inline D() {\n" +
                         "            expression: B + 1\n" +
                         "        }\n" +
-                        "        macro C() {\n" +
+                        "        function C() {\n" +
                         "            expression: A + B\n" +
                         "        }\n" +
-                        "        macro inline B() {\n" +
+                        "        function inline B() {\n" +
                         "            expression: attribute(b)\n" +
                         "        }\n" +
-                        "        macro inline A() {\n" +
+                        "        function inline A() {\n" +
                         "            expression: attribute(a)\n" +
                         "        }\n" +
                         "    }\n" +

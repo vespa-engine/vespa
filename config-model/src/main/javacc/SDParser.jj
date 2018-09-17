@@ -1927,7 +1927,7 @@ void function(RankProfile profile) :
     boolean inline = false;
 }
 {
-    ( <MACRO> inline = inline() name = identifier() [ "$" { name = name + token.image; } ]
+    (  ( <FUNCTION> | <MACRO> ) inline = inline() name = identifier() [ "$" { name = name + token.image; } ]
       "("
           [ parameter = identifier()         { parameters.add(parameter); }
           ( <COMMA> parameter = identifier() { parameters.add(parameter); } )* ]

@@ -59,7 +59,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "        constants {\n" +
                         "            p2: 2.0 \n" +
                         "        }\n" +
-                        "        macro foo() {\n" +
+                        "        function foo() {\n" +
                         "            expression: p2*p1\n" +
                         "        }\n" +
                         "    }\n" +
@@ -101,7 +101,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "        constants {\n" +
                         "            c: 7 \n" +
                         "        }\n" +
-                        "        macro c() {\n" +
+                        "        function c() {\n" +
                         "            expression: p2*p1\n" +
                         "        }\n" +
                         "    }\n" +
@@ -132,7 +132,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
-                        "        macro POP_SLOW_SCORE() {\n" +
+                        "        function POP_SLOW_SCORE() {\n" +
                         "            expression:  safeLog(popShareSlowDecaySignal, -9.21034037)\n" +
                         "        }\n" +
                         "    }\n" +
@@ -161,7 +161,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "        constants {\n" +
                         "            myValue: -9.21034037\n" +
                         "        }\n" +
-                        "        macro POP_SLOW_SCORE() {\n" +
+                        "        function POP_SLOW_SCORE() {\n" +
                         "            expression:  safeLog(popShareSlowDecaySignal, myValue)\n" +
                         "        }\n" +
                         "    }\n" +
@@ -186,7 +186,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
-                        "        macro rank_default(){\n" +
+                        "        function rank_default(){\n" +
                         "            expression: k1 + (k2 + k3) / 100000000.0\n\n" +
                         "        }\n" +
                         "    }\n" +
@@ -212,7 +212,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
-                        "        macro rank_default(){\n" +
+                        "        function rank_default(){\n" +
                         "            expression: 0.5+50*(attribute(rating_yelp)-3)\n\n" +
                         "        }\n" +
                         "    }\n" +

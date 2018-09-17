@@ -216,10 +216,10 @@ public class RankingExpressionWithOnnxTestCase {
     public void testImportingFromStoredExpressionsWithFunctionOverridingConstant() throws IOException {
         String rankProfile =
                 "  rank-profile my_profile {\n" +
-                        "    macro Placeholder() {\n" +
+                        "    function Placeholder() {\n" +
                         "      expression: tensor(d0[2],d1[784])(0.0)\n" +
                         "    }\n" +
-                        "    macro " + name + "_Variable() {\n" +
+                        "    function " + name + "_Variable() {\n" +
                         "      expression: tensor(d1[10],d2[784])(0.0)\n" +
                         "    }\n" +
                         "    first-phase {\n" +
@@ -234,7 +234,7 @@ public class RankingExpressionWithOnnxTestCase {
         search.compileRankProfile("my_profile", applicationDir.append("models"));
         search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
 
-        assertNull("Constant overridden by macro is not added",
+        assertNull("Constant overridden by function is not added",
                 search.search().rankingConstants().get( name + "_Variable"));
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
@@ -247,7 +247,7 @@ public class RankingExpressionWithOnnxTestCase {
             RankProfileSearchFixture searchFromStored = uncompiledFixtureWith(rankProfile, storedApplication);
             searchFromStored.compileRankProfile("my_profile", applicationDir.append("models"));
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
-            assertNull("Constant overridden by macro is not added",
+            assertNull("Constant overridden by function is not added",
                        searchFromStored.search().rankingConstants().get( name + "_Variable"));
         } finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
@@ -286,7 +286,7 @@ public class RankingExpressionWithOnnxTestCase {
                     application,
                     application.getQueryProfiles(),
                     "  rank-profile my_profile {\n" +
-                            "    macro " + functionName + "() {\n" +
+                            "    function " + functionName + "() {\n" +
                             "      expression: " + functionExpression +
                             "    }\n" +
                             "    first-phase {\n" +

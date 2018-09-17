@@ -121,7 +121,7 @@ search simple {
     second-phase {
       rerank-count: 99
     }
-    macro openTicket() {
+    function openTicket() {
       expression: if(attribute(status) == "accepted",1, if(attribute(status) == "new",1,if(attribute(status) == "reopened",1,0)))
     }
   }

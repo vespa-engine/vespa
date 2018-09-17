@@ -250,12 +250,12 @@ public class RankingExpression implements Serializable {
     /**
      * Creates the necessary rank properties required to implement this expression.
      *
-     * @param macros the expression macros to expand.
-     * @return a list of named rank properties required to implement this expression.
+     * @param functions the expression functions to expand
+     * @return a list of named rank properties required to implement this expression
      */
-    public Map<String, String> getRankProperties(List<ExpressionFunction> macros) {
+    public Map<String, String> getRankProperties(List<ExpressionFunction> functions) {
         Deque<String> path = new LinkedList<>();
-        SerializationContext context = new SerializationContext(macros);
+        SerializationContext context = new SerializationContext(functions);
         String serializedRoot = root.toString(new StringBuilder(), context, path, null).toString();
         Map<String, String> serializedExpressions = context.serializedFunctions();
         serializedExpressions.put(propertyName(name), serializedRoot);

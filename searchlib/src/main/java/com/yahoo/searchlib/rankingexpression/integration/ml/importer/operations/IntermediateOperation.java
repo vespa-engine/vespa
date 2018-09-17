@@ -86,7 +86,7 @@ public abstract class IntermediateOperation {
     /** Return unmodifiable list of inputs */
     public List<IntermediateOperation> inputs() { return inputs; }
 
-    /** Return unmodifiable list of outputs. If a node has multiple outputs, consider adding a macro. */
+    /** Return unmodifiable list of outputs. If a node has multiple outputs, consider adding a function. */
     public List<IntermediateOperation> outputs() { return Collections.unmodifiableList(outputs); }
 
     /** Returns a Vespa ranking expression that should be added as a macro */

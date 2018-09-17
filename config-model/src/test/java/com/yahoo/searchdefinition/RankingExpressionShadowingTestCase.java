@@ -31,7 +31,7 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
-                        "        macro sin(x) {\n" +
+                        "        function sin(x) {\n" +
                         "            expression: x * x\n" +
                         "        }\n" +
                         "        first-phase {\n" +
@@ -69,13 +69,13 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
-                        "        macro tan(x) {\n" +
+                        "        function tan(x) {\n" +
                         "            expression: x * x\n" +
                         "        }\n" +
-                        "        macro cos(x) {\n" +
+                        "        function cos(x) {\n" +
                         "            expression: tan(x)\n" +
                         "        }\n" +
-                        "        macro sin(x) {\n" +
+                        "        function sin(x) {\n" +
                         "            expression: cos(x)\n" +
                         "        }\n" +
                         "        first-phase {\n" +
@@ -125,7 +125,7 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
-                        "        macro sin(x) {\n" +
+                        "        function sin(x) {\n" +
                         "            expression: x * x\n" +
                         "        }\n" +
                         "        first-phase {\n" +
@@ -168,13 +168,13 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
-                        "        macro relu(x) {\n" + // relu is a built in function, redefined here
+                        "        function relu(x) {\n" + // relu is a built in function, redefined here
                         "            expression: max(1.0, x)\n" +
                         "        }\n" +
-                        "        macro hidden_layer() {\n" +
+                        "        function hidden_layer() {\n" +
                         "            expression: relu(sum(query(q) * constant(W_hidden), input) + constant(b_input))\n" +
                         "        }\n" +
-                        "        macro final_layer() {\n" +
+                        "        function final_layer() {\n" +
                         "            expression: sigmoid(sum(hidden_layer * constant(W_final), hidden) + constant(b_final))\n" +
                         "        }\n" +
                         "        second-phase {\n" +

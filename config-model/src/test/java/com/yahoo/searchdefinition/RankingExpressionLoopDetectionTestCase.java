@@ -29,7 +29,7 @@ public class RankingExpressionLoopDetectionTestCase {
                 "        first-phase {\n" +
                 "            expression: foo\n" +
                 "        }\n" +
-                "        macro foo() {\n" +
+                "        function foo() {\n" +
                 "            expression: foo\n" +
                 "        }\n" +
                 "    }\n" +
@@ -61,10 +61,10 @@ public class RankingExpressionLoopDetectionTestCase {
                 "        first-phase {\n" +
                 "            expression: foo\n" +
                 "        }\n" +
-                "        macro foo() {\n" +
+                "        function foo() {\n" +
                 "            expression: arg(5)\n" +
                 "        }\n" +
-                "        macro arg(a1) {\n" +
+                "        function arg(a1) {\n" +
                 "            expression: foo + a1*2\n" +
                 "        }\n" +
                 "    }\n" +
@@ -96,10 +96,10 @@ public class RankingExpressionLoopDetectionTestCase {
                 "        first-phase {\n" +
                 "            expression: foo\n" +
                 "        }\n" +
-                "        macro foo() {\n" +
+                "        function foo() {\n" +
                 "            expression: arg(foo)\n" +
                 "        }\n" +
-                "        macro arg(a1) {\n" +
+                "        function arg(a1) {\n" +
                 "            expression: a1*2\n" +
                 "        }\n" +
                 "    }\n" +
@@ -131,10 +131,10 @@ public class RankingExpressionLoopDetectionTestCase {
                 "        first-phase {\n" +
                 "            expression: foo(3)\n" +
                 "        }\n" +
-                "        macro foo(a1) {\n" +
+                "        function foo(a1) {\n" +
                 "            expression: bar(3)\n" +
                 "        }\n" +
-                "        macro bar(a1) {\n" +
+                "        function bar(a1) {\n" +
                 "            expression: a1*2\n" +
                 "        }\n" +
                 "    }\n" +
@@ -159,10 +159,10 @@ public class RankingExpressionLoopDetectionTestCase {
                 "        first-phase {\n" +
                 "            expression: foo(3)\n" +
                 "        }\n" +
-                "        macro foo(a1) {\n" +
+                "        function foo(a1) {\n" +
                 "            expression: bar(3) + bar(a1)\n" +
                 "        }\n" +
-                "        macro bar(a1) {\n" +
+                "        function bar(a1) {\n" +
                 "            expression: a1*2\n" +
                 "        }\n" +
                 "    }\n" +
@@ -183,10 +183,10 @@ public class RankingExpressionLoopDetectionTestCase {
                 "        first-phase {\n" +
                 "            expression: foo(bar(2))\n" +
                 "        }\n" +
-                "        macro foo(x) {\n" +
+                "        function foo(x) {\n" +
                 "            expression: x * x\n" +
                 "        }\n" +
-                "        macro bar(x) {\n" +
+                "        function bar(x) {\n" +
                 "            expression: x + x\n" +
                 "        }\n" +
                 "    }\n" +

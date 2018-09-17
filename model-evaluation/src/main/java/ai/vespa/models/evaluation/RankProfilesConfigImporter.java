@@ -81,11 +81,11 @@ public class RankProfilesConfigImporter {
                 referencedFunctions.put(reference.get(),
                                         new ExpressionFunction(reference.get().serialForm(), arguments, expression));
             }
-            else if (property.name().equals("vespa.rank.firstphase")) { // Include in addition to macros
+            else if (property.name().equals("vespa.rank.firstphase")) { // Include in addition to functions
                 firstPhase = new ExpressionFunction("firstphase", new ArrayList<>(),
                                                     new RankingExpression("first-phase", property.value()));
             }
-            else if (property.name().equals("vespa.rank.secondphase")) { // Include in addition to macros
+            else if (property.name().equals("vespa.rank.secondphase")) { // Include in addition to functions
                 secondPhase = new ExpressionFunction("secondphase", new ArrayList<>(),
                                                      new RankingExpression("second-phase", property.value()));
             }

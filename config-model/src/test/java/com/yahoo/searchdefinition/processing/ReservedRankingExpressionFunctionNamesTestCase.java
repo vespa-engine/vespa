@@ -32,10 +32,10 @@ public class ReservedRankingExpressionFunctionNamesTestCase {
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test_rank_profile {\n" +
-                        "        macro not_a_reserved_name(x) {\n" +
+                        "        function not_a_reserved_name(x) {\n" +
                         "            expression: x + x\n" +
                         "        }\n" +
-                        "        macro sigmoid(x) {\n" +
+                        "        function sigmoid(x) {\n" +
                         "            expression: x * x\n" +
                         "        }\n" +
                         "        first-phase {\n" +
@@ -43,7 +43,7 @@ public class ReservedRankingExpressionFunctionNamesTestCase {
                         "        }\n" +
                         "    }\n" +
                         "    rank-profile test_rank_profile_2 inherits test_rank_profile {\n" +
-                        "        macro sin(x) {\n" +
+                        "        function sin(x) {\n" +
                         "            expression: x * x\n" +
                         "        }\n" +
                         "        first-phase {\n" +

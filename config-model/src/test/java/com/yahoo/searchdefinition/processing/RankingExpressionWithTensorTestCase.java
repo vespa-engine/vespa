@@ -98,7 +98,7 @@ public class RankingExpressionWithTensorTestCase {
     public void requireThatConstantTensorsCanBeUsedInFunction() throws ParseException {
         RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile my_profile {\n" +
-                "    macro my_macro() {\n" +
+                "    function my_macro() {\n" +
                 "      expression: sum(my_tensor)\n" +
                 "    }\n" +
                 "    first-phase {\n" +
