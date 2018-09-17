@@ -442,6 +442,30 @@ public class DocumentUpdateTestCase {
     }
 
     @Test
+    public void testgetAndRemoveByName() {
+        DocumentType docType = new DocumentType("my_type");
+        Field my_int = new Field("my_int", DataType.INT);
+        Field your_int = new Field("your_int", DataType.INT);
+        docType.addField(my_int);
+        docType.addField(your_int);
+        DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("doc:this:is:a:test"));
+
+        update.addFieldUpdate(FieldUpdate.createAssign(my_int, new IntegerFieldValue(2)));
+        assertNull(update.getFieldUpdate("your_int"));
+        assertEquals(new IntegerFieldValue(2), update.getFieldUpdate("my_int").getValueUpdate(0).getValue());
+        assertNull(update.removeFieldUpdate("your_int"));
+        assertEquals(new IntegerFieldValue(2), update.removeFieldUpdate("my_int").getValueUpdate(0).getValue());
+        assertNull(update.getFieldUpdate("my_int"));
+
+        update.addFieldUpdate(FieldUpdate.createAssign(my_int, new IntegerFieldValue(2)));
+        assertNull(update.getFieldUpdate(your_int));
+        assertEquals(new IntegerFieldValue(2), update.getFieldUpdate(my_int).getValueUpdate(0).getValue());
+        assertNull(update.removeFieldUpdate(your_int));
+        assertEquals(new IntegerFieldValue(2), update.removeFieldUpdate(my_int).getValueUpdate(0).getValue());
+        assertNull(update.getFieldUpdate(my_int));
+    }
+
+    @Test
     public void testInstantiationAndEqualsHashCode() {
         DocumentType type = new DocumentType("doo");
         DocumentUpdate d1 = new DocumentUpdate(type, new DocumentId("doc:this:is:a:test"));
