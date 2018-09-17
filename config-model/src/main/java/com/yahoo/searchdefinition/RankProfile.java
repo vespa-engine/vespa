@@ -751,10 +751,9 @@ public class RankProfile implements Serializable, Cloneable {
                                              ExpressionTransforms expressionTransforms) {
         Map<String, Macro> compiledMacros = new LinkedHashMap<>();
         for (Map.Entry<String, Macro> entry : macros.entrySet()) {
-            Macro macro = entry.getValue().clone();
-            RankingExpression exp = compile(macro.getRankingExpression(), queryProfiles, importedModels, getConstants(), inlineMacros, expressionTransforms);
-            macro.setRankingExpression(exp);
-            compiledMacros.put(entry.getKey(), macro);
+            Macro macro = entry.getValue();
+            RankingExpression compiled = compile(macro.getRankingExpression(), queryProfiles, importedModels, getConstants(), inlineMacros, expressionTransforms);
+            compiledMacros.put(entry.getKey(), macro.withExpression(compiled));
         }
         return compiledMacros;
     }
@@ -954,40 +953,36 @@ public class RankProfile implements Serializable, Cloneable {
     /**
      * Represents a declared macro in the profile. It is, after parsing, transformed into ExpressionMacro
      */
-    public static class Macro implements Serializable, Cloneable {
+    public static class Macro {
 
-        private final String name;
-        private RankingExpression expression;
-        private List<String> arguments;
+        private final ExpressionFunction function;
 
         /** True if this should be inlined into calling expressions. Useful for very cheap macros. */
         private final boolean inline;
 
         public Macro(String name, List<String> arguments, RankingExpression expression, boolean inline) {
-            this.name = name;
-            this.arguments = arguments;
-            this.expression = expression;
+            this.function = new ExpressionFunction(name, arguments, expression);
             this.inline = inline;
         }
 
         public List<String> getArguments() {
-            return arguments;
+            return function.arguments();
         }
 
-        public void setRankingExpression(RankingExpression expr) {
-            this.expression=expr;
+        public Macro withExpression(RankingExpression expression) {
+            return new Macro(function.getName(), function.arguments(), expression, inline);
         }
 
         public RankingExpression getRankingExpression() {
-            return expression;
+            return function.getBody();
         }
 
         public String getName() {
-            return name;
+            return function.getName();
         }
 
         public boolean getInline() {
-            return inline && arguments.size() == 0; // only inline no-arg macros;
+            return inline && function.arguments().isEmpty(); // only inline no-arg macros;
         }
 
         public ExpressionFunction asExpressionFunction() {
@@ -995,18 +990,8 @@ public class RankProfile implements Serializable, Cloneable {
         }
 
         @Override
-        public Macro clone() {
-            try {
-                return (Macro)super.clone();
-            }
-            catch (CloneNotSupportedException e) {
-                throw new RuntimeException("Won't happen", e);
-            }
-        }
-
-        @Override
         public String toString() {
-            return "macro " + getName() + ": " + expression;
+            return "macro " + getName() + ": " + getRankingExpression();
         }
 
     }
