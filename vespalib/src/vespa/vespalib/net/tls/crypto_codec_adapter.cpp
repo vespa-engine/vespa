@@ -85,11 +85,15 @@ CryptoCodecAdapter::handshake()
 ssize_t
 CryptoCodecAdapter::read(char *buf, size_t len)
 {
+    auto drain_res = drain(buf, len);
+    if (drain_res != 0) {
+        return drain_res;
+    }
     auto fill_res = fill_input();
     if (fill_res <= 0) {
         return fill_res;
     }
-    auto drain_res = drain(buf, len);
+    drain_res = drain(buf, len);
     if (drain_res != 0) {
         return drain_res;
     }

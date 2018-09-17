@@ -112,7 +112,7 @@ public:
     }
     size_t min_read_buffer_size() const override { return 1; }
     ssize_t read(char *buf, size_t len) override {
-        if (_input.obtain().size < CHUNK_SIZE) {
+        if (_input.obtain().size == 0) {
             auto dst = _input.reserve(CHUNK_SIZE);
             ssize_t res = _socket.read(dst.data, dst.size);
             if (res > 0) {
