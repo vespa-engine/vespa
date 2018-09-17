@@ -34,10 +34,10 @@ public class TensorFlowMnistSoftmaxImportTestCase {
                      constant1.type());
         assertEquals(10, constant1.size());
 
-        // Check (provided) macros
+        // Check (provided) functions
         assertEquals(0, model.get().functions().size());
 
-        // Check required macros
+        // Check required functions
         assertEquals(1, model.get().requiredFunctions().size());
         assertTrue(model.get().requiredFunctions().containsKey("Placeholder"));
         assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(),

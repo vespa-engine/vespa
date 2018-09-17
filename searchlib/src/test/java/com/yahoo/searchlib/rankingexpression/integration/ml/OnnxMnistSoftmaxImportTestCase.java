@@ -36,7 +36,7 @@ public class OnnxMnistSoftmaxImportTestCase {
                 constant1.type());
         assertEquals(10, constant1.size());
 
-        // Check required macros (inputs)
+        // Check required functions (inputs)
         assertEquals(1, model.requiredFunctions().size());
         assertTrue(model.requiredFunctions().containsKey("Placeholder"));
         assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(),

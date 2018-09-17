@@ -193,10 +193,10 @@ public abstract class ModelImporter {
     }
 
     private static void importFunctionExpression(IntermediateOperation operation, ImportedModel model) {
-        if (operation.macro().isPresent()) {
-            TensorFunction function = operation.macro().get();
+        if (operation.rankingExpressionFunction().isPresent()) {
+            TensorFunction function = operation.rankingExpressionFunction().get();
             try {
-                model.function(operation.macroName(), new RankingExpression(operation.macroName(), function.toString()));
+                model.function(operation.rankingExpressionFunctionName(), new RankingExpression(operation.rankingExpressionFunctionName(), function.toString()));
             }
             catch (ParseException e) {
                 throw new RuntimeException("Tensorflow function " + function +

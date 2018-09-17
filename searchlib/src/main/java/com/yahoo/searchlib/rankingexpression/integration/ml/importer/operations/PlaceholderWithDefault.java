@@ -32,7 +32,7 @@ public class PlaceholderWithDefault extends IntermediateOperation {
     }
 
     @Override
-    public Optional<TensorFunction> macro() {
+    public Optional<TensorFunction> rankingExpressionFunction() {
         // For now, it is much more efficient to assume we always will return
         // the default value, as we can prune away large parts of the expression
         // tree by having it calculated as a constant. If a case arises where

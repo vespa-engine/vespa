@@ -38,7 +38,7 @@ public abstract class IntermediateOperation {
 
     protected OrderedTensorType type;
     protected TensorFunction function;
-    protected TensorFunction macro = null;
+    protected TensorFunction rankingExpressionFunction = null;
 
     private final List<String> importWarnings = new ArrayList<>();
     private Value constantValue = null;
@@ -71,8 +71,8 @@ public abstract class IntermediateOperation {
                 ExpressionNode constant = new ReferenceNode(Reference.simple("constant", vespaName()));
                 function = new TensorFunctionNode.TensorFunctionExpressionNode(constant);
             } else if (outputs.size() > 1) {
-                macro = lazyGetFunction();
-                function = new VariableTensor(macroName(), type.type());
+                rankingExpressionFunction = lazyGetFunction();
+                function = new VariableTensor(rankingExpressionFunctionName(), type.type());
             } else {
                 function = lazyGetFunction();
             }
@@ -89,8 +89,10 @@ public abstract class IntermediateOperation {
     /** Return unmodifiable list of outputs. If a node has multiple outputs, consider adding a function. */
     public List<IntermediateOperation> outputs() { return Collections.unmodifiableList(outputs); }
 
-    /** Returns a Vespa ranking expression that should be added as a macro */
-    public Optional<TensorFunction> macro() { return Optional.ofNullable(macro); }
+    /** Returns a function that should be added as a ranking expression function */
+    public Optional<TensorFunction> rankingExpressionFunction() {
+        return Optional.ofNullable(rankingExpressionFunction);
+    }
 
     /** Add dimension name constraints for this operation */
     public void addDimensionNameConstraints(DimensionRenamer renamer) { }
@@ -131,8 +133,10 @@ public abstract class IntermediateOperation {
     public String vespaName() { return vespaName(name); }
     public String vespaName(String name) { return name != null ? namePartOf(name).replace('/', '_') : null; }
 
-    /** Retrieve the valid Vespa name of this node if it is a macro */
-    public String macroName() { return vespaName() != null ? FUNCTION_PREFIX + modelName + "_" + vespaName() : null; }
+    /** Retrieve the valid Vespa name of this node if it is a ranking expression function */
+    public String rankingExpressionFunctionName() {
+        return vespaName() != null ? FUNCTION_PREFIX + modelName + "_" + vespaName() : null;
+    }
 
     /** Retrieve the list of warnings produced during its lifetime */
     public List<String> warnings() { return Collections.unmodifiableList(importWarnings); }
