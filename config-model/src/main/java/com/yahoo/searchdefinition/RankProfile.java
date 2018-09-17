@@ -97,10 +97,6 @@ public class RankProfile implements Serializable, Cloneable {
 
     private Boolean ignoreDefaultRankFeatures = null;
 
-    private String secondPhaseRankingString = null;
-
-    private String firstPhaseRankingString = null;
-
     private Map<String, RankingExpressionFunction> functions = new LinkedHashMap<>();
 
     private Set<String> filterFields = new HashSet<>();
@@ -348,6 +344,15 @@ public class RankProfile implements Serializable, Cloneable {
         this.firstPhaseRanking=rankingExpression;
     }
 
+    public void setFirstPhaseRanking(String expression) {
+        try {
+            this.firstPhaseRanking = parseRankingExpression("firstphase", expression);
+        }
+        catch (ParseException e) {
+            throw new IllegalArgumentException("Illegal first phase ranking function", e);
+        }
+    }
+
     /**
      * Returns the ranking expression to use by this. This expression must not be edited.
      * Returns null if no expression is set.
@@ -362,20 +367,9 @@ public class RankProfile implements Serializable, Cloneable {
         this.secondPhaseRanking = rankingExpression;
     }
 
-    public void setFirstPhaseRankingString(String expression) {
-        try {
-            this.firstPhaseRanking = parseRankingExpression("firstphase", expression);
-            this.firstPhaseRankingString = expression;
-        }
-        catch (ParseException e) {
-            throw new IllegalArgumentException("Illegal first phase ranking function", e);
-        }
-    }
-
-    public void setSecondPhaseRankingString(String expression) {
+    public void setSecondPhaseRanking(String expression) {
         try {
             this.secondPhaseRanking = parseRankingExpression("secondphase", expression);
-            this.secondPhaseRankingString = expression;
         }
         catch (ParseException e) {
             throw new IllegalArgumentException("Illegal second phase ranking function", e);
@@ -534,7 +528,7 @@ public class RankProfile implements Serializable, Cloneable {
      * @return string form of second phase ranking expression
      */
     public String getSecondPhaseRankingString() {
-        if (secondPhaseRankingString != null) return secondPhaseRankingString;
+        if (secondPhaseRanking != null) return secondPhaseRanking.getRoot().toString();
         if (getInherited() != null) return getInherited().getSecondPhaseRankingString();
         return null;
     }
@@ -545,7 +539,7 @@ public class RankProfile implements Serializable, Cloneable {
      * @return string form of first phase ranking expression
      */
     public String getFirstPhaseRankingString() {
-        if (firstPhaseRankingString != null) return firstPhaseRankingString;
+        if (firstPhaseRanking != null) return firstPhaseRanking.getRoot().toString();
         if (getInherited() != null) return getInherited().getFirstPhaseRankingString();
         return null;
     }

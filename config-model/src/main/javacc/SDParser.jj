@@ -2037,7 +2037,7 @@ Object firstPhaseItem(RankProfile profile) :
   double dropLimit;
 }
 {
-    ( expression = expression()                        { profile.setFirstPhaseRankingString(expression); }
+    ( expression = expression()                        { profile.setFirstPhaseRanking(expression); }
       | (<KEEPRANKCOUNT> <COLON> rerankCount = integer()) { profile.setKeepRankCount(rerankCount); }
       | (<RANKSCOREDROPLIMIT> <COLON> dropLimit = consumeFloat()) { profile.setRankScoreDropLimit(dropLimit); }
     )
@@ -2066,7 +2066,7 @@ Object secondPhaseItem(RankProfile profile) :
     int rerankCount;
 }
 {
-    ( expression = expression()                 { profile.setSecondPhaseRankingString(expression); }
+    ( expression = expression()                 { profile.setSecondPhaseRanking(expression); }
       | (<RERANKCOUNT> <COLON> rerankCount = integer()) { profile.setRerankCount(rerankCount); }
     )
     { return null; }
