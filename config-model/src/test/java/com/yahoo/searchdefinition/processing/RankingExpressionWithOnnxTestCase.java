@@ -128,7 +128,7 @@ public class RankingExpressionWithOnnxTestCase {
     }
 
     @Test
-    public void testOnnxReferenceMissingMacro() throws ParseException {
+    public void testOnnxReferenceMissingFunction() throws ParseException {
         try {
             RankProfileSearchFixture search = new RankProfileSearchFixture(
                     new StoringApplicationPackage(applicationDir),
@@ -152,7 +152,7 @@ public class RankingExpressionWithOnnxTestCase {
     }
 
     @Test
-    public void testOnnxReferenceWithWrongMacroType() {
+    public void testOnnxReferenceWithWrongFunctionType() {
         try {
             RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d5[10])(0.0)",
                     "onnx('mnist_softmax.onnx')");
@@ -213,7 +213,7 @@ public class RankingExpressionWithOnnxTestCase {
     }
 
     @Test
-    public void testImportingFromStoredExpressionsWithMacroOverridingConstant() throws IOException {
+    public void testImportingFromStoredExpressionsWithFunctionOverridingConstant() throws IOException {
         String rankProfile =
                 "  rank-profile my_profile {\n" +
                         "    macro Placeholder() {\n" +
@@ -275,19 +275,19 @@ public class RankingExpressionWithOnnxTestCase {
         }
     }
 
-    private RankProfileSearchFixture fixtureWith(String macroExpression,
+    private RankProfileSearchFixture fixtureWith(String functionExpression,
                                                  String firstPhaseExpression,
                                                  String constant,
                                                  String field,
-                                                 String macroName,
+                                                 String functionName,
                                                  StoringApplicationPackage application) {
         try {
             RankProfileSearchFixture fixture = new RankProfileSearchFixture(
                     application,
                     application.getQueryProfiles(),
                     "  rank-profile my_profile {\n" +
-                            "    macro " + macroName + "() {\n" +
-                            "      expression: " + macroExpression +
+                            "    macro " + functionName + "() {\n" +
+                            "      expression: " + functionExpression +
                             "    }\n" +
                             "    first-phase {\n" +
                             "      expression: " + firstPhaseExpression +

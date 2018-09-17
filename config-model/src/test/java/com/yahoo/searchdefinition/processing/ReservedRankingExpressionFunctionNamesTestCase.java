@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 public class ReservedRankingExpressionFunctionNamesTestCase {
 
     @Test
-    public void requireThatMacrosWithReservedNamesIssueAWarning() throws ParseException {
+    public void requireThatFunctionsWithReservedNamesIssueAWarning() throws ParseException {
         TestDeployLogger deployLogger = new TestDeployLogger();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);

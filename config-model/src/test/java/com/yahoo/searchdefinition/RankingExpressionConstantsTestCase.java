@@ -177,7 +177,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
     }
 
     @Test
-    public void testConstantDivisorInMacro() throws ParseException {
+    public void testConstantDivisorInFunction() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(

@@ -113,7 +113,7 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
     }
 
     @Test
-    public void requireThatMaxAndMinWithTensorsReturnedFromMacrosAreReplaced() throws ParseException {
+    public void requireThatMaxAndMinWithTensorsReturnedFromFunctionsAreReplaced() throws ParseException {
         assertTransformedExpression("reduce(rankingExpression(returns_tensor),max,x)",
                                     "max(returns_tensor,x)");
         assertTransformedExpression("reduce(rankingExpression(wraps_returns_tensor),max,x)",

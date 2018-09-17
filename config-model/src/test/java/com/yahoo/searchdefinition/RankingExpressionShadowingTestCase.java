@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase {
 
     @Test
-    public void testBasicMacroShadowing() throws ParseException {
+    public void testBasicFunctionShadowing() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(
@@ -57,7 +57,7 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
 
 
     @Test
-    public void testMultiLevelMacroShadowing() throws ParseException {
+    public void testMultiLevelFunctionShadowing() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(
@@ -113,7 +113,7 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
 
 
     @Test
-    public void testMacroShadowingArguments() throws ParseException {
+    public void testFunctionShadowingArguments() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(

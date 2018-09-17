@@ -19,6 +19,7 @@ import static org.junit.Assert.assertNull;
  * @author Ulf Lilleengen
  */
 public class RankProfileRegistryTest {
+
     private static final String TESTDIR = "src/test/cfg/search/data/v2/inherited_rankprofiles";
 
     @Test
@@ -46,9 +47,9 @@ public class RankProfileRegistryTest {
 
         for (String rankProfileName : RankProfileRegistry.overridableRankProfileNames) {
             assertNull(rankProfileRegistry.get(search, rankProfileName).getFunctions().get("foo"));
-            RankProfile rankProfileWithAddedMacro = new RankProfile(rankProfileName, search, rankProfileRegistry);
-            rankProfileWithAddedMacro.addFunction(new ExpressionFunction("foo", RankingExpression.from("1+2")), true);
-            rankProfileRegistry.add(rankProfileWithAddedMacro);
+            RankProfile rankProfileWithAddedFunction = new RankProfile(rankProfileName, search, rankProfileRegistry);
+            rankProfileWithAddedFunction.addFunction(new ExpressionFunction("foo", RankingExpression.from("1+2")), true);
+            rankProfileRegistry.add(rankProfileWithAddedFunction);
             assertNotNull(rankProfileRegistry.get(search, rankProfileName).getFunctions().get("foo"));
         }
     }

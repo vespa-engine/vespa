@@ -22,7 +22,7 @@ import static org.junit.Assert.fail;
 public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase {
 
     @Test
-    public void testMacroInliningPreserveArithemticOrdering() throws ParseException {
+    public void testFunctionInliningPreserveArithemticOrdering() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(
@@ -187,8 +187,8 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
     }
 
     /**
-     * Expression evaluation has no stack so macro arguments are bound at config time creating a separate version of
-     * each macro for each binding, using hashes to name the bound variants of the macro.
+     * Expression evaluation has no stack so function arguments are bound at config time creating a separate version of
+     * each function for each binding, using hashes to name the bound variants of the function.
      * This method censors those hashes for string comparison.
      */
     private String censorBindingHash(String s) {

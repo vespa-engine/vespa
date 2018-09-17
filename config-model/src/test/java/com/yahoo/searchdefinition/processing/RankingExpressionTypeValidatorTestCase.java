@@ -109,7 +109,7 @@ public class RankingExpressionTypeValidatorTestCase {
     }
 
     @Test
-    public void testMacroInvocationTypes() throws Exception {
+    public void testFunctionInvocationTypes() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(joinLines(
@@ -143,7 +143,7 @@ public class RankingExpressionTypeValidatorTestCase {
     }
 
     @Test
-    public void testTensorMacroInvocationTypes_Nested() throws Exception {
+    public void testTensorFunctionInvocationTypes_Nested() throws Exception {
         SearchBuilder builder = new SearchBuilder();
         builder.importString(joinLines(
                 "search test {",
