@@ -5,10 +5,12 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
 import java.io.IOException;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -27,9 +29,9 @@ public class IncorrectRankingExpressionFileRefTestCase extends SearchDefinitionT
             new DerivedConfiguration(search, registry, new QueryProfileRegistry(), new ImportedModels()); // cause rank profile parsing
             fail("parsing should have failed");
         } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-            assertTrue(e.getCause().getMessage().contains("Could not read ranking expression file"));
-            assertTrue(e.getCause().getMessage().contains("wrongending.expr.expression"));
+            String message = Exceptions.toMessageString(e);
+            assertTrue(message.contains("Could not read ranking expression file"));
+            assertTrue(message.contains("wrongending.expr.expression"));
         }
     }
 

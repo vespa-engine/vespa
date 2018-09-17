@@ -362,22 +362,24 @@ public class RankProfile implements Serializable, Cloneable {
         this.secondPhaseRanking = rankingExpression;
     }
 
-    /**
-     * Called by parser to store the expression string, for delayed evaluation
-     *
-     * @param exp ranking expression for second phase
-     */
-    public void setSecondPhaseRankingString(String exp) {
-        this.secondPhaseRankingString = exp;
+    public void setFirstPhaseRankingString(String expression) {
+        try {
+            this.firstPhaseRanking = parseRankingExpression("firstphase", expression);
+            this.firstPhaseRankingString = expression;
+        }
+        catch (ParseException e) {
+            throw new IllegalArgumentException("Illegal first phase ranking function", e);
+        }
     }
 
-    /**
-     * Called by parser to store the expression string, for delayed evaluation
-     *
-     * @param exp ranking expression for first phase
-     */
-    public void setFirstPhaseRankingString(String exp) {
-        this.firstPhaseRankingString = exp;
+    public void setSecondPhaseRankingString(String expression) {
+        try {
+            this.secondPhaseRanking = parseRankingExpression("secondphase", expression);
+            this.secondPhaseRankingString = expression;
+        }
+        catch (ParseException e) {
+            throw new IllegalArgumentException("Illegal second phase ranking function", e);
+        }
     }
 
     /** Returns a read-only view of the summary features to use in this profile. This is never null */
