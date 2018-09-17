@@ -522,28 +522,6 @@ public class RankProfile implements Serializable, Cloneable {
         return (getInherited()!=null) && getInherited().getIgnoreDefaultRankFeatures();
     }
 
-    /**
-     * Returns the string form of the second phase ranking expression.
-     *
-     * @return string form of second phase ranking expression
-     */
-    public String getSecondPhaseRankingString() {
-        if (secondPhaseRanking != null) return secondPhaseRanking.getRoot().toString();
-        if (getInherited() != null) return getInherited().getSecondPhaseRankingString();
-        return null;
-    }
-
-    /**
-     * Returns the string form of the first phase ranking expression.
-     *
-     * @return string form of first phase ranking expression
-     */
-    public String getFirstPhaseRankingString() {
-        if (firstPhaseRanking != null) return firstPhaseRanking.getRoot().toString();
-        if (getInherited() != null) return getInherited().getFirstPhaseRankingString();
-        return null;
-    }
-
     /** Adds a function and returns it */
     public RankingExpressionFunction addFunction(String name, List<String> arguments, String expression, boolean inline) {
         try {

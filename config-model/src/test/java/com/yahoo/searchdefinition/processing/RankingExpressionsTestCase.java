@@ -31,8 +31,10 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
         assertEquals("var1", functions.get("titlematch$").function().arguments().get(0));
         assertEquals("var2", functions.get("titlematch$").function().arguments().get(1));
         assertEquals("var1 * var2 + 890", functions.get("titlematch$").function().getBody().getRoot().toString());
-        assertEquals("0.8 + 0.2 * titlematch$(4,5) + 0.8 * titlematch$(7,8) * closeness(distance)", functionsRankProfile.getFirstPhaseRankingString().trim());
-        assertEquals("78 + closeness(distance)", functions.get("artistmatch").function().getBody().getRoot().toString());
+        assertEquals("0.8 + 0.2 * titlematch$(4,5) + 0.8 * titlematch$(7,8) * closeness(distance)",
+                     functionsRankProfile.getFirstPhaseRanking().getRoot().toString());
+        assertEquals("78 + closeness(distance)",
+                     functions.get("artistmatch").function().getBody().getRoot().toString());
         assertEquals(0, functions.get("artistmatch").function().arguments().size());
 
         List<Pair<String, String>> rankProperties = new RawRankProfile(functionsRankProfile,
