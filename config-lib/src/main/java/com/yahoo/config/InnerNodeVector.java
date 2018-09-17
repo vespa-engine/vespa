@@ -13,9 +13,4 @@ public class InnerNodeVector<NODE extends InnerNode> extends NodeVector<NODE> {
         vector.addAll(nodes);
     }
 
-    // TODO: Remove for Vespa 7
-    public InnerNodeVector(List<NODE> nodes, NODE defaultNode) {
-        this(nodes);
-    }
-
 }
