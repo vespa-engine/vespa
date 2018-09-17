@@ -5,6 +5,7 @@ import com.yahoo.document.*;
 import com.yahoo.document.datatypes.*;
 import com.yahoo.document.fieldpathupdate.AddFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
+import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
 import com.yahoo.document.serialization.DeserializationException;
 import com.yahoo.document.update.AddValueUpdate;
@@ -16,6 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.util.Iterator;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -687,103 +689,105 @@ public class VespaXMLReaderTestCase {
 
         DocumentUpdate docUpdate = op.getDocumentUpdate();
 
-        assertEquals(20, docUpdate.getFieldPathUpdates().size());
+        assertEquals(20, docUpdate.fieldPathUpdates().size());
 
+        Iterator<FieldPathUpdate> updates = docUpdate.fieldPathUpdates().iterator();
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(0);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("url", ass.getOriginalFieldPath());
             assertEquals(new StringFieldValue("assignUrl"), ass.getNewValue());
         }
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(1);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("title", ass.getOriginalFieldPath());
             assertEquals(new StringFieldValue("assignTitle"), ass.getNewValue());
         }
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(2);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("last_downloaded", ass.getOriginalFieldPath());
             assertEquals("1", ass.getExpression());
         }
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(3);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("value_long", ass.getOriginalFieldPath());
             assertEquals("2", ass.getExpression());
         }
+        updates.next();  // Skip number 5
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(5);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("stringarr", ass.getOriginalFieldPath());
             assertEquals("[assignString1, assignString2]", ass.getNewValue().toString());
         }
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(6);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("intarr", ass.getOriginalFieldPath());
             assertEquals("[3, 4]", ass.getNewValue().toString());
         }
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(7);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("longarr", ass.getOriginalFieldPath());
             assertEquals("[5, 6]", ass.getNewValue().toString());
         }
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(8);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("bytearr", ass.getOriginalFieldPath());
             assertEquals("[7, 8]", ass.getNewValue().toString());
         }
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(9);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("floatarr", ass.getOriginalFieldPath());
             assertEquals("[9.0, 10.0]", ass.getNewValue().toString());
         }
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(10);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("weightedsetint", ass.getOriginalFieldPath());
             WeightedSet set = (WeightedSet)ass.getNewValue();
             assertEquals(Integer.valueOf(11), set.get(new IntegerFieldValue(11)));
             assertEquals(Integer.valueOf(12), set.get(new IntegerFieldValue(12)));
         }
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(11);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("weightedsetstring", ass.getOriginalFieldPath());
             WeightedSet set = (WeightedSet)ass.getNewValue();
             assertEquals(Integer.valueOf(13), set.get(new StringFieldValue("assign13")));
             assertEquals(Integer.valueOf(14), set.get(new StringFieldValue("assign14")));
         }
         {
-            AddFieldPathUpdate ass = (AddFieldPathUpdate)docUpdate.getFieldPathUpdates().get(12);
+            AddFieldPathUpdate ass = (AddFieldPathUpdate)updates.next();
             assertEquals("stringarr", ass.getOriginalFieldPath());
             assertEquals("[addString1, addString2]", ass.getNewValues().toString());
         }
         {
-            AddFieldPathUpdate ass = (AddFieldPathUpdate)docUpdate.getFieldPathUpdates().get(13);
+            AddFieldPathUpdate ass = (AddFieldPathUpdate)updates.next();
             assertEquals("longarr", ass.getOriginalFieldPath());
             assertEquals("[5]", ass.getNewValues().toString());
         }
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(14);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("weightedsetint{13}", ass.getOriginalFieldPath());
             assertEquals("13", ass.getExpression());
         }
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(15);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("weightedsetint{14}", ass.getOriginalFieldPath());
             assertEquals("14", ass.getExpression());
         }
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(16);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("weightedsetstring{add13}", ass.getOriginalFieldPath());
             assertEquals("1", ass.getExpression());
         }
         {
-            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)docUpdate.getFieldPathUpdates().get(17);
+            AssignFieldPathUpdate ass = (AssignFieldPathUpdate)updates.next();
             assertEquals("weightedsetstring{assign13}", ass.getOriginalFieldPath());
             assertEquals("130", ass.getExpression());
         }
         {
-            RemoveFieldPathUpdate ass = (RemoveFieldPathUpdate)docUpdate.getFieldPathUpdates().get(18);
+            RemoveFieldPathUpdate ass = (RemoveFieldPathUpdate)updates.next();
             assertEquals("weightedsetstring{assign14}", ass.getOriginalFieldPath());
         }
         {
-            RemoveFieldPathUpdate ass = (RemoveFieldPathUpdate)docUpdate.getFieldPathUpdates().get(19);
+            RemoveFieldPathUpdate ass = (RemoveFieldPathUpdate)updates.next();
             assertEquals("bytearr", ass.getOriginalFieldPath());
         }
         Document doc = new Document(manager.getDocumentType("news"), new DocumentId("doc:test:test:test"));
