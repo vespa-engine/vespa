@@ -178,10 +178,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             derivePropertiesAndSummaryFeaturesFromMacros(rankProfile.getMacros());
         }
 
-        private void derivePropertiesAndSummaryFeaturesFromMacros(Map<String, RankProfile.Macro> macros) {
+        private void derivePropertiesAndSummaryFeaturesFromMacros(Map<String, RankProfile.RankingExpressionFunction> macros) {
             if (macros.isEmpty()) return;
             Map<String, ExpressionFunction> expressionMacros = new LinkedHashMap<>();
-            for (Map.Entry<String, RankProfile.Macro> macro : macros.entrySet()) {
+            for (Map.Entry<String, RankProfile.RankingExpressionFunction> macro : macros.entrySet()) {
                 expressionMacros.put(macro.getKey(), macro.getValue().function());
             }
 

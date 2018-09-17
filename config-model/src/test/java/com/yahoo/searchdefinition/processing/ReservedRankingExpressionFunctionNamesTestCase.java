@@ -16,7 +16,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author lesters
  */
-public class ReservedMacroNamesTestCase {
+public class ReservedRankingExpressionFunctionNamesTestCase {
 
     @Test
     public void requireThatMacrosWithReservedNamesIssueAWarning() throws ParseException {

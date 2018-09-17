@@ -251,9 +251,9 @@ public class ConvertedModel {
                                                Set<String> constantsReplacedByMacros,
                                                String constantName,
                                                Tensor constantValue) {
-        RankProfile.Macro macroOverridingConstant = profile.getMacros().get(constantName);
-        if (macroOverridingConstant != null) {
-            TensorType macroType = macroOverridingConstant.function().getBody().type(profile.typeContext(queryProfiles));
+        RankProfile.RankingExpressionFunction rankingExpressionFunctionOverridingConstant = profile.getMacros().get(constantName);
+        if (rankingExpressionFunctionOverridingConstant != null) {
+            TensorType macroType = rankingExpressionFunctionOverridingConstant.function().getBody().type(profile.typeContext(queryProfiles));
             if ( ! macroType.equals(constantValue.type()))
                 throw new IllegalArgumentException("Macro '" + constantName + "' replaces the constant with this name. " +
                                                    typeMismatchExplanation(constantValue.type(), macroType));
@@ -301,8 +301,8 @@ public class ConvertedModel {
             TensorType requiredType = model.requiredMacros().get(macroName);
             if (requiredType == null) continue; // Not a required macro
 
-            RankProfile.Macro macro = profile.getMacros().get(macroName);
-            if (macro == null)
+            RankProfile.RankingExpressionFunction rankingExpressionFunction = profile.getMacros().get(macroName);
+            if (rankingExpressionFunction == null)
                 throw new IllegalArgumentException("Model refers input '" + macroName +
                                                    "' of type " + requiredType + " but this macro is not present in " +
                                                    profile);
@@ -310,7 +310,7 @@ public class ConvertedModel {
             // phase and summary features), as it may only resolve correctly given those bindings
             // Or, probably better, annotate the macros with type constraints here and verify during general
             // type verification
-            TensorType actualType = macro.function().getBody().getRoot().type(profile.typeContext(queryProfiles));
+            TensorType actualType = rankingExpressionFunction.function().getBody().getRoot().type(profile.typeContext(queryProfiles));
             if ( actualType == null)
                 throw new IllegalArgumentException("Model refers input '" + macroName +
                                                    "' of type " + requiredType +
@@ -352,12 +352,12 @@ public class ConvertedModel {
         for (String macroName : macroNames) {
             if ( ! model.macros().containsKey(macroName)) continue;
 
-            RankProfile.Macro macro = profile.getMacros().get(macroName);
-            if (macro == null) {
+            RankProfile.RankingExpressionFunction rankingExpressionFunction = profile.getMacros().get(macroName);
+            if (rankingExpressionFunction == null) {
                 throw new IllegalArgumentException("Model refers to generated macro '" + macroName +
                                                    "but this macro is not present in " + profile);
             }
-            RankingExpression macroExpression = macro.function().getBody();
+            RankingExpression macroExpression = rankingExpressionFunction.function().getBody();
             macroExpression.setRoot(reduceBatchDimensionsAtInput(macroExpression.getRoot(), model, typeContext));
         }
 

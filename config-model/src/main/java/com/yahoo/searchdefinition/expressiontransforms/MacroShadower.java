@@ -43,13 +43,13 @@ public class MacroShadower extends ExpressionTransformer<RankProfileTransformCon
 
     private ExpressionNode transformFunctionNode(FunctionNode function, RankProfileTransformContext context) {
         String name = function.getFunction().toString();
-        RankProfile.Macro macro = context.rankProfile().getMacros().get(name);
-        if (macro == null) {
+        RankProfile.RankingExpressionFunction rankingExpressionFunction = context.rankProfile().getMacros().get(name);
+        if (rankingExpressionFunction == null) {
             return transformChildren(function, context);
         }
 
         int functionArity = function.getFunction().arity();
-        if (functionArity != macro.function().arguments().size())
+        if (functionArity != rankingExpressionFunction.function().arguments().size())
             return transformChildren(function, context);
 
         ReferenceNode node = new ReferenceNode(name, function.children(), null);

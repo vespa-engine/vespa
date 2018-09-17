@@ -101,7 +101,7 @@ public class RankProfile implements Serializable, Cloneable {
 
     private String firstPhaseRankingString = null;
 
-    private Map<String, Macro> macros= new LinkedHashMap<>();
+    private Map<String, RankingExpressionFunction> macros= new LinkedHashMap<>();
 
     private Set<String> filterFields = new HashSet<>();
 
@@ -549,7 +549,7 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     /** Adds a new macro and returns it */
-    public Macro addMacro(String name, List<String> arguments, String expression, boolean inline) {
+    public RankingExpressionFunction addMacro(String name, List<String> arguments, String expression, boolean inline) {
         try {
             return addMacro(new ExpressionFunction(name, arguments, parseRankingExpression(name, expression)), inline);
         }
@@ -559,20 +559,20 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     /** Adds a new macro and returns it */
-    public Macro addMacro(ExpressionFunction function, boolean inline) {
-        Macro macro = new Macro(function, inline);
-        macros.put(function.getName(), macro);
-        return macro;
+    public RankingExpressionFunction addMacro(ExpressionFunction function, boolean inline) {
+        RankingExpressionFunction rankingExpressionFunction = new RankingExpressionFunction(function, inline);
+        macros.put(function.getName(), rankingExpressionFunction);
+        return rankingExpressionFunction;
     }
 
     /** Returns an unmodifiable view of the macros in this */
-    public Map<String, Macro> getMacros() {
+    public Map<String, RankingExpressionFunction> getMacros() {
         if (macros.size() == 0 && getInherited()==null) return Collections.emptyMap();
         if (macros.size() == 0) return getInherited().getMacros();
         if (getInherited() == null) return Collections.unmodifiableMap(macros);
 
         // Neither is null
-        Map<String, Macro> allMacros = new LinkedHashMap<>(getInherited().getMacros());
+        Map<String, RankingExpressionFunction> allMacros = new LinkedHashMap<>(getInherited().getMacros());
         allMacros.putAll(macros);
         return Collections.unmodifiableMap(allMacros);
 
@@ -717,7 +717,7 @@ public class RankProfile implements Serializable, Cloneable {
         ExpressionTransforms expressionTransforms = new ExpressionTransforms();
 
         // Macro compiling first pass: compile inline macros without resolving other macros
-        Map<String, Macro> inlineMacros = compileMacros(getInlineMacros(), queryProfiles, importedModels, Collections.emptyMap(), expressionTransforms);
+        Map<String, RankingExpressionFunction> inlineMacros = compileMacros(getInlineMacros(), queryProfiles, importedModels, Collections.emptyMap(), expressionTransforms);
 
         // Macro compiling second pass: compile all macros and insert previously compiled inline macros
         macros = compileMacros(getMacros(), queryProfiles, importedModels, inlineMacros, expressionTransforms);
@@ -726,29 +726,29 @@ public class RankProfile implements Serializable, Cloneable {
         secondPhaseRanking = compile(this.getSecondPhaseRanking(), queryProfiles, importedModels, getConstants(), inlineMacros, expressionTransforms);
     }
 
-    private void checkNameCollisions(Map<String, Macro> macros, Map<String, Value> constants) {
-        for (Map.Entry<String, Macro> macroEntry : macros.entrySet()) {
+    private void checkNameCollisions(Map<String, RankingExpressionFunction> macros, Map<String, Value> constants) {
+        for (Map.Entry<String, RankingExpressionFunction> macroEntry : macros.entrySet()) {
             if (constants.get(macroEntry.getKey()) != null)
                 throw new IllegalArgumentException("Cannot have both a constant and macro named '" +
                                                    macroEntry.getKey() + "'");
         }
     }
 
-    private Map<String, Macro> getInlineMacros() {
+    private Map<String, RankingExpressionFunction> getInlineMacros() {
         return getMacros().entrySet().stream().filter(x -> x.getValue().inline())
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private Map<String, Macro> compileMacros(Map<String, Macro> macros,
-                                             QueryProfileRegistry queryProfiles,
-                                             ImportedModels importedModels,
-                                             Map<String, Macro> inlineMacros,
-                                             ExpressionTransforms expressionTransforms) {
-        Map<String, Macro> compiledMacros = new LinkedHashMap<>();
-        for (Map.Entry<String, Macro> entry : macros.entrySet()) {
-            Macro macro = entry.getValue();
-            RankingExpression compiled = compile(macro.function().getBody(), queryProfiles, importedModels, getConstants(), inlineMacros, expressionTransforms);
-            compiledMacros.put(entry.getKey(), macro.withBody(compiled));
+    private Map<String, RankingExpressionFunction> compileMacros(Map<String, RankingExpressionFunction> macros,
+                                                                 QueryProfileRegistry queryProfiles,
+                                                                 ImportedModels importedModels,
+                                                                 Map<String, RankingExpressionFunction> inlineMacros,
+                                                                 ExpressionTransforms expressionTransforms) {
+        Map<String, RankingExpressionFunction> compiledMacros = new LinkedHashMap<>();
+        for (Map.Entry<String, RankingExpressionFunction> entry : macros.entrySet()) {
+            RankingExpressionFunction rankingExpressionFunction = entry.getValue();
+            RankingExpression compiled = compile(rankingExpressionFunction.function().getBody(), queryProfiles, importedModels, getConstants(), inlineMacros, expressionTransforms);
+            compiledMacros.put(entry.getKey(), rankingExpressionFunction.withBody(compiled));
         }
         return compiledMacros;
     }
@@ -757,7 +757,7 @@ public class RankProfile implements Serializable, Cloneable {
                                       QueryProfileRegistry queryProfiles,
                                       ImportedModels importedModels,
                                       Map<String, Value> constants,
-                                      Map<String, Macro> inlineMacros,
+                                      Map<String, RankingExpressionFunction> inlineMacros,
                                       ExpressionTransforms expressionTransforms) {
         if (expression == null) return null;
         RankProfileTransformContext context = new RankProfileTransformContext(this,
@@ -778,7 +778,7 @@ public class RankProfile implements Serializable, Cloneable {
      */
     public TypeContext<Reference> typeContext(QueryProfileRegistry queryProfiles) {
         MapEvaluationTypeContext context = new MapEvaluationTypeContext(getMacros().values().stream()
-                                                                                   .map(Macro::function)
+                                                                                   .map(RankingExpressionFunction::function)
                                                                                    .collect(Collectors.toList()));
 
         // Add small and large constants, respectively
@@ -945,17 +945,15 @@ public class RankProfile implements Serializable, Cloneable {
 
     }
 
-    /**
-     * A function in a rank profile
-     */
-    public static class Macro {
+    /** A function in a rank profile */
+    public static class RankingExpressionFunction {
 
         private final ExpressionFunction function;
 
         /** True if this should be inlined into calling expressions. Useful for very cheap macros. */
         private final boolean inline;
 
-        public Macro(ExpressionFunction function, boolean inline) {
+        public RankingExpressionFunction(ExpressionFunction function, boolean inline) {
             this.function = function;
             this.inline = inline;
         }
@@ -966,8 +964,8 @@ public class RankProfile implements Serializable, Cloneable {
             return inline && function.arguments().isEmpty(); // only inline no-arg macros;
         }
 
-        public Macro withBody(RankingExpression expression) {
-            return new Macro(function.withBody(expression), inline);
+        public RankingExpressionFunction withBody(RankingExpression expression) {
+            return new RankingExpressionFunction(function.withBody(expression), inline);
         }
 
         @Override
