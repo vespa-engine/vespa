@@ -263,7 +263,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .flatMap(container -> removeContainerIfNeeded(node, container))
                 .map(container -> {
                         shouldRestartServices(node).ifPresent(restartReason -> {
-                            logger.info("Will restart services for container " + container + ": " + restartReason);
+                            logger.info("Will restart services: " + restartReason);
                             restartServices(node, container);
                         });
                         return container;
@@ -284,7 +284,7 @@ public class NodeAgentImpl implements NodeAgent {
     private void restartServices(NodeSpec node, Container existingContainer) {
         if (existingContainer.state.isRunning() && node.getState() == Node.State.active) {
             ContainerName containerName = existingContainer.name;
-            logger.info("Restarting services for " + containerName);
+            logger.info("Restarting services");
             // Since we are restarting the services we need to suspend the node.
             orchestratorSuspendNode();
             dockerOperations.restartVespaOnNode(containerName);
@@ -293,7 +293,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     @Override
     public void stopServices() {
-        logger.info("Stopping services for " + containerName);
+        logger.info("Stopping services");
         if (containerState == ABSENT) return;
         try {
             dockerOperations.trySuspendNode(containerName);
@@ -330,7 +330,7 @@ public class NodeAgentImpl implements NodeAgent {
     private Optional<Container> removeContainerIfNeeded(NodeSpec node, Container existingContainer) {
         Optional<String> removeReason = shouldRemoveContainer(node, existingContainer);
         if (removeReason.isPresent()) {
-            logger.info("Will remove container " + existingContainer + ": " + removeReason.get());
+            logger.info("Will remove container: " + removeReason.get());
 
             if (existingContainer.state.isRunning()) {
                 if (node.getState() == Node.State.active) {
@@ -384,7 +384,7 @@ public class NodeAgentImpl implements NodeAgent {
                     try {
                         monitor.wait(remainder);
                     } catch (InterruptedException e) {
-                        logger.error("Interrupted, but ignoring this: " + hostname);
+                        logger.error("Interrupted while sleeping before tick, ignoring");
                     }
                 } else break;
             }
@@ -640,7 +640,7 @@ public class NodeAgentImpl implements NodeAgent {
             String[] command = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:19091",  "setExtraMetrics", wrappedMetrics};
             dockerOperations.executeCommandInContainerAsRoot(containerName, 5L, command);
         } catch (DockerExecTimeoutException | JsonProcessingException  e) {
-            logger.warning("Unable to push metrics to container: " + containerName, e);
+            logger.warning("Failed to push metrics to container", e);
         }
     }
 
