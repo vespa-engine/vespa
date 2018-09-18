@@ -61,7 +61,7 @@ public class SimpleAdapterFactory implements AdapterFactory {
                 throw new IllegalArgumentException("Exception during handling of update '" + fieldUpd + "' to field '" + fieldUpd.getFieldPath() + "'", e);
             }
         }
-        for (FieldUpdate fieldUpd : upd.getFieldUpdates()) {
+        for (FieldUpdate fieldUpd : upd.fieldUpdates()) {
             Field field = fieldUpd.getField();
             for (ValueUpdate valueUpd : fieldUpd.getValueUpdates()) {
                 try {
