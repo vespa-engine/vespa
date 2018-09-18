@@ -22,6 +22,8 @@ import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
+import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
@@ -51,7 +53,7 @@ import static com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator.NetworkAddre
 public class DockerImpl implements Docker {
     private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
 
-    public static final String DOCKER_CUSTOM_MACVLAN_NETWORK_NAME = "vespa-macvlan";
+    private static final String DOCKER_CUSTOM_MACVLAN_NETWORK_NAME = "vespa-macvlan";
     static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
 
