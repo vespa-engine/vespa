@@ -88,13 +88,12 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
                 .withAddCapability("SYS_ADMIN"); // Needed for perf
 
-        if (environment.getNodeType() == NodeType.confighost ||
-                environment.getNodeType() == NodeType.proxyhost) {
+        if (environment.getNodeType() == NodeType.confighost || environment.getNodeType() == NodeType.proxyhost) {
             command.withVolume("/var/lib/sia", "/var/lib/sia");
         }
 
         if (environment.getNodeType() == NodeType.proxyhost) {
-            command.withVolume("/opt/yahoo/share/ssl/certs/", "/opt/yahoo/share/ssl/certs/");
+            command.withVolume("/opt/yahoo/share/ssl/certs", "/opt/yahoo/share/ssl/certs");
         }
 
         if (environment.getNodeType() == NodeType.host) {
@@ -143,8 +142,6 @@ public class DockerOperationsImpl implements DockerOperations {
 
         logger.info("Creating new container with args: " + command);
         command.create();
-
-        docker.createContainer(command);
     }
 
     void addEtcHosts(ContainerData containerData,

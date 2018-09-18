@@ -67,8 +67,6 @@ public interface Docker {
 
     Optional<ContainerStats> getContainerStats(ContainerName containerName);
 
-    void createContainer(CreateContainerCommand createContainerCommand);
-
     void startContainer(ContainerName containerName);
 
     void stopContainer(ContainerName containerName);

@@ -70,13 +70,6 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public void createContainer(CreateContainerCommand createContainerCommand) {
-        synchronized (monitor) {
-            callOrderVerifier.add("createContainer with " + createContainerCommand.toString());
-        }
-    }
-
-    @Override
     public void startContainer(ContainerName containerName) {
         synchronized (monitor) {
             callOrderVerifier.add("startContainer with " + containerName);
