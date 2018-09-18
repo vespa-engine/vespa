@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
+import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
@@ -293,8 +294,13 @@ public class NodeAgentImpl implements NodeAgent {
     @Override
     public void stopServices() {
         logger.info("Stopping services for " + containerName);
-        dockerOperations.trySuspendNode(containerName);
-        dockerOperations.stopServicesOnNode(containerName);
+        if (containerState == ABSENT) return;
+        try {
+            dockerOperations.trySuspendNode(containerName);
+            dockerOperations.stopServicesOnNode(containerName);
+        } catch (ContainerNotFoundException e) {
+            containerState = ABSENT;
+        }
     }
 
     private Optional<String> shouldRemoveContainer(NodeSpec node, Container existingContainer) {
@@ -403,9 +409,12 @@ public class NodeAgentImpl implements NodeAgent {
                 converged = true;
             } catch (OrchestratorException e) {
                 logger.info(e.getMessage());
+            } catch (ContainerNotFoundException e) {
+                containerState = ABSENT;
+                logger.warning("Container unexpectedly gone, resetting containerState to " + containerState);
             } catch (DockerException e) {
                 numberOfUnhandledException++;
-                logger.error("Caught a DockerException, resetting containerState to " + containerState, e);
+                logger.error("Caught a DockerException", e);
             } catch (Exception e) {
                 numberOfUnhandledException++;
                 logger.error("Unhandled exception, ignoring.", e);

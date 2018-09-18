@@ -215,26 +215,6 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     /**
-     * Try to suspend node. Suspending a node means the node should be taken offline,
-     * such that maintenance can be done of the node (upgrading, rebooting, etc),
-     * and such that we will start serving again as soon as possible afterwards.
-     * <p>
-     * Any failures are logged and ignored.
-     */
-    @Override
-    public void trySuspendNode(ContainerName containerName) {
-        try {
-            // TODO: Change to waiting w/o timeout (need separate thread that we can stop).
-            executeCommandInContainer(containerName, nodeProgram, "suspend");
-        } catch (RuntimeException e) {
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-            // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
-            // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
-            logger.warning("Failed trying to suspend container " + containerName.asString(), e);
-        }
-    }
-
-    /**
      * For macvlan:
      * <p>
      * Due to a bug in docker (https://github.com/docker/libnetwork/issues/1443), we need to manually set
@@ -302,7 +282,6 @@ public class DockerOperationsImpl implements DockerOperations {
                     Arrays.toString(wrappedCommand), containerName.asString(), containerPid), e);
             throw new RuntimeException(e);
         }
-
     }
 
     @Override
@@ -318,6 +297,11 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public void stopServicesOnNode(ContainerName containerName) {
         executeCommandInContainer(containerName, nodeProgram, "stop");
+    }
+
+    @Override
+    public void trySuspendNode(ContainerName containerName) {
+        executeCommandInContainer(containerName, nodeProgram, "suspend");
     }
 
     @Override
