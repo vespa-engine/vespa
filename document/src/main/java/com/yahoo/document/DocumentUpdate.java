@@ -278,8 +278,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * @return the update for the field, or null if that field has no update in this
      */
     public FieldUpdate getFieldUpdate(String fieldName) {
-        Field field = documentType.getField(fieldName);
-        return field != null ? getFieldUpdate(field) : null;
+        return getFieldUpdate(documentType.getField(fieldName));
     }
     private FieldUpdate getFieldUpdateById(Integer fieldId) {
         return id2FieldUpdateMap.get(fieldId);
@@ -397,8 +396,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     }
 
     public FieldUpdate removeFieldUpdate(String fieldName) {
-        Field field = documentType.getField(fieldName);
-        return field != null ? removeFieldUpdate(field) : null;
+        return removeFieldUpdate(documentType.getField(fieldName));
     }
 
     /**
