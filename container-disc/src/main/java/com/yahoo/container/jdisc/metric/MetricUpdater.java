@@ -24,9 +24,6 @@ import java.util.TimerTask;
  */
 public class MetricUpdater extends AbstractComponent {
 
-    @Deprecated private static final String DEPRECATED_FREE_MEMORY_BYTES = "freeMemoryBytes";
-    @Deprecated private static final String DEPRECATED_USED_MEMORY_BYTES = "usedMemoryBytes";
-    @Deprecated private static final String DEPRECATED_TOTAL_MEMORY_BYTES = "totalMemoryBytes";
     private static final String FREE_MEMORY_BYTES = "mem.heap.free";
     private static final String USED_MEMORY_BYTES = "mem.heap.used";
     private static final String TOTAL_MEMORY_BYTES = "mem.heap.total";
@@ -104,9 +101,6 @@ public class MetricUpdater extends AbstractComponent {
             long freeMemory = runtime.freeMemory();
             long totalMemory = runtime.totalMemory();
             long usedMemory = totalMemory - freeMemory;
-            metric.set(DEPRECATED_FREE_MEMORY_BYTES, freeMemory, null);
-            metric.set(DEPRECATED_USED_MEMORY_BYTES, usedMemory, null);
-            metric.set(DEPRECATED_TOTAL_MEMORY_BYTES, totalMemory, null);
             metric.set(FREE_MEMORY_BYTES, freeMemory, null);
             metric.set(USED_MEMORY_BYTES, usedMemory, null);
             metric.set(TOTAL_MEMORY_BYTES, totalMemory, null);
