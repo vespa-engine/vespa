@@ -24,6 +24,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
+
     private final DockerClient docker;
     private final DockerImage dockerImage;
     private final ContainerResources containerResources;
@@ -148,8 +149,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
 
         final CreateContainerCmd containerCmd = docker
                 .createContainerCmd(dockerImage.asString())
-                .withCpuShares(containerResources.cpuShares)
-                .withMemory(containerResources.memoryBytes)
+                .withCpuShares(containerResources.cpuShares())
+                .withMemory(containerResources.memoryBytes())
                 .withName(containerName.asString())
                 .withHostName(hostName)
                 .withLabels(labels)
@@ -202,11 +203,11 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .skip(1)
                 .collect(Collectors.joining(" "));
 
-        return String.join(" ",
+        return Stream.of(
                 "--name " + containerName.asString(),
                 "--hostname " + hostName,
-                "--cpu-shares " + containerResources.cpuShares,
-                "--memory " + containerResources.memoryBytes,
+                "--cpu-shares " + containerResources.cpuShares(),
+                "--memory " + containerResources.memoryBytes(),
                 toRepeatedOption("--label", labelList),
                 toRepeatedOption("--ulimit", ulimitList),
                 toRepeatedOption("--env", environmentAssignments),
@@ -219,7 +220,9 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 toOptionalOption("--entrypoint", entrypointExecuteable),
                 toFlagOption("--privileged", privileged),
                 dockerImage.asString(),
-                entrypointArgs);
+                entrypointArgs)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.joining(" "));
     }
 
     /**
