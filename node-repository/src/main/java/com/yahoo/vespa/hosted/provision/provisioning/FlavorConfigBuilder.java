@@ -19,7 +19,7 @@ public class FlavorConfigBuilder {
         return new FlavorsConfig(builder);
     }
 
-    public FlavorsConfig.Flavor.Builder addFlavor(String flavorName, double cpu, double mem, double disk, Flavor.Type type, int headRoom) {
+    public FlavorsConfig.Flavor.Builder addFlavor(String flavorName, double cpu, double mem, double disk, Flavor.Type type) {
         FlavorsConfig.Flavor.Builder flavor = new FlavorsConfig.Flavor.Builder();
         flavor.name(flavorName);
         flavor.description("Flavor-name-is-" + flavorName);
@@ -27,13 +27,8 @@ public class FlavorConfigBuilder {
         flavor.minCpuCores(cpu);
         flavor.minMainMemoryAvailableGb(mem);
         flavor.environment(type.name());
-        flavor.idealHeadroom(headRoom);
         builder.flavor(flavor);
         return flavor;
-    }
-
-    public FlavorsConfig.Flavor.Builder addFlavor(String flavorName, double cpu, double mem, double disk, Flavor.Type type) {
-        return addFlavor(flavorName, cpu, mem, disk, type, 0);
     }
 
     public FlavorsConfig.Flavor.Builder addNonStockFlavor(String flavorName, double cpu, double mem, double disk, Flavor.Type type) {

@@ -5,7 +5,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 
 import java.nio.file.Path;
-import java.util.Objects;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -46,7 +46,7 @@ public class FileSync {
     }
 
     private boolean maybeUpdateContent(TaskContext taskContext,
-                                       Optional<String> content,
+                                       Optional<byte[]> content,
                                        FileAttributesCache currentAttributes) {
         if (!content.isPresent()) {
             return false;
@@ -55,16 +55,16 @@ public class FileSync {
         if (!currentAttributes.exists()) {
             taskContext.recordSystemModification(logger, "Creating file " + path);
             path.createParents();
-            path.writeUtf8File(content.get());
+            path.writeBytes(content.get());
             contentCache.updateWith(content.get(), currentAttributes.forceGet().lastModifiedTime());
             return true;
         }
 
-        if (Objects.equals(content.get(), contentCache.get(currentAttributes.get().lastModifiedTime()))) {
+        if (Arrays.equals(content.get(), contentCache.get(currentAttributes.get().lastModifiedTime()))) {
             return false;
         } else {
             taskContext.recordSystemModification(logger, "Patching file " + path);
-            path.writeUtf8File(content.get());
+            path.writeBytes(content.get());
             contentCache.updateWith(content.get(), currentAttributes.forceGet().lastModifiedTime());
             return true;
         }

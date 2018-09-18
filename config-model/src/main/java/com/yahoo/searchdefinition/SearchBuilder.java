@@ -15,6 +15,7 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchdefinition.parser.SDParser;
 import com.yahoo.searchdefinition.parser.SimpleCharStream;
 import com.yahoo.searchdefinition.parser.TokenMgrException;
+import com.yahoo.searchdefinition.processing.MinimalProcessing;
 import com.yahoo.searchdefinition.processing.Processing;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -250,7 +251,7 @@ public class SearchBuilder {
      * #build()} method so that subclasses can choose not to build anything.
      */
     protected void process(Search search, DeployLogger deployLogger, QueryProfiles queryProfiles, boolean validate) {
-        Processing.process(search, deployLogger, rankProfileRegistry, queryProfiles, validate);
+        new Processing().process(search, deployLogger, rankProfileRegistry, queryProfiles, validate);
     }
 
     /**

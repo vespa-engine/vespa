@@ -16,8 +16,6 @@ class DeleteBucketOperation;
 class SplitBucketOperation;
 class JoinBucketsOperation;
 class PruneRemovedDocumentsOperation;
-class SpoolerReplayStartOperation;
-class SpoolerReplayCompleteOperation;
 class MoveOperation;
 class CreateBucketOperation;
 class CompactLidSpaceOperation;
@@ -41,8 +39,6 @@ struct IReplayPacketHandler
     virtual void replay(const SplitBucketOperation &op) = 0;
     virtual void replay(const JoinBucketsOperation &op) = 0;
     virtual void replay(const PruneRemovedDocumentsOperation &op) = 0;
-    virtual void replay(const SpoolerReplayStartOperation &op) = 0;
-    virtual void replay(const SpoolerReplayCompleteOperation &op) = 0;
     virtual void replay(const MoveOperation &op) = 0;
     virtual void replay(const CreateBucketOperation &op) = 0;
     virtual void replay(const CompactLidSpaceOperation &op) = 0;

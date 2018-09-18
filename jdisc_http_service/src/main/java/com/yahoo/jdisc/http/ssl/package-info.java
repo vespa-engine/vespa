@@ -2,7 +2,9 @@
 /**
  * @author bjorncs
  */
+@PublicApi
 @ExportPackage
 package com.yahoo.jdisc.http.ssl;
 
+import com.yahoo.api.annotations.PublicApi;
 import com.yahoo.osgi.annotation.ExportPackage;

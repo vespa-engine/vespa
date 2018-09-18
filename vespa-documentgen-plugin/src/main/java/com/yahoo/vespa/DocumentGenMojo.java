@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.document.*;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
+import com.yahoo.searchdefinition.MinimalProcessingSearchBuilder;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.UnprocessingSearchBuilder;
@@ -109,7 +111,7 @@ public class DocumentGenMojo extends AbstractMojo {
             public boolean accept(File dir, String name) {
                 return name.endsWith(".sd");
             }});
-        SearchBuilder builder = new UnprocessingSearchBuilder();
+        SearchBuilder builder = new MinimalProcessingSearchBuilder();
         for (File f : sdFiles) {
             try {
                 long modTime = f.lastModified();
@@ -405,7 +407,9 @@ public class DocumentGenMojo extends AbstractMojo {
      */
     private void exportDocumentClass(NewDocumentType docType, Writer out, String packageName) throws IOException {
         String className = className(docType.getName());
-        String superType = javaSuperType(docType);
+        Pair<String, Boolean> extendInfo = javaSuperType(docType);
+        String superType = extendInfo.getFirst();
+        Boolean multiExtends = extendInfo.getSecond();
         out.write(
                 "package "+packageName+";\n\n" +
                 exportInnerImportsFromSuperTypes(docType, packageName) +
@@ -441,12 +445,14 @@ public class DocumentGenMojo extends AbstractMojo {
         exportStructTypeGetter(docType.getName()+".header", docType.allHeader().getFields(), out, 1, "getHeaderStructType", "com.yahoo.document.StructDataType");
         exportStructTypeGetter(docType.getName()+".body", docType.allBody().getFields(), out, 1, "getBodyStructType", "com.yahoo.document.StructDataType");
 
-        exportExtendedStructTypeGetter(className, docType.getName(), docType.getAllFields(), out, 1, "getDocumentType", "com.yahoo.document.DocumentType");
-        exportCopyConstructor(className, docType.getAllFields(), out, 1, true);
-        exportFieldsAndAccessors(className, "com.yahoo.document.Document".equals(superType) ? docType.getAllFields() : docType.getFields(), out, 1, true);
-        exportDocumentMethods(docType.getAllFields(), out, 1);
-        exportHashCode(docType.getAllFields(), out, 1, "(getDataType() != null ? getDataType().hashCode() : 0) + getId().hashCode()");
-        exportEquals(className, docType.getAllFields(), out, 1);
+        Collection<Field> allUniqueFields = getAllUniqueFields(multiExtends, docType.getAllFields());
+        exportExtendedStructTypeGetter(className, docType.getName(), allUniqueFields, out, 1, "getDocumentType", "com.yahoo.document.DocumentType");
+        exportCopyConstructor(className, allUniqueFields, out, 1, true);
+
+        exportFieldsAndAccessors(className, "com.yahoo.document.Document".equals(superType) ? allUniqueFields : docType.getFields(), out, 1, true);
+        exportDocumentMethods(allUniqueFields, out, 1);
+        exportHashCode(allUniqueFields, out, 1, "(getDataType() != null ? getDataType().hashCode() : 0) + getId().hashCode()");
+        exportEquals(className, allUniqueFields, out, 1);
         Set<DataType> exportedStructs = exportStructTypes(docType.getTypes(), out, 1, null);
         docTypes.put(docType.getName(), packageName+"."+className);
         for (DataType exportedStruct : exportedStructs) {
@@ -455,15 +461,36 @@ public class DocumentGenMojo extends AbstractMojo {
         out.write("}\n");
     }
 
+    private Collection<Field> getAllUniqueFields(Boolean multipleInheritance, Collection<Field> allFields) {
+        if (multipleInheritance) {
+            Map<String, Field> seen = new HashMap<>();
+            List<Field> unique = new ArrayList<>(allFields.size());
+            for (Field f : allFields) {
+                if (seen.containsKey(f.getName())) {
+                    if ( ! f.equals(seen.get(f.getName()))) {
+                        throw new IllegalArgumentException("Field '" + f.getName() + "' has conflicting definitions in multiple inheritance." +
+                                "First defined as '" + seen.get(f.getName()) + "', then as '" + f + "'.");
+                    }
+                } else {
+                    unique.add(f);
+                    seen.put(f.getName(), f);
+                }
+            }
+            return unique;
+        }
+        return allFields;
+    }
+
     /**
      * The Java class the class of the given type should inherit from. If the input type inherits from _one_
      * other type, use that, otherwise Document.
      */
-    private static String javaSuperType(NewDocumentType docType) {
+    private static Pair<String,Boolean> javaSuperType(NewDocumentType docType) {
         String ret = "com.yahoo.document.Document";
         Collection<NewDocumentType> specInheriteds = specificInheriteds(docType);
-        if (!specInheriteds.isEmpty() && singleInheritance(specInheriteds)) ret = className(specInheriteds.iterator().next().getName());
-        return ret;
+        boolean singleExtends = singleInheritance(specInheriteds);
+        if (!specInheriteds.isEmpty() && singleExtends) ret = className(specInheriteds.iterator().next().getName());
+        return new Pair<>(ret, !singleExtends);
     }
 
     private static boolean singleInheritance(Collection<NewDocumentType> specInheriteds) {

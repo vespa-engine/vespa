@@ -112,12 +112,6 @@ public:
     virtual void replay(const PruneRemovedDocumentsOperation &op) override {
         _feed_view_ptr->handlePruneRemovedDocuments(op);
     }
-    virtual void replay(const SpoolerReplayStartOperation &op) override {
-        (void) op;
-    }
-    virtual void replay(const SpoolerReplayCompleteOperation &op) override {
-        (void) op;
-    }
     virtual void replay(const MoveOperation &op) override {
         _feed_view_ptr->handleMove(op, search::IDestructorCallback::SP());
     }

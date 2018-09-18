@@ -26,7 +26,7 @@ public class Flavor {
     private final String description;
     private final boolean retired;
     private List<Flavor> replacesFlavors;
-    private int idealHeadroom;
+    private int idealHeadroom; // Note: Not used after Vespa 6.282
 
     /**
      * Creates a Flavor, but does not set the replacesFlavors.

@@ -84,7 +84,8 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
         tune._index._indexing._write.setFromConfig<ProtonConfig::Indexing::Write>(conf.indexing.write.io);
         tune._index._indexing._read.setFromConfig<ProtonConfig::Indexing::Read>(conf.indexing.read.io);
         tune._attr._write.setFromConfig<ProtonConfig::Attribute::Write>(conf.attribute.write.io);
-        tune._index._search._read.setFromConfig<ProtonConfig::Search, ProtonConfig::Search::Mmap>(conf.search.io, conf.search.mmap);
+        tune._index._search._read.setWantMemoryMap();
+        tune._index._search._read.setFromMmapConfig<ProtonConfig::Search::Mmap>(conf.search.mmap);
         tune._summary._write.setFromConfig<ProtonConfig::Summary::Write>(conf.summary.write.io);
         tune._summary._seqRead.setFromConfig<ProtonConfig::Summary::Read>(conf.summary.read.io);
         tune._summary._randRead.setFromConfig<ProtonConfig::Summary::Read, ProtonConfig::Summary::Read::Mmap>(conf.summary.read.io, conf.summary.read.mmap);

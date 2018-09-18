@@ -51,12 +51,12 @@ search music2 {
 
    field sw1 type float {
       indexing {
-        input weight * 6 + input w1 + input w2 | summary;
+        input weight_src * 6 + input w1_src + input w2_src | summary;
       }
    }
 
    field didinteger type array<int> {
-      indexing: input did | split " " | attribute
+      indexing: input did | split " " | for_each { to_int } | attribute
    }
 
    rank-profile default {

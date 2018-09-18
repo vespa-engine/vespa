@@ -7,7 +7,9 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.processing.multifieldresolver.RankProfileTypeSettingsProcessor;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -18,9 +20,7 @@ import java.util.List;
  */
 public class Processing {
 
-    private static final List<ProcessorFactory> factories = createProcessorFactories();
-
-    private static List<ProcessorFactory> createProcessorFactories() {
+    protected Collection<ProcessorFactory> minimalSetOfProcessors() {
         return Arrays.asList(
                 SearchMustHaveDocument::new,
                 UrlFieldValidator::new,
@@ -74,12 +74,22 @@ public class Processing {
                 RankProfileTypeSettingsProcessor::new,
                 ReferenceFieldsProcessor::new,
                 FastAccessValidator::new,
-                ReservedFunctionNames::new,
+                ReservedFunctionNames::new);
+    }
+
+    private Collection<ProcessorFactory> extendedSetOfProcessors() {
+        return Arrays.asList(
                 RankingExpressionTypeValidator::new,
 
                 // These should be last.
                 IndexingValidation::new,
                 IndexingValues::new);
+    }
+
+    protected Collection<ProcessorFactory> createProcessorFactories() {
+        List<ProcessorFactory> processorFactories = new ArrayList<>(minimalSetOfProcessors());
+        processorFactories.addAll(extendedSetOfProcessors());
+        return processorFactories;
     }
 
     /**
@@ -91,11 +101,10 @@ public class Processing {
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
      * @param queryProfiles The query profiles contained in the application this search is part of.
      */
-    public static void process(Search search,
-                               DeployLogger deployLogger,
-                               RankProfileRegistry rankProfileRegistry,
-                               QueryProfiles queryProfiles,
-                               boolean validate) {
+    public void process(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry,
+                        QueryProfiles queryProfiles, boolean validate)
+    {
+        Collection<ProcessorFactory> factories = createProcessorFactories();
         search.process();
         factories.stream()
                 .map(factory -> factory.create(search, deployLogger, rankProfileRegistry, queryProfiles))

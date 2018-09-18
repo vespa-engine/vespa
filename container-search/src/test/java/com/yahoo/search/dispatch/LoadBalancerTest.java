@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.SearchCluster.Group;
 import com.yahoo.search.dispatch.SearchCluster.Node;
 import junit.framework.AssertionFailedError;
@@ -24,7 +25,7 @@ public class LoadBalancerTest {
         SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1), null, 1, null);
         LoadBalancer lb = new LoadBalancer(cluster);
 
-        Optional<Group> grp = lb.takeGroupForQuery(null);
+        Optional<Group> grp = lb.takeGroupForQuery(new Query());
         Group group = grp.orElseGet(() -> {
             throw new AssertionFailedError("Expected a SearchCluster.Group");
         });
@@ -38,7 +39,7 @@ public class LoadBalancerTest {
         SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1, n2), null, 1, null);
         LoadBalancer lb = new LoadBalancer(cluster);
 
-        Optional<Group> grp = lb.takeGroupForQuery(null);
+        Optional<Group> grp = lb.takeGroupForQuery(new Query());
         Group group = grp.orElseGet(() -> {
             throw new AssertionFailedError("Expected a SearchCluster.Group");
         });
@@ -52,7 +53,7 @@ public class LoadBalancerTest {
         SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1, n2), null, 2, null);
         LoadBalancer lb = new LoadBalancer(cluster);
 
-        Optional<Group> grp = lb.takeGroupForQuery(null);
+        Optional<Group> grp = lb.takeGroupForQuery(new Query());
         assertThat(grp.isPresent(), is(false));
     }
 
@@ -65,7 +66,7 @@ public class LoadBalancerTest {
         SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1, n2, n3, n4), null, 2, null);
         LoadBalancer lb = new LoadBalancer(cluster);
 
-        Optional<Group> grp = lb.takeGroupForQuery(null);
+        Optional<Group> grp = lb.takeGroupForQuery(new Query());
         assertThat(grp.isPresent(), is(false));
     }
 
@@ -77,16 +78,37 @@ public class LoadBalancerTest {
         LoadBalancer lb = new LoadBalancer(cluster);
 
         // get first group
-        Optional<Group> grp = lb.takeGroupForQuery(null);
+        Optional<Group> grp = lb.takeGroupForQuery(new Query());
         Group group = grp.get();
         int id1 = group.id();
         // release allocation
         lb.releaseGroup(group);
 
         // get second group
-        grp = lb.takeGroupForQuery(null);
+        grp = lb.takeGroupForQuery(new Query());
         group = grp.get();
         assertThat(group.id(), not(equalTo(id1)));
+    }
+
+    @Test
+    public void requreThatLoadBalancerReturnsSameGroupForSameQuery() {
+        Node n1 = new SearchCluster.Node(0, "test-node1", 0, 0);
+        Node n2 = new SearchCluster.Node(1, "test-node2", 1, 1);
+        SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1, n2), null, 1, null);
+        LoadBalancer lb = new LoadBalancer(cluster);
+
+        Query q = new Query();
+        // get first group
+        Optional<Group> grp = lb.takeGroupForQuery(q);
+        Group group = grp.get();
+        int id1 = group.id();
+        // release allocation
+        lb.releaseGroup(group);
+
+        // continue with same query
+        grp = lb.takeGroupForQuery(q);
+        group = grp.get();
+        assertThat(group.id(), equalTo(id1));
     }
 
     @Test
@@ -97,12 +119,12 @@ public class LoadBalancerTest {
         LoadBalancer lb = new LoadBalancer(cluster);
 
         // get first group
-        Optional<Group> grp = lb.takeGroupForQuery(null);
+        Optional<Group> grp = lb.takeGroupForQuery(new Query());
         Group group = grp.get();
         int id1 = group.id();
 
         // get second group
-        grp = lb.takeGroupForQuery(null);
+        grp = lb.takeGroupForQuery(new Query());
         group = grp.get();
         int id2 = group.id();
         assertThat(id2, not(equalTo(id1)));
@@ -110,7 +132,7 @@ public class LoadBalancerTest {
         lb.releaseGroup(group);
 
         // get third group
-        grp = lb.takeGroupForQuery(null);
+        grp = lb.takeGroupForQuery(new Query());
         group = grp.get();
         assertThat(group.id(), equalTo(id2));
     }

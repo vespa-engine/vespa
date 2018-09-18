@@ -33,6 +33,7 @@ public class DocumentGenTest {
         mojo.execute(new File("etc/complex/"), new File("target/generated-test-sources/vespa-documentgen-plugin/"), "com.yahoo.vespa.document");
         Map<String, Search> searches = mojo.getSearches();
         assertEquals(searches.get("video").getDocument("video").getField("weight").getDataType(), DataType.FLOAT);
+        assertEquals(searches.get("book").getDocument("book").getField("sw1").getDataType(), DataType.FLOAT);
         assertTrue(searches.get("book").getDocument("book").getField("mystruct").getDataType() instanceof StructDataType);
         assertTrue(searches.get("book").getDocument("book").getField("mywsfloat").getDataType() instanceof WeightedSetDataType);
         assertTrue(((WeightedSetDataType)(searches.get("book").getDocument("book").getField("mywsfloat").getDataType())).getNestedType() == DataType.FLOAT);

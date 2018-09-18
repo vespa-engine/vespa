@@ -14,7 +14,6 @@
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
 
-#include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
 #include <vespa/searchcore/proton/flushengine/prepare_restart_flush_strategy.h>
@@ -48,9 +47,6 @@ using vespalib::Slime;
 using vespalib::slime::ArrayInserter;
 using vespalib::slime::Cursor;
 
-using search::TuneFileDocumentDB;
-using search::index::Schema;
-using search::index::SchemaBuilder;
 using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::internal::InternalProtonType;

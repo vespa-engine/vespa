@@ -33,8 +33,6 @@ public:
         SPLIT_BUCKET            = 10,
         JOIN_BUCKETS            = 11,
         PRUNE_REMOVED_DOCUMENTS = 12,
-        SPOOLER_REPLAY_START    = 13,
-        SPOOLER_REPLAY_COMPLETE = 14,
         MOVE                    = 15,
         CREATE_BUCKET           = 16,
         COMPACT_LID_SPACE       = 17,
