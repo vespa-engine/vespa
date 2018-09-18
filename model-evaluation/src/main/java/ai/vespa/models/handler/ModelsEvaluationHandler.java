@@ -40,22 +40,24 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         Optional<String> modelName = path.segment(2);
 
         if ( ! apiName.isPresent() || ! apiName.get().equalsIgnoreCase(API_ROOT)) {
-            return new ErrorResponse(400, "unknown API");
+            return new ErrorResponse(404, "unknown API");
         }
         if ( ! version.isPresent() || ! version.get().equalsIgnoreCase(VERSION_V1)) {
-            return new ErrorResponse(400, "unknown API version");
+            return new ErrorResponse(404, "unknown API version");
         }
         if ( ! modelName.isPresent()) {
             return listAllModels(request);
         }
         if ( ! modelsEvaluator.models().containsKey(modelName.get())) {
-            return new ErrorResponse(400, "no model with name '" + modelName.get() + "' found");
+            // TODO: Replace by catching IllegalArgumentException and passing that error message
+            return new ErrorResponse(404, "no model with name '" + modelName.get() + "' found");
         }
 
         Model model = modelsEvaluator.models().get(modelName.get());
 
         // The following logic follows from the spec, in that signature and
         // output are optional if the model only has a single function.
+        // TODO: Try to avoid recreating that logic here
 
         if (path.segments() == 3) {
             if (model.functions().size() > 1) {
@@ -74,7 +76,8 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
             if (model.functions().size() <= 1) {
                 return evaluateModel(request, modelName.get());
             }
-            return new ErrorResponse(400, "attempt to evaluate model without specifying function");
+            // TODO: Replace by catching IllegalArgumentException and passing that error message
+            return new ErrorResponse(404, "attempt to evaluate model without specifying function");
         }
 
         if (path.segments() == 5) {
@@ -83,7 +86,7 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
             }
         }
 
-        return new ErrorResponse(400, "unrecognized request");
+        return new ErrorResponse(404, "unrecognized request");
     }
 
     private HttpResponse listAllModels(HttpRequest request) {
@@ -118,6 +121,7 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         Cursor root = slime.setObject();
         Cursor bindings = root.setArray("bindings");
         for (String bindingName : evaluator.context().names()) {
+            // TODO: Use an API which exposes only the external binding names instead of this
             if (bindingName.startsWith("constant(")) {
                 continue;
             }
@@ -126,7 +130,7 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
             }
             Cursor binding = bindings.addObject();
             binding.setString("name", bindingName);
-            binding.setString("type", "");  // todo: implement type information when available
+            binding.setString("type", "");  // TODO: implement type information when available
         }
         return new Response(200, com.yahoo.slime.JsonFormat.toJsonBytes(slime));
     }

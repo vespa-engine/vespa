@@ -37,17 +37,17 @@ public class ModelsEvaluationHandlerTest {
 
     @Test
     public void testUnknownAPI() {
-        assertResponse("http://localhost/wrong-api-binding", 400);
+        assertResponse("http://localhost/wrong-api-binding", 404);
     }
 
     @Test
     public void testUnknownVersion() {
-        assertResponse("http://localhost/model-evaluation/v0", 400);
+        assertResponse("http://localhost/model-evaluation/v0", 404);
     }
 
     @Test
     public void testNonExistingModel() {
-        assertResponse("http://localhost/model-evaluation/v1/non-existing-model", 400);
+        assertResponse("http://localhost/model-evaluation/v1/non-existing-model", 404);
     }
 
     @Test
@@ -141,7 +141,7 @@ public class ModelsEvaluationHandlerTest {
     public void testMnistSavedEvaluateDefaultFunctionShouldFail() {
         String url = "http://localhost/model-evaluation/v1/mnist_saved/eval";
         String expected = "{\"error\":\"attempt to evaluate model without specifying function\"}";
-        assertResponse(url, 400, expected);
+        assertResponse(url, 404, expected);
     }
 
     @Test
