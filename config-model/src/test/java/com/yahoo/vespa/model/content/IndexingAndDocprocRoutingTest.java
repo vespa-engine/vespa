@@ -42,7 +42,6 @@ public class IndexingAndDocprocRoutingTest extends ContentBaseTest {
         SearchClusterSpec searchCluster = new SearchClusterSpec(CLUSTERNAME, null, null);
         searchCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
         VespaModel model = getIndexedContentVespaModel(Collections.<DocprocClusterSpec>emptyList(), Arrays.asList(searchCluster));
-System.out.println("line 37");
         assertIndexing(model, new DocprocClusterSpec("jdisc", new DocprocChainSpec("jdisc/chain.indexing")));
         assertFeedingRoute(model, CLUSTERNAME, "jdisc/chain.indexing");
     }
@@ -55,7 +54,6 @@ System.out.println("line 37");
         searchCluster.searchDefs.add(new SearchDefSpec("music", "artist", "album"));
         searchCluster.searchDefs.add(new SearchDefSpec("book", "author", "title"));
         VespaModel model = getIndexedContentVespaModel(Collections.<DocprocClusterSpec>emptyList(), Arrays.asList(searchCluster));
-System.out.println("line 49");
         assertIndexing(model, new DocprocClusterSpec("jdisc", new DocprocChainSpec("jdisc/chain.indexing")));
         assertFeedingRoute(model, CLUSTERNAME, "jdisc/chain.indexing");
     }
@@ -73,7 +71,6 @@ System.out.println("line 49");
 
         VespaModel model = getIndexedContentVespaModel(Collections.<DocprocClusterSpec>emptyList(), Arrays.asList(musicCluster, booksCluster));
 
-System.out.println("line 66");
         assertIndexing(model,
                 new DocprocClusterSpec("jdisc", new DocprocChainSpec("jdisc/chain.indexing")));
 
@@ -243,9 +240,6 @@ System.out.println("line 66");
 
     private void assertIndexing(VespaModel model, DocprocClusterSpec... expectedDocprocClusters) {
         Map<String, ContainerCluster> docprocClusters = getDocprocClusters(model);
-for (Map.Entry<String, ContainerCluster> entry : docprocClusters.entrySet()) {
-System.out.println("got docproc cluster: "+entry.getKey());
-}
         assertThat(docprocClusters.size(), is(expectedDocprocClusters.length));
 
         for (DocprocClusterSpec expectedDocprocCluster : expectedDocprocClusters) {
@@ -259,7 +253,6 @@ System.out.println("got docproc cluster: "+entry.getKey());
             List<String> actualDocprocChains = new ArrayList<>();
             for (DocprocChain chain : chains) {
                 actualDocprocChains.add(chain.getServiceName());
-System.out.println("cluster "+docprocCluster.getName()+" with docproc chain: "+chain.getServiceName());
             }
             List<String> expectedDocprocChainStrings = new ArrayList<>();
             for (DocprocChainSpec spec : expectedDocprocCluster.chains) {
