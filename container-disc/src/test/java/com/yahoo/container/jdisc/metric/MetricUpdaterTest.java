@@ -27,7 +27,7 @@ public class MetricUpdaterTest {
         ContainerWatchdogMetrics containerWatchdogMetrics = mock(ContainerWatchdogMetrics.class);
         new MetricUpdater(new MockScheduler(), metric, containerWatchdogMetrics);
         verify(containerWatchdogMetrics, times(1)).emitMetrics(any());
-        verify(metric, times(8 + 2 * gcCount)).set(anyString(), any(), any());
+        verify(metric, times(5 + 2 * gcCount)).set(anyString(), any(), any());
     }
 
     private static class MockScheduler implements MetricUpdater.Scheduler {
