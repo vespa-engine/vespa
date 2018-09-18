@@ -5,7 +5,6 @@ import org.junit.Test;
 
 import java.util.Optional;
 
-import static com.yahoo.text.StringUtilities.quote;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 import static com.yahoo.reflection.Casting.cast;
@@ -31,6 +30,6 @@ public class CastingTest {
         Object objectToCast = "illegal";
         int result = cast(Integer.class, objectToCast).
                 filter(i -> !i.equals(0)).
-                orElseThrow(() -> new IllegalArgumentException("Expected non-zero integer, got " + quote(objectToCast)));
+                orElseThrow(() -> new IllegalArgumentException("Expected non-zero integer, got '" + objectToCast + "'"));
     }
 }

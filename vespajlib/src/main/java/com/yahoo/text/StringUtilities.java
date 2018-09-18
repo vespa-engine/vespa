@@ -15,8 +15,10 @@ import java.util.Set;
  * Need to duplicate escape / unescape of strings as we have in C++ for java version of system states.
  *
  * @author Haakon Humberset
+ *
+ * @deprecated Do not use! This will be removed in Vespa 7
  */
-// TODO: Text utilities should which are still needed should move to Text. This should be deprecated.
+@Deprecated
 public class StringUtilities {
 
     private static Charset UTF8 = Charset.forName("utf8");
