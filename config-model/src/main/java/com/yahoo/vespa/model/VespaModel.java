@@ -77,7 +77,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
-import static com.yahoo.text.StringUtilities.quote;
 
 /**
  * <p>
@@ -377,8 +376,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         boolean foundOverride = configProducer.addUserConfig(builder);
         if (logDebug()) {
             log.log(LogLevel.DEBUG, "Trying to get config for " + builder.getClass().getDeclaringClass().getName() +
-                    " for config id " + quote(configProducer.getConfigId()) +
-                    ", found=" + found + ", foundOverride=" + foundOverride);
+                    " for config id '" + configProducer.getConfigId() +
+                    "', found=" + found + ", foundOverride=" + foundOverride);
         }
     }
 

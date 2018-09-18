@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.protocol;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.slime.*;
+import com.yahoo.text.Text;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -12,7 +13,6 @@ import java.util.List;
 
 /**
 * @author lulf
-* @since 5.3
 */
 public class DefContent {
     private final List<String> data;
@@ -30,7 +30,7 @@ public class DefContent {
     }
 
     public String asString() {
-        return com.yahoo.text.StringUtilities.implode(asStringArray(), "\n");
+        return Text.implode(asStringArray(), "\n");
     }
 
     static DefContent fromSlime(Inspector data) {

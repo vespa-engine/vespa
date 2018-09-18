@@ -17,7 +17,6 @@ import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.rendering.Renderer;
-import com.yahoo.text.StringUtilities;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.model.VespaModel;
 import org.xml.sax.SAXException;
@@ -31,6 +30,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+
+import static com.yahoo.text.Text.stripSuffix;
 
 /**
  * Contains one or more containers built from services.xml.
@@ -289,7 +290,7 @@ public final class Application implements AutoCloseable {
 
         // copy from com.yahoo.application.ApplicationBuilder
         private Path nestedResource(final com.yahoo.path.Path nestedPath, final String name, final String fileType) {
-            String nameWithoutSuffix = StringUtilities.stripSuffix(name, fileType);
+            String nameWithoutSuffix = stripSuffix(name, fileType);
             return path.resolve(nestedPath.getRelative()).resolve(nameWithoutSuffix + fileType);
         }
 

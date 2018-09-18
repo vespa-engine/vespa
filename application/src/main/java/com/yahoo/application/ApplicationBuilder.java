@@ -3,13 +3,13 @@ package com.yahoo.application;
 
 import com.google.common.annotations.Beta;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.text.StringUtilities;
 import com.yahoo.text.Utf8;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static com.yahoo.text.Text.stripSuffix;
 import static java.nio.file.Files.createTempDirectory;
 
 /**
@@ -77,7 +77,7 @@ public class ApplicationBuilder {
     private Path nestedResource(com.yahoo.path.Path nestedPath, String name, String fileType) {
         ensureNotAlreadyBuild();
 
-        String nameWithoutSuffix = StringUtilities.stripSuffix(name, fileType);
+        String nameWithoutSuffix = stripSuffix(name, fileType);
         return applicationDir.resolve(nestedPath.getRelative()).resolve(nameWithoutSuffix + fileType);
     }
 

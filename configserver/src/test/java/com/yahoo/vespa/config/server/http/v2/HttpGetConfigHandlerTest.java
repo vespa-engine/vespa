@@ -23,7 +23,7 @@ import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.text.StringUtilities;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.protocol.SlimeConfigResponse;
@@ -131,7 +131,7 @@ public class HttpGetConfigHandlerTest {
 
     private InnerCNode getInnerCNode() {
         // TODO: Hope to be able to remove this mess soon.
-        DefParser dParser = new DefParser(SimpletypesConfig.getDefName(), new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n")));
+        DefParser dParser = new DefParser(SimpletypesConfig.getDefName(), new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n")));
         return dParser.getTree();
     }
 

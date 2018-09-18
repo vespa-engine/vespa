@@ -1,7 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
+import com.google.common.collect.ImmutableSet;
+
+import java.util.Collections;
+import java.util.List;
 import java.util.OptionalInt;
+import java.util.Set;
 
 /**
  * Text utility functions.
@@ -122,6 +127,48 @@ public final class Text {
                 ++i; // // codePointAt() consumes one more char in this case
         }
         return stripped != null ? stripped.toString() : string;
+    }
+
+    /** Splits a string on both space and comma */
+    public static Set<String> split(String s) {
+        if (s == null || s.isEmpty()) return Collections.emptySet();
+        ImmutableSet.Builder<String> b = new ImmutableSet.Builder<>();
+        for (String item : s.split("[\\s\\,]"))
+            if ( ! item.isEmpty())
+                b.add(item);
+        return b.build();
+    }
+
+    public static String stripSuffix(String string, String suffix) {
+        int index = string.lastIndexOf(suffix);
+        return index == -1 ? string : string.substring(0, index);
+    }
+
+    /**
+     * Returns the given array flattened to string, with the given separator string
+     * @param array the array
+     * @param sepString or null
+     * @return imploded array
+     */
+    public static String implode(String[] array, String sepString) {
+        if (array==null) return null;
+        StringBuilder ret = new StringBuilder();
+        if (sepString==null) sepString="";
+        for (int i = 0 ; i<array.length ; i++) {
+            ret.append(array[i]);
+            if (!(i==array.length-1)) ret.append(sepString);
+        }
+        return ret.toString();
+    }
+
+    /**
+     * Returns the given list flattened to one with newline between
+     *
+     * @return flattened string
+     */
+    public static String implodeMultiline(List<String> lines) {
+        if (lines==null) return null;
+        return implode(lines.toArray(new String[0]), "\n");
     }
 
 }

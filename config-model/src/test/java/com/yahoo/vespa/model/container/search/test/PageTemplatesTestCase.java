@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.container.search.test;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
-import com.yahoo.text.StringUtilities;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.container.search.PageTemplates;
 import org.junit.Test;
 
@@ -30,7 +30,7 @@ public class PageTemplatesTestCase {
         pageFiles.add(new NamedReader(root + "/footer.xml", IOUtils.createReader(root + "/footer.xml")));
         pageFiles.add(new NamedReader(root + "/richerSerp.xml", IOUtils.createReader(root + "/richerSerp.xml")));
         pageFiles.add(new NamedReader(root + "/header.xml", IOUtils.createReader(root + "/header.xml")));
-        assertEquals(IOUtils.readFile(new File(root, "/pages.cfg")), StringUtilities.implodeMultiline(ConfigInstance.serialize(new PageTemplates(pageFiles).getConfig())));
+        assertEquals(IOUtils.readFile(new File(root, "/pages.cfg")), Text.implodeMultiline(ConfigInstance.serialize(new PageTemplates(pageFiles).getConfig())));
     }
 
 }

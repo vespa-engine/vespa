@@ -5,7 +5,7 @@ import com.yahoo.test.FunctionTestConfig;
 import com.yahoo.test.FunctionTestConfig.*;
 import com.yahoo.test.SimpletypesConfig;
 import com.yahoo.config.codegen.*;
-import com.yahoo.text.StringUtilities;
+import com.yahoo.text.Text;
 import org.junit.Test;
 
 import java.io.StringReader;
@@ -211,14 +211,14 @@ public class InstanceResolverTest {
         ArrayList<String> def = new ArrayList<>();
         def.addAll(Arrays.asList(schema));
         return new DefParser("documentmanager",
-                new StringReader(StringUtilities.implode(def.toArray(new String[def.size()]), "\n"))).getTree();
+                new StringReader(Text.implode(def.toArray(new String[def.size()]), "\n"))).getTree();
     }
 
     @Test
     public void testExtraFieldsAreIgnored() throws Exception {
         try {
             SimpletypesConfig.Builder builder = new SimpletypesConfig.Builder();
-            InnerCNode defWithExtra = new DefParser(SimpletypesConfig.CONFIG_DEF_NAME, new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n") + "\nnewfield string default=\"foo\"\n")).getTree();
+            InnerCNode defWithExtra = new DefParser(SimpletypesConfig.CONFIG_DEF_NAME, new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n") + "\nnewfield string default=\"foo\"\n")).getTree();
             InstanceResolver.applyDef(builder, defWithExtra);
         } catch (NoSuchFieldException e) {
             fail("Should not fail on extra field");

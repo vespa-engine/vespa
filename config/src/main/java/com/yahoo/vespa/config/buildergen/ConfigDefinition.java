@@ -5,7 +5,7 @@ import com.google.common.io.Files;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.codegen.JavaClassBuilder;
-import com.yahoo.text.StringUtilities;
+import com.yahoo.text.Text;
 
 import java.io.File;
 import java.io.StringReader;
@@ -23,7 +23,7 @@ public class ConfigDefinition {
     public ConfigDefinition(String name, String[] defSchema) {
         this.name = name;
         this.defSchema = defSchema;
-        this.cnode = new DefParser(name, new StringReader(StringUtilities.implode(defSchema, "\n"))).getTree();
+        this.cnode = new DefParser(name, new StringReader(Text.implode(defSchema, "\n"))).getTree();
     }
 
     public InnerCNode getCNode() {
@@ -32,7 +32,7 @@ public class ConfigDefinition {
 
     public ConfigDefinitionClass generateClass() {
         File tempDir = Files.createTempDir();
-        DefParser parser = new DefParser(name, new StringReader(StringUtilities.implode(defSchema, "\n")));
+        DefParser parser = new DefParser(name, new StringReader(Text.implode(defSchema, "\n")));
         JavaClassBuilder builder = new JavaClassBuilder(parser.getTree(), parser.getNormalizedDefinition(),  tempDir, null);
         String className = builder.className();
         return new ConfigDefinitionClass(className, builder.javaPackage(), builder.getConfigClass(className));

@@ -1,16 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search.test;
 
-import com.yahoo.component.ComponentId;
+import com.yahoo.config.ConfigInstance;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
-import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.FieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
 
@@ -116,7 +115,7 @@ public class QueryProfilesTestCase {
 
     protected void assertConfig(String correctFileName, QueryProfileRegistry check) throws IOException {
         assertSerializedConfigFileEquals(root + "/" + correctFileName,
-                com.yahoo.text.StringUtilities.implodeMultiline(com.yahoo.config.ConfigInstance.serialize(new QueryProfiles(check).getConfig())));
+                                         Text.implodeMultiline(ConfigInstance.serialize(new QueryProfiles(check).getConfig())));
 
         // Also assert that the correct config config can actually be read as a config source
         QueryProfileConfigurer configurer = new QueryProfileConfigurer("file:" + root + "empty.cfg");
