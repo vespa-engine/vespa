@@ -21,6 +21,7 @@ import org.w3c.dom.Element;
 import java.util.*;
 
 import static com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets.predefinedMetricSets;
+import static java.util.logging.Level.WARNING;
 
 /**
  * A base class for admin model builders, to support common functionality across versions.
@@ -68,6 +69,9 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
                 .buildMetrics(XML.getChild(adminElement, "metrics"));
         Map<String, MetricsConsumer> legacyMetricsConsumers = DomMetricBuilderHelper
                 .buildMetricsConsumers(XML.getChild(adminElement, "metric-consumers"));
+        if (! legacyMetricsConsumers.isEmpty()) {
+            parent.deployLogger().log(WARNING, "Element 'metric-consumers' is deprecated and will be removed in Vespa 7. Use 'metrics' instead!");
+        }
         FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent);
 
         Admin admin = new Admin(parent, monitoring, metrics, legacyMetricsConsumers, multitenant, fileDistributionConfigProducer);
