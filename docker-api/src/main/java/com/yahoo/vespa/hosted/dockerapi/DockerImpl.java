@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
-import com.github.dockerjava.api.command.ExecStartCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.InspectImageResponse;
@@ -22,6 +21,7 @@ import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
@@ -192,6 +192,8 @@ public class DockerImpl implements Docker {
             dockerClient.connectToNetworkCmd()
                     .withContainerId(containerName.asString())
                     .withNetworkId(networkName).exec();
+        } catch (NotFoundException e) {
+            throw new ContainerNotFoundException(containerName);
         } catch (RuntimeException e) {
             numberOfDockerDaemonFails.add();
             throw new DockerException("Failed to connect container '" + containerName.asString() +
@@ -219,37 +221,44 @@ public class DockerImpl implements Docker {
      */
     private ProcessResult executeInContainerAsUser(ContainerName containerName, String user, Optional<Long> timeoutSeconds, String... command) {
         try {
-            final ExecCreateCmdResponse response = dockerClient.execCreateCmd(containerName.asString())
-                    .withCmd(command)
-                    .withAttachStdout(true)
-                    .withAttachStderr(true)
-                    .withUser(user)
-                    .exec();
+            ExecCreateCmdResponse response = execCreateCmd(containerName, user, command);
 
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             ByteArrayOutputStream errors = new ByteArrayOutputStream();
-            ExecStartCmd execStartCmd = dockerClient.execStartCmd(response.getId());
-            ExecStartResultCallback callback = execStartCmd.exec(new ExecStartResultCallback(output, errors));
+            ExecStartResultCallback callback = dockerClient.execStartCmd(response.getId())
+                    .exec(new ExecStartResultCallback(output, errors));
 
             if (timeoutSeconds.isPresent()) {
-                if (!callback.awaitCompletion(timeoutSeconds.get(), TimeUnit.SECONDS)) {
-                    throw new DockerExecTimeoutException(String.format("Command '%s' did not finish within %s seconds.", command[0], timeoutSeconds));
-                }
+                if (!callback.awaitCompletion(timeoutSeconds.get(), TimeUnit.SECONDS))
+                    throw new DockerExecTimeoutException(String.format(
+                            "Command '%s' did not finish within %s seconds.", command[0], timeoutSeconds));
             } else {
                 // Wait for completion no timeout
                 callback.awaitCompletion();
             }
 
-            final InspectExecResponse state = dockerClient.inspectExecCmd(execStartCmd.getExecId()).exec();
-            assert !state.isRunning();
-            Integer exitCode = state.getExitCode();
-            assert exitCode != null;
+            InspectExecResponse state = dockerClient.inspectExecCmd(response.getId()).exec();
+            if (state.isRunning())
+                throw new DockerException("Command '%s' did not finish within %s seconds.");
 
-            return new ProcessResult(exitCode, new String(output.toByteArray()), new String(errors.toByteArray()));
+            return new ProcessResult(state.getExitCode(), new String(output.toByteArray()), new String(errors.toByteArray()));
         } catch (RuntimeException | InterruptedException e) {
             numberOfDockerDaemonFails.add();
             throw new DockerException("Container '" + containerName.asString()
                     + "' failed to execute " + Arrays.toString(command), e);
+        }
+    }
+
+    private ExecCreateCmdResponse execCreateCmd(ContainerName containerName, String user, String... command) {
+        try {
+            return dockerClient.execCreateCmd(containerName.asString())
+                    .withCmd(command)
+                    .withAttachStdout(true)
+                    .withAttachStderr(true)
+                    .withUser(user)
+                    .exec();
+        } catch (NotFoundException e) {
+            throw new ContainerNotFoundException(containerName);
         }
     }
 
@@ -284,6 +293,8 @@ public class DockerImpl implements Docker {
     public void startContainer(ContainerName containerName) {
         try {
             dockerClient.startContainerCmd(containerName.asString()).exec();
+        } catch (NotFoundException e) {
+            throw new ContainerNotFoundException(containerName);
         } catch (NotModifiedException ignored) {
             // If is already started, ignore
         } catch (RuntimeException e) {
@@ -296,6 +307,8 @@ public class DockerImpl implements Docker {
     public void stopContainer(ContainerName containerName) {
         try {
             dockerClient.stopContainerCmd(containerName.asString()).withTimeout(secondsToWaitBeforeKilling).exec();
+        } catch (NotFoundException e) {
+            throw new ContainerNotFoundException(containerName);
         } catch (NotModifiedException ignored) {
             // If is already stopped, ignore
         } catch (RuntimeException e) {
@@ -313,8 +326,8 @@ public class DockerImpl implements Docker {
             });
 
             dockerClient.removeContainerCmd(containerName.asString()).exec();
-        } catch (NotFoundException ignored) {
-            // If container doesn't exist ignore
+        } catch (NotFoundException e) {
+            throw new ContainerNotFoundException(containerName);
         } catch (RuntimeException e) {
             numberOfDockerDaemonFails.add();
             throw new DockerException("Failed to delete container '" + containerName.asString() + "'", e);
@@ -351,7 +364,7 @@ public class DockerImpl implements Docker {
                 .orElse(Stream.empty());
     }
 
-    private boolean isManagedBy(final com.github.dockerjava.api.model.Container container, String manager) {
+    private boolean isManagedBy(com.github.dockerjava.api.model.Container container, String manager) {
         final Map<String, String> labels = container.getLabels();
         return labels != null && manager.equals(labels.get(LABEL_NAME_MANAGEDBY));
     }
