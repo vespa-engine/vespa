@@ -1209,7 +1209,6 @@ updateDocstoreMetrics(LegacyDocumentDBMetrics::DocstoreMetrics &metrics,
     metrics.memoryUsage.set(memoryUsage);
     updateCountMetric(cache_stats.lookups(), lastCacheStats.lookups(), metrics.cacheLookups);
     updateDocumentStoreCacheHitRate(cache_stats, lastCacheStats, metrics.cacheHitRate);
-    metrics.hits = cache_stats.hits;
     metrics.cacheElements.set(cache_stats.elements);
     metrics.cacheMemoryUsed.set(cache_stats.memory_used);
     lastCacheStats = cache_stats;
