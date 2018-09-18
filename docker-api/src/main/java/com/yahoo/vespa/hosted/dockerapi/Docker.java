@@ -60,10 +60,6 @@ public interface Docker {
             ContainerName containerName,
             String hostName);
 
-    default boolean networkNATed() {
-        return false;
-    }
-
     Optional<ContainerStats> getContainerStats(ContainerName containerName);
 
     void startContainer(ContainerName containerName);

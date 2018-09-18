@@ -106,11 +106,6 @@ public class DockerImpl implements Docker {
         }
     }
 
-    @Override
-    public boolean networkNATed() {
-        return config.networkNATed();
-    }
-
     private void setupDockerNetworkIfNeeded() throws IOException {
         if (!dockerClient.listNetworksCmd().withNameFilter(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
 
