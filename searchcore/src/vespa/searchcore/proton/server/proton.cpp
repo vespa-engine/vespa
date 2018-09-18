@@ -194,7 +194,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       _protonConfigurer(_executor, *this, _protonDiskLayout),
       _protonConfigFetcher(configUri, _protonConfigurer, subscribeTimeout),
       _warmupExecutor(),
-      _summaryExecutor(),
+      _sharedExecutor(),
       _queryLimiter(),
       _clock(0.010),
       _threadPool(128 * 1024),
@@ -288,8 +288,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     vespalib::string fileConfigId;
     _warmupExecutor = std::make_unique<vespalib::ThreadStackExecutor>(4, 128*1024);
 
-    const size_t summaryThreads = deriveCompactionCompressionThreads(protonConfig, hwInfo.cpu());
-    _summaryExecutor = std::make_unique<vespalib::BlockingThreadStackExecutor>(summaryThreads, 128*1024, summaryThreads*16);
+    const size_t sharedThreads = deriveCompactionCompressionThreads(protonConfig, hwInfo.cpu());
+    _sharedExecutor = std::make_unique<vespalib::BlockingThreadStackExecutor>(sharedThreads, 128*1024, sharedThreads*16);
     InitializeThreads initializeThreads;
     if (protonConfig.initialize.threads > 0) {
         initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(protonConfig.initialize.threads, 128 * 1024);
@@ -422,8 +422,8 @@ Proton::~Proton()
     if (_warmupExecutor) {
         _warmupExecutor->sync();
     }
-    if (_summaryExecutor) {
-        _summaryExecutor->sync();
+    if (_sharedExecutor) {
+        _sharedExecutor->sync();
     }
     LOG(debug, "Shutting down fs4 interface");
     if (_metricsEngine && _fs4Server) {
@@ -440,7 +440,7 @@ Proton::~Proton()
     _persistenceEngine.reset();
     _tls.reset();
     _warmupExecutor.reset();
-    _summaryExecutor.reset();
+    _sharedExecutor.reset();
     _clock.stop();
     LOG(debug, "Explicit destructor done");
 }
@@ -526,7 +526,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
     }
     auto ret = std::make_shared<DocumentDB>(config.basedir + "/documents", documentDBConfig, config.tlsspec,
                                             _queryLimiter, _clock, docTypeName, bucketSpace, config, *this,
-                                            *_warmupExecutor, *_summaryExecutor, *_tls->getTransLogServer(),
+                                            *_warmupExecutor, *_sharedExecutor, *_tls->getTransLogServer(),
                                             *_metricsEngine, _fileHeaderContext, std::move(config_store),
                                             initializeThreads, bootstrapConfig->getHwInfo());
     try {
