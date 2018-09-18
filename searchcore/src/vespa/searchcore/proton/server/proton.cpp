@@ -658,7 +658,15 @@ int countOpenFiles()
     return count;
 }
 
-} // namespace <unnamed>
+void
+updateExecutorMetrics(ExecutorMetrics &metrics, ExecutorMetrics &legacyMetrics,
+                      const vespalib::ThreadStackExecutor::Stats &stats)
+{
+    metrics.update(stats);
+    legacyMetrics.update(stats);
+}
+
+}
 
 void
 Proton::updateMetrics(const vespalib::MonitorGuard &)
@@ -681,16 +689,23 @@ Proton::updateMetrics(const vespalib::MonitorGuard &)
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));
     }
     {
-        LegacyProtonMetrics &metrics = _metricsEngine->legacyRoot();
-        metrics.executor.update(_executor.getStats());
+        ContentProtonMetrics::ProtonExecutorMetrics &metrics = _metricsEngine->root().executor;
+        LegacyProtonMetrics &legacyMetrics = _metricsEngine->legacyRoot();
+        updateExecutorMetrics(metrics.proton, legacyMetrics.executor, _executor.getStats());
         if (_flushEngine) {
-            metrics.flushExecutor.update(_flushEngine->getExecutorStats());
+            updateExecutorMetrics(metrics.flush, legacyMetrics.flushExecutor, _flushEngine->getExecutorStats());
         }
         if (_matchEngine) {
-            metrics.matchExecutor.update(_matchEngine->getExecutorStats());
+            updateExecutorMetrics(metrics.match, legacyMetrics.matchExecutor, _matchEngine->getExecutorStats());
         }
         if (_summaryEngine) {
-            metrics.summaryExecutor.update(_summaryEngine->getExecutorStats());
+            updateExecutorMetrics(metrics.docsum, legacyMetrics.summaryExecutor, _summaryEngine->getExecutorStats());
+        }
+        if (_sharedExecutor) {
+            metrics.shared.update(_sharedExecutor->getStats());
+        }
+        if (_warmupExecutor) {
+            metrics.warmup.update(_warmupExecutor->getStats());
         }
     }
 }

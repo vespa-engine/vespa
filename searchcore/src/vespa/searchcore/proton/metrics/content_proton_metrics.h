@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include <vespa/metrics/metrics.h>
+#include "executor_metrics.h"
 #include "resource_usage_metrics.h"
 #include "trans_log_server_metrics.h"
+#include <vespa/metrics/metrics.h>
 
 namespace proton {
 
@@ -18,12 +19,26 @@ namespace proton {
  */
 struct ContentProtonMetrics : metrics::MetricSet
 {
+    struct ProtonExecutorMetrics : metrics::MetricSet {
+
+        ExecutorMetrics proton;
+        ExecutorMetrics flush;
+        ExecutorMetrics match;
+        ExecutorMetrics docsum;
+        ExecutorMetrics shared;
+        ExecutorMetrics warmup;
+
+        ProtonExecutorMetrics(metrics::MetricSet *parent);
+        ~ProtonExecutorMetrics();
+    };
+
     TransLogServerMetrics transactionLog;
     ResourceUsageMetrics resourceUsage;
+    ProtonExecutorMetrics executor;
 
     ContentProtonMetrics();
     ~ContentProtonMetrics();
 
 };
 
-} // namespace proton
+}
