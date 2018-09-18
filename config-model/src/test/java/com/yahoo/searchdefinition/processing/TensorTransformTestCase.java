@@ -113,7 +113,7 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
     }
 
     @Test
-    public void requireThatMaxAndMinWithTensorsReturnedFromMacrosAreReplaced() throws ParseException {
+    public void requireThatMaxAndMinWithTensorsReturnedFromFunctionsAreReplaced() throws ParseException {
         assertTransformedExpression("reduce(rankingExpression(returns_tensor),max,x)",
                                     "max(returns_tensor,x)");
         assertTransformedExpression("reduce(rankingExpression(wraps_returns_tensor),max,x)",
@@ -171,7 +171,7 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
                 "                value: { {x:0}:0 }\n" +
                 "            }\n" +
                 "        }\n" +
-                "        macro base_tensor() {\n" +
+                "        function base_tensor() {\n" +
                 "            expression: constant(base_constant_tensor)\n" +
                 "        }\n" +
                 "    }\n" +
@@ -181,19 +181,19 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
                 "                value: { {x:0}:1 }\n" +
                 "            }\n" +
                 "        }\n" +
-                "        macro returns_tensor_with_arg(arg1) {\n" +
+                "        function returns_tensor_with_arg(arg1) {\n" +
                 "            expression: 2.0 * arg1\n" +
                 "        }\n" +
-                "        macro wraps_returns_tensor() {\n" +
+                "        function wraps_returns_tensor() {\n" +
                 "            expression: returns_tensor\n" +
                 "        }\n" +
-                "        macro returns_tensor() {\n" +
+                "        function returns_tensor() {\n" +
                 "            expression: attribute(tensor_field_2)\n" +
                 "        }\n" +
-                "        macro tensor_inheriting() {\n" +
+                "        function tensor_inheriting() {\n" +
                 "            expression: base_tensor\n" +
                 "        }\n" +
-                "        macro testexpression() {\n" +
+                "        function testexpression() {\n" +
                 "            expression: " + expression + "\n" +
                 "        }\n" +
                 "    }\n" +

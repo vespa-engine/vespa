@@ -160,7 +160,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testTensorFlowReferenceMissingMacro() throws ParseException {
+    public void testTensorFlowReferenceMissingFunction() throws ParseException {
         try {
             RankProfileSearchFixture search = new RankProfileSearchFixture(
                     new StoringApplicationPackage(applicationDir),
@@ -177,14 +177,14 @@ public class RankingExpressionWithTensorFlowTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from " +
                          "tensorflow('mnist_softmax/saved'): " +
-                         "Model refers input 'Placeholder' of type tensor(d0[],d1[784]) but this macro is " +
+                         "Model refers input 'Placeholder' of type tensor(d0[],d1[784]) but this function is " +
                          "not present in rank profile 'my_profile'",
                          Exceptions.toMessageString(expected));
         }
     }
 
     @Test
-    public void testTensorFlowReferenceWithWrongMacroType() {
+    public void testTensorFlowReferenceWithWrongFunctionType() {
         try {
             RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d5[10])(0.0)",
                                                           "tensorflow('mnist_softmax/saved')");
@@ -195,7 +195,7 @@ public class RankingExpressionWithTensorFlowTestCase {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from " +
                          "tensorflow('mnist_softmax/saved'): " +
                          "Model refers input 'Placeholder'. The required type of this is tensor(d0[],d1[784]), " +
-                         "but this macro returns tensor(d0[2],d5[10])",
+                         "but this function returns tensor(d0[2],d5[10])",
                          Exceptions.toMessageString(expected));
         }
     }
@@ -261,13 +261,13 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testImportingFromStoredExpressionsWithMacroOverridingConstantAndInheritance() throws IOException {
+    public void testImportingFromStoredExpressionsWithFunctionOverridingConstantAndInheritance() throws IOException {
         String rankProfiles =
                 "  rank-profile my_profile {\n" +
-                "    macro Placeholder() {\n" +
+                "    function Placeholder() {\n" +
                 "      expression: tensor(d0[2],d1[784])(0.0)\n" +
                 "    }\n" +
-                "    macro " + name + "_layer_Variable_read() {\n" +
+                "    function " + name + "_layer_Variable_read() {\n" +
                 "      expression: tensor(d1[10],d2[784])(0.0)\n" +
                 "    }\n" +
                 "    first-phase {\n" +
@@ -285,7 +285,7 @@ public class RankingExpressionWithTensorFlowTestCase {
         search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
         search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile_child");
 
-        assertNull("Constant overridden by macro is not added",
+        assertNull("Constant overridden by function is not added",
                    search.search().rankingConstants().get("mnist_softmax_saved_layer_Variable_read"));
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
@@ -300,7 +300,7 @@ public class RankingExpressionWithTensorFlowTestCase {
             searchFromStored.compileRankProfile("my_profile_child", applicationDir.append("models"));
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile_child");
-            assertNull("Constant overridden by macro is not added",
+            assertNull("Constant overridden by function is not added",
                        searchFromStored.search().rankingConstants().get("mnist_softmax_saved_layer_Variable_read"));
         }
         finally {
@@ -317,11 +317,11 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testMacroGeneration() {
+    public void testFunctionGeneration() {
         final String name = "mnist_saved";
-        final String expression = "join(join(reduce(join(join(join(imported_ml_macro_" + name + "_dnn_hidden2_add, reduce(constant(" + name + "_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), imported_ml_macro_" + name + "_dnn_hidden2_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
-        final String macroExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(" + name + "_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(" + name + "_dnn_hidden1_bias_read), f(a,b)(a + b))";
-        final String macroExpression2 = "join(reduce(join(join(join(imported_ml_macro_" + name + "_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), imported_ml_macro_" + name + "_dnn_hidden1_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(" + name + "_dnn_hidden2_bias_read), f(a,b)(a + b))";
+        final String expression = "join(join(reduce(join(join(join(imported_ml_function_" + name + "_dnn_hidden2_add, reduce(constant(" + name + "_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden2_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
+        final String functionExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(" + name + "_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(" + name + "_dnn_hidden1_bias_read), f(a,b)(a + b))";
+        final String functionExpression2 = "join(reduce(join(join(join(imported_ml_function_" + name + "_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden1_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(" + name + "_dnn_hidden2_bias_read), f(a,b)(a + b))";
 
         RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
                                     "tensorflow('mnist/saved')",
@@ -330,8 +330,8 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "input",
                                                       new StoringApplicationPackage(applicationDir));
         search.assertFirstPhaseExpression(expression, "my_profile");
-        search.assertMacro(macroExpression1, "imported_ml_macro_" + name + "_dnn_hidden1_add", "my_profile");
-        search.assertMacro(macroExpression2, "imported_ml_macro_" + name + "_dnn_hidden2_add", "my_profile");
+        search.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile");
+        search.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile");
     }
 
     @Test
@@ -339,7 +339,7 @@ public class RankingExpressionWithTensorFlowTestCase {
         final String name = "mnist_saved";
         final String rankProfiles =
                 "  rank-profile my_profile {\n" +
-                "    macro input() {\n" +
+                "    function input() {\n" +
                 "      expression: tensor(d0[1],d1[784])(0.0)\n" +
                 "    }\n" +
                 "    first-phase {\n" +
@@ -349,9 +349,9 @@ public class RankingExpressionWithTensorFlowTestCase {
                 "  rank-profile my_profile_child inherits my_profile {\n" +
                 "  }";
 
-        final String expression = "join(join(reduce(join(join(join(imported_ml_macro_" + name + "_dnn_hidden2_add, reduce(constant(" + name + "_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), imported_ml_macro_" + name + "_dnn_hidden2_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
-        final String macroExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(" + name + "_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(" + name + "_dnn_hidden1_bias_read), f(a,b)(a + b))";
-        final String macroExpression2 = "join(reduce(join(join(join(imported_ml_macro_" + name + "_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), imported_ml_macro_" + name + "_dnn_hidden1_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(" + name + "_dnn_hidden2_bias_read), f(a,b)(a + b))";
+        final String expression = "join(join(reduce(join(join(join(imported_ml_function_" + name + "_dnn_hidden2_add, reduce(constant(" + name + "_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden2_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
+        final String functionExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(" + name + "_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(" + name + "_dnn_hidden1_bias_read), f(a,b)(a + b))";
+        final String functionExpression2 = "join(reduce(join(join(join(imported_ml_function_" + name + "_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden1_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(" + name + "_dnn_hidden2_bias_read), f(a,b)(a + b))";
 
         RankProfileSearchFixture search = fixtureWithUncompiled(rankProfiles, new StoringApplicationPackage(applicationDir));
         search.compileRankProfile("my_profile", applicationDir.append("models"));
@@ -359,10 +359,10 @@ public class RankingExpressionWithTensorFlowTestCase {
         search.assertFirstPhaseExpression(expression, "my_profile");
         search.assertFirstPhaseExpression(expression, "my_profile_child");
         assertSmallConstant(name + "_dnn_hidden1_mul_x", TensorType.fromSpec("tensor()"), search);
-        search.assertMacro(macroExpression1, "imported_ml_macro_" + name + "_dnn_hidden1_add", "my_profile");
-        search.assertMacro(macroExpression1, "imported_ml_macro_" + name + "_dnn_hidden1_add", "my_profile_child");
-        search.assertMacro(macroExpression2, "imported_ml_macro_" + name + "_dnn_hidden2_add", "my_profile");
-        search.assertMacro(macroExpression2, "imported_ml_macro_" + name + "_dnn_hidden2_add", "my_profile_child");
+        search.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile");
+        search.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile_child");
+        search.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile");
+        search.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile_child");
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
         Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
@@ -377,10 +377,10 @@ public class RankingExpressionWithTensorFlowTestCase {
             searchFromStored.assertFirstPhaseExpression(expression, "my_profile");
             searchFromStored.assertFirstPhaseExpression(expression, "my_profile_child");
             assertSmallConstant(name + "_dnn_hidden1_mul_x", TensorType.fromSpec("tensor()"), search);
-            searchFromStored.assertMacro(macroExpression1, "imported_ml_macro_" + name + "_dnn_hidden1_add", "my_profile");
-            searchFromStored.assertMacro(macroExpression1, "imported_ml_macro_" + name + "_dnn_hidden1_add", "my_profile_child");
-            searchFromStored.assertMacro(macroExpression2, "imported_ml_macro_" + name + "_dnn_hidden2_add", "my_profile");
-            searchFromStored.assertMacro(macroExpression2, "imported_ml_macro_" + name + "_dnn_hidden2_add", "my_profile_child");
+            searchFromStored.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile");
+            searchFromStored.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile_child");
+            searchFromStored.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile");
+            searchFromStored.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile_child");
         }
         finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
@@ -429,19 +429,19 @@ public class RankingExpressionWithTensorFlowTestCase {
                            new StoringApplicationPackage(applicationDir));
     }
 
-    private RankProfileSearchFixture fixtureWith(String macroExpression,
+    private RankProfileSearchFixture fixtureWith(String functionExpression,
                                                  String firstPhaseExpression,
                                                  String constant,
                                                  String field,
-                                                 String macroName,
+                                                 String functionName,
                                                  StoringApplicationPackage application) {
         try {
             RankProfileSearchFixture fixture = new RankProfileSearchFixture(
                     application,
                     application.getQueryProfiles(),
                     "  rank-profile my_profile {\n" +
-                    "    macro " + macroName + "() {\n" +
-                    "      expression: " + macroExpression +
+                    "    function " + functionName + "() {\n" +
+                    "      expression: " + functionExpression +
                     "    }\n" +
                     "    first-phase {\n" +
                     "      expression: " + firstPhaseExpression +

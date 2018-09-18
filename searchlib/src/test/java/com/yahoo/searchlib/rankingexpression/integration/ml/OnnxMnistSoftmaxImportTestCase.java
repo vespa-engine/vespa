@@ -36,11 +36,11 @@ public class OnnxMnistSoftmaxImportTestCase {
                 constant1.type());
         assertEquals(10, constant1.size());
 
-        // Check required macros (inputs)
-        assertEquals(1, model.requiredMacros().size());
-        assertTrue(model.requiredMacros().containsKey("Placeholder"));
+        // Check required functions (inputs)
+        assertEquals(1, model.requiredFunctions().size());
+        assertTrue(model.requiredFunctions().containsKey("Placeholder"));
         assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(),
-                     model.requiredMacros().get("Placeholder"));
+                     model.requiredFunctions().get("Placeholder"));
 
         // Check outputs
         RankingExpression output = model.defaultSignature().outputExpression("add");

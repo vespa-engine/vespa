@@ -48,7 +48,7 @@ public class TestableTensorFlowModel {
         Tensor placeholder = placeholderArgument();
         context.put(inputName, new TensorValue(placeholder));
 
-        model.macros().forEach((k,v) -> evaluateMacro(context, model, k));
+        model.functions().forEach((k, v) -> evaluateFunction(context, model, k));
 
         Tensor vespaResult = model.expressions().get(operationName).evaluate(context).asTensor();
         assertEquals("Operation '" + operationName + "' produces equal results",
@@ -62,7 +62,7 @@ public class TestableTensorFlowModel {
         Tensor placeholder = placeholderArgument();
         context.put(inputName, new TensorValue(placeholder));
 
-        model.macros().forEach((k,v) -> evaluateMacro(context, model, k));
+        model.functions().forEach((k, v) -> evaluateFunction(context, model, k));
 
         Tensor vespaResult = model.expressions().get(operationName).evaluate(context).asTensor();
         assertEquals("Operation '" + operationName + "' produces equal results", tfResult, vespaResult);
@@ -96,24 +96,24 @@ public class TestableTensorFlowModel {
         return b.build();
     }
 
-    private void evaluateMacro(Context context, ImportedModel model, String macroName) {
-        if (!context.names().contains(macroName)) {
-            RankingExpression e = model.macros().get(macroName);
-            evaluateMacroDependencies(context, model, e.getRoot());
-            context.put(macroName, new TensorValue(e.evaluate(context).asTensor()));
+    private void evaluateFunction(Context context, ImportedModel model, String functionName) {
+        if (!context.names().contains(functionName)) {
+            RankingExpression e = model.functions().get(functionName);
+            evaluateFunctionDependencies(context, model, e.getRoot());
+            context.put(functionName, new TensorValue(e.evaluate(context).asTensor()));
         }
     }
 
-    private void evaluateMacroDependencies(Context context, ImportedModel model, ExpressionNode node) {
+    private void evaluateFunctionDependencies(Context context, ImportedModel model, ExpressionNode node) {
         if (node instanceof ReferenceNode) {
             String name = node.toString();
-            if (model.macros().containsKey(name)) {
-                evaluateMacro(context, model, name);
+            if (model.functions().containsKey(name)) {
+                evaluateFunction(context, model, name);
             }
         }
         else if (node instanceof CompositeNode) {
             for (ExpressionNode child : ((CompositeNode)node).children()) {
-                evaluateMacroDependencies(context, model, child);
+                evaluateFunctionDependencies(context, model, child);
             }
         }
     }

@@ -22,7 +22,7 @@ public class Bolding extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
         for (SDField field : search.allConcreteFields()) {
             for (SummaryField summary : field.getSummaryFields()) {

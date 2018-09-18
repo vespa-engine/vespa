@@ -95,10 +95,10 @@ public class RankingExpressionWithTensorTestCase {
     }
 
     @Test
-    public void requireThatConstantTensorsCanBeUsedInMacro() throws ParseException {
+    public void requireThatConstantTensorsCanBeUsedInFunction() throws ParseException {
         RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile my_profile {\n" +
-                "    macro my_macro() {\n" +
+                "    function my_macro() {\n" +
                 "      expression: sum(my_tensor)\n" +
                 "    }\n" +
                 "    first-phase {\n" +
@@ -112,7 +112,7 @@ public class RankingExpressionWithTensorTestCase {
                 "  }");
         f.compileRankProfile("my_profile");
         f.assertFirstPhaseExpression("5.0 + my_macro", "my_profile");
-        f.assertMacro("reduce(constant(my_tensor), sum)", "my_macro", "my_profile");
+        f.assertFunction("reduce(constant(my_tensor), sum)", "my_macro", "my_profile");
         f.assertRankProperty("{{x:1}:1.0}", "constant(my_tensor).value", "my_profile");
         f.assertRankProperty("tensor(x{})", "constant(my_tensor).type", "my_profile");
     }

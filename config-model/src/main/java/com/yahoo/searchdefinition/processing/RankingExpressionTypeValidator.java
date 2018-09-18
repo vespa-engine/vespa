@@ -33,8 +33,9 @@ public class RankingExpressionTypeValidator extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
+        if (documentsOnly) return;
 
         for (RankProfile profile : rankProfileRegistry.rankProfilesOf(search)) {
             try {
@@ -48,7 +49,6 @@ public class RankingExpressionTypeValidator extends Processor {
 
     /** Throws an IllegalArgumentException if the given rank profile does not produce valid type */
     private void validate(RankProfile profile) {
-        profile.parseExpressions();
         TypeContext context = profile.typeContext(queryProfiles);
         profile.getSummaryFeatures().forEach(f -> ensureValid(f, "summary feature " + f, context));
         ensureValidDouble(profile.getFirstPhaseRanking(), "first-phase expression", context);

@@ -28,7 +28,7 @@ public class ReservedDocumentNames extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
         String docName = search.getDocument().getName();

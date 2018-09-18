@@ -109,7 +109,7 @@ public class RankingExpressionTypeValidatorTestCase {
     }
 
     @Test
-    public void testMacroInvocationTypes() throws Exception {
+    public void testFunctionInvocationTypes() throws Exception {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(joinLines(
@@ -123,7 +123,7 @@ public class RankingExpressionTypeValidatorTestCase {
                 "    }",
                 "  }",
                 "  rank-profile my_rank_profile {",
-                "    macro macro1(attribute_to_use) {",
+                "    function macro1(attribute_to_use) {",
                 "      expression: attribute(attribute_to_use)",
                 "    }",
                 "    summary-features {",
@@ -143,7 +143,7 @@ public class RankingExpressionTypeValidatorTestCase {
     }
 
     @Test
-    public void testTensorMacroInvocationTypes_Nested() throws Exception {
+    public void testTensorFunctionInvocationTypes_Nested() throws Exception {
         SearchBuilder builder = new SearchBuilder();
         builder.importString(joinLines(
                 "search test {",
@@ -156,16 +156,16 @@ public class RankingExpressionTypeValidatorTestCase {
                 "    }",
                 "  }",
                 "  rank-profile my_rank_profile {",
-                "    macro return_a() {",
+                "    function return_a() {",
                 "      expression: return_first(attribute(a), attribute(b))",
                 "    }",
-                "    macro return_b() {",
+                "    function return_b() {",
                 "      expression: return_second(attribute(a), attribute(b))",
                 "    }",
-                "    macro return_first(e1, e2) {",
+                "    function return_first(e1, e2) {",
                 "      expression: e1",
                 "    }",
-                "    macro return_second(e1, e2) {",
+                "    function return_second(e1, e2) {",
                 "      expression: return_first(e2, e1)",
                 "    }",
                 "    summary-features {",

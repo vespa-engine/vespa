@@ -27,7 +27,7 @@ public class ConstantDereferencerTestCase {
         TransformContext context = new TransformContext(constants);
 
         assertEquals("1.0 + 2.0 + 3.5", c.transform(new RankingExpression("a + b + c"), context).toString());
-        assertEquals("myMacro(1.0,2.0)", c.transform(new RankingExpression("myMacro(a, b)"), context).toString());
+        assertEquals("myFunction(1.0,2.0)", c.transform(new RankingExpression("myFunction(a, b)"), context).toString());
     }
 
 }

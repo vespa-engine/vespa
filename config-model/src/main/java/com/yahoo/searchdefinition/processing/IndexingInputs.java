@@ -27,7 +27,7 @@ public class IndexingInputs extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : search.allConcreteFields()) {
             ScriptExpression script = field.getIndexingScript();
             if (script == null) continue;

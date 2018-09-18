@@ -5,9 +5,11 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 /**
@@ -29,9 +31,7 @@ public class RankingExpressionValidationTestCase extends SearchDefinitionTestCas
             fail("No exception on incorrect ranking expression " + expression);
         } catch (IllegalArgumentException e) {
             // Success
-            // TODO: Where's the "com.yahoo.searchdefinition.parser.ParseException:"  nonsense coming from?
-            assertTrue("Got unexpected error message: " + e.getCause().getMessage(),
-                       e.getCause().getMessage().startsWith("com.yahoo.searchdefinition.parser.ParseException: Could not parse ranking expression '" + expression + "'"));
+            assertTrue(Exceptions.toMessageString(e).startsWith("Illegal first phase ranking function: Could not parse ranking expression '" + expression + "' in default, firstphase.:"));
         }
     }
 

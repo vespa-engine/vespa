@@ -30,7 +30,7 @@ public class IntegerIndex2Attribute extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : search.allConcreteFields()) {
             if (field.doesIndexing() && field.getDataType().getPrimitiveType() instanceof NumericDataType) {
                 if (field.getIndex(field.getName()) != null

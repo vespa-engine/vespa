@@ -4,6 +4,8 @@ package com.yahoo.searchdefinition;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
+import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
+import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import org.junit.Test;
 
@@ -17,6 +19,7 @@ import static org.junit.Assert.assertNull;
  * @author Ulf Lilleengen
  */
 public class RankProfileRegistryTest {
+
     private static final String TESTDIR = "src/test/cfg/search/data/v2/inherited_rankprofiles";
 
     @Test
@@ -43,11 +46,11 @@ public class RankProfileRegistryTest {
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(search);
 
         for (String rankProfileName : RankProfileRegistry.overridableRankProfileNames) {
-            assertNull(rankProfileRegistry.get(search, rankProfileName).getMacros().get("foo"));
-            RankProfile rankProfileWithAddedMacro = new RankProfile(rankProfileName, search, rankProfileRegistry);
-            rankProfileWithAddedMacro.addMacro("foo", true);
-            rankProfileRegistry.add(rankProfileWithAddedMacro);
-            assertNotNull(rankProfileRegistry.get(search, rankProfileName).getMacros().get("foo"));
+            assertNull(rankProfileRegistry.get(search, rankProfileName).getFunctions().get("foo"));
+            RankProfile rankProfileWithAddedFunction = new RankProfile(rankProfileName, search, rankProfileRegistry);
+            rankProfileWithAddedFunction.addFunction(new ExpressionFunction("foo", RankingExpression.from("1+2")), true);
+            rankProfileRegistry.add(rankProfileWithAddedFunction);
+            assertNotNull(rankProfileRegistry.get(search, rankProfileName).getFunctions().get("foo"));
         }
     }
 

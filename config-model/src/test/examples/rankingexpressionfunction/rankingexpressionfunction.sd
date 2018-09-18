@@ -22,11 +22,11 @@ search rankexpression {
   }
 
   rank-profile macros {
-    macro titlematch$(var1, var2) {
+    function titlematch$(var1, var2) {
       expression: file: titlematch
     }
 
-    macro artistmatch() {
+    function artistmatch() {
       expression: 78+closeness(distance)
     }
 

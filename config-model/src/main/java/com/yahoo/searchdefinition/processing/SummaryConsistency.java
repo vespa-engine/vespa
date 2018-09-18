@@ -26,7 +26,7 @@ public class SummaryConsistency extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         for (DocumentSummary summary : search.getSummaries().values()) {
             if (summary.getName().equals("default")) continue;
 

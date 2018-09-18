@@ -41,7 +41,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
-        new Processing().process(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(), true);
+        new Processing().process(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(), true, false);
         DerivedConfiguration derived=new DerivedConfiguration(search, rankProfileRegistry, new QueryProfileRegistry(), new ImportedModels());
 
         // Check attribute fields

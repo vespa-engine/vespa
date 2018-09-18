@@ -12,6 +12,7 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class SummaryFieldsMustHaveValidSourceTestCase extends SearchDefinitionTestCase {
 
@@ -20,41 +21,44 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends SearchDefinitionTe
         Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/invalidsummarysource.sd");
         search.process();
         try {
-            new SummaryFieldsMustHaveValidSource(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true);
-            assertTrue("This should throw and never get here", false);
+            new SummaryFieldsMustHaveValidSource(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true, false);
+            fail("This should throw and never get here");
         } catch (IllegalArgumentException e) {
             assertEquals("For search 'invalidsummarysource', summary class 'baz', summary field 'cox': there is no valid source 'nonexistingfield'.", e.getMessage());
         }
     }
+
     @Test
     public void requireThatInvalidImplicitSourceIsCaught() throws IOException, ParseException {
         Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/invalidimplicitsummarysource.sd");
         search.process();
         try {
-            new SummaryFieldsMustHaveValidSource(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true);
-            assertTrue("This should throw and never get here", false);
+            new SummaryFieldsMustHaveValidSource(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true, false);
+            fail("This should throw and never get here");
         } catch (IllegalArgumentException e) {
             assertEquals("For search 'invalidsummarysource', summary class 'baz', summary field 'cox': there is no valid source 'cox'.", e.getMessage());
         }
     }
+
     @Test
     public void requireThatInvalidSelfReferingSingleSource() throws IOException, ParseException {
         Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/invalidselfreferringsummary.sd");
         search.process();
         try {
-            new SummaryFieldsMustHaveValidSource(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true);
-            assertTrue("This should throw and never get here", false);
+            new SummaryFieldsMustHaveValidSource(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true, false);
+            fail("This should throw and never get here");
         } catch (IllegalArgumentException e) {
             assertEquals("For search 'invalidselfreferringsummary', summary class 'withid', summary field 'w': there is no valid source 'w'.", e.getMessage());
         }
     }
+
     @Test
     public void requireThatDocumentIdIsAllowedToPass() throws IOException, ParseException {
         Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/documentidinsummary.sd");
         search.process();
         BaseDeployLogger deployLogger = new BaseDeployLogger();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        new SummaryFieldsMustHaveValidSource(search, deployLogger, rankProfileRegistry, new QueryProfiles()).process(true);
+        new SummaryFieldsMustHaveValidSource(search, deployLogger, rankProfileRegistry, new QueryProfiles()).process(true, false);
         assertEquals("documentid", search.getSummary("withid").getSummaryField("w").getSingleSource());
     }
 

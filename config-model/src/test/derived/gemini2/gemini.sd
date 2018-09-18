@@ -6,19 +6,19 @@ search gemini {
 
     rank-profile test {
 
-        macro wrapper2(x) {
+        function wrapper2(x) {
             expression: x
         }
 
-		macro wrapper1(x) {
+		function wrapper1(x) {
 			expression: wrapper2(x)
 		}
 
-        macro toplevel() {
+        function toplevel() {
             expression: wrapper1(attribute(right))
         }
 
-        macro interfering() {
+        function interfering() {
             expression: wrapper1(attribute(wrong))
         }
 

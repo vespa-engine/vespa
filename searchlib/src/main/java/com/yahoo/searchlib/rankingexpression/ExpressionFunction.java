@@ -3,13 +3,16 @@ package com.yahoo.searchlib.rankingexpression;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
-import com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.text.Utf8;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A function defined by a ranking expression
@@ -22,6 +25,16 @@ public class ExpressionFunction {
     private final String name;
     private final ImmutableList<String> arguments;
     private final RankingExpression body;
+
+    /**
+     * Constructs a new function with no arguments
+     *
+     * @param name the name of this function
+     * @param body the ranking expression that defines this function
+     */
+    public ExpressionFunction(String name, RankingExpression body) {
+        this(name, Collections.emptyList(), body);
+    }
 
     /**
      * Constructs a new function

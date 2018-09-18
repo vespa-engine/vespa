@@ -30,8 +30,8 @@ public class ImportedModel {
     private final Map<String, Tensor> smallConstants = new HashMap<>();
     private final Map<String, Tensor> largeConstants = new HashMap<>();
     private final Map<String, RankingExpression> expressions = new HashMap<>();
-    private final Map<String, RankingExpression> macros = new HashMap<>();
-    private final Map<String, TensorType> requiredMacros = new HashMap<>();
+    private final Map<String, RankingExpression> functions = new HashMap<>();
+    private final Map<String, TensorType> requiredFunctions = new HashMap<>();
 
     /**
      * Creates a new imported model.
@@ -77,13 +77,13 @@ public class ImportedModel {
     public Map<String, RankingExpression> expressions() { return Collections.unmodifiableMap(expressions); }
 
     /**
-     * Returns an immutable map of macros that are part of this model.
-     * Note that the macros themselves are *not* copies and *not* immutable - they must be copied before modification.
+     * Returns an immutable map of the functions that are part of this model.
+     * Note that the functions themselves are *not* copies and *not* immutable - they must be copied before modification.
      */
-    public Map<String, RankingExpression> macros() { return Collections.unmodifiableMap(macros); }
+    public Map<String, RankingExpression> functions() { return Collections.unmodifiableMap(functions); }
 
-    /** Returns an immutable map of the macros that must be provided by the environment running this model */
-    public Map<String, TensorType> requiredMacros() { return Collections.unmodifiableMap(requiredMacros); }
+    /** Returns an immutable map of the functions that must be provided by the environment running this model */
+    public Map<String, TensorType> requiredFunctions() { return Collections.unmodifiableMap(requiredFunctions); }
 
     /** Returns an immutable map of the signatures of this */
     public Map<String, Signature> signatures() { return Collections.unmodifiableMap(signatures); }
@@ -100,8 +100,8 @@ public class ImportedModel {
     void smallConstant(String name, Tensor constant) { smallConstants.put(name, constant); }
     void largeConstant(String name, Tensor constant) { largeConstants.put(name, constant); }
     void expression(String name, RankingExpression expression) { expressions.put(name, expression); }
-    void macro(String name, RankingExpression expression) { macros.put(name, expression); }
-    void requiredMacro(String name, TensorType type) { requiredMacros.put(name, type); }
+    void function(String name, RankingExpression expression) { functions.put(name, expression); }
+    void requiredFunction(String name, TensorType type) { requiredFunctions.put(name, type); }
 
     /**
      * Returns all the output expressions of this indexed by name. The names consist of one or two parts

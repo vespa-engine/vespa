@@ -15,12 +15,12 @@ public class MutableAttributes extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : search.allConcreteFields()) {
-            if (!field.isExtraField() && field.getAttributes().containsKey(field.getName())) {
+            if ( ! field.isExtraField() && field.getAttributes().containsKey(field.getName())) {
                 if (field.getAttributes().get(field.getName()).isMutable()) {
                     throw new IllegalArgumentException("Field '" + field.getName() + "' in '" + search.getDocument().getName() +
-                            "' can not be marked mutable as it is inside the document clause.");
+                                                       "' can not be marked mutable as it is inside the document clause.");
                 }
             }
         }

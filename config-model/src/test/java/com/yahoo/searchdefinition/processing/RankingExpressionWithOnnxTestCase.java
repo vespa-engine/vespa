@@ -128,7 +128,7 @@ public class RankingExpressionWithOnnxTestCase {
     }
 
     @Test
-    public void testOnnxReferenceMissingMacro() throws ParseException {
+    public void testOnnxReferenceMissingFunction() throws ParseException {
         try {
             RankProfileSearchFixture search = new RankProfileSearchFixture(
                     new StoringApplicationPackage(applicationDir),
@@ -145,14 +145,14 @@ public class RankingExpressionWithOnnxTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
                             "onnx('mnist_softmax.onnx'): " +
-                            "Model refers input 'Placeholder' of type tensor(d0[],d1[784]) but this macro is " +
+                            "Model refers input 'Placeholder' of type tensor(d0[],d1[784]) but this function is " +
                             "not present in rank profile 'my_profile'",
                     Exceptions.toMessageString(expected));
         }
     }
 
     @Test
-    public void testOnnxReferenceWithWrongMacroType() {
+    public void testOnnxReferenceWithWrongFunctionType() {
         try {
             RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d5[10])(0.0)",
                     "onnx('mnist_softmax.onnx')");
@@ -163,7 +163,7 @@ public class RankingExpressionWithOnnxTestCase {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use Onnx model from " +
                             "onnx('mnist_softmax.onnx'): " +
                             "Model refers input 'Placeholder'. The required type of this is tensor(d0[],d1[784]), " +
-                            "but this macro returns tensor(d0[2],d5[10])",
+                            "but this function returns tensor(d0[2],d5[10])",
                     Exceptions.toMessageString(expected));
         }
     }
@@ -213,13 +213,13 @@ public class RankingExpressionWithOnnxTestCase {
     }
 
     @Test
-    public void testImportingFromStoredExpressionsWithMacroOverridingConstant() throws IOException {
+    public void testImportingFromStoredExpressionsWithFunctionOverridingConstant() throws IOException {
         String rankProfile =
                 "  rank-profile my_profile {\n" +
-                        "    macro Placeholder() {\n" +
+                        "    function Placeholder() {\n" +
                         "      expression: tensor(d0[2],d1[784])(0.0)\n" +
                         "    }\n" +
-                        "    macro " + name + "_Variable() {\n" +
+                        "    function " + name + "_Variable() {\n" +
                         "      expression: tensor(d1[10],d2[784])(0.0)\n" +
                         "    }\n" +
                         "    first-phase {\n" +
@@ -234,7 +234,7 @@ public class RankingExpressionWithOnnxTestCase {
         search.compileRankProfile("my_profile", applicationDir.append("models"));
         search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
 
-        assertNull("Constant overridden by macro is not added",
+        assertNull("Constant overridden by function is not added",
                 search.search().rankingConstants().get( name + "_Variable"));
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
@@ -247,7 +247,7 @@ public class RankingExpressionWithOnnxTestCase {
             RankProfileSearchFixture searchFromStored = uncompiledFixtureWith(rankProfile, storedApplication);
             searchFromStored.compileRankProfile("my_profile", applicationDir.append("models"));
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
-            assertNull("Constant overridden by macro is not added",
+            assertNull("Constant overridden by function is not added",
                        searchFromStored.search().rankingConstants().get( name + "_Variable"));
         } finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
@@ -275,19 +275,19 @@ public class RankingExpressionWithOnnxTestCase {
         }
     }
 
-    private RankProfileSearchFixture fixtureWith(String macroExpression,
+    private RankProfileSearchFixture fixtureWith(String functionExpression,
                                                  String firstPhaseExpression,
                                                  String constant,
                                                  String field,
-                                                 String macroName,
+                                                 String functionName,
                                                  StoringApplicationPackage application) {
         try {
             RankProfileSearchFixture fixture = new RankProfileSearchFixture(
                     application,
                     application.getQueryProfiles(),
                     "  rank-profile my_profile {\n" +
-                            "    macro " + macroName + "() {\n" +
-                            "      expression: " + macroExpression +
+                            "    function " + functionName + "() {\n" +
+                            "      expression: " + functionExpression +
                             "    }\n" +
                             "    first-phase {\n" +
                             "      expression: " + firstPhaseExpression +

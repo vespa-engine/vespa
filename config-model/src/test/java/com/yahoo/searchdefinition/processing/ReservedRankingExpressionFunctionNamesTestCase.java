@@ -16,10 +16,10 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author lesters
  */
-public class ReservedMacroNamesTestCase {
+public class ReservedRankingExpressionFunctionNamesTestCase {
 
     @Test
-    public void requireThatMacrosWithReservedNamesIssueAWarning() throws ParseException {
+    public void requireThatFunctionsWithReservedNamesIssueAWarning() throws ParseException {
         TestDeployLogger deployLogger = new TestDeployLogger();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
@@ -32,10 +32,10 @@ public class ReservedMacroNamesTestCase {
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test_rank_profile {\n" +
-                        "        macro not_a_reserved_name(x) {\n" +
+                        "        function not_a_reserved_name(x) {\n" +
                         "            expression: x + x\n" +
                         "        }\n" +
-                        "        macro sigmoid(x) {\n" +
+                        "        function sigmoid(x) {\n" +
                         "            expression: x * x\n" +
                         "        }\n" +
                         "        first-phase {\n" +
@@ -43,7 +43,7 @@ public class ReservedMacroNamesTestCase {
                         "        }\n" +
                         "    }\n" +
                         "    rank-profile test_rank_profile_2 inherits test_rank_profile {\n" +
-                        "        macro sin(x) {\n" +
+                        "        function sin(x) {\n" +
                         "            expression: x * x\n" +
                         "        }\n" +
                         "        first-phase {\n" +

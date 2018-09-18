@@ -26,7 +26,7 @@ public class ExactMatch extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : search.allConcreteFields()) {
             Matching.Type matching = field.getMatching().getType();
             if (matching.equals(Matching.Type.EXACT) || matching.equals(Matching.Type.WORD)) {

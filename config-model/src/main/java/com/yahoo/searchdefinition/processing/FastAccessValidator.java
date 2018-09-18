@@ -21,7 +21,7 @@ public class FastAccessValidator extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
         String invalidAttributes = search.allFields()
@@ -29,7 +29,7 @@ public class FastAccessValidator extends Processor {
                 .filter(FastAccessValidator::isIncompatibleAttribute)
                 .map(Attribute::getName)
                 .collect(Collectors.joining(", "));
-        if (!invalidAttributes.isEmpty()) {
+        if ( ! invalidAttributes.isEmpty()) {
             throw new IllegalArgumentException(
                     String.format(
                             "For search '%s': The following attributes have a type that is incompatible with fast-access: %s. " +

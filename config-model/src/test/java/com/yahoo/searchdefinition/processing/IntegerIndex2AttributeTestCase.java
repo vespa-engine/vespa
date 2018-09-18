@@ -19,11 +19,12 @@ import static org.junit.Assert.assertTrue;
  * @author baldersheim
  */
 public class IntegerIndex2AttributeTestCase extends SearchDefinitionTestCase {
+
     @Test
     public void testIntegerIndex2Attribute() throws IOException, ParseException {
         Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/integerindex2attribute.sd");
         search.process();
-        new IntegerIndex2Attribute(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true);
+        new IntegerIndex2Attribute(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true, false);
 
         SDField f;
         f = search.getConcreteField("s1");

@@ -1,8 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import com.yahoo.collections.Pair;
+
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -54,22 +58,18 @@ public class FieldRankSettings {
                 table.getType().equals(NativeTable.Type.REVERSE_PROXIMITY));
     }
 
-    public Map<String,String> deriveRankProperties(int part) {
-        Map<String,String> ret = new LinkedHashMap<>();
-        int i = part;
-        for (Iterator<NativeTable> itr = tables.values().iterator(); itr.hasNext(); ++i) {
-            NativeTable table = itr.next();
-            if (isFieldMatchTable(table)) {
-                ret.put("nativeFieldMatch." + table.getType().getName() + "." + fieldName + ".part" + i, table.getName());
-            }
-            if (isAttributeMatchTable(table)) {
-                ret.put("nativeAttributeMatch." + table.getType().getName() + "." + fieldName + ".part" + i, table.getName());
-            }
-            if (isProximityTable(table)) {
-                ret.put("nativeProximity." + table.getType().getName() + "." + fieldName + ".part" + i, table.getName());
-            }
+    public List<Pair<String, String>> deriveRankProperties() {
+        List<Pair<String, String>> properties = new ArrayList<>();
+        for (Iterator<NativeTable> i = tables.values().iterator(); i.hasNext();) {
+            NativeTable table = i.next();
+            if (isFieldMatchTable(table))
+                properties.add(new Pair<>("nativeFieldMatch." + table.getType().getName() + "." + fieldName, table.getName()));
+            if (isAttributeMatchTable(table))
+                properties.add(new Pair<>("nativeAttributeMatch." + table.getType().getName() + "." + fieldName, table.getName()));
+            if (isProximityTable(table))
+                properties.add(new Pair<>("nativeProximity." + table.getType().getName() + "." + fieldName, table.getName()));
         }
-        return ret;
+        return properties;
     }
 
     public String toString() {

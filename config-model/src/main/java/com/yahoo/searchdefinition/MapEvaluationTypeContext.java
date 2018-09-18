@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Stack;
 import java.util.stream.Collectors;
 
 /**
@@ -71,7 +70,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                                                currentResolutionCallStack.stream().map(Reference::toString).collect(Collectors.joining(" -> ")) +
                                                " -> " + reference);
 
-        // A reference to a macro argument?
+        // A reference to a function argument?
         Optional<String> binding = boundIdentifier(reference);
         if (binding.isPresent()) {
             try {
@@ -117,7 +116,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     }
 
     /**
-     * Returns the default type for this simple feature, or nullif it does not have a default
+     * Returns the default type for this simple feature, or null if it does not have a default
      */
     public TensorType defaultTypeOf(Reference reference) {
         if ( ! FeatureNames.isSimpleFeature(reference))

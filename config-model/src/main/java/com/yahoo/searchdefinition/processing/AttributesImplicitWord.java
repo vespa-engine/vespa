@@ -23,7 +23,7 @@ public class AttributesImplicitWord extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : search.allConcreteFields()) {
             if (fieldImplicitlyWordMatch(field)) {
                 field.getMatching().setType(Matching.Type.WORD);

@@ -26,7 +26,7 @@ public class SummaryNamesFieldCollisions extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
         Map<String, Pair<String, String>> fieldToClassAndSource = new HashMap<>();

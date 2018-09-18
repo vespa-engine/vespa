@@ -26,7 +26,7 @@ public class AddExtraFieldsToDocument extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         SDDocumentType document = search.getDocument();
         if (document != null) {
             for (Field field : search.extraFieldList()) {
