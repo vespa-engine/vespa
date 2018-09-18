@@ -3,9 +3,9 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.collections.CollectionUtil;
 import com.yahoo.config.ConfigInstance;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.model.search.Tuning;
 import org.junit.Test;
 import org.w3c.dom.Element;
@@ -45,7 +45,7 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
     String getProtonCfg(Tuning tuning) {
         ProtonConfig.Builder pb = new ProtonConfig.Builder();
         tuning.getConfig(pb);
-        return StringUtilities.implode(ConfigInstance.serialize(new ProtonConfig(pb)).toArray(new String[0]), "\n");
+        return Text.implode(ConfigInstance.serialize(new ProtonConfig(pb)).toArray(new String[0]), "\n");
     }
 
     @Test

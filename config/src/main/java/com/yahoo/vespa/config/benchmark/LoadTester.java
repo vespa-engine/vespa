@@ -199,7 +199,7 @@ public class LoadTester {
                 if (defContent==null && defs.size()>0) { // Only complain if we actually did run with a def dir
                     System.out.println("# No def found for "+dKey+", not sending in request.");
                 }/* else {
-                    System.out.println("# FOUND: "+dKey+" : "+ StringUtilities.implode(defContent, "\n"));
+                    System.out.println("# FOUND: "+dKey+" : "+ Text.implode(defContent, "\n"));
                 }*/
                 request = getRequest(ConfigKey.createFull(reqKey.getName(), reqKey.getConfigId(), reqKey.getNamespace(), defContent.first), defContent.second);
                 if (debug) System.out.println("# Requesting: " + reqKey);

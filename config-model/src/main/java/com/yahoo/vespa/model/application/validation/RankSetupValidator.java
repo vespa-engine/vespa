@@ -8,7 +8,6 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogMessage;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.system.ProcessExecuter;
-import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.ConfigInstance;
@@ -30,6 +29,8 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.logging.Logger;
+
+import static com.yahoo.text.Text.implodeMultiline;
 
 /**
  * Validate rank setup for all search clusters (rank-profiles, index-schema, attributes configs), validating done
@@ -128,7 +129,7 @@ public class RankSetupValidator extends Validator {
     }
 
     private static void writeConfig(String dir, String configName, ConfigInstance config) throws IOException {
-        IOUtils.writeFile(dir + configName, StringUtilities.implodeMultiline(ConfigInstance.serialize(config)), false);
+        IOUtils.writeFile(dir + configName, implodeMultiline(ConfigInstance.serialize(config)), false);
     }
 
     private boolean execValidate(String configId, SearchCluster sc, String sdName, DeployLogger deployLogger) {

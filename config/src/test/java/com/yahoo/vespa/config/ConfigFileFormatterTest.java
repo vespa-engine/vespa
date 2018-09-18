@@ -9,7 +9,7 @@ import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.foo.MaptypesConfig;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.text.StringUtilities;
+import com.yahoo.text.Text;
 import com.yahoo.text.Utf8;
 import org.junit.Test;
 import org.junit.Ignore;
@@ -23,7 +23,6 @@ import static org.junit.Assert.assertThat;
 
 /**
  * @author lulf
- * @since 5.1
  */
 public class ConfigFileFormatterTest {
 
@@ -64,7 +63,7 @@ public class ConfigFileFormatterTest {
 
     private void assertConfigFormat(Slime slime, String expected_simpletypes) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("simpletypes", new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(baos, slime);
         assertThat(baos.toString(), is(expected_simpletypes));
     }
@@ -74,7 +73,7 @@ public class ConfigFileFormatterTest {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString("nosuchfield", "bar");
-        InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("simpletypes", new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new ConfigFileFormat(def).encode(baos, slime);
         assertThat(baos.toString(), is(""));
@@ -87,7 +86,7 @@ public class ConfigFileFormatterTest {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString("intval", "invalid");
-        InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("simpletypes", new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(new ByteArrayOutputStream(), slime);
     }
 
@@ -98,7 +97,7 @@ public class ConfigFileFormatterTest {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString("longval", "invalid");
-        InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("simpletypes", new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(new ByteArrayOutputStream(), slime);
     }
 
@@ -109,7 +108,7 @@ public class ConfigFileFormatterTest {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString("doubleval", "invalid");
-        InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("simpletypes", new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(new ByteArrayOutputStream(), slime);
     }
 
@@ -118,7 +117,7 @@ public class ConfigFileFormatterTest {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString("boolval", "invalid");
-        InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("simpletypes", new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new ConfigFileFormat(def).encode(baos, slime);
         assertThat(baos.toString(), is("boolval false\n"));
@@ -134,7 +133,7 @@ public class ConfigFileFormatterTest {
         root.setString("longval", "null");
         root.setString("boolval", "null");
         root.setString("doubleval", "null");
-        InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("simpletypes", new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new ConfigFileFormat(def).encode(baos, slime);
         assertThat(baos.toString("UTF-8"), is("enumval null\nintval null\nlongval null\nboolval false\ndoubleval null\n"));
@@ -147,7 +146,7 @@ public class ConfigFileFormatterTest {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString("enumval", "invalid");
-        InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("simpletypes", new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(new ByteArrayOutputStream(), slime);
     }
 
@@ -158,7 +157,7 @@ public class ConfigFileFormatterTest {
         String value = "\u7d22";
         root.setString("stringval", value);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("simpletypes", new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(baos, slime);
         assertThat(baos.toString("UTF-8"), is("stringval \"" + value + "\"\n"));
     }
@@ -187,7 +186,7 @@ public class ConfigFileFormatterTest {
         stringarr.addString("bar");
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        InnerCNode def = new DefParser("arraytypes", new StringReader(StringUtilities.implode(ArraytypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("arraytypes", new StringReader(Text.implode(ArraytypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(baos, slime);
         assertThat(baos.toString(), is(
                 "boolarr[0] true\n" +
@@ -219,7 +218,7 @@ public class ConfigFileFormatterTest {
         root.setObject("nestedmap").setObject("baz").setObject("inner").setString("foo", "1234");
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        InnerCNode def = new DefParser("maptypes", new StringReader(StringUtilities.implode(MaptypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("maptypes", new StringReader(Text.implode(MaptypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(baos, slime);
         assertThat(baos.toString(), is(
                 "boolmap{\"foo\"} true\n" +
@@ -244,7 +243,7 @@ public class ConfigFileFormatterTest {
         array.addString("bar@baz.net");
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        InnerCNode def = new DefParser("structtypes", new StringReader(StringUtilities.implode(StructtypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("structtypes", new StringReader(Text.implode(StructtypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(baos, slime);
         assertThat(baos.toString(), is(
                 "simple.name \"myname\"\n" +
@@ -284,7 +283,7 @@ public class ConfigFileFormatterTest {
         innerarr11.setString("gender", "MALE");
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        InnerCNode def = new DefParser("structtypes", new StringReader(StringUtilities.implode(StructtypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("structtypes", new StringReader(Text.implode(StructtypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         new ConfigFileFormat(def).encode(baos, slime);
         assertThat(baos.toString(), is(
                         "nested.inner.name \"baz\"\n" +
@@ -305,7 +304,7 @@ public class ConfigFileFormatterTest {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString("stringval", "some\"quotes\\\"instring");
-        InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("simpletypes", new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new ConfigFileFormat(def).encode(baos, slime);
         assertThat(baos.toString(), is("stringval \"some\\\"quotes\\\\\\\"instring\"\n"));
@@ -319,7 +318,7 @@ public class ConfigFileFormatterTest {
         final String input = "Hei \u00E6\u00F8\u00E5 \n \uBC14\uB451 \u00C6\u00D8\u00C5 hallo";
         root.setString("stringval", input);
         System.out.println(bytesToHexString(Utf8.toBytes(input)));
-        InnerCNode def = new DefParser("simpletypes", new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
+        InnerCNode def = new DefParser("simpletypes", new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n"))).getTree();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         new ConfigFileFormat(def).encode(baos, slime);
         System.out.println(bytesToHexString(baos.toByteArray()));

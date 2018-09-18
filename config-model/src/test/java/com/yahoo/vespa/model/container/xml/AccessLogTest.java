@@ -12,14 +12,12 @@ import com.yahoo.vespa.model.container.component.Component;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
-import static com.yahoo.text.StringUtilities.quote;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertEquals;
 
 /**
  * @author gjoranv
- * @since 5.5
  */
 public class AccessLogTest extends ContainerModelBuilderTestBase {
 
@@ -48,7 +46,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         final String jdiscClusterId = "jdisc-cluster";
 
         Element clusterElem = DomBuilderTest.parse(
-                "<jdisc id=" + quote(jdiscClusterId) + " version='1.0'>" +
+                "<jdisc id='" + jdiscClusterId + "' version='1.0'>" +
                         "  <search />" +
                         "  <accesslog type='disabled' />" +
                         "</jdisc>" );

@@ -16,7 +16,7 @@ import java.util.Set;
  *
  * @author Haakon Humberset
  *
- * @deprecated Do not use! This will be removed in Vespa 7
+ * @deprecated Do not use! This will be removed in Vespa 7. Use methods in {@link Text} instead.
  */
 @Deprecated
 public class StringUtilities {

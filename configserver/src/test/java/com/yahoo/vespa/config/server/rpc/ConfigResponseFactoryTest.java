@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.rpc;
 import com.yahoo.config.SimpletypesConfig;
 import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.codegen.InnerCNode;
-import com.yahoo.text.StringUtilities;
+import com.yahoo.text.Text;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.protocol.CompressionType;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
@@ -25,7 +25,7 @@ public class ConfigResponseFactoryTest {
     @Before
     public void setup() {
         DefParser dParser = new DefParser(SimpletypesConfig.getDefName(),
-                                          new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n")));
+                                          new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n")));
         def = dParser.getTree();
     }
 

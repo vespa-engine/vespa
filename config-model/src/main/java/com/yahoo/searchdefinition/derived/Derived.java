@@ -10,7 +10,7 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.text.StringUtilities;
+import com.yahoo.text.Text;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -122,7 +122,7 @@ public abstract class Derived implements Exportable {
                 getConfig.invoke(this, builder);
                 ConfigInstance inst = (ConfigInstance) configClass.getConstructor(builderClass).newInstance(builder);
                 List<String> payloadL = ConfigInstance.serialize(inst);
-                String payload = StringUtilities.implodeMultiline(payloadL);
+                String payload = Text.implodeMultiline(payloadL);
                 writer.write(payload);
             }
         }

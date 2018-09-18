@@ -6,7 +6,7 @@ import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.text.StringUtilities;
+import com.yahoo.text.Text;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -17,7 +17,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author lulf                                               3
- * @since 5.1
  */
 public class ConfigPayloadTest {
 
@@ -356,7 +355,7 @@ public class ConfigPayloadTest {
 
     @Test
     public void test_applying_extra_default_values() {
-        InnerCNode clientDef = new DefParser(SimpletypesConfig.CONFIG_DEF_NAME, new StringReader(StringUtilities.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n") + "\nnewfield int default=3\n")).getTree();
+        InnerCNode clientDef = new DefParser(SimpletypesConfig.CONFIG_DEF_NAME, new StringReader(Text.implode(SimpletypesConfig.CONFIG_DEF_SCHEMA, "\n") + "\nnewfield int default=3\n")).getTree();
         ConfigPayload payload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
         payload = payload.applyDefaultsFromDef(clientDef);
         assertThat(payload.toString(true), is("{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\",\"newfield\":\"3\"}"));
