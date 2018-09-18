@@ -26,7 +26,7 @@ public class NGramMatch extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : search.allConcreteFields()) {
             if (field.getMatching().getType().equals(Matching.Type.GRAM))
                 implementGramMatch(search, field, validate);

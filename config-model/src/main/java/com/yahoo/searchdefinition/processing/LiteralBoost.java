@@ -31,7 +31,7 @@ public class LiteralBoost extends Processor {
 
     /** Adds extra search fields and indices to express literal boosts */
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         checkRankModifierRankType(search);
         addLiteralBoostsToFields(search);
         reduceFieldLiteralBoosts(search);

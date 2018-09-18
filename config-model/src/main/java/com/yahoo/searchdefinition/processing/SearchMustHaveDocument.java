@@ -19,7 +19,7 @@ public class SearchMustHaveDocument extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
         if (search.getDocument() == null)

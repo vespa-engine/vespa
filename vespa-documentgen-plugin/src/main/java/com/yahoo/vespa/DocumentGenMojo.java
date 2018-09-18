@@ -7,12 +7,9 @@ import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
-import com.yahoo.searchdefinition.MinimalProcessingSearchBuilder;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.UnprocessingSearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.tensor.TensorType;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -80,10 +77,10 @@ public class DocumentGenMojo extends AbstractMojo {
 
     void execute(File sdDir, File outputDir, String packageName) throws MojoFailureException {
         if ("".equals(packageName)) throw new IllegalArgumentException("You may not use empty package for generated types.");
-        searches = new HashMap<String, Search>();
-        docTypes = new HashMap<String, String>();
-        structTypes = new HashMap<String, String>();
-        annotationTypes = new HashMap<String, String>();
+        searches = new HashMap<>();
+        docTypes = new HashMap<>();
+        structTypes = new HashMap<>();
+        annotationTypes = new HashMap<>();
 
         outputDir.mkdirs();
         SearchBuilder builder = buildSearches(sdDir);
@@ -111,7 +108,7 @@ public class DocumentGenMojo extends AbstractMojo {
             public boolean accept(File dir, String name) {
                 return name.endsWith(".sd");
             }});
-        SearchBuilder builder = new MinimalProcessingSearchBuilder();
+        SearchBuilder builder = new SearchBuilder(true);
         for (File f : sdFiles) {
             try {
                 long modTime = f.lastModified();

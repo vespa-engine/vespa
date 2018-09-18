@@ -24,7 +24,8 @@ public class SetLanguage extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
+        if ( ! validate) return;
         List<String> textFieldsWithoutLanguage = new ArrayList<>();
 
         for (SDField field : search.allConcreteFields()) {

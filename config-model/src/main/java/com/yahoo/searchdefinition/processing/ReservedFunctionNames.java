@@ -27,13 +27,14 @@ public class ReservedFunctionNames extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
+        if (documentsOnly) return;
 
         for (RankProfile rp : rankProfileRegistry.all()) {
             for (String functionName : rp.getFunctions().keySet()) {
                 if (reservedNames.contains(functionName)) {
-                    deployLogger.log(Level.WARNING, "Funcion '" + functionName + "' " +
+                    deployLogger.log(Level.WARNING, "Function '" + functionName + "' " +
                                                     "in rank profile '" + rp.getName() + "' " +
                                                     "has a reserved name. This might mean that the function shadows " +
                                                     "the built-in function with the same name."

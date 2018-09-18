@@ -21,7 +21,7 @@ public class ImplicitSummaryFields extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         for (DocumentSummary docsum : search.getSummaries().values()) {
             addField(docsum, new SummaryField("rankfeatures", DataType.STRING, SummaryTransform.RANKFEATURES), validate);
             addField(docsum, new SummaryField("summaryfeatures", DataType.STRING, SummaryTransform.SUMMARYFEATURES), validate);

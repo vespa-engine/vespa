@@ -522,10 +522,10 @@ public class RankProfile implements Serializable, Cloneable {
         return (getInherited() != null) && getInherited().getIgnoreDefaultRankFeatures();
     }
 
-    /** Adds a function and returns it */
-    public RankingExpressionFunction addFunction(String name, List<String> arguments, String expression, boolean inline) {
+    /** Adds a function */
+    public void addFunction(String name, List<String> arguments, String expression, boolean inline) {
         try {
-            return addFunction(new ExpressionFunction(name, arguments, parseRankingExpression(name, expression)), inline);
+            addFunction(new ExpressionFunction(name, arguments, parseRankingExpression(name, expression)), inline);
         }
         catch (ParseException e) {
             throw new IllegalArgumentException("Could not parse function '" + name + "'", e);

@@ -16,7 +16,7 @@ public class StringSettingsOnNonStringFields extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
         for (SDField field : search.allConcreteFields()) {

@@ -25,7 +25,7 @@ public class WordMatch extends Processor {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : search.allConcreteFields()) {
             if ( ! field.getMatching().getType().equals(Matching.Type.WORD)) continue;
 

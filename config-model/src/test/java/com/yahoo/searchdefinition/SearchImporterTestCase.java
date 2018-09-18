@@ -34,20 +34,19 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
         assertEquals("simple",search.getName());
         assertTrue(search.hasDocument());
 
-        SDDocumentType document=search.getDocument();
-        assertEquals("simple",document.getName());
-        assertEquals(12,document.getFieldCount());
+        SDDocumentType document = search.getDocument();
+        assertEquals("simple", document.getName());
+        assertEquals(12, document.getFieldCount());
 
         SDField field;
         Attribute attribute;
 
-        new MakeAliases(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles()).process(true);
+        new MakeAliases(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles()).process(true, false);
 
         // First field
         field=(SDField) document.getField("title");
         assertEquals(DataType.STRING,field.getDataType());
-        assertEquals("{ summary | index; }",
-                     field.getIndexingScript().toString());
+        assertEquals("{ summary | index; }", field.getIndexingScript().toString());
         assertTrue(!search.getIndex("default").isPrefix());
         assertTrue(search.getIndex("title").isPrefix());
         Iterator<String> titleAliases=search.getIndex("title").aliasIterator();

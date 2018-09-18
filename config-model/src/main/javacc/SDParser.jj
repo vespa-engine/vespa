@@ -34,6 +34,7 @@ import com.yahoo.searchdefinition.document.annotation.TemporaryAnnotationReferen
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchdefinition.DocumentsOnlyRankProfile;
 import com.yahoo.searchdefinition.DefaultRankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile.MatchPhaseSettings;
@@ -75,6 +76,7 @@ public class SDParser {
     private ApplicationPackage app;
     private DeployLogger deployLogger;
     private RankProfileRegistry rankProfileRegistry;
+    private boolean documentsOnly;
 
     /** For testing only */
     public SDParser(String input, DeployLogger deployLogger) {
@@ -83,17 +85,24 @@ public class SDParser {
 
     /** For testing only */
     public SDParser(SimpleCharStream stream, DeployLogger deployLogger) {
-        this(stream, deployLogger, MockApplicationPackage.createEmpty(), new RankProfileRegistry());
+        this(stream, deployLogger, MockApplicationPackage.createEmpty(), new RankProfileRegistry(), false);
     }
 
+    /**
+     * Creates a parser
+     *
+     * @param documentsOnly true to only parse the document aspect of a search definition (e.g skip rank profiles)
+     */
     public SDParser(SimpleCharStream stream,
                     DeployLogger deployLogger,
                     ApplicationPackage applicationPackage,
-                    RankProfileRegistry rankProfileRegistry) {
+                    RankProfileRegistry rankProfileRegistry,
+                    boolean documentsOnly) {
         this(stream);
         this.deployLogger = deployLogger;
         this.app = applicationPackage;
         this.rankProfileRegistry = rankProfileRegistry;
+        this.documentsOnly = documentsOnly;
     }
 
     /**
@@ -1806,6 +1815,7 @@ void rankingConstant(Search search) :
         }
       lbrace() (rankingConstantItem(constant) (<NL>)*)+ <RBRACE> )
     {
+        if (documentsOnly) return;
         search.rankingConstants().add(constant);
     }
 }
@@ -1861,7 +1871,10 @@ void rankProfile(Search search) :
 {
     ( <RANKPROFILE> name = identifier()
         {
-            if ("default".equals(name)) {
+            if (documentsOnly) {
+                profile = new DocumentsOnlyRankProfile(name, search, rankProfileRegistry);
+            }
+            else if ("default".equals(name)) {
                 profile = rankProfileRegistry.get(search, "default");
             } else {
                 profile = new RankProfile(name, search, rankProfileRegistry);
@@ -1870,6 +1883,7 @@ void rankProfile(Search search) :
       [inheritsRankProfile(profile)]
       lbrace() (rankProfileItem(profile) (<NL>)*)* <RBRACE> )
     {
+        if (documentsOnly) return;
         rankProfileRegistry.add(profile);
     }
 }
@@ -1912,7 +1926,8 @@ void inheritsRankProfile(RankProfile profile) :
     String str;
 }
 {
-    <INHERITS> str = identifier() { profile.setInherited(str); }
+    <INHERITS> str = identifier()
+    { profile.setInherited(str); }
 }
 
 /**

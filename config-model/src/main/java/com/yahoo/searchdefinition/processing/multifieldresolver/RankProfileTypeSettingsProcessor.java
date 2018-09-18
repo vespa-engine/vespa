@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Class that processes a search instance and sets type settings on all rank profiles.
+ * This processes a search instance and sets type settings on all rank profiles.
  *
  * Currently, type settings are limited to the type of tensor attribute fields and tensor query features.
  *
@@ -35,7 +35,9 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
+        if (documentsOnly) return;
+
         processAttributeFields();
         processImportedFields();
         processQueryProfileTypes();

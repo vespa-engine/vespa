@@ -15,7 +15,6 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchdefinition.parser.SDParser;
 import com.yahoo.searchdefinition.parser.SimpleCharStream;
 import com.yahoo.searchdefinition.parser.TokenMgrException;
-import com.yahoo.searchdefinition.processing.MinimalProcessing;
 import com.yahoo.searchdefinition.processing.Processing;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -40,15 +39,23 @@ public class SearchBuilder {
 
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
     private List<Search> searchList = new LinkedList<>();
-    private ApplicationPackage app = null;
+    private ApplicationPackage app;
     private boolean isBuilt = false;
     private DocumentModel model = new DocumentModel();
     private final RankProfileRegistry rankProfileRegistry;
     private final QueryProfileRegistry queryProfileRegistry;
 
+    /** True to build the document aspect only, skipping instantiation of rank profiles */
+    private final boolean documentsOnly;
+
     /** For testing only */
     public SearchBuilder() {
         this(MockApplicationPackage.createEmpty(), new RankProfileRegistry(), new QueryProfileRegistry());
+    }
+
+    /** Used for generating documents for typed access to document fields in Java */
+    public SearchBuilder(boolean documentsOnly) {
+        this(MockApplicationPackage.createEmpty(), new RankProfileRegistry(), new QueryProfileRegistry(), documentsOnly);
     }
 
     /** For testing only */
@@ -69,9 +76,16 @@ public class SearchBuilder {
     public SearchBuilder(ApplicationPackage app,
                          RankProfileRegistry rankProfileRegistry,
                          QueryProfileRegistry queryProfileRegistry) {
+        this(app, rankProfileRegistry, queryProfileRegistry, false);
+    }
+    public SearchBuilder(ApplicationPackage app,
+                         RankProfileRegistry rankProfileRegistry,
+                         QueryProfileRegistry queryProfileRegistry,
+                         boolean documentsOnly) {
         this.app = app;
         this.rankProfileRegistry = rankProfileRegistry;
         this.queryProfileRegistry = queryProfileRegistry;
+        this.documentsOnly = documentsOnly;
     }
 
     /**
@@ -151,7 +165,7 @@ public class SearchBuilder {
         Search search;
         SimpleCharStream stream = new SimpleCharStream(str);
         try {
-            search = new SDParser(stream, deployLogger, app, rankProfileRegistry).search(docTypeMgr, searchDefDir);
+            search = new SDParser(stream, deployLogger, app, rankProfileRegistry, documentsOnly).search(docTypeMgr, searchDefDir);
         } catch (TokenMgrException e) {
             throw new ParseException("Unknown symbol: " + e.getMessage());
         } catch (ParseException pe) {
@@ -165,9 +179,9 @@ public class SearchBuilder {
      * {@link Search} object is considered to be "raw" if it has not already been processed. This is the case for most
      * programmatically constructed search objects used in unit tests.
      *
-     * @param rawSearch The object to import.
-     * @return The name of the imported object.
-     * @throws IllegalArgumentException Thrown if the given search object has already been processed.
+     * @param rawSearch the object to import.
+     * @return the name of the imported object.
+     * @throws IllegalArgumentException if the given search object has already been processed.
      */
     public String importRawSearch(Search rawSearch) {
         if (rawSearch.getName() == null) {
@@ -251,15 +265,15 @@ public class SearchBuilder {
      * #build()} method so that subclasses can choose not to build anything.
      */
     protected void process(Search search, DeployLogger deployLogger, QueryProfiles queryProfiles, boolean validate) {
-        new Processing().process(search, deployLogger, rankProfileRegistry, queryProfiles, validate);
+        new Processing().process(search, deployLogger, rankProfileRegistry, queryProfiles, validate, documentsOnly);
     }
 
     /**
      * Convenience method to call {@link #getSearch(String)} when there is only a single {@link Search} object
      * built. This method will never return null.
      *
-     * @return The build object.
-     * @throws IllegalStateException Thrown if there is not exactly one search.
+     * @return the built object
+     * @throws IllegalStateException if there is not exactly one search.
      */
     public Search getSearch() {
         if ( ! isBuilt)  throw new IllegalStateException("Searches not built.");

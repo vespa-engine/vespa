@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class Processing {
 
-    protected Collection<ProcessorFactory> minimalSetOfProcessors() {
+    private Collection<ProcessorFactory> processors() {
         return Arrays.asList(
                 SearchMustHaveDocument::new,
                 UrlFieldValidator::new,
@@ -74,22 +74,11 @@ public class Processing {
                 RankProfileTypeSettingsProcessor::new,
                 ReferenceFieldsProcessor::new,
                 FastAccessValidator::new,
-                ReservedFunctionNames::new);
-    }
-
-    private Collection<ProcessorFactory> extendedSetOfProcessors() {
-        return Arrays.asList(
+                ReservedFunctionNames::new,
                 RankingExpressionTypeValidator::new,
-
-                // These should be last.
+                // These should be last:
                 IndexingValidation::new,
                 IndexingValues::new);
-    }
-
-    protected Collection<ProcessorFactory> createProcessorFactories() {
-        List<ProcessorFactory> processorFactories = new ArrayList<>(minimalSetOfProcessors());
-        processorFactories.addAll(extendedSetOfProcessors());
-        return processorFactories;
     }
 
     /**
@@ -102,17 +91,17 @@ public class Processing {
      * @param queryProfiles The query profiles contained in the application this search is part of.
      */
     public void process(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry,
-                        QueryProfiles queryProfiles, boolean validate)
-    {
-        Collection<ProcessorFactory> factories = createProcessorFactories();
+                        QueryProfiles queryProfiles, boolean validate, boolean documentsOnly) {
+        Collection<ProcessorFactory> factories = processors();
         search.process();
         factories.stream()
                 .map(factory -> factory.create(search, deployLogger, rankProfileRegistry, queryProfiles))
-                .forEach(processor -> processor.process(validate));
+                .forEach(processor -> processor.process(validate, documentsOnly));
     }
 
     @FunctionalInterface
     public interface ProcessorFactory {
         Processor create(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles);
     }
+
 }

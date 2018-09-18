@@ -20,7 +20,7 @@ public class AttributeProperties extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : search.allConcreteFields()) {
             String fieldName = field.getName();
 

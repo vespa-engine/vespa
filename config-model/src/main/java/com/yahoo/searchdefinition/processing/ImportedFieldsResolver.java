@@ -33,7 +33,7 @@ public class ImportedFieldsResolver extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         search.temporaryImportedFields().get().fields().forEach((name, field) -> resolveImportedField(field, validate));
         search.setImportedFields(new ImportedFields(importedFields));
     }

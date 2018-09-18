@@ -69,14 +69,14 @@ public class SummaryMapTestCase extends SearchDefinitionTestCase {
         assertTrue(!transforms.hasNext());
     }
     @Test
-    public void testPositionDeriving() throws IOException, ParseException {
+    public void testPositionDeriving() {
         Search search = new Search("store", null);
         SDDocumentType document = new SDDocumentType("store");
         search.addDocument(document);
         String fieldName = "location";
         SDField field = document.addField(fieldName, PositionDataType.INSTANCE);
         field.parseIndexingScript("{ attribute | summary }");
-        new Processing().process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true);
+        new Processing().process(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(), true, false);
         SummaryMap summaryMap = new SummaryMap(search, new Summaries(search, new BaseDeployLogger()));
 
         Iterator transforms = summaryMap.resultTransformIterator();
@@ -141,7 +141,7 @@ public class SummaryMapTestCase extends SearchDefinitionTestCase {
     }
 
     @Test
-    public void testFailOnSummaryFieldSourceCollision() throws IOException, ParseException {
+    public void testFailOnSummaryFieldSourceCollision() {
         try {
             Search search = SearchBuilder.buildFromFile("src/test/examples/summaryfieldcollision.sd");
         } catch (Exception e) {

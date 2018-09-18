@@ -25,7 +25,7 @@ public class IndexingValidation extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
         VerificationContext context = new VerificationContext(new MyAdapter(search));
