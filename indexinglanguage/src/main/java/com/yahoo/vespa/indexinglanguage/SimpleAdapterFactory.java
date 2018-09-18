@@ -57,7 +57,7 @@ public class SimpleAdapterFactory implements AdapterFactory {
                 ret.add(new IdentityFieldPathUpdateAdapter(fieldUpd, newDocumentAdapter(complete, true)));
             }
         }
-        for (FieldUpdate fieldUpd : upd.fieldUpdates()) {
+        for (FieldUpdate fieldUpd : upd.getFieldUpdates()) {
             Field field = fieldUpd.getField();
             for (ValueUpdate valueUpd : fieldUpd.getValueUpdates()) {
                 if (FieldUpdateHelper.isComplete(field, valueUpd)) {

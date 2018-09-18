@@ -472,7 +472,7 @@ public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 imple
 
         for (int i = 0; i < size; i++) {
             // TODO: Should use checked method, but doesn't work according to test now.
-            update.addFieldUpdate(new FieldUpdate(this, update.getDocumentType(), serializationVersion));
+            update.addFieldUpdateNoCheck(new FieldUpdate(this, update.getDocumentType(), serializationVersion));
         }
     }
 
