@@ -6,7 +6,7 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
@@ -554,7 +554,7 @@ public class NodeAgentImpl implements NodeAgent {
         final NodeSpec node = lastNode;
         if (node == null || containerState != UNKNOWN) return;
 
-        Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
+        Optional<ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
         if (!containerStats.isPresent()) return;
 
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
@@ -566,7 +566,7 @@ public class NodeAgentImpl implements NodeAgent {
                 dimensionsBuilder.add("orchestratorState", allowed ? "ALLOWED_TO_BE_DOWN" : "NO_REMARKS"));
         Dimensions dimensions = dimensionsBuilder.build();
 
-        Docker.ContainerStats stats = containerStats.get();
+        ContainerStats stats = containerStats.get();
         final String APP = MetricReceiverWrapper.APPLICATION_NODE;
         final int totalNumCpuCores = ((List<Number>) ((Map) stats.getCpuStats().get("cpu_usage")).get("percpu_usage")).size();
         final long cpuContainerKernelTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("usage_in_kernelmode")).longValue();

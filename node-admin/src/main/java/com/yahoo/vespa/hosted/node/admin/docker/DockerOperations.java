@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
+import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -38,7 +38,7 @@ public interface DockerOperations {
 
     void trySuspendNode(ContainerName containerName);
 
-    Optional<Docker.ContainerStats> getContainerStats(ContainerName containerName);
+    Optional<ContainerStats> getContainerStats(ContainerName containerName);
 
     /**
      * Returns the list of containers managed by node-admin

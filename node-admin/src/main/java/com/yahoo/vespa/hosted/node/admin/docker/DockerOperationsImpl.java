@@ -8,6 +8,7 @@ import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
+import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
@@ -323,7 +324,7 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public Optional<Docker.ContainerStats> getContainerStats(ContainerName containerName) {
+    public Optional<ContainerStats> getContainerStats(ContainerName containerName) {
         return docker.getContainerStats(containerName);
     }
 

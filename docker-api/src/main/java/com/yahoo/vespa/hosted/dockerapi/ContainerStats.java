@@ -10,14 +10,14 @@ import java.util.Optional;
  *
  * @author freva
  */
-public class ContainerStatsImpl implements Docker.ContainerStats {
+public class ContainerStats {
     private final Map<String, Object> networks;
     private final Map<String, Object> cpuStats;
     private final Map<String, Object> memoryStats;
     private final Map<String, Object> blkioStats;
 
-    public ContainerStatsImpl(Map<String, Object> networks, Map<String, Object> cpuStats,
-                              Map<String, Object> memoryStats, Map<String, Object> blkioStats) {
+    public ContainerStats(Map<String, Object> networks, Map<String, Object> cpuStats,
+                          Map<String, Object> memoryStats, Map<String, Object> blkioStats) {
         // Network stats are null when container uses host network
         this.networks = Optional.ofNullable(networks).orElse(Collections.emptyMap());
         this.cpuStats = cpuStats;

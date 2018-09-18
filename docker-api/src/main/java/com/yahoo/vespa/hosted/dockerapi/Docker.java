@@ -61,13 +61,6 @@ public interface Docker {
             ContainerName containerName,
             String hostName);
 
-    interface ContainerStats {
-        Map<String, Object> getNetworks();
-        Map<String, Object> getCpuStats();
-        Map<String, Object> getMemoryStats();
-        Map<String, Object> getBlkioStats();
-    }
-
     default boolean networkNATed() {
         return false;
     }

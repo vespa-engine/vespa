@@ -273,7 +273,7 @@ public class DockerImpl implements Docker {
             DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
             statsCallback.awaitCompletion(5, TimeUnit.SECONDS);
 
-            return statsCallback.stats.map(stats -> new ContainerStatsImpl(
+            return statsCallback.stats.map(stats -> new ContainerStats(
                     stats.getNetworks(), stats.getCpuStats(), stats.getMemoryStats(), stats.getBlkioStats()));
         } catch (NotFoundException ignored) {
             return Optional.empty();
