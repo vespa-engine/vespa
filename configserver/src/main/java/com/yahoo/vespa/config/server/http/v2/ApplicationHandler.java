@@ -97,7 +97,16 @@ public class ApplicationHandler extends HttpHandler {
         }
 
         if (isLogRequest(request)) {
-            String apiParams = request.hasProperty("numberOf") ? request.getProperty("numberOfLogs") : "";
+            String apiParams = "?";
+            if (request.hasProperty("from")) {
+                apiParams = apiParams + "from=" + request.getProperty("from") + "&";
+            }
+            if (request.hasProperty("to")) {
+                apiParams = apiParams + "to=" + request.getProperty("to");
+            }
+            StringBuilder api = new StringBuilder("?");
+            request.propertyMap().entrySet().stream().forEach(entry -> api.append(entry.getKey() + "=" + entry.getValue() + "&"));
+            apiParams = getPathSuffix(request);
             return applicationRepository.getLogs(applicationId, apiParams);
         }
 
@@ -146,7 +155,7 @@ public class ApplicationHandler extends HttpHandler {
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*",
                 "http://*/application/v2/tenant/*/application/*",
-                "http://*/application/v2/tenant/*/application/*/logs");
+                "http://*/application/v2/tenant/*/application/*/logs/*");
     }
 
     private static boolean isLogRequest(HttpRequest request) {
