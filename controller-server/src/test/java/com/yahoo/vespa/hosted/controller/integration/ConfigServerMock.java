@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
@@ -298,14 +299,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public HttpResponse getLogs(DeploymentId deployment) {
-        return new HttpResponse(200) {
-            @Override
-            public void render(OutputStream outputStream) throws IOException {
-                outputStream.write("{\"subfolder\":{\"log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxl\"},\"log1.log\":\"VGhpcyBpcyBvbmUgbG9nIGZpbGU=\"}".getBytes());
-            }
-        };
-
+    public Optional<Logs> getLogs(DeploymentId deployment, HashMap<String, String> queryParameters) {
+        HashMap<String, String> logs = new HashMap<>();
+        logs.put("subfolder-log2.log", "VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxl");
+        logs.put("log1.log", "VGhpcyBpcyBvbmUgbG9nIGZpbGU=");
+        return Optional.of(new Logs(logs));
     }
 
     public static class Application {

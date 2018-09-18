@@ -10,23 +10,34 @@ import java.nio.file.Files;
 
 public class LogReader {
 
-    protected static JSONObject readLogs(String logDirectory) throws IOException, JSONException {
+    long earliestLogThreshold;
+    long latestLogThreshold;
+
+    public LogReader(long earliestLogThreshold, long latestLogThreshold) {
+        this.earliestLogThreshold = earliestLogThreshold;
+        this.latestLogThreshold = latestLogThreshold;
+    }
+
+    protected JSONObject readLogs(String logDirectory) throws IOException, JSONException {
         JSONObject json = new JSONObject();
         File root = new File(logDirectory);
-        traverse_folder(root, json);
+        traverse_folder(root, json, "");
         return json;
     }
 
-    private static void traverse_folder(File root, JSONObject json) throws IOException, JSONException {
-        for(File child : root.listFiles()) {
+    private void traverse_folder(File root, JSONObject json, String filename) throws IOException, JSONException {
+        File[] files = root.listFiles();
+        for(File child : files) {
+            File temp = child;
             JSONObject childJson = new JSONObject();
-            if(child.isFile()) {
-                json.put(child.getName(), DatatypeConverter.printBase64Binary(Files.readAllBytes(child.toPath())));
+            long logTime = child.lastModified();
+            if(child.isFile() && earliestLogThreshold < logTime && logTime < latestLogThreshold) {
+                json.put(filename + child.getName(), DatatypeConverter.printBase64Binary(Files.readAllBytes(child.toPath())));
             }
-            else {
-                json.put(child.getName(), childJson);
-                traverse_folder(child, childJson);
+            else if (!child.isFile()){
+                traverse_folder(child, json, filename + child.getName() + "-");
             }
         }
     }
+
 }
