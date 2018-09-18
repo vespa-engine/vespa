@@ -83,7 +83,7 @@ public class DockerImpl implements Docker {
     }
 
     // For testing
-    DockerImpl(final DockerClient dockerClient) {
+    DockerImpl(DockerClient dockerClient) {
         this(null, null);
         this.dockerClient = dockerClient;
     }
@@ -140,7 +140,7 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public boolean pullImageAsyncIfNeeded(final DockerImage image) {
+    public boolean pullImageAsyncIfNeeded(DockerImage image) {
         try {
             synchronized (monitor) {
                 if (scheduledPulls.contains(image)) return true;
@@ -159,7 +159,7 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private void removeScheduledPoll(final DockerImage image) {
+    private void removeScheduledPoll(DockerImage image) {
         synchronized (monitor) {
             scheduledPulls.remove(image);
         }
@@ -168,7 +168,7 @@ public class DockerImpl implements Docker {
     /**
      * Check if a given image is already in the local registry
      */
-    boolean imageIsDownloaded(final DockerImage dockerImage) {
+    boolean imageIsDownloaded(DockerImage dockerImage) {
         return inspectImage(dockerImage).isPresent();
     }
 
@@ -296,7 +296,7 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public void stopContainer(final ContainerName containerName) {
+    public void stopContainer(ContainerName containerName) {
         try {
             dockerClient.stopContainerCmd(containerName.asString()).withTimeout(secondsToWaitBeforeKilling).exec();
         } catch (NotModifiedException ignored) {
@@ -381,8 +381,7 @@ public class DockerImpl implements Docker {
         }
     }
 
-    @Override
-    public void deleteImage(final DockerImage dockerImage) {
+    private void deleteImage(final DockerImage dockerImage) {
         try {
             dockerClient.removeImageCmd(dockerImage.asString()).exec();
         } catch (NotFoundException ignored) {

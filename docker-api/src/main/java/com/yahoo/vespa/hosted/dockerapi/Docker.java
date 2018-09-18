@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.dockerapi;
 
 import java.net.InetAddress;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -87,8 +86,6 @@ public interface Docker {
      * @return true iff image being pulled, false otherwise
      */
     boolean pullImageAsyncIfNeeded(DockerImage image);
-
-    void deleteImage(DockerImage dockerImage);
 
     /**
      * Deletes the local images that are currently not in use by any container and not recently used.
