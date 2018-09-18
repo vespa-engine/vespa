@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.ml;
 import ai.vespa.models.evaluation.Model;
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import ai.vespa.models.evaluation.RankProfilesConfigImporter;
+import ai.vespa.models.handler.ModelsEvaluationHandler;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -79,6 +80,10 @@ public class ModelEvaluationTest {
     private void assertHasMlModels(VespaModel model) {
         ContainerCluster cluster = model.getContainerClusters().get("container");
         assertNotNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluator.class.getName())));
+
+        assertNotNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluationHandler.class.getName())));
+        assertTrue(cluster.getHandlers().stream()
+                .anyMatch(h -> h.getComponentId().toString().equals(ModelsEvaluationHandler.class.getName())));
 
         RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
         cluster.getConfig(b);

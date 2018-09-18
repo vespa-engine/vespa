@@ -65,7 +65,7 @@ public class ModelTester {
     }
 
     /** Allows us to provide canned tensor constants during import since file distribution does not work in tests */
-    private static class RankProfilesConfigImporterWithMockedConstants extends RankProfilesConfigImporter {
+    public static class RankProfilesConfigImporterWithMockedConstants extends RankProfilesConfigImporter {
 
         private static final Logger log = Logger.getLogger(RankProfilesConfigImporterWithMockedConstants.class.getName());
 
