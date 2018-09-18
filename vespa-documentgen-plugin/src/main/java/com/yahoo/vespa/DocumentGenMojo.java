@@ -7,6 +7,7 @@ import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.VespaDocumentType;
+import com.yahoo.searchdefinition.MinimalProcessingSearchBuilder;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.UnprocessingSearchBuilder;
@@ -110,7 +111,7 @@ public class DocumentGenMojo extends AbstractMojo {
             public boolean accept(File dir, String name) {
                 return name.endsWith(".sd");
             }});
-        SearchBuilder builder = new SearchBuilder();
+        SearchBuilder builder = new MinimalProcessingSearchBuilder();
         for (File f : sdFiles) {
             try {
                 long modTime = f.lastModified();
