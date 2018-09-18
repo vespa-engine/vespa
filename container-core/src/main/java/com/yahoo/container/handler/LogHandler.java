@@ -10,7 +10,6 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.Executor;
@@ -26,14 +25,15 @@ public class LogHandler extends ThreadedHttpRequestHandler {
 
     @Override
     public HttpResponse handle(HttpRequest request) {
-        JSONObject logJson;
+        JSONObject responseJSON = new JSONObject();
 
         HashMap<String, String> apiParams = getParameters(request);
         long earliestLogThreshold = getEarliestThreshold(apiParams);
         long latestLogThreshold = getLatestThreshold(apiParams);
         LogReader logReader= new LogReader(earliestLogThreshold, latestLogThreshold);
         try {
-            logJson = logReader.readLogs(LOG_DIRECTORY);
+            JSONObject logJson = logReader.readLogs(LOG_DIRECTORY);
+            responseJSON.put("logs", logJson.toString());
         } catch (IOException | JSONException e) {
             return new HttpResponse(404) {
                 @Override
@@ -44,7 +44,7 @@ public class LogHandler extends ThreadedHttpRequestHandler {
             @Override
             public void render(OutputStream outputStream) throws IOException {
                 OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream);
-                outputStreamWriter.write(logJson.toString());
+                outputStreamWriter.write(responseJSON.toString());
                 outputStreamWriter.close();
             }
         };

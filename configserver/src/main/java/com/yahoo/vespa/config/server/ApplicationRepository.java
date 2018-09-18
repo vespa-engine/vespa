@@ -484,9 +484,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     // ---------------- Logs ----------------------------------------------------------------
 
     public HttpResponse getLogs(ApplicationId applicationId, String apiParams) {
-        String logServerHostName = getLogServerURI(applicationId) + "/" + apiParams;
+        String logServerURI = getLogServerURI(applicationId) + apiParams;
         LogRetriever logRetriever = new LogRetriever();
-        return logRetriever.getLogs(logServerHostName);
+        return logRetriever.getLogs(logServerURI);
     }
 
     // ---------------- Session operations ----------------------------------------------------------------

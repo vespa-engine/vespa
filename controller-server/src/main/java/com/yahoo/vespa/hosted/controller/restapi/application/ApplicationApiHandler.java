@@ -49,6 +49,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFact
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
@@ -87,7 +88,9 @@ import java.net.URISyntaxException;
 import java.security.Principal;
 import java.time.DayOfWeek;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -168,7 +171,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs/{*}")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("'region"), path.getRest());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.getUri().getQuery());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job")) return JobControllerApiHandlerHelper.jobTypeResponse(controller, appIdFromPath(path), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/run/{number}")) return JobControllerApiHandlerHelper.runDetailsResponse(controller.jobController(), runIdFromPath(path), request.getProperty("after"));
@@ -346,11 +349,27 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse logs(String tenantName, String applicationName, String instanceName, String environment, String region, String apiParams) {
+    private HttpResponse logs(String tenantName, String applicationName, String instanceName, String environment, String region, String query) {
         ApplicationId application = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = ZoneId.from(environment, region);
         DeploymentId deployment = new DeploymentId(application, zone);
-        return controller.configServer().getLogs(deployment,apiParams);
+        HashMap<String, String> queryParameters = getParameters(query);
+        Optional<Logs> response = controller.configServer().getLogs(deployment, queryParameters);
+        Slime slime = new Slime();
+        Cursor object = slime.setObject();
+        if (response.isPresent()) {
+            response.get().logs().entrySet().stream().forEach(entry -> object.setString(entry.getKey(), entry.getValue()));
+        }
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HashMap<String, String> getParameters(String query) {
+        HashMap<String, String> keyValPair = new HashMap<>();
+        Arrays.stream(query.split("&")).forEach(pair -> {
+            String[] splitPair = pair.split("=");
+            keyValPair.put(splitPair[0], splitPair[1]);
+        });
+        return keyValPair;
     }
 
     private void toSlime(Cursor object, Application application, HttpRequest request) {

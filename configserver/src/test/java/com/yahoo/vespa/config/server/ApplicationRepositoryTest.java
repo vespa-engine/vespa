@@ -118,7 +118,7 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
-    public void getLogs(){
+    public void getLogs() {
         WireMockServer wireMock = new WireMockServer(wireMockConfig().port(8080));
         wireMock.start();
         WireMock.configureFor("localhost", wireMock.port());
@@ -127,15 +127,15 @@ public class ApplicationRepositoryTest {
                         .withStatus(200)));
         wireMock.start();
         deployApp(testAppLogServerWithContainer);
-        HttpResponse response = applicationRepository.getLogs(applicationId());
-        assertEquals(response.getStatus(),200);
+        HttpResponse response = applicationRepository.getLogs(applicationId(), "");
+        assertEquals(200, response.getStatus());
         wireMock.stop();
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void getLogsNoContainerOnLogServerHostShouldThrowException() {
         deployApp(testApp);
-        applicationRepository.getLogs(applicationId());
+        applicationRepository.getLogs(applicationId(), "");
     }
 
     @Test

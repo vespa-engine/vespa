@@ -22,7 +22,7 @@ public class LogReaderTest {
         String logDirectory = "src/test/resources/logfolder/";
         LogReader logReader = new LogReader(21, Long.MAX_VALUE);
         JSONObject json = logReader.readLogs(logDirectory);
-        String expected = "{\"subfolder\":{\"log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxl\"},\"log1.log\":\"VGhpcyBpcyBvbmUgbG9nIGZpbGU=\"}";
+        String expected = "{\"subfolder-log2.log\":\"VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxl\",\"log1.log\":\"VGhpcyBpcyBvbmUgbG9nIGZpbGU=\"}";
         String actual = json.toString();
         assertEquals(expected, actual);
     }
