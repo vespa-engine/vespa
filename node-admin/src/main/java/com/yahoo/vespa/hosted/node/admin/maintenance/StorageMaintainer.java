@@ -189,10 +189,8 @@ public class StorageMaintainer {
         try {
             FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
             Optional<String> config = filebeatConfigProvider.getConfig(node);
-            if (!config.isPresent()) {
-                logger.error("Was not able to generate a config for filebeat, ignoring filebeat file creation." + node.toString());
-                return;
-            }
+            if (!config.isPresent()) return;
+
             Path filebeatPath = environment.pathInNodeAdminFromPathInNode(
                     containerName, Paths.get("/etc/filebeat/filebeat.yml"));
             Files.write(filebeatPath, config.get().getBytes());
