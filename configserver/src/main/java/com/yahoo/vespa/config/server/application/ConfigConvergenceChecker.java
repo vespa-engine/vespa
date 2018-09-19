@@ -60,7 +60,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         this.stateApiFactory = stateApiFactory;
     }
 
-    /** Check all services in given application */
+    /** Check all services in given application. Returns the minimum current generation of all services */
     public ServiceListResponse servicesToCheck(Application application, URI requestUrl, Duration timeoutPerService) {
         List<ServiceInfo> servicesToCheck = new ArrayList<>();
         application.getModel().getHosts()
@@ -102,9 +102,9 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         StateApi createStateApi(Client client, URI serviceUri);
     }
 
-    /** Get service generation for a list of services. Returns the minimum generation of all services */
+    /** Gets service generation for a list of services (in parallel). */
     private Map<ServiceInfo, Long> getServiceGenerations(List<ServiceInfo> services, Duration timeout) {
-        return services.stream()
+        return services.parallelStream()
                        .collect(Collectors.toMap(service -> service,
                                                  service -> {
                                                      try {
