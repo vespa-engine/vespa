@@ -477,8 +477,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return convergeChecker.checkService(getApplication(applicationId), hostAndPort, uri, timeout);
     }
 
-    public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri, Duration timeout) {
-        return convergeChecker.servicesToCheck(getApplication(applicationId), uri, timeout);
+    public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri, Duration timeoutPerService) {
+        return convergeChecker.servicesToCheck(getApplication(applicationId), uri, timeoutPerService);
     }
 
     // ---------------- Logs ----------------------------------------------------------------
