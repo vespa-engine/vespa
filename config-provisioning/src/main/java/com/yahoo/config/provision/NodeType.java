@@ -24,7 +24,10 @@ public enum NodeType {
     config(false, "Config server"),
 
     /** A host of a (docker) config server node */
-    confighost(true, "Config docker host");
+    confighost(true, "Config docker host"),
+
+    /** A controller */
+    controller(true, "Controller");
 
     private final boolean isDockerHost;
     private final String description;
