@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "legacy_attribute_metrics.h"
 #include "executor_metrics.h"
-#include "sessionmanager_metrics.h"
+#include "legacy_attribute_metrics.h"
+#include "legacy_sessionmanager_metrics.h"
 #include <vespa/metrics/summetric.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
 
@@ -15,6 +15,8 @@ namespace proton {
  *
  * All these metrics have the document type name as part of the metric name,
  * which is not flexible for setting up default metric graph dashboards.
+ *
+ * TODO: Remove on Vespa 7
  *
  * @deprecated Use DocumentDBTaggedMetrics for all new metrics.
  */
@@ -115,7 +117,7 @@ struct LegacyDocumentDBMetrics : metrics::MetricSet
     ExecutorMetrics                              executor;
     ExecutorMetrics                              indexExecutor;
     ExecutorMetrics                              summaryExecutor;
-    search::grouping::SessionManagerMetrics      sessionManager;
+    LegacySessionManagerMetrics                  sessionManager;
     SubDBMetrics                                 ready;
     SubDBMetrics                                 notReady;
     SubDBMetrics                                 removed;

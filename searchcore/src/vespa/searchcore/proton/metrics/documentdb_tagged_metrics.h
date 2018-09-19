@@ -4,6 +4,7 @@
 #include "attribute_metrics.h"
 #include "memory_usage_metrics.h"
 #include "executor_threading_service_metrics.h"
+#include "sessionmanager_metrics.h"
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/valuemetric.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
@@ -101,6 +102,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     {
         metrics::LongValueMetric diskUsage;
         MemoryUsageMetrics memoryUsage;
+        metrics::LongValueMetric docsInMemory;
 
         IndexMetrics(metrics::MetricSet *parent);
         ~IndexMetrics();
@@ -158,6 +160,14 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         ~MatchingMetrics();
     };
 
+    struct SessionCacheMetrics : metrics::MetricSet {
+        SessionManagerMetrics search;
+        SessionManagerMetrics grouping;
+
+        SessionCacheMetrics(metrics::MetricSet *parent);
+        ~SessionCacheMetrics();
+    };
+
     JobMetrics job;
     AttributeMetrics attribute;
     IndexMetrics index;
@@ -166,6 +176,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     SubDBMetrics removed;
     ExecutorThreadingServiceMetrics threadingService;
     MatchingMetrics matching;
+    SessionCacheMetrics sessionCache;
 
     DocumentDBTaggedMetrics(const vespalib::string &docTypeName);
     ~DocumentDBTaggedMetrics();

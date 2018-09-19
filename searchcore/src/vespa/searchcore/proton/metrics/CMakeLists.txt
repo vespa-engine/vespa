@@ -16,6 +16,7 @@ vespa_add_library(searchcore_proton_metrics STATIC
     legacy_attribute_metrics.cpp
     legacy_documentdb_metrics.cpp
     legacy_proton_metrics.cpp
+    legacy_sessionmanager_metrics.cpp
     memory_usage_metrics.cpp
     metrics_engine.cpp
     resource_usage_metrics.cpp

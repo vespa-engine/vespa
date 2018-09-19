@@ -1018,6 +1018,7 @@ updateIndexMetrics(DocumentDBMetricsCollection &metrics, const search::Searchabl
     DocumentDBTaggedMetrics::IndexMetrics &indexMetrics = metrics.getTaggedMetrics().index;
     indexMetrics.diskUsage.set(stats.sizeOnDisk());
     indexMetrics.memoryUsage.update(stats.memoryUsage());
+    indexMetrics.docsInMemory.set(stats.docsInMemory());
 
     LegacyDocumentDBMetrics::IndexMetrics &legacyIndexMetrics = metrics.getLegacyMetrics().index;
     legacyIndexMetrics.memoryUsage.set(stats.memoryUsage().allocatedBytes());
@@ -1166,6 +1167,17 @@ updateMatchingMetrics(DocumentDBMetricsCollection &metrics, const IDocumentSubDB
 }
 
 void
+updateSessionCacheMetrics(DocumentDBMetricsCollection &metrics, proton::matching::SessionManager &sessionManager)
+{
+    auto searchStats = sessionManager.getSearchStats();
+    metrics.getTaggedMetrics().sessionCache.search.update(searchStats);
+
+    auto groupingStats = sessionManager.getGroupingStats();
+    metrics.getTaggedMetrics().sessionCache.grouping.update(groupingStats);
+    metrics.getLegacyMetrics().sessionManager.update(groupingStats);
+}
+
+void
 updateDocumentStoreCacheHitRate(const CacheStats &current, const CacheStats &last,
                                 metrics::LongAverageMetric &cacheHitRate)
 {
@@ -1263,6 +1275,7 @@ DocumentDB::updateMetrics(DocumentDBMetricsCollection &metrics)
     updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats());
     updateAttributeMetrics(metrics, _subDBs);
     updateMatchingMetrics(metrics, *_subDBs.getReadySubDB());
+    updateSessionCacheMetrics(metrics, *_sessionManager);
     updateMetrics(metrics.getTaggedMetrics(), threadingServiceStats);
 }
 
@@ -1272,7 +1285,6 @@ DocumentDB::updateLegacyMetrics(LegacyDocumentDBMetrics &metrics, const Executor
     metrics.executor.update(threadingServiceStats.getMasterExecutorStats());
     metrics.summaryExecutor.update(threadingServiceStats.getSummaryExecutorStats());
     metrics.indexExecutor.update(threadingServiceStats.getIndexExecutorStats());
-    metrics.sessionManager.update(_sessionManager->getGroupingStats());
     updateDocstoreMetrics(metrics.docstore, _subDBs, _lastDocStoreCacheStats.total);
     metrics.numDocs.set(getNumDocs());
 
