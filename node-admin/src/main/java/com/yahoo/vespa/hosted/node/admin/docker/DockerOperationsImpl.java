@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
@@ -301,7 +302,16 @@ public class DockerOperationsImpl implements DockerOperations {
 
     @Override
     public void trySuspendNode(ContainerName containerName) {
-        executeCommandInContainer(containerName, nodeProgram, "suspend");
+        try {
+            executeCommandInContainer(containerName, nodeProgram, "suspend");
+        } catch (ContainerNotFoundException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
+            // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
+            // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
+            logger.warning("Failed trying to suspend container " + containerName.asString(), e);
+        }
     }
 
     @Override
