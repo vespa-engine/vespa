@@ -1,7 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.core.config.testutil;
 
+import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Scopes;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.subscription.ConfigSourceSet;
@@ -10,6 +13,8 @@ import com.yahoo.container.di.CloudSubscriberFactory;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.core.config.HandlersConfigurerDi;
 import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.language.Linguistics;
+import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.osgi.MockOsgi;
 
 import java.io.File;
@@ -92,7 +97,7 @@ public class HandlersConfigurerTestWrapper {
                 container,
                 configId,
                 testDeconstructor,
-                Guice.createInjector(),
+                guiceInjector(),
                 mockOsgi);
         this.container = container;
     }
@@ -111,7 +116,7 @@ public class HandlersConfigurerTestWrapper {
 
     public void reloadConfig() {
         configurer.reloadConfig(++lastGeneration);
-        configurer.getNewComponentGraph(Guice.createInjector(), false);
+        configurer.getNewComponentGraph(guiceInjector(), false);
     }
 
     public void shutdown() {
@@ -123,6 +128,16 @@ public class HandlersConfigurerTestWrapper {
 
     public ComponentRegistry<RequestHandler> getRequestHandlerRegistry() {
         return container.getRequestHandlerRegistry();
+    }
+
+    private static Injector guiceInjector() {
+        return Guice.createInjector(new AbstractModule() {
+            @Override
+            protected void configure() {
+                // Needed by e.g. SearchHandler
+                bind(Linguistics.class).to(SimpleLinguistics.class).in(Scopes.SINGLETON);
+            }
+        });
     }
 
 }
