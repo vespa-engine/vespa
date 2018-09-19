@@ -17,6 +17,9 @@
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/annotation/spantreevisitor.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.memoryindex.fieldinverter");
+
 namespace search {
 
 namespace memoryindex {
@@ -246,7 +249,11 @@ FieldInverter::saveWord(const vespalib::stringref word)
 {
     const size_t wordsSize = _words.size();
     // assert((wordsSize & 3) == 0); // Check alignment
-    size_t len = word.size();
+    size_t len = strnlen(word.data(), word.size());
+    if (len < word.size()) {
+        const Schema::IndexField &field = _schema.getIndexField(_fieldId);
+        LOG(error, "Detected NUL byte in word, length reduced from %zu to %zu, field is %s, truncated word is %s", word.size(), len, field.getName().c_str(), word.data());
+    }
     if (len == 0)
         return 0u;
 
