@@ -6,8 +6,7 @@
 #include <vespa/searchlib/datastore/array_store.h>
 #include <vespa/searchlib/common/address_space.h>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 /**
  * Class for mapping from from document id to an array of values.
@@ -29,7 +28,7 @@ public:
     MultiValueMapping & operator = (const MultiValueMapping &) = delete;
     MultiValueMapping(const datastore::ArrayStoreConfig &storeCfg,
                       const GrowStrategy &gs = GrowStrategy());
-    virtual ~MultiValueMapping();
+    ~MultiValueMapping() override;
     ConstArrayRef get(uint32_t docId) const { return _store.get(_indices[docId]); }
     ConstArrayRef getDataForIdx(EntryRef idx) const { return _store.get(idx); }
     void set(uint32_t docId, ConstArrayRef values);
@@ -45,10 +44,10 @@ public:
 
     void doneLoadFromMultiValue() { _store.setInitializing(false); }
 
-    virtual void compactWorst(bool compactMemory, bool compactAddressSpace) override;
+    void compactWorst(bool compactMemory, bool compactAddressSpace) override;
 
-    virtual AddressSpace getAddressSpaceUsage() const override;
-    virtual MemoryUsage getArrayStoreMemoryUsage() const override;
+    AddressSpace getAddressSpaceUsage() const override;
+    MemoryUsage getArrayStoreMemoryUsage() const override;
 
     static datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                                   size_t hugePageSize,
@@ -57,5 +56,4 @@ public:
                                                                   float allocGrowFactor);
 };
 
-} // namespace search::attribute
-} // namespace search
+}

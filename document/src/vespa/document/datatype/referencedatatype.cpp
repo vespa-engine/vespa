@@ -15,8 +15,7 @@ ReferenceDataType::ReferenceDataType(const DocumentType& targetDocType, int id)
 {
 }
 
-ReferenceDataType::~ReferenceDataType() {
-}
+ReferenceDataType::~ReferenceDataType() = default;
 
 std::unique_ptr<FieldValue> ReferenceDataType::createFieldValue() const {
     return std::make_unique<ReferenceFieldValue>(*this);
@@ -25,8 +24,7 @@ std::unique_ptr<FieldValue> ReferenceDataType::createFieldValue() const {
 void ReferenceDataType::print(std::ostream& os, bool verbose, const std::string& indent) const {
     (void) verbose;
     (void) indent;
-    os << "ReferenceDataType(" << _targetDocType.getName()
-       << ", id " << getId() << ')';
+    os << "ReferenceDataType(" << _targetDocType.getName() << ", id " << getId() << ')';
 }
 
 ReferenceDataType* ReferenceDataType::clone() const {

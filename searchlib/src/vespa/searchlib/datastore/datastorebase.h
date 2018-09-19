@@ -13,10 +13,6 @@ namespace search::datastore {
 
 class DataStoreBase
 {
-private:
-    DataStoreBase(const DataStoreBase &rhs);
-
-    DataStoreBase &operator=(const DataStoreBase &rhs);
 public:
     // Hold list before freeze, before knowing how long elements must be held
     class ElemHold1ListElem
@@ -80,7 +76,7 @@ protected:
         FallbackHold(size_t size, BufferState::Alloc &&buffer, size_t usedElems,
                      BufferTypeBase *typeHandler, uint32_t typeId);
 
-        virtual ~FallbackHold();
+        ~FallbackHold() override;
     };
 
     class BufferHold;
@@ -151,6 +147,8 @@ protected:
     vespalib::GenerationHolder _genHolder;
 
     DataStoreBase(uint32_t numBuffers, size_t maxClusters);
+    DataStoreBase(const DataStoreBase &) = delete;
+    DataStoreBase &operator=(const DataStoreBase &) = delete;
 
     virtual ~DataStoreBase();
 

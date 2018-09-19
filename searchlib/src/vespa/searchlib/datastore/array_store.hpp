@@ -139,10 +139,10 @@ public:
           _store(store),
           _bufferIdsToCompact(std::move(bufferIdsToCompact))
     {}
-    virtual ~CompactionContext() {
+    ~CompactionContext() override {
         _dataStore.finishCompact(_bufferIdsToCompact);
     }
-    virtual void compact(vespalib::ArrayRef<EntryRef> refs) override {
+    void compact(vespalib::ArrayRef<EntryRef> refs) override {
         if (!_bufferIdsToCompact.empty()) {
             for (auto &ref : refs) {
                 if (ref.valid()) {
@@ -202,4 +202,3 @@ ArrayStore<EntryT, RefT>::optimizedConfigForHugePage(size_t maxSmallArraySize,
 }
 
 }
-
