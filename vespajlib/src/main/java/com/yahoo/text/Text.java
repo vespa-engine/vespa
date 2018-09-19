@@ -91,35 +91,59 @@ public final class Text {
      * returns the first illegal code point if one is found.
      */
     public static OptionalInt validateTextString(String string) {
-        for (int i = 0; i < string.length(); i++) {
+        for (int i = 0; i < string.length(); ) {
             int codePoint = string.codePointAt(i);
             if ( ! Text.isTextCharacter(codePoint))
                 return OptionalInt.of(codePoint);
 
-            if (Character.isHighSurrogate(string.charAt(i)))
-                ++i; // // codePointAt() consumes one more char in this case
+            int charCount = Character.charCount(codePoint);
+            if (Character.isHighSurrogate(string.charAt(i))) {
+                if ( charCount == 1) {
+                    return OptionalInt.of(string.codePointAt(i));
+                } else if ( !Character.isLowSurrogate(string.charAt(i+1))) {
+                    return OptionalInt.of(string.codePointAt(i+1));
+                }
+            }
+            i += charCount;
         }
         return OptionalInt.empty();
     }
 
+    private static StringBuilder lazy(StringBuilder sb, String s, int i) {
+        if (sb == null) {
+            sb = new StringBuilder(s.substring(0, i));
+        }
+        sb.append(' ');
+        return sb;
+    }
     /**
      * Returns a string where any invalid characters in the input string is replaced by spaces
      */
     public static String stripInvalidCharacters(String string) {
         StringBuilder stripped = null; // lazy, as most string will not need stripping
-        for (int i = 0; i < string.length(); i++) {
+        for (int i = 0; i < string.length();) {
             int codePoint = string.codePointAt(i);
+            int charCount = Character.charCount(codePoint);
             if ( ! Text.isTextCharacter(codePoint)) {
-                if (stripped == null)
-                    stripped = new StringBuilder(string.substring(0, i));
-                stripped.append(' ');
+                stripped = lazy(stripped, string, i);
+            } else {
+                if (Character.isHighSurrogate(string.charAt(i))) {
+                    if (charCount == 1) {
+                        stripped = lazy(stripped, string, i);
+                    } else if (!Character.isLowSurrogate(string.charAt(i+1))) {
+                        stripped = lazy(stripped, string, i);
+                    } else {
+                        if (stripped != null) {
+                            stripped.appendCodePoint(codePoint);
+                        }
+                    }
+                } else {
+                    if (stripped != null) {
+                        stripped.appendCodePoint(codePoint);
+                    }
+                }
             }
-            else if (stripped != null) {
-                stripped.appendCodePoint(codePoint);
-            }
-
-            if (Character.isHighSurrogate(string.charAt(i)))
-                ++i; // // codePointAt() consumes one more char in this case
+            i += charCount;
         }
         return stripped != null ? stripped.toString() : string;
     }
