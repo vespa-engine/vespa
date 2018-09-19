@@ -667,7 +667,7 @@ TEST("requireThatStatsAreUpdated")
     EXPECT_GREATER(lastAllocated, perGidUsed);
     EXPECT_GREATER(lastUsed, perGidUsed);
 
-    std::this_thread::sleep_for(2200ms);
+    std::this_thread::sleep_for(6000ms);
     addGid(dms, gid1, bucketId1, time1);
     EXPECT_EQUAL(2u, dms.getStatus().getNumDocs());
     EXPECT_EQUAL(2u, dms.getStatus().getNumValues());
