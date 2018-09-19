@@ -2,6 +2,8 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -32,6 +34,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -174,6 +181,23 @@ public class ApplicationHandlerTest {
         assertEquals(404, responseForUnknown.getStatus());
         assertEquals("{\"error-code\":\"NOT_FOUND\",\"message\":\"No such application id: mytenant.unknown\"}",
                      SessionHandlerTest.getRenderedString(responseForUnknown));
+    }
+
+    @Test
+    public void testGetLogs() {
+        String path = "/logs?from=100&to=200";
+        applicationRepository.deploy(new File("src/test/apps/app-logserver-with-container"), prepareParams(applicationId));
+        WireMockServer wireMock = new WireMockServer(wireMockConfig().port(8080));
+        wireMock.start();
+        WireMock.configureFor("localhost", wireMock.port());
+        stubFor(get(urlEqualTo(path))
+                .willReturn(aResponse()
+                            .withStatus(200)));
+        String url = toUrlPath(applicationId, Zone.defaultZone(), false) + path;
+        ApplicationHandler mockHandler = createApplicationHandler();
+        HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        assertEquals(200, response.getStatus());
+        wireMock.stop();
     }
 
     private void assertNotAllowed(com.yahoo.jdisc.http.HttpRequest.Method method) throws IOException {

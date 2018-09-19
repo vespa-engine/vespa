@@ -146,8 +146,8 @@ public class ApplicationHandler extends HttpHandler {
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*",
-                "http://*/application/v2/tenant/*/application/*",
-                "http://*/application/v2/tenant/*/application/*/logs");
+                "http://*/application/v2/tenant/*/application/*/logs",
+                "http://*/application/v2/tenant/*/application/*");
     }
 
     private static boolean isLogRequest(HttpRequest request) {
