@@ -15,7 +15,7 @@
     <properties>
         <vespaversion>${project.version}</vespaversion>
         <target_jdk_version>1.8</target_jdk_version>
-        <compiler_plugin_version>3.6.1</compiler_plugin_version>
+        <compiler_plugin_version>3.8.0</compiler_plugin_version>
         <surefire_version>2.22.0</surefire_version> <!-- NOTE bjorncs 15.06.2017: Version 2.20 has OoM issues -->
     </properties>
 
@@ -28,15 +28,6 @@
                 <version>${vespaversion}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <!-- Frequently causes class loading issues when pulled in with compile scope transitively
-                     via e.g. avro, vespa-grid-log and others. -->
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>1.7.5</version>
-                <scope>provided</scope> <!-- NOTE: setting scope in depManagement should be avoided in general!-->
             </dependency>
 
         </dependencies>
@@ -360,17 +351,6 @@
                 <artifactId>bundle-plugin</artifactId>
                 <version>${vespaversion}</version>
                 <extensions>true</extensions>
-            </plugin>
-
-            <plugin>
-                <groupId>com.yahoo.vespa.hosted</groupId>
-                <artifactId>vespa-maven-plugin</artifactId>
-                <version>${vespaversion}</version>
-                <configuration>
-                    <tenant>${tenant}</tenant>
-                    <application>${application}</application>
-                    <instance>${instance}</instance>
-                </configuration>
             </plugin>
 
             <plugin>
