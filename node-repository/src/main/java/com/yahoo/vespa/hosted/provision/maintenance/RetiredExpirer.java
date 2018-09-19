@@ -92,17 +92,25 @@ public class RetiredExpirer extends Maintainer {
      */
     private boolean canRemove(Node node) {
         if (node.type().isDockerHost()) {
-            return nodeRepository()
-                    .getChildNodes(node.hostname()).stream()
-                    .allMatch(child -> child.state() == Node.State.parked || child.state() == Node.State.failed);
+            if (nodeRepository()
+                        .getChildNodes(node.hostname()).stream()
+                        .allMatch(child -> child.state() == Node.State.parked ||
+                                child.state() == Node.State.failed)) {
+                log.info("Docker host " + node + " has no non-parked/failed children");
+                return true;
+            }
+
+            return false;
         }
 
         if (node.history().hasEventBefore(History.Event.Type.retired, clock.instant().minus(retiredExpiry))) {
+            log.info("Node " + node + " has been retired longer than " + retiredExpiry);
             return true;
         }
 
         try {
             orchestrator.acquirePermissionToRemove(new HostName(node.hostname()));
+            log.info("Node " + node + " has been granted permission to be removed");
             return true;
         } catch (OrchestrationException e) {
             log.info("Did not get permission to remove retired " + node + ": " + e.getMessage());
