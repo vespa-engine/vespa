@@ -236,7 +236,7 @@ public class ProxyServer implements Runnable {
     // TODO Remove this once TLS migration is complete
     // Temporary measure to rewrite config sources to use TLS protected port instead
     private static String[] rewritePortIfTlsEnabled(String[] inputConfigSources) {
-        if (!TransportSecurityUtils.getConfigFile().isPresent()) return inputConfigSources;
+        if (!TransportSecurityUtils.isConfigInsecureMixedModeEnabled()) return inputConfigSources;
         return Arrays.stream(inputConfigSources)
                 .map(source -> {
                     int portDelimiter = source.lastIndexOf(':');

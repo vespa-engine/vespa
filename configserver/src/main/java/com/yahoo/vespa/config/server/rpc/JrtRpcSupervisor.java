@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.jrt.Acceptor;
+import com.yahoo.jrt.CryptoEngine;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.NullCryptoEngine;
@@ -14,12 +15,14 @@ import com.yahoo.security.tls.TransportSecurityUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -78,19 +81,23 @@ public class JrtRpcSupervisor {
 
     private static List<SupervisorAndSpec> createSupervisors(int insecurePort, int securePort, int maxOutputBufferSize) {
         List<SupervisorAndSpec> supervisors = new ArrayList<>();
-        supervisors.add(
-                new SupervisorAndSpec(
-                        new Supervisor(new Transport(new NullCryptoEngine())),
-                        new Spec(null, insecurePort)));
-        TransportSecurityUtils.getOptions()
-                .ifPresent(options -> {
-                    supervisors.add(
-                            new SupervisorAndSpec(
-                                    new Supervisor(new Transport(new TlsCryptoEngine(options))),
-                                    new Spec(null, securePort)));
-                });
+        if (TransportSecurityUtils.isTransportSecurityEnabled()) {
+            TransportSecurityOptions options = TransportSecurityUtils.getOptions().get();
+            if (TransportSecurityUtils.isConfigInsecureMixedModeEnabled()) {
+                supervisors.add(createSupervisor(insecurePort, new NullCryptoEngine()));
+                supervisors.add(createSupervisor(securePort, new TlsCryptoEngine(options)));
+            } else {
+                supervisors.add(createSupervisor(insecurePort, new TlsCryptoEngine(options)));
+            }
+        } else {
+            supervisors.add(createSupervisor(insecurePort, new NullCryptoEngine()));
+        }
         supervisors.forEach(s -> s.supervisor.setMaxOutputBufferSize(maxOutputBufferSize));
         return supervisors;
+    }
+
+    private static SupervisorAndSpec createSupervisor(int port, CryptoEngine engine) {
+        return new SupervisorAndSpec(new Supervisor(new Transport(engine)), new Spec(null, port));
     }
 
     @SuppressWarnings("unchecked")
