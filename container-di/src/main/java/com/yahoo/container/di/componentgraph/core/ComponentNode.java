@@ -36,6 +36,7 @@ import static com.yahoo.container.di.componentgraph.core.Keys.createKey;
  * @author ollivir
  */
 public class ComponentNode extends Node {
+
     private static final Logger log = Logger.getLogger(ComponentNode.class.getName());
 
     private final Class<?> clazz;
