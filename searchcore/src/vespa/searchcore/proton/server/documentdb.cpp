@@ -1018,6 +1018,7 @@ updateIndexMetrics(DocumentDBMetricsCollection &metrics, const search::Searchabl
     DocumentDBTaggedMetrics::IndexMetrics &indexMetrics = metrics.getTaggedMetrics().index;
     indexMetrics.diskUsage.set(stats.sizeOnDisk());
     indexMetrics.memoryUsage.update(stats.memoryUsage());
+    indexMetrics.docsInMemory.set(stats.docsInMemory());
 
     LegacyDocumentDBMetrics::IndexMetrics &legacyIndexMetrics = metrics.getLegacyMetrics().index;
     legacyIndexMetrics.memoryUsage.set(stats.memoryUsage().allocatedBytes());

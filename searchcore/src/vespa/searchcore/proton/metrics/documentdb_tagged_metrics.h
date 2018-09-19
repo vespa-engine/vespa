@@ -101,6 +101,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     {
         metrics::LongValueMetric diskUsage;
         MemoryUsageMetrics memoryUsage;
+        metrics::LongValueMetric docsInMemory;
 
         IndexMetrics(metrics::MetricSet *parent);
         ~IndexMetrics();
