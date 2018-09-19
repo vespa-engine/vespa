@@ -39,51 +39,53 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         Optional<String> version = path.segment(1);
         Optional<String> modelName = path.segment(2);
 
-        if ( ! apiName.isPresent() || ! apiName.get().equalsIgnoreCase(API_ROOT)) {
-            return new ErrorResponse(404, "unknown API");
-        }
-        if ( ! version.isPresent() || ! version.get().equalsIgnoreCase(VERSION_V1)) {
-            return new ErrorResponse(404, "unknown API version");
-        }
-        if ( ! modelName.isPresent()) {
-            return listAllModels(request);
-        }
-        if ( ! modelsEvaluator.models().containsKey(modelName.get())) {
-            // TODO: Replace by catching IllegalArgumentException and passing that error message
-            return new ErrorResponse(404, "no model with name '" + modelName.get() + "' found");
-        }
-
-        Model model = modelsEvaluator.models().get(modelName.get());
-
-        // The following logic follows from the spec, in that signature and
-        // output are optional if the model only has a single function.
-        // TODO: Try to avoid recreating that logic here
-
-        if (path.segments() == 3) {
-            if (model.functions().size() > 1) {
-                return listModelDetails(request, modelName.get());
+        try {
+            if ( ! apiName.isPresent() || ! apiName.get().equalsIgnoreCase(API_ROOT)) {
+                throw new IllegalArgumentException("unknown API");
             }
-            return listTypeDetails(request, modelName.get());
-        }
+            if ( ! version.isPresent() || ! version.get().equalsIgnoreCase(VERSION_V1)) {
+                throw new IllegalArgumentException("unknown API version");
+            }
+            if ( ! modelName.isPresent()) {
+                return listAllModels(request);
+            }
+            if ( ! modelsEvaluator.models().containsKey(modelName.get())) {
+                throw new IllegalArgumentException("no model with name '" + modelName.get() + "' found");
+            }
 
-        if (path.segments() == 4) {
-            if ( ! path.segment(3).get().equalsIgnoreCase(EVALUATE)) {
-                return listTypeDetails(request, modelName.get(), path.segment(3).get());
-            }
-            if (model.functions().stream().anyMatch(f -> f.getName().equalsIgnoreCase(EVALUATE))) {
-                return listTypeDetails(request, modelName.get(), path.segment(3).get());  // model has a function "eval"
-            }
-            if (model.functions().size() <= 1) {
-                return evaluateModel(request, modelName.get());
-            }
-            // TODO: Replace by catching IllegalArgumentException and passing that error message
-            return new ErrorResponse(404, "attempt to evaluate model without specifying function");
-        }
+            Model model = modelsEvaluator.models().get(modelName.get());
 
-        if (path.segments() == 5) {
-            if (path.segment(4).get().equalsIgnoreCase(EVALUATE)) {
-                return evaluateModel(request, modelName.get(), path.segment(3).get());
+            // The following logic follows from the spec, in that signature and
+            // output are optional if the model only has a single function.
+
+            if (path.segments() == 3) {
+                if (model.functions().size() > 1) {
+                    return listModelDetails(request, modelName.get());
+                }
+                return listTypeDetails(request, modelName.get());
             }
+
+            if (path.segments() == 4) {
+                if ( ! path.segment(3).get().equalsIgnoreCase(EVALUATE)) {
+                    return listTypeDetails(request, modelName.get(), path.segment(3).get());
+                }
+                if (model.functions().stream().anyMatch(f -> f.getName().equalsIgnoreCase(EVALUATE))) {
+                    return listTypeDetails(request, modelName.get(), path.segment(3).get());  // model has a function "eval"
+                }
+                if (model.functions().size() <= 1) {
+                    return evaluateModel(request, modelName.get());
+                }
+                throw new IllegalArgumentException("attempt to evaluate model without specifying function");
+            }
+
+            if (path.segments() == 5) {
+                if (path.segment(4).get().equalsIgnoreCase(EVALUATE)) {
+                    return evaluateModel(request, modelName.get(), path.segment(3).get());
+                }
+            }
+
+        } catch (IllegalArgumentException e) {
+            return new ErrorResponse(404, e.getMessage());
         }
 
         return new ErrorResponse(404, "unrecognized request");
