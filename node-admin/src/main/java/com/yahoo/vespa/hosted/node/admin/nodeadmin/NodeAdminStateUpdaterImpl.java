@@ -47,8 +47,8 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
 
     private final AtomicBoolean terminated = new AtomicBoolean(false);
     private State currentState = SUSPENDED_NODE_ADMIN;
-    private State wantedState = RESUMED;
-    private boolean workToDoNow = true;
+    private State wantedState = SUSPENDED_NODE_ADMIN;
+    private boolean workToDoNow = false;
 
     private final Object monitor = new Object();
     private RuntimeException lastConvergenceException;

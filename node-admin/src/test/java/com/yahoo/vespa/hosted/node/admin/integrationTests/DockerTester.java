@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
+import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -99,6 +100,9 @@ public class DockerTester implements AutoCloseable {
         nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(nodeRepositoryMock, orchestratorMock, storageMaintainer,
                 nodeAdmin, DOCKER_HOST_HOSTNAME, clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL,
                 Optional.of(new ClassLocking()));
+        try {
+            nodeAdminStateUpdater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED);
+        } catch (RuntimeException ignored) { }
         nodeAdminStateUpdater.start();
     }
 

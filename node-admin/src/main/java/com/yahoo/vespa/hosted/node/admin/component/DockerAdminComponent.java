@@ -143,7 +143,7 @@ public class DockerAdminComponent implements AdminComponent {
                 metricReceiver,
                 clock);
 
-        return new NodeAdminStateUpdaterImpl(
+        NodeAdminStateUpdaterImpl nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(
                 configServerClients.nodeRepository(),
                 configServerClients.orchestrator(),
                 storageMaintainer,
@@ -152,6 +152,10 @@ public class DockerAdminComponent implements AdminComponent {
                 clock,
                 NODE_ADMIN_CONVERGE_STATE_INTERVAL,
                 classLocking);
+        try {
+            nodeAdminStateUpdater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED);
+        } catch (RuntimeException ignored) { }
+        return nodeAdminStateUpdater;
     }
 
     @Override

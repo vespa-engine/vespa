@@ -49,9 +49,7 @@ public class NodeAdminStateUpdaterImplTest {
     private final ManualClock clock = new ManualClock();
     private final Duration convergeStateInterval = Duration.ofSeconds(30);
 
-    private final NodeAdminStateUpdaterImpl refresher = spy(new NodeAdminStateUpdaterImpl(
-            nodeRepository, orchestrator, storageMaintainer, nodeAdmin, parentHostname, clock,
-            convergeStateInterval, Optional.empty()));
+    private final NodeAdminStateUpdaterImpl refresher = createNodeAdminStateUpdater();
 
 
     @Test
@@ -252,5 +250,15 @@ public class NodeAdminStateUpdaterImplTest {
     private void tickAfter(int seconds) {
         clock.advance(Duration.ofSeconds(seconds));
         refresher.tick();
+    }
+
+    private NodeAdminStateUpdaterImpl createNodeAdminStateUpdater() {
+        NodeAdminStateUpdaterImpl nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(
+                nodeRepository, orchestrator, storageMaintainer, nodeAdmin, parentHostname, clock,
+                convergeStateInterval, Optional.empty());
+        try {
+            nodeAdminStateUpdater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED);
+        } catch (RuntimeException ignored) { }
+        return spy(nodeAdminStateUpdater);
     }
 }
