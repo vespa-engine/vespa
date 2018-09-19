@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
+import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.deploy.DeployProperties;
@@ -1771,6 +1772,12 @@ public class ModelProvisioningTest {
         model.getConfig(builder, configId);
         ApplicationMetadataConfig cfg = new ApplicationMetadataConfig(builder);
         assertEquals(1, cfg.generation());
+
+        LogdConfig.Builder logdConfigBuilder = new LogdConfig.Builder();
+        model.getConfig(logdConfigBuilder, configId);
+        LogdConfig logdConfig = new LogdConfig(logdConfigBuilder);
+        // Logd should use logserver (forward logs to it)
+        assertTrue(logdConfig.logserver().use());
     }
 
 }

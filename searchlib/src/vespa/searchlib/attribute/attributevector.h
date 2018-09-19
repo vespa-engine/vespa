@@ -42,7 +42,6 @@ namespace search {
 
     template <typename T> class ComponentGuard;
     class AttributeReadGuard;
-    class AttributeWriteGuard;
     class AttributeSaver;
     class EnumStoreBase;
     class IAttributeSaveTarget;
@@ -405,7 +404,6 @@ public:
 
     bool hasArrayType() const { return _config.collectionType().isArray(); }
     bool hasEnum() const override final;
-    virtual bool hasEnum2Value() const;
     uint32_t getMaxValueCount() const override;
     uint32_t getEnumMax() const { return _enumMax; }
 

@@ -25,7 +25,6 @@ LegacyDocumentDBMetrics::DocstoreMetrics::DocstoreMetrics(MetricSet *parent)
     : MetricSet("docstore", "", "Document store metrics", parent),
       memoryUsage("memoryusage", "", "Memory usage for docstore", this),
       cacheLookups("cachelookups", "", "Number of lookups in summary cache", this),
-      hits(0),
       cacheHitRate("cachehitrate", "", "Rate of cache hits in summary cache", this),
       cacheElements("cacheelements", "", "Number of elements in summary cache", this),
       cacheMemoryUsed("cachememoryused", "", "Memory used by summary cache", this)

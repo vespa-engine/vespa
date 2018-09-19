@@ -138,12 +138,11 @@ void AttributeVector::updateStat(bool force) {
         onUpdateStat();
     } else if (_nextStatUpdateTime < fastos::ClockSystem::now()) {
         onUpdateStat();
-        _nextStatUpdateTime = fastos::ClockSystem::now() + fastos::TimeStamp::SEC;
+        _nextStatUpdateTime = fastos::ClockSystem::now() + 5ul * fastos::TimeStamp::SEC;
     }
 }
 
 bool AttributeVector::hasEnum() const { return _hasEnum; }
-bool AttributeVector::hasEnum2Value() const { return false; }
 uint32_t AttributeVector::getMaxValueCount() const { return _highestValueCount; }
 
 bool

@@ -250,7 +250,7 @@ public:
                const ProtonConfig &protonCfg,
                IDocumentDBOwner &owner,
                vespalib::ThreadExecutor &warmupExecutor,
-               vespalib::ThreadStackExecutorBase &summaryExecutor,
+               vespalib::ThreadStackExecutorBase &sharedExecutor,
                search::transactionlog::Writer &tlsDirectWriter,
                MetricsWireService &metricsWireService,
                const search::common::FileHeaderContext &fileHeaderContext,

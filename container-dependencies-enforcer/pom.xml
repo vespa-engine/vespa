@@ -71,7 +71,7 @@
                                                 <include>aopalliance:aopalliance:[1.0]:jar:provided</include>
                                                 <include>com.fasterxml.jackson.core:jackson-annotations:[${jackson2.version}]:jar:provided</include>
                                                 <include>com.fasterxml.jackson.core:jackson-core:[${jackson2.version}]:jar:provided</include>
-                                                <include>com.fasterxml.jackson.core:jackson-databind:[${jackson2.version}]:jar:provided</include>
+                                                <include>com.fasterxml.jackson.core:jackson-databind:[${jackson-databind.version}]:jar:provided</include>
                                                 <include>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:[${jackson2.version}]:jar:provided</include>
                                                 <include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:[${jackson2.version}]:jar:provided</include>
 
