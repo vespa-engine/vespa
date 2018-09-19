@@ -23,18 +23,20 @@ DocumentDBTaggedMetrics::JobMetrics::JobMetrics(metrics::MetricSet* parent)
       removedDocumentsPrune("removed_documents_prune", "",
               "Pruning of removed documents in 'removed' sub database", this),
       total("total", "", "The job load average total of all job metrics", this)
-{ }
+{
+}
 
-DocumentDBTaggedMetrics::JobMetrics::~JobMetrics() { }
+DocumentDBTaggedMetrics::JobMetrics::~JobMetrics() = default;
 
 DocumentDBTaggedMetrics::SubDBMetrics::SubDBMetrics(const vespalib::string &name, MetricSet *parent)
     : MetricSet(name, "", "Sub database metrics", parent),
       lidSpace(this),
       documentStore(this),
       attributes(this)
-{ }
+{
+}
 
-DocumentDBTaggedMetrics::SubDBMetrics::~SubDBMetrics() { }
+DocumentDBTaggedMetrics::SubDBMetrics::~SubDBMetrics() = default;
 
 DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::LidSpaceMetrics(MetricSet *parent)
     : MetricSet("lid_space", "", "Local document id (lid) space metrics for this document sub DB", parent),
@@ -47,9 +49,10 @@ DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::LidSpaceMetrics(MetricSe
       lidFragmentationFactor("lid_fragmentation_factor", "",
               "The fragmentation factor of this lid space, indicating the amount of holes in the currently used part of the lid space "
               "((highest_used_lid - used_lids) / highest_used_lid)", this)
-{ }
+{
+}
 
-DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::~LidSpaceMetrics() { }
+DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::~LidSpaceMetrics() = default;
 
 DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::CacheMetrics::CacheMetrics(MetricSet *parent)
     : MetricSet("cache", "", "Document store cache metrics", parent),
@@ -61,7 +64,7 @@ DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::CacheMetrics::Cache
 {
 }
 
-DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::CacheMetrics::~CacheMetrics() {}
+DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::CacheMetrics::~CacheMetrics() = default;
 
 DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::DocumentStoreMetrics(MetricSet *parent)
     : MetricSet("document_store", "", "Document store metrics for this document sub DB", parent),
@@ -70,16 +73,18 @@ DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::DocumentStoreMetric
       maxBucketSpread("max_bucket_spread", "", "Max bucket spread in underlying files (sum(unique buckets in each chunk)/unique buckets in file)", this),
       memoryUsage(this),
       cache(this)
-{ }
+{
+}
 
-DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::~DocumentStoreMetrics() { }
+DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::~DocumentStoreMetrics() = default;
 
 DocumentDBTaggedMetrics::AttributeMetrics::AttributeMetrics(MetricSet *parent)
     : MetricSet("attribute", "", "Attribute vector metrics for this document db", parent),
       resourceUsage(this)
-{ }
+{
+}
 
-DocumentDBTaggedMetrics::AttributeMetrics::~AttributeMetrics() { }
+DocumentDBTaggedMetrics::AttributeMetrics::~AttributeMetrics() = default;
 
 DocumentDBTaggedMetrics::AttributeMetrics::ResourceUsageMetrics::ResourceUsageMetrics(MetricSet *parent)
     : MetricSet("resource_usage", "", "Usage metrics for various attribute vector resources", parent),
@@ -91,7 +96,7 @@ DocumentDBTaggedMetrics::AttributeMetrics::ResourceUsageMetrics::ResourceUsageMe
 {
 }
 
-DocumentDBTaggedMetrics::AttributeMetrics::ResourceUsageMetrics::~ResourceUsageMetrics() { }
+DocumentDBTaggedMetrics::AttributeMetrics::ResourceUsageMetrics::~ResourceUsageMetrics() = default;
 
 DocumentDBTaggedMetrics::IndexMetrics::IndexMetrics(MetricSet *parent)
     : MetricSet("index", "", "Index metrics (memory and disk) for this document db", parent),
@@ -101,8 +106,7 @@ DocumentDBTaggedMetrics::IndexMetrics::IndexMetrics(MetricSet *parent)
 {
 }
 
-DocumentDBTaggedMetrics::IndexMetrics::~IndexMetrics() { }
-
+DocumentDBTaggedMetrics::IndexMetrics::~IndexMetrics() = default;
 
 void
 DocumentDBTaggedMetrics::MatchingMetrics::update(const MatchingStats &stats)
@@ -127,9 +131,10 @@ DocumentDBTaggedMetrics::MatchingMetrics::MatchingMetrics(MetricSet *parent)
       softDoomFactor("soft_doom_factor", "", "Factor used to compute soft-timeout", this),
       queryCollateralTime("query_collateral_time", "", "Average time (sec) spent setting up and tearing down queries", this),
       queryLatency("query_latency", "", "Average latency (sec) when matching a query", this)
-{ }
+{
+}
 
-DocumentDBTaggedMetrics::MatchingMetrics::~MatchingMetrics() {}
+DocumentDBTaggedMetrics::MatchingMetrics::~MatchingMetrics() = default;
 
 DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics(const vespalib::string &name,
                                                                                  size_t numDocIdPartitions,
@@ -152,7 +157,7 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
     }
 }
 
-DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::~RankProfileMetrics() {}
+DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::~RankProfileMetrics() = default;
 
 DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::DocIdPartition(const vespalib::string &name, MetricSet *parent) :
     MetricSet("docid_partition", {{"docidPartition", name}}, "DocId Partition profile metrics", parent),
@@ -163,7 +168,7 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::Do
     waitTime("wait_time", "", "Time (sec) spent waiting for other external threads and resources", this)
 { }
 
-DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::~DocIdPartition() {}
+DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::~DocIdPartition() = default;
 
 void
 DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::update(const MatchingStats::Partition &stats)
@@ -208,6 +213,15 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const Match
     }
 }
 
+DocumentDBTaggedMetrics::SessionCacheMetrics::SessionCacheMetrics(metrics::MetricSet *parent)
+    : metrics::MetricSet("session_cache", "", "Metrics for session caches (search / grouping requests)", parent),
+      search("search", this),
+      grouping("grouping", this)
+{
+}
+
+DocumentDBTaggedMetrics::SessionCacheMetrics::~SessionCacheMetrics() = default;
+
 DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docTypeName)
     : MetricSet("documentdb", {{"documenttype", docTypeName}}, "Document DB metrics", nullptr),
       job(this),
@@ -217,9 +231,11 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docType
       notReady("notready", this),
       removed("removed", this),
       threadingService("threading_service", this),
-      matching(this)
-{ }
+      matching(this),
+      sessionCache(this)
+{
+}
 
-DocumentDBTaggedMetrics::~DocumentDBTaggedMetrics() { }
+DocumentDBTaggedMetrics::~DocumentDBTaggedMetrics() = default;
 
-} // namespace proton
+}

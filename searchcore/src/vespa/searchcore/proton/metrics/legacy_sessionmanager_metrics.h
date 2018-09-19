@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #pragma once
 
@@ -10,9 +10,10 @@
 namespace proton {
 
 /**
- * Metrics for session manager cache (search or grouping requests).
+ * Legacy metrics for session manager cache.
+ * TODO: Remove on Vespa 7
  */
-struct SessionManagerMetrics : metrics::MetricSet
+struct LegacySessionManagerMetrics : metrics::MetricSet
 {
     metrics::LongCountMetric numInsert;
     metrics::LongCountMetric numPick;
@@ -21,8 +22,8 @@ struct SessionManagerMetrics : metrics::MetricSet
     metrics::LongCountMetric numTimedout;
 
     void update(const proton::matching::SessionManager::Stats &stats);
-    SessionManagerMetrics(const vespalib::string &name, metrics::MetricSet *parent);
-    ~SessionManagerMetrics();
+    LegacySessionManagerMetrics(metrics::MetricSet *parent);
+    ~LegacySessionManagerMetrics();
 };
 
 }
