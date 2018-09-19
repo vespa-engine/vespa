@@ -115,6 +115,8 @@
         <module>standalone-container</module>
         <module>statistics</module>
         <module>storage</module>
+        <module>tenant-base</module>
+        <module>tenant-cd</module>
         <module>testutil</module>
         <module>vdslib</module>
         <module>vespaclient-core</module>
