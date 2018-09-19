@@ -8,18 +8,20 @@ import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.protect.Error;
-import com.yahoo.prelude.fastsearch.DocumentDatabase;
-import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.slime.SlimeAdapter;
+import com.yahoo.prelude.fastsearch.DocumentDatabase;
+import com.yahoo.prelude.fastsearch.FS4CloseableChannel;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
+import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.query.SessionId;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
-import com.yahoo.data.access.Inspector;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
@@ -52,7 +54,7 @@ public class Dispatcher extends AbstractComponent {
 
     /** A model of the search cluster this dispatches to */
     private final SearchCluster searchCluster;
-    
+
     /** Connections to the search nodes this talks to, indexed by node id ("partid") */
     private final ImmutableMap<Integer, Client.NodeConnection> nodeConnections;
 
@@ -84,7 +86,7 @@ public class Dispatcher extends AbstractComponent {
         this.fs4ResourcePool = null;
         this.loadBalancer = new LoadBalancer(searchCluster);
     }
-    
+
     /** Returns the search cluster this dispatches to */
     public SearchCluster searchCluster() { return searchCluster; }
 
@@ -283,14 +285,18 @@ public class Dispatcher extends AbstractComponent {
 
     }
 
-    public Optional<CloseableChannel> getDispatchedChannel(Query query) {
+    public Optional<CloseableChannel> getDispatchedChannel(VespaBackEndSearcher searcher, Query query) {
         Optional<SearchCluster.Group> groupInCluster = loadBalancer.takeGroupForQuery(query);
 
         return groupInCluster.flatMap(group -> {
             if(group.nodes().size() == 1) {
                 SearchCluster.Node node = group.nodes().iterator().next();
                 query.trace(false, 2, "Dispatching internally to ", group, " (", node.toString(), ")");
-                return Optional.of(new DispatchedChannel(fs4ResourcePool, loadBalancer, group));
+                CloseableChannel channel = new FS4CloseableChannel(searcher, query, fs4ResourcePool, node.hostname(), node.fs4port(), node.key());
+                channel.teardown(() -> {
+                    loadBalancer.releaseGroup(group);
+                });
+                return Optional.of(channel);
             } else {
                 loadBalancer.releaseGroup(group);
                 return Optional.empty();

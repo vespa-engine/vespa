@@ -4,9 +4,11 @@ package com.yahoo.fs4;
 import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
 import com.yahoo.log.LogLevel;
+import com.yahoo.prelude.fastsearch.TimeoutException;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -325,4 +327,20 @@ public abstract class BasicPacket {
         return false;
     }
 
+    /**
+     * Throws an IOException if the packet is not of the expected type
+     */
+    public void ensureInstanceOf(Class<? extends BasicPacket> type, String name) throws IOException {
+        if ((type.isAssignableFrom(getClass()))) return;
+
+        if (this instanceof ErrorPacket) {
+            ErrorPacket errorPacket = (ErrorPacket) this;
+            if (errorPacket.getErrorCode() == 8)
+                throw new TimeoutException("Query timed out in " + name);
+            else
+                throw new IOException("Received error from backend in " + name + ": " + this);
+        } else {
+            throw new IOException("Received " + this + " when expecting " + type);
+        }
+    }
 }

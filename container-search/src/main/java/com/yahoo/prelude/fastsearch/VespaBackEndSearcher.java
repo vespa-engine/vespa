@@ -1,15 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
-import java.util.Optional;
 import com.yahoo.collections.TinyIdentitySet;
-import com.yahoo.fs4.BasicPacket;
 import com.yahoo.fs4.DocsumPacket;
 import com.yahoo.fs4.DocumentInfo;
-import com.yahoo.fs4.ErrorPacket;
-import com.yahoo.fs4.QueryPacketData;
 import com.yahoo.fs4.Packet;
 import com.yahoo.fs4.QueryPacket;
+import com.yahoo.fs4.QueryPacketData;
 import com.yahoo.fs4.QueryResultPacket;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.HexDump;
@@ -42,7 +39,9 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -53,8 +52,8 @@ import java.util.logging.Level;
 @SuppressWarnings("deprecation")
 public abstract class VespaBackEndSearcher extends PingableSearcher {
 
-    protected static final CompoundName PACKET_COMPRESSION_LIMIT = new CompoundName("packetcompressionlimit");
-    protected static final CompoundName PACKET_COMPRESSION_TYPE = new CompoundName("packetcompressiontype");
+    static final CompoundName PACKET_COMPRESSION_LIMIT = new CompoundName("packetcompressionlimit");
+    static final CompoundName PACKET_COMPRESSION_TYPE = new CompoundName("packetcompressiontype");
     protected static final CompoundName TRACE_DISABLE = new CompoundName("trace.disable");
 
     /** The set of all document databases available in the backend handled by this searcher */
@@ -65,7 +64,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     private String defaultDocsumClass = null;
 
     /** Returns an iterator which returns all hits below this result **/
-    protected Iterator<Hit> hitIterator(Result result) {
+    static Iterator<Hit> hitIterator(Result result) {
         return result.hits().unorderedDeepIterator();
     }
 
@@ -75,7 +74,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     /** Cache wrapper */
     protected CacheControl cacheControl = null;
 
-    protected final String getName()          { return name; }
+    public final String getName() { return name; }
     protected final String getDefaultDocsumClass() { return defaultDocsumClass; }
 
     /** Sets default document summary class. Default is null */
@@ -83,6 +82,8 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     /** Returns the packet cache controller of this */
     public final CacheControl getCacheControl() { return cacheControl; }
+
+    public final Logger getLogger() { return super.getLogger(); }
 
     /**
      * Searches a search cluster
@@ -101,7 +102,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
      * Returns whether we need to send the query when fetching summaries.
      * This is necessary if the query requests summary features or dynamic snippeting
      */
-    protected boolean summaryNeedsQuery(Query query) {
+    boolean summaryNeedsQuery(Query query) {
         if (query.getRanking().getQueryCache()) return false;  // Query is cached in backend
 
         DocumentDatabase documentDb = getDocumentDatabase(query);
@@ -135,7 +136,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         Result result = new Result(query);
         QueryResultPacket resultPacket = packetWrapper.getFirstResultPacket();
 
-        addMetaInfo(query, queryPacketData, resultPacket, result, true);
+        addMetaInfo(query, queryPacketData, resultPacket, result);
         if (packetWrapper.getNumPackets() == 0)
             addUnfilledHits(result, documents, true, queryPacketData, key, packetWrapper.distributionKey());
         else
@@ -400,7 +401,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
     }
 
-    protected void addMetaInfo(Query query, QueryPacketData queryPacketData, QueryResultPacket resultPacket, Result result, boolean fromCache) {
+    void addMetaInfo(Query query, QueryPacketData queryPacketData, QueryResultPacket resultPacket, Result result) {
         result.setTotalHitCount(resultPacket.getTotalDocumentCount());
 
         // Grouping
@@ -429,7 +430,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
     }
 
-    static private class FillHitResult {
+    static class FillHitResult {
         final boolean ok;
         final String error;
         FillHitResult(boolean ok) {
@@ -440,7 +441,8 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             this.error = error;
         }
     }
-    private FillHitResult fillHit(FastHit hit, DocsumPacket packet, String summaryClass) {
+
+    FillHitResult fillHit(FastHit hit, DocsumPacket packet, String summaryClass) {
         if (packet != null) {
             byte[] docsumdata = packet.getData();
             if (docsumdata.length > 0) {
@@ -464,7 +466,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
      * @return the number of hits that we did not return data for, and an optional error message.
      *         when things are working normally we return 0.
      */
-    protected FillHitsResult fillHits(Result result, Packet[] packets, String summaryClass) throws IOException {
+     public FillHitsResult fillHits(Result result, Packet[] packets, String summaryClass) throws IOException {
         int skippedHits = 0;
         String lastError = null;
         int packetIndex = 0;
@@ -474,7 +476,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             if (hit instanceof FastHit && ! hit.isFilled(summaryClass)) {
                 FastHit fastHit = (FastHit) hit;
 
-                ensureInstanceOf(DocsumPacket.class, packets[packetIndex], getName());
+                packets[packetIndex].ensureInstanceOf(DocsumPacket.class, getName());
                 DocsumPacket docsum = (DocsumPacket) packets[packetIndex];
 
                 packetIndex++;
@@ -491,23 +493,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
         result.hits().setSorted(false);
         return new FillHitsResult(skippedHits, lastError);
-    }
-
-    /**
-     * Throws an IOException if the packet is not of the expected type
-     */
-    protected static void ensureInstanceOf(Class<? extends BasicPacket> type, BasicPacket packet, String name) throws IOException {
-        if ((type.isAssignableFrom(packet.getClass()))) return;
-
-        if (packet instanceof ErrorPacket) {
-            ErrorPacket errorPacket=(ErrorPacket)packet;
-            if (errorPacket.getErrorCode() == 8)
-                throw new TimeoutException("Query timed out in " + name);
-            else
-                throw new IOException("Received error from backend in " + name + ": " + packet);
-        } else {
-            throw new IOException("Received " + packet + " when expecting " + type);
-        }
     }
 
     private boolean addCachedHits(Result result,
@@ -562,34 +547,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         hit.setPartId(document.getPartId());
     }
 
-    protected PacketWrapper cacheLookupTwoPhase(CacheKey cacheKey, Result result, String summaryClass) {
-        Query query = result.getQuery();
-        PacketWrapper packetWrapper = cacheControl.lookup(cacheKey, query);
-
-        if (packetWrapper == null) {
-            return null;
-        }
-        if (packetWrapper.getNumPackets() != 0) {
-            for (Iterator<Hit> i = hitIterator(result); i.hasNext();) {
-                Hit hit = i.next();
-
-                if (hit instanceof FastHit) {
-                    FastHit fastHit = (FastHit) hit;
-                    DocsumPacketKey key = new DocsumPacketKey(fastHit.getGlobalId(), fastHit.getPartId(), summaryClass);
-
-                    if (fillHit(fastHit, (DocsumPacket) packetWrapper.getPacket(key), summaryClass).ok) {
-                        fastHit.setCached(true);
-                    }
-
-                }
-            }
-            result.hits().setSorted(false);
-            result.analyzeHits();
-        }
-
-        return packetWrapper;
-    }
-
     protected DocsumDefinitionSet getDocsumDefinitionSet(Query query) {
         DocumentDatabase db = getDocumentDatabase(query);
         return db.getDocsumDefinitionSet();
@@ -620,13 +577,12 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
      *                               Only set if produced directly by a search node, not dispatch
      *                               (in which case it is not set in the received packets.)
      */
-    boolean addUnfilledHits(Result result,
+    void addUnfilledHits(Result result,
                             List<DocumentInfo> documents,
                             boolean fromCache,
                             QueryPacketData queryPacketData,
                             CacheKey cacheKey,
                             Optional<Integer> channelDistributionKey) {
-        boolean allHitsOK = true;
         Query myQuery = result.getQuery();
 
         for (DocumentInfo document : documents) {
@@ -646,14 +602,11 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
                 result.hits().add(hit);
             } catch (ConfigurationException e) {
-                allHitsOK = false;
                 getLogger().log(LogLevel.WARNING, "Skipping hit", e);
             } catch (Exception e) {
-                allHitsOK = false;
                 getLogger().log(LogLevel.ERROR, "Skipping malformed hit", e);
             }
         }
-        return allHitsOK;
     }
 
     @SuppressWarnings("rawtypes")
