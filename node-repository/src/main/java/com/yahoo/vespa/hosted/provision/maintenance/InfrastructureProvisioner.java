@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
 import com.yahoo.vespa.service.monitor.application.ConfigServerHostApplication;
+import com.yahoo.vespa.service.monitor.application.ControllerApplication;
 import com.yahoo.vespa.service.monitor.application.HostedVespaApplication;
 import com.yahoo.vespa.service.monitor.application.ProxyHostApplication;
 
@@ -35,7 +36,8 @@ public class InfrastructureProvisioner extends Maintainer {
     private static final List<HostedVespaApplication> HOSTED_VESPA_APPLICATIONS = Arrays.asList(
             ConfigServerApplication.CONFIG_SERVER_APPLICATION,
             ConfigServerHostApplication.CONFIG_SERVER_HOST_APPLICATION,
-            ProxyHostApplication.PROXY_HOST_APPLICATION);
+            ProxyHostApplication.PROXY_HOST_APPLICATION,
+            ControllerApplication.CONTROLLER_APPLICATION);
 
     private final Provisioner provisioner;
     private final InfrastructureVersions infrastructureVersions;
@@ -101,4 +103,5 @@ public class InfrastructureProvisioner extends Maintainer {
         }
         return targetVersion;
     }
+
 }
