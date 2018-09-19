@@ -9,7 +9,7 @@ import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.searchdefinition.UnproperSearch;
+import com.yahoo.searchdefinition.DocumentOnlySearch;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.HostResource;
@@ -286,7 +286,7 @@ public class IndexedSearchCluster extends SearchCluster
                                               List<com.yahoo.searchdefinition.Search> globalSearches) {
         for (SearchDefinitionSpec spec : localSearches) {
             com.yahoo.searchdefinition.Search search = spec.getSearchDefinition().getSearch();
-            if ( ! (search instanceof UnproperSearch)) {
+            if ( ! (search instanceof DocumentOnlySearch)) {
                 DocumentDatabase db = new DocumentDatabase(this,
                                                            search.getName(),
                                                            new DerivedConfiguration(search,

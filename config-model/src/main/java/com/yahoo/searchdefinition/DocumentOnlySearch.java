@@ -5,19 +5,13 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
 
 /**
  * A search that was derived from an sd file containing no search element(s), only
- * document specifications.
+ * document specifications, so the name of this is decided by parsing and adding the document instance.
  *
  * @author vegardh
- *
  */
- // Award for best class name goes to ...
-public class UnproperSearch extends Search {
-    // This class exists because the parser accepts SD files without search { ... , and
-    // there are unit tests using it too, BUT there are many nullpointer bugs if you try to
-    // deploy such a file. Using this class to try to catch those.
-    // TODO: Throw away this when we properly support doc-only SD files.
+public class DocumentOnlySearch extends Search {
 
-    public UnproperSearch() {
+    public DocumentOnlySearch() {
         // empty
     }
 
@@ -28,4 +22,5 @@ public class UnproperSearch extends Search {
         }
         super.addDocument(docType);
     }
+
 }
