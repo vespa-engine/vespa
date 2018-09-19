@@ -17,8 +17,7 @@ import java.util.*;
 /**
  * Tool to verify that configs across multiple config servers are the same.
  *
- * @author lulf
- * @since 5.12
+ * @author Ulf Lilleengen
  */
 public class ConfigVerification {
     private final static int port = 19071;

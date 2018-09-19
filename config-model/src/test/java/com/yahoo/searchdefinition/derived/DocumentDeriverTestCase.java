@@ -16,35 +16,10 @@ import static org.junit.Assert.*;
 /**
  * Tests deriving of documentmanager
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Moelster Lidal</a>
+ * @author Mathias Moelster Lidal
  */
 public class DocumentDeriverTestCase extends AbstractExportingTestCase {
-    @Test
-    public void testDocumentDeriving() {
-        String root = "src/test/derived/documentderiver/";
 
-        List<String> files = new ArrayList<>();
-        files.add(root + "newsarticle.sd");
-        files.add(root + "newssummary.sd");
-        files.add(root + "music.sd");
-        files.add(root + "mail.sd");
-        files.add(root + "compression_header.sd");
-        files.add(root + "compression_both.sd");
-        files.add(root + "compression_body.sd");
-
-        File toDir = new File("temp/documentderiver/");
-        toDir.mkdir();
-
-        SearchBuilder builder = Deriver.deriveDocuments(files, toDir.getPath());
-        try {
-            assertEqualFiles(root + "documentmanager.cfg", toDir.getPath() + "/documentmanager.cfg");
-        } catch (IOException e) {
-            throw new RuntimeException("Exception while comparing files", e);
-        }
-
-        SDDocumentType doc = builder.getSearch("newsarticle").getDocument();
-        assertNotNull(doc);
-    }
     @Test
     public void testStructTypesNotUsed() {
         String root = "src/test/derived/documentderiver/";
@@ -54,8 +29,6 @@ public class DocumentDeriverTestCase extends AbstractExportingTestCase {
 
         File toDir = new File("temp/structtypesnotused/");
         toDir.mkdir();
-
-        Deriver.deriveDocuments(files, toDir.getPath());
 
         DocumentTypeManager dtm = new DocumentTypeManager();
         int numBuiltInTypes = dtm.getDataTypes().size();
