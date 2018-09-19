@@ -32,7 +32,6 @@ struct LegacyDocumentDBMetrics : metrics::MetricSet
     struct DocstoreMetrics : metrics::MetricSet {
         metrics::LongValueMetric memoryUsage;
         metrics::LongCountMetric cacheLookups;
-        size_t hits;
         metrics::LongAverageMetric cacheHitRate;
         metrics::LongValueMetric cacheElements;
         metrics::LongValueMetric cacheMemoryUsed;

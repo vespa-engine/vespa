@@ -83,7 +83,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
                        const ProtonConfig &protonCfg,
                        IDocumentDBOwner &owner,
                        vespalib::ThreadExecutor &warmupExecutor,
-                       vespalib::ThreadStackExecutorBase &summaryExecutor,
+                       vespalib::ThreadStackExecutorBase &sharedExecutor,
                        search::transactionlog::Writer &tlsDirectWriter,
                        MetricsWireService &metricsWireService,
                        const FileHeaderContext &fileHeaderContext,
@@ -130,9 +130,9 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _writeFilter(),
       _feedHandler(_writeService, tlsSpec, docTypeName, _state, *this, _writeFilter, *this, tlsDirectWriter),
       _subDBs(*this, *this, _feedHandler, _docTypeName, _writeService, warmupExecutor,
-              summaryExecutor, fileHeaderContext, metricsWireService, getMetricsCollection(),
+              sharedExecutor, fileHeaderContext, metricsWireService, getMetricsCollection(),
               queryLimiter, clock, _configMutex, _baseDir, protonCfg, hwInfo),
-      _maintenanceController(_writeService.master(), summaryExecutor, _docTypeName),
+      _maintenanceController(_writeService.master(), sharedExecutor, _docTypeName),
       _visibility(_feedHandler, _writeService, _feedView),
       _lidSpaceCompactionHandlers(),
       _jobTrackers(),
@@ -1209,7 +1209,6 @@ updateDocstoreMetrics(LegacyDocumentDBMetrics::DocstoreMetrics &metrics,
     metrics.memoryUsage.set(memoryUsage);
     updateCountMetric(cache_stats.lookups(), lastCacheStats.lookups(), metrics.cacheLookups);
     updateDocumentStoreCacheHitRate(cache_stats, lastCacheStats, metrics.cacheHitRate);
-    metrics.hits = cache_stats.hits;
     metrics.cacheElements.set(cache_stats.elements);
     metrics.cacheMemoryUsed.set(cache_stats.memory_used);
     lastCacheStats = cache_stats;
