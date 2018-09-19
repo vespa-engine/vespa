@@ -13,17 +13,32 @@ import java.util.Optional;
 public class TransportSecurityUtils {
 
     public static final String CONFIG_FILE_ENVIRONMENT_VARIABLE = "VESPA_TLS_CONFIG_FILE";
+    public static final String CONFIG_INSECURE_MIXED_MODE_ENVIRONMENT_VARIABLE = "VESPA_TLS_CONFIG_INSECURE_MIXED_MODE";
 
     private TransportSecurityUtils() {}
 
+    public static boolean isTransportSecurityEnabled() {
+        return getConfigFile().isPresent();
+    }
+
+    public static boolean isConfigInsecureMixedModeEnabled() {
+        boolean mixedModeVariableEqualsTrue = getEnvironmentVariable(CONFIG_INSECURE_MIXED_MODE_ENVIRONMENT_VARIABLE)
+                .map(value -> value.equals("true"))
+                .orElse(false);
+        return isTransportSecurityEnabled() && mixedModeVariableEqualsTrue;
+    }
+
     public static Optional<Path> getConfigFile() {
-        return Optional.ofNullable(System.getenv(CONFIG_FILE_ENVIRONMENT_VARIABLE))
-                .filter(var -> !var.isEmpty())
-                .map(Paths::get);
+        return getEnvironmentVariable(CONFIG_FILE_ENVIRONMENT_VARIABLE).map(Paths::get);
     }
 
     public static Optional<TransportSecurityOptions> getOptions() {
         return getConfigFile()
                 .map(TransportSecurityOptions::fromJsonFile);
+    }
+
+    private static Optional<String> getEnvironmentVariable(String environmentVariable) {
+        return Optional.ofNullable(System.getenv(environmentVariable))
+                .filter(var -> !var.isEmpty());
     }
 }
