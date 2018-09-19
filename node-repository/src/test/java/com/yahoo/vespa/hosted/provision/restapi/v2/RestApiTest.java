@@ -508,7 +508,7 @@ public class RestApiTest {
         // Initially, no versions are set
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"), "{\"versions\":{},\"osVersions\":{}}");
 
-        // Set version for config and confighost
+        // Set version for config, confighost and controller
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/config",
                         Utf8.toBytes("{\"version\": \"6.123.456\"}"),
                         Request.Method.PATCH),
@@ -517,10 +517,15 @@ public class RestApiTest {
                         Utf8.toBytes("{\"version\": \"6.123.456\"}"),
                         Request.Method.PATCH),
                 "{\"message\":\"Set version to 6.123.456 for nodes of type confighost\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/controller",
+                                   Utf8.toBytes("{\"version\": \"6.123.456\"}"),
+                                   Request.Method.PATCH),
+                       "{\"message\":\"Set version to 6.123.456 for nodes of type controller\"}");
+
 
         // Verify versions are set
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.456\"},\"osVersions\":{}}");
+                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.456\",\"controller\":\"6.123.456\"},\"osVersions\":{}}");
 
         // Setting empty version fails
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -528,6 +533,13 @@ public class RestApiTest {
                                    Request.Method.PATCH),
                        400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid target version: 0.0.0\"}");
+
+        // Setting version for unsupported node type fails
+        assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/tenant",
+                                   Utf8.toBytes("{\"version\": \"6.123.456\"}"),
+                                   Request.Method.PATCH),
+                       400,
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot set version for type tenant\"}");
 
         // Omitting version field fails
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -552,7 +564,7 @@ public class RestApiTest {
 
         // Verify version has been updated
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\"},\"osVersions\":{}}");
+                "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\",\"controller\":\"6.123.456\"},\"osVersions\":{}}");
 
         // Upgrade OS for confighost and host
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",
@@ -566,7 +578,7 @@ public class RestApiTest {
 
         // OS versions are set
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/"),
-                       "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\"},\"osVersions\":{\"host\":\"7.5.2\",\"confighost\":\"7.5.2\"}}");
+                       "{\"versions\":{\"config\":\"6.123.456\",\"confighost\":\"6.123.1\",\"controller\":\"6.123.456\"},\"osVersions\":{\"host\":\"7.5.2\",\"confighost\":\"7.5.2\"}}");
 
         // Upgrade OS and Vespa together
         assertResponse(new Request("http://localhost:8080/nodes/v2/upgrade/confighost",

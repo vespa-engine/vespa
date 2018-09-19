@@ -320,12 +320,13 @@ public class NodeSerializer {
 
     static NodeType nodeTypeFromString(String typeString) {
         switch (typeString) {
-            case "tenant" : return NodeType.tenant;
-            case "host" : return NodeType.host;
-            case "proxy" : return NodeType.proxy;
-            case "proxyhost" : return NodeType.proxyhost;
-            case "config" : return NodeType.config;
-            case "confighost" : return NodeType.confighost;
+            case "tenant": return NodeType.tenant;
+            case "host": return NodeType.host;
+            case "proxy": return NodeType.proxy;
+            case "proxyhost": return NodeType.proxyhost;
+            case "config": return NodeType.config;
+            case "confighost": return NodeType.confighost;
+            case "controller": return NodeType.controller;
             default : throw new IllegalArgumentException("Unknown node type '" + typeString + "'");
         }
     }
@@ -338,6 +339,7 @@ public class NodeSerializer {
             case proxyhost: return "proxyhost";
             case config: return "config";
             case confighost: return "confighost";
+            case controller: return "controller";
         }
         throw new IllegalArgumentException("Serialized form of '" + type + "' not defined");
     }

@@ -28,8 +28,14 @@ public class InfrastructureVersions {
     }
 
     public void setTargetVersion(NodeType nodeType, Version newTargetVersion, boolean force) {
-        if (nodeType != NodeType.config && nodeType != NodeType.confighost && nodeType != NodeType.proxyhost) {
-            throw new IllegalArgumentException("Cannot set version for type " + nodeType);
+        switch (nodeType) {
+            case config:
+            case confighost:
+            case proxyhost:
+            case controller:
+                break;
+            default:
+                throw new IllegalArgumentException("Cannot set version for type " + nodeType);
         }
         if (newTargetVersion.isEmpty()) {
             throw  new IllegalArgumentException("Invalid target version: " + newTargetVersion.toFullString());
