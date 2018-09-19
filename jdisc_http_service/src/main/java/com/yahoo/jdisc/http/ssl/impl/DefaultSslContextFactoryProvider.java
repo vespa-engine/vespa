@@ -48,14 +48,6 @@ public class DefaultSslContextFactoryProvider implements SslContextFactoryProvid
                 break;
         }
 
-        // NOTE: All ciphers matching ^TLS_RSA_.*$ are disabled by default in Jetty 9.4.12+ (https://github.com/eclipse/jetty.project/issues/2807)
-        // JDisc will allow these ciphers by default to support older clients (e.g. Java 8u60 and curl 7.29.0)
-        // Removing the exclusion will allow for the TLS_RSA variants that are not covered by other exclusions
-        String[] excludedCiphersWithoutTlsRsaExclusion = Arrays.stream(factory.getExcludeCipherSuites())
-                .filter(cipher -> !cipher.equals("^TLS_RSA_.*$"))
-                .toArray(String[]::new);
-        factory.setExcludeCipherSuites(excludedCiphersWithoutTlsRsaExclusion);
-
         // Check if using new ssl syntax from services.xml
         factory.setKeyStore(createKeystore(sslConfig));
         factory.setKeyStorePassword("");
