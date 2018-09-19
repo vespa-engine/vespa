@@ -187,7 +187,7 @@
                 hk2-utils-${hk2.version}.jar,
                 jackson-annotations-${jackson2.version}.jar,
                 jackson-core-${jackson2.version}.jar,
-                jackson-databind-${jackson2.version}.jar,
+                jackson-databind-${jackson-databind.version}.jar,
                 jackson-datatype-jdk8-${jackson2.version}.jar,
                 jackson-datatype-jsr310-${jackson2.version}.jar,
                 jackson-jaxrs-base-${jackson2.version}.jar,
