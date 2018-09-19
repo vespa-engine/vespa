@@ -30,7 +30,6 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -111,12 +110,6 @@ public class ConfigserverSslContextFactoryProvider extends AbstractComponent imp
                                                                  ZtsClient ztsClient,
                                                                  AthenzProviderServiceConfig.Zones zoneConfig) {
         SslContextFactory factory = new SslContextFactory();
-
-        // Allow safe TLS_RSA* ciphers
-        String[] excludedCiphersWithoutTlsRsaExclusion = Arrays.stream(factory.getExcludeCipherSuites())
-                .filter(cipher -> !cipher.equals("^TLS_RSA_.*$"))
-                .toArray(String[]::new);
-        factory.setExcludeCipherSuites(excludedCiphersWithoutTlsRsaExclusion);
 
         factory.setWantClientAuth(true);
 
