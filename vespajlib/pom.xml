@@ -90,12 +90,6 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
-        <configuration>
-          <discPreInstallBundle>
-            bcpkix-jdk15on-${bouncycastle.version}.jar,
-            bcprov-jdk15on-${bouncycastle.version}.jar,
-          </discPreInstallBundle>
-        </configuration>
       </plugin>
 
       <plugin>
