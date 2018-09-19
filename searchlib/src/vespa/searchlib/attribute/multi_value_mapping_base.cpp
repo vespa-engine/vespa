@@ -3,7 +3,8 @@
 #include "multi_value_mapping_base.h"
 #include <vespa/searchcommon/common/compaction_strategy.h>
 
-namespace search::attribute {
+namespace search {
+namespace attribute {
 
 namespace {
 
@@ -22,7 +23,9 @@ MultiValueMappingBase::MultiValueMappingBase(const GrowStrategy &gs,
 {
 }
 
-MultiValueMappingBase::~MultiValueMappingBase() = default;
+MultiValueMappingBase::~MultiValueMappingBase()
+{
+}
 
 MultiValueMappingBase::RefCopyVector
 MultiValueMappingBase::getRefCopy(uint32_t size) const {
@@ -99,4 +102,5 @@ MultiValueMappingBase::considerCompact(const CompactionStrategy &compactionStrat
     return false;
 }
 
-}
+} // namespace search::attribute
+} // namespace search
