@@ -73,7 +73,9 @@ protected:
     void insertNewUniqueValues(EnumStoreBase::IndexVector & newIndexes);
     virtual void considerAttributeChange(const Change & c, UniqueSet & newUniques) = 0;
     virtual void reEnumerate() = 0;
+    bool hasEnum2Value() const override { return true; }
     AddressSpace getEnumStoreAddressSpaceUsage() const override;
+
 public:
     EnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
     ~EnumAttribute();

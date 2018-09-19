@@ -61,14 +61,17 @@ class DataStoreBase::BufferHold : public GenerationHeldBase
     uint32_t _bufferId;
 
 public:
-    BufferHold(size_t size, DataStoreBase &dsb, uint32_t bufferId)
+    BufferHold(size_t size,
+               DataStoreBase &dsb,
+               uint32_t bufferId)
         : GenerationHeldBase(size),
           _dsb(dsb),
           _bufferId(bufferId)
     {
     }
 
-    ~BufferHold() override
+    virtual
+    ~BufferHold()
     {
         _dsb.doneHoldBuffer(_bufferId);
     }

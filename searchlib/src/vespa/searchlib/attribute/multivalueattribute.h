@@ -53,7 +53,7 @@ protected:
 
 public:
     MultiValueAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
-    ~MultiValueAttribute() override;
+    virtual ~MultiValueAttribute();
 
     bool addDoc(DocId & doc) override;
     uint32_t getValueCount(DocId doc) const override;
