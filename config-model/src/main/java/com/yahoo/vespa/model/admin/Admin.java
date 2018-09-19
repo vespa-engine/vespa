@@ -155,7 +155,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     public void getConfig(LogdConfig.Builder builder) {
         builder.
             logserver(new LogdConfig.Logserver.Builder().
-                    use(!isHostedVespa).
+                    use(logServerContainerCluster.isPresent() || !isHostedVespa).
                     host(logserver.getHostName()).
                     port(logserver.getRelativePort(1)));
     }
