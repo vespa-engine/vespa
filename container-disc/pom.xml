@@ -165,6 +165,7 @@
         <configuration>
           <discApplicationClass>com.yahoo.container.jdisc.ConfiguredApplication</discApplicationClass>
             <discPreInstallBundle>
+                <!-- Vespa bundles -->
                 config-bundle-jar-with-dependencies.jar,
                 configdefinitions-jar-with-dependencies.jar,
                 container-jersey2-jar-with-dependencies.jar,
@@ -182,6 +183,9 @@
                 defaults-jar-with-dependencies.jar,
                 component-jar-with-dependencies.jar,
                 zkfacade-jar-with-dependencies.jar,
+                <!-- Misc 3rd party bundles -->
+                bcpkix-jdk15on-${bouncycastle.version}.jar,
+                bcprov-jdk15on-${bouncycastle.version}.jar,
                 <!-- Jersey 2 + Jackson 2 -->
                 aopalliance-repackaged-${hk2.version}.jar,
                 hk2-api-${hk2.version}.jar,
