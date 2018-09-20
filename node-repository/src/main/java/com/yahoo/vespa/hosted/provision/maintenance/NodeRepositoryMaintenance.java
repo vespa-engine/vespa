@@ -70,7 +70,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         jobControl = new JobControl(nodeRepository.database());
         infrastructureVersions = new InfrastructureVersions(nodeRepository.database());
 
-        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv("throttle_policy").orElse(defaults.throttlePolicy), metric, jobControl, configserverConfig);
+        nodeFailer = new NodeFailer(deployer, hostLivenessTracker, serviceMonitor, nodeRepository, durationFromEnv("fail_grace").orElse(defaults.failGrace), clock, orchestrator, throttlePolicyFromEnv().orElse(defaults.throttlePolicy), metric, jobControl, configserverConfig);
         periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, nodeRepository, defaults.redeployMaintainerInterval, durationFromEnv("periodic_redeploy_interval").orElse(defaults.periodicRedeployInterval), jobControl);
         operatorChangeApplicationMaintainer = new OperatorChangeApplicationMaintainer(deployer, nodeRepository, clock, durationFromEnv("operator_change_redeploy_interval").orElse(defaults.operatorChangeRedeployInterval), jobControl);
         reservationExpirer = new ReservationExpirer(nodeRepository, clock, durationFromEnv("reservation_expiry").orElse(defaults.reservationExpiry), jobControl);
@@ -117,8 +117,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         return Optional.ofNullable(System.getenv(envPrefix + envVariable)).map(Long::parseLong).map(Duration::ofSeconds);
     }
 
-    private static Optional<NodeFailer.ThrottlePolicy> throttlePolicyFromEnv(String envVariable) {
-        String policyName = System.getenv(envPrefix + envVariable);
+    private static Optional<NodeFailer.ThrottlePolicy> throttlePolicyFromEnv() {
+        String policyName = System.getenv(envPrefix + "throttle_policy");
         try {
             return Optional.ofNullable(policyName).map(NodeFailer.ThrottlePolicy::valueOf);
         } catch (IllegalArgumentException e) {
@@ -162,26 +162,25 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             operatorChangeRedeployInterval = Duration.ofMinutes(1);
             failedExpirerInterval = Duration.ofMinutes(10);
             provisionedExpiry = Duration.ofHours(4);
-            reservationExpiry = Duration.ofMinutes(20); // Need to be long enough for deployment to be finished for all config model versions
             rebootInterval = Duration.ofDays(30);
             nodeRetirerInterval = Duration.ofMinutes(30);
             metricsInterval = Duration.ofMinutes(1);
             infrastructureProvisionInterval = Duration.ofMinutes(3);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
 
-            if (zone.environment().isTest())
-                retiredExpiry = Duration.ofMinutes(1); // fast turnaround as test envs don't have persistent data
-            else
-                retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
 
-            if (zone.environment().equals(Environment.prod) && zone.system() == SystemName.main) {
+            if (zone.environment().equals(Environment.prod) && zone.system() != SystemName.cd) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(29);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
+                retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
+                reservationExpiry = Duration.ofMinutes(20); // Need to be long enough for deployment to be finished for all config model versions
             } else {
                 inactiveExpiry = Duration.ofSeconds(2); // support interactive wipe start over
                 retiredInterval = Duration.ofMinutes(5);
                 dirtyExpiry = Duration.ofMinutes(30);
+                retiredExpiry = Duration.ofMinutes(20); // fast turnaround as test envs don't have persistent data
+                reservationExpiry = Duration.ofMinutes(10);
             }
         }
 
