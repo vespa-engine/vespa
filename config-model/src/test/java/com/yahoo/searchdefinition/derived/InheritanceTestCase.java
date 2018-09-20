@@ -158,18 +158,4 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         assertEquals(new Index("prefixed", true), childSearch.getIndex("prefixed"));
     }
 
-    @Test
-    public void testFailTypesMismatch() throws IOException, ParseException {
-        String root = "src/test/derived/inheritancebadtypes/";
-        List<String> files = new LinkedList<>();
-        files.add(root + "parent.sd");
-        files.add(root + "child.sd");
-        File toDir = tmpDir.newFolder("to");
-        try {
-            Deriver.deriveDocuments(files, toDir.getPath());
-            fail("Import of child SD with type mismatch worked.");
-        } catch (RuntimeException e) {
-            assertTrue(e.getMessage().matches(".*already contains field 'a'.*"));
-        }
-    }
 }

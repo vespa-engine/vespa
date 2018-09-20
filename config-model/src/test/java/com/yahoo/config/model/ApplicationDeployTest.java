@@ -14,7 +14,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.searchdefinition.Search;
-import com.yahoo.searchdefinition.UnproperSearch;
+import com.yahoo.searchdefinition.DocumentOnlySearch;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.model.VespaModel;
@@ -72,7 +72,7 @@ public class ApplicationDeployTest {
                 case "sock":
                     break;
                 case "product":
-                    assertTrue(s instanceof UnproperSearch);
+                    assertTrue(s instanceof DocumentOnlySearch);
                     assertEquals(s.getDocument().getField("title").getDataType(), DataType.STRING);
                     break;
                 default:

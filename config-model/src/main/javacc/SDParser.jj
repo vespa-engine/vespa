@@ -40,7 +40,7 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile.MatchPhaseSettings;
 import com.yahoo.searchdefinition.RankProfile.DiversitySettings;
 import com.yahoo.searchdefinition.Search;
-import com.yahoo.searchdefinition.UnproperSearch;
+import com.yahoo.searchdefinition.DocumentOnlySearch;
 import com.yahoo.searchdefinition.UnrankedRankProfile;
 import com.yahoo.searchdefinition.fieldoperation.*;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
@@ -457,7 +457,7 @@ Object rootSearchItem(Search search) : { }
  */
 Search rootDocument(String dir) :
 {
-    Search search = new UnproperSearch();
+    Search search = new DocumentOnlySearch();
 }
 {
     ( (rootDocumentItem(search) (<NL>)*)*<EOF> )

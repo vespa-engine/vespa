@@ -12,6 +12,7 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
 /**
  * tests importing of document containing array type fields
  *
@@ -21,7 +22,7 @@ public class ArraysTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testArrayImporting() throws IOException, ParseException {
-        Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/arrays.sd");
+        Search search = SearchBuilder.buildFromFile("src/test/examples/arrays.sd");
 
         SDField tags = (SDField)search.getDocument().getField("tags");
         assertEquals(DataType.STRING, ((CollectionDataType)tags.getDataType()).getNestedType());
