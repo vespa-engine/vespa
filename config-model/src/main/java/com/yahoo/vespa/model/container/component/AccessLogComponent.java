@@ -8,8 +8,6 @@ import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
-import static com.yahoo.container.core.AccessLogConfig.FileHandler.RotateScheme;
-
 /**
  * @author Tony Vaagenes
  * @author gjoranv
@@ -20,7 +18,6 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
 
     private final String fileNamePattern;
     private final String rotationInterval;
-    private final RotateScheme.Enum rotationScheme;
     private final Boolean compression;
     private final boolean isHostedVespa;
     private final String symlinkName;
@@ -29,7 +26,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     {
         this(logType,
                 String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName, "%Y%m%d%H%M%S"),
-                null, null, null, isHostedVespa,
+                null, null, isHostedVespa,
                 capitalize(logType.name()) + "." + clusterName);
     }
 
@@ -40,7 +37,6 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     public AccessLogComponent(AccessLogType logType,
                               String fileNamePattern,
                               String rotationInterval,
-                              RotateScheme.Enum rotationScheme,
                               Boolean compressOnRotation,
                               boolean isHostedVespa,
                               String symlinkName)
@@ -48,7 +44,6 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         super(new ComponentModel(accessLogClass(logType), null, "container-core", null));
         this.fileNamePattern = fileNamePattern;
         this.rotationInterval = rotationInterval;
-        this.rotationScheme = rotationScheme;
         this.compression = compressOnRotation;
         this.isHostedVespa = isHostedVespa;
         this.symlinkName = symlinkName;
@@ -81,8 +76,6 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
             builder.pattern(fileNamePattern);
         if (rotationInterval != null)
             builder.rotation(rotationInterval);
-        if (rotationScheme != null)
-            builder.rotateScheme(rotationScheme);
         if (symlinkName != null)
             builder.symlink(symlinkName);
         if (compression != null) {
@@ -96,19 +89,5 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
 
     public String getFileNamePattern() {
         return fileNamePattern;
-    }
-
-    public static final RotateScheme.Enum rotateScheme(@Nullable String name) {
-        if (name == null)
-            return null;
-
-        switch (name) {
-            case "date":
-                return RotateScheme.Enum.DATE;
-            case "sequence":
-                return RotateScheme.Enum.SEQUENCE;
-            default:
-                throw new IllegalArgumentException("Invalid rotation scheme " + name);
-        }
     }
 }

@@ -187,26 +187,6 @@ public class YApacheLogTestCase {
         return entry;
     }
 
-    /**
-     * author someone-else. Please rewrite this.
-     */
-    @Test
-    public void testYApacheAccessLogWithSequenceNamingScheme() throws IOException, InterruptedException {
-        // try without existing files
-        assertCorrectSequenceBehavior(1);
-
-        // try with existing files
-        try {
-            new File("yapachetest2").mkdir();
-            new File("yapachetest2/access.1").createNewFile();
-            new File("yapachetest2/access.2").createNewFile();
-            assertCorrectSequenceBehavior(3);
-        }
-        finally {
-            deleteDirectory("yapachetest2");
-        }
-    }
-
     // Prefixes that don't collide with any in the specified log format.
     private static final char FIELD_KEY_REQUEST_EXTRA = '@';
     private static final char FIELD_KEY_RESPONSE_EXTRA = '#';
@@ -232,8 +212,7 @@ public class YApacheLogTestCase {
         AccessLogConfig.Builder builder = new AccessLogConfig.Builder().
                 fileHandler(new AccessLogConfig.FileHandler.Builder().
                         pattern("yapachetest2/access").
-                        compressOnRotation(false).
-                        rotateScheme(AccessLogConfig.FileHandler.RotateScheme.Enum.SEQUENCE));
+                        compressOnRotation(false));
 
         AccessLogConfig config = new AccessLogConfig(builder);
         YApacheAccessLog accessLog = new YApacheAccessLog(config);
