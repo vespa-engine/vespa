@@ -9,12 +9,3 @@ attribute[].referencefield string
 
 # The name of the target attribute field in the parent document type that is imported into this document type.
 attribute[].targetfield string
-
-# Deprecated. TODO: Remove when going to Vespa 7.
-# The data type of the target attribute field. This enum should match the one in attributes.def.
-attribute[].datatype enum { STRING, UINT1, UINT2, UINT4, INT8, INT16, INT32, INT64, FLOAT, DOUBLE, PREDICATE, TENSOR, REFERENCE, NONE } default=NONE
-
-# Deprecated. TODO: Remove when going to Vespa 7.
-# The collection type of the target attribute field. This enum should match the one in attributes.def.
-attribute[].collectiontype enum { SINGLE, ARRAY, WEIGHTEDSET } default=SINGLE
-
