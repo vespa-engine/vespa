@@ -82,8 +82,7 @@ public class SerializationContext extends FunctionReferenceContext {
 
     /** Adds the serialization of the type of a function */
     public void addFunctionTypeSerialization(String name, String expressionString) {
-        // TODO: Enable
-        // serializedFunctions.put(name, expressionString);
+        serializedFunctions.put(name, expressionString);
     }
 
     @Override
