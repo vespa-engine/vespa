@@ -179,7 +179,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 inactiveExpiry = Duration.ofSeconds(2); // support interactive wipe start over
                 retiredInterval = Duration.ofMinutes(5);
                 dirtyExpiry = Duration.ofMinutes(30);
-                retiredExpiry = Duration.ofMinutes(1); // fast turnaround as test envs don't have persistent data
+                retiredExpiry = Duration.ofMinutes(20); // fast turnaround as test envs don't have persistent data
                 reservationExpiry = Duration.ofMinutes(10);
             }
         }
