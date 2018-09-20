@@ -7,8 +7,8 @@ package com.yahoo.vespa.hosted.dockerapi;
 public class ContainerResources {
     public static final ContainerResources UNLIMITED = ContainerResources.from(0, 0);
 
-    public final int cpuShares;
-    public final long memoryBytes;
+    private final int cpuShares;
+    private final long memoryBytes;
 
     ContainerResources(int cpuShares, long memoryBytes) {
         this.cpuShares = cpuShares;
@@ -19,6 +19,14 @@ public class ContainerResources {
         return new ContainerResources(
                 (int) Math.round(10 * cpuCores),
                 (long) ((1L << 30) * memoryGb));
+    }
+
+    public int cpuShares() {
+        return cpuShares;
+    }
+
+    public long memoryBytes() {
+        return memoryBytes;
     }
 
     @Override

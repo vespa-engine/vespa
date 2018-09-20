@@ -6,9 +6,10 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
-import com.yahoo.vespa.hosted.dockerapi.DockerException;
-import com.yahoo.vespa.hosted.dockerapi.DockerExecTimeoutException;
+import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
+import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
+import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
+import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
@@ -262,7 +263,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .flatMap(container -> removeContainerIfNeeded(node, container))
                 .map(container -> {
                         shouldRestartServices(node).ifPresent(restartReason -> {
-                            logger.info("Will restart services for container " + container + ": " + restartReason);
+                            logger.info("Will restart services: " + restartReason);
                             restartServices(node, container);
                         });
                         return container;
@@ -283,7 +284,7 @@ public class NodeAgentImpl implements NodeAgent {
     private void restartServices(NodeSpec node, Container existingContainer) {
         if (existingContainer.state.isRunning() && node.getState() == Node.State.active) {
             ContainerName containerName = existingContainer.name;
-            logger.info("Restarting services for " + containerName);
+            logger.info("Restarting services");
             // Since we are restarting the services we need to suspend the node.
             orchestratorSuspendNode();
             dockerOperations.restartVespaOnNode(containerName);
@@ -292,9 +293,14 @@ public class NodeAgentImpl implements NodeAgent {
 
     @Override
     public void stopServices() {
-        logger.info("Stopping services for " + containerName);
-        dockerOperations.trySuspendNode(containerName);
-        dockerOperations.stopServicesOnNode(containerName);
+        logger.info("Stopping services");
+        if (containerState == ABSENT) return;
+        try {
+            dockerOperations.trySuspendNode(containerName);
+            dockerOperations.stopServicesOnNode(containerName);
+        } catch (ContainerNotFoundException e) {
+            containerState = ABSENT;
+        }
     }
 
     private Optional<String> shouldRemoveContainer(NodeSpec node, Container existingContainer) {
@@ -324,7 +330,7 @@ public class NodeAgentImpl implements NodeAgent {
     private Optional<Container> removeContainerIfNeeded(NodeSpec node, Container existingContainer) {
         Optional<String> removeReason = shouldRemoveContainer(node, existingContainer);
         if (removeReason.isPresent()) {
-            logger.info("Will remove container " + existingContainer + ": " + removeReason.get());
+            logger.info("Will remove container: " + removeReason.get());
 
             if (existingContainer.state.isRunning()) {
                 if (node.getState() == Node.State.active) {
@@ -378,7 +384,7 @@ public class NodeAgentImpl implements NodeAgent {
                     try {
                         monitor.wait(remainder);
                     } catch (InterruptedException e) {
-                        logger.error("Interrupted, but ignoring this: " + hostname);
+                        logger.error("Interrupted while sleeping before tick, ignoring");
                     }
                 } else break;
             }
@@ -403,9 +409,12 @@ public class NodeAgentImpl implements NodeAgent {
                 converged = true;
             } catch (OrchestratorException e) {
                 logger.info(e.getMessage());
+            } catch (ContainerNotFoundException e) {
+                containerState = ABSENT;
+                logger.warning("Container unexpectedly gone, resetting containerState to " + containerState);
             } catch (DockerException e) {
                 numberOfUnhandledException++;
-                logger.error("Caught a DockerException, resetting containerState to " + containerState, e);
+                logger.error("Caught a DockerException", e);
             } catch (Exception e) {
                 numberOfUnhandledException++;
                 logger.error("Unhandled exception, ignoring.", e);
@@ -554,7 +563,7 @@ public class NodeAgentImpl implements NodeAgent {
         final NodeSpec node = lastNode;
         if (node == null || containerState != UNKNOWN) return;
 
-        Optional<Docker.ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
+        Optional<ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
         if (!containerStats.isPresent()) return;
 
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
@@ -566,7 +575,7 @@ public class NodeAgentImpl implements NodeAgent {
                 dimensionsBuilder.add("orchestratorState", allowed ? "ALLOWED_TO_BE_DOWN" : "NO_REMARKS"));
         Dimensions dimensions = dimensionsBuilder.build();
 
-        Docker.ContainerStats stats = containerStats.get();
+        ContainerStats stats = containerStats.get();
         final String APP = MetricReceiverWrapper.APPLICATION_NODE;
         final int totalNumCpuCores = ((List<Number>) ((Map) stats.getCpuStats().get("cpu_usage")).get("percpu_usage")).size();
         final long cpuContainerKernelTime = ((Number) ((Map) stats.getCpuStats().get("cpu_usage")).get("usage_in_kernelmode")).longValue();
@@ -631,7 +640,7 @@ public class NodeAgentImpl implements NodeAgent {
             String[] command = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:19091",  "setExtraMetrics", wrappedMetrics};
             dockerOperations.executeCommandInContainerAsRoot(containerName, 5L, command);
         } catch (DockerExecTimeoutException | JsonProcessingException  e) {
-            logger.warning("Unable to push metrics to container: " + containerName, e);
+            logger.warning("Failed to push metrics to container", e);
         }
     }
 

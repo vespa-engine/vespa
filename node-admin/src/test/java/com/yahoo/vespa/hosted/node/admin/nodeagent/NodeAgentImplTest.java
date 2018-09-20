@@ -8,9 +8,8 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
-import com.yahoo.vespa.hosted.dockerapi.ContainerStatsImpl;
-import com.yahoo.vespa.hosted.dockerapi.Docker;
-import com.yahoo.vespa.hosted.dockerapi.DockerException;
+import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
+import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -29,8 +28,8 @@ import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -78,7 +77,7 @@ public class NodeAgentImplTest {
     private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
     private final MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
     private final AclMaintainer aclMaintainer = mock(AclMaintainer.class);
-    private final Docker.ContainerStats emptyContainerStats = new ContainerStatsImpl(Collections.emptyMap(),
+    private final ContainerStats emptyContainerStats = new ContainerStats(Collections.emptyMap(),
             Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
     private final AthenzCredentialsMaintainer athenzCredentialsMaintainer = mock(AthenzCredentialsMaintainer.class);
 
@@ -598,7 +597,7 @@ public class NodeAgentImplTest {
     public void testGetRelevantMetrics() throws Exception {
         final ObjectMapper objectMapper = new ObjectMapper();
         ClassLoader classLoader = getClass().getClassLoader();
-        File statsFile = new File(classLoader.getResource("docker.stats.json").getFile());
+        URL statsFile = classLoader.getResource("docker.stats.json");
         Map<String, Map<String, Object>> dockerStats = objectMapper.readValue(statsFile, Map.class);
 
         Map<String, Object> networks = dockerStats.get("networks");
@@ -606,8 +605,8 @@ public class NodeAgentImplTest {
         Map<String, Object> cpu_stats = dockerStats.get("cpu_stats");
         Map<String, Object> memory_stats = dockerStats.get("memory_stats");
         Map<String, Object> blkio_stats = dockerStats.get("blkio_stats");
-        Docker.ContainerStats stats1 = new ContainerStatsImpl(networks, precpu_stats, memory_stats, blkio_stats);
-        Docker.ContainerStats stats2 = new ContainerStatsImpl(networks, cpu_stats, memory_stats, blkio_stats);
+        ContainerStats stats1 = new ContainerStats(networks, precpu_stats, memory_stats, blkio_stats);
+        ContainerStats stats2 = new ContainerStats(networks, cpu_stats, memory_stats, blkio_stats);
 
         NodeSpec.Owner owner = new NodeSpec.Owner("tester", "testapp", "testinstance");
         NodeSpec.Membership membership = new NodeSpec.Membership("clustType", "clustId", "grp", 3, false);

@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.dockerapi;
 
 import java.net.InetAddress;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -61,20 +60,7 @@ public interface Docker {
             ContainerName containerName,
             String hostName);
 
-    interface ContainerStats {
-        Map<String, Object> getNetworks();
-        Map<String, Object> getCpuStats();
-        Map<String, Object> getMemoryStats();
-        Map<String, Object> getBlkioStats();
-    }
-
-    default boolean networkNATed() {
-        return false;
-    }
-
     Optional<ContainerStats> getContainerStats(ContainerName containerName);
-
-    void createContainer(CreateContainerCommand createContainerCommand);
 
     void startContainer(ContainerName containerName);
 
@@ -96,8 +82,6 @@ public interface Docker {
      * @return true iff image being pulled, false otherwise
      */
     boolean pullImageAsyncIfNeeded(DockerImage image);
-
-    void deleteImage(DockerImage dockerImage);
 
     /**
      * Deletes the local images that are currently not in use by any container and not recently used.
