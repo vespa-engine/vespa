@@ -210,6 +210,12 @@ public class NodeAgentImpl implements NodeAgent {
         logger.info("Stopped");
     }
 
+    /**
+     * Verifies that service is healthy, otherwise throws an exception. The default implementation does
+     * nothing, override if it's necessary to verify that a service is healthy before resuming.
+     */
+    protected void verifyHealth(NodeSpec node) { }
+
     void runLocalResumeScriptIfNeeded(NodeSpec node) {
         if (! resumeScriptRun) {
             storageMaintainer.writeMetricsConfig(containerName, node);
@@ -477,6 +483,7 @@ public class NodeAgentImpl implements NodeAgent {
                     aclMaintainer.run();
                 }
 
+                verifyHealth(node);
                 runLocalResumeScriptIfNeeded(node);
 
                 athenzCredentialsMaintainer.converge();
