@@ -24,11 +24,11 @@ struct DocumentMetaStoreReadGuards
     uint32_t numActiveDocs() const {
         return readydms ? readydms->get().getNumActiveLids() : 0;
     }
-    uint32_t numReadyDocs() const {
+    uint32_t numIndexedDocs() const {
         return readydms ? readydms->get().getNumUsedLids() : 0;
     }
-    uint32_t numTotalDocs() const {
-        return numReadyDocs() + (notreadydms ? notreadydms->get().getNumUsedLids() : 0);
+    uint32_t numStoredDocs() const {
+        return numIndexedDocs() + (notreadydms ? notreadydms->get().getNumUsedLids() : 0);
     }
     uint32_t numRemovedDocs() const {
         return remdms ? remdms->get().getNumUsedLids() : 0;
