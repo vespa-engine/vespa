@@ -449,7 +449,7 @@ public class RankProfile implements Serializable, Cloneable {
         addRankProperty(new RankProperty(name, parameter));
     }
 
-    public void addRankProperty(RankProperty rankProperty) {
+    private void addRankProperty(RankProperty rankProperty) {
         // Just the usual multimap semantics here
         List<RankProperty> properties = rankProperties.get(rankProperty.getName());
         if (properties == null) {
@@ -534,22 +534,21 @@ public class RankProfile implements Serializable, Cloneable {
 
     /** Adds a function and returns it */
     public RankingExpressionFunction addFunction(ExpressionFunction function, boolean inline) {
-        RankingExpressionFunction rankingExpressionFunction = new RankingExpressionFunction(function, inline);
+        RankingExpressionFunction rankingExpressionFunction = new RankingExpressionFunction(function, inline, Optional.empty());
         functions.put(function.getName(), rankingExpressionFunction);
         return rankingExpressionFunction;
     }
 
     /** Returns an unmodifiable view of the functions in this */
     public Map<String, RankingExpressionFunction> getFunctions() {
-        if (functions.size() == 0 && getInherited() == null) return Collections.emptyMap();
-        if (functions.size() == 0) return getInherited().getFunctions();
+        if (functions.isEmpty() && getInherited() == null) return Collections.emptyMap();
+        if (functions.isEmpty()) return getInherited().getFunctions();
         if (getInherited() == null) return Collections.unmodifiableMap(functions);
 
         // Neither is null
         Map<String, RankingExpressionFunction> allFunctions = new LinkedHashMap<>(getInherited().getFunctions());
         allFunctions.putAll(functions);
         return Collections.unmodifiableMap(allFunctions);
-
     }
 
     public int getKeepRankCount() {
@@ -903,9 +902,16 @@ public class RankProfile implements Serializable, Cloneable {
         /** True if this should be inlined into calling expressions. Useful for very cheap functions. */
         private final boolean inline;
 
-        public RankingExpressionFunction(ExpressionFunction function, boolean inline) {
+        private Optional<TensorType> type = Optional.empty();
+
+        public RankingExpressionFunction(ExpressionFunction function, boolean inline, Optional<TensorType> type) {
             this.function = function;
             this.inline = inline;
+            this.type = type;
+        }
+
+        public void setType(TensorType type) {
+            this.type = Optional.of(type);
         }
 
         public ExpressionFunction function() { return function; }
@@ -914,8 +920,11 @@ public class RankProfile implements Serializable, Cloneable {
             return inline && function.arguments().isEmpty(); // only inline no-arg functions;
         }
 
+        /** Returns the type this produces, or empty if not resolved */
+        public Optional<TensorType> type() { return type; }
+
         public RankingExpressionFunction withBody(RankingExpression expression) {
-            return new RankingExpressionFunction(function.withBody(expression), inline);
+            return new RankingExpressionFunction(function.withBody(expression), inline, type);
         }
 
         @Override

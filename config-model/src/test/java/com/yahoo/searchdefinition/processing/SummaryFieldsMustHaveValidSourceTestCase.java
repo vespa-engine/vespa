@@ -11,7 +11,6 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class SummaryFieldsMustHaveValidSourceTestCase extends SearchDefinitionTestCase {
@@ -19,7 +18,6 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends SearchDefinitionTe
     @Test
     public void requireThatInvalidSourceIsCaught() throws IOException, ParseException {
         Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/invalidsummarysource.sd");
-        search.process();
         try {
             new SummaryFieldsMustHaveValidSource(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true, false);
             fail("This should throw and never get here");
@@ -31,7 +29,6 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends SearchDefinitionTe
     @Test
     public void requireThatInvalidImplicitSourceIsCaught() throws IOException, ParseException {
         Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/invalidimplicitsummarysource.sd");
-        search.process();
         try {
             new SummaryFieldsMustHaveValidSource(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true, false);
             fail("This should throw and never get here");
@@ -43,7 +40,6 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends SearchDefinitionTe
     @Test
     public void requireThatInvalidSelfReferingSingleSource() throws IOException, ParseException {
         Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/invalidselfreferringsummary.sd");
-        search.process();
         try {
             new SummaryFieldsMustHaveValidSource(search, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles()).process(true, false);
             fail("This should throw and never get here");
@@ -55,7 +51,6 @@ public class SummaryFieldsMustHaveValidSourceTestCase extends SearchDefinitionTe
     @Test
     public void requireThatDocumentIdIsAllowedToPass() throws IOException, ParseException {
         Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/documentidinsummary.sd");
-        search.process();
         BaseDeployLogger deployLogger = new BaseDeployLogger();
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         new SummaryFieldsMustHaveValidSource(search, deployLogger, rankProfileRegistry, new QueryProfiles()).process(true, false);

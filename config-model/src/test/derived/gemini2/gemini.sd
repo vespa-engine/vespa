@@ -2,6 +2,12 @@
 search gemini {
 
     document gemini {
+        field right type string {
+            indexing: attribute
+        }
+        field wrong type string {
+            indexing: attribute
+        }
     }
 
     rank-profile test {
