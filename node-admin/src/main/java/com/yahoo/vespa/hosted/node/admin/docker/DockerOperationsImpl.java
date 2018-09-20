@@ -25,6 +25,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -324,9 +325,11 @@ public class DockerOperationsImpl implements DockerOperations {
         return docker.getAllContainersManagedBy(MANAGER_NAME);
     }
 
+    // TODO: Remove after migrating to host-admin
     @Override
     public void deleteUnusedDockerImages() {
-        docker.deleteUnusedDockerImages();
+        if (environment.isRunningOnHost()) return;
+        docker.deleteUnusedDockerImages(Collections.emptyList(), Duration.ofHours(1));
     }
 
     /**
