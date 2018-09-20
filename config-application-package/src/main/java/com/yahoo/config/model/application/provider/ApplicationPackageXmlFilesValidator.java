@@ -26,9 +26,9 @@ public class ApplicationPackageXmlFilesValidator {
     private static final FilenameFilter xmlFilter = (dir, name) -> name.endsWith(".xml");
 
 
-    public ApplicationPackageXmlFilesValidator(AppSubDirs appDirs, Version vespaVersion) {
+    private ApplicationPackageXmlFilesValidator(AppSubDirs appDirs, Version vespaVersion) {
         this.appDirs = appDirs;
-        this.validators = new SchemaValidators(vespaVersion, new BaseDeployLogger());
+        this.validators = new SchemaValidators(vespaVersion);
     }
 
     public static ApplicationPackageXmlFilesValidator create(File appDir, Version vespaVersion) {

@@ -9,6 +9,7 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.SchemaValidators;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
+import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.VespaModel;
 import org.xml.sax.SAXException;
 
@@ -103,7 +104,7 @@ public class TestDriver {
         if (!validate) {
             return;
         }
-        SchemaValidators schemaValidators = new SchemaValidators(new Version(6), new BaseDeployLogger());
+        SchemaValidators schemaValidators = new SchemaValidators(new Version(VespaVersion.major));
         if (appPkg.getHosts() != null) {
             schemaValidators.hostsXmlValidator().validate(appPkg.getHosts());
         }

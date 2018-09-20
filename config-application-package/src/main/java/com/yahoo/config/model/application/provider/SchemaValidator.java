@@ -82,15 +82,15 @@ public class SchemaValidator {
     private class CustomErrorHandler implements ErrorHandler {
         volatile String fileName;
 
-        public void warning(SAXParseException e) throws SAXException {
+        public void warning(SAXParseException e) {
             deployLogger.log(Level.WARNING, message(e));
         }
 
-        public void error(SAXParseException e) throws SAXException {
+        public void error(SAXParseException e) {
             throw new IllegalArgumentException(message(e));
         }
 
-        public void fatalError(SAXParseException e) throws SAXException {
+        public void fatalError(SAXParseException e) {
             throw new IllegalArgumentException(message(e));
         }
 
