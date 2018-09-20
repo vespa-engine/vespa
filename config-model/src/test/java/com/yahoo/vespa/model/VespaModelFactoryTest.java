@@ -216,6 +216,9 @@ public class VespaModelFactoryTest {
 
                     @Override
                     public boolean isFirstTimeDeployment() { return false; }
+
+                    @Override
+                    public boolean useDedicatedNodeForLogserver() { return false; }
                 };
             }
         };

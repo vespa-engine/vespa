@@ -125,6 +125,7 @@ public class ModelContextImpl implements ModelContext {
         private final Set<Rotation> rotations;
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
+        private final boolean useDedicatedNodeForLogserver;
 
         public Properties(ApplicationId applicationId,
                           boolean multitenant,
@@ -136,7 +137,8 @@ public class ModelContextImpl implements ModelContext {
                           Zone zone,
                           Set<Rotation> rotations,
                           boolean isBootstrap,
-                          boolean isFirstTimeDeployment) {
+                          boolean isFirstTimeDeployment,
+                          boolean useDedicatedNodeForLogserver) {
             this.applicationId = applicationId;
             this.multitenant = multitenant;
             this.configServerSpecs = configServerSpecs;
@@ -148,6 +150,7 @@ public class ModelContextImpl implements ModelContext {
             this.rotations = rotations;
             this.isBootstrap = isBootstrap;
             this.isFirstTimeDeployment = isFirstTimeDeployment;
+            this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
         }
 
         @Override
@@ -186,6 +189,9 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public boolean isFirstTimeDeployment() { return isFirstTimeDeployment; }
+
+        @Override
+        public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     }
 
 }

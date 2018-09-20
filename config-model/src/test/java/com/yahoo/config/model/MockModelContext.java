@@ -133,6 +133,9 @@ public class MockModelContext implements ModelContext {
 
             @Override
             public boolean isFirstTimeDeployment() { return false; }
+
+            @Override
+            public boolean useDedicatedNodeForLogserver() { return false; }
         };
     }
 }

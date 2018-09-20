@@ -51,6 +51,7 @@ public interface ModelContext {
         Set<Rotation> rotations();
         boolean isBootstrap();
         boolean isFirstTimeDeployment();
+        boolean useDedicatedNodeForLogserver();
     }
 
 }
