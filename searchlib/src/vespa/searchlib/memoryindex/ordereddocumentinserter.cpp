@@ -94,6 +94,7 @@ OrderedDocumentInserter::setNextWord(const vespalib::stringref word)
     }
     if (!_dItr.valid() || cmp(key, _dItr.getKey())) {
         datastore::EntryRef wordRef = _fieldIndex.addWord(_word);
+
         WordKey insertKey(wordRef);
         DictionaryTree &dTree(_fieldIndex.getDictionaryTree());
         dTree.insert(_dItr, insertKey, datastore::EntryRef().ref());

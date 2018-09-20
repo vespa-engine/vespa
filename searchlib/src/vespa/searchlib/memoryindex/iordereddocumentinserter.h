@@ -5,11 +5,9 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <cstdint>
 
-namespace search {
+namespace search::index { class DocIdAndFeatures; }
 
-namespace index { class DocIdAndFeatures; }
-
-namespace memoryindex {
+namespace search::memoryindex {
 
 /**
  * Interface class for ordered document inserter.
@@ -48,5 +46,4 @@ public:
     virtual void rewind() = 0;
 };
 
-}
 }
