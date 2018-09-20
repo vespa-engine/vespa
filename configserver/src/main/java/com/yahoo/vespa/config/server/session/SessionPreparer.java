@@ -159,7 +159,8 @@ public class SessionPreparer {
                                                               zone,
                                                               rotationsSet,
                                                               params.isBootstrap(),
-                                                              ! currentActiveApplicationSet.isPresent());
+                                                              ! currentActiveApplicationSet.isPresent(),
+                                                              configserverConfig.useDedicatedNodeForLogserver());
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
                                                                    configDefinitionRepo,

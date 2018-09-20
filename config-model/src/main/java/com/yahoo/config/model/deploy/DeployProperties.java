@@ -27,6 +27,8 @@ public class DeployProperties {
     private final Version vespaVersion;
     private final boolean isBootstrap;
     private final boolean isFirstTimeDeployment;
+    private final boolean useDedicatedNodeForLogserver;
+
 
     private DeployProperties(boolean multitenant,
                              ApplicationId applicationId,
@@ -37,7 +39,8 @@ public class DeployProperties {
                              String athenzDnsSuffix,
                              Version vespaVersion,
                              boolean isBootstrap,
-                             boolean isFirstTimeDeployment) {
+                             boolean isFirstTimeDeployment,
+                             boolean useDedicatedNodeForLogserver) {
         this.loadBalancerName = loadBalancerName;
         this.ztsUrl = ztsUrl;
         this.athenzDnsSuffix = athenzDnsSuffix;
@@ -48,6 +51,7 @@ public class DeployProperties {
         this.hostedVespa = hostedVespa;
         this.isBootstrap = isBootstrap;
         this.isFirstTimeDeployment = isFirstTimeDeployment;
+        this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
     }
 
     public boolean multitenant() {
@@ -89,6 +93,8 @@ public class DeployProperties {
     /** Returns whether this is the first deployment for this application (used during *prepare*, not set on activate) */
     public boolean isFirstTimeDeployment() { return isFirstTimeDeployment; }
 
+    public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
+
     public static class Builder {
 
         private ApplicationId applicationId = ApplicationId.defaultId();
@@ -101,6 +107,7 @@ public class DeployProperties {
         private Version vespaVersion = Version.fromIntValues(1, 0, 0);
         private boolean isBootstrap = false;
         private boolean isFirstTimeDeployment = false;
+        private boolean useDedicatedNodeForLogserver = false;
 
         public Builder applicationId(ApplicationId applicationId) {
             this.applicationId = applicationId;
@@ -152,9 +159,15 @@ public class DeployProperties {
             return this;
         }
 
+        public Builder useDedicatedNodeForLogserver(boolean useDedicatedNodeForLogserver) {
+            this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
+            return this;
+        }
+
         public DeployProperties build() {
             return new DeployProperties(multitenant, applicationId, configServerSpecs, loadBalancerName, hostedVespa,
-                                        ztsUrl, athenzDnsSuffix, vespaVersion, isBootstrap, isFirstTimeDeployment);
+                                        ztsUrl, athenzDnsSuffix, vespaVersion, isBootstrap, isFirstTimeDeployment,
+                                        useDedicatedNodeForLogserver);
         }
     }
 

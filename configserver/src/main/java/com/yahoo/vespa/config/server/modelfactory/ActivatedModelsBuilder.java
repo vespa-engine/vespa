@@ -115,7 +115,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                zone(),
                                                new Rotations(curator, TenantRepository.getTenantPath(tenant)).readRotationsFromZooKeeper(applicationId),
                                                false, // We may be bootstrapping, but we only know and care during prepare
-                                               false); // Always false, assume no one uses it when activating
+                                               false, // Always false, assume no one uses it when activating
+                                               configserverConfig.useDedicatedNodeForLogserver());
     }
 
 }
