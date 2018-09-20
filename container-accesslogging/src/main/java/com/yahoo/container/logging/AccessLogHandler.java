@@ -3,8 +3,6 @@ package com.yahoo.container.logging;
 
 import com.yahoo.container.core.AccessLogConfig;
 
-import static com.yahoo.container.core.AccessLogConfig.FileHandler.RotateScheme.DATE;
-
 import java.util.logging.Logger;
 
 /**
@@ -18,14 +16,12 @@ class AccessLogHandler {
     public AccessLogHandler(AccessLogConfig.FileHandler config) {
         access.setUseParentHandlers(false);
 
-        logFileHandler = new LogFileHandler(config.rotateScheme(), config.compressOnRotation());
+        logFileHandler = new LogFileHandler(config.compressOnRotation());
 
         logFileHandler.setFilePattern(config.pattern());
         logFileHandler.setRotationTimes(config.rotation());
 
-        if (config.rotateScheme() == DATE)
-            createSymlink(config, logFileHandler);
-
+        createSymlink(config, logFileHandler);
 
         LogFormatter lf = new LogFormatter();
         lf.messageOnly(true);

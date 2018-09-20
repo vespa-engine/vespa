@@ -85,7 +85,6 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
             AccessLogConfig.FileHandler fileHandlerConfig = config.fileHandler();
             assertEquals("pattern", fileHandlerConfig.pattern());
             assertEquals("interval", fileHandlerConfig.rotation());
-            assertEquals(AccessLogConfig.FileHandler.RotateScheme.DATE, fileHandlerConfig.rotateScheme());
         }
 
         { // json
@@ -96,7 +95,6 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
             AccessLogConfig.FileHandler fileHandlerConfig = config.fileHandler();
             assertEquals("pattern", fileHandlerConfig.pattern());
             assertEquals("interval", fileHandlerConfig.rotation());
-            assertEquals(AccessLogConfig.FileHandler.RotateScheme.DATE, fileHandlerConfig.rotateScheme());
         }
     }
 
