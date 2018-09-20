@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.container;
 
 import ai.vespa.models.evaluation.ModelsEvaluator;
-import ai.vespa.models.handler.ModelsEvaluationHandler;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -19,9 +18,10 @@ import java.util.Objects;
  */
 public class ContainerModelEvaluation implements RankProfilesConfig.Producer, RankingConstantsConfig.Producer {
 
-    private final static String EVALUATOR_NAME = ModelsEvaluator.class.getName();
-    private final static String REST_HANDLER_NAME = ModelsEvaluationHandler.class.getName();
     private final static String BUNDLE_NAME = "model-evaluation";
+    private final static String EVALUATOR_NAME = ModelsEvaluator.class.getName();
+    private final static String REST_HANDLER_NAME = "ai.vespa.models.handler.ModelsEvaluationHandler";
+    private final static String REST_BINDING = "model-evaluation/v1";
 
     /** Global rank profiles, aka models */
     private final RankProfileList rankProfileList;
@@ -48,11 +48,10 @@ public class ContainerModelEvaluation implements RankProfilesConfig.Producer, Ra
 
     public static Handler<?> getHandler() {
         Handler<?> handler = new Handler<>(new ComponentModel(REST_HANDLER_NAME, null, BUNDLE_NAME));
-        String binding = ModelsEvaluationHandler.API_ROOT + "/" + ModelsEvaluationHandler.VERSION_V1;
-        handler.addServerBindings("http://*/" + binding,
-                                  "https://*/" + binding,
-                                  "http://*/" + binding + "/*",
-                                  "https://*/" + binding + "/*");
+        handler.addServerBindings("http://*/" + REST_BINDING,
+                                  "https://*/" + REST_BINDING,
+                                  "http://*/" + REST_BINDING + "/*",
+                                  "https://*/" + REST_BINDING + "/*");
         return handler;
     }
 
