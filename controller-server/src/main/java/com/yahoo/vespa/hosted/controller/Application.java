@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.ImmutableMap;
@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -16,12 +17,12 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,47 +50,41 @@ public class Application {
     private final Optional<IssueId> ownershipIssueId;
     private final ApplicationMetrics metrics;
     private final Optional<RotationId> rotation;
+    private final Map<HostName, RotationStatus> rotationStatus;
 
     /** Creates an empty application */
     public Application(ApplicationId id) {
         this(id, DeploymentSpec.empty, ValidationOverrides.empty, Collections.emptyMap(),
              new DeploymentJobs(OptionalLong.empty(), Collections.emptyList(), Optional.empty(), false),
              Change.empty(), Change.empty(), Optional.empty(), new ApplicationMetrics(0, 0),
-             Optional.empty());
+             Optional.empty(), Collections.emptyMap());
     }
 
     /** Used from persistence layer: Do not use */
     public Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                        List<Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                        Change outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
-                       Optional<RotationId> rotation) {
+                       Optional<RotationId> rotation, Map<HostName, RotationStatus> rotationStatus) {
         this(id, deploymentSpec, validationOverrides,
              deployments.stream().collect(Collectors.toMap(Deployment::zone, d -> d)),
-             deploymentJobs, change, outstandingChange, ownershipIssueId, metrics, rotation);
+             deploymentJobs, change, outstandingChange, ownershipIssueId, metrics, rotation, rotationStatus);
     }
 
     Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                 Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                 Change outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
-                Optional<RotationId> rotation) {
-        Objects.requireNonNull(id, "id cannot be null");
-        Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
-        Objects.requireNonNull(validationOverrides, "validationOverrides cannot be null");
-        Objects.requireNonNull(deployments, "deployments cannot be null");
-        Objects.requireNonNull(deploymentJobs, "deploymentJobs cannot be null");
-        Objects.requireNonNull(change, "change cannot be null");
-        Objects.requireNonNull(metrics, "metrics cannot be null");
-        Objects.requireNonNull(rotation, "rotation cannot be null");
-        this.id = id;
-        this.deploymentSpec = deploymentSpec;
-        this.validationOverrides = validationOverrides;
-        this.deployments = ImmutableMap.copyOf(deployments);
-        this.deploymentJobs = deploymentJobs;
-        this.change = change;
-        this.outstandingChange = outstandingChange;
-        this.ownershipIssueId = ownershipIssueId;
-        this.metrics = metrics;
-        this.rotation = rotation;
+                Optional<RotationId> rotation, Map<HostName, RotationStatus> rotationStatus) {
+        this.id = Objects.requireNonNull(id, "id cannot be null");
+        this.deploymentSpec = Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
+        this.validationOverrides = Objects.requireNonNull(validationOverrides, "validationOverrides cannot be null");
+        this.deployments = ImmutableMap.copyOf(Objects.requireNonNull(deployments, "deployments cannot be null"));
+        this.deploymentJobs = Objects.requireNonNull(deploymentJobs, "deploymentJobs cannot be null");
+        this.change = Objects.requireNonNull(change, "change cannot be null");
+        this.outstandingChange = Objects.requireNonNull(outstandingChange, "outstandingChange cannot be null");
+        this.ownershipIssueId = Objects.requireNonNull(ownershipIssueId, "ownershipIssueId cannot be null");
+        this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
+        this.rotation = Objects.requireNonNull(rotation, "rotation cannot be null");
+        this.rotationStatus = ImmutableMap.copyOf(Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null"));
     }
 
     public ApplicationId id() { return id; }
@@ -180,6 +175,23 @@ public class Application {
     /** Returns the global rotation of this, if present */
     public Optional<ApplicationRotation> rotation() {
         return rotation.map(rotation -> new ApplicationRotation(id, rotation));
+    }
+
+    /** Returns the status of the global rotation assigned to this. Wil be empty if this does not have a global rotation. */
+    public Map<HostName, RotationStatus> rotationStatus() {
+        return rotationStatus;
+    }
+
+    /** Returns the global rotation status of given deployment */
+    public RotationStatus rotationStatus(Deployment deployment) {
+        // Rotation status only contains VIP host names, one per zone in the system. The only way to map VIP hostname to
+        // this deployment, and thereby determine rotation status, is to check if VIP hostname contains the
+        // deployment's environment and region.
+        return rotationStatus.entrySet().stream()
+                             .filter(kv -> kv.getKey().value().contains(deployment.zone().value()))
+                             .map(Map.Entry::getValue)
+                             .findFirst()
+                             .orElse(RotationStatus.unknown);
     }
 
     @Override

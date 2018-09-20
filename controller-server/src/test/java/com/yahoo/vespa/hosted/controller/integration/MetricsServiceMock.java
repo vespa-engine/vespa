@@ -1,8 +1,10 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
 import java.util.HashMap;
@@ -14,9 +16,20 @@ import java.util.Map;
 public class MetricsServiceMock implements MetricsService {
 
     private final Map<String, Double> metrics = new HashMap<>();
+    private final Map<HostName, RotationStatus> rotationStatus = new HashMap<>();
 
     public MetricsServiceMock setMetric(String key, Double value) {
         metrics.put(key, value);
+        return this;
+    }
+
+    public MetricsServiceMock setRotationIn(String hostname) {
+        rotationStatus.put(HostName.from(hostname), RotationStatus.IN);
+        return this;
+    }
+
+    public MetricsServiceMock setRotationOut(String hostname) {
+        rotationStatus.put(HostName.from(hostname), RotationStatus.OUT);
         return this;
     }
 
@@ -41,6 +54,11 @@ public class MetricsServiceMock implements MetricsService {
         SystemMetrics system = new SystemMetrics(55.54, 69.90, 34.59);
         result.put("default", system);
         return result;
+    }
+
+    @Override
+    public Map<HostName, RotationStatus> getRotationStatus(String rotationName) {
+        return rotationStatus;
     }
 
 }

@@ -8,6 +8,7 @@ import java.util.Map;
  *
  * @author mpolden
  */
+// TODO: Remove once DeploymentMetricsMaintainer starts providing rotation status
 public interface GlobalRoutingService {
 
     /** Returns the health status for each endpoint behind the given rotation name */
