@@ -343,14 +343,6 @@ pruneremoveddocumentsinterval double default=0.0
 ## Default value is 2 weeks (1209600 seconds).
 pruneremoveddocumentsage double default=1209600.0
 
-## NOT USED. TODO: Remove when going to Vespa 7.
-## Interval between wiping of old removed document fields (in seconds).
-wipeoldremovedfieldsinterval double default=21600.0
-
-## NOT USED. TODO: Remove when going to Vespa 7.
-## Age of removed document fields before they can be wiped (in seconds).
-wipeoldremovedfieldsage double default=1209600.0
-
 ## Timeout of recovery rpc calls in rowcolumn mode
 ##
 ## Default value is 60 seconds
