@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -110,8 +111,8 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public void deleteUnusedDockerImages() {
-
+    public boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
+        return false;
     }
 
     @Override
