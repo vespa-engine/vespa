@@ -27,7 +27,8 @@ import java.util.stream.Stream;
  * <p>Definitions:
  * <ul>
  *   <li>Every image has exactly 1 id</li>
- *   <li>Every image has between 0..n tags</li>
+ *   <li>Every image has between 0..n tags, see
+ *       <a href="https://docs.docker.com/engine/reference/commandline/tag/">docker tag</a> for more</li>
  *   <li>Every image has 0..1 parent ids</li>
  * </ul>
  *
@@ -74,6 +75,8 @@ class DockerImageGarbageCollector {
         List<Container> containers = docker.listAllContainers();
 
         Map<String, Image> imageByImageId = images.stream().collect(Collectors.toMap(Image::getId, Function.identity()));
+
+        // Find all the ancestors for every local image id, this includes the image id itself
         Map<String, Set<String>> ancestorsByImageId = images.stream()
                 .map(Image::getId)
                 .collect(Collectors.toMap(
