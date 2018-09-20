@@ -33,7 +33,7 @@ public class LogHandler extends ThreadedHttpRequestHandler {
         LogReader logReader= new LogReader(earliestLogThreshold, latestLogThreshold);
         try {
             JSONObject logJson = logReader.readLogs(LOG_DIRECTORY);
-            responseJSON.put("logs", logJson.toString());
+            responseJSON.put("logs", logJson);
         } catch (IOException | JSONException e) {
             return new HttpResponse(404) {
                 @Override
