@@ -72,8 +72,7 @@ AccessLog = element accesslog {
     attribute compressOnRotation { xsd:boolean }? &
     attribute symlinkName { string }? &
 
-    attribute rotationInterval { string }? &
-    attribute rotationScheme { string "date" | string "sequence" }?
+    attribute rotationInterval { string }?
 }
 
 SecretStore = element secret-store {

@@ -67,11 +67,9 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <accesslog type='yapache' ",
-                "             fileNamePattern='pattern' rotationInterval='interval'",
-                "             rotationScheme='date' />",
+                "             fileNamePattern='pattern' rotationInterval='interval' />",
                 "  <accesslog type='json' ",
-                "             fileNamePattern='pattern' rotationInterval='interval'",
-                "             rotationScheme='date' />",
+                "             fileNamePattern='pattern' rotationInterval='interval' />",
                 nodesXml,
                 "</jdisc>" );
 
