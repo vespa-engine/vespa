@@ -207,8 +207,8 @@ private:
     void notifyAllBucketsChanged();
 
     void updateLegacyMetrics(LegacyDocumentDBMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats);
-    void updateMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats);
-    void updateMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics);
+    void updateMiscMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats, search::MemoryUsage &totalMemoryUsage);
+    void updateAttributeResourceUsageMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics);
 
     /*
      * Tear down references to this document db (e.g. listeners for
