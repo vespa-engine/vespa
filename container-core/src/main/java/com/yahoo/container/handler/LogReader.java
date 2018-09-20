@@ -14,12 +14,9 @@ public class LogReader {
     long earliestLogThreshold;
     long latestLogThreshold;
 
-    public LogReader(long earliestLogThreshold, long latestLogThreshold) {
+    protected JSONObject readLogs(String logDirectory, long earliestLogThreshold, long latestLogThreshold) throws IOException, JSONException {
         this.earliestLogThreshold = earliestLogThreshold;
         this.latestLogThreshold = latestLogThreshold;
-    }
-
-    protected JSONObject readLogs(String logDirectory) throws IOException, JSONException {
         JSONObject json = new JSONObject();
         File root = new File(logDirectory);
         traverse_folder(root, json, "");

@@ -17,10 +17,16 @@ import java.util.concurrent.Executor;
 public class LogHandler extends ThreadedHttpRequestHandler {
 
     private static final String LOG_DIRECTORY = "/home/y/logs/vespa/logarchive/";
+    private final LogReader logReader;
 
     @Inject
     public LogHandler(Executor executor) {
+        this(executor, new LogReader());
+    }
+
+    protected LogHandler(Executor executor, LogReader logReader) {
         super(executor);
+        this.logReader = logReader;
     }
 
     @Override
@@ -30,9 +36,8 @@ public class LogHandler extends ThreadedHttpRequestHandler {
         HashMap<String, String> apiParams = getParameters(request);
         long earliestLogThreshold = getEarliestThreshold(apiParams);
         long latestLogThreshold = getLatestThreshold(apiParams);
-        LogReader logReader= new LogReader(earliestLogThreshold, latestLogThreshold);
         try {
-            JSONObject logJson = logReader.readLogs(LOG_DIRECTORY);
+            JSONObject logJson = logReader.readLogs(LOG_DIRECTORY, earliestLogThreshold, latestLogThreshold);
             responseJSON.put("logs", logJson);
         } catch (IOException | JSONException e) {
             return new HttpResponse(404) {
