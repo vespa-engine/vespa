@@ -221,8 +221,8 @@ TEST_F("requireThatStateIsReported", Fixture)
             "    },\n"
             "    \"documents\": {\n"
             "        \"active\": 0,\n"
-            "        \"ready\": 0,\n"
-            "        \"total\": 0,\n"
+            "        \"indexed\": 0,\n"
+            "        \"stored\": 0,\n"
             "        \"removed\": 0\n"
             "    }\n"
             "}\n",

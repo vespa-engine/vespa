@@ -38,8 +38,8 @@ DocumentDBExplorer::get_state(const Inserter &inserter, bool full) const
             (const_cast<DocumentSubDBCollection &>(_docDb->getDocumentSubDBs()));
         Cursor &documents = object.setObject("documents");
         documents.setLong("active", dmss.numActiveDocs());
-        documents.setLong("ready", dmss.numReadyDocs());
-        documents.setLong("total", dmss.numTotalDocs());
+        documents.setLong("indexed", dmss.numIndexedDocs());
+        documents.setLong("stored", dmss.numStoredDocs());
         documents.setLong("removed", dmss.numRemovedDocs());
     }
 }
