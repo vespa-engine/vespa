@@ -58,7 +58,6 @@ public class AccessLogBuilder {
                     accessLogType,
                     fileNamePattern(spec),
                     rotationInterval(spec),
-                    rotationScheme(spec),
                     compressOnRotation(spec),
                     isHostedVespa,
                     symlinkName(spec));
@@ -71,10 +70,6 @@ public class AccessLogBuilder {
         private Boolean compressOnRotation(Element spec) {
             String compress = spec.getAttribute("compressOnRotation");
             return (compress.isEmpty() ? null : Boolean.parseBoolean(compress));
-        }
-
-        private AccessLogConfig.FileHandler.RotateScheme.Enum rotationScheme(Element spec) {
-            return AccessLogComponent.rotateScheme(nullIfEmpty(spec.getAttribute("rotationScheme")));
         }
 
         private String rotationInterval(Element spec) {

@@ -30,8 +30,6 @@ import java.util.regex.Pattern;
  */
 public class LogFileHandler extends StreamHandler {
 
-    /** True to use the sequence file name scheme, false (default) to use the date scheme */
-    private final boolean useSequenceNameScheme;
     private final boolean compressOnRotation;
     private long[] rotationTimes = {0}; //default to one log per day, at midnight
     private String filePattern = "./log.%T";  // default to current directory, ms time stamp
@@ -92,42 +90,16 @@ public class LogFileHandler extends StreamHandler {
     LogThread logThread = null;
 
     public LogFileHandler() {
-        this(AccessLogConfig.FileHandler.RotateScheme.Enum.DATE, false);
+        this(false);
     }
 
-    public LogFileHandler(boolean compressOnRotation) {
-        this(AccessLogConfig.FileHandler.RotateScheme.Enum.DATE, compressOnRotation);
-    }
-
-    public LogFileHandler(AccessLogConfig.FileHandler.RotateScheme.Enum rotateScheme) {
-        this(rotateScheme, false);
-    }
-
-    public LogFileHandler(AccessLogConfig.FileHandler.RotateScheme.Enum rotateScheme,
-                          boolean compressOnRotation)
+    public LogFileHandler(boolean compressOnRotation)
     {
         super();
-        this.useSequenceNameScheme = (rotateScheme == AccessLogConfig.FileHandler.RotateScheme.Enum.SEQUENCE);
         this.compressOnRotation = compressOnRotation;
         init();
     }
-
-    /**
-     * Constructs a log handler
-     *
-     * @param useSequenceNameScheme True to use the sequence file name scheme, false (default) to use the date scheme
-     */
-    public LogFileHandler(OutputStream out, Formatter formatter, boolean useSequenceNameScheme) {
-        this(out, formatter, useSequenceNameScheme, false);
-    }
-
-    public LogFileHandler(OutputStream out, Formatter formatter, boolean useSequenceNameScheme, boolean compressOnRotation) {
-        super(out, formatter);
-        this.useSequenceNameScheme = useSequenceNameScheme;
-        this.compressOnRotation = compressOnRotation;
-        init();
-    }
-
+    
     private void init() {
         logThread = new LogThread(this);
         logThread.start();
@@ -243,22 +215,18 @@ public class LogFileHandler extends StreamHandler {
         super.flush();
         super.close();
 
-        if (useSequenceNameScheme)
-            moveCurrentFile();
-
         try {
             checkAndCreateDir(fileName);
             FileOutputStream os = new FileOutputStream(fileName, true); // append mode, for safety
             super.setOutputStream(os);
             currentOutputStream = os;
-            if (! useSequenceNameScheme) LogFileDb.nowLoggingTo(fileName);
+            LogFileDb.nowLoggingTo(fileName);
         }
         catch (IOException e) {
             throw new RuntimeException("Couldn't open log file '" + fileName + "'", e);
         }
 
-        if ( ! useSequenceNameScheme)
-            createSymlinkToCurrentFile();
+        createSymlinkToCurrentFile();
 
         numberOfRecords = 0;
         lastRotationTime = now;
