@@ -12,6 +12,8 @@ import com.yahoo.container.plugin.classanalysis.sampleclasses.MethodAnnotation;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.MethodInvocation;
 import com.yahoo.osgi.annotation.ExportPackage;
 import com.yahoo.osgi.annotation.Version;
+import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -27,7 +29,6 @@ import static com.yahoo.container.plugin.classanalysis.TestUtilities.classFile;
 import static com.yahoo.container.plugin.classanalysis.TestUtilities.name;
 import static com.yahoo.container.plugin.classanalysis.TestUtilities.throwableMessage;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
@@ -41,6 +42,7 @@ import static org.junit.Assert.assertThat;
  * @author ollivir
  */
 public class AnalyzeClassTest {
+
     @Test
     public void require_that_full_class_name_is_returned() {
         assertThat(analyzeClass(Base.class).getName(), is(name(Base.class)));
@@ -82,12 +84,14 @@ public class AnalyzeClassTest {
 
     @Test
     public void require_that_basic_types_ignored() {
-        assertThat(analyzeClass(Interface1.class).getReferencedClasses(), not(anyOf(hasItem("int"), hasItem("float"))));
+        assertThat(analyzeClass(Interface1.class).getReferencedClasses(),
+                   not(Matchers.<Iterable<? super String>>anyOf(hasItem("int"), hasItem("float"))));
     }
 
     @Test
     public void require_that_arrays_of_basic_types_ignored() {
-        assertThat(analyzeClass(Interface1.class).getReferencedClasses(), not(anyOf(hasItem("int[]"), hasItem("int[][]"))));
+        assertThat(analyzeClass(Interface1.class).getReferencedClasses(),
+                   not(Matchers.<Iterable<? super String>>anyOf(hasItem("int[]"), hasItem("int[][]"))));
     }
 
     @Test
@@ -118,7 +122,8 @@ public class AnalyzeClassTest {
     @Test
     public void require_that_export_package_annotations_are_ignored() {
         assertThat(Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.package-info"))
-                .getReferencedClasses(), not(anyOf(hasItem(name(ExportPackage.class)), hasItem(name(Version.class)))));
+                .getReferencedClasses(), not(Matchers.<Iterable<? super String>>anyOf(
+                        hasItem(name(ExportPackage.class)), hasItem(name(Version.class)))));
     }
 
     @Test
