@@ -12,7 +12,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.yolean.Exceptions;
 
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -45,9 +47,14 @@ public class DeploymentIssueReporter extends Maintainer {
 
     @Override
     protected void maintain() {
-        maintainDeploymentIssues(controller().applications().asList());
-        maintainPlatformIssue(controller().applications().asList());
-        escalateInactiveDeploymentIssues(controller().applications().asList());
+        try {
+            maintainDeploymentIssues(controller().applications().asList());
+            maintainPlatformIssue(controller().applications().asList());
+            escalateInactiveDeploymentIssues(controller().applications().asList());
+        }
+        catch (UncheckedIOException e) {
+            log.log(Level.INFO, () -> "IO exception handling issues, will retry in " + maintenanceInterval() + ": '" + Exceptions.toMessageString(e));
+        }
     }
 
     /**
