@@ -120,7 +120,6 @@ public class Request extends AbstractResource {
      *
      * @return The container instance.
      */
-    // TODO: Vespa 7 remove.
     public Container container() {
         return parent != null ? parent.container() : container;
     }
