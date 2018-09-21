@@ -246,7 +246,8 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docType
       matching(this),
       sessionCache(this),
       documents(this),
-      totalMemoryUsage(this)
+      totalMemoryUsage(this),
+      totalDiskUsage("disk_usage", "", "The total disk usage (in bytes) for this document db", this)
 {
 }
 

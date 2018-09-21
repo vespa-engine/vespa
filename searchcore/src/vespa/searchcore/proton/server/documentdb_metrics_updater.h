@@ -21,7 +21,8 @@ class LegacyDocumentDBMetrics;
  * Class used to update metrics for a document db.
  */
 class DocumentDBMetricsUpdater {
-private:
+public:
+
     struct DocumentStoreCacheStats {
         search::CacheStats total;
         search::CacheStats readySubDb;
@@ -30,6 +31,7 @@ private:
         DocumentStoreCacheStats() : total(), readySubDb(), notReadySubDb(), removedSubDb() {}
     };
 
+private:
     const DocumentSubDBCollection &_subDBs;
     ExecutorThreadingService &_writeService;
     DocumentDBJobTrackers &_jobTrackers;
@@ -40,7 +42,7 @@ private:
     DocumentStoreCacheStats _lastDocStoreCacheStats;
 
     void updateLegacyMetrics(LegacyDocumentDBMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats);
-    void updateMiscMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats, search::MemoryUsage &totalMemoryUsage);
+    void updateMiscMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats);
     void updateAttributeResourceUsageMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics);
 
 public:

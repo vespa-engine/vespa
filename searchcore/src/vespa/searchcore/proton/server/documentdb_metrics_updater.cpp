@@ -50,19 +50,32 @@ DocumentDBMetricsUpdater::~DocumentDBMetricsUpdater() = default;
 
 namespace {
 
+struct TotalStats {
+    search::MemoryUsage memoryUsage;
+    uint64_t diskUsage;
+    TotalStats() : memoryUsage(), diskUsage() {}
+};
+
 void
-updateMemoryUsageMetrics(MemoryUsageMetrics &metrics, const MemoryUsage &memoryUsage, MemoryUsage &totalMemoryUsage)
+updateMemoryUsageMetrics(MemoryUsageMetrics &metrics, const MemoryUsage &memoryUsage, TotalStats &totalStats)
 {
     metrics.update(memoryUsage);
-    totalMemoryUsage.merge(memoryUsage);
+    totalStats.memoryUsage.merge(memoryUsage);
 }
 
 void
-updateIndexMetrics(DocumentDBMetricsCollection &metrics, const search::SearchableStats &stats, MemoryUsage &totalMemoryUsage)
+updateDiskUsageMetric(metrics::LongValueMetric &metric, uint64_t diskUsage, TotalStats &totalStats)
+{
+    metric.set(diskUsage);
+    totalStats.diskUsage += diskUsage;
+}
+
+void
+updateIndexMetrics(DocumentDBMetricsCollection &metrics, const search::SearchableStats &stats, TotalStats &totalStats)
 {
     DocumentDBTaggedMetrics::IndexMetrics &indexMetrics = metrics.getTaggedMetrics().index;
-    indexMetrics.diskUsage.set(stats.sizeOnDisk());
-    updateMemoryUsageMetrics(indexMetrics.memoryUsage, stats.memoryUsage(), totalMemoryUsage);
+    updateDiskUsageMetric(indexMetrics.diskUsage, stats.sizeOnDisk(), totalStats);
+    updateMemoryUsageMetrics(indexMetrics.memoryUsage, stats.memoryUsage(), totalStats);
     indexMetrics.docsInMemory.set(stats.docsInMemory());
 
     LegacyDocumentDBMetrics::IndexMetrics &legacyIndexMetrics = metrics.getLegacyMetrics().index;
@@ -167,7 +180,7 @@ updateAttributeMetrics(AttributeMetrics &metrics, const TempAttributeMetrics &tm
 }
 
 void
-updateAttributeMetrics(DocumentDBMetricsCollection &metrics, const DocumentSubDBCollection &subDbs, MemoryUsage &totalMemoryUsage)
+updateAttributeMetrics(DocumentDBMetricsCollection &metrics, const DocumentSubDBCollection &subDbs, TotalStats &totalStats)
 {
     TempAttributeMetrics totalMetrics;
     TempAttributeMetrics readyMetrics;
@@ -180,7 +193,7 @@ updateAttributeMetrics(DocumentDBMetricsCollection &metrics, const DocumentSubDB
 
     updateAttributeMetrics(metrics.getTaggedMetrics().ready.attributes, readyMetrics);
     updateAttributeMetrics(metrics.getTaggedMetrics().notReady.attributes, notReadyMetrics);
-    updateMemoryUsageMetrics(metrics.getTaggedMetrics().attribute.totalMemoryUsage, totalMetrics.total.memoryUsage, totalMemoryUsage);
+    updateMemoryUsageMetrics(metrics.getTaggedMetrics().attribute.totalMemoryUsage, totalMetrics.total.memoryUsage, totalStats);
 }
 
 void
@@ -270,9 +283,9 @@ updateCountMetric(uint64_t currVal, uint64_t lastVal, metrics::LongCountMetric &
 }
 
 void
-updateDocstoreMetrics(LegacyDocumentDBMetrics::DocstoreMetrics &metrics,
-                      const DocumentSubDBCollection &sub_dbs,
-                      CacheStats &lastCacheStats)
+updateLegacyDocstoreMetrics(LegacyDocumentDBMetrics::DocstoreMetrics &metrics,
+                            const DocumentSubDBCollection &sub_dbs,
+                            CacheStats &lastCacheStats)
 {
     size_t memoryUsage = 0;
     CacheStats cache_stats;
@@ -295,24 +308,33 @@ void
 updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics &metrics,
                            const IDocumentSubDB *subDb,
                            CacheStats &lastCacheStats,
-                           MemoryUsage &totalMemoryUsage)
+                           TotalStats &totalStats)
 {
     const ISummaryManager::SP &summaryMgr = subDb->getSummaryManager();
     search::IDocumentStore &backingStore = summaryMgr->getBackingStore();
     search::DataStoreStorageStats storageStats(backingStore.getStorageStats());
-    metrics.diskUsage.set(storageStats.diskUsage());
+    updateDiskUsageMetric(metrics.diskUsage, storageStats.diskUsage(), totalStats);
     metrics.diskBloat.set(storageStats.diskBloat());
     metrics.maxBucketSpread.set(storageStats.maxBucketSpread());
-    updateMemoryUsageMetrics(metrics.memoryUsage, backingStore.getMemoryUsage(), totalMemoryUsage);
+    updateMemoryUsageMetrics(metrics.memoryUsage, backingStore.getMemoryUsage(), totalStats);
 
     search::CacheStats cacheStats = backingStore.getCacheStats();
-    totalMemoryUsage.incAllocatedBytes(cacheStats.memory_used);
+    totalStats.memoryUsage.incAllocatedBytes(cacheStats.memory_used);
     metrics.cache.memoryUsage.set(cacheStats.memory_used);
     metrics.cache.elements.set(cacheStats.elements);
     updateDocumentStoreCacheHitRate(cacheStats, lastCacheStats, metrics.cache.hitRate);
     updateCountMetric(cacheStats.lookups(), lastCacheStats.lookups(), metrics.cache.lookups);
     updateCountMetric(cacheStats.invalidations, lastCacheStats.invalidations, metrics.cache.invalidations);
     lastCacheStats = cacheStats;
+}
+
+void
+updateDocumentStoreMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBCollection &subDBs,
+                           DocumentDBMetricsUpdater::DocumentStoreCacheStats &lastDocStoreCacheStats, TotalStats &totalStats)
+{
+    updateDocumentStoreMetrics(metrics.ready.documentStore, subDBs.getReadySubDB(), lastDocStoreCacheStats.readySubDb, totalStats);
+    updateDocumentStoreMetrics(metrics.removed.documentStore, subDBs.getRemSubDB(), lastDocStoreCacheStats.removedSubDb, totalStats);
+    updateDocumentStoreMetrics(metrics.notReady.documentStore, subDBs.getNotReadySubDB(), lastDocStoreCacheStats.notReadySubDb, totalStats);
 }
 
 template <typename MetricSetType>
@@ -333,16 +355,19 @@ updateLidSpaceMetrics(MetricSetType &metrics, const search::IDocumentMetaStore &
 void
 DocumentDBMetricsUpdater::updateMetrics(DocumentDBMetricsCollection &metrics)
 {
-    MemoryUsage totalMemoryUsage;
+    TotalStats totalStats;
     ExecutorThreadingServiceStats threadingServiceStats = _writeService.getStats();
     updateLegacyMetrics(metrics.getLegacyMetrics(), threadingServiceStats);
-    updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats(), totalMemoryUsage);
-    updateAttributeMetrics(metrics, _subDBs, totalMemoryUsage);
+    updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats(), totalStats);
+    updateAttributeMetrics(metrics, _subDBs, totalStats);
     updateMatchingMetrics(metrics, *_subDBs.getReadySubDB());
     updateSessionCacheMetrics(metrics, _sessionManager);
     updateDocumentsMetrics(metrics, _subDBs);
-    updateMiscMetrics(metrics.getTaggedMetrics(), threadingServiceStats, totalMemoryUsage);
-    metrics.getTaggedMetrics().totalMemoryUsage.update(totalMemoryUsage);
+    updateDocumentStoreMetrics(metrics.getTaggedMetrics(), _subDBs, _lastDocStoreCacheStats, totalStats);
+    updateMiscMetrics(metrics.getTaggedMetrics(), threadingServiceStats);
+
+    metrics.getTaggedMetrics().totalMemoryUsage.update(totalStats.memoryUsage);
+    metrics.getTaggedMetrics().totalDiskUsage.set(totalStats.diskUsage);
 }
 
 void
@@ -351,7 +376,7 @@ DocumentDBMetricsUpdater::updateLegacyMetrics(LegacyDocumentDBMetrics &metrics, 
     metrics.executor.update(threadingServiceStats.getMasterExecutorStats());
     metrics.summaryExecutor.update(threadingServiceStats.getSummaryExecutorStats());
     metrics.indexExecutor.update(threadingServiceStats.getIndexExecutorStats());
-    updateDocstoreMetrics(metrics.docstore, _subDBs, _lastDocStoreCacheStats.total);
+    updateLegacyDocstoreMetrics(metrics.docstore, _subDBs, _lastDocStoreCacheStats.total);
 
     DocumentMetaStoreReadGuards dmss(_subDBs);
     updateLidSpaceMetrics(metrics.ready.docMetaStore, dmss.readydms->get());
@@ -374,15 +399,12 @@ DocumentDBMetricsUpdater::updateAttributeResourceUsageMetrics(DocumentDBTaggedMe
 }
 
 void
-DocumentDBMetricsUpdater::updateMiscMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats, MemoryUsage &totalMemoryUsage)
+DocumentDBMetricsUpdater::updateMiscMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats)
 {
     metrics.threadingService.update(threadingServiceStats);
     _jobTrackers.updateMetrics(metrics.job);
 
     updateAttributeResourceUsageMetrics(metrics.attribute);
-    updateDocumentStoreMetrics(metrics.ready.documentStore, _subDBs.getReadySubDB(), _lastDocStoreCacheStats.readySubDb, totalMemoryUsage);
-    updateDocumentStoreMetrics(metrics.removed.documentStore, _subDBs.getRemSubDB(), _lastDocStoreCacheStats.removedSubDb, totalMemoryUsage);
-    updateDocumentStoreMetrics(metrics.notReady.documentStore, _subDBs.getNotReadySubDB(), _lastDocStoreCacheStats.notReadySubDb, totalMemoryUsage);
 
     DocumentMetaStoreReadGuards dmss(_subDBs);
     updateLidSpaceMetrics(metrics.ready.lidSpace, dmss.readydms->get());

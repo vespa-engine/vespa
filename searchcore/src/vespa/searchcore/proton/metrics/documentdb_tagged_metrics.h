@@ -190,6 +190,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     SessionCacheMetrics sessionCache;
     DocumentsMetrics documents;
     MemoryUsageMetrics totalMemoryUsage;
+    metrics::LongValueMetric totalDiskUsage;
 
     DocumentDBTaggedMetrics(const vespalib::string &docTypeName);
     ~DocumentDBTaggedMetrics();
