@@ -164,7 +164,7 @@ public class MockOrganization extends AbstractComponent implements Organization 
 
     private class PropertyInfo {
 
-        private User defaultAssignee = User.from("firewallguy");
+        private User defaultAssignee = null;
         private List<List<User>> contacts = Collections.emptyList();
         private URI issueUrl = URI.create("issues.tld");
         private URI contactsUrl = URI.create("contacts.tld");
