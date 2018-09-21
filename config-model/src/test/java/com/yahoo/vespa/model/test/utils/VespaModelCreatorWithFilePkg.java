@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.ValidationParameters.FailOnIncompatibleChange;
 import com.yahoo.config.model.api.ValidationParameters.IgnoreValidationErrors;
 import com.yahoo.config.model.application.provider.*;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.vespa.config.VespaVersion;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation;
 
@@ -50,7 +51,7 @@ public class VespaModelCreatorWithFilePkg {
 
     public void validate() throws IOException {
         ApplicationPackageXmlFilesValidator validator =
-                ApplicationPackageXmlFilesValidator.create(applicationPkg.getAppDir(), new Version(6));
+                ApplicationPackageXmlFilesValidator.create(applicationPkg.getAppDir(), new Version(VespaVersion.major));
         validator.checkApplication();
         validator.checkIncludedDirs(applicationPkg);
     }
