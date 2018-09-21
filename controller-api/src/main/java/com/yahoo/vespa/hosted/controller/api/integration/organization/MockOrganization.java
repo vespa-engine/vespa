@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -38,6 +39,8 @@ public class MockOrganization extends AbstractComponent implements Organization 
 
     @Override
     public IssueId file(Issue issue) {
+        if ( ! properties.containsKey(issue.propertyId()))
+            throw new NoSuchElementException("Unknown property '" + issue.propertyId() + "'!");
         IssueId issueId = IssueId.from("" + counter.incrementAndGet());
         issues.put(issueId, new MockIssue(issue));
         return issueId;
