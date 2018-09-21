@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+import static org.hamcrest.CoreMatchers.both;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.collection.IsIn.isIn;
 import static org.hamcrest.core.Every.everyItem;
@@ -947,11 +948,11 @@ public class ModelProvisioningTest {
                         "     <nodes count='1'/>" +
                         "  </container>" +
                         "</services>";
-        testContainerOnLogserverHost(services);
+        boolean useDedicatedNodeForLogserver = false;
+        testContainerOnLogserverHost(services, useDedicatedNodeForLogserver);
     }
 
     @Test
-    @Ignore // Ignore until we create container on logserver implicitly
     public void testImplicitLogserverContainer() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -960,7 +961,8 @@ public class ModelProvisioningTest {
                         "     <nodes count='1'/>" +
                         "  </container>" +
                         "</services>";
-        testContainerOnLogserverHost(services);
+        boolean useDedicatedNodeForLogserver = true;
+        testContainerOnLogserverHost(services, useDedicatedNodeForLogserver);
     }
 
     @Test
@@ -1751,9 +1753,10 @@ public class ModelProvisioningTest {
 
     // Tests that a container is allocated on logserver host and that
     // it is able to get config
-    private void testContainerOnLogserverHost(String services) {
+    private void testContainerOnLogserverHost(String services, boolean useDedicatedNodeForLogserver) {
         int numberOfHosts = 2;
         VespaModelTester tester = new VespaModelTester();
+        tester.useDedicatedNodeForLogserver(useDedicatedNodeForLogserver);
         tester.addHosts(numberOfHosts);
         Zone zone = new Zone(SystemName.cd, Environment.prod, RegionName.defaultName());
 
