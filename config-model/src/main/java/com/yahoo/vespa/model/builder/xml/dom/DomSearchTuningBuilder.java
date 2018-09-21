@@ -255,10 +255,6 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                         " The min value from flush.memory.xxx.diskbloatfactor is used instead");
             } else if (equals("minfilesizefactor", e)) {
                 s.logStore.minFileSizeFactor = asDouble(e);
-            } else if (equals("numthreads", e)) {
-                parent.deployLogger().log(Level.WARNING,
-                        "Element 'numthreads is deprecated. Use feeding.concurrency instead.");
-                s.logStore.numThreads = asInt(e);
             } else if (equals("chunk", e)) {
                 s.logStore.chunk = new Tuning.SearchNode.Summary.Store.Component(true);
                 handleSummaryStoreComponent(parent, e, s.logStore.chunk);
