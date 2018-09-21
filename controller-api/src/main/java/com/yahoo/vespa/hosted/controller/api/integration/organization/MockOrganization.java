@@ -153,7 +153,7 @@ public class MockOrganization extends AbstractComponent implements Organization 
             this.issue = issue;
             this.updated = clock.instant();
             this.open = true;
-            this.assignee = issue.assignee().orElse(properties.get(issue.propertyId()).defaultAssignee);
+            this.assignee = issue.assignee().orElse(null);
         }
 
         public Issue issue() { return issue; }
@@ -164,7 +164,6 @@ public class MockOrganization extends AbstractComponent implements Organization 
 
     private class PropertyInfo {
 
-        private User defaultAssignee = null;
         private List<List<User>> contacts = Collections.emptyList();
         private URI issueUrl = URI.create("issues.tld");
         private URI contactsUrl = URI.create("contacts.tld");
