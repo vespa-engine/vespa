@@ -5,5 +5,4 @@
  *
  * @see com.yahoo.jdisc.client.ClientApplication
  */
-@com.yahoo.api.annotations.PublicApi
 package com.yahoo.jdisc.client;
