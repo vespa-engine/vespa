@@ -24,14 +24,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Organization;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -74,7 +71,6 @@ public class Controller extends AbstractComponent {
     private final Clock clock;
     private final GitHub gitHub;
     private final EntityService entityService;
-    private final GlobalRoutingService globalRoutingService;
     private final ZoneRegistry zoneRegistry;
     private final ConfigServer configServer;
     private final MetricsService metricsService;
@@ -89,14 +85,13 @@ public class Controller extends AbstractComponent {
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService, Organization organization,
-                      GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, AthenzClientFactory athenzClientFactory,
                       ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
                       BuildService buildService, RunDataStore runDataStore) {
         this(curator, rotationsConfig,
-             gitHub, entityService, globalRoutingService, zoneRegistry,
+             gitHub, entityService, zoneRegistry,
              configServer, metricsService, nameService, routingGenerator, chef,
              Clock.systemUTC(), athenzClientFactory, artifactRepository, applicationStore, testerCloud,
              buildService, runDataStore, com.yahoo.net.HostName::getLocalhost);
@@ -104,7 +99,6 @@ public class Controller extends AbstractComponent {
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService,
-                      GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
@@ -116,7 +110,6 @@ public class Controller extends AbstractComponent {
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
         this.gitHub = Objects.requireNonNull(gitHub, "GitHub cannot be null");
         this.entityService = Objects.requireNonNull(entityService, "EntityService cannot be null");
-        this.globalRoutingService = Objects.requireNonNull(globalRoutingService, "GlobalRoutingService cannot be null");
         this.zoneRegistry = Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
         this.configServer = Objects.requireNonNull(configServer, "ConfigServer cannot be null");
         this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
@@ -167,11 +160,6 @@ public class Controller extends AbstractComponent {
     public Clock clock() { return clock; }
 
     public ZoneRegistry zoneRegistry() { return zoneRegistry; }
-
-    // TODO: Remove once DeploymentMetricsMaintainer has stored rotation status for all applications at least once
-    public Map<String, RotationStatus> rotationStatus(Rotation rotation) {
-        return globalRoutingService.getHealthStatus(rotation.name());
-    }
 
     public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
                                               String environment, String region) {
