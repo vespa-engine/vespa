@@ -51,7 +51,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         // Run parallel stream inside a custom ForkJoinPool so that we can control the number of threads used
         ForkJoinPool pool = new ForkJoinPool(applicationsToUpdateInParallel);
         pool.submit(() -> {
-            applicationList.parallelStream().forEach(application -> {
+            applicationList.stream().forEach(application -> {
                 try {
                     applications.lockIfPresent(application.id(), locked ->
                             applications.store(locked.with(controller().metricsService().getApplicationMetrics(application.id()))));
