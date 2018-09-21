@@ -184,7 +184,6 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
                 "<logstore>",
                 "<maxfilesize>512</maxfilesize>",
                 "<minfilesizefactor>0.3</minfilesizefactor>",
-                "<numthreads>7</numthreads>",
                 "<chunk>",
                 "<maxsize>256</maxsize>",
                 "<compression>",
@@ -204,7 +203,6 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         assertEquals(3, t.searchNode.summary.store.cache.compression.level.intValue());
         assertEquals(512, t.searchNode.summary.store.logStore.maxFileSize.longValue());
         assertEquals(0.3, t.searchNode.summary.store.logStore.minFileSizeFactor, DELTA);
-        assertEquals(7, t.searchNode.summary.store.logStore.numThreads.intValue());
         assertEquals(256, t.searchNode.summary.store.logStore.chunk.maxSize.intValue());
         assertEquals(Tuning.SearchNode.Summary.Store.Compression.Type.LZ4,
                 t.searchNode.summary.store.logStore.chunk.compression.type);
