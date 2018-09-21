@@ -90,14 +90,14 @@ public class DeploymentMetricsMaintainer extends Maintainer {
 
     /** Get global rotation status for application */
     private Map<HostName, RotationStatus> rotationStatus(Application application) {
-        return application.rotation()
-                          .map(rotation -> controller().metricsService().getRotationStatus(rotation.id().asString()))
-                          .map(rotationStatus -> {
-                              Map<HostName, RotationStatus> result = new TreeMap<>();
-                              rotationStatus.forEach((hostname, status) -> result.put(hostname, from(status)));
-                              return result;
-                          })
-                          .orElseGet(Collections::emptyMap);
+        return applications.rotationRepository().getRotation(application)
+                           .map(rotation -> controller().metricsService().getRotationStatus(rotation.name()))
+                           .map(rotationStatus -> {
+                               Map<HostName, RotationStatus> result = new TreeMap<>();
+                               rotationStatus.forEach((hostname, status) -> result.put(hostname, from(status)));
+                               return result;
+                           })
+                           .orElseGet(Collections::emptyMap);
     }
 
     private static RotationStatus from(com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus status) {

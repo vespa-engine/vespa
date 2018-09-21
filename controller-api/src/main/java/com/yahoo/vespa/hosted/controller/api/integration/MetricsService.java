@@ -21,6 +21,10 @@ public interface MetricsService {
     DeploymentMetrics getDeploymentMetrics(ApplicationId application, ZoneId zone);
 
     // TODO: Remove default once implementation catches up
+    /**
+     * Get status for a global rotation
+     * @param rotationName The fully qualified domain name of the rotation
+     */
     default Map<HostName, RotationStatus> getRotationStatus(String rotationName) {
         return Collections.emptyMap();
     }

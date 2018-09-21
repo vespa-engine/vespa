@@ -108,20 +108,22 @@ public class DeploymentMetricsMaintainerTest {
         Supplier<Application> app = () -> tester.application(application.id());
         Supplier<Deployment> deployment1 = () -> app.get().deployments().get(zone1);
         Supplier<Deployment> deployment2 = () -> app.get().deployments().get(zone2);
+        String assignedRotation = "rotation-fqdn-01";
+        tester.controllerTester().metricsService().addRotation(assignedRotation);
 
         // No status gathered yet
         assertEquals(RotationStatus.unknown, app.get().rotationStatus(deployment1.get()));
         assertEquals(RotationStatus.unknown, app.get().rotationStatus(deployment2.get()));
 
         // One rotation out, one in
-        metricsService.setRotationIn("proxy.prod.us-west-1.vip.test");
-        metricsService.setRotationOut("proxy.prod.us-east-3.vip.test");
+        metricsService.setZoneIn(assignedRotation, "proxy.prod.us-west-1.vip.test");
+        metricsService.setZoneOut(assignedRotation,"proxy.prod.us-east-3.vip.test");
         maintainer.maintain();
         assertEquals(RotationStatus.in, app.get().rotationStatus(deployment1.get()));
         assertEquals(RotationStatus.out, app.get().rotationStatus(deployment2.get()));
 
         // All rotations in
-        metricsService.setRotationIn("proxy.prod.us-east-3.vip.test");
+        metricsService.setZoneIn(assignedRotation,"proxy.prod.us-east-3.vip.test");
         maintainer.maintain();
         assertEquals(RotationStatus.in, app.get().rotationStatus(deployment1.get()));
         assertEquals(RotationStatus.in, app.get().rotationStatus(deployment2.get()));
