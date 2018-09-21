@@ -84,7 +84,8 @@ TEST("require that LogDocumentStore::Config equality operator detects inequality
 
 using search::docstore::Value;
 vespalib::stringref S1("this is a string long enough to be compressed and is just used for sanity checking of compression"
-                       "Adding some repeatble sequences like aaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbb to ensure compression");
+                       "Adding some repeatble sequences like aaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbb to ensure compression"
+                       "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz");
 
 Value createValue(vespalib::stringref s, const CompressionConfig & cfg) {
     Value v(7);
@@ -99,6 +100,7 @@ void verifyValue(vespalib::stringref s, const Value & v) {
     EXPECT_EQUAL(7u, v.getSyncToken());
     EXPECT_EQUAL(0, memcmp(s.data(), buf.getData(), buf.getDataLen()));
 }
+
 TEST("require that Value can store uncompressed data") {
     Value v = createValue(S1, CompressionConfig::NONE);
     verifyValue(S1, v);
@@ -115,6 +117,20 @@ TEST("require that Value can be copied") {
     Value copy(v);
     verifyValue(S1, v);
     verifyValue(S1, copy);
+}
+
+TEST("require that Value can store lz4 compressed data") {
+    Value v = createValue(S1, CompressionConfig::LZ4);
+    EXPECT_EQUAL(CompressionConfig::LZ4, v.getCompression());
+    EXPECT_EQUAL(164u, v.size());
+    verifyValue(S1, v);
+}
+
+TEST("require that Value can store zstd compressed data") {
+    Value v = createValue(S1, CompressionConfig::ZSTD);
+    EXPECT_EQUAL(CompressionConfig::ZSTD, v.getCompression());
+    EXPECT_EQUAL(128u, v.size());
+    verifyValue(S1, v);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
