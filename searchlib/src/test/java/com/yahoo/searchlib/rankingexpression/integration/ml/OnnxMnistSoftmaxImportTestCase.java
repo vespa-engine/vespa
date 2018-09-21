@@ -27,27 +27,28 @@ public class OnnxMnistSoftmaxImportTestCase {
         Tensor constant0 = model.largeConstants().get("test_Variable");
         assertNotNull(constant0);
         assertEquals(new TensorType.Builder().indexed("d2", 784).indexed("d1", 10).build(),
-                constant0.type());
+                     constant0.type());
         assertEquals(7840, constant0.size());
 
         Tensor constant1 = model.largeConstants().get("test_Variable_1");
         assertNotNull(constant1);
-        assertEquals(new TensorType.Builder().indexed("d1", 10).build(),
-                constant1.type());
+        assertEquals(new TensorType.Builder().indexed("d1", 10).build(), constant1.type());
         assertEquals(10, constant1.size());
 
-        // Check required functions (inputs)
-        assertEquals(1, model.requiredFunctions().size());
-        assertTrue(model.requiredFunctions().containsKey("Placeholder"));
-        assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(),
-                     model.requiredFunctions().get("Placeholder"));
+        // Check inputs
+        assertEquals(1, model.inputs().size());
+        assertTrue(model.inputs().containsKey("Placeholder"));
+        assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"), model.inputs().get("Placeholder"));
 
-        // Check outputs
-        RankingExpression output = model.defaultSignature().outputExpression("add");
+        // Check signature
+        ImportedModel.ExpressionWithInputs output = model.defaultSignature().outputExpression("add");
         assertNotNull(output);
-        assertEquals("add", output.getName());
+        assertEquals("add", output.expression().getName());
         assertEquals("join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(test_Variable), f(a,b)(a * b)), sum, d2), constant(test_Variable_1), f(a,b)(a + b))",
-                     output.getRoot().toString());
+                     output.expression().getRoot().toString());
+        assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"),
+                     model.inputs().get(model.defaultSignature().inputs().get("Placeholder")));
+        assertEquals("{Placeholder=tensor(d0[],d1[784])}", output.inputs().toString());
     }
 
     @Test

@@ -20,11 +20,10 @@ public class MnistImportTestCase {
         assertEquals("Has skipped outputs",
                      0, model.get().signature("serving_default").skippedOutputs().size());
 
-        RankingExpression output = signature.outputExpression("y");
+        ImportedModel.ExpressionWithInputs output = signature.outputExpression("y");
         assertNotNull(output);
-        assertEquals("dnn/outputs/add", output.getName());
-        model.assertEqualResultSum("input", output.getName(), 0.00001);
+        assertEquals("dnn/outputs/add", output.expression().getName());
+        model.assertEqualResultSum("input", output.expression().getName(), 0.00001);
     }
-
 
 }

@@ -38,10 +38,10 @@ public class TensorFlowMnistSoftmaxImportTestCase {
         assertEquals(0, model.get().functions().size());
 
         // Check required functions
-        assertEquals(1, model.get().requiredFunctions().size());
-        assertTrue(model.get().requiredFunctions().containsKey("Placeholder"));
+        assertEquals(1, model.get().inputs().size());
+        assertTrue(model.get().inputs().containsKey("Placeholder"));
         assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(),
-                     model.get().requiredFunctions().get("Placeholder"));
+                     model.get().inputs().get("Placeholder"));
 
         // Check signatures
         assertEquals(1, model.get().signatures().size());
@@ -56,11 +56,12 @@ public class TensorFlowMnistSoftmaxImportTestCase {
 
         // ... signature outputs
         assertEquals(1, signature.outputs().size());
-        RankingExpression output = signature.outputExpression("y");
+        ImportedModel.ExpressionWithInputs output = signature.outputExpression("y");
         assertNotNull(output);
-        assertEquals("add", output.getName());
+        assertEquals("add", output.expression().getName());
         assertEquals("join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(test_Variable_read), f(a,b)(a * b)), sum, d2), constant(test_Variable_1_read), f(a,b)(a + b))",
-                     output.getRoot().toString());
+                     output.expression().getRoot().toString());
+        assertEquals("{x=tensor(d0[],d1[784])}", output.inputs().toString());
 
         // Test execution
         model.assertEqualResult("Placeholder", "MatMul");

@@ -902,7 +902,7 @@ public class RankProfile implements Serializable, Cloneable {
         /** True if this should be inlined into calling expressions. Useful for very cheap functions. */
         private final boolean inline;
 
-        private Optional<TensorType> type = Optional.empty();
+        private Optional<TensorType> type;
 
         public RankingExpressionFunction(ExpressionFunction function, boolean inline, Optional<TensorType> type) {
             this.function = function;

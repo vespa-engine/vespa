@@ -20,10 +20,11 @@ public class BatchNormImportTestCase {
         assertEquals("Has skipped outputs",
                      0, model.get().signature("serving_default").skippedOutputs().size());
 
-        RankingExpression output = signature.outputExpression("y");
+        ImportedModel.ExpressionWithInputs output = signature.outputExpression("y");
         assertNotNull(output);
-        assertEquals("dnn/batch_normalization_3/batchnorm/add_1", output.getName());
-        model.assertEqualResult("X", output.getName());
+        assertEquals("dnn/batch_normalization_3/batchnorm/add_1", output.expression().getName());
+        model.assertEqualResult("X", output.expression().getName());
+        assertEquals("{x=tensor(d0[],d1[784])}", output.inputs().toString());
     }
 
 }

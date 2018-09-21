@@ -19,22 +19,23 @@ public class DropoutImportTestCase {
         TestableTensorFlowModel model = new TestableTensorFlowModel("test", "src/test/files/integration/tensorflow/dropout/saved");
 
         // Check required functions
-        assertEquals(1, model.get().requiredFunctions().size());
-        assertTrue(model.get().requiredFunctions().containsKey("X"));
+        assertEquals(1, model.get().inputs().size());
+        assertTrue(model.get().inputs().containsKey("X"));
         assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(),
-                     model.get().requiredFunctions().get("X"));
+                     model.get().inputs().get("X"));
 
         ImportedModel.Signature signature = model.get().signature("serving_default");
 
         assertEquals("Has skipped outputs",
                      0, model.get().signature("serving_default").skippedOutputs().size());
 
-        RankingExpression output = signature.outputExpression("y");
+        ImportedModel.ExpressionWithInputs output = signature.outputExpression("y");
         assertNotNull(output);
-        assertEquals("outputs/Maximum", output.getName());
+        assertEquals("outputs/Maximum", output.expression().getName());
         assertEquals("join(join(imported_ml_function_test_outputs_BiasAdd, reduce(constant(test_outputs_Const), sum, d1), f(a,b)(a * b)), imported_ml_function_test_outputs_BiasAdd, f(a,b)(max(a,b)))",
-                output.getRoot().toString());
-        model.assertEqualResult("X", output.getName());
+                     output.expression().getRoot().toString());
+        model.assertEqualResult("X", output.expression().getName());
+        assertEquals("{x=tensor(d0[],d1[784])}", output.inputs().toString());
     }
 
 }
