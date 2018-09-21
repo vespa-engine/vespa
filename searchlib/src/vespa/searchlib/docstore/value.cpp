@@ -3,6 +3,7 @@
 #include "value.h"
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
+#include <vespa/vespalib/xxhash/xxhash.h>
 
 using vespalib::compression::compress;
 using vespalib::compression::decompress;
@@ -13,6 +14,7 @@ Value::Value()
     : _syncToken(0),
       _compressedSize(0),
       _uncompressedSize(0),
+      _uncompressedCrc(0),
       _compression(CompressionConfig::NONE)
 {}
 
@@ -20,6 +22,7 @@ Value::Value(uint64_t syncToken)
     : _syncToken(syncToken),
       _compressedSize(0),
       _uncompressedSize(0),
+      _uncompressedCrc(0),
       _compression(CompressionConfig::NONE)
 {}
 
@@ -27,16 +30,11 @@ Value::Value(const Value &rhs)
     : _syncToken(rhs._syncToken),
       _compressedSize(rhs._compressedSize),
       _uncompressedSize(rhs._uncompressedSize),
+      _uncompressedCrc(rhs._uncompressedCrc),
       _compression(rhs._compression),
       _buf(Alloc::alloc(rhs.size()))
 {
     memcpy(get(), rhs.get(), size());
-}
-
-void
-Value::setCompression(CompressionConfig::Type comp, size_t uncompressedSize) {
-    _compression = comp;
-    _uncompressedSize = uncompressedSize;
 }
 
 void
@@ -48,7 +46,8 @@ void
 Value::set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &compression) {
     //Underlying buffer must be identical to allow swap.
     vespalib::DataBuffer compressed(buf.getData(), 0u);
-    CompressionConfig::Type type = compress(compression, vespalib::ConstBufferRef(buf.getData(), len), compressed, true);
+    vespalib::ConstBufferRef input(buf.getData(), len);
+    CompressionConfig::Type type = compress(compression, input, compressed, true);
     _compressedSize = compressed.getDataLen();
     if (buf.getData() == compressed.getData()) {
         // Uncompressed so we can just steal the underlying buffer.
@@ -60,14 +59,17 @@ Value::set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &com
             (len == ssize_t(_compressedSize))) ||
            ((type != CompressionConfig::NONE) &&
             (len > ssize_t(_compressedSize))));
-    setCompression(type, len);
+    _compression = type;
+    _uncompressedSize = len;
+    _uncompressedCrc = XXH64(input.c_str(), input.size(), 0);
 }
 
-vespalib::DataBuffer
+Value::Result
 Value::decompressed() const {
     vespalib::DataBuffer uncompressed(_buf.get(), (size_t) 0);
     decompress(getCompression(), getUncompressedSize(), vespalib::ConstBufferRef(*this, size()), uncompressed, true);
-    return uncompressed;
+    uint64_t crc = XXH64(uncompressed.getData(), uncompressed.getDataLen(), 0);
+    return std::make_pair<vespalib::DataBuffer, bool>(std::move(uncompressed), crc == _uncompressedCrc);
 }
 
 }

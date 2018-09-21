@@ -10,6 +10,10 @@
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
 
+#include <vespa/log/log.h>
+
+LOG_SETUP(".searchlib.docstore.documentstore");
+
 using document::DocumentTypeRepo;
 using vespalib::compression::CompressionConfig;
 
@@ -39,8 +43,7 @@ DocumentVisitorAdapter::visit(uint32_t lid, vespalib::ConstBufferRef buf) {
 }
 
 document::Document::UP
-deserializeDocument(const docstore::Value & value, const DocumentTypeRepo &repo) {
-    vespalib::DataBuffer uncompressed(value.decompressed());
+deserializeDocument(const vespalib::DataBuffer & uncompressed, const DocumentTypeRepo &repo) {
     vespalib::nbostream is(uncompressed.getData(), uncompressed.getDataLen());
     return std::make_unique<document::Document>(repo, is);
 }
@@ -91,8 +94,9 @@ BackingStore::read(DocumentIdT key, Value &value) const {
 void
 BackingStore::write(DocumentIdT lid, const Value & value)
 {
-    vespalib::DataBuffer buf = value.decompressed();
-    _backingStore.write(value.getSyncToken(), lid, buf.getData(), buf.getDataLen());
+    Value::Result buf = value.decompressed();
+    assert(buf.second);
+    _backingStore.write(value.getSyncToken(), lid, buf.first.getData(), buf.first.getDataLen());
 }
 
 void
@@ -168,21 +172,32 @@ DocumentStore::visit(const LidVector & lids, const DocumentTypeRepo &repo, IDocu
     }
 }
 
-document::Document::UP
+std::unique_ptr<document::Document>
 DocumentStore::read(DocumentIdT lid, const DocumentTypeRepo &repo) const
 {
-    document::Document::UP retval;
     Value value;
     if (useCache()) {
         value = _cache->read(lid);
-    } else {
-        _uncached_lookups.fetch_add(1);
-        _store->read(lid, value);
+        if (value.empty()) {
+            return std::unique_ptr<document::Document>();
+        }
+        Value::Result result = value.decompressed();
+        if ( result.second ) {
+            return deserializeDocument(result.first, repo);
+        } else {
+            LOG(warning, "Summary cache for lid %u is corrupt. Invalidating and reading directly backing store", lid);
+            _cache->invalidate(lid);
+        }
     }
+
+    _uncached_lookups.fetch_add(1);
+    _store->read(lid, value);
     if ( ! value.empty() ) {
-        retval = deserializeDocument(value, repo);
+        Value::Result result = value.decompressed();
+        assert(result.second);
+        return deserializeDocument(result.first, repo);
     }
-    return retval;
+    return std::unique_ptr<document::Document>();
 }
 
 void
@@ -354,7 +369,7 @@ DocumentStore::WrapVisitor<Visitor>::visit(uint32_t lid, const void *buffer, siz
         value.set(std::move(buf), len);
     }
     if (! value.empty()) {
-        std::shared_ptr<document::Document> doc(deserializeDocument(value, _repo));
+        std::shared_ptr<document::Document> doc(deserializeDocument(value.decompressed().first, _repo));
         _visitor.visit(lid, doc);
         rewrite(lid, *doc);
     } else {

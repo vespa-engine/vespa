@@ -11,8 +11,9 @@ class Value {
 public:
     using Alloc = vespalib::alloc::Alloc;
     using CompressionConfig = vespalib::compression::CompressionConfig;
+    using Result = std::pair<vespalib::DataBuffer, bool>;
 
-    Value();
+            Value();
     Value(uint64_t syncToken);
 
     Value(Value &&rhs) = default;
@@ -33,7 +34,7 @@ public:
     // Keep buffer uncompressed
     void set(vespalib::DataBuffer &&buf, ssize_t len);
 
-    vespalib::DataBuffer decompressed() const;
+    Result decompressed() const;
 
     size_t size() const { return _compressedSize; }
     bool empty() const { return size() == 0; }
@@ -42,8 +43,9 @@ public:
     void *get() { return _buf.get(); }
 private:
     uint64_t _syncToken;
-    size_t _compressedSize;
-    size_t _uncompressedSize;
+    size_t   _compressedSize;
+    size_t   _uncompressedSize;
+    uint64_t _uncompressedCrc;
     CompressionConfig::Type _compression;
     Alloc _buf;
 };

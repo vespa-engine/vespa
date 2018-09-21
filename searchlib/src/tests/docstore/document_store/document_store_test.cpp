@@ -95,10 +95,11 @@ Value createValue(vespalib::stringref s, const CompressionConfig & cfg) {
     return v;
 }
 void verifyValue(vespalib::stringref s, const Value & v) {
-    vespalib::DataBuffer buf = v.decompressed();
+    Value::Result result = v.decompressed();
+    ASSERT_TRUE(result.second);
     EXPECT_EQUAL(s.size(), v.getUncompressedSize());
     EXPECT_EQUAL(7u, v.getSyncToken());
-    EXPECT_EQUAL(0, memcmp(s.data(), buf.getData(), buf.getDataLen()));
+    EXPECT_EQUAL(0, memcmp(s.data(), result.first.getData(), result.first.getDataLen()));
 }
 
 TEST("require that Value can store uncompressed data") {
@@ -131,6 +132,12 @@ TEST("require that Value can store zstd compressed data") {
     EXPECT_EQUAL(CompressionConfig::ZSTD, v.getCompression());
     EXPECT_EQUAL(128u, v.size());
     verifyValue(S1, v);
+}
+
+TEST("require that Value can detect if output not equal to input") {
+    Value v = createValue(S1, CompressionConfig::NONE);
+    static_cast<uint8_t *>(v.get())[8] ^= 0xff;
+    EXPECT_FALSE(v.decompressed().second);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
