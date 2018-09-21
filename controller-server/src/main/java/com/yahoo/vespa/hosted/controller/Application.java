@@ -124,12 +124,20 @@ public class Application {
     public Change change() { return change; }
 
     /**
-     * Returns the change that should used for this application at the given instant, typically now.
+     * Returns the target that should be used for this application at the given instant, typically now.
+     *
+     * This will be any parts of current total change that aren't both blocked and not yet deployed anywhere.
      */
     public Change changeAt(Instant now) {
-        Change change = change();
-        if ( ! deploymentSpec.canUpgradeAt(now)) change = change.withoutPlatform();
-        if ( ! deploymentSpec.canChangeRevisionAt(now)) change = change.withoutApplication();
+        Change change = this.change;
+        if (     this.change.platform().isPresent()
+            &&   productionDeployments().values().stream().noneMatch(deployment -> deployment.version().equals(this.change.platform().get()))
+            && ! deploymentSpec.canUpgradeAt(now))
+            change = change.withoutPlatform();
+        if (     this.change.application().isPresent()
+            &&   productionDeployments().values().stream().noneMatch(deployment -> deployment.applicationVersion().equals(this.change.application().get()))
+            && ! deploymentSpec.canChangeRevisionAt(now))
+            change = change.withoutApplication();
         return change;
     }
 
