@@ -11,7 +11,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.yolean.Exceptions;
 
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -35,8 +37,13 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
 
     @Override
     protected void maintain() {
-        confirmApplicationOwnerships();
-        ensureConfirmationResponses();
+        try {
+            confirmApplicationOwnerships();
+            ensureConfirmationResponses();
+        }
+        catch (UncheckedIOException e) {
+            log.log(Level.INFO, () -> "IO exception handling issues, will retry: '" + Exceptions.toMessageString(e));
+        }
     }
 
     /** File an ownership issue with the owners of all applications we know about. */
