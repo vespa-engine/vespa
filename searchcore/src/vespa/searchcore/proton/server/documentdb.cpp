@@ -1178,6 +1178,28 @@ updateSessionCacheMetrics(DocumentDBMetricsCollection &metrics, proton::matching
 }
 
 void
+updateDocumentsMetrics(DocumentDBMetricsCollection &metrics, DocumentSubDBCollection &subDbs)
+{
+    DocumentMetaStoreReadGuards dms(subDbs);
+    uint32_t active = dms.numActiveDocs();
+    uint32_t ready = dms.numReadyDocs();
+    uint32_t total = dms.numTotalDocs();
+    uint32_t removed = dms.numRemovedDocs();
+
+    auto &docsMetrics = metrics.getTaggedMetrics().documents;
+    docsMetrics.active.set(active);
+    docsMetrics.ready.set(ready);
+    docsMetrics.total.set(total);
+    docsMetrics.removed.set(removed);
+
+    auto &legacyMetrics = metrics.getLegacyMetrics();
+    legacyMetrics.numActiveDocs.set(active);
+    legacyMetrics.numIndexedDocs.set(ready);
+    legacyMetrics.numStoredDocs.set(total);
+    legacyMetrics.numRemovedDocs.set(removed);
+}
+
+void
 updateDocumentStoreCacheHitRate(const CacheStats &current, const CacheStats &last,
                                 metrics::LongAverageMetric &cacheHitRate)
 {
@@ -1276,6 +1298,7 @@ DocumentDB::updateMetrics(DocumentDBMetricsCollection &metrics)
     updateAttributeMetrics(metrics, _subDBs);
     updateMatchingMetrics(metrics, *_subDBs.getReadySubDB());
     updateSessionCacheMetrics(metrics, *_sessionManager);
+    updateDocumentsMetrics(metrics, _subDBs);
     updateMetrics(metrics.getTaggedMetrics(), threadingServiceStats);
 }
 
@@ -1289,12 +1312,6 @@ DocumentDB::updateLegacyMetrics(LegacyDocumentDBMetrics &metrics, const Executor
     metrics.numDocs.set(getNumDocs());
 
     DocumentMetaStoreReadGuards dmss(_subDBs);
-    
-    metrics.numActiveDocs.set(dmss.numActiveDocs());
-    metrics.numIndexedDocs.set(dmss.numIndexedDocs());
-    metrics.numStoredDocs.set(dmss.numStoredDocs());
-    metrics.numRemovedDocs.set(dmss.numRemovedDocs());
-
     updateLidSpaceMetrics(metrics.ready.docMetaStore, dmss.readydms->get());
     updateLidSpaceMetrics(metrics.notReady.docMetaStore, dmss.notreadydms->get());
     updateLidSpaceMetrics(metrics.removed.docMetaStore, dmss.remdms->get());
