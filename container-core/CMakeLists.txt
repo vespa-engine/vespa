@@ -6,7 +6,6 @@ install_config_definition(src/main/resources/configdefinitions/health-monitor.de
 install_config_definition(src/main/resources/configdefinitions/http-filter.def container.core.http.http-filter.def)
 install_config_definition(src/main/resources/configdefinitions/metrics-presentation.def metrics.metrics-presentation.def)
 install_config_definition(src/main/resources/configdefinitions/mockservice.def container.handler.test.mockservice.def)
-install_config_definition(src/main/resources/configdefinitions/qr-logging.def container.core.qr-logging.def)
 install_config_definition(src/main/resources/configdefinitions/qr-searchers.def container.qr-searchers.def)
 install_config_definition(src/main/resources/configdefinitions/qr.def container.qr.def)
 install_config_definition(src/main/resources/configdefinitions/servlet-config.def container.servlet.servlet-config.def)
