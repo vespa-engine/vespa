@@ -46,6 +46,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -340,7 +341,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(app, changedApplication, true, stagingTest);
 
         readyJobsTrigger.run();
-        assertEquals(0, tester.buildService().jobs().size());
+        assertEquals(emptyList(), tester.buildService().jobs());
 
         tester.clock().advance(Duration.ofHours(2)); // ---------------- Exit block window: 20:30
         tester.deploymentTrigger().triggerReadyJobs(); // Schedules staging test for the blocked production job(s)
@@ -380,27 +381,17 @@ public class DeploymentTriggerTest {
         assertEquals((BuildJob.defaultBuildNumber + 1), tester.application(application.id()).outstandingChange().application().get().buildNumber().getAsLong());
 
         tester.readyJobTrigger().maintain();
-        assertTrue(tester.buildService().jobs().isEmpty());
+        // Platform upgrade keeps rolling, since it has already deployed in a production zone.
+        assertEquals(1, tester.buildService().jobs().size());
+        tester.deployAndNotify(application, applicationPackage, true, productionUsEast3);
+        assertEquals(emptyList(), tester.buildService().jobs());
 
-        // New component triggers a full deployment of new application version, leaving platform versions alone.
+
+        // New component triggers a full deployment of new application version, but only after the upgrade is done.
         tester.jobCompletion(component).application(application).nextBuildNumber().nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(application, applicationPackage, true, stagingTest);
         tester.deployAndNotify(application, applicationPackage, true, systemTest);
         tester.deployAndNotify(application, applicationPackage, true, productionUsWest1);
-        tester.deployAndNotify(application, applicationPackage, true, systemTest);
-        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(application, applicationPackage, true, productionUsEast3);
-        tester.deployAndNotify(application, applicationPackage, true, systemTest);
-        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
-
-        // All tests are done for now, and only the platform change remains.
-        assertTrue(tester.buildService().jobs().isEmpty());
-        assertEquals(Change.of(v2), tester.application(application.id()).change());
-
-        // Exiting block window, staging test is re-run for the last prod zone, which has the old platform.
-        clock.advance(Duration.ofHours(1));
-        tester.readyJobTrigger().maintain();
-        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
         tester.deployAndNotify(application, applicationPackage, true, productionUsEast3);
 
         assertFalse(tester.application(application.id()).change().isPresent());
