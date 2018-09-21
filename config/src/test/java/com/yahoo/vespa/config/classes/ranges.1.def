@@ -1,4 +1,0 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-quux int default=5 range=[,]
-xyzzy double default=5 range=[,]
-longVal long default=5 range=[,]
