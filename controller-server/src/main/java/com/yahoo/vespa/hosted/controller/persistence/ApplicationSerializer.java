@@ -53,6 +53,7 @@ public class ApplicationSerializer {
 
     // Application fields
     private final String idField = "id";
+    private final String createdAtField = "createdAt";
     private final String deploymentSpecField = "deploymentSpecField";
     private final String validationOverridesField = "validationOverrides";
     private final String deploymentsField = "deployments";
@@ -135,6 +136,7 @@ public class ApplicationSerializer {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString(idField, application.id().serializedForm());
+        root.setLong(createdAtField, application.createdAt().toEpochMilli());
         root.setString(deploymentSpecField, application.deploymentSpec().xmlForm());
         root.setString(validationOverridesField, application.validationOverrides().xmlForm());
         deploymentsToSlime(application.deployments().values(), root.setArray(deploymentsField));
@@ -287,6 +289,7 @@ public class ApplicationSerializer {
         Inspector root = slime.get();
 
         ApplicationId id = ApplicationId.fromSerializedForm(root.field(idField).asString());
+        Instant createdAt = Instant.ofEpochMilli(root.field(createdAtField).asLong());
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(root.field(deploymentSpecField).asString(), false);
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml(root.field(validationOverridesField).asString());
         List<Deployment> deployments = deploymentsFromSlime(root.field(deploymentsField));
@@ -299,7 +302,7 @@ public class ApplicationSerializer {
         Optional<RotationId> rotation = rotationFromSlime(root.field(rotationField));
         Map<HostName, RotationStatus> rotationStatus = rotationStatusFromSlime(root.field(rotationStatusField));
 
-        return new Application(id, deploymentSpec, validationOverrides, deployments, deploymentJobs, deploying,
+        return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs, deploying,
                                outstandingChange, ownershipIssueId, metrics, rotation, rotationStatus);
     }
 

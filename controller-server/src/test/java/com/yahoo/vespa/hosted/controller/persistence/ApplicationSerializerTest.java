@@ -32,6 +32,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -97,6 +99,7 @@ public class ApplicationSerializerTest {
         rotationStatus.put(HostName.from("rot2.fqdn"), RotationStatus.out);
 
         Application original = new Application(ApplicationId.from("t1", "a1", "i1"),
+                                               Instant.now().truncatedTo(ChronoUnit.MILLIS),
                                                deploymentSpec,
                                                validationOverrides,
                                                deployments, deploymentJobs,
@@ -110,6 +113,7 @@ public class ApplicationSerializerTest {
         Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
 
         assertEquals(original.id(), serialized.id());
+        assertEquals(original.createdAt(), serialized.createdAt());
 
         assertEquals(original.deploymentSpec().xmlForm(), serialized.deploymentSpec().xmlForm());
         assertEquals(original.validationOverrides().xmlForm(), serialized.validationOverrides().xmlForm());

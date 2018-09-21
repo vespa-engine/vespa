@@ -274,7 +274,7 @@ public class ApplicationController {
                 zmsClient.addApplication(((AthenzTenant) tenant.get()).domain(),
                                          new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
             }
-            LockedApplication application = new LockedApplication(new Application(id), lock);
+            LockedApplication application = new LockedApplication(new Application(id, clock.instant()), lock);
             store(application);
             log.info("Created " + application);
             return application.get();
