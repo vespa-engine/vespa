@@ -148,5 +148,4 @@ $ sudo jdisc_start target/myapp.jar
  * @see com.yahoo.jdisc.handler
  * @see com.yahoo.jdisc.service
  */
-@com.yahoo.api.annotations.PublicApi
 package com.yahoo.jdisc.application;
