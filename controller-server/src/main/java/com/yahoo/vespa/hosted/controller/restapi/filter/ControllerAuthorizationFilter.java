@@ -121,7 +121,8 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
                path.matches("/provision/v2/{*}") ||
                path.matches("/screwdriver/v1/trigger/tenant/{*}") ||
                path.matches("/os/v1/{*}") ||
-               path.matches("/zone/v2/{*}");
+               path.matches("/zone/v2/{*}") ||
+               path.matches("/nodes/v2/{*}");
     }
 
     private static boolean isTenantAdminOperation(Path path, Method method) {
