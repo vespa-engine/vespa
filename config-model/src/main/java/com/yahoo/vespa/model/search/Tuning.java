@@ -282,14 +282,12 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
 
                 public static class LogStore {
                     public Long maxFileSize = null;
-                    public Integer numThreads = null;
                     public Component chunk = null;
                     public Double minFileSizeFactor = null;
 
                     public void getConfig(ProtonConfig.Summary.Log.Builder log) {
                         if (maxFileSize!=null) log.maxfilesize(maxFileSize);
                         if (minFileSizeFactor!=null) log.minfilesizefactor(minFileSizeFactor);
-                        if (numThreads != null) log.numthreads(numThreads);
                         if (chunk != null) {
                             chunk.getConfig(log.chunk);
                         }
