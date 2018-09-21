@@ -42,7 +42,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
             ensureConfirmationResponses();
         }
         catch (UncheckedIOException e) {
-            log.log(Level.INFO, () -> "IO exception handling issues, will retry: '" + Exceptions.toMessageString(e));
+            log.log(Level.INFO, () -> "IO exception handling issues, will retry in " + maintenanceInterval() + ": '" + Exceptions.toMessageString(e));
         }
     }
 
