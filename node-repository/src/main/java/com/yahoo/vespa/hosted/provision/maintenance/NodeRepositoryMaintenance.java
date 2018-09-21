@@ -168,7 +168,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             infrastructureProvisionInterval = Duration.ofMinutes(3);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
 
-
             if (zone.environment().equals(Environment.prod) && zone.system() != SystemName.cd) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(29);
@@ -177,9 +176,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 reservationExpiry = Duration.ofMinutes(20); // Need to be long enough for deployment to be finished for all config model versions
             } else {
                 inactiveExpiry = Duration.ofSeconds(2); // support interactive wipe start over
-                retiredInterval = Duration.ofMinutes(5);
+                retiredInterval = Duration.ofMinutes(1);
                 dirtyExpiry = Duration.ofMinutes(30);
-                retiredExpiry = Duration.ofMinutes(20); // fast turnaround as test envs don't have persistent data
+                retiredExpiry = Duration.ofMinutes(20);
                 reservationExpiry = Duration.ofMinutes(10);
             }
         }
