@@ -90,11 +90,11 @@ size_t
 deriveCompactionCompressionThreads(const ProtonConfig &proton,
                                    const HwInfo::Cpu &cpuInfo) {
     size_t scaledCores = (size_t)std::ceil(cpuInfo.cores() * proton.feeding.concurrency);
-    size_t threads = std::max(scaledCores, size_t(proton.summary.log.numthreads));
+    size_t threads = std::max(scaledCores, 8ul);
 
     // We need at least 1 guaranteed free worker in order to ensure progress so #documentsdbs + 1 should suffice,
     // but we will not be cheap and give #documentsdbs * 2
-    return std::max(threads, proton.documentdb.size() * 2);;
+    return std::max(threads, proton.documentdb.size() * 2);
 }
 
 const vespalib::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
