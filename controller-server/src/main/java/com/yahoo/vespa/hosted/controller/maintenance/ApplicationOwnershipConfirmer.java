@@ -49,22 +49,24 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
     /** File an ownership issue with the owners of all applications we know about. */
     private void confirmApplicationOwnerships() {
         ApplicationList.from(controller().applications().asList())
-                .notPullRequest()
-                .hasProductionDeployment()
-                .asList()
-                .forEach(application -> {
-                    try {
-                        Tenant tenant = ownerOf(application.id());
-                        Optional<IssueId> ourIssueId = application.ownershipIssueId();
-                        ourIssueId = tenant instanceof AthenzTenant
-                                ? ownershipIssues.confirmOwnership(ourIssueId, application.id(), propertyIdFor((AthenzTenant) tenant))
-                                : ownershipIssues.confirmOwnership(ourIssueId, application.id(), userFor(tenant));
-                        ourIssueId.ifPresent(issueId -> store(issueId, application.id()));
-                    }
-                    catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
-                        log.log(Level.WARNING, "Exception caught when attempting to file an issue for " + application.id(), e);
-                    }
-                });
+                       .notPullRequest()
+                       .hasProductionDeployment()
+                       .asList()
+                       .stream()
+                       .filter(application -> application.createdAt().isBefore(controller().clock().instant().minus(Duration.ofDays(90))))
+                       .forEach(application -> {
+                           try {
+                               Tenant tenant = ownerOf(application.id());
+                               Optional<IssueId> ourIssueId = application.ownershipIssueId();
+                               ourIssueId = tenant instanceof AthenzTenant
+                                       ? ownershipIssues.confirmOwnership(ourIssueId, application.id(), propertyIdFor((AthenzTenant) tenant))
+                                       : ownershipIssues.confirmOwnership(ourIssueId, application.id(), userFor(tenant));
+                               ourIssueId.ifPresent(issueId -> store(issueId, application.id()));
+                           }
+                           catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
+                               log.log(Level.WARNING, "Exception caught when attempting to file an issue for " + application.id(), e);
+                           }
+                       });
 
     }
 

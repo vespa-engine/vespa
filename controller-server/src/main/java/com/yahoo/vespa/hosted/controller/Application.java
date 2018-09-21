@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 public class Application {
 
     private final ApplicationId id;
+    private final Instant createdAt;
     private final DeploymentSpec deploymentSpec;
     private final ValidationOverrides validationOverrides;
     private final Map<ZoneId, Deployment> deployments;
@@ -53,28 +54,29 @@ public class Application {
     private final Map<HostName, RotationStatus> rotationStatus;
 
     /** Creates an empty application */
-    public Application(ApplicationId id) {
-        this(id, DeploymentSpec.empty, ValidationOverrides.empty, Collections.emptyMap(),
+    public Application(ApplicationId id, Instant now) {
+        this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Collections.emptyMap(),
              new DeploymentJobs(OptionalLong.empty(), Collections.emptyList(), Optional.empty(), false),
              Change.empty(), Change.empty(), Optional.empty(), new ApplicationMetrics(0, 0),
              Optional.empty(), Collections.emptyMap());
     }
 
     /** Used from persistence layer: Do not use */
-    public Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
+    public Application(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                        List<Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                        Change outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
                        Optional<RotationId> rotation, Map<HostName, RotationStatus> rotationStatus) {
-        this(id, deploymentSpec, validationOverrides,
+        this(id, createdAt, deploymentSpec, validationOverrides,
              deployments.stream().collect(Collectors.toMap(Deployment::zone, d -> d)),
              deploymentJobs, change, outstandingChange, ownershipIssueId, metrics, rotation, rotationStatus);
     }
 
-    Application(ApplicationId id, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
+    Application(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                 Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
                 Change outstandingChange, Optional<IssueId> ownershipIssueId, ApplicationMetrics metrics,
                 Optional<RotationId> rotation, Map<HostName, RotationStatus> rotationStatus) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
+        this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
         this.deploymentSpec = Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
         this.validationOverrides = Objects.requireNonNull(validationOverrides, "validationOverrides cannot be null");
         this.deployments = ImmutableMap.copyOf(Objects.requireNonNull(deployments, "deployments cannot be null"));
@@ -88,6 +90,8 @@ public class Application {
     }
 
     public ApplicationId id() { return id; }
+
+    public Instant createdAt() { return createdAt; }
 
     /**
      * Returns the last deployed deployment spec of this application,
