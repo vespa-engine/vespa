@@ -6,11 +6,12 @@
 #include "configstore.h"
 #include "ddbstate.h"
 #include "disk_mem_usage_forwarder.h"
+#include "documentdb_metrics_updater.h"
+#include "document_db_config_owner.h"
 #include "documentdbconfig.h"
 #include "documentsubdbcollection.h"
 #include "executorthreadingservice.h"
 #include "feedhandler.h"
-#include "document_db_config_owner.h"
 #include "i_document_subdb_owner.h"
 #include "i_feed_handler_owner.h"
 #include "i_lid_space_compaction_handler.h"
@@ -135,10 +136,8 @@ private:
     VisibilityHandler             _visibility;
     ILidSpaceCompactionHandler::Vector _lidSpaceCompactionHandlers;
     DocumentDBJobTrackers         _jobTrackers;
-
-    // Last updated document store cache statistics. Necessary due to metrics implementation is upside down.
-    DocumentStoreCacheStats       _lastDocStoreCacheStats;
     IBucketStateCalculator::SP    _calc;
+    DocumentDBMetricsUpdater      _metricsUpdater;
 
     void registerReference();
     void setActiveConfig(const DocumentDBConfig::SP &config, SerialNum serialNum, int64_t generation);
@@ -205,10 +204,6 @@ private:
      */
     virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
     void notifyAllBucketsChanged();
-
-    void updateLegacyMetrics(LegacyDocumentDBMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats);
-    void updateMiscMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats, search::MemoryUsage &totalMemoryUsage);
-    void updateAttributeResourceUsageMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics);
 
     /*
      * Tear down references to this document db (e.g. listeners for

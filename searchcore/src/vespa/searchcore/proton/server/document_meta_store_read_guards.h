@@ -18,7 +18,7 @@ struct DocumentMetaStoreReadGuards
     IDocumentMetaStoreContext::IReadGuard::UP notreadydms;
     IDocumentMetaStoreContext::IReadGuard::UP remdms;
 
-    DocumentMetaStoreReadGuards(DocumentSubDBCollection &subDBs);
+    DocumentMetaStoreReadGuards(const DocumentSubDBCollection &subDBs);
     ~DocumentMetaStoreReadGuards();
 
     uint32_t numActiveDocs() const {
