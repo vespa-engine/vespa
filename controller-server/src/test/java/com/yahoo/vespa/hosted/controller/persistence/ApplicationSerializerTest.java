@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
@@ -22,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import org.junit.Test;
@@ -37,6 +39,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalLong;
+import java.util.TreeMap;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.ControllerTester.writable;
@@ -70,7 +73,7 @@ public class ApplicationSerializerTest {
         deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3))); // One deployment without cluster info and utils
         deployments.add(new Deployment(zone2, applicationVersion2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
                                        createClusterUtils(3, 0.2), createClusterInfo(3, 4),
-                                       new DeploymentMetrics(2,3,4,5,6),
+                                       new DeploymentMetrics(2, 3, 4, 5, 6),
                                        DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
                                                                  OptionalDouble.of(200), OptionalDouble.of(10))));
 
@@ -89,6 +92,10 @@ public class ApplicationSerializerTest {
 
         DeploymentJobs deploymentJobs = new DeploymentJobs(projectId, statusList, empty(), true);
 
+        Map<HostName, RotationStatus> rotationStatus = new TreeMap<>();
+        rotationStatus.put(HostName.from("rot1.fqdn"), RotationStatus.in);
+        rotationStatus.put(HostName.from("rot2.fqdn"), RotationStatus.out);
+
         Application original = new Application(ApplicationId.from("t1", "a1", "i1"),
                                                deploymentSpec,
                                                validationOverrides,
@@ -97,7 +104,8 @@ public class ApplicationSerializerTest {
                                                Change.of(ApplicationVersion.from(new SourceRevision("repo", "master", "deadcafe"), 42)),
                                                Optional.of(IssueId.from("1234")),
                                                new MetricsService.ApplicationMetrics(0.5, 0.9),
-                                               Optional.of(new RotationId("my-rotation")));
+                                               Optional.of(new RotationId("my-rotation")),
+                                               rotationStatus);
 
         Application serialized = applicationSerializer.fromSlime(applicationSerializer.toSlime(original));
 
@@ -129,6 +137,7 @@ public class ApplicationSerializerTest {
 
         assertEquals(original.change(), serialized.change());
         assertEquals(original.rotation().get().id(), serialized.rotation().get().id());
+        assertEquals(original.rotationStatus(), serialized.rotationStatus());
 
         // Test cluster utilization
         assertEquals(0, serialized.deployments().get(zone1).clusterUtils().size());

@@ -168,6 +168,7 @@ public class Controller extends AbstractComponent {
 
     public ZoneRegistry zoneRegistry() { return zoneRegistry; }
 
+    // TODO: Remove once DeploymentMetricsMaintainer has stored rotation status for all applications at least once
     public Map<String, RotationStatus> rotationStatus(Rotation rotation) {
         return globalRoutingService.getHealthStatus(rotation.name());
     }
