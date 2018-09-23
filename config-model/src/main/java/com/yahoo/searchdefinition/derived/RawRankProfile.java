@@ -208,8 +208,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 String expressionString = e.getValue().function().getBody().getRoot().toString(new StringBuilder(), context, null, null).toString();
                 context.addFunctionSerialization(RankingExpression.propertyName(e.getKey()), expressionString);
 
-                if (e.getValue().type().isPresent())
-                    context.addFunctionTypeSerialization(RankingExpression.propertyTypeName(e.getKey()), e.getValue().type().get().toString());
+                if (e.getValue().function().returnType().isPresent())
+                    context.addFunctionTypeSerialization(RankingExpression.propertyTypeName(e.getKey()), e.getValue().function().returnType().get().toString());
                 else if (e.getValue().function().arguments().isEmpty())
                     throw new IllegalStateException("Type of function '" + e.getKey() + "' is not resolved");
             }

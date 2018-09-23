@@ -534,7 +534,7 @@ public class RankProfile implements Serializable, Cloneable {
 
     /** Adds a function and returns it */
     public RankingExpressionFunction addFunction(ExpressionFunction function, boolean inline) {
-        RankingExpressionFunction rankingExpressionFunction = new RankingExpressionFunction(function, inline, Optional.empty());
+        RankingExpressionFunction rankingExpressionFunction = new RankingExpressionFunction(function, inline);
         functions.put(function.getName(), rankingExpressionFunction);
         return rankingExpressionFunction;
     }
@@ -694,7 +694,7 @@ public class RankProfile implements Serializable, Cloneable {
         for (Map.Entry<String, RankingExpressionFunction> entry : functions.entrySet()) {
             RankingExpressionFunction rankingExpressionFunction = entry.getValue();
             RankingExpression compiled = compile(rankingExpressionFunction.function().getBody(), queryProfiles, importedModels, getConstants(), inlineFunctions, expressionTransforms);
-            compiledFunctions.put(entry.getKey(), rankingExpressionFunction.withBody(compiled));
+            compiledFunctions.put(entry.getKey(), rankingExpressionFunction.withExpression(compiled));
         }
         return compiledFunctions;
     }
@@ -897,21 +897,18 @@ public class RankProfile implements Serializable, Cloneable {
     /** A function in a rank profile */
     public static class RankingExpressionFunction {
 
-        private final ExpressionFunction function;
+        private ExpressionFunction function;
 
         /** True if this should be inlined into calling expressions. Useful for very cheap functions. */
         private final boolean inline;
 
-        private Optional<TensorType> type;
-
-        public RankingExpressionFunction(ExpressionFunction function, boolean inline, Optional<TensorType> type) {
+        public RankingExpressionFunction(ExpressionFunction function, boolean inline) {
             this.function = function;
             this.inline = inline;
-            this.type = type;
         }
 
-        public void setType(TensorType type) {
-            this.type = Optional.of(type);
+        public void setReturnType(TensorType type) {
+            this.function = function.withReturnType(type);
         }
 
         public ExpressionFunction function() { return function; }
@@ -920,11 +917,8 @@ public class RankProfile implements Serializable, Cloneable {
             return inline && function.arguments().isEmpty(); // only inline no-arg functions;
         }
 
-        /** Returns the type this produces, or empty if not resolved */
-        public Optional<TensorType> type() { return type; }
-
-        public RankingExpressionFunction withBody(RankingExpression expression) {
-            return new RankingExpressionFunction(function.withBody(expression), inline, type);
+        public RankingExpressionFunction withExpression(RankingExpression expression) {
+            return new RankingExpressionFunction(function.withBody(expression), inline);
         }
 
         @Override
