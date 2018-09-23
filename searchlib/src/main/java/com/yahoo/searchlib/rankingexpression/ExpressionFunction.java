@@ -60,8 +60,8 @@ public class ExpressionFunction {
         this(name, arguments, body, ImmutableMap.of(), Optional.empty());
     }
 
-    private ExpressionFunction(String name, List<String> arguments, RankingExpression body,
-                               Map<String, TensorType> argumentTypes, Optional<TensorType> returnType) {
+    public ExpressionFunction(String name, List<String> arguments, RankingExpression body,
+                              Map<String, TensorType> argumentTypes, Optional<TensorType> returnType) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.arguments = arguments==null ? ImmutableList.of() : ImmutableList.copyOf(arguments);
         this.body = Objects.requireNonNull(body, "body cannot be null");

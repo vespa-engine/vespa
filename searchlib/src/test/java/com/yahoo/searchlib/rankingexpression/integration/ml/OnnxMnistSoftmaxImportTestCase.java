@@ -1,5 +1,6 @@
 package com.yahoo.searchlib.rankingexpression.integration.ml;
 
+import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
@@ -41,14 +42,14 @@ public class OnnxMnistSoftmaxImportTestCase {
         assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"), model.inputs().get("Placeholder"));
 
         // Check signature
-        ImportedModel.ExpressionWithInputs output = model.defaultSignature().outputExpression("add");
+        ExpressionFunction output = model.defaultSignature().outputExpression("add");
         assertNotNull(output);
-        assertEquals("add", output.expression().getName());
+        assertEquals("add", output.getBody().getName());
         assertEquals("join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(test_Variable), f(a,b)(a * b)), sum, d2), constant(test_Variable_1), f(a,b)(a + b))",
-                     output.expression().getRoot().toString());
+                     output.getBody().getRoot().toString());
         assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"),
                      model.inputs().get(model.defaultSignature().inputs().get("Placeholder")));
-        assertEquals("{Placeholder=tensor(d0[],d1[784])}", output.inputs().toString());
+        assertEquals("{Placeholder=tensor(d0[],d1[784])}", output.getBody().toString());
     }
 
     @Test

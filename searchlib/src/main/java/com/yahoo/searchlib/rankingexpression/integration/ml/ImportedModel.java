@@ -3,6 +3,7 @@ package com.yahoo.searchlib.rankingexpression.integration.ml;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.collections.Pair;
+import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -11,9 +12,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -108,27 +111,38 @@ public class ImportedModel {
      * if signatures are used, or the expression name if signatures are not used and there are multiple
      * expressions, and the second is the output name if signature names are used.
      */
-    public List<Pair<String, ExpressionWithInputs>> outputExpressions() {
-        List<Pair<String, ExpressionWithInputs>> expressions = new ArrayList<>();
+    public List<Pair<String, ExpressionFunction>> outputExpressions() {
+        List<Pair<String, ExpressionFunction>> expressions = new ArrayList<>();
         for (Map.Entry<String, Signature> signatureEntry : signatures().entrySet()) {
             for (Map.Entry<String, String> outputEntry : signatureEntry.getValue().outputs().entrySet())
                 expressions.add(new Pair<>(signatureEntry.getKey() + "." + outputEntry.getKey(),
                                            signatureEntry.getValue().outputExpression(outputEntry.getKey())));
             if (signatureEntry.getValue().outputs().isEmpty()) // fallback: Signature without outputs
                 expressions.add(new Pair<>(signatureEntry.getKey(),
-                                           new ExpressionWithInputs(expressions().get(signatureEntry.getKey()),
-                                                                    signatureEntry.getValue().inputMap())));
+                                           new ExpressionFunction(signatureEntry.getKey(),
+                                                                  new ArrayList<>(signatureEntry.getValue().inputs().keySet()),
+                                                                  expressions().get(signatureEntry.getKey()),
+                                                                  signatureEntry.getValue().inputMap(),
+                                                                  Optional.empty())));
         }
         if (signatures().isEmpty()) { // fallback for models without signatures
             if (expressions().size() == 1) {
                 Map.Entry<String, RankingExpression> singleEntry = this.expressions.entrySet().iterator().next();
                 expressions.add(new Pair<>(singleEntry.getKey(),
-                                           new ExpressionWithInputs(singleEntry.getValue(), inputs)));
+                                           new ExpressionFunction(singleEntry.getKey(),
+                                                                  new ArrayList<>(inputs.keySet()),
+                                                                  singleEntry.getValue(),
+                                                                  inputs,
+                                                                  Optional.empty())));
             }
             else {
                 for (Map.Entry<String, RankingExpression> expressionEntry : expressions().entrySet()) {
                     expressions.add(new Pair<>(expressionEntry.getKey(),
-                                               new ExpressionWithInputs(expressionEntry.getValue(), inputs)));
+                                               new ExpressionFunction(expressionEntry.getKey(),
+                                                                      new ArrayList<>(inputs.keySet()),
+                                                                      expressionEntry.getValue(),
+                                                                      inputs,
+                                                                      Optional.empty())));
                 }
             }
         }
@@ -144,8 +158,8 @@ public class ImportedModel {
     public class Signature {
 
         private final String name;
-        private final Map<String, String> inputs = new HashMap<>();
-        private final Map<String, String> outputs = new HashMap<>();
+        private final Map<String, String> inputs = new LinkedHashMap<>();
+        private final Map<String, String> outputs = new LinkedHashMap<>();
         private final Map<String, String> skippedOutputs = new HashMap<>();
         private final List<String> importWarnings = new ArrayList<>();
 
@@ -190,8 +204,12 @@ public class ImportedModel {
         public List<String> importWarnings() { return Collections.unmodifiableList(importWarnings); }
 
         /** Returns the expression this output references */
-        public ExpressionWithInputs outputExpression(String outputName) {
-            return new ExpressionWithInputs(owner().expressions().get(outputs.get(outputName)), inputMap());
+        public ExpressionFunction outputExpression(String outputName) {
+            return new ExpressionFunction(outputName,
+                                          new ArrayList<>(inputs.keySet()),
+                                          owner().expressions().get(outputs.get(outputName)),
+                                          inputMap(),
+                                          Optional.empty());
         }
 
         @Override
@@ -201,30 +219,6 @@ public class ImportedModel {
         void output(String name, String expressionName) { outputs.put(name, expressionName); }
         void skippedOutput(String name, String reason) { skippedOutputs.put(name, reason); }
         void importWarning(String warning) { importWarnings.add(warning); }
-
-    }
-
-    /**
-     * An expression, with the inputs (bindings) which must be supplied to evaluate it.
-     * All non-scalar (non-empty tensor type) inputs are always present here. Inputs not
-     * given explicitly here (but present in the expression) are always scalar.
-     */
-    public static class ExpressionWithInputs {
-
-        private final RankingExpression expression;
-        private final ImmutableMap<String, TensorType> inputs;
-
-        public ExpressionWithInputs(RankingExpression expression, Map<String, TensorType> inputs) {
-            this.expression = Objects.requireNonNull(expression, "expression cannot be null");
-            this.inputs = ImmutableMap.copyOf(inputs);
-        }
-
-        public RankingExpression expression() { return expression; }
-        public ImmutableMap<String, TensorType> inputs() { return inputs; }
-
-        public ExpressionWithInputs with(RankingExpression newExpression) {
-            return new ExpressionWithInputs(newExpression, inputs);
-        }
 
     }
 

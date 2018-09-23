@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.integration.ml;
 
+import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -56,12 +57,12 @@ public class TensorFlowMnistSoftmaxImportTestCase {
 
         // ... signature outputs
         assertEquals(1, signature.outputs().size());
-        ImportedModel.ExpressionWithInputs output = signature.outputExpression("y");
+        ExpressionFunction output = signature.outputExpression("y");
         assertNotNull(output);
-        assertEquals("add", output.expression().getName());
+        assertEquals("add", output.getBody().getName());
         assertEquals("join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(test_Variable_read), f(a,b)(a * b)), sum, d2), constant(test_Variable_1_read), f(a,b)(a + b))",
-                     output.expression().getRoot().toString());
-        assertEquals("{x=tensor(d0[],d1[784])}", output.inputs().toString());
+                     output.getBody().getRoot().toString());
+        assertEquals("{x=tensor(d0[],d1[784])}", output.getBody().toString());
 
         // Test execution
         model.assertEqualResult("Placeholder", "MatMul");

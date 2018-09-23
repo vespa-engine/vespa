@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.integration.ml;
 
+import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
@@ -29,13 +30,13 @@ public class DropoutImportTestCase {
         assertEquals("Has skipped outputs",
                      0, model.get().signature("serving_default").skippedOutputs().size());
 
-        ImportedModel.ExpressionWithInputs output = signature.outputExpression("y");
+        ExpressionFunction output = signature.outputExpression("y");
         assertNotNull(output);
-        assertEquals("outputs/Maximum", output.expression().getName());
+        assertEquals("outputs/Maximum", output.getBody().getName());
         assertEquals("join(join(imported_ml_function_test_outputs_BiasAdd, reduce(constant(test_outputs_Const), sum, d1), f(a,b)(a * b)), imported_ml_function_test_outputs_BiasAdd, f(a,b)(max(a,b)))",
-                     output.expression().getRoot().toString());
-        model.assertEqualResult("X", output.expression().getName());
-        assertEquals("{x=tensor(d0[],d1[784])}", output.inputs().toString());
+                     output.getBody().getRoot().toString());
+        model.assertEqualResult("X", output.getBody().getName());
+        assertEquals("{x=tensor(d0[],d1[784])}", output.getBody().toString());
     }
 
 }
