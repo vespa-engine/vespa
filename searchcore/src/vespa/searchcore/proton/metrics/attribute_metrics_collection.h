@@ -4,7 +4,6 @@
 namespace proton {
 
 class AttributeMetrics;
-class LegacyAttributeMetrics;
 
 /**
  * A collection of references to all the metrics for a set of attributes.
@@ -13,18 +12,14 @@ class AttributeMetricsCollection
 {
 private:
     AttributeMetrics &_metrics;
-    LegacyAttributeMetrics &_legacyMetrics;
 
 public:
-    AttributeMetricsCollection(AttributeMetrics &metrics,
-                               LegacyAttributeMetrics &legacyMetrics)
-        : _metrics(metrics),
-          _legacyMetrics(legacyMetrics)
+    AttributeMetricsCollection(AttributeMetrics &metrics)
+        : _metrics(metrics)
     {
     }
     AttributeMetrics &getMetrics() const { return _metrics; }
-    LegacyAttributeMetrics &getLegacyMetrics() const { return _legacyMetrics; }
 };
 
-} // namespace proton
+}
 
