@@ -25,7 +25,6 @@ import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionProvider;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.vespa.config.server.provision.ProvisionerAdapter;
 import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 import com.yahoo.vespa.config.server.session.FileDistributionFactory;
 import com.yahoo.vespa.config.server.session.PrepareParams;
@@ -52,7 +51,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private final DeployLogger logger;
     private final PrepareParams params;
     private final FileDistributionFactory fileDistributionFactory;
-    private final HostProvisionerProvider hostProvisionerProvider;
     private final Optional<ApplicationSet> currentActiveApplicationSet;
     private final ModelContext.Properties properties;
 
@@ -67,12 +65,11 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  Optional<ApplicationSet> currentActiveApplicationSet,
                                  ModelContext.Properties properties,
                                  ConfigserverConfig configserverConfig) {
-        super(modelFactoryRegistry, configserverConfig, properties.zone());
+        super(modelFactoryRegistry, configserverConfig, properties.zone(), hostProvisionerProvider);
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
 
         this.fileDistributionFactory = fileDistributionFactory;
-        this.hostProvisionerProvider = hostProvisionerProvider;
 
         this.context = context;
         this.logger = logger;
@@ -127,12 +124,8 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         Optional<HostProvisioner> nodeRepositoryProvisioner = createNodeRepositoryProvisioner(properties);
         if ( ! allocatedHosts.isPresent()) return nodeRepositoryProvisioner;
         
-        Optional<HostProvisioner> staticProvisioner = createStaticProvisioner(allocatedHosts);
+        Optional<HostProvisioner> staticProvisioner = createStaticProvisioner(allocatedHosts, properties);
         if ( ! staticProvisioner.isPresent()) return Optional.empty(); // Since we have hosts allocated this means we are on non-hosted
-
-        // The following option should not be possible, but since there is a right action for it we can take it
-        if ( ! nodeRepositoryProvisioner.isPresent())
-            return Optional.of(new StaticProvisioner(allocatedHosts.get()));
             
         // Nodes are already allocated by a model and we should use them unless this model requests hosts from a
         // previously unallocated cluster. This allows future models to stop allocate certain clusters.
@@ -153,12 +146,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         hostValidator.verifyHosts(applicationId, model.getHosts().stream().map(hostInfo -> hostInfo.getHostname())
                 .collect(Collectors.toList()));
     }
-
-    private Optional<HostProvisioner> createNodeRepositoryProvisioner(ModelContext.Properties properties) {
-        return hostProvisionerProvider.getHostProvisioner().map(
-                provisioner -> new ProvisionerAdapter(provisioner, properties.applicationId()));
-    }
-
 
     /** The result of preparing a single model version */
     public static class PreparedModelResult implements ModelResult {
