@@ -504,6 +504,11 @@ public class ApplicationController {
 
     /** Returns the endpoints of the deployment, or an empty list if the request fails */
     public Optional<List<URI>> getDeploymentEndpoints(DeploymentId deploymentId) {
+        if ( ! get(deploymentId.applicationId())
+                .map(application -> application.deployments().containsKey(deploymentId.zoneId()))
+                .orElse(deploymentId.applicationId().instance().isTester()))
+            throw new NotExistsException("Deployment", deploymentId.toString());
+
         try {
             return Optional.of(ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
                                                                     .map(RoutingEndpoint::getEndpoint)
@@ -526,12 +531,10 @@ public class ApplicationController {
      */
     public void deleteApplication(ApplicationId applicationId, Optional<NToken> token) {
         // Find all instances of the application
-        List<ApplicationId> instances = controller.applications().asList(applicationId.tenant())
-                                                  .stream()
-                                                  .map(Application::id)
-                                                  .filter(id -> id.application().equals(applicationId.application()) &&
-                                                                id.tenant().equals(applicationId.tenant()))
-                                                  .collect(Collectors.toList());
+        List<ApplicationId> instances = asList(applicationId.tenant()).stream()
+                                                                      .map(Application::id)
+                                                                      .filter(id -> id.application().equals(applicationId.application()))
+                                                                      .collect(Collectors.toList());
         if (instances.isEmpty()) {
             throw new NotExistsException("Could not delete application '" + applicationId + "': Application not found");
         }
