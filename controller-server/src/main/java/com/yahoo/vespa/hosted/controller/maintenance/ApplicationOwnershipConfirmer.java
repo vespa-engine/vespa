@@ -50,6 +50,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
     private void confirmApplicationOwnerships() {
         ApplicationList.from(controller().applications().asList())
                        .notPullRequest()
+                       .withProjectId()
                        .hasProductionDeployment()
                        .asList()
                        .stream()
