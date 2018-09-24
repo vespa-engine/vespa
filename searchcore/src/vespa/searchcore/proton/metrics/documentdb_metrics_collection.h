@@ -2,7 +2,6 @@
 #pragma once
 
 #include "documentdb_tagged_metrics.h"
-#include "legacy_documentdb_metrics.h"
 
 namespace proton {
 
@@ -12,15 +11,15 @@ namespace proton {
 class DocumentDBMetricsCollection
 {
 private:
-    LegacyDocumentDBMetrics _metrics;
     DocumentDBTaggedMetrics _taggedMetrics;
+    size_t _maxNumThreads;
 
 public:
     DocumentDBMetricsCollection(const vespalib::string &docTypeName, size_t maxNumThreads);
     ~DocumentDBMetricsCollection();
-    LegacyDocumentDBMetrics &getLegacyMetrics() { return _metrics; }
     DocumentDBTaggedMetrics &getTaggedMetrics() { return _taggedMetrics; }
+    size_t maxNumThreads() const { return _maxNumThreads; }
 };
 
-} // namespace proton
+}
 
