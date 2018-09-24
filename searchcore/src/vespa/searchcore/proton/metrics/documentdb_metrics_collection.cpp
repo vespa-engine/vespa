@@ -5,11 +5,11 @@
 namespace proton {
 
 DocumentDBMetricsCollection::DocumentDBMetricsCollection(const vespalib::string &docTypeName, size_t maxNumThreads)
-    : _metrics(docTypeName, maxNumThreads),
-      _taggedMetrics(docTypeName)
+    : _taggedMetrics(docTypeName),
+      _maxNumThreads(maxNumThreads)
 {}
 
-DocumentDBMetricsCollection::~DocumentDBMetricsCollection() {}
+DocumentDBMetricsCollection::~DocumentDBMetricsCollection() = default;
 
-} // namespace proton
+}
 
