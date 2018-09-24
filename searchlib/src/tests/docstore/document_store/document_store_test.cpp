@@ -103,6 +103,7 @@ void verifyValue(vespalib::stringref s, const Value & v) {
 }
 
 TEST("require that Value can store uncompressed data") {
+    EXPECT_EQUAL(64ul, sizeof(Value));
     Value v = createValue(S1, CompressionConfig::NONE);
     verifyValue(S1, v);
 }
