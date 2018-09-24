@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.modelfactory;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
@@ -16,6 +15,7 @@ import com.yahoo.config.provision.Version;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.application.Application;
@@ -54,7 +54,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     public ActivatedModelsBuilder(TenantName tenant, long appGeneration, SessionZooKeeperClient zkClient, GlobalComponentRegistry globalComponentRegistry) {
         super(globalComponentRegistry.getModelFactoryRegistry(),
               globalComponentRegistry.getConfigserverConfig(),
-              globalComponentRegistry.getZone());
+              globalComponentRegistry.getZone(),
+              HostProvisionerProvider.from(globalComponentRegistry.getHostProvisioner()));
         this.tenant = tenant;
         this.appGeneration = appGeneration;
         this.zkClient = zkClient;
@@ -74,6 +75,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                             Instant now) {
         log.log(LogLevel.DEBUG, String.format("Loading model version %s for session %s application %s",
                                               modelFactory.getVersion(), appGeneration, applicationId));
+        ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId);
         ModelContext modelContext = new ModelContextImpl(
                 applicationPackage,
                 Optional.empty(),
@@ -81,8 +83,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                 logger,
                 configDefinitionRepo,
                 getForVersionOrLatest(applicationPackage.getFileRegistryMap(), modelFactory.getVersion()).orElse(new MockFileRegistry()),
-                createStaticProvisioner(applicationPackage.getAllocatedHosts()),
-                createModelContextProperties(applicationId),
+                createStaticProvisioner(applicationPackage.getAllocatedHosts(), modelContextProperties),
+                modelContextProperties,
                 Optional.empty(),
                 new com.yahoo.component.Version(modelFactory.getVersion().toString()),
                 wantedNodeVespaVersion);
