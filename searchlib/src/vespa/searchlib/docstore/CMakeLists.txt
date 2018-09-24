@@ -18,6 +18,7 @@ vespa_add_library(searchlib_docstore OBJECT
     randreaders.cpp
     storebybucket.cpp
     summaryexceptions.cpp
+    value.cpp
     visitcache.cpp
     writeablefilechunk.cpp
     DEPENDS

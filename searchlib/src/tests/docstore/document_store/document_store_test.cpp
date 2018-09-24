@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
+#include <vespa/searchlib/docstore/value.h>
 #include <vespa/searchlib/docstore/cachestats.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -79,6 +80,72 @@ TEST("require that LogDocumentStore::Config equality operator detects inequality
     EXPECT_FALSE(C() != C());
     EXPECT_FALSE(C(DC(CompressionConfig::NONE, 100000, 100), LC()) == C());
     EXPECT_FALSE(C(DC(), LC().setMaxBucketSpread(7)) == C());
+}
+
+using search::docstore::Value;
+vespalib::stringref S1("this is a string long enough to be compressed and is just used for sanity checking of compression"
+                       "Adding some repeatble sequences like aaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbb to ensure compression"
+                       "xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz xyz");
+
+Value createValue(vespalib::stringref s, const CompressionConfig & cfg) {
+    Value v(7);
+    vespalib::DataBuffer input;
+    input.writeBytes(s.data(), s.size());
+    v.set(std::move(input), s.size(), cfg);
+    return v;
+}
+void verifyValue(vespalib::stringref s, const Value & v) {
+    Value::Result result = v.decompressed();
+    ASSERT_TRUE(result.second);
+    EXPECT_EQUAL(s.size(), v.getUncompressedSize());
+    EXPECT_EQUAL(7u, v.getSyncToken());
+    EXPECT_EQUAL(0, memcmp(s.data(), result.first.getData(), result.first.getDataLen()));
+}
+
+TEST("require that Value and cache entries have expected size") {
+    using pair = std::pair<DocumentIdT, Value>;
+    using Node = vespalib::hash_node<pair>;
+    EXPECT_EQUAL(64ul, sizeof(Value));
+    EXPECT_EQUAL(72ul, sizeof(pair));
+    EXPECT_EQUAL(80ul, sizeof(Node));
+}
+
+TEST("require that Value can store uncompressed data") {
+    Value v = createValue(S1, CompressionConfig::NONE);
+    verifyValue(S1, v);
+}
+
+TEST("require that Value can be moved") {
+    Value v = createValue(S1, CompressionConfig::NONE);
+    Value m = std::move(v);
+    verifyValue(S1, m);
+}
+
+TEST("require that Value can be copied") {
+    Value v = createValue(S1, CompressionConfig::NONE);
+    Value copy(v);
+    verifyValue(S1, v);
+    verifyValue(S1, copy);
+}
+
+TEST("require that Value can store lz4 compressed data") {
+    Value v = createValue(S1, CompressionConfig::LZ4);
+    EXPECT_EQUAL(CompressionConfig::LZ4, v.getCompression());
+    EXPECT_EQUAL(164u, v.size());
+    verifyValue(S1, v);
+}
+
+TEST("require that Value can store zstd compressed data") {
+    Value v = createValue(S1, CompressionConfig::ZSTD);
+    EXPECT_EQUAL(CompressionConfig::ZSTD, v.getCompression());
+    EXPECT_EQUAL(128u, v.size());
+    verifyValue(S1, v);
+}
+
+TEST("require that Value can detect if output not equal to input") {
+    Value v = createValue(S1, CompressionConfig::NONE);
+    static_cast<uint8_t *>(v.get())[8] ^= 0xff;
+    EXPECT_FALSE(v.decompressed().second);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

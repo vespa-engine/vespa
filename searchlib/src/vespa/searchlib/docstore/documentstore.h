@@ -5,17 +5,13 @@
 #include "idocumentstore.h"
 #include <vespa/vespalib/util/compressionconfig.h>
 
-
-namespace search {
-
-namespace docstore {
+namespace search::docstore {
     class VisitCache;
     class BackingStore;
     class Cache;
 }
-using docstore::VisitCache;
-using docstore::BackingStore;
-using docstore::Cache;
+
+namespace search {
 
 /**
  * Simple document store that contains serialized Document instances.
@@ -67,7 +63,7 @@ public:
      * @param baseDir  The path to a directory where "simpledocstore.dat" will exist.
      **/
     DocumentStore(const Config & config, IDataStore & store);
-    ~DocumentStore();
+    ~DocumentStore() override;
 
     DocumentUP read(DocumentIdT lid, const document::DocumentTypeRepo &repo) const override;
     void visit(const LidVector & lids, const document::DocumentTypeRepo &repo, IDocumentVisitor & visitor) const override;
@@ -111,12 +107,12 @@ private:
 
     template <class> class WrapVisitor;
     class WrapVisitorProgress;
-    Config                         _config;
-    IDataStore &                   _backingStore;
-    std::unique_ptr<BackingStore>  _store;
-    std::shared_ptr<Cache>         _cache;
-    std::shared_ptr<VisitCache>    _visitCache;
-    mutable std::atomic<uint64_t>  _uncached_lookups;
+    Config                                   _config;
+    IDataStore &                             _backingStore;
+    std::unique_ptr<docstore::BackingStore>  _store;
+    std::unique_ptr<docstore::Cache>         _cache;
+    std::unique_ptr<docstore::VisitCache>    _visitCache;
+    mutable std::atomic<uint64_t>            _uncached_lookups;
 };
 
 } // namespace search
