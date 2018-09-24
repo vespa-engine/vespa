@@ -316,7 +316,7 @@ public class FastSearcherTestCase {
         SessionId sessionId = query.getSessionId(false);
         byte IGNORE = 69;
         ByteBuffer answer = ByteBuffer.allocate(1024);
-        answer.put(new byte[] { 0, 0, 0, (byte)(145+sessionId.asUtf8String().getByteLength()), 0, 0, 0, -37, 0, 0, 48, 17, 0, 0, 0, 0,
+        answer.put(new byte[] { 0, 0, 0, (byte)(141+sessionId.asUtf8String().getByteLength()), 0, 0, 0, -37, 0, 0, 16, 17, 0, 0, 0, 0,
                 // query timeout
                 IGNORE, IGNORE, IGNORE, IGNORE,
                 // "default" - rank profile
@@ -331,9 +331,7 @@ public class FastSearcherTestCase {
                 // match: documentdb.searchdoctype => test
                 0, 0, 0, 5, 'm', 'a', 't', 'c', 'h', 0, 0, 0, 1, 0, 0, 0, 24, 'd', 'o', 'c', 'u', 'm', 'e', 'n', 't', 'd', 'b', '.', 's', 'e', 'a', 'r', 'c', 'h', 'd', 'o', 'c', 't', 'y', 'p', 'e', 0, 0, 0, 4, 't', 'e', 's', 't',
                 // sessionId => qrserver.0.XXXXXXXXXXXXX.0
-                0, 0, 0, 6, 'c', 'a', 'c', 'h', 'e', 's', 0, 0, 0, 1, 0, 0, 0, 5, 'q', 'u', 'e', 'r', 'y', 0, 0, 0, 4, 't', 'r', 'u', 'e',
-                // flags
-                0, 0, 0, 2});
+                0, 0, 0, 6, 'c', 'a', 'c', 'h', 'e', 's', 0, 0, 0, 1, 0, 0, 0, 5, 'q', 'u', 'e', 'r', 'y', 0, 0, 0, 4, 't', 'r', 'u', 'e'});
         byte [] expected = new byte [answer.position()];
         answer.flip();
         answer.get(expected);
