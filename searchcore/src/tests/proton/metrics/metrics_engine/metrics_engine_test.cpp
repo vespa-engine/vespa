@@ -1,5 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Unit tests for metrics_engine.
 
 #include <vespa/metrics/metricset.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics_collection.h>
@@ -23,55 +22,30 @@ struct AttributeMetricsFixture {
     MetricsEngine engine;
     DummyMetricSet parent;
     AttributeMetrics metrics;
-    LegacyAttributeMetrics legacyMetrics;
-    LegacyAttributeMetrics totalLegacyMetrics;
     AttributeMetricsFixture()
         : engine(),
           parent("parent"),
-          metrics(&parent),
-          legacyMetrics(nullptr),
-          totalLegacyMetrics(nullptr)
+          metrics(&parent)
     {}
     void addAttribute(const vespalib::string &attrName) {
-        engine.addAttribute(AttributeMetricsCollection(metrics, legacyMetrics), &totalLegacyMetrics, attrName);
+        engine.addAttribute(AttributeMetricsCollection(metrics), attrName);
     }
     void removeAttribute(const vespalib::string &attrName) {
-        engine.removeAttribute(AttributeMetricsCollection(metrics, legacyMetrics), &totalLegacyMetrics, attrName);
+        engine.removeAttribute(AttributeMetricsCollection(metrics), attrName);
     }
     void cleanAttributes() {
-        engine.cleanAttributes(AttributeMetricsCollection(metrics, legacyMetrics), &totalLegacyMetrics);
+        engine.cleanAttributes(AttributeMetricsCollection(metrics));
     }
     void assertRegisteredMetrics(size_t expNumMetrics) const {
         EXPECT_EQUAL(expNumMetrics, parent.getRegisteredMetrics().size());
-        EXPECT_EQUAL(expNumMetrics, legacyMetrics.list.getRegisteredMetrics().size());
-        EXPECT_EQUAL(expNumMetrics, totalLegacyMetrics.list.getRegisteredMetrics().size());
     }
     void assertMetricsExists(const vespalib::string &attrName) {
         EXPECT_TRUE(metrics.get(attrName) != nullptr);
-        EXPECT_TRUE(legacyMetrics.list.get(attrName) != nullptr);
-        EXPECT_TRUE(totalLegacyMetrics.list.get(attrName) != nullptr);
     }
     void assertMetricsNotExists(const vespalib::string &attrName) {
         EXPECT_TRUE(metrics.get(attrName) == nullptr);
-        EXPECT_TRUE(legacyMetrics.list.get(attrName) == nullptr);
-        EXPECT_TRUE(totalLegacyMetrics.list.get(attrName) == nullptr);
     }
 };
-
-TEST("require that the metric proton.diskusage is the sum of the documentDB diskusage metrics")
-{
-    MetricsEngine metrics_engine;
-
-    DocumentDBMetricsCollection metrics1("type1", 1);
-    DocumentDBMetricsCollection metrics2("type2", 1);
-    metrics1.getLegacyMetrics().index.diskUsage.addValue(100);
-    metrics2.getLegacyMetrics().index.diskUsage.addValue(1000);
-
-    metrics_engine.addDocumentDBMetrics(metrics1);
-    metrics_engine.addDocumentDBMetrics(metrics2);
-
-    EXPECT_EQUAL(1100, metrics_engine.legacyRoot().diskUsage.getLongValue("value"));
-}
 
 TEST_F("require that attribute metrics can be added", AttributeMetricsFixture)
 {
