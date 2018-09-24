@@ -10,7 +10,7 @@
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_manager_initializer.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
-#include <vespa/searchcore/proton/metrics/legacy_documentdb_metrics.h>
+#include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reference/document_db_reference.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
