@@ -17,16 +17,6 @@ ignorenonexistingvisitortimelimit int default=300 restart
 ## 100 buckets, 8 of them will be visited in parallel.
 defaultparalleliterators int default=8
 
-## The number of iterators we send for each bucket being visited from visitor
-## thread. For streaming search we would likely want two or three. Since
-## supporting more than one is a new feature, default is still one.
-## (If you visit 8 buckets in parallel and have 2 iterators per bucket, this
-## will be 16 requests to persistence layer, but only 8 will be able to execute
-## at the same time, since only one operation can be executed at the same time
-## for one bucket)
-## DEPRECATED: ignored by backend, 1 is always used.
-iterators_per_bucket int default=1
-
 ## Default number of maximum client replies pending.
 defaultpendingmessages int default=32
 
