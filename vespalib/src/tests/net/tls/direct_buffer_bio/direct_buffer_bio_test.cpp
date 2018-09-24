@@ -17,7 +17,7 @@ struct Fixture {
           const_bio(new_const_direct_buffer_bio()),
           tmp_buf('X', 64)
     {
-        assert(mutable_bio && const_bio);
+        ASSERT_TRUE(mutable_bio && const_bio);
     }
 };
 
