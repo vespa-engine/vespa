@@ -30,10 +30,6 @@ using msg_ptr_vector = std::vector<api::StorageMessage::SP>;
 
 struct TestParams
 {
-    TestParams& iteratorsPerBucket(uint32_t n) {
-        _iteratorsPerBucket = n;
-        return *this;
-    }
     TestParams& maxVisitorMemoryUsage(uint32_t bytes) {
         _maxVisitorMemoryUsage = bytes;
         return *this;
@@ -47,7 +43,6 @@ struct TestParams
         return *this;
     }
 
-    uint32_t _iteratorsPerBucket {1};
     uint32_t _maxVisitorMemoryUsage {UINT32_MAX};
     uint32_t _parallelBuckets {1};
     mbus::Error _autoReplyError;
@@ -62,7 +57,6 @@ private:
     CPPUNIT_TEST(testNormalUsage);
     CPPUNIT_TEST(testFailedCreateIterator);
     CPPUNIT_TEST(testFailedGetIter);
-    CPPUNIT_TEST(iterators_per_bucket_config_is_ignored_and_hardcoded_to_1);
     CPPUNIT_TEST(testDocumentAPIClientError);
     CPPUNIT_TEST(testNoDocumentAPIResendingForFailedVisitor);
     CPPUNIT_TEST(testIteratorCreatedForFailedVisitor);
@@ -90,7 +84,6 @@ public:
     void testNormalUsage();
     void testFailedCreateIterator();
     void testFailedGetIter();
-    void iterators_per_bucket_config_is_ignored_and_hardcoded_to_1();
     void testDocumentAPIClientError();
     void testNoDocumentAPIResendingForFailedVisitor();
     void testIteratorCreatedForFailedVisitor();
@@ -183,9 +176,6 @@ VisitorTest::initializeTest(const TestParams& params)
 {
     vdstestlib::DirConfig config(getStandardConfig(true, "visitortest"));
     config.getConfig("stor-visitor").set("visitorthreads", "1");
-    config.getConfig("stor-visitor").set(
-            "iterators_per_bucket",
-            std::to_string(params._iteratorsPerBucket));
     config.getConfig("stor-visitor").set(
             "defaultparalleliterators",
             std::to_string(params._parallelBuckets));
@@ -596,33 +586,6 @@ VisitorTest::testFailedGetIter()
     CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
 }
 
-void VisitorTest::iterators_per_bucket_config_is_ignored_and_hardcoded_to_1() {
-    initializeTest(TestParams().iteratorsPerBucket(20));
-    auto cmd = makeCreateVisitor();
-    _top->sendDown(cmd);
-    sendCreateIteratorReply();
-
-    auto getIterCmd = fetchSingleCommand<GetIterCommand>(*_bottom);
-    CPPUNIT_ASSERT_EQUAL(spi::IteratorId(1234),
-                         getIterCmd->getIteratorId());
-    sendGetIterReply(*getIterCmd);
-
-    CPPUNIT_ASSERT_EQUAL(size_t(0), _bottom->getNumCommands());
-
-    std::vector<document::Document::SP> docs;
-    std::vector<document::DocumentId> docIds;
-    std::vector<std::string> infoMessages;
-    getMessagesAndReply(_documents.size(), getSession(0), docs, docIds, infoMessages);
-    CPPUNIT_ASSERT_EQUAL(size_t(0), infoMessages.size());
-    CPPUNIT_ASSERT_EQUAL(size_t(0), docIds.size());
-
-    auto destroyIterCmd = fetchSingleCommand<DestroyIteratorCommand>(*_bottom);
-
-    verifyCreateVisitorReply(api::ReturnCode::OK);
-    CPPUNIT_ASSERT(waitUntilNoActiveVisitors());
-    CPPUNIT_ASSERT_EQUAL(0L, getFailedVisitorDestinationReplyCount());
-}
-
 void
 VisitorTest::testDocumentAPIClientError()
 {
@@ -709,7 +672,7 @@ VisitorTest::testNoDocumentAPIResendingForFailedVisitor()
 void
 VisitorTest::testIteratorCreatedForFailedVisitor()
 {
-    initializeTest(TestParams().iteratorsPerBucket(1).parallelBuckets(2));
+    initializeTest(TestParams().parallelBuckets(2));
     std::shared_ptr<api::CreateVisitorCommand> cmd(
             makeCreateVisitor());
     cmd->addBucketToBeVisited(document::BucketId(16, 4));
@@ -928,8 +891,7 @@ void
 VisitorTest::testNoMoreIteratorsSentWhileMemoryUsedAboveLimit()
 {
     initializeTest(TestParams().maxVisitorMemoryUsage(1)
-                               .parallelBuckets(1)
-                               .iteratorsPerBucket(1));
+                               .parallelBuckets(1));
     std::shared_ptr<api::CreateVisitorCommand> cmd(
             makeCreateVisitor());
     _top->sendDown(cmd);
