@@ -228,6 +228,7 @@ public:
     const ISummaryAdapter::SP & getSummaryAdapter() const override { return _summaryAdapter; }
     const std::shared_ptr<IIndexWriter> & getIndexWriter() const override;
     IDocumentMetaStoreContext & getDocumentMetaStoreContext() override { return *_metaStoreCtx; }
+    const IDocumentMetaStoreContext &getDocumentMetaStoreContext() const override { return *_metaStoreCtx; }
     size_t getNumDocs() const override;
     size_t getNumActiveDocs() const override;
     bool hasDocument(const document::DocumentId &id) override;

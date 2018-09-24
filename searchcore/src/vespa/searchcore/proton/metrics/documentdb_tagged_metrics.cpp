@@ -80,7 +80,8 @@ DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::~DocumentStoreMetri
 
 DocumentDBTaggedMetrics::AttributeMetrics::AttributeMetrics(MetricSet *parent)
     : MetricSet("attribute", "", "Attribute vector metrics for this document db", parent),
-      resourceUsage(this)
+      resourceUsage(this),
+      totalMemoryUsage(this)
 {
 }
 
@@ -244,7 +245,9 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docType
       threadingService("threading_service", this),
       matching(this),
       sessionCache(this),
-      documents(this)
+      documents(this),
+      totalMemoryUsage(this),
+      totalDiskUsage("disk_usage", "", "The total disk usage (in bytes) for this document db", this)
 {
 }
 

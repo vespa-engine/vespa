@@ -93,6 +93,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         };
 
         ResourceUsageMetrics resourceUsage;
+        MemoryUsageMetrics totalMemoryUsage;
 
         AttributeMetrics(metrics::MetricSet *parent);
         ~AttributeMetrics();
@@ -188,6 +189,8 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     MatchingMetrics matching;
     SessionCacheMetrics sessionCache;
     DocumentsMetrics documents;
+    MemoryUsageMetrics totalMemoryUsage;
+    metrics::LongValueMetric totalDiskUsage;
 
     DocumentDBTaggedMetrics(const vespalib::string &docTypeName);
     ~DocumentDBTaggedMetrics();
