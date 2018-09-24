@@ -17,14 +17,14 @@ public interface TenantListener {
      * @param tenant name of newly created tenant.
      * @param provider provider of request and reload handlers for new tenant.
      */
-    public void onTenantCreate(TenantName tenant, TenantHandlerProvider provider);
+    void onTenantCreate(TenantName tenant, TenantHandlerProvider provider);
 
     /**
      * Called whenever a tenant is deleted.
      *
      * @param tenant name of deleted tenant.
      */
-    public void onTenantDelete(TenantName tenant);
+    void onTenantDelete(TenantName tenant);
 
     /**
      * Called when all tenants have been loaded at startup.
