@@ -504,6 +504,11 @@ public class ApplicationController {
 
     /** Returns the endpoints of the deployment, or an empty list if the request fails */
     public Optional<List<URI>> getDeploymentEndpoints(DeploymentId deploymentId) {
+        if ( ! get(deploymentId.applicationId())
+                .map(application -> application.deployments().containsKey(deploymentId.zoneId()))
+                .orElse(deploymentId.applicationId().instance().isTester()))
+            throw new NotExistsException("Deployment", deploymentId.toString());
+
         try {
             return Optional.of(ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
                                                                     .map(RoutingEndpoint::getEndpoint)
