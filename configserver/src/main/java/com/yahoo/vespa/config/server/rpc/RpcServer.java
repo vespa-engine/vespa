@@ -16,11 +16,8 @@ import com.yahoo.jrt.Int64Value;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
-import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.StringValue;
-import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
-import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.ErrorCode;
 import com.yahoo.vespa.config.JRTMethods;
@@ -80,8 +77,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     private static final String THREADPOOL_NAME = "rpcserver worker pool";
     private static final long SHUTDOWN_TIMEOUT = 60;
 
-    private final Supervisor supervisor = new Supervisor(new Transport());
-    private Spec spec;
+    private final JrtRpcSupervisor rpcSupervisor;
     private final boolean useRequestVersion;
     private final boolean hostedVespa;
 
@@ -113,7 +109,6 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                      HostLivenessTracker hostLivenessTracker, FileServer fileServer) {
         this.superModelRequestHandler = superModelRequestHandler;
         metricUpdaterFactory = metrics;
-        supervisor.setMaxOutputBufferSize(config.maxoutputbuffersize());
         this.metrics = metrics.getOrCreateMetricUpdater(Collections.<String, String>emptyMap());
         this.hostLivenessTracker = hostLivenessTracker;
         BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(config.maxgetconfigclients());
@@ -121,12 +116,14 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         executorService = new ThreadPoolExecutor(numberOfRpcThreads, numberOfRpcThreads,
                 0, TimeUnit.SECONDS, workQueue, ThreadFactoryFactory.getThreadFactory(THREADPOOL_NAME));
         delayedConfigResponses = new DelayedConfigResponses(this, config.numDelayedResponseThreads());
-        spec = new Spec(null, config.rpcport());
         hostRegistry = hostRegistries.getTenantHostRegistry();
         this.useRequestVersion = config.useVespaVersionInRequest();
         this.hostedVespa = config.hostedVespa();
         this.fileServer = fileServer;
         downloader = fileServer.downloader();
+        int insecureRpcPort = config.rpcport();
+        int secureRpcPort = insecureRpcPort + 2;
+        this.rpcSupervisor = new JrtRpcSupervisor(insecureRpcPort, secureRpcPort, config.maxoutputbuffersize());
         setUpHandlers();
     }
 
@@ -166,15 +163,17 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     }
 
     public void run() {
-        log.log(LogLevel.INFO, "Rpc will listen on port " + spec.port());
+        log.log(LogLevel.INFO, "Rpc will listen on ports " + rpcSupervisor.ports());
         try {
-            Acceptor acceptor = supervisor.listen(spec);
+            List<Acceptor> acceptors = rpcSupervisor.listen();
             isRunning = true;
-            supervisor.transport().join();
-            acceptor.shutdown().join();
+            rpcSupervisor.awaitTransportFinish();
+            acceptors.forEach(acceptor -> acceptor.shutdown().join());
         } catch (ListenFailedException e) {
             stop();
-            throw new RuntimeException("Could not listen at " + spec, e);
+            throw new RuntimeException(
+                    String.format("Could not listen at %s: %s", rpcSupervisor.specs(), e.getMessage()),
+                    e);
         }
     }
 
@@ -186,7 +185,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             Thread.interrupted(); // Ignore and continue shutdown.
         }
         delayedConfigResponses.stop();
-        supervisor.transport().shutdown().join();
+        rpcSupervisor.awaitTransportShutdown();
         isRunning = false;
     }
 
@@ -199,16 +198,16 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
      */
     private void setUpHandlers() {
         // The getConfig method in this class will handle RPC calls for getting config
-        getSupervisor().addMethod(JRTMethods.createConfigV3GetConfigMethod(this, getConfigMethodName));
-        getSupervisor().addMethod(new Method("ping", "", "i", this, "ping")
+        rpcSupervisor.addMethod(JRTMethods.createConfigV3GetConfigMethod(this, getConfigMethodName));
+        rpcSupervisor.addMethod(new Method("ping", "", "i", this, "ping")
                                   .methodDesc("ping")
                                   .returnDesc(0, "ret code", "return code, 0 is OK"));
-        getSupervisor().addMethod(new Method("printStatistics", "", "s", this, "printStatistics")
+        rpcSupervisor.addMethod(new Method("printStatistics", "", "s", this, "printStatistics")
                                   .methodDesc("printStatistics")
                                   .returnDesc(0, "statistics", "Statistics for server"));
-        getSupervisor().addMethod(new Method("filedistribution.serveFile", "si", "is", this, "serveFile"));
-        getSupervisor().addMethod(new Method("filedistribution.setFileReferencesToDownload", "S", "i",
-                                        this, "setFileReferencesToDownload")
+        rpcSupervisor.addMethod(new Method("filedistribution.serveFile", "si", "is", this, "serveFile"));
+        rpcSupervisor.addMethod(new Method("filedistribution.setFileReferencesToDownload", "S", "i",
+                                           this, "setFileReferencesToDownload")
                                      .methodDesc("set which file references to download")
                                      .paramDesc(0, "file references", "file reference to download")
                                      .returnDesc(0, "ret", "0 if success, 1 otherwise"));
@@ -319,10 +318,6 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     public ConfigResponse resolveConfig(JRTServerConfigRequest request, GetConfigContext context, Optional<Version> vespaVersion) {
         context.trace().trace(TRACELEVEL, "RpcServer.resolveConfig()");
         return context.requestHandler().resolveConfig(context.applicationId(), request, vespaVersion);
-    }
-
-    protected Supervisor getSupervisor() {
-        return supervisor;
     }
 
     Boolean addToRequestQueue(JRTServerConfigRequest request) {

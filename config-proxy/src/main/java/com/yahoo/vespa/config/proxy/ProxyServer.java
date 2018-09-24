@@ -10,13 +10,17 @@ import com.yahoo.jrt.Transport;
 import com.yahoo.log.LogLevel;
 import com.yahoo.log.LogSetup;
 import com.yahoo.log.event.Event;
+import com.yahoo.security.tls.TransportSecurityOptions;
+import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.system.CatchSigTerm;
 import com.yahoo.vespa.config.*;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.filedistribution.FileDistributionRpcServer;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -226,7 +230,21 @@ public class ProxyServer implements Runnable {
         // Read system properties
         long eventInterval = Long.getLong("eventinterval", ConfigProxyStatistics.defaultEventInterval);
         final String[] inputConfigSources = System.getProperty("proxyconfigsources", DEFAULT_PROXY_CONFIG_SOURCES).split(",");
-        return new Properties(eventInterval, inputConfigSources);
+        return new Properties(eventInterval, rewritePortIfTlsEnabled(inputConfigSources));
+    }
+
+    // TODO Remove this once TLS migration is complete
+    // Temporary measure to rewrite config sources to use TLS protected port instead
+    private static String[] rewritePortIfTlsEnabled(String[] inputConfigSources) {
+        if (!TransportSecurityUtils.isConfigInsecureMixedModeEnabled()) return inputConfigSources;
+        return Arrays.stream(inputConfigSources)
+                .map(source -> {
+                    int portDelimiter = source.lastIndexOf(':');
+                    int originalPort = Integer.parseInt(source.substring(portDelimiter + 1));
+                    int tlsPort = originalPort + 2;
+                    return source.substring(0, portDelimiter + 1) + tlsPort;
+                })
+                .toArray(String[]::new);
     }
 
     static class Properties {
