@@ -7,6 +7,11 @@
 
 namespace search::docstore {
 
+/**
+ * This class is used to represent a serialized and optionally compressed blob.
+ * Has efficient move/copy operators for use in a cache/stl containers.
+ * Also has crc checks of uncompressed data.
+ */
 class Value {
 public:
     using Alloc = vespalib::alloc::Alloc;
@@ -21,7 +26,6 @@ public:
 
     Value(const Value &rhs);
 
-    void setCompression(CompressionConfig::Type comp, size_t uncompressedSize);
     uint64_t getSyncToken() const { return _syncToken; }
     CompressionConfig::Type getCompression() const { return _compression; }
     size_t getUncompressedSize() const { return _uncompressedSize; }

@@ -102,8 +102,15 @@ void verifyValue(vespalib::stringref s, const Value & v) {
     EXPECT_EQUAL(0, memcmp(s.data(), result.first.getData(), result.first.getDataLen()));
 }
 
-TEST("require that Value can store uncompressed data") {
+TEST("require that Value and cache entries have expected size") {
+    using pair = std::pair<DocumentIdT, Value>;
+    using Node = vespalib::hash_node<pair>;
     EXPECT_EQUAL(64ul, sizeof(Value));
+    EXPECT_EQUAL(72ul, sizeof(pair));
+    EXPECT_EQUAL(80ul, sizeof(Node));
+}
+
+TEST("require that Value can store uncompressed data") {
     Value v = createValue(S1, CompressionConfig::NONE);
     verifyValue(S1, v);
 }

@@ -185,7 +185,7 @@ DocumentStore::read(DocumentIdT lid, const DocumentTypeRepo &repo) const
         if ( result.second ) {
             return deserializeDocument(result.first, repo);
         } else {
-            LOG(warning, "Summary cache for lid %u is corrupt. Invalidating and reading directly backing store", lid);
+            LOG(warning, "Summary cache for lid %u is corrupt. Invalidating and reading directly from backing store", lid);
             _cache->invalidate(lid);
         }
     }
