@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
@@ -301,7 +300,6 @@ public final class ControllerTester {
                                                rotationsConfig,
                                                gitHub,
                                                entityService,
-                                               new MemoryGlobalRoutingService(),
                                                zoneRegistryMock,
                                                configServer,
                                                metricsService,

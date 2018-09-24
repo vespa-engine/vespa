@@ -38,7 +38,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
 
     private final ApplicationController applications;
 
-    DeploymentMetricsMaintainer(Controller controller, Duration duration, JobControl jobControl) {
+    public DeploymentMetricsMaintainer(Controller controller, Duration duration, JobControl jobControl) {
         super(controller, duration, jobControl);
         this.applications = controller.applications();
     }

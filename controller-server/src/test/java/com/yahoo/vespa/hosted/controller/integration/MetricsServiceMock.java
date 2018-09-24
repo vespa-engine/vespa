@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
@@ -13,7 +14,7 @@ import java.util.Map;
 /**
  * @author bratseth
  */
-public class MetricsServiceMock implements MetricsService {
+public class MetricsServiceMock extends AbstractComponent implements MetricsService {
 
     private final Map<String, Double> metrics = new HashMap<>();
     private final Map<String, Map<HostName, RotationStatus>> rotationStatus = new HashMap<>();
