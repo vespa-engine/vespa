@@ -273,16 +273,6 @@ public class RankingExpression implements Serializable {
     }
 
     /**
-     * Returns the expression type rank property name for a given expression name.
-     *
-     * @param expressionName the expression name to return as an expression type property
-     * @return the property name
-     */
-    public static String propertyTypeName(String expressionName) {
-        return "rankingExpression(" + expressionName + ").type";
-    }
-
-    /**
      * Validates the type correctness of the given expression with the given context and
      * returns the type this expression will produce from the given type context
      *

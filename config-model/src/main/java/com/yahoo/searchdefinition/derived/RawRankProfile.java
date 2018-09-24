@@ -13,6 +13,7 @@ import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
 import java.nio.charset.Charset;
@@ -208,8 +209,10 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                 String expressionString = e.getValue().function().getBody().getRoot().toString(new StringBuilder(), context, null, null).toString();
                 context.addFunctionSerialization(RankingExpression.propertyName(e.getKey()), expressionString);
 
+                for (Map.Entry<String, TensorType> argumentType : e.getValue().function().argumentTypes().entrySet())
+                    context.addArgumentTypeSerialization(e.getKey(), argumentType.getKey(), argumentType.getValue());
                 if (e.getValue().function().returnType().isPresent())
-                    context.addFunctionTypeSerialization(RankingExpression.propertyTypeName(e.getKey()), e.getValue().function().returnType().get().toString());
+                    context.addFunctionTypeSerialization(e.getKey(), e.getValue().function().returnType().get());
                 else if (e.getValue().function().arguments().isEmpty())
                     throw new IllegalStateException("Type of function '" + e.getKey() + "' is not resolved");
             }
