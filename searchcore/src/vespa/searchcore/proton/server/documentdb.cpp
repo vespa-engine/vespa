@@ -548,11 +548,10 @@ DocumentDB::close()
 
     // The attributes in the ready sub db is also the total set of attributes.
     DocumentDBTaggedMetrics &metrics = getMetricsCollection().getTaggedMetrics();
-    LegacyDocumentDBMetrics &legacyMetrics = getMetricsCollection().getLegacyMetrics();
-    AttributeMetricsCollection ready(metrics.ready.attributes, legacyMetrics.ready.attributes);
-    AttributeMetricsCollection notReady(metrics.notReady.attributes, legacyMetrics.notReady.attributes);
-    _metricsWireService.cleanAttributes(ready, &legacyMetrics.attributes);
-    _metricsWireService.cleanAttributes(notReady, nullptr);
+    AttributeMetricsCollection ready(metrics.ready.attributes);
+    AttributeMetricsCollection notReady(metrics.notReady.attributes);
+    _metricsWireService.cleanAttributes(ready);
+    _metricsWireService.cleanAttributes(notReady);
     _writeService.sync();
     masterExecute([this] () { closeSubDBs(); } );
     _writeService.sync();
