@@ -96,6 +96,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         // TODO: Enable for main system as well
         DeployState deployState = context.getDeployState();
         if (deployState.getProperties().useDedicatedNodeForLogserver() &&
+                context.getApplicationType() == ConfigModelContext.ApplicationType.DEFAULT &&
                 deployState.isHosted() &&
                 deployState.zone().system() == SystemName.cd)
             return NodesSpecification.dedicated(1, context);
