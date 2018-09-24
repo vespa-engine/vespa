@@ -659,11 +659,10 @@ int countOpenFiles()
 }
 
 void
-updateExecutorMetrics(ExecutorMetrics &metrics, ExecutorMetrics &legacyMetrics,
+updateExecutorMetrics(ExecutorMetrics &metrics,
                       const vespalib::ThreadStackExecutor::Stats &stats)
 {
     metrics.update(stats);
-    legacyMetrics.update(stats);
 }
 
 }
@@ -690,16 +689,15 @@ Proton::updateMetrics(const vespalib::MonitorGuard &)
     }
     {
         ContentProtonMetrics::ProtonExecutorMetrics &metrics = _metricsEngine->root().executor;
-        LegacyProtonMetrics &legacyMetrics = _metricsEngine->legacyRoot();
-        updateExecutorMetrics(metrics.proton, legacyMetrics.executor, _executor.getStats());
+        updateExecutorMetrics(metrics.proton, _executor.getStats());
         if (_flushEngine) {
-            updateExecutorMetrics(metrics.flush, legacyMetrics.flushExecutor, _flushEngine->getExecutorStats());
+            updateExecutorMetrics(metrics.flush, _flushEngine->getExecutorStats());
         }
         if (_matchEngine) {
-            updateExecutorMetrics(metrics.match, legacyMetrics.matchExecutor, _matchEngine->getExecutorStats());
+            updateExecutorMetrics(metrics.match, _matchEngine->getExecutorStats());
         }
         if (_summaryEngine) {
-            updateExecutorMetrics(metrics.docsum, legacyMetrics.summaryExecutor, _summaryEngine->getExecutorStats());
+            updateExecutorMetrics(metrics.docsum, _summaryEngine->getExecutorStats());
         }
         if (_sharedExecutor) {
             metrics.shared.update(_sharedExecutor->getStats());
