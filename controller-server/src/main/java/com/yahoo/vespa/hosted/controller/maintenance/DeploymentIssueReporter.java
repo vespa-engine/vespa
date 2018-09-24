@@ -48,13 +48,21 @@ public class DeploymentIssueReporter extends Maintainer {
     @Override
     protected void maintain() {
         try {
-            maintainDeploymentIssues(controller().applications().asList());
-            maintainPlatformIssue(controller().applications().asList());
-            escalateInactiveDeploymentIssues(controller().applications().asList());
+            maintainDeploymentIssues(applications());
+            maintainPlatformIssue(applications());
+            escalateInactiveDeploymentIssues(applications());
         }
         catch (UncheckedIOException e) {
             log.log(Level.INFO, () -> "IO exception handling issues, will retry in " + maintenanceInterval() + ": '" + Exceptions.toMessageString(e));
         }
+    }
+
+    /** Returns the applications to maintain issue status for. */
+    private List<Application> applications() {
+        return ApplicationList.from(controller().applications().asList())
+                              .withProjectId()
+                              .notPullRequest()
+                              .asList();
     }
 
     /**
