@@ -84,6 +84,10 @@ public class ExpressionFunction {
     /** Returns the return type of this, or empty if not specified */
     public Optional<TensorType> returnType() { return returnType; }
 
+    public ExpressionFunction withName(String name) {
+        return new ExpressionFunction(name, arguments, body, argumentTypes, returnType);
+    }
+
     /** Returns a copy of this with the body changed to the given value */
     public ExpressionFunction withBody(RankingExpression body) {
         return new ExpressionFunction(name, arguments, body, argumentTypes, returnType);

@@ -116,7 +116,8 @@ public class ImportedModel {
         for (Map.Entry<String, Signature> signatureEntry : signatures().entrySet()) {
             for (Map.Entry<String, String> outputEntry : signatureEntry.getValue().outputs().entrySet())
                 expressions.add(new Pair<>(signatureEntry.getKey() + "." + outputEntry.getKey(),
-                                           signatureEntry.getValue().outputExpression(outputEntry.getKey())));
+                                           signatureEntry.getValue().outputExpression(outputEntry.getKey())
+                                                         .withName(signatureEntry.getKey() + "." + outputEntry.getKey())));
             if (signatureEntry.getValue().outputs().isEmpty()) // fallback: Signature without outputs
                 expressions.add(new Pair<>(signatureEntry.getKey(),
                                            new ExpressionFunction(signatureEntry.getKey(),
