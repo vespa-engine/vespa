@@ -47,18 +47,7 @@ public class LoadBalancerTest {
     }
 
     @Test
-    public void requreThatLoadBalancerIgnoresClusteredSingleGroup() {
-        Node n1 = new SearchCluster.Node(0, "test-node1", 0, 0);
-        Node n2 = new SearchCluster.Node(1, "test-node2", 1, 0);
-        SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1, n2), null, 2, null);
-        LoadBalancer lb = new LoadBalancer(cluster);
-
-        Optional<Group> grp = lb.takeGroupForQuery(new Query());
-        assertThat(grp.isPresent(), is(false));
-    }
-
-    @Test
-    public void requreThatLoadBalancerIgnoresClusteredGroups() {
+    public void requreThatLoadBalancerServesClusteredGroups() {
         Node n1 = new SearchCluster.Node(0, "test-node1", 0, 0);
         Node n2 = new SearchCluster.Node(1, "test-node2", 1, 0);
         Node n3 = new SearchCluster.Node(0, "test-node3", 0, 1);
@@ -67,7 +56,7 @@ public class LoadBalancerTest {
         LoadBalancer lb = new LoadBalancer(cluster);
 
         Optional<Group> grp = lb.takeGroupForQuery(new Query());
-        assertThat(grp.isPresent(), is(false));
+        assertThat(grp.isPresent(), is(true));
     }
 
     @Test

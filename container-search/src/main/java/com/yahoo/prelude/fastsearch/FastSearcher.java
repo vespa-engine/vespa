@@ -28,6 +28,7 @@ import com.yahoo.search.searchchain.Execution;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 
@@ -64,9 +65,9 @@ public class FastSearcher extends VespaBackEndSearcher {
     private final Dispatcher dispatcher;
 
     private final Backend dispatchBackend;
-    
+
     private final FS4ResourcePool fs4ResourcePool;
-    
+
     /**
      * Creates a Fastsearcher.
      *
@@ -99,7 +100,7 @@ public class FastSearcher extends VespaBackEndSearcher {
     public Pong ping(Ping ping, Execution execution) {
         return ping(ping, dispatchBackend, getName());
     }
-    
+
     public static Pong ping(Ping ping, Backend backend, String name) {
         FS4Channel channel = backend.openPingChannel();
 
@@ -151,6 +152,7 @@ public class FastSearcher extends VespaBackEndSearcher {
         }
     }
 
+    @Override
     protected void transformQuery(Query query) {
         QueryRewrite.rewriteSddocname(query);
     }
@@ -160,7 +162,8 @@ public class FastSearcher extends VespaBackEndSearcher {
         if (dispatcher.searchCluster().groupSize() == 1)
             forceSinglePassGrouping(query);
         try(CloseableChannel channel = getChannel(query)) {
-            Result result = channel.search(query, queryPacket, cacheKey);
+            List<Result> results = channel.search(query, queryPacket, cacheKey);
+            Result result = mergeResults(results, query, execution);
 
             if (query.properties().getBoolean(Ranking.RANKFEATURES, false)) {
                 // There is currently no correct choice for which
@@ -182,13 +185,13 @@ public class FastSearcher extends VespaBackEndSearcher {
             return result;
         }
     }
-    
+
     /** When we only search a single node, doing all grouping in one pass is more efficient */
     private void forceSinglePassGrouping(Query query) {
         for (GroupingRequest groupingRequest : query.getSelect().getGrouping())
             forceSinglePassGrouping(groupingRequest.getRootOperation());
     }
-    
+
     private void forceSinglePassGrouping(GroupingOperation operation) {
         operation.setForceSinglePass(true);
         for (GroupingOperation childOperation : operation.getChildren())
@@ -231,6 +234,7 @@ public class FastSearcher extends VespaBackEndSearcher {
      * @param result result containing a partition of the unfilled hits
      * @param summaryClass the summary class we want to fill with
      **/
+    @Override
     protected void doPartialFill(Result result, String summaryClass) {
         if (result.isFilled(summaryClass)) return;
 
@@ -260,6 +264,34 @@ public class FastSearcher extends VespaBackEndSearcher {
         if (config.stringBackedFeatureData()) return true;
         if (config.stringBackedStructuredData()) return true;
         return false;
+    }
+
+    private Result mergeResults(List<Result> results, Query query, Execution execution) {
+        if(results.size() == 1) {
+            return results.get(0);
+        }
+
+        Result result = new Result(query);
+
+        for (Result partialResult : results) {
+            result.mergeWith(partialResult);
+            result.hits().addAll(partialResult.hits().asUnorderedHits());
+        }
+
+        if (query.getOffset() != 0 || result.hits().size() > query.getHits()) {
+            // with multiple results, each partial result is expected to have
+            // offset = 0 to allow correct offset positioning after merge
+
+            if (result.getHitOrderer() != null) {
+                // Make sure we have the necessary data for sorting
+                fill(result, Execution.ATTRIBUTEPREFETCH, execution);
+            }
+            result.hits().trim(query.getOffset(), query.getHits());
+        }
+
+        // TODO grouping
+
+        return result;
     }
 
     private static @NonNull Optional<String> quotedSummaryClass(String summaryClass) {

@@ -21,21 +21,31 @@ import com.yahoo.search.result.HitGroup;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.prelude.fastsearch.VespaBackEndSearcher.hitIterator;
+import static java.util.Arrays.asList;
 
 /**
  * {@link CloseableChannel} implementation for FS4 nodes and fdispatch
- * 
+ *
  * @author ollivir
  */
 public class FS4CloseableChannel extends CloseableChannel {
     private final VespaBackEndSearcher searcher;
     private FS4Channel channel;
     private final Optional<Integer> distributionKey;
+
+    private ErrorMessage pendingSearchError = null;
+    private Query query = null;
+    private QueryPacket queryPacket = null;
+
+    private int expectedFillResults = 0;
+    private CacheKey summaryCacheKey = null;
+    private DocsumPacketKey[] summaryPacketKeys = null;
 
     public FS4CloseableChannel(VespaBackEndSearcher searcher, Query query, FS4ResourcePool fs4ResourcePool, String hostname, int port,
             int distributionKey) {
@@ -56,32 +66,47 @@ public class FS4CloseableChannel extends CloseableChannel {
     }
 
     @Override
-    public Result search(Query query, QueryPacket queryPacket, CacheKey cacheKey) throws IOException {
+    protected void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException {
         if (isLoggingFine())
             getLogger().finest("sending query packet");
 
-        try {
-            boolean couldSend = channel.sendPacket(queryPacket);
-            if (!couldSend)
-                return new Result(query, ErrorMessage.createBackendCommunicationError("Could not reach '" + getName() + "'"));
-        } catch (InvalidChannelException e) {
-            return new Result(query, ErrorMessage.createBackendCommunicationError("Invalid channel " + getName()));
-        } catch (IllegalStateException e) {
-            return new Result(query, ErrorMessage.createBackendCommunicationError("Illegal state in FS4: " + e.getMessage()));
+        if(queryPacket == null) {
+            // query changed for subchannel
+            queryPacket = searcher.createQueryPacket(query);
         }
 
+        this.query = query;
+        this.queryPacket = queryPacket;
+
+        try {
+            boolean couldSend = channel.sendPacket(queryPacket);
+            if (!couldSend) {
+                pendingSearchError = ErrorMessage.createBackendCommunicationError("Could not reach '" + getName() + "'");
+            }
+        } catch (InvalidChannelException e) {
+            pendingSearchError = ErrorMessage.createBackendCommunicationError("Invalid channel " + getName());
+        } catch (IllegalStateException e) {
+            pendingSearchError = ErrorMessage.createBackendCommunicationError("Illegal state in FS4: " + e.getMessage());
+        }
+    }
+
+    @Override
+    protected List<Result> getSearchResults(CacheKey cacheKey) throws IOException {
+        if(pendingSearchError != null) {
+            return asList(new Result(query, pendingSearchError));
+        }
         BasicPacket[] basicPackets;
 
         try {
             basicPackets = channel.receivePackets(query.getTimeLeft(), 1);
         } catch (ChannelTimeoutException e) {
-            return new Result(query, ErrorMessage.createTimeout("Timeout while waiting for " + getName()));
+            return asList(new Result(query, ErrorMessage.createTimeout("Timeout while waiting for " + getName())));
         } catch (InvalidChannelException e) {
-            return new Result(query, ErrorMessage.createBackendCommunicationError("Invalid channel for " + getName()));
+            return asList(new Result(query, ErrorMessage.createBackendCommunicationError("Invalid channel for " + getName())));
         }
 
         if (basicPackets.length == 0) {
-            return new Result(query, ErrorMessage.createBackendCommunicationError(getName() + " got no packets back"));
+            return asList(new Result(query, ErrorMessage.createBackendCommunicationError(getName() + " got no packets back")));
         }
 
         if (isLoggingFine())
@@ -118,53 +143,67 @@ public class FS4CloseableChannel extends CloseableChannel {
                 cacheControl.cache(cacheKey, query, new DocsumPacketKey[0], packets, distributionKey);
             }
         }
-        return result;
+        return asList(result);
     }
 
     @Override
-    public void partialFill(Result result, String summaryClass) {
-        Packet[] receivedPackets;
-        DocsumPacketKey[] packetKeys;
-
-        CacheKey cacheKey = null;
-        PacketWrapper packetWrapper = null;
+    protected void sendPartialFillRequest(Result result, String summaryClass) {
+        summaryCacheKey = null;
         if (searcher.getCacheControl().useCache(channel.getQuery())) {
-            cacheKey = fetchCacheKeyFromHits(result.hits(), summaryClass);
-            if (cacheKey == null) {
+            summaryCacheKey = fetchCacheKeyFromHits(result.hits(), summaryClass);
+            if (summaryCacheKey == null) {
                 QueryPacket queryPacket = QueryPacket.create(channel.getQuery());
-                cacheKey = new CacheKey(queryPacket);
+                summaryCacheKey = new CacheKey(queryPacket);
             }
-            packetWrapper = cacheLookupTwoPhase(cacheKey, result, summaryClass);
+            boolean cacheFound = cacheLookupTwoPhase(summaryCacheKey, result, summaryClass);
+            if (!cacheFound) {
+                summaryCacheKey = null;
+            }
         }
 
         if (countFastHits(result) > 0) {
-            packetKeys = getPacketKeys(result, summaryClass, false);
-            if (packetKeys.length == 0) {
-                receivedPackets = new Packet[0];
+            summaryPacketKeys = getPacketKeys(result, summaryClass);
+            if (summaryPacketKeys.length == 0) {
+                expectedFillResults = 0;
             } else {
                 try {
-                    receivedPackets = fetchSummaries(result, summaryClass);
+                    expectedFillResults = requestSummaries(result, summaryClass);
                 } catch (InvalidChannelException e) {
                     result.hits()
                             .addError(ErrorMessage.createBackendCommunicationError("Invalid channel " + getName() + " (summary fetch)"));
-                    return;
-                } catch (ChannelTimeoutException e) {
-                    result.hits().addError(ErrorMessage.createTimeout("timeout waiting for summaries from " + getName()));
                     return;
                 } catch (IOException e) {
                     result.hits().addError(ErrorMessage.createBackendCommunicationError(
                             "IO error while talking on channel " + getName() + " (summary fetch): " + e.getMessage()));
                     return;
                 }
-                if (receivedPackets.length == 0) {
-                    result.hits()
-                            .addError(ErrorMessage.createBackendCommunicationError(getName() + " got no packets back (summary fetch)"));
-                    return;
-                }
             }
         } else {
-            packetKeys = new DocsumPacketKey[0];
-            receivedPackets = new Packet[0];
+            expectedFillResults = 0;
+        }
+    }
+
+
+    @Override
+    protected void getPartialFillResults(Result result, String summaryClass) {
+        if (expectedFillResults == 0) {
+            return;
+        }
+
+        Packet[] receivedPackets;
+        try {
+            receivedPackets = getSummaryResponses(result);
+        } catch (InvalidChannelException e1) {
+            result.hits().addError(ErrorMessage.createBackendCommunicationError("Invalid channel " + getName() + " (summary fetch)"));
+            return;
+        } catch (ChannelTimeoutException e1) {
+            result.hits().addError(ErrorMessage.createTimeout("timeout waiting for summaries from " + getName()));
+            return;
+        }
+
+        if (receivedPackets.length == 0) {
+            result.hits().addError(ErrorMessage.createBackendCommunicationError(getName() + " got no packets back (summary fetch)"));
+            return;
         }
 
         int skippedHits;
@@ -183,8 +222,8 @@ public class FS4CloseableChannel extends CloseableChannel {
                     "Error filling hits with summary fields, source: " + getName() + " Exception thrown: " + e.getMessage()));
             return;
         }
-        if (skippedHits == 0 && packetWrapper != null) {
-            searcher.getCacheControl().updateCacheEntry(cacheKey, channel.getQuery(), packetKeys, receivedPackets);
+        if (skippedHits == 0 && summaryCacheKey != null) {
+            searcher.getCacheControl().updateCacheEntry(summaryCacheKey, channel.getQuery(), summaryPacketKeys, receivedPackets);
         }
 
         if (skippedHits > 0)
@@ -216,12 +255,12 @@ public class FS4CloseableChannel extends CloseableChannel {
         }
     }
 
-    private PacketWrapper cacheLookupTwoPhase(CacheKey cacheKey, Result result, String summaryClass) {
+    private boolean cacheLookupTwoPhase(CacheKey cacheKey, Result result, String summaryClass) {
         Query query = result.getQuery();
         PacketWrapper packetWrapper = searcher.getCacheControl().lookup(cacheKey, query);
 
         if (packetWrapper == null) {
-            return null;
+            return false;
         }
         if (packetWrapper.getNumPackets() != 0) {
             for (Iterator<Hit> i = hitIterator(result); i.hasNext();) {
@@ -241,7 +280,7 @@ public class FS4CloseableChannel extends CloseableChannel {
             result.analyzeHits();
         }
 
-        return packetWrapper;
+        return true;
     }
 
     private CacheKey fetchCacheKeyFromHits(HitGroup hits, String summaryClass) {
@@ -269,10 +308,8 @@ public class FS4CloseableChannel extends CloseableChannel {
         return count;
     }
 
-    private Packet[] fetchSummaries(Result result, String summaryClass)
-            throws InvalidChannelException, ChannelTimeoutException, ClassCastException, IOException {
+    private int requestSummaries(Result result, String summaryClass) throws InvalidChannelException, ClassCastException, IOException {
 
-        BasicPacket[] receivedPackets;
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(result.getQuery());
         if (result.getQuery().getTraceLevel() >= 3)
             result.getQuery().trace((summaryNeedsQuery ? "Resending " : "Not resending ") + "query during document summary fetching", 3);
@@ -287,7 +324,15 @@ public class FS4CloseableChannel extends CloseableChannel {
         boolean couldSend = channel.sendPacket(docsumsPacket);
         if (!couldSend)
             throw new IOException("Could not successfully send GetDocSumsPacket.");
-        receivedPackets = channel.receivePackets(result.getQuery().getTimeLeft(), docsumsPacket.getNumDocsums() + 1);
+
+        return docsumsPacket.getNumDocsums() + 1;
+    }
+
+    private Packet[] getSummaryResponses(Result result) throws InvalidChannelException, ChannelTimeoutException {
+        if(expectedFillResults == 0) {
+            return new Packet[0];
+        }
+        BasicPacket[] receivedPackets = channel.receivePackets(result.getQuery().getTimeLeft(), expectedFillResults);
 
         return convertBasicPackets(receivedPackets);
     }
@@ -295,11 +340,9 @@ public class FS4CloseableChannel extends CloseableChannel {
     /**
      * Returns an array of the hits contained in a result
      *
-     * @param filled
-     *            true to return all hits, false to return only unfilled hits
      * @return array of docids, empty array if no hits
      */
-    private DocsumPacketKey[] getPacketKeys(Result result, String summaryClass, boolean filled) {
+    private DocsumPacketKey[] getPacketKeys(Result result, String summaryClass) {
         DocsumPacketKey[] packetKeys = new DocsumPacketKey[result.getHitCount()];
         int x = 0;
 
@@ -307,7 +350,7 @@ public class FS4CloseableChannel extends CloseableChannel {
             com.yahoo.search.result.Hit hit = i.next();
             if (hit instanceof FastHit) {
                 FastHit fastHit = (FastHit) hit;
-                if (filled || !fastHit.isFilled(summaryClass)) {
+                if (!fastHit.isFilled(summaryClass)) {
                     packetKeys[x] = new DocsumPacketKey(fastHit.getGlobalId(), fastHit.getPartId(), summaryClass);
                     x++;
                 }

@@ -213,11 +213,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         if (root == null || root instanceof NullItem) // root can become null after resolving and transformation?
             return new Result(query);
 
-        QueryPacket queryPacket = QueryPacket.create(query);
-        int compressionLimit = query.properties().getInteger(PACKET_COMPRESSION_LIMIT, 0);
-        queryPacket.setCompressionLimit(compressionLimit);
-        if (compressionLimit != 0)
-            queryPacket.setCompressionType(query.properties().getString(PACKET_COMPRESSION_TYPE, "lz4"));
+        QueryPacket queryPacket = createQueryPacket(query);
 
         if (isLoggingFine())
             getLogger().fine("made QueryPacket: " + queryPacket);
@@ -239,6 +235,15 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             result.trace(getName());
         }
         return result;
+    }
+
+    protected QueryPacket createQueryPacket(Query query) {
+        QueryPacket queryPacket = QueryPacket.create(query);
+        int compressionLimit = query.properties().getInteger(PACKET_COMPRESSION_LIMIT, 0);
+        queryPacket.setCompressionLimit(compressionLimit);
+        if (compressionLimit != 0)
+            queryPacket.setCompressionType(query.properties().getString(PACKET_COMPRESSION_TYPE, "lz4"));
+        return queryPacket;
     }
 
     /**
@@ -355,7 +360,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             s.append(" location=")
                     .append(query.getRanking().getLocation().toString());
         }
-        
+
         if (query.getGroupingSessionCache()) {
             s.append(" groupingSessionCache=true");
         }
