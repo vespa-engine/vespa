@@ -526,12 +526,10 @@ public class ApplicationController {
      */
     public void deleteApplication(ApplicationId applicationId, Optional<NToken> token) {
         // Find all instances of the application
-        List<ApplicationId> instances = controller.applications().asList(applicationId.tenant())
-                                                  .stream()
-                                                  .map(Application::id)
-                                                  .filter(id -> id.application().equals(applicationId.application()) &&
-                                                                id.tenant().equals(applicationId.tenant()))
-                                                  .collect(Collectors.toList());
+        List<ApplicationId> instances = asList(applicationId.tenant()).stream()
+                                                                      .map(Application::id)
+                                                                      .filter(id -> id.application().equals(applicationId.application()))
+                                                                      .collect(Collectors.toList());
         if (instances.isEmpty()) {
             throw new NotExistsException("Could not delete application '" + applicationId + "': Application not found");
         }
