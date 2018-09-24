@@ -27,6 +27,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -286,21 +287,31 @@ public class Dispatcher extends AbstractComponent {
     }
 
     public Optional<CloseableChannel> getDispatchedChannel(VespaBackEndSearcher searcher, Query query) {
-        Optional<SearchCluster.Group> groupInCluster = loadBalancer.takeGroupForQuery(query);
+        if (!query.getSelect().getGrouping().isEmpty()) {
+            return Optional.empty();
+        }
 
-        return groupInCluster.flatMap(group -> {
-            if(group.nodes().size() == 1) {
-                SearchCluster.Node node = group.nodes().iterator().next();
-                query.trace(false, 2, "Dispatching internally to ", group, " (", node.toString(), ")");
-                CloseableChannel channel = new FS4CloseableChannel(searcher, query, fs4ResourcePool, node.hostname(), node.fs4port(), node.key());
-                channel.teardown(() -> {
-                    loadBalancer.releaseGroup(group);
-                });
-                return Optional.of(channel);
-            } else {
-                loadBalancer.releaseGroup(group);
-                return Optional.empty();
+        Optional<SearchCluster.Group> groupInCluster = loadBalancer.takeGroupForQuery(query);
+        if (!groupInCluster.isPresent()) {
+            return Optional.empty();
+        }
+        SearchCluster.Group group = groupInCluster.get();
+        query.trace(false, 2, "Dispatching internally to ", group);
+
+        if (group.nodes().size() == 1) {
+            SearchCluster.Node node = group.nodes().iterator().next();
+            CloseableChannel channel = new FS4CloseableChannel(searcher, query, fs4ResourcePool, node.hostname(), node.fs4port(),
+                    node.key());
+            return Optional.of(channel);
+        } else {
+            query.setNoCache(true); // Note - multi-node request disables packet based caching
+
+            Map<Integer, CloseableChannel> subchannels = new HashMap<>();
+            for (SearchCluster.Node node : group.nodes()) {
+                subchannels.put(node.key(), new FS4CloseableChannel(searcher, query, fs4ResourcePool, node.hostname(), node.fs4port(), node.key()));
             }
-        });
+            CloseableChannel multinode = new InterleavedCloseableChannel(subchannels);
+            return Optional.of(multinode);
+        }
     }
 }
