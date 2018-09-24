@@ -69,7 +69,6 @@ public class GetDocSumsPacket extends Packet {
      * definition of enum getdocsums_flags
      */
     public static final int GDFLAG_IGNORE_ROW  = 0x00000001;
-    public static final int GDFLAG_ALLOW_SLIME = 0x00000002;
 
     public void encodeBody(ByteBuffer buffer) {
         setFieldsFromHits();
@@ -79,9 +78,6 @@ public class GetDocSumsPacket extends Packet {
         if (useQueryCache) { // TODO: Move this decision (and the key) to ranking
             query.getRanking().getProperties().put(sessionIdKey, query.getSessionId(false).toString());
         }
-
-        // always allow slime docsums
-        flags |= GDFLAG_ALLOW_SLIME;
 
         // set the default features
         long features = GDF_MLD;
