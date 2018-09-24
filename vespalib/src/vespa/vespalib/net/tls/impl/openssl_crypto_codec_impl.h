@@ -11,10 +11,8 @@ namespace vespalib::net::tls { class TlsContext; }
 namespace vespalib::net::tls::impl {
 
 /*
- * Frame-level OpenSSL-backed TLSv1.2 crypto codec implementation.
- *
- * Currently has sub-optimal buffer management, and is mostly intended
- * as a starting point.
+ * Frame-level OpenSSL-backed TLSv1.2/TLSv1.3 (depending on OpenSSL version)
+ * crypto codec implementation.
  *
  * NOT thread safe per instance, but independent instances may be
  * used by different threads safely.

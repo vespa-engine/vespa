@@ -59,6 +59,7 @@ vespa_define_module(
     src/tests/net/socket_spec
     src/tests/net/tls/direct_buffer_bio
     src/tests/net/tls/openssl_impl
+    src/tests/net/tls/protocol_snooping
     src/tests/net/tls/transport_options
     src/tests/objects/nbostream
     src/tests/optimized
