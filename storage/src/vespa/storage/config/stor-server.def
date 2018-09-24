@@ -13,11 +13,6 @@ cluster_name string default="storage" restart
 ## to identify the node, and to decide what data should be on it.
 node_index int default=0 restart
 
-## The maximum amount of memory to use in the storage node.
-## Currently default is 2 GB.
-## DEPRECATED!
-memorytouse long default=2147483647 restart
-
 ## Set whether this is a distributor or a storage node. This will decide what
 ## storage links are set up.
 is_distributor bool restart
