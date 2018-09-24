@@ -29,7 +29,7 @@ struct CommunicationManagerTest : public CppUnit::TestFixture {
     void testRepliesAreDequeuedInFifoOrder();
     void bucket_space_config_can_be_updated_live();
     void unmapped_bucket_space_documentapi_request_returns_error_reply();
-    void unmapped_bucket_space_for_get_documentapi_request_returns_empty_reply();
+    void unmapped_bucket_space_for_get_documentapi_request_returns_error_reply();
 
     static constexpr uint32_t MESSAGE_WAIT_TIME_SEC = 60;
 
@@ -54,7 +54,7 @@ struct CommunicationManagerTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testRepliesAreDequeuedInFifoOrder);
     CPPUNIT_TEST(bucket_space_config_can_be_updated_live);
     CPPUNIT_TEST(unmapped_bucket_space_documentapi_request_returns_error_reply);
-    CPPUNIT_TEST(unmapped_bucket_space_for_get_documentapi_request_returns_empty_reply);
+    CPPUNIT_TEST(unmapped_bucket_space_for_get_documentapi_request_returns_error_reply);
     CPPUNIT_TEST_SUITE_END();
 };
 
@@ -349,11 +349,7 @@ void CommunicationManagerTest::unmapped_bucket_space_documentapi_request_returns
     CPPUNIT_ASSERT_EQUAL(uint64_t(1), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
 }
 
-// Legacy DocumentAPI routing protocols will send Gets to _all_ clusters even
-// if they do not contain a particular document type. By sending an empty reply
-// we signal a mergeable "not found" to the sender rather than a non-mergeable
-// fatal error.
-void CommunicationManagerTest::unmapped_bucket_space_for_get_documentapi_request_returns_empty_reply() {
+void CommunicationManagerTest::unmapped_bucket_space_for_get_documentapi_request_returns_error_reply() {
     CommunicationManagerFixture f;
 
     BucketspacesConfigBuilder config;
@@ -363,9 +359,9 @@ void CommunicationManagerTest::unmapped_bucket_space_for_get_documentapi_request
     f.comm_mgr->handleMessage(f.documentapi_get_message_for_space("fluff"));
     CPPUNIT_ASSERT_EQUAL(size_t(1), f.reply_handler.replies.size());
     auto& reply = *f.reply_handler.replies[0];
-    CPPUNIT_ASSERT(!reply.hasErrors());
-    auto& get_reply = dynamic_cast<documentapi::GetDocumentReply&>(reply);
-    CPPUNIT_ASSERT(!get_reply.hasDocument());
+    CPPUNIT_ASSERT(reply.hasErrors());
+    CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(api::ReturnCode::REJECTED), reply.getError(0).getCode());
+    CPPUNIT_ASSERT_EQUAL(uint64_t(1), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
 }
 
 } // storage
