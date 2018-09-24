@@ -55,21 +55,7 @@ public:
     DecodeResult decode(const char* ciphertext, size_t ciphertext_size,
                         char* plaintext, size_t plaintext_size) noexcept override;
 private:
-    /*
-     * Returns
-     *   n > 0 if n bytes written to `to_peer`. Always <= to_peer_buf_size
-     *   n == 0 if no bytes pending in output BIO
-     *   n < 0 on error
-     */
-    int drain_outgoing_network_bytes_if_any(char *to_peer, size_t to_peer_buf_size) noexcept;
-    /*
-     * Returns
-     *   n > 0 if n bytes written to `ciphertext`. Always <= ciphertext_size
-     *   n == 0 if no bytes pending in input BIO
-     *   n < 0 on error
-     */
-    int consume_peer_input_bytes(const char* ciphertext, size_t ciphertext_size) noexcept;
-    HandshakeResult do_handshake_and_consume_peer_input_bytes(const char *from_peer, size_t from_peer_buf_size) noexcept;
+    HandshakeResult do_handshake_and_consume_peer_input_bytes() noexcept;
     DecodeResult drain_and_produce_plaintext_from_ssl(char* plaintext, size_t plaintext_size) noexcept;
 };
 
