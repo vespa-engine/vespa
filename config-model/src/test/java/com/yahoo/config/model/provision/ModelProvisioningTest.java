@@ -48,7 +48,6 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
-import static org.hamcrest.CoreMatchers.both;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.collection.IsIn.isIn;
 import static org.hamcrest.core.Every.everyItem;
@@ -1758,7 +1757,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.useDedicatedNodeForLogserver(useDedicatedNodeForLogserver);
         tester.addHosts(numberOfHosts);
-        Zone zone = new Zone(SystemName.cd, Environment.prod, RegionName.defaultName());
+        Zone zone = new Zone(SystemName.cd, Environment.dev, RegionName.defaultName());
 
         VespaModel model = tester.createModel(zone, services, true);
         assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
