@@ -23,10 +23,10 @@
                 <configuration>
                     <instructions>
                         <Bundle-Activator>
-                            com.yahoo.jdisc.bundle.MyBundleActivator
+                            com.yahoo.jdisc.bundle.my_act.MyBundleActivator
                         </Bundle-Activator>
                         <Export-Package>
-                            com.yahoo.jdisc.bundle
+                            com.yahoo.jdisc.bundle.my_act
                         </Export-Package>
                     </instructions>
                 </configuration>
