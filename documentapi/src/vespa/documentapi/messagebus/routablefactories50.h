@@ -157,19 +157,6 @@ public:
     // Factories
     //
     ////////////////////////////////////////////////////////////////////////////////
-
-    class BatchDocumentUpdateMessageFactory : public DocumentMessageFactory {
-        const document::DocumentTypeRepo &_repo;
-        DocumentMessage::UP doDecode(document::ByteBuffer &buf) const override;
-        bool doEncode(const DocumentMessage &msg, vespalib::GrowableByteBuffer &buf) const override;
-    public:
-        BatchDocumentUpdateMessageFactory(const document::DocumentTypeRepo &r) : _repo(r) {}
-    };
-    class BatchDocumentUpdateReplyFactory : public DocumentReplyFactory {
-    protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
-    };
     class CreateVisitorMessageFactory : public DocumentMessageFactory {
         const document::DocumentTypeRepo &_repo;
     protected:

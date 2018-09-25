@@ -9,8 +9,6 @@ using document::BucketSpace;
 
 IMPLEMENT_COMMAND(BatchPutRemoveCommand, BatchPutRemoveReply)
 IMPLEMENT_REPLY(BatchPutRemoveReply)
-IMPLEMENT_COMMAND(BatchDocumentUpdateCommand, BatchDocumentUpdateReply)
-IMPLEMENT_REPLY(BatchDocumentUpdateReply)
 
 
 BatchPutRemoveCommand::Operation::Operation(uint64_t ts, Type tp)
@@ -130,44 +128,5 @@ BatchPutRemoveReply::print(std::ostream& out, bool verbose,
         }
         out << "\n" << indent << "} : ";
         BucketInfoReply::print(out, verbose, indent);
-    }
-}
-
-BatchDocumentUpdateCommand::BatchDocumentUpdateCommand(const UpdateList& updates)
-    : StorageCommand(MessageType::BATCHDOCUMENTUPDATE),
-      _updates(updates),
-      _bucket(BucketSpace::placeHolder(), document::BucketId())
-{
-    document::BucketIdFactory factory;
-    _bucket = document::Bucket(BucketSpace::placeHolder(), factory.getBucketId(updates[0]->getId()));
-}
-
-void
-BatchDocumentUpdateCommand::print(std::ostream& out, bool verbose,
-               const std::string& indent) const {
-    out << "BatchDocumentUpdate(" << _updates.size() << " operations)";
-
-    if (verbose) {
-        out << " : ";
-        StorageCommand::print(out, verbose, indent);
-    }
-}
-
-BatchDocumentUpdateReply::BatchDocumentUpdateReply(const BatchDocumentUpdateCommand& cmd)
-    : StorageReply(cmd),
-      _documentsNotFound()
-{
-}
-
-void
-BatchDocumentUpdateReply::print(std::ostream& out, bool verbose,
-               const std::string& indent) const {
-    out << "BatchDocumentUpdateReply("
-        << std::count(_documentsNotFound.begin(), _documentsNotFound.end(), true)
-        << " not found)";
-
-    if (verbose) {
-        out << " : ";
-        StorageReply::print(out, verbose, indent);
     }
 }

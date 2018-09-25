@@ -149,8 +149,6 @@ public:
         QUERYRESULT_REPLY_ID = 89,
         BATCHPUTREMOVE_ID = 90,
         BATCHPUTREMOVE_REPLY_ID = 91,
-        BATCHDOCUMENTUPDATE_ID = 92,
-        BATCHDOCUMENTUPDATE_REPLY_ID = 93,
         SETBUCKETSTATE_ID = 94,
         SETBUCKETSTATE_REPLY_ID = 95,
         MESSAGETYPE_MAX_ID
@@ -235,8 +233,6 @@ public:
     static const MessageType QUERYRESULT_REPLY;
     static const MessageType BATCHPUTREMOVE;
     static const MessageType BATCHPUTREMOVE_REPLY;
-    static const MessageType BATCHDOCUMENTUPDATE;
-    static const MessageType BATCHDOCUMENTUPDATE_REPLY;
     static const MessageType SETBUCKETSTATE;
     static const MessageType SETBUCKETSTATE_REPLY;
 

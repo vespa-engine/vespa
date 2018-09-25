@@ -1,8 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/documentapi/messagebus/messages/batchdocumentupdatemessage.h>
-#include <vespa/documentapi/messagebus/messages/batchdocumentupdatereply.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/messagebus/messages/getbucketstatemessage.h>
 #include <vespa/documentapi/messagebus/messages/getbucketstatereply.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentmessage.h>

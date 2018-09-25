@@ -150,10 +150,6 @@ StoragePolicy::doSelect(mbus::RoutingContext &context)
             id = static_cast<const RemoveLocationMessage&>(msg).getBucketId();
             break;
 
-        case DocumentProtocol::MESSAGE_BATCHDOCUMENTUPDATE:
-            id = static_cast<const BatchDocumentUpdateMessage&>(msg).getBucketId();
-            break;
-
         default:
             LOG(error, "Message type '%d' not supported.", msg.getType());
             return;

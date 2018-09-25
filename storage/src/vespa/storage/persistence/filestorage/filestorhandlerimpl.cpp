@@ -250,7 +250,6 @@ FileStorHandlerImpl::messageMayBeAborted(const api::StorageMessage& msg)
     case api::MessageType::UPDATE_ID:
     case api::MessageType::REMOVELOCATION_ID:
     case api::MessageType::BATCHPUTREMOVE_ID:
-    case api::MessageType::BATCHDOCUMENTUPDATE_ID:
     case api::MessageType::SETBUCKETSTATE_ID:
         return true;
     default:

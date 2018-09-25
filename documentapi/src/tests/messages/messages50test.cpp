@@ -22,7 +22,6 @@ Messages50Test::Messages50Test()
 {
     // This list MUST mirror the list of routable factories from the DocumentProtocol constructor that support
     // version 5.0. When adding tests to this list, please KEEP THEM ORDERED alphabetically like they are now.
-    putTest(DocumentProtocol::MESSAGE_BATCHDOCUMENTUPDATE, TEST_METHOD(Messages50Test::testBatchDocumentUpdateMessage));
     putTest(DocumentProtocol::MESSAGE_CREATEVISITOR, TEST_METHOD(Messages50Test::testCreateVisitorMessage));
     putTest(DocumentProtocol::MESSAGE_DESTROYVISITOR, TEST_METHOD(Messages50Test::testDestroyVisitorMessage));
     putTest(DocumentProtocol::MESSAGE_DOCUMENTLIST, TEST_METHOD(Messages50Test::testDocumentListMessage));
@@ -41,7 +40,6 @@ Messages50Test::Messages50Test()
     putTest(DocumentProtocol::MESSAGE_UPDATEDOCUMENT, TEST_METHOD(Messages50Test::testUpdateDocumentMessage));
     putTest(DocumentProtocol::MESSAGE_VISITORINFO, TEST_METHOD(Messages50Test::testVisitorInfoMessage));
 
-    putTest(DocumentProtocol::REPLY_BATCHDOCUMENTUPDATE, TEST_METHOD(Messages50Test::testBatchDocumentUpdateReply));
     putTest(DocumentProtocol::REPLY_CREATEVISITOR, TEST_METHOD(Messages50Test::testCreateVisitorReply));
     putTest(DocumentProtocol::REPLY_DESTROYVISITOR, TEST_METHOD(Messages50Test::testDestroyVisitorReply));
     putTest(DocumentProtocol::REPLY_DOCUMENTLIST, TEST_METHOD(Messages50Test::testDocumentListReply));
@@ -687,90 +685,6 @@ Messages50Test::testUpdateDocumentMessage()
             EXPECT_EQUAL(666u, ref.getOldTimestamp());
             EXPECT_EQUAL(777u, ref.getNewTimestamp());
             EXPECT_EQUAL(85u, ref.getApproxSize());
-        }
-    }
-    return true;
-}
-
-bool
-Messages50Test::testBatchDocumentUpdateMessage()
-{
-    const DocumentTypeRepo &repo = getTypeRepo();
-    const document::DocumentType &docType = *repo.getDocumentType("testdoc");
-
-    BatchDocumentUpdateMessage msg(1234);
-
-    {
-        document::DocumentUpdate::SP upd;
-        upd.reset(new document::DocumentUpdate(repo, docType, document::DocumentId("userdoc:footype:1234:foo")));
-        upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
-                        new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
-        msg.addUpdate(upd);
-    }
-    {
-        document::DocumentUpdate::SP upd;
-        upd.reset(new document::DocumentUpdate(repo, docType, document::DocumentId("orderdoc(32,17):footype:1234:123456789:foo")));
-        upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
-                        new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
-        msg.addUpdate(upd);
-    }
-    try {
-        document::DocumentUpdate::SP upd;
-        upd.reset(new document::DocumentUpdate(repo, docType, document::DocumentId("userdoc:footype:5678:foo")));
-        upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
-                        new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
-        msg.addUpdate(upd);
-        EXPECT_TRUE(false);
-    } catch (...) {
-    }
-    try {
-        document::DocumentUpdate::SP upd;
-        upd.reset(new document::DocumentUpdate(repo, docType, document::DocumentId("groupdoc:footype:hable:foo")));
-        upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
-                        new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
-        msg.addUpdate(upd);
-        EXPECT_TRUE(false);
-    } catch (...) {
-    }
-
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 202u, serialize("BatchDocumentUpdateMessage", msg));
-    for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
-        mbus::Routable::UP obj = deserialize("BatchDocumentUpdateMessage", DocumentProtocol::MESSAGE_BATCHDOCUMENTUPDATE, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
-            BatchDocumentUpdateMessage &ref = static_cast<BatchDocumentUpdateMessage&>(*obj);
-            EXPECT_EQUAL(2u, ref.getUpdates().size());
-        }
-    }
-
-    return true;
-}
-
-bool
-Messages50Test::testBatchDocumentUpdateReply()
-{
-    BatchDocumentUpdateReply reply;
-    reply.setHighestModificationTimestamp(30);
-    {
-        std::vector<bool> notFound(3);
-        notFound[0] = false;
-        notFound[1] = true;
-        notFound[2] = true;
-        reply.getDocumentsNotFound() = notFound;
-    }
-
-    EXPECT_EQUAL(20u, serialize("BatchDocumentUpdateReply", reply));
-
-    for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
-        mbus::Routable::UP obj = deserialize("BatchDocumentUpdateReply", DocumentProtocol::REPLY_BATCHDOCUMENTUPDATE, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
-            BatchDocumentUpdateReply &ref = dynamic_cast<BatchDocumentUpdateReply&>(*obj);
-            EXPECT_EQUAL(30u, ref.getHighestModificationTimestamp());
-            {
-                const std::vector<bool>& notFound = ref.getDocumentsNotFound();
-                EXPECT_TRUE(notFound[0] == false);
-                EXPECT_TRUE(notFound[1] == true);
-                EXPECT_TRUE(notFound[2] == true);
-            }
         }
     }
     return true;

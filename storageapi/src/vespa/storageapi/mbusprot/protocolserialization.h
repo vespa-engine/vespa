@@ -52,8 +52,6 @@ class RemoveLocationCommand;
 class RemoveLocationReply;
 class BatchPutRemoveCommand;
 class BatchPutRemoveReply;
-class BatchDocumentUpdateCommand;
-class BatchDocumentUpdateReply;
 }
 
 namespace storage::mbusprot {

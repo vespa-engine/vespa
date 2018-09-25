@@ -13,8 +13,6 @@ protected:
 public:
     Messages50Test();
 
-    bool testBatchDocumentUpdateMessage();
-    bool testBatchDocumentUpdateReply();
     bool testCreateVisitorMessage();
     bool testCreateVisitorReply();
     bool testDestroyVisitorMessage();
