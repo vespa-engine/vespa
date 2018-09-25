@@ -234,7 +234,7 @@ DocumentDBTaggedMetrics::DocumentsMetrics::DocumentsMetrics(metrics::MetricSet *
 
 DocumentDBTaggedMetrics::DocumentsMetrics::~DocumentsMetrics() = default;
 
-DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docTypeName)
+DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docTypeName, size_t maxNumThreads_)
     : MetricSet("documentdb", {{"documenttype", docTypeName}}, "Document DB metrics", nullptr),
       job(this),
       attribute(this),
@@ -247,7 +247,8 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docType
       sessionCache(this),
       documents(this),
       totalMemoryUsage(this),
-      totalDiskUsage("disk_usage", {}, "The total disk usage (in bytes) for this document db", this)
+      totalDiskUsage("disk_usage", {}, "The total disk usage (in bytes) for this document db", this),
+      maxNumThreads(maxNumThreads_)
 {
 }
 
