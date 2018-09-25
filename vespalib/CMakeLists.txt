@@ -12,6 +12,7 @@ vespa_define_module(
     src/apps/make_fixture_macros
     src/apps/vespa-detect-hostname
     src/apps/vespa-validate-hostname
+    src/apps/vespa-drop-file-from-cache
 
     TESTS
     src/tests/alignedmemory
