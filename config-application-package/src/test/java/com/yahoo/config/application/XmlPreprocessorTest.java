@@ -23,8 +23,10 @@ public class XmlPreprocessorTest {
     private static final File services = new File(appDir, "services.xml");
 
     @Test
-    public void testPreProcessing() throws IOException, SAXException, XMLStreamException, ParserConfigurationException, TransformerException {
-        String expectedDev = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
+    public void testPreProcessing() throws IOException, SAXException, ParserConfigurationException, TransformerException {
+        String expectedDev =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+                "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
                 "    <admin version=\"2.0\">\n" +
                 "        <adminserver hostalias=\"node0\"/>\n" +
                 "    </admin>\n" +
@@ -46,14 +48,40 @@ public class XmlPreprocessorTest {
                 "      </nodes>\n" +
                 "    </jdisc>\n" +
                 "</services>";
+        TestBase.assertDocument(expectedDev, new XmlPreProcessor(appDir, services, Environment.dev, RegionName.from("default")).run());
 
-        Document docDev = (new XmlPreProcessor(appDir, services, Environment.dev, RegionName.from("default")).run());
-        TestBase.assertDocument(expectedDev, docDev);
-
-
-        String expectedUsWest = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
+        String expectedStaging =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+                "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
                 "    <admin version=\"2.0\">\n" +
-                "        <adminserver hostalias=\"node1\"/>\n" +
+                "        <adminserver hostalias=\"node1\"/>\n" + // Difference from dev: node1
+                "    </admin>\n" +
+                "    <content id=\"foo\" version=\"1.0\">\n" +
+                "      <redundancy>1</redundancy>\n" +
+                "      <documents>\n" +
+                "        <document mode=\"index\" type=\"music.sd\"/>\n" +
+                "      </documents>\n" +
+                "      <nodes>\n" +
+                "        <node distribution-key=\"0\" hostalias=\"node0\"/>\n" +
+                "      </nodes>\n" +
+                "    </content>\n" +
+                "    <jdisc id=\"stateless\" version=\"1.0\">\n" +
+                "      <search/>\n" +
+                "      <component bundle=\"foobundle\" class=\"MyFoo\" id=\"foo\"/>\n" +
+                "" +   //  Difference from dev: no TestBar
+                "      <nodes>\n" +
+                "        <node hostalias=\"node0\" baseport=\"5000\"/>\n" +
+                "      </nodes>\n" +
+                "    </jdisc>\n" +
+                "</services>";
+        // System.out.println(Xml.documentAsString(new XmlPreProcessor(appDir, services, Environment.staging, RegionName.from("default")).run()));
+        TestBase.assertDocument(expectedStaging, new XmlPreProcessor(appDir, services, Environment.staging, RegionName.from("default")).run());
+
+        String expectedUsWest =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+                "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
+                "    <admin version=\"2.0\">\n" +
+                "        <adminserver hostalias=\"node0\"/>\n" +
                 "    </admin>\n" +
                 "    <content id=\"foo\" version=\"1.0\">\n" +
                 "      <redundancy>1</redundancy>\n" +
@@ -81,12 +109,11 @@ public class XmlPreprocessorTest {
                 "      </nodes>\n" +
                 "    </jdisc>\n" +
                 "</services>";
+        TestBase.assertDocument(expectedUsWest, new XmlPreProcessor(appDir, services, Environment.prod, RegionName.from("us-west")).run());
 
-        Document docUsWest = (new XmlPreProcessor(appDir, services, Environment.prod, RegionName.from("us-west"))).run();
-        // System.out.println(Xml.documentAsString(docUsWest));
-        TestBase.assertDocument(expectedUsWest, docUsWest);
-
-        String expectedUsEast = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
+        String expectedUsEastAndCentral =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+                "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
                 "    <admin version=\"2.0\">\n" +
                 "        <adminserver hostalias=\"node1\"/>\n" +
                 "    </admin>\n" +
@@ -115,14 +142,16 @@ public class XmlPreprocessorTest {
                 "      </nodes>\n" +
                 "    </jdisc>\n" +
                 "</services>";
-
-        Document docUsEast = (new XmlPreProcessor(appDir, services, Environment.prod, RegionName.from("us-east"))).run();
-        TestBase.assertDocument(expectedUsEast, docUsEast);
+        TestBase.assertDocument(expectedUsEastAndCentral,
+                                new XmlPreProcessor(appDir, services, Environment.prod, RegionName.from("us-east")).run());
+        TestBase.assertDocument(expectedUsEastAndCentral,
+                                new XmlPreProcessor(appDir, services, Environment.prod, RegionName.from("us-central")).run());
     }
 
     @Test
-    public void testPropertiesWithOverlappingNames() throws IOException, SAXException, XMLStreamException, ParserConfigurationException, TransformerException {
-        String input = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+    public void testPropertiesWithOverlappingNames() throws IOException, SAXException, ParserConfigurationException, TransformerException {
+        String input =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">" +
                 "  <preprocess:properties>" +
                 "    <sherpa.host>gamma-usnc1.dht.yahoo.com</sherpa.host>" +
@@ -146,7 +175,8 @@ public class XmlPreprocessorTest {
                 "  </admin>" +
                 "</services>";
 
-        String expectedProd = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+        String expectedProd =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">" +
                 "  <config name='a'>" +
                 "     <a>36000</a>" +

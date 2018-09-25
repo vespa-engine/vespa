@@ -13,44 +13,48 @@ import java.io.*;
 import java.nio.file.NoSuchFileException;
 
 /**
- * @author lulf
- * @since 5.22
+ * @author Ulf Lilleengen
  */
 public class IncludeProcessorTest {
 
     @Test
-    public void testInclude() throws IOException, SAXException, XMLStreamException, ParserConfigurationException, TransformerException {
+    public void testInclude() throws IOException, SAXException, ParserConfigurationException, TransformerException {
         File app = new File("src/test/resources/multienvapp");
         DocumentBuilder docBuilder = Xml.getPreprocessDocumentBuilder();
 
-        String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?><services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
+        String expected =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
+                "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\" version=\"1.0\">\n" +
                 "    <preprocess:properties>\n" +
                 "        <qrs.port>4099</qrs.port>\n" +
                 "        <qrs.port>5000</qrs.port>\n" +
                 "    </preprocess:properties>\n" +
                 "    <preprocess:properties deploy:environment='prod'>\n" +
                 "        <qrs.port deploy:region='us-west'>5001</qrs.port>" +
-                "        <qrs.port deploy:region='us-east'>5002</qrs.port>" +
+                "        <qrs.port deploy:region='us-east us-central'>5002</qrs.port>" +
                 "    </preprocess:properties>\n" +
                 "    <admin version=\"2.0\">\n" +
                 "        <adminserver hostalias=\"node0\"/>\n" +
                 "    </admin>\n" +
-                "    <admin deploy:environment=\"prod\" version=\"2.0\">\n" +
+                "    <admin deploy:environment=\"staging prod\" deploy:region=\"us-east us-central\" version=\"2.0\">\n" +
                 "        <adminserver hostalias=\"node1\"/>\n" +
                 "    </admin>\n" +
                 "    <content id=\"foo\" version=\"1.0\">\n" +
                 "    <redundancy>1</redundancy><documents>\n" +
                 "    <document mode=\"index\" type=\"music.sd\"/>\n" +
-                "</documents><nodes>\n" +
+                "    </documents><nodes>\n" +
                 "    <node distribution-key=\"0\" hostalias=\"node0\"/>\n" +
-                "</nodes><nodes deploy:environment=\"prod\">\n" +
+                "    </nodes>" +
+                "    <nodes deploy:environment=\"prod\">\n" +
                 "    <node distribution-key=\"0\" hostalias=\"node0\"/>\n" +
                 "    <node distribution-key=\"1\" hostalias=\"node1\"/>\n" +
-                "</nodes><nodes deploy:environment=\"prod\" deploy:region=\"us-west\">\n" +
+                "    </nodes>" +
+                "    <nodes deploy:environment=\"prod\" deploy:region=\"us-west\">\n" +
                 "    <node distribution-key=\"0\" hostalias=\"node0\"/>\n" +
                 "    <node distribution-key=\"1\" hostalias=\"node1\"/>\n" +
                 "    <node distribution-key=\"2\" hostalias=\"node2\"/>\n" +
-                "</nodes></content>\n" +
+                "    </nodes>" +
+                "</content>\n" +
                 "<jdisc id=\"stateless\" version=\"1.0\">\n" +
                 "    <search deploy:environment=\"prod\">\n" +
                 "      <chain id=\"common\">\n" +
@@ -68,7 +72,7 @@ public class IncludeProcessorTest {
                 "    </nodes>\n" +
                 "</jdisc></services>";
 
-        Document doc = (new IncludeProcessor(app)).process(docBuilder.parse(Xml.getServices(app)));
+        Document doc = new IncludeProcessor(app).process(docBuilder.parse(Xml.getServices(app)));
         // System.out.println(Xml.documentAsString(doc));
         TestBase.assertDocument(expected, doc);
     }
@@ -77,7 +81,7 @@ public class IncludeProcessorTest {
     public void testRequiredIncludeIsDefault() throws ParserConfigurationException, IOException, SAXException, TransformerException {
         File app = new File("src/test/resources/multienvapp_failrequired");
         DocumentBuilder docBuilder = Xml.getPreprocessDocumentBuilder();
-        (new IncludeProcessor(app)).process(docBuilder.parse(Xml.getServices(app)));
+        new IncludeProcessor(app).process(docBuilder.parse(Xml.getServices(app)));
     }
 
 }
