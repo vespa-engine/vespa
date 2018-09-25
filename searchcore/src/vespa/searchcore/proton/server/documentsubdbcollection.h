@@ -26,7 +26,7 @@ namespace searchcorespi {
 
 namespace proton {
 class DocumentDBConfig;
-class DocumentDBMetricsCollection;
+class DocumentDBTaggedMetrics;
 class MaintenanceController;
 class MetricsWireService;
 class ICommitable;
@@ -102,7 +102,7 @@ public:
             vespalib::ThreadStackExecutorBase &sharedExecutor,
             const search::common::FileHeaderContext &fileHeaderContext,
             MetricsWireService &metricsWireService,
-            DocumentDBMetricsCollection &metrics,
+            DocumentDBTaggedMetrics &metrics,
             matching::QueryLimiter & queryLimiter,
             const vespalib::Clock &clock,
             std::mutex &configMutex,
