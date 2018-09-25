@@ -36,7 +36,11 @@ search tensor {
   rank-profile profile3 {
 
     first-phase {
-      expression: sum(tensor(i[10])(i) * attribute(f4))
+      expression: sum(joinedtensors)
+    }
+
+    function joinedtensors() {
+        expression: tensor(i[10])(i) * attribute(f4)
     }
 
   }
