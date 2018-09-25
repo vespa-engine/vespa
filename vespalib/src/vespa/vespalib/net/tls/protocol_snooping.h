@@ -4,7 +4,7 @@
 #include <iosfwd>
 #include <stddef.h>
 
-namespace vespalib::net::tls {
+namespace vespalib::net::tls::snooping {
 
 constexpr inline size_t min_header_bytes_to_observe() { return 8; }
 

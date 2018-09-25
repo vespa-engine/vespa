@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <stdint.h>
 
-namespace vespalib::net::tls {
+namespace vespalib::net::tls::snooping {
 
 namespace {
 
@@ -12,17 +12,17 @@ namespace {
 
 // From RFC 5246:
 // 0x16 - Handshake content type byte of TLSCiphertext record
-// 0x03 - First byte of 2-byte ProtocolVersion, always 3 on TLSv1.2 and v1.3
 inline bool is_tls_handshake_packet(const char* buf) {
-    return ((buf[0] == 0x16) && (buf[1] == 0x03));
+    return (buf[0] == 0x16);
 }
 
+// First byte of 2-byte ProtocolVersion, always 3 on TLSv1.2 and v1.3
 // Next is the TLS minor version, either 1 or 3 depending on version (though the
 // RFCs say it _should_ be 1 for backwards compatibility reasons).
 // Yes, the TLS spec says that you should technically ignore the protocol version
 // field here, but we want all the signals we can get.
 inline bool is_expected_tls_protocol_version(const char* buf) {
-    return ((buf[2] == 0x01) || (buf[2] == 0x03));
+    return ((buf[1] == 0x03) && ((buf[2] == 0x01) || (buf[2] == 0x03)));
 }
 
 // Length is big endian u16 in bytes 3, 4
@@ -70,7 +70,7 @@ TlsSnoopingResult snoop_client_hello_header(const char* buf) noexcept {
     // where we control frame sizes and where such fragmentation should not take place.
     // We also do not support TLSv1.3 0-RTT which may trigger early data.
     uint16_t length = tls_record_length(buf);
-    if (length > (16384 + 2048)) {
+    if ((length < 4) || (length > (16384 + 2048))) {
         return TlsSnoopingResult::RecordSizeRfcViolation;
     }
     if (!is_client_hello_handshake_record(buf)) {
@@ -95,8 +95,8 @@ const char* to_string(TlsSnoopingResult result) noexcept {
     case TlsSnoopingResult::RecordNotClientHello:       return "RecordNotClientHello";
     case TlsSnoopingResult::ClientHelloRecordTooBig:    return "ClientHelloRecordTooBig";
     case TlsSnoopingResult::ExpectedRecordSizeMismatch: return "ExpectedRecordSizeMismatch";
-    default: return "Unknown TlsSnoopingResult";
     }
+    abort();
 }
 
 std::ostream& operator<<(std::ostream& os, TlsSnoopingResult result) {
@@ -120,9 +120,8 @@ const char* describe_result(TlsSnoopingResult result) noexcept {
         return "ClientHello record is too big (fragmented?)";
     case TlsSnoopingResult::ExpectedRecordSizeMismatch:
         return "ClientHello vs Handshake header record size mismatch";
-    default:
-        return "Unknown TlsSnoopingResult";
     }
+    abort();
 }
 
 }
