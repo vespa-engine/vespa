@@ -11,11 +11,9 @@ namespace matching { class SessionManager; }
 class AttributeUsageFilter;
 class DDBState;
 class DocumentDBJobTrackers;
-class DocumentDBMetricsCollection;
 class DocumentSubDBCollection;
 class ExecutorThreadingService;
 class ExecutorThreadingServiceStats;
-class LegacyDocumentDBMetrics;
 
 /**
  * Class used to update metrics for a document db.
@@ -52,7 +50,7 @@ public:
                              const DDBState &state);
     ~DocumentDBMetricsUpdater();
 
-    void updateMetrics(DocumentDBMetricsCollection &metrics);
+    void updateMetrics(DocumentDBTaggedMetrics &metrics);
 
 };
 
