@@ -101,7 +101,7 @@ public class FeedTesterV3 {
         Executor threadPool = Executors.newCachedThreadPool();
         DocumentmanagerConfig docMan = new DocumentmanagerConfig(new DocumentmanagerConfig.Builder().enablecompression(true));
         FeedHandlerV3 feedHandlerV3 = new FeedHandlerV3(
-                new FeedHandlerV3.Context(threadPool, AccessLog.voidAccessLog(), new NullFeedMetric(true)),
+                new FeedHandlerV3.Context(threadPool, AccessLog.voidAccessLog(), new NullFeedMetric()),
                 docMan,
                 null /* session cache */,
                 null /* thread pool config */, 
