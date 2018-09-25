@@ -252,7 +252,6 @@ public class StoragePolicy extends ExternalSlobrokPolicy {
                 case DocumentProtocol.MESSAGE_STATBUCKET:          return ((StatBucketMessage)msg).getBucketId();
                 case DocumentProtocol.MESSAGE_CREATEVISITOR:       return ((CreateVisitorMessage)msg).getBuckets().get(0);
                 case DocumentProtocol.MESSAGE_REMOVELOCATION:      return ((RemoveLocationMessage)msg).getBucketId();
-                case DocumentProtocol.MESSAGE_BATCHDOCUMENTUPDATE: return ((BatchDocumentUpdateMessage)msg).getBucketId();
                 default:
                     log.log(LogLevel.ERROR, "Message type '" + msg.getType() + "' not supported.");
                     return null;
