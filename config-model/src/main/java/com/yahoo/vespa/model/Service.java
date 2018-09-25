@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Optional;
 
 /**
- * Representation of a markProcessed which runs a service
+ * Representation of a process which runs a service
  *
  * @author gjoranv
  */

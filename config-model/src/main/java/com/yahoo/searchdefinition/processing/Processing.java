@@ -7,8 +7,10 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.processing.multifieldresolver.RankProfileTypeSettingsProcessor;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Executor of processors. This defines the right order of processor execution.
@@ -73,18 +75,10 @@ public class Processing {
                 ReferenceFieldsProcessor::new,
                 FastAccessValidator::new,
                 ReservedFunctionNames::new,
-                RankingExpressionTypeResolver::new,
+                RankingExpressionTypeValidator::new,
                 // These should be last:
                 IndexingValidation::new,
                 IndexingValues::new);
-    }
-
-    /** Processors of rank profiles only (those who tolerate and so something useful when the search field is null) */
-    private Collection<ProcessorFactory> rankProfileProcessors() {
-        return Arrays.asList(
-                RankProfileTypeSettingsProcessor::new,
-                ReservedFunctionNames::new,
-                RankingExpressionTypeResolver::new);
     }
 
     /**
@@ -99,24 +93,10 @@ public class Processing {
     public void process(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry,
                         QueryProfiles queryProfiles, boolean validate, boolean documentsOnly) {
         Collection<ProcessorFactory> factories = processors();
+        search.process();
         factories.stream()
                 .map(factory -> factory.create(search, deployLogger, rankProfileRegistry, queryProfiles))
                 .forEach(processor -> processor.process(validate, documentsOnly));
-    }
-
-    /**
-     * Runs rank profiles processors only.
-     *
-     * @param deployLogger The log to log messages and warnings for application deployment to
-     * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
-     * @param queryProfiles The query profiles contained in the application this search is part of.
-     */
-    public void processRankProfiles(DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry,
-                        QueryProfiles queryProfiles, boolean validate, boolean documentsOnly) {
-        Collection<ProcessorFactory> factories = rankProfileProcessors();
-        factories.stream()
-                 .map(factory -> factory.create(null, deployLogger, rankProfileRegistry, queryProfiles))
-                 .forEach(processor -> processor.process(validate, documentsOnly));
     }
 
     @FunctionalInterface

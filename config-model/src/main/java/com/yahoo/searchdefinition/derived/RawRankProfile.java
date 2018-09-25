@@ -13,7 +13,6 @@ import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
-import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 
 import java.nio.charset.Charset;
@@ -24,7 +23,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * A rank profile derived from a search definition, containing exactly the features available natively in the server
@@ -182,39 +180,32 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
         private void derivePropertiesAndSummaryFeaturesFromFunctions(Map<String, RankProfile.RankingExpressionFunction> functions) {
             if (functions.isEmpty()) return;
-
-            List<ExpressionFunction> functionExpressions = functions.values().stream().map(f -> f.function()).collect(Collectors.toList());
+            Map<String, ExpressionFunction> expressionFunctions = new LinkedHashMap<>();
+            for (Map.Entry<String, RankProfile.RankingExpressionFunction> function : functions.entrySet()) {
+                expressionFunctions.put(function.getKey(), function.getValue().function());
+            }
 
             Map<String, String> functionProperties = new LinkedHashMap<>();
-            functionProperties.putAll(deriveFunctionProperties(functions, functionExpressions));
-
+            functionProperties.putAll(deriveFunctionProperties(expressionFunctions));
             if (firstPhaseRanking != null) {
-                functionProperties.putAll(firstPhaseRanking.getRankProperties(functionExpressions));
+                functionProperties.putAll(firstPhaseRanking.getRankProperties(new ArrayList<>(expressionFunctions.values())));
             }
             if (secondPhaseRanking != null) {
-                functionProperties.putAll(secondPhaseRanking.getRankProperties(functionExpressions));
+                functionProperties.putAll(secondPhaseRanking.getRankProperties(new ArrayList<>(expressionFunctions.values())));
             }
 
             for (Map.Entry<String, String> e : functionProperties.entrySet()) {
                 rankProperties.add(new RankProfile.RankProperty(e.getKey(), e.getValue()));
             }
-            SerializationContext context = new SerializationContext(functionExpressions, null, functionProperties);
+            SerializationContext context = new SerializationContext(expressionFunctions.values(), null, functionProperties);
             replaceFunctionSummaryFeatures(context);
         }
 
-        private Map<String, String> deriveFunctionProperties(Map<String, RankProfile.RankingExpressionFunction> functions,
-                                                             List<ExpressionFunction> functionExpressions) {
-            SerializationContext context = new SerializationContext(functionExpressions);
-            for (Map.Entry<String, RankProfile.RankingExpressionFunction> e : functions.entrySet()) {
-                String expressionString = e.getValue().function().getBody().getRoot().toString(new StringBuilder(), context, null, null).toString();
-                context.addFunctionSerialization(RankingExpression.propertyName(e.getKey()), expressionString);
-
-                for (Map.Entry<String, TensorType> argumentType : e.getValue().function().argumentTypes().entrySet())
-                    context.addArgumentTypeSerialization(e.getKey(), argumentType.getKey(), argumentType.getValue());
-                if (e.getValue().function().returnType().isPresent())
-                    context.addFunctionTypeSerialization(e.getKey(), e.getValue().function().returnType().get());
-                else if (e.getValue().function().arguments().isEmpty())
-                    throw new IllegalStateException("Type of function '" + e.getKey() + "' is not resolved");
+        private Map<String, String> deriveFunctionProperties(Map<String, ExpressionFunction> functions) {
+            SerializationContext context = new SerializationContext(functions);
+            for (Map.Entry<String, ExpressionFunction> e : functions.entrySet()) {
+                String expression = e.getValue().getBody().getRoot().toString(new StringBuilder(), context, null, null).toString();
+                context.addFunctionSerialization(RankingExpression.propertyName(e.getKey()), expression);
             }
             return context.serializedFunctions();
         }

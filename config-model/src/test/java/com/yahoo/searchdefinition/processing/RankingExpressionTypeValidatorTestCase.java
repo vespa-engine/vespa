@@ -19,7 +19,7 @@ import static org.junit.Assert.fail;
 /**
  * @author bratseth
  */
-public class RankingExpressionTypeResolverTestCase {
+public class RankingExpressionTypeValidatorTestCase {
 
     @Test
     public void tensorFirstPhaseMustProduceDouble() throws Exception {

@@ -147,7 +147,7 @@ public class AsyncExecution {
     }
 
     private static <T> Future<T> getFuture(Callable<T> callable) {
-        FutureTask<T> future = new FutureTask<>(callable);
+        final FutureTask<T> future = new FutureTask<>(callable);
         getExecutor().execute(future);
         return future;
     }

@@ -187,7 +187,8 @@ public abstract class ModelImporter {
         if (operation.isInput()) {
             // All inputs must have dimensions with standard naming convention: d0, d1, ...
             OrderedTensorType standardNamingConvention = OrderedTensorType.standardType(operation.type().get());
-            model.input(operation.vespaName(), standardNamingConvention.type());
+            model.argument(operation.vespaName(), standardNamingConvention.type());
+            model.requiredFunction(operation.vespaName(), standardNamingConvention.type());
         }
     }
 

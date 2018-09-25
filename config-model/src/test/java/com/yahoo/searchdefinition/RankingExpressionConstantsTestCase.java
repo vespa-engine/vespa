@@ -82,7 +82,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                                                                        new ImportedModels(),
                                                                        new AttributeFields(s)).configProperties();
         assertEquals("(rankingExpression(foo).rankingScript,14.0)", rankProperties.get(0).toString());
-        assertEquals("(rankingExpression(firstphase).rankingScript,16.6)", rankProperties.get(3).toString());
+        assertEquals("(rankingExpression(firstphase).rankingScript,16.6)", rankProperties.get(2).toString());
     }
 
     @Test

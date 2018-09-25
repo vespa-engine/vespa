@@ -188,6 +188,10 @@ public class SearchBuilder {
             throw new IllegalArgumentException("Search has no name.");
         }
         String rawName = rawSearch.getName();
+        if (rawSearch.isProcessed()) {
+            throw new IllegalArgumentException("A search definition with a search section called '" + rawName +
+                                               "' has already been processed.");
+        }
         for (Search search : searchList) {
             if (rawName.equals(search.getName())) {
                 throw new IllegalArgumentException("A search definition with a search section called '" + rawName +
@@ -243,7 +247,8 @@ public class SearchBuilder {
 
         DocumentModelBuilder builder = new DocumentModelBuilder(model);
         for (Search search : new SearchOrderer().order(searchList)) {
-            new FieldOperationApplierForSearch().process(search); // TODO: Why is this not in the regular list?
+            new FieldOperationApplierForSearch().process(search);
+            // These two needed for a couple of old unit tests, ideally these are just read from app
             process(search, deployLogger, new QueryProfiles(queryProfileRegistry), validate);
             built.add(search);
         }
