@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "attribute_metrics.h"
+#include "documentdb_tagged_metrics.h"
 #include "metrics_engine.h"
-#include "attribute_metrics_collection.h"
-#include "documentdb_metrics_collection.h"
 #include <vespa/metrics/jsonwriter.h>
 #include <vespa/metrics/metricmanager.h>
 
@@ -65,17 +65,17 @@ MetricsEngine::removeExternalMetrics(metrics::Metric &child)
 }
 
 void
-MetricsEngine::addDocumentDBMetrics(DocumentDBMetricsCollection &child)
+MetricsEngine::addDocumentDBMetrics(DocumentDBTaggedMetrics &child)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    _root.registerMetric(child.getTaggedMetrics());
+    _root.registerMetric(child);
 }
 
 void
-MetricsEngine::removeDocumentDBMetrics(DocumentDBMetricsCollection &child)
+MetricsEngine::removeDocumentDBMetrics(DocumentDBTaggedMetrics &child)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    _root.unregisterMetric(child.getTaggedMetrics());
+    _root.unregisterMetric(child);
 }
 
 namespace {
@@ -114,26 +114,26 @@ doCleanAttributes(AttributeMetrics &attributes)
 }
 
 void
-MetricsEngine::addAttribute(const AttributeMetricsCollection &subAttributes,
+MetricsEngine::addAttribute(AttributeMetrics &subAttributes,
                             const std::string &name)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doAddAttribute(subAttributes.getMetrics(), name);
+    doAddAttribute(subAttributes, name);
 }
 
 void
-MetricsEngine::removeAttribute(const AttributeMetricsCollection &subAttributes,
+MetricsEngine::removeAttribute(AttributeMetrics &subAttributes,
                                const std::string &name)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doRemoveAttribute(subAttributes.getMetrics(), name);
+    doRemoveAttribute(subAttributes, name);
 }
 
 void
-MetricsEngine::cleanAttributes(const AttributeMetricsCollection &subAttributes)
+MetricsEngine::cleanAttributes(AttributeMetrics &subAttributes)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    doCleanAttributes(subAttributes.getMetrics());
+    doCleanAttributes(subAttributes);
 }
 
 namespace {
@@ -165,17 +165,17 @@ cleanRankProfilesIn(MatchingMetricsType &matchingMetrics)
 }
 
 void
-MetricsEngine::addRankProfile(DocumentDBMetricsCollection &owner, const std::string &name, size_t numDocIdPartitions)
+MetricsEngine::addRankProfile(DocumentDBTaggedMetrics &owner, const std::string &name, size_t numDocIdPartitions)
 {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    size_t adjustedNumDocIdPartitions = std::min(numDocIdPartitions, owner.maxNumThreads());
-    addRankProfileTo(owner.getTaggedMetrics().matching, name, adjustedNumDocIdPartitions);
+    size_t adjustedNumDocIdPartitions = std::min(numDocIdPartitions, owner.maxNumThreads);
+    addRankProfileTo(owner.matching, name, adjustedNumDocIdPartitions);
 }
 
 void
-MetricsEngine::cleanRankProfiles(DocumentDBMetricsCollection &owner) {
+MetricsEngine::cleanRankProfiles(DocumentDBTaggedMetrics &owner) {
     metrics::MetricLockGuard guard(_manager->getMetricLock());
-    cleanRankProfilesIn(owner.getTaggedMetrics().matching);
+    cleanRankProfilesIn(owner.matching);
 }
 
 void
@@ -184,4 +184,4 @@ MetricsEngine::stop()
     _manager->stop();
 }
 
-} // namespace proton
+}

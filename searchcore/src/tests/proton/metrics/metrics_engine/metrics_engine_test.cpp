@@ -1,11 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/metrics/metricset.h>
-#include <vespa/searchcore/proton/metrics/attribute_metrics_collection.h>
 #include <vespa/searchcore/proton/metrics/attribute_metrics.h>
-#include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
-
-
 #include <vespa/searchcore/proton/metrics/metrics_engine.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -28,13 +24,13 @@ struct AttributeMetricsFixture {
           metrics(&parent)
     {}
     void addAttribute(const vespalib::string &attrName) {
-        engine.addAttribute(AttributeMetricsCollection(metrics), attrName);
+        engine.addAttribute(metrics, attrName);
     }
     void removeAttribute(const vespalib::string &attrName) {
-        engine.removeAttribute(AttributeMetricsCollection(metrics), attrName);
+        engine.removeAttribute(metrics, attrName);
     }
     void cleanAttributes() {
-        engine.cleanAttributes(AttributeMetricsCollection(metrics));
+        engine.cleanAttributes(metrics);
     }
     void assertRegisteredMetrics(size_t expNumMetrics) const {
         EXPECT_EQUAL(expNumMetrics, parent.getRegisteredMetrics().size());
