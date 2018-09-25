@@ -17,7 +17,7 @@
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
-#include <vespa/searchcore/proton/metrics/documentdb_metrics_collection.h>
+#include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/attribute/configconverter.h>
@@ -80,7 +80,7 @@ StoreOnlyDocSubDB::Context::Context(IDocumentSubDBOwner &owner,
                                     vespalib::ThreadStackExecutorBase &sharedExecutor,
                                     std::shared_ptr<BucketDBOwner> bucketDB,
                                     bucketdb::IBucketDBHandlerInitializer & bucketDBHandlerInitializer,
-                                    DocumentDBMetricsCollection &metrics,
+                                    DocumentDBTaggedMetrics &metrics,
                                     std::mutex &configMutex,
                                     const HwInfo &hwInfo)
     : _owner(owner),
