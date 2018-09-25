@@ -5,6 +5,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>

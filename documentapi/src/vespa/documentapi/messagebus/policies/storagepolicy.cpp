@@ -2,6 +2,7 @@
 
 #include "storagepolicy.h"
 #include <vespa/document/base/documentid.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
 #include <vespa/documentapi/documentapi.h>
