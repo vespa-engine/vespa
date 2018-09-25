@@ -16,7 +16,8 @@ namespace config {
 }
 namespace proton {
 
-class DocumentDBMetricsCollection;
+class AttributeMetrics;
+class DocumentDBTaggedMetrics;
 
 class MetricsEngine : public MetricsWireService
 {
@@ -36,15 +37,15 @@ public:
     void removeMetricsHook(metrics::UpdateHook &hook);
     void addExternalMetrics(metrics::Metric &child);
     void removeExternalMetrics(metrics::Metric &child);
-    void addDocumentDBMetrics(DocumentDBMetricsCollection &child);
-    void removeDocumentDBMetrics(DocumentDBMetricsCollection &child);
-    void addAttribute(const AttributeMetricsCollection &subAttributes,
+    void addDocumentDBMetrics(DocumentDBTaggedMetrics &child);
+    void removeDocumentDBMetrics(DocumentDBTaggedMetrics &child);
+    void addAttribute(AttributeMetrics &subAttributes,
                       const std::string &name) override;
-    void removeAttribute(const AttributeMetricsCollection &subAttributes,
+    void removeAttribute(AttributeMetrics &subAttributes,
                          const std::string &name) override;
-    void cleanAttributes(const AttributeMetricsCollection &subAttributes) override;
-    void addRankProfile(DocumentDBMetricsCollection &owner, const std::string &name, size_t numDocIdPartitions) override;
-    void cleanRankProfiles(DocumentDBMetricsCollection &owner) override;
+    void cleanAttributes(AttributeMetrics &subAttributes) override;
+    void addRankProfile(DocumentDBTaggedMetrics &owner, const std::string &name, size_t numDocIdPartitions) override;
+    void cleanRankProfiles(DocumentDBTaggedMetrics &owner) override;
     void stop();
 
     vespalib::MetricsProducer &metrics_producer() { return _metrics_producer; }
