@@ -105,8 +105,6 @@ const MessageType MessageType::REMOVELOCATION("Removelocation", REMOVELOCATION_I
 const MessageType MessageType::REMOVELOCATION_REPLY("Removelocation Reply", REMOVELOCATION_REPLY_ID, &MessageType::REMOVELOCATION);
 const MessageType MessageType::QUERYRESULT("QueryResult", QUERYRESULT_ID);
 const MessageType MessageType::QUERYRESULT_REPLY("QueryResult reply", QUERYRESULT_REPLY_ID, &MessageType::QUERYRESULT);
-const MessageType MessageType::BATCHPUTREMOVE("BatchPutRemove", BATCHPUTREMOVE_ID);
-const MessageType MessageType::BATCHPUTREMOVE_REPLY("BatchPutRemove reply", BATCHPUTREMOVE_REPLY_ID, &MessageType::BATCHPUTREMOVE);
 const MessageType MessageType::SETBUCKETSTATE("SetBucketState", SETBUCKETSTATE_ID);
 const MessageType MessageType::SETBUCKETSTATE_REPLY("SetBucketStateReply", SETBUCKETSTATE_REPLY_ID, &MessageType::SETBUCKETSTATE);
 

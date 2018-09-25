@@ -147,8 +147,6 @@ public:
         REMOVELOCATION_REPLY_ID = 87,
         QUERYRESULT_ID = 88,
         QUERYRESULT_REPLY_ID = 89,
-        BATCHPUTREMOVE_ID = 90,
-        BATCHPUTREMOVE_REPLY_ID = 91,
         SETBUCKETSTATE_ID = 94,
         SETBUCKETSTATE_REPLY_ID = 95,
         MESSAGETYPE_MAX_ID
@@ -231,8 +229,6 @@ public:
     static const MessageType REMOVELOCATION_REPLY;
     static const MessageType QUERYRESULT;
     static const MessageType QUERYRESULT_REPLY;
-    static const MessageType BATCHPUTREMOVE;
-    static const MessageType BATCHPUTREMOVE_REPLY;
     static const MessageType SETBUCKETSTATE;
     static const MessageType SETBUCKETSTATE_REPLY;
 

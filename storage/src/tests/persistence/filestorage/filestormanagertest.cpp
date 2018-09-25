@@ -12,12 +12,12 @@
 #include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/persistence/filestorage/modifiedbucketchecker.h>
 #include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <vespa/persistence/spi/test.h>
-#include <vespa/storageapi/message/batch.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/file.h>
 

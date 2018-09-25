@@ -3,9 +3,9 @@
 #include "documentapiconverter.h"
 #include "priorityconverter.h"
 #include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/storage/common/bucket_resolver.h>
-#include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/documentsummary.h>
 #include <vespa/storageapi/message/persistence.h>

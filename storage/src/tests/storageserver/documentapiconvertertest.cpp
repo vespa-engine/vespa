@@ -8,11 +8,11 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/storage/common/bucket_resolver.h>
 #include <vespa/storage/storageserver/documentapiconverter.h>
-#include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
