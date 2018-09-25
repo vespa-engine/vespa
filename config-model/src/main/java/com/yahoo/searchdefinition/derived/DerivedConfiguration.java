@@ -74,10 +74,20 @@ public class DerivedConfiguration {
                                 QueryProfileRegistry queryProfiles,
                                 ImportedModels importedModels) {
         Validator.ensureNotNull("Search definition", search);
+        if ( ! search.isProcessed()) {
+            throw new IllegalArgumentException("Search '" + search.getName() + "' not processed.");
+        }
         this.search = search;
         if ( ! search.isDocumentsOnly()) {
             streamingFields = new VsmFields(search);
             streamingSummary = new VsmSummary(search);
+        }
+        if (abstractSearchList != null) {
+            for (Search abstractSearch : abstractSearchList) {
+                if (!abstractSearch.isProcessed()) {
+                    throw new IllegalArgumentException("Search '" + search.getName() + "' not processed.");
+                }
+            }
         }
         if ( ! search.isDocumentsOnly()) {
             attributeFields = new AttributeFields(search);

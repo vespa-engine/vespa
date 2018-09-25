@@ -58,8 +58,8 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
                                     "max(attribute(tensor_field_1),x)");
         assertTransformedExpression("1+reduce(attribute(tensor_field_1),max,x)",
                                     "1 + max(attribute(tensor_field_1),x)");
-        assertTransformedExpression("if(attribute(double_field),1+reduce(attribute(tensor_field_1),max,x),attribute(tensor_field_1))",
-                                    "if(attribute(double_field),1 + max(attribute(tensor_field_1),x),attribute(tensor_field_1))");
+        assertTransformedExpression("if(attribute(double_field),1+reduce(attribute(tensor_field_1),max,x),0)",
+                                    "if(attribute(double_field),1 + max(attribute(tensor_field_1),x),0)");
         assertTransformedExpression("reduce(max(attribute(tensor_field_1),attribute(tensor_field_2)),max,x)",
                                     "max(max(attribute(tensor_field_1),attribute(tensor_field_2)),x)");
         assertTransformedExpression("reduce(if(attribute(double_field),attribute(tensor_field_2),attribute(tensor_field_2)),max,x)",

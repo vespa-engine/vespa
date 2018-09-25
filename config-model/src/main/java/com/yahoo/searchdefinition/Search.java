@@ -59,6 +59,9 @@ public class Search implements Serializable, ImmutableSearch {
     // Field sets
     private FieldSets fieldSets = new FieldSets();
 
+    // Whether or not this object has been processed.
+    private boolean processed;
+
     // The unique name of this search definition.
     private String name;
 
@@ -580,6 +583,17 @@ public class Search implements Serializable, ImmutableSearch {
             return true;
         }
         return false;
+    }
+
+    public void process() {
+        if (processed) {
+            throw new IllegalStateException("Search '" + getName() + "' already processed.");
+        }
+        processed = true;
+    }
+
+    public boolean isProcessed() {
+        return processed;
     }
 
     /**

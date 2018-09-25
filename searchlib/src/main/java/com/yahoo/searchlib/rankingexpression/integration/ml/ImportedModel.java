@@ -1,22 +1,15 @@
 package com.yahoo.searchlib.rankingexpression.integration.ml;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.collections.Pair;
-import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
@@ -33,11 +26,12 @@ public class ImportedModel {
     private final String source;
 
     private final Map<String, Signature> signatures = new HashMap<>();
-    private final Map<String, TensorType> inputs = new HashMap<>();
+    private final Map<String, TensorType> arguments = new HashMap<>();
     private final Map<String, Tensor> smallConstants = new HashMap<>();
     private final Map<String, Tensor> largeConstants = new HashMap<>();
     private final Map<String, RankingExpression> expressions = new HashMap<>();
     private final Map<String, RankingExpression> functions = new HashMap<>();
+    private final Map<String, TensorType> requiredFunctions = new HashMap<>();
 
     /**
      * Creates a new imported model.
@@ -55,11 +49,11 @@ public class ImportedModel {
     /** Returns the name of this model, which can only contain the characters in [A-Za-z0-9_] */
     public String name() { return name; }
 
-    /** Returns the source path (directory or file) of this model */
+    /** Returns the source path (directiry or file) of this model */
     public String source() { return source; }
 
-    /** Returns an immutable map of the inputs of this */
-    public Map<String, TensorType> inputs() { return Collections.unmodifiableMap(inputs); }
+    /** Returns an immutable map of the arguments ("Placeholders") of this */
+    public Map<String, TensorType> arguments() { return Collections.unmodifiableMap(arguments); }
 
     /**
      * Returns an immutable map of the small constants of this.
@@ -77,7 +71,7 @@ public class ImportedModel {
 
     /**
      * Returns an immutable map of the expressions of this - corresponding to graph nodes
-     * which are not Inputs/Placeholders or Variables (which instead become respectively inputs and constants).
+     * which are not Inputs/Placeholders or Variables (which instead become respectively arguments and constants).
      * Note that only nodes recursively referenced by a placeholder/input are added.
      */
     public Map<String, RankingExpression> expressions() { return Collections.unmodifiableMap(expressions); }
@@ -87,6 +81,9 @@ public class ImportedModel {
      * Note that the functions themselves are *not* copies and *not* immutable - they must be copied before modification.
      */
     public Map<String, RankingExpression> functions() { return Collections.unmodifiableMap(functions); }
+
+    /** Returns an immutable map of the functions that must be provided by the environment running this model */
+    public Map<String, TensorType> requiredFunctions() { return Collections.unmodifiableMap(requiredFunctions); }
 
     /** Returns an immutable map of the signatures of this */
     public Map<String, Signature> signatures() { return Collections.unmodifiableMap(signatures); }
@@ -99,11 +96,12 @@ public class ImportedModel {
     /** Convenience method for returning a default signature */
     Signature defaultSignature() { return signature(defaultSignatureName); }
 
-    void input(String name, TensorType argumentType) { inputs.put(name, argumentType); }
+    void argument(String name, TensorType argumentType) { arguments.put(name, argumentType); }
     void smallConstant(String name, Tensor constant) { smallConstants.put(name, constant); }
     void largeConstant(String name, Tensor constant) { largeConstants.put(name, constant); }
     void expression(String name, RankingExpression expression) { expressions.put(name, expression); }
     void function(String name, RankingExpression expression) { functions.put(name, expression); }
+    void requiredFunction(String name, TensorType type) { requiredFunctions.put(name, type); }
 
     /**
      * Returns all the output expressions of this indexed by name. The names consist of one or two parts
@@ -111,39 +109,24 @@ public class ImportedModel {
      * if signatures are used, or the expression name if signatures are not used and there are multiple
      * expressions, and the second is the output name if signature names are used.
      */
-    public List<Pair<String, ExpressionFunction>> outputExpressions() {
-        List<Pair<String, ExpressionFunction>> expressions = new ArrayList<>();
+    public List<Pair<String, RankingExpression>> outputExpressions() {
+        List<Pair<String, RankingExpression>> expressions = new ArrayList<>();
         for (Map.Entry<String, Signature> signatureEntry : signatures().entrySet()) {
             for (Map.Entry<String, String> outputEntry : signatureEntry.getValue().outputs().entrySet())
                 expressions.add(new Pair<>(signatureEntry.getKey() + "." + outputEntry.getKey(),
-                                           signatureEntry.getValue().outputExpression(outputEntry.getKey())
-                                                         .withName(signatureEntry.getKey() + "." + outputEntry.getKey())));
+                                           expressions().get(outputEntry.getValue())));
             if (signatureEntry.getValue().outputs().isEmpty()) // fallback: Signature without outputs
                 expressions.add(new Pair<>(signatureEntry.getKey(),
-                                           new ExpressionFunction(signatureEntry.getKey(),
-                                                                  new ArrayList<>(signatureEntry.getValue().inputs().keySet()),
-                                                                  expressions().get(signatureEntry.getKey()),
-                                                                  signatureEntry.getValue().inputMap(),
-                                                                  Optional.empty())));
+                                           expressions().get(signatureEntry.getKey())));
         }
         if (signatures().isEmpty()) { // fallback for models without signatures
             if (expressions().size() == 1) {
                 Map.Entry<String, RankingExpression> singleEntry = this.expressions.entrySet().iterator().next();
-                expressions.add(new Pair<>(singleEntry.getKey(),
-                                           new ExpressionFunction(singleEntry.getKey(),
-                                                                  new ArrayList<>(inputs.keySet()),
-                                                                  singleEntry.getValue(),
-                                                                  inputs,
-                                                                  Optional.empty())));
+                expressions.add(new Pair<>(singleEntry.getKey(), singleEntry.getValue()));
             }
             else {
                 for (Map.Entry<String, RankingExpression> expressionEntry : expressions().entrySet()) {
-                    expressions.add(new Pair<>(expressionEntry.getKey(),
-                                               new ExpressionFunction(expressionEntry.getKey(),
-                                                                      new ArrayList<>(inputs.keySet()),
-                                                                      expressionEntry.getValue(),
-                                                                      inputs,
-                                                                      Optional.empty())));
+                    expressions.add(new Pair<>(expressionEntry.getKey(), expressionEntry.getValue()));
                 }
             }
         }
@@ -151,7 +134,7 @@ public class ImportedModel {
     }
 
     /**
-     * A signature is a set of named inputs and outputs, where the inputs maps to input
+     * A signature is a set of named inputs and outputs, where the inputs maps to argument
      * ("placeholder") names+types, and outputs maps to expressions nodes.
      * Note that TensorFlow supports multiple signatures in their format, but ONNX has no explicit
      * concept of signatures. For now, we handle ONNX models as having a single signature.
@@ -159,8 +142,8 @@ public class ImportedModel {
     public class Signature {
 
         private final String name;
-        private final Map<String, String> inputs = new LinkedHashMap<>();
-        private final Map<String, String> outputs = new LinkedHashMap<>();
+        private final Map<String, String> inputs = new HashMap<>();
+        private final Map<String, String> outputs = new HashMap<>();
         private final Map<String, String> skippedOutputs = new HashMap<>();
         private final List<String> importWarnings = new ArrayList<>();
 
@@ -175,20 +158,12 @@ public class ImportedModel {
 
         /**
          * Returns an immutable map of the inputs (evaluation context) of this. This is a map from input name
-         * in this signature to input name in the owning model
+         * to argument (Placeholder) name in the owner of this
          */
         public Map<String, String> inputs() { return Collections.unmodifiableMap(inputs); }
 
-        /** Returns the name and type of all inputs in this signature as an immutable map */
-        public Map<String, TensorType> inputMap() {
-            ImmutableMap.Builder<String, TensorType> inputs = new ImmutableMap.Builder<>();
-            for (Map.Entry<String, String> inputEntry : inputs().entrySet())
-                inputs.put(inputEntry.getKey(), owner().inputs().get(inputEntry.getValue()));
-            return inputs.build();
-        }
-
-        /** Returns the type of the input this input references */
-        public TensorType inputArgument(String inputName) { return owner().inputs().get(inputs.get(inputName)); }
+        /** Returns the type of the argument this input references */
+        public TensorType inputArgument(String inputName) { return owner().arguments().get(inputs.get(inputName)); }
 
         /** Returns an immutable list of the expression names of this */
         public Map<String, String> outputs() { return Collections.unmodifiableMap(outputs); }
@@ -205,13 +180,7 @@ public class ImportedModel {
         public List<String> importWarnings() { return Collections.unmodifiableList(importWarnings); }
 
         /** Returns the expression this output references */
-        public ExpressionFunction outputExpression(String outputName) {
-            return new ExpressionFunction(outputName,
-                                          new ArrayList<>(inputs.keySet()),
-                                          owner().expressions().get(outputs.get(outputName)),
-                                          inputMap(),
-                                          Optional.empty());
-        }
+        public RankingExpression outputExpression(String outputName) { return owner().expressions().get(outputs.get(outputName)); }
 
         @Override
         public String toString() { return "signature '" + name + "'"; }

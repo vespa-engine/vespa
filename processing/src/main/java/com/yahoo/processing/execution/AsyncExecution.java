@@ -59,14 +59,14 @@ public class AsyncExecution {
     /**
      * Create an async execution of a single processor
      */
-    public AsyncExecution(Processor processor, Execution parent) {
+    public AsyncExecution(final Processor processor, Execution parent) {
         this(new Execution(processor, parent));
     }
 
     /**
      * Create an async execution of a chain
      */
-    public AsyncExecution(Chain<? extends Processor> chain, Execution parent) {
+    public AsyncExecution(final Chain<? extends Processor> chain, Execution parent) {
         this(new Execution(chain, parent));
     }
 
@@ -81,7 +81,7 @@ public class AsyncExecution {
      *
      * @param execution the execution from which the state of this is created
      */
-    public AsyncExecution(Execution execution) {
+    public AsyncExecution(final Execution execution) {
         this.execution = new Execution(execution);
     }
 
@@ -89,7 +89,7 @@ public class AsyncExecution {
      * Performs an async processing. Note that the given request cannot be simultaneously
      * used in multiple such processings - a clone must be created for each.
      */
-    public FutureResponse process(Request request) {
+    public FutureResponse process(final Request request) {
         return getFutureResponse(new Callable<Response>() {
             @Override
             public Response call() {
@@ -99,13 +99,13 @@ public class AsyncExecution {
     }
 
     private static <T> Future<T> getFuture(final Callable<T> callable) {
-        FutureTask<T> future = new FutureTask<>(callable);
+        final FutureTask<T> future = new FutureTask<>(callable);
         executorMain.execute(future);
         return future;
     }
 
-    private FutureResponse getFutureResponse(Callable<Response> callable, Request request) {
-        FutureResponse future = new FutureResponse(callable, execution, request);
+    private FutureResponse getFutureResponse(final Callable<Response> callable, final Request request) {
+        final FutureResponse future = new FutureResponse(callable, execution, request);
         executorMain.execute(future.delegate());
         return future;
     }
@@ -118,15 +118,15 @@ public class AsyncExecution {
      * @return the list of responses in the same order as returned from the task collection
      */
     // Note that this may also be achieved using guava Futures. Not sure if this should be deprecated because of it.
-    public static List<Response> waitForAll(Collection<FutureResponse> tasks, long timeout) {
+    public static List<Response> waitForAll(final Collection<FutureResponse> tasks, final long timeout) {
 
         // Copy the list in case it is modified while we are waiting
-        List<FutureResponse> workingTasks = new ArrayList<>(tasks);
+        final List<FutureResponse> workingTasks = new ArrayList<>(tasks);
         @SuppressWarnings({"rawtypes", "unchecked"})
-        Future task = getFuture(new Callable() {
+        final Future task = getFuture(new Callable() {
             @Override
             public List<Future> call() {
-                for (FutureResponse task : workingTasks) {
+                for (final FutureResponse task : workingTasks) {
                     task.get();
                 }
                 return null;
@@ -135,12 +135,12 @@ public class AsyncExecution {
 
         try {
             task.get(timeout, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException | InterruptedException | ExecutionException e) {
+        } catch (final TimeoutException | InterruptedException | ExecutionException e) {
             // Handle timeouts below
         }
 
-        List<Response> responses = new ArrayList<>(tasks.size());
-        for (FutureResponse future : workingTasks)
+        final List<Response> responses = new ArrayList<>(tasks.size());
+        for (final FutureResponse future : workingTasks)
             responses.add(getTaskResponse(future));
         return responses;
     }
@@ -152,5 +152,6 @@ public class AsyncExecution {
             return new Response(future.getRequest(), new ErrorMessage("Timed out waiting for " + future));
         }
     }
+
 
 }

@@ -40,7 +40,7 @@ public class RankingExpressionLoopDetectionTestCase {
             fail("Excepted exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("In search definition 'test', rank profile 'test': The function 'foo' is invalid: Invocation loop: foo -> foo",
+            assertEquals("In search definition 'test', rank profile 'test': The first-phase expression is invalid: Invocation loop: foo -> foo",
                          Exceptions.toMessageString(e));
         }
     }
@@ -75,7 +75,7 @@ public class RankingExpressionLoopDetectionTestCase {
             fail("Excepted exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("In search definition 'test', rank profile 'test': The function 'foo' is invalid: Invocation loop: arg(5) -> foo -> arg(5)",
+            assertEquals("In search definition 'test', rank profile 'test': The first-phase expression is invalid: Invocation loop: foo -> arg(5) -> foo",
                          Exceptions.toMessageString(e));
         }
     }
@@ -110,7 +110,7 @@ public class RankingExpressionLoopDetectionTestCase {
             fail("Excepted exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("In search definition 'test', rank profile 'test': The function 'foo' is invalid: Invocation loop: arg(foo) -> foo -> arg(foo)",
+            assertEquals("In search definition 'test', rank profile 'test': The first-phase expression is invalid: Invocation loop: foo -> arg(foo) -> foo",
                          Exceptions.toMessageString(e));
         }
     }
