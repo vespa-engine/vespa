@@ -93,6 +93,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         };
 
         ResourceUsageMetrics resourceUsage;
+        MemoryUsageMetrics totalMemoryUsage;
 
         AttributeMetrics(metrics::MetricSet *parent);
         ~AttributeMetrics();
@@ -168,6 +169,16 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         ~SessionCacheMetrics();
     };
 
+    struct DocumentsMetrics : metrics::MetricSet {
+        metrics::LongValueMetric active;
+        metrics::LongValueMetric ready;
+        metrics::LongValueMetric total;
+        metrics::LongValueMetric removed;
+
+        DocumentsMetrics(metrics::MetricSet *parent);
+        ~DocumentsMetrics();
+    };
+
     JobMetrics job;
     AttributeMetrics attribute;
     IndexMetrics index;
@@ -177,6 +188,9 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     ExecutorThreadingServiceMetrics threadingService;
     MatchingMetrics matching;
     SessionCacheMetrics sessionCache;
+    DocumentsMetrics documents;
+    MemoryUsageMetrics totalMemoryUsage;
+    metrics::LongValueMetric totalDiskUsage;
 
     DocumentDBTaggedMetrics(const vespalib::string &docTypeName);
     ~DocumentDBTaggedMetrics();

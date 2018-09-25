@@ -7,18 +7,16 @@ import javax.xml.bind.DatatypeConverter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
 
 public class LogReader {
 
     long earliestLogThreshold;
     long latestLogThreshold;
 
-    public LogReader(long earliestLogThreshold, long latestLogThreshold) {
+    protected JSONObject readLogs(String logDirectory, long earliestLogThreshold, long latestLogThreshold) throws IOException, JSONException {
         this.earliestLogThreshold = earliestLogThreshold;
         this.latestLogThreshold = latestLogThreshold;
-    }
-
-    protected JSONObject readLogs(String logDirectory) throws IOException, JSONException {
         JSONObject json = new JSONObject();
         File root = new File(logDirectory);
         traverse_folder(root, json, "");
@@ -28,9 +26,7 @@ public class LogReader {
     private void traverse_folder(File root, JSONObject json, String filename) throws IOException, JSONException {
         File[] files = root.listFiles();
         for(File child : files) {
-            File temp = child;
-            JSONObject childJson = new JSONObject();
-            long logTime = child.lastModified();
+            long logTime = Files.readAttributes(child.toPath(), BasicFileAttributes.class).creationTime().toMillis();
             if(child.isFile() && earliestLogThreshold < logTime && logTime < latestLogThreshold) {
                 json.put(filename + child.getName(), DatatypeConverter.printBase64Binary(Files.readAllBytes(child.toPath())));
             }

@@ -60,4 +60,10 @@ public abstract class HostedVespaApplication {
                 .applicationName(applicationName)
                 .build();
     }
+
+    @Override
+    public String toString() {
+        return applicationId.toString();
+    }
+
 }

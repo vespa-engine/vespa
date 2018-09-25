@@ -1,5 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.dockerapi;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.dockerapi.exception;
 
 /**
  * Runtime exception to be thrown when the exec commands did not finish in time.
@@ -10,7 +10,7 @@ package com.yahoo.vespa.hosted.dockerapi;
  * @author smorgrav
  */
 @SuppressWarnings("serial")
-public class DockerExecTimeoutException extends RuntimeException {
+public class DockerExecTimeoutException extends DockerException {
     public DockerExecTimeoutException(String msg) {
         super(msg);
     }

@@ -49,7 +49,7 @@ public class OnnxMnistSoftmaxImportTestCase {
                      output.getBody().getRoot().toString());
         assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"),
                      model.inputs().get(model.defaultSignature().inputs().get("Placeholder")));
-        assertEquals("{Placeholder=tensor(d0[],d1[784])}", output.getBody().toString());
+        assertEquals("{Placeholder=tensor(d0[],d1[784])}", output.argumentTypes().toString());
     }
 
     @Test

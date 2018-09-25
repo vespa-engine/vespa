@@ -43,7 +43,6 @@ import com.yahoo.vespa.config.server.session.SessionTest;
 import com.yahoo.vespa.config.server.session.SessionZooKeeperClient;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModelFactory;
@@ -80,7 +79,6 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
     private static final String activatedMessage = " for tenant '" + tenantName + "' activated.";
 
     private final Clock clock = Clock.systemUTC();
-    private ConfigCurator configCurator;
     private Curator curator;
     private RemoteSessionRepo remoteSessionRepo;
     private LocalSessionRepo localRepo;
@@ -99,14 +97,12 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
         remoteSessionRepo = new RemoteSessionRepo(tenantName);
         applicationRepo = new MemoryTenantApplications();
         curator = new MockCurator();
-        configCurator = ConfigCurator.create(curator);
         localRepo = new LocalSessionRepo(clock, curator);
         pathPrefix = "/application/v2/tenant/" + tenantName + "/session/";
         hostProvisioner = new MockProvisioner();
         modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
         componentRegistry = new TestComponentRegistry.Builder()
                 .curator(curator)
-                .configCurator(configCurator)
                 .modelFactoryRegistry(new ModelFactoryRegistry(Collections.singletonList(modelFactory)))
                 .build();
         TenantBuilder tenantBuilder = TenantBuilder.create(componentRegistry, tenantName)
@@ -218,7 +214,8 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
 
     private RemoteSession createRemoteSession(long sessionId, Session.Status status, SessionZooKeeperClient zkClient, Clock clock) throws IOException {
         zkClient.writeStatus(status);
-        ZooKeeperClient zkC = new ZooKeeperClient(configCurator, new BaseDeployLogger(), false, TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)));
+        ZooKeeperClient zkC = new ZooKeeperClient(componentRegistry.getConfigCurator(), new BaseDeployLogger(), false,
+                                                  TenantRepository.getSessionsPath(tenantName).append(String.valueOf(sessionId)));
         zkC.write(Collections.singletonMap(modelFactory.getVersion(), new MockFileRegistry()));
         zkC.write(AllocatedHosts.withHosts(Collections.emptySet()));
         RemoteSession session = new RemoteSession(tenantName, sessionId, componentRegistry, zkClient, clock);

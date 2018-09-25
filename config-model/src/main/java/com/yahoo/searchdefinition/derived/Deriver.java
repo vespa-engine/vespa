@@ -3,7 +3,6 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.document.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.SearchBuilder;
-import com.yahoo.searchdefinition.UnprocessingSearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
@@ -18,40 +17,8 @@ import java.util.List;
  */
 public class Deriver {
 
-    /**
-     * Derives only document manager.
-     *
-     *
-     * @param sdFileNames The name of the search definition files to derive from.
-     * @param toDir       The directory to write configuration to.
-     * @return The list of Search objects, possibly "unproper ones", from sd files containing only document
-     */
-    public static SearchBuilder deriveDocuments(List<String> sdFileNames, String toDir) {
-        SearchBuilder builder = getUnprocessingSearchBuilder(sdFileNames);
-        DocumentmanagerConfig.Builder documentManagerCfg = new DocumentManager().produce(builder.getModel(), new DocumentmanagerConfig.Builder());
-        try {
-            DerivedConfiguration.exportDocuments(documentManagerCfg, toDir);
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
-        }
-        return builder;
-    }
-
     public static SearchBuilder getSearchBuilder(List<String> sds) {
         SearchBuilder builder = new SearchBuilder();
-        try {
-            for (String s : sds) {
-                builder.importFile(s);
-            }
-        } catch (ParseException | IOException e) {
-            throw new IllegalArgumentException(e);
-        }
-        builder.build();
-        return builder;
-    }
-
-    public static SearchBuilder getUnprocessingSearchBuilder(List<String> sds) {
-        SearchBuilder builder = new UnprocessingSearchBuilder();
         try {
             for (String s : sds) {
                 builder.importFile(s);

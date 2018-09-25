@@ -1,9 +1,12 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -16,6 +19,15 @@ public interface MetricsService {
     ApplicationMetrics getApplicationMetrics(ApplicationId application);
 
     DeploymentMetrics getDeploymentMetrics(ApplicationId application, ZoneId zone);
+
+    // TODO: Remove default once implementation catches up
+    /**
+     * Get status for a global rotation
+     * @param rotationName The fully qualified domain name of the rotation
+     */
+    default Map<HostName, RotationStatus> getRotationStatus(String rotationName) {
+        return Collections.emptyMap();
+    }
 
     Map<String, SystemMetrics> getSystemMetrics(ApplicationId application, ZoneId zone);
 

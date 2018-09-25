@@ -33,14 +33,16 @@ import static org.mockito.Mockito.when;
  */
 public class DockerImplTest {
 
+    private final DockerClient dockerClient = mock(DockerClient.class);
+    private final MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
+    private final DockerImpl docker = new DockerImpl(dockerClient, metricReceiver);
+
     @Test
     public void testExecuteCompletes() {
         final String containerId = "container-id";
         final String[] command = new String[] {"/bin/ls", "-l"};
         final String execId = "exec-id";
         final int exitCode = 3;
-
-        final DockerClient dockerClient = mock(DockerClient.class);
 
         final ExecCreateCmdResponse response = mock(ExecCreateCmdResponse.class);
         when(response.getId()).thenReturn(execId);
@@ -64,7 +66,6 @@ public class DockerImplTest {
         when(state.isRunning()).thenReturn(false);
         when(state.getExitCode()).thenReturn(exitCode);
 
-        final Docker docker = new DockerImpl(dockerClient);
         final ProcessResult result = docker.executeInContainer(new ContainerName(containerId), command);
         assertThat(result.getExitStatus(), is(exitCode));
     }
@@ -87,12 +88,9 @@ public class DockerImplTest {
         PullImageCmd pullImageCmd = mock(PullImageCmd.class);
         when(pullImageCmd.exec(resultCallback.capture())).thenReturn(null);
 
-        final DockerClient dockerClient = mock(DockerClient.class);
         when(dockerClient.inspectImageCmd(image.asString())).thenReturn(imageInspectCmd);
         when(dockerClient.pullImageCmd(eq(image.asString()))).thenReturn(pullImageCmd);
 
-        final DockerImpl docker = new DockerImpl(dockerClient);
-        docker.setMetrics(new MetricReceiverWrapper(MetricReceiver.nullImplementation));
         assertTrue("Should return true, we just scheduled the pull", docker.pullImageAsyncIfNeeded(image));
         assertTrue("Should return true, the pull i still ongoing", docker.pullImageAsyncIfNeeded(image));
 
@@ -114,12 +112,9 @@ public class DockerImplTest {
         PullImageCmd pullImageCmd = mock(PullImageCmd.class);
         when(pullImageCmd.exec(resultCallback.capture())).thenReturn(null);
 
-        final DockerClient dockerClient = mock(DockerClient.class);
         when(dockerClient.inspectImageCmd(image.asString())).thenReturn(imageInspectCmd);
         when(dockerClient.pullImageCmd(eq(image.asString()))).thenReturn(pullImageCmd);
 
-        final DockerImpl docker = new DockerImpl(dockerClient);
-        docker.setMetrics(new MetricReceiverWrapper(MetricReceiver.nullImplementation));
         assertTrue("Should return true, we just scheduled the pull", docker.pullImageAsyncIfNeeded(image));
         assertTrue("Should return true, the pull i still ongoing", docker.pullImageAsyncIfNeeded(image));
 

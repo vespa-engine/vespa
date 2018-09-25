@@ -46,7 +46,9 @@ import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
+import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
 import com.yahoo.vespa.hosted.controller.maintenance.ContactInformationMaintainer;
+import com.yahoo.vespa.hosted.controller.maintenance.DeploymentMetricsMaintainer;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -433,28 +435,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/", Request.Method.OPTIONS),
                               "");
 
-        // GET global rotation status
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/global-rotation", GET)
-                                      .userIdentity(USER_ID),
-                              new File("global-rotation.json"));
-
-        // GET global rotation override status
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/global-rotation/override", GET)
-                                      .userIdentity(USER_ID),
-                              new File("global-rotation-get.json"));
-
-        // SET global rotation override status
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/environment/prod/region/us-west-1/instance/default/global-rotation/override", PUT)
-                                      .userIdentity(USER_ID)
-                                      .data("{\"reason\":\"because i can\"}"),
-                              new File("global-rotation-put.json"));
-
-        // DELETE global rotation override status
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/environment/prod/region/us-west-1/instance/default/global-rotation/override", DELETE)
-                                      .userIdentity(USER_ID)
-                                      .data("{\"reason\":\"because i can\"}"),
-                              new File("global-rotation-delete.json"));
-
+        // Promote from pipeline
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/promote", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "{\"message\":\"Successfully copied environment hosted-verified-prod to hosted-instance_tenant1_application1_placeholder_component_default\"}");
@@ -477,6 +458,58 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 tester.controller().applications().store(application
                                                                  .withDeploymentIssueId(IssueId.from("123"))
                                                                  .withOwnershipIssueId(IssueId.from("321"))));
+    }
+
+    @Test
+    public void testRotationOverride() {
+        // Setup
+        tester.computeVersionStatus();
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .globalServiceId("foo")
+                .region("us-west-1")
+                .region("us-east-3")
+                .build();
+
+        // Create tenant and deploy
+        ApplicationId id = createTenantAndApplication();
+        long projectId = 1;
+        HttpEntity deployData = createApplicationDeployData(Optional.empty(), false);
+        startAndTestChange(controllerTester, id, projectId, applicationPackage, deployData, 100);
+
+        // us-west-1
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/deploy", POST)
+                                      .data(deployData)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
+                              new File("deploy-result.json"));
+        controllerTester.jobCompletion(JobType.productionUsWest1)
+                        .application(id)
+                        .projectId(projectId)
+                        .submit();
+        setZoneInRotation("rotation-fqdn-1", ZoneId.from("prod", "us-west-1"));
+
+        // GET global rotation status
+        setZoneInRotation("rotation-fqdn-1", ZoneId.from("prod", "us-west-1"));
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/global-rotation", GET)
+                                      .userIdentity(USER_ID),
+                              new File("global-rotation.json"));
+
+        // GET global rotation override status
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/global-rotation/override", GET)
+                                      .userIdentity(USER_ID),
+                              new File("global-rotation-get.json"));
+
+        // SET global rotation override status
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/global-rotation/override", PUT)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"reason\":\"because i can\"}"),
+                              new File("global-rotation-put.json"));
+
+        // DELETE global rotation override status
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/global-rotation/override", DELETE)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"reason\":\"because i can\"}"),
+                              new File("global-rotation-delete.json"));
     }
 
     @Test
@@ -537,31 +570,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     @Test
     public void testSortsDeploymentsAndJobs() {
-        // Setup
         tester.computeVersionStatus();
-        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
-
-        // Create tenant
-        tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
-                                      .userIdentity(USER_ID)
-                                      .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
-                                      .nToken(N_TOKEN),
-                              new File("tenant-without-applications.json"));
-
-        // Create application
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
-                                      .userIdentity(USER_ID)
-                                      .nToken(N_TOKEN),
-                              new File("application-reference.json"));
-
-        // Give Screwdriver project deploy access
-        addScrewdriverUserToDeployRole(SCREWDRIVER_ID, ATHENZ_TENANT_DOMAIN, new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId("application1"));
 
         // Deploy
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .region("us-east-3")
                 .build();
-        ApplicationId id = ApplicationId.from("tenant1", "application1", "default");
+        ApplicationId id = createTenantAndApplication();
         long projectId = 1;
         HttpEntity deployData = createApplicationDeployData(Optional.empty(), false);
         startAndTestChange(controllerTester, id, projectId, applicationPackage, deployData, 100);
@@ -594,6 +609,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .application(id)
                         .projectId(projectId)
                         .submit();
+
+        setZoneInRotation("rotation-fqdn-1", ZoneId.from("prod", "us-west-1"));
 
         // us-east-3
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-east-3/instance/default/deploy", POST)
@@ -1135,6 +1152,23 @@ public class ApplicationApiTest extends ControllerContainerTest {
         athenzApplication.addRoleMember(ApplicationAction.deploy, screwdriverIdentity);
     }
 
+    private ApplicationId createTenantAndApplication() {
+        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
+        tester.assertResponse(request("/application/v4/tenant/tenant1", POST)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"athensDomain\":\"domain1\", \"property\":\"property1\"}")
+                                      .nToken(N_TOKEN),
+                              new File("tenant-without-applications.json"));
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", POST)
+                                      .userIdentity(USER_ID)
+                                      .nToken(N_TOKEN),
+                              new File("application-reference.json"));
+        addScrewdriverUserToDeployRole(SCREWDRIVER_ID, ATHENZ_TENANT_DOMAIN,
+                                       new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId("application1"));
+
+        return ApplicationId.from("tenant1", "application1", "default");
+    }
+
     private void startAndTestChange(ContainerControllerTester controllerTester, ApplicationId application,
                                     long projectId, ApplicationPackage applicationPackage,
                                     HttpEntity deployData, long buildNumber) {
@@ -1198,7 +1232,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                     clusterInfo.put(ClusterSpec.Id.from("cluster1"), new ClusterInfo("flavor1", 37, 2, 4, 50, ClusterSpec.Type.content, hostnames));
                     Map<ClusterSpec.Id, ClusterUtilization> clusterUtils = new HashMap<>();
                     clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3, 0.6, 0.4, 0.3));
-                    DeploymentMetrics metrics = new DeploymentMetrics(1,2,3,4,5);
+                    DeploymentMetrics metrics = new DeploymentMetrics(1, 2, 3, 4, 5);
 
                     lockedApplication = lockedApplication
                             .withClusterInfo(deployment.zone(), clusterInfo)
@@ -1211,8 +1245,20 @@ public class ApplicationApiTest extends ControllerContainerTest {
         }
     }
 
+    private MetricsServiceMock metricsService() {
+        return (MetricsServiceMock) tester.container().components().getComponent(MetricsServiceMock.class.getName());
+    }
+
     private MockOrganization organization() {
         return (MockOrganization) tester.container().components().getComponent(MockOrganization.class.getName());
+    }
+
+    private void setZoneInRotation(String rotationName, ZoneId zone) {
+        String vipName = "proxy." + zone.value() + ".vip.test";
+        metricsService().addRotation(rotationName)
+                        .setZoneIn(rotationName, vipName);
+
+        new DeploymentMetricsMaintainer(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator())).run();
     }
 
     private void updateContactInformation() {

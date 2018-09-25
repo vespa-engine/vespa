@@ -30,7 +30,7 @@ public class Deployment {
 
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime) {
         this(zone, applicationVersion, version, deployTime, Collections.emptyMap(), Collections.emptyMap(),
-             new DeploymentMetrics(), DeploymentActivity.none);
+             DeploymentMetrics.none, DeploymentActivity.none);
     }
 
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime,

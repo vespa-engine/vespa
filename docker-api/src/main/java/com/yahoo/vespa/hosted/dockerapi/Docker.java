@@ -2,8 +2,8 @@
 package com.yahoo.vespa.hosted.dockerapi;
 
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -12,7 +12,8 @@ import java.util.Optional;
  */
 public interface Docker {
     /**
-     * Must be called before any other method. May be called more than once.
+     * Should only be called by non-host-admin. May be called more than once.
+     * TODO: Remove when migration to host-admin is done
      */
     void start();
 
@@ -61,20 +62,7 @@ public interface Docker {
             ContainerName containerName,
             String hostName);
 
-    interface ContainerStats {
-        Map<String, Object> getNetworks();
-        Map<String, Object> getCpuStats();
-        Map<String, Object> getMemoryStats();
-        Map<String, Object> getBlkioStats();
-    }
-
-    default boolean networkNATed() {
-        return false;
-    }
-
     Optional<ContainerStats> getContainerStats(ContainerName containerName);
-
-    void createContainer(CreateContainerCommand createContainerCommand);
 
     void startContainer(ContainerName containerName);
 
@@ -97,12 +85,10 @@ public interface Docker {
      */
     boolean pullImageAsyncIfNeeded(DockerImage image);
 
-    void deleteImage(DockerImage dockerImage);
-
     /**
      * Deletes the local images that are currently not in use by any container and not recently used.
      */
-    void deleteUnusedDockerImages();
+    boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete);
 
     /**
      * Execute a command in docker container as $VESPA_USER. Will block until the command is finished.

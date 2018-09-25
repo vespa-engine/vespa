@@ -7,9 +7,7 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-namespace search {
-
-namespace memoryindex {
+namespace search::memoryindex {
 
 class FeatureStore
 {
@@ -54,8 +52,7 @@ private:
      * @param features the features to be encoded
      * @return the encode offset before writing
      */
-    uint64_t
-    writeFeatures(uint32_t packedIndex, const DocIdAndFeatures &features);
+    uint64_t writeFeatures(uint32_t packedIndex, const DocIdAndFeatures &features);
 
     /**
      * Adds the features from the given buffer to the data store.
@@ -64,8 +61,7 @@ private:
      * @param byteLen the byte length of the buffer
      * @return the entry ref for the added features
      */
-    datastore::EntryRef
-    addFeatures(const uint8_t * src, uint64_t byteLen);
+    datastore::EntryRef addFeatures(const uint8_t * src, uint64_t byteLen);
 
     /**
      * Adds the features currently in the underlying encode context to the data store.
@@ -74,8 +70,7 @@ private:
      * @param endOffset the end offset into the encode context
      * @return the entry ref and bit length of the features
      */
-    std::pair<datastore::EntryRef, uint64_t>
-    addFeatures(uint64_t beginOffset, uint64_t endOffset);
+    std::pair<datastore::EntryRef, uint64_t> addFeatures(uint64_t beginOffset, uint64_t endOffset);
 
     /**
      * Moves features to new location, as part of compaction.
@@ -107,9 +102,7 @@ public:
      * @return            pair with reference to stored features and
      *                    size of encoded features in bits
      */
-    std::pair<datastore::EntryRef, uint64_t>
-    addFeatures(uint32_t packedIndex,
-                const DocIdAndFeatures &features);
+    std::pair<datastore::EntryRef, uint64_t> addFeatures(uint32_t packedIndex, const DocIdAndFeatures &features);
 
 
     /**
@@ -120,10 +113,7 @@ public:
      * @param ref         Reference to stored features
      * @param features    The features to be decoded
      */
-    void
-    getFeatures(uint32_t packedIndex,
-                datastore::EntryRef ref,
-                DocIdAndFeatures &features);
+    void getFeatures(uint32_t packedIndex, datastore::EntryRef ref, DocIdAndFeatures &features);
 
 
     /**
@@ -189,9 +179,7 @@ public:
      * @param ref Referennce to stored features
      * @return    byte address of stored features
      */
-    const uint8_t *
-    getBits(datastore::EntryRef ref) const
-    {
+    const uint8_t *getBits(datastore::EntryRef ref) const {
         RefType iRef(ref);
         return _store.getBufferEntry<uint8_t>(iRef.bufferId(), iRef.offset());
     }
@@ -203,72 +191,22 @@ public:
      * @param ref         Old reference to stored features
      * @return            New reference to stored features
      */
-    datastore::EntryRef
-    moveFeatures(uint32_t packedIndex,
-                 datastore::EntryRef ref);
+    datastore::EntryRef moveFeatures(uint32_t packedIndex, datastore::EntryRef ref);
 
     /**
      * Return a const view of the fields params used by this feature store.
      *
      * @return const view of fields params.
      */
-    const std::vector<PosOccFieldsParams> &
-    getFieldsParams() const
-    {
-        return _fieldsParams;
-    }
+    const std::vector<PosOccFieldsParams> &getFieldsParams() const { return _fieldsParams; }
 
-    // Inherit doc from DataStoreBase
-    void
-    trimHoldLists(generation_t usedGen)
-    {
-        _store.trimHoldLists(usedGen);
-    }
-
-    // Inherit doc from DataStoreBase
-    void
-    transferHoldLists(generation_t generation)
-    {
-        _store.transferHoldLists(generation);
-    }
-
-    void
-    clearHoldLists()
-    {
-        _store.clearHoldLists();
-    }
-
-    // Inherit doc from DataStoreBase
-    std::vector<uint32_t>
-    startCompact()
-    {
-        return _store.startCompact(_typeId);
-    }
-
-    // Inherit doc from DataStoreBase
-    void
-    finishCompact(const std::vector<uint32_t> & toHold)
-    {
-        _store.finishCompact(toHold);
-    }
-
-    // Inherit doc from DataStoreBase
-    MemoryUsage
-    getMemoryUsage() const
-    {
-        return _store.getMemoryUsage();
-    }
-
-    // Inherit doc from DataStoreBase
-    datastore::DataStoreBase::MemStats
-    getMemStats() const
-    {
-        return _store.getMemStats();
-    }
+    void trimHoldLists(generation_t usedGen) { _store.trimHoldLists(usedGen); }
+    void transferHoldLists(generation_t generation) { _store.transferHoldLists(generation); }
+    void clearHoldLists() { _store.clearHoldLists();}
+    std::vector<uint32_t> startCompact() { return _store.startCompact(_typeId); }
+    void finishCompact(const std::vector<uint32_t> & toHold) { _store.finishCompact(toHold); }
+    MemoryUsage getMemoryUsage() const { return _store.getMemoryUsage(); }
+    datastore::DataStoreBase::MemStats getMemStats() const { return _store.getMemStats(); }
 };
 
-
-} // namespace search::memoryindex
-} // namespace search
-
-
+}

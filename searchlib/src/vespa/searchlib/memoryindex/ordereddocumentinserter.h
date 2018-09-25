@@ -6,11 +6,7 @@
 #include "memoryfieldindex.h"
 #include <limits>
 
-namespace search
-{
-
-namespace memoryindex
-{
+namespace search::memoryindex {
 
 class IDocumentInsertListener;
 
@@ -52,11 +48,10 @@ class OrderedDocumentInserter : public IOrderedDocumentInserter
 
 public:
     OrderedDocumentInserter(MemoryFieldIndex &fieldIndex);
-    virtual ~OrderedDocumentInserter();
-    virtual void setNextWord(const vespalib::stringref word) override;
-    virtual void add(uint32_t docId,
-                     const index::DocIdAndFeatures &features) override;
-    virtual void remove(uint32_t docId) override;
+    ~OrderedDocumentInserter() override;
+    void setNextWord(const vespalib::stringref word) override;
+    void add(uint32_t docId, const index::DocIdAndFeatures &features) override;
+    void remove(uint32_t docId) override;
 
     /*
      * Flush pending changes to postinglist for (_word).  Also flush
@@ -64,17 +59,15 @@ public:
      *
      * _dItr is located at correct position.
      */
-    virtual void flush() override;
+    void flush() override;
 
     /*
      * Rewind iterator, to start new pass.
      */
-    virtual void rewind() override;
+    void rewind() override;
 
     // Used by unit test
     datastore::EntryRef getWordRef() const;
 };
-
-}
 
 }

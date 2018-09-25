@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -26,18 +27,21 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalLong;
+import java.util.TreeMap;
 
 /**
  * Serializes applications to/from slime.
@@ -49,6 +53,7 @@ public class ApplicationSerializer {
 
     // Application fields
     private final String idField = "id";
+    private final String createdAtField = "createdAt";
     private final String deploymentSpecField = "deploymentSpecField";
     private final String validationOverridesField = "validationOverrides";
     private final String deploymentsField = "deployments";
@@ -59,6 +64,7 @@ public class ApplicationSerializer {
     private final String writeQualityField = "writeQuality";
     private final String queryQualityField = "queryQuality";
     private final String rotationField = "rotation";
+    private final String rotationStatusField = "rotationStatus";
 
     // Deployment fields
     private final String zoneField = "zone";
@@ -124,13 +130,13 @@ public class ApplicationSerializer {
     private final String deploymentMetricsQueryLatencyField = "queryLatencyMillis";
     private final String deploymentMetricsWriteLatencyField = "writeLatencyMillis";
 
-
     // ------------------ Serialization
 
     public Slime toSlime(Application application) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString(idField, application.id().serializedForm());
+        root.setLong(createdAtField, application.createdAt().toEpochMilli());
         root.setString(deploymentSpecField, application.deploymentSpec().xmlForm());
         root.setString(validationOverridesField, application.validationOverrides().xmlForm());
         deploymentsToSlime(application.deployments().values(), root.setArray(deploymentsField));
@@ -141,6 +147,7 @@ public class ApplicationSerializer {
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
         application.rotation().ifPresent(rotation -> root.setString(rotationField, rotation.id().asString()));
+        toSlime(application.rotationStatus(), root.setArray(rotationStatusField));
         return slime;
     }
 
@@ -268,12 +275,21 @@ public class ApplicationSerializer {
             toSlime(deploying.application().get(), object);
     }
 
+    private void toSlime(Map<HostName, RotationStatus> rotationStatus, Cursor array) {
+        rotationStatus.forEach((hostname, status) -> {
+            Cursor object = array.addObject();
+            object.setString("hostname", hostname.value());
+            object.setString("status", status.name());
+        });
+    }
+
     // ------------------ Deserialization
 
     public Application fromSlime(Slime slime) {
         Inspector root = slime.get();
 
         ApplicationId id = ApplicationId.fromSerializedForm(root.field(idField).asString());
+        Instant createdAt = Instant.ofEpochMilli(root.field(createdAtField).asLong());
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(root.field(deploymentSpecField).asString(), false);
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml(root.field(validationOverridesField).asString());
         List<Deployment> deployments = deploymentsFromSlime(root.field(deploymentsField));
@@ -284,9 +300,10 @@ public class ApplicationSerializer {
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
         Optional<RotationId> rotation = rotationFromSlime(root.field(rotationField));
+        Map<HostName, RotationStatus> rotationStatus = rotationStatusFromSlime(root.field(rotationStatusField));
 
-        return new Application(id, deploymentSpec, validationOverrides, deployments, deploymentJobs, deploying,
-                               outstandingChange, ownershipIssueId, metrics, rotation);
+        return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs, deploying,
+                               outstandingChange, ownershipIssueId, metrics, rotation, rotationStatus);
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {
@@ -315,6 +332,19 @@ public class ApplicationSerializer {
                                      object.field(deploymentMetricsDocsField).asDouble(),
                                      object.field(deploymentMetricsQueryLatencyField).asDouble(),
                                      object.field(deploymentMetricsWriteLatencyField).asDouble());
+    }
+
+    private Map<HostName, RotationStatus> rotationStatusFromSlime(Inspector object) {
+        if (!object.valid()) {
+            return Collections.emptyMap();
+        }
+        Map<HostName, RotationStatus> rotationStatus = new TreeMap<>();
+        object.traverse((ArrayTraverser) (idx, inspect) -> {
+            HostName hostname = HostName.from(inspect.field("hostname").asString());
+            RotationStatus status = RotationStatus.valueOf(inspect.field("status").asString());
+            rotationStatus.put(hostname, status);
+        });
+        return Collections.unmodifiableMap(rotationStatus);
     }
 
     private Map<ClusterSpec.Id, ClusterInfo> clusterInfoMapFromSlime(Inspector object) {

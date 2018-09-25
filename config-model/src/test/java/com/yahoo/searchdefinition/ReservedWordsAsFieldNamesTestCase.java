@@ -15,7 +15,7 @@ public class ReservedWordsAsFieldNamesTestCase extends SearchDefinitionTestCase 
 
     @Test
     public void testIt() throws IOException, ParseException {
-        Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/reserved_words_as_field_names.sd");
+        Search search = SearchBuilder.buildFromFile("src/test/examples/reserved_words_as_field_names.sd");
         assertNotNull(search.getDocument().getField("inline"));
         assertNotNull(search.getDocument().getField("constants"));
         assertNotNull(search.getDocument().getField("reference"));

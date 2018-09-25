@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -38,6 +39,8 @@ public class MockOrganization extends AbstractComponent implements Organization 
 
     @Override
     public IssueId file(Issue issue) {
+        if ( ! properties.containsKey(issue.propertyId()))
+            throw new NoSuchElementException("Unknown property '" + issue.propertyId() + "'!");
         IssueId issueId = IssueId.from("" + counter.incrementAndGet());
         issues.put(issueId, new MockIssue(issue));
         return issueId;
@@ -153,7 +156,7 @@ public class MockOrganization extends AbstractComponent implements Organization 
             this.issue = issue;
             this.updated = clock.instant();
             this.open = true;
-            this.assignee = issue.assignee().orElse(properties.get(issue.propertyId()).defaultAssignee);
+            this.assignee = issue.assignee().orElse(null);
         }
 
         public Issue issue() { return issue; }
@@ -164,11 +167,10 @@ public class MockOrganization extends AbstractComponent implements Organization 
 
     private class PropertyInfo {
 
-        private User defaultAssignee;
         private List<List<User>> contacts = Collections.emptyList();
-        private URI issueUrl;
-        private URI contactsUrl;
-        private URI propertyUrl;
+        private URI issueUrl = URI.create("issues.tld");
+        private URI contactsUrl = URI.create("contacts.tld");
+        private URI propertyUrl = URI.create("properties.tld");
 
     }
 

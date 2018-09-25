@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
@@ -93,9 +94,13 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
     private NodesSpecification createNodesSpecificationForLogserver() {
         // TODO: Enable for main system as well
-        //if (context.getDeployState().isHosted() && context.getDeployState().zone().system() == SystemName.cd)
-        //    return NodesSpecification.dedicated(1, context);
-        //else
+        DeployState deployState = context.getDeployState();
+        if (deployState.getProperties().useDedicatedNodeForLogserver() &&
+                context.getApplicationType() == ConfigModelContext.ApplicationType.DEFAULT &&
+                deployState.isHosted() &&
+                deployState.zone().system() == SystemName.cd)
+            return NodesSpecification.dedicated(1, context);
+        else
             return NodesSpecification.nonDedicated(1, context);
     }
 

@@ -8,10 +8,12 @@ import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
+import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
@@ -23,6 +25,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -87,13 +90,12 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
                 .withAddCapability("SYS_ADMIN"); // Needed for perf
 
-        if (environment.getNodeType() == NodeType.confighost ||
-                environment.getNodeType() == NodeType.proxyhost) {
+        if (environment.getNodeType() == NodeType.confighost || environment.getNodeType() == NodeType.proxyhost) {
             command.withVolume("/var/lib/sia", "/var/lib/sia");
         }
 
         if (environment.getNodeType() == NodeType.proxyhost) {
-            command.withVolume("/opt/yahoo/share/ssl/certs/", "/opt/yahoo/share/ssl/certs/");
+            command.withVolume("/opt/yahoo/share/ssl/certs", "/opt/yahoo/share/ssl/certs");
         }
 
         if (environment.getNodeType() == NodeType.host) {
@@ -142,8 +144,6 @@ public class DockerOperationsImpl implements DockerOperations {
 
         logger.info("Creating new container with args: " + command);
         command.create();
-
-        docker.createContainer(command);
     }
 
     void addEtcHosts(ContainerData containerData,
@@ -217,26 +217,6 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     /**
-     * Try to suspend node. Suspending a node means the node should be taken offline,
-     * such that maintenance can be done of the node (upgrading, rebooting, etc),
-     * and such that we will start serving again as soon as possible afterwards.
-     * <p>
-     * Any failures are logged and ignored.
-     */
-    @Override
-    public void trySuspendNode(ContainerName containerName) {
-        try {
-            // TODO: Change to waiting w/o timeout (need separate thread that we can stop).
-            executeCommandInContainer(containerName, nodeProgram, "suspend");
-        } catch (RuntimeException e) {
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-            // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
-            // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
-            logger.warning("Failed trying to suspend container " + containerName.asString(), e);
-        }
-    }
-
-    /**
      * For macvlan:
      * <p>
      * Due to a bug in docker (https://github.com/docker/libnetwork/issues/1443), we need to manually set
@@ -304,7 +284,6 @@ public class DockerOperationsImpl implements DockerOperations {
                     Arrays.toString(wrappedCommand), containerName.asString(), containerPid), e);
             throw new RuntimeException(e);
         }
-
     }
 
     @Override
@@ -323,7 +302,21 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public Optional<Docker.ContainerStats> getContainerStats(ContainerName containerName) {
+    public void trySuspendNode(ContainerName containerName) {
+        try {
+            executeCommandInContainer(containerName, nodeProgram, "suspend");
+        } catch (ContainerNotFoundException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
+            // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
+            // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
+            logger.warning("Failed trying to suspend container " + containerName.asString(), e);
+        }
+    }
+
+    @Override
+    public Optional<ContainerStats> getContainerStats(ContainerName containerName) {
         return docker.getContainerStats(containerName);
     }
 
@@ -332,9 +325,11 @@ public class DockerOperationsImpl implements DockerOperations {
         return docker.getAllContainersManagedBy(MANAGER_NAME);
     }
 
+    // TODO: Remove after migrating to host-admin
     @Override
     public void deleteUnusedDockerImages() {
-        docker.deleteUnusedDockerImages();
+        if (environment.isRunningOnHost()) return;
+        docker.deleteUnusedDockerImages(Collections.emptyList(), Duration.ofHours(1));
     }
 
     /**

@@ -196,6 +196,7 @@ class NodesResponse extends HttpResponse {
             case proxyhost: return "proxyhost";
             case config: return "config";
             case confighost: return "confighost";
+            case controller: return "controller";
             default:
                 throw new RuntimeException("New type added to enum, not implemented in NodesResponse: " + type.name());
         }

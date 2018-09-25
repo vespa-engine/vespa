@@ -27,12 +27,9 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,7 +50,6 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     private final Map<ApplicationId, Application> applications = new LinkedHashMap<>();
     private final Map<String, EndpointStatus> endpoints = new HashMap<>();
-    private final Map<URI, Version> versions = new HashMap<>();
     private final NodeRepositoryMock nodeRepository = new NodeRepositoryMock();
     private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
     private final Version initialVersion = new Version(6, 1, 0);

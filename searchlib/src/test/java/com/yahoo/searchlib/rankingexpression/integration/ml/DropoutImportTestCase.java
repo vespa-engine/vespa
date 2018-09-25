@@ -36,7 +36,7 @@ public class DropoutImportTestCase {
         assertEquals("join(join(imported_ml_function_test_outputs_BiasAdd, reduce(constant(test_outputs_Const), sum, d1), f(a,b)(a * b)), imported_ml_function_test_outputs_BiasAdd, f(a,b)(max(a,b)))",
                      output.getBody().getRoot().toString());
         model.assertEqualResult("X", output.getBody().getName());
-        assertEquals("{x=tensor(d0[],d1[784])}", output.getBody().toString());
+        assertEquals("{x=tensor(d0[],d1[784])}", output.argumentTypes().toString());
     }
 
 }

@@ -12,6 +12,9 @@
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <assert.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".vespalib.net.crypto_engine");
+
 namespace vespalib {
 
 namespace {
@@ -172,6 +175,8 @@ CryptoEngine::SP create_default_crypto_engine() {
     if (cfg_file.empty()) {
         return std::make_shared<NullCryptoEngine>();
     }
+
+    LOG(debug, "Using TLS crypto engine with config file '%s'", cfg_file.c_str());
     auto tls_opts = net::tls::read_options_from_json_file(cfg_file);
     return std::make_shared<TlsCryptoEngine>(*tls_opts);
 }

@@ -62,7 +62,7 @@ public class TensorFlowMnistSoftmaxImportTestCase {
         assertEquals("add", output.getBody().getName());
         assertEquals("join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(test_Variable_read), f(a,b)(a * b)), sum, d2), constant(test_Variable_1_read), f(a,b)(a + b))",
                      output.getBody().getRoot().toString());
-        assertEquals("{x=tensor(d0[],d1[784])}", output.getBody().toString());
+        assertEquals("{x=tensor(d0[],d1[784])}", output.argumentTypes().toString());
 
         // Test execution
         model.assertEqualResult("Placeholder", "MatMul");

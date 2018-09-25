@@ -2,7 +2,6 @@
 package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import org.osgi.framework.Bundle;
@@ -40,8 +39,6 @@ public class SchemaValidators {
     private static final String routingStandaloneXmlSchemaName = "routing-standalone.rnc";
 
 
-    private final DeployLogger deployLogger;
-
     private final SchemaValidator servicesXmlValidator;
     private final SchemaValidator hostsXmlValidator;
     private final SchemaValidator deploymentXmlValidator;
@@ -54,8 +51,7 @@ public class SchemaValidators {
      *
      * @param vespaVersion the version of Vespa we should validate against
      */
-    public SchemaValidators(Version vespaVersion, DeployLogger logger) {
-        this.deployLogger = logger;
+    public SchemaValidators(Version vespaVersion) {
         File schemaDir = null;
         try {
             schemaDir = saveSchemasFromJar(new File(SchemaValidators.schemaDirBase), vespaVersion);
@@ -73,15 +69,6 @@ public class SchemaValidators {
             if (schemaDir != null)
                 IOUtils.recursiveDeleteDir(schemaDir);
         }
-    }
-
-    /**
-     * Initializes the validator by using the given file as schema file
-     *
-     * @param vespaVersion the version of Vespa we should validate against
-     */
-    public SchemaValidators(Version vespaVersion) {
-        this(vespaVersion, new BaseDeployLogger());
     }
 
     public SchemaValidator servicesXmlValidator() {
@@ -104,7 +91,7 @@ public class SchemaValidators {
         return containerIncludeXmlValidator;
     }
 
-    public SchemaValidator routingStandaloneXmlValidator() {
+    SchemaValidator routingStandaloneXmlValidator() {
         return routingStandaloneXmlValidator;
     }
 
@@ -114,22 +101,20 @@ public class SchemaValidators {
      * @return the directory the schema files are stored in
      * @throws IOException if it is not possible to read schema files
      */
-    File saveSchemasFromJar(File tmpBase, Version vespaVersion) throws IOException {
+    private File saveSchemasFromJar(File tmpBase, Version vespaVersion) throws IOException {
         final Class<? extends SchemaValidators> schemaValidatorClass = this.getClass();
         final ClassLoader classLoader = schemaValidatorClass.getClassLoader();
         Enumeration<URL> uris = classLoader.getResources("schema");
         if (uris == null) return null;
         File tmpDir = java.nio.file.Files.createTempDirectory(tmpBase.toPath(), "vespa").toFile();
-        log.log(LogLevel.DEBUG, "Will save all XML schemas to " + tmpDir);
+        log.log(LogLevel.DEBUG, "Will save all XML schemas found in jar to " + tmpDir);
         while (uris.hasMoreElements()) {
             URL u = uris.nextElement();
             log.log(LogLevel.DEBUG, "uri for resource 'schema'=" + u.toString());
             if ("jar".equals(u.getProtocol())) {
                 JarURLConnection jarConnection = (JarURLConnection) u.openConnection();
                 JarFile jarFile = jarConnection.getJarFile();
-                for (Enumeration<JarEntry> entries = jarFile.entries();
-                     entries.hasMoreElements(); ) {
-
+                for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements(); ) {
                     JarEntry je = entries.nextElement();
                     if (je.getName().startsWith("schema/") && je.getName().endsWith(".rnc")) {
                         writeContentsToFile(tmpDir, je.getName(), jarFile.getInputStream(je));
@@ -168,7 +153,6 @@ public class SchemaValidators {
         return tmpDir;
     }
 
-    // TODO: This only copies schema for services.xml. Why?
     private static void copySchemas(File from, File to) throws IOException {
         // TODO: only copy .rnc files.
         if (! from.exists()) throw new IOException("Could not find schema source directory '" + from + "'");
@@ -187,7 +171,7 @@ public class SchemaValidators {
     private SchemaValidator createValidator(File schemaDir, String schemaFile) {
         try {
             File file = new File(schemaDir + File.separator + "schema" + File.separator + schemaFile);
-            return new SchemaValidator(file, deployLogger);
+            return new SchemaValidator(file, new BaseDeployLogger());
         } catch (SAXException e) {
             throw new RuntimeException("Invalid schema '" + schemaFile + "'", e);
         } catch (IOException e) {

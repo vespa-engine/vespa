@@ -5,7 +5,6 @@ import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.provision.*;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -19,13 +18,6 @@ public class StaticProvisioner implements HostProvisioner {
     
     /** The fallback provisioner to use for unknown clusters, or null to not fall back */
     private final HostProvisioner fallback;
-
-    /**
-     * Creates a static host provisioner with no fallback
-     */
-    public StaticProvisioner(AllocatedHosts allocatedHosts) {
-        this(allocatedHosts, null);
-    }
 
     /**
      * Creates a static host provisioner which will fall back to using the given provisioner

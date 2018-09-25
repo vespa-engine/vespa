@@ -2,23 +2,19 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 /**
+ * Metrics for a deployment of an application.
+ *
  * @author smorgrav
  */
 public class DeploymentMetrics {
+
+    public static final DeploymentMetrics none = new DeploymentMetrics(0, 0, 0, 0, 0);
 
     private final double queriesPerSecond;
     private final double writesPerSecond;
     private final double documentCount;
     private final double queryLatencyMillis;
     private final double writeLatencyMills;
-
-    DeploymentMetrics() {
-        this.queriesPerSecond = 0;
-        this.writesPerSecond = 0;
-        this.documentCount = 0;
-        this.queryLatencyMillis = 0;
-        this.writeLatencyMills = 0;
-    }
 
     public DeploymentMetrics(double queriesPerSecond, double writesPerSecond, double documentCount,
                              double queryLatencyMillis, double writeLatencyMills) {

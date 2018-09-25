@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
@@ -39,54 +40,37 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         Optional<String> version = path.segment(1);
         Optional<String> modelName = path.segment(2);
 
-        if ( ! apiName.isPresent() || ! apiName.get().equalsIgnoreCase(API_ROOT)) {
-            return new ErrorResponse(404, "unknown API");
-        }
-        if ( ! version.isPresent() || ! version.get().equalsIgnoreCase(VERSION_V1)) {
-            return new ErrorResponse(404, "unknown API version");
-        }
-        if ( ! modelName.isPresent()) {
-            return listAllModels(request);
-        }
-        if ( ! modelsEvaluator.models().containsKey(modelName.get())) {
-            // TODO: Replace by catching IllegalArgumentException and passing that error message
-            return new ErrorResponse(404, "no model with name '" + modelName.get() + "' found");
-        }
-
-        Model model = modelsEvaluator.models().get(modelName.get());
-
-        // The following logic follows from the spec, in that signature and
-        // output are optional if the model only has a single function.
-        // TODO: Try to avoid recreating that logic here
-
-        if (path.segments() == 3) {
-            if (model.functions().size() > 1) {
-                return listModelDetails(request, modelName.get());
+        try {
+            if ( ! apiName.isPresent() || ! apiName.get().equalsIgnoreCase(API_ROOT)) {
+                throw new IllegalArgumentException("unknown API");
             }
-            return listTypeDetails(request, modelName.get());
-        }
+            if ( ! version.isPresent() || ! version.get().equalsIgnoreCase(VERSION_V1)) {
+                throw new IllegalArgumentException("unknown API version");
+            }
+            if ( ! modelName.isPresent()) {
+                return listAllModels(request);
+            }
+            Model model = modelsEvaluator.requireModel(modelName.get());
 
-        if (path.segments() == 4) {
-            if ( ! path.segment(3).get().equalsIgnoreCase(EVALUATE)) {
-                return listTypeDetails(request, modelName.get(), path.segment(3).get());
+            Optional<Integer> evalSegment = path.lastIndexOf(EVALUATE);
+            String[] function = path.range(3, evalSegment);
+            if (evalSegment.isPresent()) {
+                return evaluateModel(request, model, function);
             }
-            if (model.functions().stream().anyMatch(f -> f.getName().equalsIgnoreCase(EVALUATE))) {
-                return listTypeDetails(request, modelName.get(), path.segment(3).get());  // model has a function "eval"
-            }
-            if (model.functions().size() <= 1) {
-                return evaluateModel(request, modelName.get());
-            }
-            // TODO: Replace by catching IllegalArgumentException and passing that error message
-            return new ErrorResponse(404, "attempt to evaluate model without specifying function");
-        }
+            return listModelInformation(request, model, function);
 
-        if (path.segments() == 5) {
-            if (path.segment(4).get().equalsIgnoreCase(EVALUATE)) {
-                return evaluateModel(request, modelName.get(), path.segment(3).get());
-            }
+        } catch (IllegalArgumentException e) {
+            return new ErrorResponse(404, e.getMessage());
         }
+    }
 
-        return new ErrorResponse(404, "unrecognized request");
+    private HttpResponse evaluateModel(HttpRequest request, Model model, String[] function)  {
+        FunctionEvaluator evaluator = model.evaluatorOf(function);
+        for (String bindingName : evaluator.context().names()) {
+            property(request, bindingName).ifPresent(s -> evaluator.bind(bindingName, Tensor.from(s)));
+        }
+        Tensor result = evaluator.evaluate();
+        return new Response(200, JsonFormat.encode(result));
     }
 
     private HttpResponse listAllModels(HttpRequest request) {
@@ -98,28 +82,33 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         return new Response(200, com.yahoo.slime.JsonFormat.toJsonBytes(slime));
     }
 
-    private HttpResponse listModelDetails(HttpRequest request, String modelName) {
-        Model model = modelsEvaluator.models().get(modelName);
+    private HttpResponse listModelInformation(HttpRequest request, Model model, String[] function) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        for (ExpressionFunction func : model.functions()) {
-            root.setString(func.getName(), baseUrl(request) + modelName + "/" + func.getName());
+        root.setString("model", model.name());
+        if (function.length == 0) {
+            listFunctions(request, model, root);
+        } else {
+            listFunctionDetails(request, model, function, root);
         }
         return new Response(200, com.yahoo.slime.JsonFormat.toJsonBytes(slime));
     }
 
-    private HttpResponse listTypeDetails(HttpRequest request, String modelName) {
-        return listTypeDetails(request, modelsEvaluator.evaluatorOf(modelName));
+    private void listFunctions(HttpRequest request, Model model, Cursor cursor) {
+        Cursor functions = cursor.setArray("functions");
+        for (ExpressionFunction func : model.functions()) {
+            Cursor function = functions.addObject();
+            listFunctionDetails(request, model, new String[] { func.getName() }, function);
+        }
     }
 
-    private HttpResponse listTypeDetails(HttpRequest request, String modelName, String signatureAndOutput) {
-        return listTypeDetails(request, modelsEvaluator.evaluatorOf(modelName, signatureAndOutput));
-    }
-
-    private HttpResponse listTypeDetails(HttpRequest request, FunctionEvaluator evaluator) {
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
-        Cursor bindings = root.setArray("bindings");
+    private void listFunctionDetails(HttpRequest request, Model model, String[] function, Cursor cursor) {
+        String compactedFunction = String.join(".", function);
+        FunctionEvaluator evaluator = model.evaluatorOf(function);
+        cursor.setString("function", compactedFunction);
+        cursor.setString("info", baseUrl(request) + model.name() + "/" + compactedFunction);
+        cursor.setString("eval", baseUrl(request) + model.name() + "/" + compactedFunction + "/" + EVALUATE);
+        Cursor bindings = cursor.setArray("bindings");
         for (String bindingName : evaluator.context().names()) {
             // TODO: Use an API which exposes only the external binding names instead of this
             if (bindingName.startsWith("constant(")) {
@@ -129,26 +118,9 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
                 continue;
             }
             Cursor binding = bindings.addObject();
-            binding.setString("name", bindingName);
+            binding.setString("binding", bindingName);
             binding.setString("type", "");  // TODO: implement type information when available
         }
-        return new Response(200, com.yahoo.slime.JsonFormat.toJsonBytes(slime));
-    }
-
-    private HttpResponse evaluateModel(HttpRequest request, String modelName)  {
-        return evaluateModel(request, modelsEvaluator.evaluatorOf(modelName));
-    }
-
-    private HttpResponse evaluateModel(HttpRequest request, String modelName, String signatureAndOutput)  {
-        return evaluateModel(request, modelsEvaluator.evaluatorOf(modelName, signatureAndOutput));
-    }
-
-    private HttpResponse evaluateModel(HttpRequest request, FunctionEvaluator evaluator)  {
-        for (String bindingName : evaluator.context().names()) {
-            property(request, bindingName).ifPresent(s -> evaluator.bind(bindingName, Tensor.from(s)));
-        }
-        Tensor result = evaluator.evaluate();
-        return new Response(200, JsonFormat.encode(result));
     }
 
     private Optional<String> property(HttpRequest request, String name) {
@@ -178,8 +150,17 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
             return (index < 0 || index >= segments.length) ? Optional.empty() : Optional.of(segments[index]);
         }
 
-        int segments() {
-            return segments.length;
+        Optional<Integer> lastIndexOf(String segment) {
+            for (int i = segments.length - 1; i >= 0; --i) {
+                if (segments[i].equalsIgnoreCase(segment)) {
+                    return Optional.of(i);
+                }
+            }
+            return Optional.empty();
+        }
+
+        public String[] range(int start, Optional<Integer> end) {
+            return Arrays.copyOfRange(segments, start, end.isPresent() ? end.get() : segments.length);
         }
 
         private static String[] splitPath(HttpRequest request) {

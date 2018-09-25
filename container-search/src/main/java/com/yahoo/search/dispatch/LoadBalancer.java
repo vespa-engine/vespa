@@ -26,17 +26,14 @@ public class LoadBalancer {
 
     private static final CompoundName QUERY_NODE_GROUP_AFFINITY = new CompoundName("dispatch.group.affinity");
 
-    private final boolean isInternallyDispatchable;
     private final List<GroupSchedule> scoreboard;
     private int needle = 0;
 
     public LoadBalancer(SearchCluster searchCluster) {
         if (searchCluster == null) {
-            this.isInternallyDispatchable = false;
             this.scoreboard = null;
             return;
         }
-        this.isInternallyDispatchable = (searchCluster.groupSize() == 1);
         this.scoreboard = new ArrayList<>(searchCluster.groups().size());
 
         for (Group group : searchCluster.groups().values()) {
@@ -53,7 +50,7 @@ public class LoadBalancer {
      * @return The node group to target, or <i>empty</i> if the internal dispatch logic cannot be used
      */
     public Optional<Group> takeGroupForQuery(Query query) {
-        if (!isInternallyDispatchable) {
+        if (scoreboard == null) {
             return Optional.empty();
         }
 

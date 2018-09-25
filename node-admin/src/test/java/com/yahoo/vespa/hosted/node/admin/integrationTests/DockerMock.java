@@ -4,11 +4,13 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
+import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -69,13 +71,6 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public void createContainer(CreateContainerCommand createContainerCommand) {
-        synchronized (monitor) {
-            callOrderVerifier.add("createContainer with " + createContainerCommand.toString());
-        }
-    }
-
-    @Override
     public void startContainer(ContainerName containerName) {
         synchronized (monitor) {
             callOrderVerifier.add("startContainer with " + containerName);
@@ -116,13 +111,8 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public void deleteImage(DockerImage dockerImage) {
-
-    }
-
-    @Override
-    public void deleteUnusedDockerImages() {
-
+    public boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
+        return false;
     }
 
     @Override

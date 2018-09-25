@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.test;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -46,6 +47,7 @@ public class VespaModelTester {
     private boolean hosted = true;
     private Map<String, Collection<Host>> hostsByFlavor = new HashMap<>();
     private ApplicationId applicationId = ApplicationId.defaultId();
+    private boolean useDedicatedNodeForLogserver = false;
 
     public VespaModelTester() {
         this(new NullConfigModelRegistry());
@@ -92,6 +94,10 @@ public class VespaModelTester {
         applicationId = ApplicationId.from(tenant, applicationName, instanceName);
     }
 
+    public void useDedicatedNodeForLogserver(boolean useDedicatedNodeForLogserver) {
+        this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
+    }
+
     /** Creates a model which uses 0 as start index and fails on out of capacity */
     public VespaModel createModel(String services, String ... retiredHostNames) {
         return createModel(Zone.defaultZone(), services, true, retiredHostNames);
@@ -131,6 +137,7 @@ public class VespaModelTester {
         DeployProperties properties = new DeployProperties.Builder()
                 .hostedVespa(hosted)
                 .applicationId(applicationId)
+                .useDedicatedNodeForLogserver(useDedicatedNodeForLogserver)
                 .build();
 
         DeployState deployState = new DeployState.Builder()

@@ -80,7 +80,8 @@ DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::~DocumentStoreMetri
 
 DocumentDBTaggedMetrics::AttributeMetrics::AttributeMetrics(MetricSet *parent)
     : MetricSet("attribute", "", "Attribute vector metrics for this document db", parent),
-      resourceUsage(this)
+      resourceUsage(this),
+      totalMemoryUsage(this)
 {
 }
 
@@ -222,6 +223,17 @@ DocumentDBTaggedMetrics::SessionCacheMetrics::SessionCacheMetrics(metrics::Metri
 
 DocumentDBTaggedMetrics::SessionCacheMetrics::~SessionCacheMetrics() = default;
 
+DocumentDBTaggedMetrics::DocumentsMetrics::DocumentsMetrics(metrics::MetricSet *parent)
+    : metrics::MetricSet("documents", "", "Metrics for various document counts in this document db", parent),
+      active("active", "", "The number of active / searchable documents in this document db", this),
+      ready("ready", "", "The number of ready documents in this document db", this),
+      total("total", "", "The total number of documents in this documents db (ready + not-ready)", this),
+      removed("removed", "", "The number of removed documents in this document db", this)
+{
+}
+
+DocumentDBTaggedMetrics::DocumentsMetrics::~DocumentsMetrics() = default;
+
 DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docTypeName)
     : MetricSet("documentdb", {{"documenttype", docTypeName}}, "Document DB metrics", nullptr),
       job(this),
@@ -232,7 +244,10 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docType
       removed("removed", this),
       threadingService("threading_service", this),
       matching(this),
-      sessionCache(this)
+      sessionCache(this),
+      documents(this),
+      totalMemoryUsage(this),
+      totalDiskUsage("disk_usage", "", "The total disk usage (in bytes) for this document db", this)
 {
 }
 

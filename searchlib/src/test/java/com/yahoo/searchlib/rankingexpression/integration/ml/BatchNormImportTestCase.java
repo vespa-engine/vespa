@@ -25,7 +25,7 @@ public class BatchNormImportTestCase {
         assertNotNull(output);
         assertEquals("dnn/batch_normalization_3/batchnorm/add_1", output.getBody().getName());
         model.assertEqualResult("X", output.getBody().getName());
-        assertEquals("{x=tensor(d0[],d1[784])}", output.arguments().toString());
+        assertEquals("{x=tensor(d0[],d1[784])}", output.argumentTypes().toString());
     }
 
 }

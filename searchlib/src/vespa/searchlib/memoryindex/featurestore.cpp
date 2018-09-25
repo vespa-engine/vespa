@@ -11,8 +11,7 @@ constexpr size_t MIN_CLUSTERS = 1024u;
 using index::SchemaUtil;
 
 uint64_t
-FeatureStore::writeFeatures(uint32_t packedIndex,
-                            const DocIdAndFeatures &features)
+FeatureStore::writeFeatures(uint32_t packedIndex, const DocIdAndFeatures &features)
 {
     _f._fieldsParams = &_fieldsParams[packedIndex];
     uint64_t oldOffset = _f.getWriteOffset();
@@ -90,8 +89,7 @@ FeatureStore::FeatureStore(const Schema &schema)
     _fieldsParams.resize(_schema.getNumIndexFields());
     SchemaUtil::IndexIterator it(_schema);
     for(; it.isValid(); ++it) {
-        _fieldsParams[it.getIndex()].
-            setSchemaParams(_schema, it.getIndex());
+        _fieldsParams[it.getIndex()].setSchemaParams(_schema, it.getIndex());
     }
     _store.addType(&_type);
     _store.initActiveBuffers();
@@ -105,8 +103,7 @@ FeatureStore::~FeatureStore()
 
 
 std::pair<datastore::EntryRef, uint64_t>
-FeatureStore::addFeatures(uint32_t packedIndex,
-                          const DocIdAndFeatures &features)
+FeatureStore::addFeatures(uint32_t packedIndex, const DocIdAndFeatures &features)
 {
     uint64_t oldOffset = writeFeatures(packedIndex, features);
     uint64_t newOffset = _f.getWriteOffset();
@@ -117,8 +114,7 @@ FeatureStore::addFeatures(uint32_t packedIndex,
 
 
 void
-FeatureStore::getFeatures(uint32_t packedIndex, datastore::EntryRef ref,
-                          DocIdAndFeatures &features)
+FeatureStore::getFeatures(uint32_t packedIndex, datastore::EntryRef ref, DocIdAndFeatures &features)
 {
     setupForField(packedIndex, _d);
     setupForReadFeatures(ref, _d);
@@ -141,8 +137,7 @@ FeatureStore::bitSize(uint32_t packedIndex, datastore::EntryRef ref)
 
 
 datastore::EntryRef
-FeatureStore::moveFeatures(uint32_t packedIndex,
-                           datastore::EntryRef ref)
+FeatureStore::moveFeatures(uint32_t packedIndex, datastore::EntryRef ref)
 {
     uint64_t bitLen = bitSize(packedIndex, ref);
     return moveFeatures(ref, bitLen);

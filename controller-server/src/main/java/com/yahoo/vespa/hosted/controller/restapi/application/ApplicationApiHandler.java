@@ -52,7 +52,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
@@ -64,6 +63,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
@@ -89,7 +89,6 @@ import java.security.Principal;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -443,10 +442,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             deploymentObject.setString("environment", deployment.zone().environment().value());
             deploymentObject.setString("region", deployment.zone().region().value());
             deploymentObject.setString("instance", application.id().instance().value()); // pointless
-            controller.applications().rotationRepository().getRotation(application).ifPresent(rotation -> {
-                Map<String, RotationStatus> rotationHealthStatus = controller.rotationStatus(rotation);
-                setRotationStatus(deployment, rotationHealthStatus, deploymentObject);
-            });
+            if (application.rotation().isPresent() && deployment.zone().environment() == Environment.prod) {
+                toSlime(application.rotationStatus(deployment), deploymentObject);
+            }
 
             if (recurseOverDeployments(request)) // List full deployment information when recursive.
                 toSlime(deploymentObject, new DeploymentId(application.id(), deployment.zone()), deployment, request);
@@ -557,6 +555,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("gitCommit", revision.get().commit());
     }
 
+    private void toSlime(RotationStatus status, Cursor object) {
+        Cursor bcpStatus = object.setObject("bcpStatus");
+        bcpStatus.setString("rotationStatus", status.name().toUpperCase());
+    }
+
     private URI monitoringSystemUri(DeploymentId deploymentId) {
         return controller.zoneRegistry().getMonitoringSystemUri(deploymentId);
     }
@@ -617,24 +620,18 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse rotationStatus(String tenantName, String applicationName, String instanceName, String environment, String region) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
         Application application = controller.applications().require(applicationId);
+        ZoneId zone = ZoneId.from(environment, region);
         if (!application.rotation().isPresent()) {
-            throw new NotExistsException("global rotation does not exist for '" + environment + "." + region + "'");
+            throw new NotExistsException("global rotation does not exist for " + application);
+        }
+        Deployment deployment = application.deployments().get(zone);
+        if (deployment == null) {
+            throw new NotExistsException(application + " has no deployment in " + zone);
         }
 
         Slime slime = new Slime();
         Cursor response = slime.setObject();
-
-        Map<String, RotationStatus> rotationStatus = controller.applications().rotationRepository()
-                                                               .getRotation(application)
-                                                               .map(controller::rotationStatus)
-                                                               .orElseGet(Collections::emptyMap);
-        for (String rotationEndpoint : rotationStatus.keySet()) {
-            if (rotationEndpoint.contains(toDns(environment)) && rotationEndpoint.contains(toDns(region))) {
-                Cursor bcpStatusObject = response.setObject("bcpStatus");
-                bcpStatusObject.setString("rotationStatus", rotationStatus.getOrDefault(rotationEndpoint, RotationStatus.UNKNOWN).name());
-            }
-        }
-
+        toSlime(application.rotationStatus(deployment), response);
         return new SlimeJsonResponse(slime);
     }
 
@@ -989,28 +986,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         catch (URISyntaxException e) {
             throw new RuntimeException("Will not happen", e);
         }
-    }
-
-    private void setRotationStatus(Deployment deployment, Map<String, RotationStatus> healthStatus, Cursor object) {
-        if ( ! deployment.zone().environment().equals(Environment.prod)) return;
-
-        Cursor bcpStatusObject = object.setObject("bcpStatus");
-        bcpStatusObject.setString("rotationStatus", findRotationStatus(deployment, healthStatus).name());
-    }
-
-    private RotationStatus findRotationStatus(Deployment deployment, Map<String, RotationStatus> healthStatus) {
-        for (String endpoint : healthStatus.keySet()) {
-            if (endpoint.contains(toDns(deployment.zone().environment().value())) &&
-                endpoint.contains(toDns(deployment.zone().region().value()))) {
-                return healthStatus.getOrDefault(endpoint, RotationStatus.UNKNOWN);
-            }
-        }
-
-        return RotationStatus.UNKNOWN;
-    }
-
-    private String toDns(String id) {
-        return id.replace('_', '-');
     }
 
     private long asLong(String valueOrNull, long defaultWhenNull) {
