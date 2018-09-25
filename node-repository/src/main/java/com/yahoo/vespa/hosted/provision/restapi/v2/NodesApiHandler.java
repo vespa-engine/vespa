@@ -230,12 +230,13 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private static NodeType nodeTypeFromSlime(Inspector object) {
         if (! object.valid()) return NodeType.tenant; // default
         switch (object.asString()) {
-            case "tenant" : return NodeType.tenant;
-            case "host" : return NodeType.host;
-            case "proxy" : return NodeType.proxy;
-            case "proxyhost" : return NodeType.proxyhost;
-            case "config" : return NodeType.config;
-            case "confighost" : return NodeType.confighost;
+            case "tenant": return NodeType.tenant;
+            case "host": return NodeType.host;
+            case "proxy": return NodeType.proxy;
+            case "proxyhost": return NodeType.proxyhost;
+            case "config": return NodeType.config;
+            case "confighost": return NodeType.confighost;
+            case "controller": return NodeType.controller;
             default: throw new IllegalArgumentException("Unknown node type '" + object.asString() + "'");
         }
     }
