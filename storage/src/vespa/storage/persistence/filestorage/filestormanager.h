@@ -14,7 +14,6 @@
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/persistence/spi/persistenceprovider.h>
-#include <vespa/persistence/spi/metricpersistenceprovider.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/common/servicelayercomponent.h>
@@ -56,7 +55,6 @@ class FileStorManager : public StorageLinkQueued,
     const spi::PartitionStateList& _partitions;
     spi::PersistenceProvider& _providerCore;
     ProviderErrorWrapper _providerErrorWrapper;
-    spi::MetricPersistenceProvider::UP _providerMetric;
     spi::PersistenceProvider* _provider;
     
     const document::BucketIdFactory& _bucketIdFactory;
