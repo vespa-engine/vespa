@@ -34,16 +34,16 @@ public class GetDocSumsPacketTestCase {
     @Test
     public void testEncodingWithQuery() throws BufferTooSmallException {
         Hit hit = new FastHit();
-        assertPacket(true, hit, new byte[] {0, 0, 0, 57, 0, 0, 0, -37, 0, 0, 40, 21, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
+        assertPacket(true, hit, new byte[] {0, 0, 0, 53, 0, 0, 0, -37, 0, 0, 8, 21, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
                 IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x03, 0, 0, 0, 7,
-                100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 1, 0, 0, 0, 6, 4, 0, 3, 102, 111, 111, 0, 0, 0, 2});
+                100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 1, 0, 0, 0, 6, 4, 0, 3, 102, 111, 111});
     }
 
     @Test
     public void testEncodingWithoutQuery() throws BufferTooSmallException {
         Hit hit = new FastHit();
-        assertPacket(false, hit, new byte[] { 0, 0, 0, 43, 0, 0, 0, -37, 0, 0, 40, 17, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
-                IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x03, 0, 0, 0, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 2
+        assertPacket(false, hit, new byte[] { 0, 0, 0, 39, 0, 0, 0, -37, 0, 0, 8, 17, 0, 0, 0, 0, IGNORE, IGNORE, IGNORE,
+                IGNORE, 7, 100, 101, 102, 97, 117, 108, 116, 0, 0, 0, 0x03, 0, 0, 0, 7, 100, 101, 102, 97, 117, 108, 116
         });
     }
 
@@ -56,7 +56,7 @@ public class GetDocSumsPacketTestCase {
         result.hits().add(hit);
         ByteBuffer answer = ByteBuffer.allocate(1024);
         //assertEquals(0, sessionId.asUtf8String().getByteLength());
-        answer.put(new byte[] { 0, 0, 0, (byte)(107+sessionId.asUtf8String().getByteLength()), 0, 0, 0, -37, 0, 0, 56, 17, 0, 0, 0, 0,
+        answer.put(new byte[] { 0, 0, 0, (byte)(103+sessionId.asUtf8String().getByteLength()), 0, 0, 0, -37, 0, 0, 24, 17, 0, 0, 0, 0,
                 // query timeout
                 IGNORE, IGNORE, IGNORE, IGNORE,
                 // "default" - rank profile
@@ -72,9 +72,7 @@ public class GetDocSumsPacketTestCase {
         answer.put(new byte [] {
                 // caches: features => true
                 0, 0, 0, 6, 'c', 'a', 'c', 'h', 'e', 's',
-                0, 0, 0, 1, 0, 0, 0, 5, 'q', 'u', 'e', 'r', 'y', 0, 0, 0, 4, 't', 'r', 'u', 'e',
-                // flags
-                0, 0, 0, 2});
+                0, 0, 0, 1, 0, 0, 0, 5, 'q', 'u', 'e', 'r', 'y', 0, 0, 0, 4, 't', 'r', 'u', 'e'});
         byte [] expected = new byte [answer.position()];
         answer.flip();
         answer.get(expected);

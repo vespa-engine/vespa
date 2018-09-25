@@ -106,8 +106,7 @@ enum getdocsums_features {
 
 
 enum getdocsums_flags {
-    GDFLAG_IGNORE_ROW         = 0x00000001,
-    GDFLAG_ALLOW_SLIME_NOTUSED = 0x00000002 // TODO: remove in Vespa 7
+    GDFLAG_IGNORE_ROW         = 0x00000001
 };
 
 // docsum class for slime tunneling
