@@ -68,6 +68,21 @@ public class Acl {
         return Collections.unmodifiableList(rules);
     }
 
+    public List<String> getTrustedNodes(IPVersion ipVersion) {
+        return trustedNodes.stream()
+                .filter(ipVersion::match)
+                .map(InetAddresses::toAddrString)
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    public List<String> getTrustedPorts(IPVersion ipVersion) {
+        return trustedPorts.stream()
+                .map(Object::toString)
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

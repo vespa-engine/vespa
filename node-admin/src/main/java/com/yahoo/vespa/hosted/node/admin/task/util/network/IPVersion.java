@@ -10,12 +10,13 @@ import java.net.InetAddress;
  */
 public enum IPVersion {
 
-    IPv6("ip6tables", "ip -6", "ipv6-icmp", "/128", "icmp6-port-unreachable", "ip6tables-restore"),
-    IPv4("iptables", "ip", "icmp", "/32", "icmp-port-unreachable", "iptables-restore");
+    IPv6(6, "ip6tables", "ip -6", "ipv6-icmp", "/128", "icmp6-port-unreachable", "ip6tables-restore"),
+    IPv4(4, "iptables", "ip", "icmp", "/32", "icmp-port-unreachable", "iptables-restore");
 
-    IPVersion(String iptablesCmd, String ipCmd,
+    IPVersion(int version, String iptablesCmd, String ipCmd,
               String icmpProtocol, String singleHostCidr, String icmpPortUnreachable,
               String iptablesRestore) {
+        this.version = version;
         this.ipCmd = ipCmd;
         this.iptablesCmd = iptablesCmd;
         this.icmpProtocol = icmpProtocol;
@@ -24,6 +25,7 @@ public enum IPVersion {
         this.iptablesRestore = iptablesRestore;
     }
 
+    private final int version;
     private final String iptablesCmd;
     private final String ipCmd;
     private final String icmpProtocol;
@@ -31,6 +33,12 @@ public enum IPVersion {
     private final String icmpPortUnreachable;
     private final String iptablesRestore;
 
+    public int version() {
+        return version;
+    }
+    public String versionString() {
+        return String.valueOf(version);
+    }
     public String iptablesCmd() {
         return iptablesCmd;
     }
