@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.yolean.Exceptions;
 
-import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -20,7 +19,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,6 +29,7 @@ import java.util.logging.Logger;
  * update applications with this info.
  *
  * @author smorgrav
+ * @author mpolden
  */
 public class DeploymentMetricsMaintainer extends Maintainer {
 
@@ -45,7 +46,8 @@ public class DeploymentMetricsMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        AtomicBoolean hasWarned = new AtomicBoolean(false);
+        AtomicInteger failures = new AtomicInteger(0);
+        AtomicReference<Exception> lastException = new AtomicReference<>(null);
         List<Application> applicationList = ApplicationList.from(applications.asList()).notPullRequest().asList();
 
         // Run parallel stream inside a custom ForkJoinPool so that we can control the number of threads used
@@ -72,17 +74,22 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                                 applications.store(locked.with(deployment.zone(), newMetrics)
                                                          .recordActivityAt(controller().clock().instant(), deployment.zone())));
                     }
-                } catch (UncheckedIOException e) {
-                    if (!hasWarned.getAndSet(true)) {// produce only one warning per maintenance interval
-                        log.log(Level.WARNING, "Failed to query metrics service: " + Exceptions.toMessageString(e) +
-                                               ". Retrying in " + maintenanceInterval());
-                    }
+                } catch (Exception e) {
+                    failures.incrementAndGet();
+                    lastException.set(e);
                 }
             });
         });
         pool.shutdown();
         try {
             pool.awaitTermination(30, TimeUnit.MINUTES);
+            if (lastException.get() != null) {
+                log.log(Level.WARNING, String.format("Failed to query metrics service for %d/%d applications. Last error: %s. Retrying in %s",
+                                                     failures.get(),
+                                                     applicationList.size(),
+                                                     Exceptions.toMessageString(lastException.get()),
+                                                     maintenanceInterval()));
+            }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
