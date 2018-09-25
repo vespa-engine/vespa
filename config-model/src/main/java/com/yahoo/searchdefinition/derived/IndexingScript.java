@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig.Ilscript.Builder;
@@ -22,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -34,11 +34,16 @@ import java.util.Set;
  */
 public final class IndexingScript extends Derived implements IlscriptsConfig.Producer {
 
-    private final List<String> docFields = new LinkedList<>();
-    private final List<Expression> expressions = new LinkedList<>();
+    private final List<String> docFields = new ArrayList<>();
+    private final List<Expression> expressions = new ArrayList<>();
 
     public IndexingScript(Search search) {
         derive(search);
+    }
+
+    private boolean hasFullIndexingDocprocRights(ImmutableSDField field) {
+        Attribute self = field.getAttributes().get(field.getName());
+        return (!field.isExtraField() || ((self != null) && self.isMutable()));
     }
 
     @Override
@@ -46,7 +51,7 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
         if (field.isImportedField()) {
             return;
         }
-        if (!field.isExtraField()) {
+        if (hasFullIndexingDocprocRights(field)) {
             docFields.add(field.getName());
         }
         if (field.usesStructOrMap() &&
@@ -75,9 +80,7 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
     public void getConfig(IlscriptsConfig.Builder configBuilder) {
         IlscriptsConfig.Ilscript.Builder ilscriptBuilder = new IlscriptsConfig.Ilscript.Builder();
         ilscriptBuilder.doctype(getName());
-        for (String fieldName : docFields) {
-            ilscriptBuilder.docfield(fieldName);
-        }
+        ilscriptBuilder.docfield(docFields);
         addContentInOrder(ilscriptBuilder);
         configBuilder.ilscript(ilscriptBuilder);
     }
@@ -102,9 +105,9 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
     }
 
     private void generateSyntheticStatementsForUntouchedFields(Builder ilscriptBuilder, Set<String> touchedFields) {
-        Set<String> fieldsWithSyntheticStatements = new HashSet<String>(docFields);
+        Set<String> fieldsWithSyntheticStatements = new HashSet<>(docFields);
         fieldsWithSyntheticStatements.removeAll(touchedFields);
-        List<String> orderedFields = new ArrayList<String>(fieldsWithSyntheticStatements);
+        List<String> orderedFields = new ArrayList<>(fieldsWithSyntheticStatements);
         Collections.sort(orderedFields);
         for (String fieldName : orderedFields) {
             StatementExpression copyField = new StatementExpression(new InputExpression(fieldName),
