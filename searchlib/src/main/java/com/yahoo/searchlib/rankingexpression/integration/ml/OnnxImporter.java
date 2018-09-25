@@ -2,7 +2,6 @@
 
 package com.yahoo.searchlib.rankingexpression.integration.ml;
 
-import com.yahoo.io.IOUtils;
 import com.yahoo.searchlib.rankingexpression.integration.ml.importer.IntermediateGraph;
 import com.yahoo.searchlib.rankingexpression.integration.ml.importer.onnx.GraphImporter;
 import onnx.Onnx;

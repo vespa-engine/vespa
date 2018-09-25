@@ -7,39 +7,44 @@ import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+import java.util.Map;
+
 /**
- * Validates the types of all ranking expressions under a search instance:
+ * Resolves and assigns types to all functions in a ranking expression, and
+ * validates the types of all ranking expressions under a search instance:
  * Some operators constrain the types of inputs, and first-and second-phase expressions
- * must return scalar values. In addition, the existence of all referred attribute, query and constant
+ * must return scalar values.
+ *
+ * In addition, the existence of all referred attribute, query and constant
  * features is ensured.
  *
  * @author bratseth
  */
-public class RankingExpressionTypeValidator extends Processor {
+public class RankingExpressionTypeResolver extends Processor {
 
     private final QueryProfileRegistry queryProfiles;
 
-    public RankingExpressionTypeValidator(Search search,
-                                          DeployLogger deployLogger,
-                                          RankProfileRegistry rankProfileRegistry,
-                                          QueryProfiles queryProfiles) {
+    public RankingExpressionTypeResolver(Search search,
+                                         DeployLogger deployLogger,
+                                         RankProfileRegistry rankProfileRegistry,
+                                         QueryProfiles queryProfiles) {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
         this.queryProfiles = queryProfiles.getRegistry();
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        if ( ! validate) return;
         if (documentsOnly) return;
 
         for (RankProfile profile : rankProfileRegistry.rankProfilesOf(search)) {
             try {
-                validate(profile);
+                resolveTypesIn(profile, validate);
             }
             catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("In " + search + ", " + profile, e);
@@ -47,20 +52,34 @@ public class RankingExpressionTypeValidator extends Processor {
         }
     }
 
-    /** Throws an IllegalArgumentException if the given rank profile does not produce valid type */
-    private void validate(RankProfile profile) {
-        TypeContext context = profile.typeContext(queryProfiles);
-        profile.getSummaryFeatures().forEach(f -> ensureValid(f, "summary feature " + f, context));
-        ensureValidDouble(profile.getFirstPhaseRanking(), "first-phase expression", context);
-        ensureValidDouble(profile.getSecondPhaseRanking(), "second-phase expression", context);
+    /**
+     * Resolves the types of all functions in the given profile
+     *
+     * @throws IllegalArgumentException if validate is true and the given rank profile does not produce valid types
+     */
+    private void resolveTypesIn(RankProfile profile, boolean validate) {
+        TypeContext<Reference> context = profile.typeContext(queryProfiles);
+        for (Map.Entry<String, RankProfile.RankingExpressionFunction> function : profile.getFunctions().entrySet()) {
+            if ( ! function.getValue().function().arguments().isEmpty()) continue;
+            TensorType type = resolveType(function.getValue().function().getBody(),
+                                          "function '" + function.getKey() + "'",
+                                          context);
+            function.getValue().setReturnType(type);
+        }
+
+        if (validate) {
+            profile.getSummaryFeatures().forEach(f -> resolveType(f, "summary feature " + f, context));
+            ensureValidDouble(profile.getFirstPhaseRanking(), "first-phase expression", context);
+            ensureValidDouble(profile.getSecondPhaseRanking(), "second-phase expression", context);
+        }
     }
 
-    private TensorType ensureValid(RankingExpression expression, String expressionDescription, TypeContext context) {
+    private TensorType resolveType(RankingExpression expression, String expressionDescription, TypeContext context) {
         if (expression == null) return null;
-        return ensureValid(expression.getRoot(), expressionDescription, context);
+        return resolveType(expression.getRoot(), expressionDescription, context);
     }
 
-    private TensorType ensureValid(ExpressionNode expression, String expressionDescription, TypeContext context) {
+    private TensorType resolveType(ExpressionNode expression, String expressionDescription, TypeContext context) {
         TensorType type;
         try {
             type = expression.type(context);
@@ -75,7 +94,7 @@ public class RankingExpressionTypeValidator extends Processor {
 
     private void ensureValidDouble(RankingExpression expression, String expressionDescription, TypeContext context) {
         if (expression == null) return;
-        TensorType type = ensureValid(expression, expressionDescription, context);
+        TensorType type = resolveType(expression, expressionDescription, context);
         if ( ! type.equals(TensorType.empty))
             throw new IllegalArgumentException("The " + expressionDescription + " must produce a double " +
                                                "(a tensor with no dimensions), but produces " + type);

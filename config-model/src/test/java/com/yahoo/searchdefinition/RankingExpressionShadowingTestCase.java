@@ -211,12 +211,16 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                      censorBindingHash(testRankProperties.get(1).toString()));
         assertEquals("(rankingExpression(hidden_layer).rankingScript,rankingExpression(relu@))",
                      censorBindingHash(testRankProperties.get(2).toString()));
+        assertEquals("(rankingExpression(hidden_layer).type,tensor(x[]))",
+                     censorBindingHash(testRankProperties.get(3).toString()));
         assertEquals("(rankingExpression(final_layer).rankingScript,sigmoid(reduce(rankingExpression(hidden_layer) * constant(W_final), sum, hidden) + constant(b_final)))",
-                     testRankProperties.get(3).toString());
-        assertEquals("(vespa.rank.secondphase,rankingExpression(secondphase))",
                      testRankProperties.get(4).toString());
-        assertEquals("(rankingExpression(secondphase).rankingScript,reduce(rankingExpression(final_layer), sum))",
+        assertEquals("(rankingExpression(final_layer).type,tensor(x[]))",
                      testRankProperties.get(5).toString());
+        assertEquals("(vespa.rank.secondphase,rankingExpression(secondphase))",
+                     testRankProperties.get(6).toString());
+        assertEquals("(rankingExpression(secondphase).rankingScript,reduce(rankingExpression(final_layer), sum))",
+                     testRankProperties.get(7).toString());
     }
 
     private QueryProfileRegistry queryProfileWith(String field, String type) {

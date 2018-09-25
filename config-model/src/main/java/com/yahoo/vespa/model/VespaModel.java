@@ -32,7 +32,9 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstants;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RankProfileList;
+import com.yahoo.searchdefinition.processing.Processing;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
+import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.ml.ConvertedModel;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
@@ -168,7 +170,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
         createGlobalRankProfiles(deployState.getImportedModels(),
                                  deployState.rankProfileRegistry(),
-                                 deployState.getQueryProfiles().getRegistry());
+                                 deployState.getQueryProfiles());
         this.rankProfileList = new RankProfileList(null, // null search -> global
                                                    rankingConstants,
                                                    AttributeFields.empty,
@@ -219,26 +221,23 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     /** Adds generic application specific clusters of services */
     private void addServiceClusters(ApplicationPackage app, VespaModelBuilder builder) {
-        for (ServiceCluster sc : builder.getClusters(app, this))
-            serviceClusters.add(sc);
+        serviceClusters.addAll(builder.getClusters(app, this));
     }
 
     /**
-     * Creates a rank profile not attached to any search definition, for each imported model in the application package
+     * Creates a rank profile not attached to any search definition, for each imported model in the application package,
+     * and adds it to the given rank profile registry.
      */
-    private ImmutableList<RankProfile> createGlobalRankProfiles(ImportedModels importedModels,
-                                                                RankProfileRegistry rankProfileRegistry,
-                                                                QueryProfileRegistry queryProfiles) {
-        List<RankProfile> profiles = new ArrayList<>();
+    private void createGlobalRankProfiles(ImportedModels importedModels,
+                                          RankProfileRegistry rankProfileRegistry,
+                                          QueryProfiles queryProfiles) {
         if ( ! importedModels.all().isEmpty()) { // models/ directory is available
             for (ImportedModel model : importedModels.all()) {
                 RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry);
                 rankProfileRegistry.add(profile);
                 ConvertedModel convertedModel = ConvertedModel.fromSource(new ModelName(model.name()),
-                                                                          model.name(), profile, queryProfiles, model);
-                for (Map.Entry<String, RankingExpression> entry : convertedModel.expressions().entrySet()) {
-                    profile.addFunction(new ExpressionFunction(entry.getKey(), entry.getValue()), false);
-                }
+                                                                          model.name(), profile, queryProfiles.getRegistry(), model);
+                convertedModel.expressions().values().forEach(f -> profile.addFunction(f, false));
             }
         }
         else { // generated and stored model information may be available instead
@@ -248,12 +247,12 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                 RankProfile profile = new RankProfile(modelName, this, rankProfileRegistry);
                 rankProfileRegistry.add(profile);
                 ConvertedModel convertedModel = ConvertedModel.fromStore(new ModelName(modelName), modelName, profile);
-                for (Map.Entry<String, RankingExpression> entry : convertedModel.expressions().entrySet()) {
-                    profile.addFunction(new ExpressionFunction(entry.getKey(), entry.getValue()), false);
-                }
+                convertedModel.expressions().values().forEach(f -> profile.addFunction(f, false));
             }
         }
-        return ImmutableList.copyOf(profiles);
+        new Processing().processRankProfiles(deployState.getDeployLogger(),
+                                             rankProfileRegistry,
+                                             queryProfiles, true, false);
     }
 
     /** Returns the global rank profiles as a rank profile list */

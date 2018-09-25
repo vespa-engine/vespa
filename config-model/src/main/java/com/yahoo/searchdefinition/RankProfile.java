@@ -449,7 +449,7 @@ public class RankProfile implements Serializable, Cloneable {
         addRankProperty(new RankProperty(name, parameter));
     }
 
-    public void addRankProperty(RankProperty rankProperty) {
+    private void addRankProperty(RankProperty rankProperty) {
         // Just the usual multimap semantics here
         List<RankProperty> properties = rankProperties.get(rankProperty.getName());
         if (properties == null) {
@@ -541,15 +541,14 @@ public class RankProfile implements Serializable, Cloneable {
 
     /** Returns an unmodifiable view of the functions in this */
     public Map<String, RankingExpressionFunction> getFunctions() {
-        if (functions.size() == 0 && getInherited() == null) return Collections.emptyMap();
-        if (functions.size() == 0) return getInherited().getFunctions();
+        if (functions.isEmpty() && getInherited() == null) return Collections.emptyMap();
+        if (functions.isEmpty()) return getInherited().getFunctions();
         if (getInherited() == null) return Collections.unmodifiableMap(functions);
 
         // Neither is null
         Map<String, RankingExpressionFunction> allFunctions = new LinkedHashMap<>(getInherited().getFunctions());
         allFunctions.putAll(functions);
         return Collections.unmodifiableMap(allFunctions);
-
     }
 
     public int getKeepRankCount() {
@@ -695,7 +694,7 @@ public class RankProfile implements Serializable, Cloneable {
         for (Map.Entry<String, RankingExpressionFunction> entry : functions.entrySet()) {
             RankingExpressionFunction rankingExpressionFunction = entry.getValue();
             RankingExpression compiled = compile(rankingExpressionFunction.function().getBody(), queryProfiles, importedModels, getConstants(), inlineFunctions, expressionTransforms);
-            compiledFunctions.put(entry.getKey(), rankingExpressionFunction.withBody(compiled));
+            compiledFunctions.put(entry.getKey(), rankingExpressionFunction.withExpression(compiled));
         }
         return compiledFunctions;
     }
@@ -898,7 +897,7 @@ public class RankProfile implements Serializable, Cloneable {
     /** A function in a rank profile */
     public static class RankingExpressionFunction {
 
-        private final ExpressionFunction function;
+        private ExpressionFunction function;
 
         /** True if this should be inlined into calling expressions. Useful for very cheap functions. */
         private final boolean inline;
@@ -908,13 +907,17 @@ public class RankProfile implements Serializable, Cloneable {
             this.inline = inline;
         }
 
+        public void setReturnType(TensorType type) {
+            this.function = function.withReturnType(type);
+        }
+
         public ExpressionFunction function() { return function; }
 
         public boolean inline() {
             return inline && function.arguments().isEmpty(); // only inline no-arg functions;
         }
 
-        public RankingExpressionFunction withBody(RankingExpression expression) {
+        public RankingExpressionFunction withExpression(RankingExpression expression) {
             return new RankingExpressionFunction(function.withBody(expression), inline);
         }
 
