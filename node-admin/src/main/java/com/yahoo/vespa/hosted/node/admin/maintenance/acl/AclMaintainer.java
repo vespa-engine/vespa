@@ -71,6 +71,10 @@ public class AclMaintainer implements Runnable {
     }
 
     private synchronized void configureAcls() {
+        if (environment.getDockerNetworking() == DockerNetworking.HOST_NETWORK) {
+            return;
+        }
+
         log.info("Configuring ACLs"); // Needed to potentially nail down when ACL maintainer stopped working
         Map<String, Container> runningContainers = dockerOperations
                 .getAllManagedContainers().stream()
