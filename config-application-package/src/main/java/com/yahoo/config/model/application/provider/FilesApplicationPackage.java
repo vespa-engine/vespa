@@ -305,6 +305,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     /**
      * Verify that two sets of search definitions are disjoint (TODO: everything except error message is very generic).
+     *
      * @param  fileSds Set of search definitions from file
      * @param  bundleSds Set of search definitions from bundles
      */

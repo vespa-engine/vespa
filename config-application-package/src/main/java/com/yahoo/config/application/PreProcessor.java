@@ -9,9 +9,10 @@ import java.io.IOException;
 /**
  * Performs pre-processing of XML document and returns new document that has been processed.
  *
- * @author lulf
- * @since 5.21
+ * @author Ulf Lilleengen
  */
 public interface PreProcessor {
-    public Document process(Document input) throws IOException, TransformerException;
+
+    Document process(Document input) throws IOException, TransformerException;
+
 }
