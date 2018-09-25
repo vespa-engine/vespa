@@ -208,8 +208,8 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
                 // We have spent too much time trying to freeze and node admin is still not frozen.
                 // To avoid node agents stalling for too long, we'll force unfrozen ticks now.
                 log.info("Timed out trying to freeze, will force unfreezed ticks");
-                nodeAdmin.setFrozen(false);
                 fetchContainersToRunFromNodeRepository();
+                nodeAdmin.setFrozen(false);
             }
         } else if (currentState == RESUMED) {
             fetchContainersToRunFromNodeRepository();
