@@ -34,8 +34,7 @@ FileStorManager(const config::ConfigUri & configUri, const spi::PartitionStateLi
       _partitions(partitions),
       _providerCore(provider),
       _providerErrorWrapper(_providerCore),
-      _providerMetric(new spi::MetricPersistenceProvider(_providerErrorWrapper)),
-      _provider(_providerMetric.get()),
+      _provider(&_providerErrorWrapper),
       _bucketIdFactory(_component.getBucketIdFactory()),
       _configUri(configUri),
       _disks(),
@@ -47,7 +46,6 @@ FileStorManager(const config::ConfigUri & configUri, const spi::PartitionStateLi
       _threadMonitor(),
       _closed(false)
 {
-    _metrics->registerMetric(*_providerMetric),
     _configFetcher.subscribe(_configUri.getConfigId(), this);
     _configFetcher.start();
     _component.registerMetric(*_metrics);
