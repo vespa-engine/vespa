@@ -5,7 +5,7 @@
 #include "storeonlydocsubdb.h"
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/common/docid_limit.h>
-#include <vespa/searchcore/proton/metrics/attribute_metrics_collection.h>
+#include <vespa/searchcore/proton/metrics/attribute_metrics.h>
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 
 namespace proton {
@@ -45,10 +45,10 @@ public:
     struct Context
     {
         const StoreOnlyDocSubDB::Context _storeOnlyCtx;
-        const AttributeMetricsCollection &_subAttributeMetrics;
+        const AttributeMetrics          &_subAttributeMetrics;
         MetricsWireService              &_metricsWireService;
         Context(const StoreOnlyDocSubDB::Context &storeOnlyCtx,
-                const AttributeMetricsCollection &subAttributeMetrics,
+                const AttributeMetrics &subAttributeMetrics,
                 MetricsWireService &metricsWireService)
         : _storeOnlyCtx(storeOnlyCtx),
           _subAttributeMetrics(subAttributeMetrics),
@@ -64,7 +64,7 @@ private:
     const bool                    _fastAccessAttributesOnly;
     AttributeManager::SP          _initAttrMgr;
     Configurer::FeedViewVarHolder _fastAccessFeedView;
-    AttributeMetricsCollection    _subAttributeMetrics;
+    AttributeMetrics              _subAttributeMetrics;
 
     std::shared_ptr<initializer::InitializerTask>
     createAttributeManagerInitializer(const DocumentDBConfig &configSnapshot,
