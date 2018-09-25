@@ -946,7 +946,7 @@ public class UpgraderTest {
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("canary")
-                // Block upgrades on Tuesday in hours 18 and 19.
+                // Block revisions on Tuesday in hours 18 and 19.
                 .blockChange(true, false, "tue", "18-19", "UTC")
                 .region("us-west-1")
                 .region("us-central-1")
@@ -985,6 +985,47 @@ public class UpgraderTest {
         tester.deployAndNotify(app, applicationPackage, true, productionUsCentral1);
         tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
         assertTrue("All jobs consumed", tester.buildService().jobs().isEmpty());
+    }
+
+
+    @Test
+    public void testBlockRevisionChangeHalfwayThoughThenNewRevision() {
+        ManualClock clock = new ManualClock(Instant.parse("2017-09-26T17:00:00.00Z")); // Tuesday, 17:00.
+        DeploymentTester tester = new DeploymentTester(new ControllerTester(clock));
+
+        Version version = Version.fromString("5.0");
+        tester.upgradeSystem(version);
+
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .upgradePolicy("canary")
+                // Block revision on Tuesday in hours 18 and 19.
+                .blockChange(true, false, "tue", "18-19", "UTC")
+                .region("us-west-1")
+                .region("us-central-1")
+                .region("us-east-3")
+                .build();
+
+        Application app = tester.createAndDeploy("app1", 1, applicationPackage);
+
+        tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+
+        // Application upgrade starts.
+        tester.upgrader().maintain();
+        tester.triggerUntilQuiescence();
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+        clock.advance(Duration.ofHours(1)); // Entering block window after prod job is triggered.
+        tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
+        assertEquals(1, tester.buildService().jobs().size()); // Next job triggered in spite of block, because it is already rolling out.
+
+        // New revision is submitted, but is stored as outstanding, since the previous revision is proceeding in good fashion.
+        tester.jobCompletion(component).application(app).nextBuildNumber().nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        tester.triggerUntilQuiescence();
+        assertEquals(1, tester.buildService().jobs().size()); // Still just the running revision upgrade.
+
+        tester.deployAndNotify(app, applicationPackage, true, productionUsCentral1);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
+        assertEquals(Collections.emptyList(), tester.buildService().jobs()); // No jobs left.
     }
 
 }

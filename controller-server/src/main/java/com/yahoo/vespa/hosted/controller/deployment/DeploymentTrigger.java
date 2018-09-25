@@ -460,6 +460,9 @@ public class DeploymentTrigger {
     // ---------- Change management o_O ----------
 
     private boolean acceptNewApplicationVersion(Application application) {
+        if (    ! application.deploymentSpec().canChangeRevisionAt(clock.instant()) // If rolling out revision
+             &&   application.changeAt(clock.instant()).application().isPresent()   // which isn't complete, but in prod
+             && ! application.deploymentJobs().hasFailures()) return false;         // and isn't failing, delay the new submission.
         if (application.change().application().isPresent()) return true; // More application changes are ok.
         if (application.deploymentJobs().hasFailures()) return true; // Allow changes to fix upgrade problems.
         return ! application.changeAt(clock.instant()).platform().isPresent();
