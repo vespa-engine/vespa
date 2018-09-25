@@ -118,6 +118,14 @@ public class DockerImageGarbageCollectionTest {
                 .expectDeletedImages("image"); // 1h after re-download it is deleted again
     }
 
+    @Test
+    public void reDownloadingImageIsNotImmediatelyDeletedWhenDeletingByTag() {
+        gcTester.withExistingImages(ImageBuilder.forId("image").withTags("image-1", "my-tag"))
+                .expectDeletedImages("image-1", "my-tag") // After 1h we delete image
+                .expectDeletedImagesAfterMinutes(0) // image is immediately re-downloaded, but is not deleted
+                .expectDeletedImagesAfterMinutes(10)
+                .expectDeletedImages("image-1", "my-tag"); // 1h after re-download it is deleted again
+    }
 
     /** Same scenario as in {@link #multipleUnusedImagesAreIdentified()} */
     @Test

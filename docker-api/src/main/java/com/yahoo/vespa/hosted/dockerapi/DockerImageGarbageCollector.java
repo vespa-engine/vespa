@@ -118,18 +118,21 @@ class DockerImageGarbageCollector {
                     else return o1.compareTo(o2);
                 })
 
-                // Map image IDs to tags if there are any
-                .flatMap(imageId -> {
-                    // Deleting an image by image ID with multiple tags will fail -> map IDs to all the tags referring to the ID
-                    String[] repoTags = imageByImageId.get(imageId).getRepoTags();
-                    return repoTags == null ? Stream.of(imageId) : Stream.of(repoTags);
-                })
+                // Map back to image
+                .map(imageByImageId::get)
 
                 // Delete image, if successful also remove last usage time to prevent re-download being instantly deleted
                 .peek(image -> {
-                    logger.info("Deleting unused docker image " + image);
-                    docker.deleteImage(new DockerImage(image));
-                    lastTimeUsedByImageId.remove(image);
+                    // Deleting an image by image ID with multiple tags will fail -> delete by tags instead
+                    Optional.ofNullable(image.getRepoTags())
+                            .map(Stream::of)
+                            .orElse(Stream.of(image.getId()))
+                            .forEach(imageReference -> {
+                                logger.info("Deleting unused docker image " + imageReference);
+                                docker.deleteImage(new DockerImage(imageReference));
+                            });
+
+                    lastTimeUsedByImageId.remove(image.getId());
                 })
                 .count() > 0;
     }
