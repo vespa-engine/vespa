@@ -66,7 +66,6 @@ public class DocumentProtocol implements Protocol {
     public static final int MESSAGE_EMPTYBUCKETS = DOCUMENT_MESSAGE + 23;
     public static final int MESSAGE_REMOVELOCATION = DOCUMENT_MESSAGE + 24;
     public static final int MESSAGE_QUERYRESULT = DOCUMENT_MESSAGE + 25;
-    public static final int MESSAGE_BATCHDOCUMENTUPDATE = DOCUMENT_MESSAGE + 26;
 
     /**
      * All reply types that are implemented by this protocol.
@@ -89,7 +88,6 @@ public class DocumentProtocol implements Protocol {
     public static final int REPLY_EMPTYBUCKETS = DOCUMENT_REPLY + 23;
     public static final int REPLY_REMOVELOCATION = DOCUMENT_REPLY + 24;
     public static final int REPLY_QUERYRESULT = DOCUMENT_REPLY + 25;
-    public static final int REPLY_BATCHDOCUMENTUPDATE = DOCUMENT_REPLY + 26;
     public static final int REPLY_WRONGDISTRIBUTION = DOCUMENT_REPLY + 1000;
     public static final int REPLY_DOCUMENTIGNORED = DOCUMENT_REPLY + 1001;
 
@@ -314,7 +312,6 @@ public class DocumentProtocol implements Protocol {
         List<VersionSpecification> from6 = Collections.singletonList(version6); // TODO decide minor version...
 
         // 5.0 serialization (keep alphabetized please)
-        putRoutableFactory(MESSAGE_BATCHDOCUMENTUPDATE, new RoutableFactories50.BatchDocumentUpdateMessageFactory(), from50);
         putRoutableFactory(MESSAGE_CREATEVISITOR, new RoutableFactories50.CreateVisitorMessageFactory(), from50);
         putRoutableFactory(MESSAGE_DESTROYVISITOR, new RoutableFactories50.DestroyVisitorMessageFactory(), from50);
         putRoutableFactory(MESSAGE_DOCUMENTLIST, new RoutableFactories50.DocumentListMessageFactory(), from50);
@@ -332,7 +329,6 @@ public class DocumentProtocol implements Protocol {
         putRoutableFactory(MESSAGE_STATBUCKET, new RoutableFactories50.StatBucketMessageFactory(), from50);
         putRoutableFactory(MESSAGE_UPDATEDOCUMENT, new RoutableFactories50.UpdateDocumentMessageFactory(), from50);
         putRoutableFactory(MESSAGE_VISITORINFO, new RoutableFactories50.VisitorInfoMessageFactory(), from50);
-        putRoutableFactory(REPLY_BATCHDOCUMENTUPDATE, new RoutableFactories50.BatchDocumentUpdateReplyFactory(), from50);
         putRoutableFactory(REPLY_CREATEVISITOR, new RoutableFactories50.CreateVisitorReplyFactory(), from50);
         putRoutableFactory(REPLY_DESTROYVISITOR, new RoutableFactories50.DestroyVisitorReplyFactory(), from50);
         putRoutableFactory(REPLY_DOCUMENTLIST, new RoutableFactories50.DocumentListReplyFactory(), from50);

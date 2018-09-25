@@ -30,7 +30,6 @@ public class Messages50TestCase extends MessagesTestBase {
     protected void registerTests(Map<Integer, RunnableTest> out) {
         // This list MUST mirror the list of routable factories from the DocumentProtocol constructor that support
         // version 5.0. When adding tests to this list, please KEEP THEM ORDERED alphabetically like they are now.
-        out.put(DocumentProtocol.MESSAGE_BATCHDOCUMENTUPDATE, new testBatchDocumentUpdateMessage());
         out.put(DocumentProtocol.MESSAGE_CREATEVISITOR, new testCreateVisitorMessage());
         out.put(DocumentProtocol.MESSAGE_DESTROYVISITOR, new testDestroyVisitorMessage());
         out.put(DocumentProtocol.MESSAGE_DOCUMENTLIST, new testDocumentListMessage());
@@ -48,7 +47,6 @@ public class Messages50TestCase extends MessagesTestBase {
         out.put(DocumentProtocol.MESSAGE_STATBUCKET, new testStatBucketMessage());
         out.put(DocumentProtocol.MESSAGE_UPDATEDOCUMENT, new testUpdateDocumentMessage());
         out.put(DocumentProtocol.MESSAGE_VISITORINFO, new testVisitorInfoMessage());
-        out.put(DocumentProtocol.REPLY_BATCHDOCUMENTUPDATE, new testBatchDocumentUpdateReply());
         out.put(DocumentProtocol.REPLY_CREATEVISITOR, new testCreateVisitorReply());
         out.put(DocumentProtocol.REPLY_DESTROYVISITOR, new testDestroyVisitorReply());
         out.put(DocumentProtocol.REPLY_DOCUMENTLIST, new testDocumentListReply());
@@ -721,78 +719,6 @@ public class Messages50TestCase extends MessagesTestBase {
             }
         }
     }
-
-    public class testBatchDocumentUpdateMessage implements RunnableTest {
-
-        @Override
-        public void run() {
-            DocumentType docType = protocol.getDocumentTypeManager().getDocumentType("testdoc");
-            BatchDocumentUpdateMessage msg = new BatchDocumentUpdateMessage(1234);
-
-            {
-                DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("userdoc:footype:1234:foo"));
-                update.addFieldPathUpdate(new RemoveFieldPathUpdate(docType, "intfield", "testdoc.intfield > 0"));
-                msg.addUpdate(update);
-            }
-            {
-                DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("orderdoc(32,17):footype:1234:123456789:foo"));
-                update.addFieldPathUpdate(new RemoveFieldPathUpdate(docType, "intfield", "testdoc.intfield > 0"));
-                msg.addUpdate(update);
-            }
-
-            try {
-                DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("orderdoc:footype:5678:foo"));
-                update.addFieldPathUpdate(new RemoveFieldPathUpdate(docType, "intfield", "testdoc.intfield > 0"));
-                msg.addUpdate(update);
-                fail();
-            } catch (Exception e) {
-
-            }
-
-            try {
-                DocumentUpdate update = new DocumentUpdate(docType, new DocumentId("groupdoc:footype:hable:foo"));
-                update.addFieldPathUpdate(new RemoveFieldPathUpdate(docType, "intfield", "testdoc.intfield > 0"));
-                msg.addUpdate(update);
-                fail();
-            } catch (Exception e) {
-
-            }
-
-            assertEquals(2, msg.getUpdates().size());
-
-            assertEquals(BASE_MESSAGE_LENGTH + 202, serialize("BatchDocumentUpdateMessage", msg));
-
-            for (Language lang : LANGUAGES) {
-                msg = (BatchDocumentUpdateMessage)deserialize("BatchDocumentUpdateMessage", DocumentProtocol.MESSAGE_BATCHDOCUMENTUPDATE, lang);
-                assertEquals(2, msg.getUpdates().size());
-            }
-        }
-    }
-
-    public class testBatchDocumentUpdateReply implements RunnableTest {
-
-        @Override
-        public void run() {
-            BatchDocumentUpdateReply reply = new BatchDocumentUpdateReply();
-            reply.setHighestModificationTimestamp(30);
-            reply.getDocumentsNotFound().add(false);
-            reply.getDocumentsNotFound().add(true);
-            reply.getDocumentsNotFound().add(true);
-
-            assertEquals(20, serialize("BatchDocumentUpdateReply", reply));
-
-            for (Language lang : LANGUAGES) {
-                BatchDocumentUpdateReply obj = (BatchDocumentUpdateReply)deserialize("BatchDocumentUpdateReply", DocumentProtocol.REPLY_BATCHDOCUMENTUPDATE, lang);
-                assertNotNull(obj);
-                assertEquals(30, obj.getHighestModificationTimestamp());
-                assertEquals(3, obj.getDocumentsNotFound().size());
-                assertFalse(obj.getDocumentsNotFound().get(0));
-                assertTrue(obj.getDocumentsNotFound().get(1));
-                assertTrue(obj.getDocumentsNotFound().get(2));
-            }
-        }
-    }
-
 
     public class testQueryResultReply implements RunnableTest {
 

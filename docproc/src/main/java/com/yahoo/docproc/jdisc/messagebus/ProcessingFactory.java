@@ -15,7 +15,6 @@ import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.documentapi.messagebus.protocol.BatchDocumentUpdateMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
@@ -65,12 +64,6 @@ class ProcessingFactory {
                 DocumentRemove removeOperation = new DocumentRemove(removeMessage.getDocumentId());
                 removeOperation.setCondition(removeMessage.getCondition());
                 processings.add(createProcessing(removeOperation, message));
-                break;
-            }
-            case DocumentProtocol.MESSAGE_BATCHDOCUMENTUPDATE: {
-                for (DocumentUpdate update : ((BatchDocumentUpdateMessage) message).getUpdates()) {
-                    processings.add(createProcessing(update, message));
-                }
                 break;
             }
         }

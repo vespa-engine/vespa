@@ -168,7 +168,6 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
         case DocumentProtocol.MESSAGE_PUTDOCUMENT:
         case DocumentProtocol.MESSAGE_UPDATEDOCUMENT:
         case DocumentProtocol.MESSAGE_REMOVEDOCUMENT:
-        case DocumentProtocol.MESSAGE_BATCHDOCUMENTUPDATE:
             return true;
         }
         return false;

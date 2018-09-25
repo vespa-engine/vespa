@@ -69,7 +69,6 @@ public class DocumentProcessingHandlerTransformingMessagesTestCase extends Docum
         put();
         remove();
         update();
-        batchDocumentUpdate();
     }
 
     private void put() throws InterruptedException {
@@ -168,24 +167,6 @@ public class DocumentProcessingHandlerTransformingMessagesTestCase extends Docum
             assertThat(reply, instanceOf(DocumentReply.class));
             assertFalse(reply.hasErrors());
         }
-    }
-
-    private void batchDocumentUpdate() throws InterruptedException {
-        DocumentUpdate doc1 = new DocumentUpdate(getType(), new DocumentId("userdoc:test:12345:batch:nodocstatus:keep:this"));
-        DocumentUpdate doc2 = new DocumentUpdate(getType(), new DocumentId("userdoc:test:12345:batch:nodocstatus:skip:this"));
-
-        Field testField = getType().getField("foostring");
-        doc1.addFieldUpdate(FieldUpdate.createAssign(testField, new StringFieldValue("1 not yet processed")));
-        doc2.addFieldUpdate(FieldUpdate.createAssign(testField, new StringFieldValue("2 not yet processed")));
-
-        BatchDocumentUpdateMessage message = new BatchDocumentUpdateMessage(12345);
-        message.addUpdate(doc1);
-        message.addUpdate(doc2);
-
-        Routable result = sendMessageAndGetResult(message);
-        assertThat(result, instanceOf(UpdateDocumentMessage.class));
-        DocumentUpdate outputUpd = ((UpdateDocumentMessage)result).getDocumentUpdate();
-        assertThat(outputUpd.getId().toString(), is("userdoc:test:12345:batch:nodocstatus:keep:this"));
     }
 
     public class TransformingDocumentProcessor extends DocumentProcessor {
