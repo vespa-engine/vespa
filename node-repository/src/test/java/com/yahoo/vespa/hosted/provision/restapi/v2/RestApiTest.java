@@ -268,6 +268,19 @@ public class RestApiTest {
     }
 
     @Test
+    public void post_controller_node() throws Exception {
+        String data = "[{\"hostname\":\"controller1.yahoo.com\", \"openStackId\":\"fake-controller1.yahoo.com\"," +
+                      createIpAddresses("127.0.0.1") +
+                      "\"flavor\":\"default\"" +
+                      ", \"type\":\"controller\"}]";
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node", data.getBytes(StandardCharsets.UTF_8),
+                                   Request.Method.POST),
+                       "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+
+        assertFile(new Request("http://localhost:8080/nodes/v2/node/controller1.yahoo.com"), "controller1.json");
+    }
+
+    @Test
     public void fails_to_deallocate_node_with_hardware_failure() throws Exception {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                         ("[" + asNodeJson("host12.yahoo.com", "default") + "]").
@@ -407,7 +420,6 @@ public class RestApiTest {
                                    new byte[0], Request.Method.PUT), 400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set host2.yahoo.com active. It has no allocation.\"}");
     }
-
 
     @Test
     public void test_node_patching() throws Exception {

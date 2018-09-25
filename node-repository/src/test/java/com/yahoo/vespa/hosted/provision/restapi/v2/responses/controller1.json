@@ -1,0 +1,33 @@
+{
+  "url": "http://localhost:8080/nodes/v2/node/controller1.yahoo.com",
+  "id": "controller1.yahoo.com",
+  "state": "provisioned",
+  "type": "controller",
+  "hostname": "controller1.yahoo.com",
+  "openStackId": "fake-controller1.yahoo.com",
+  "flavor": "default",
+  "canonicalFlavor": "default",
+  "minDiskAvailableGb": 400.0,
+  "minMainMemoryAvailableGb": 16.0,
+  "description": "Flavor-name-is-default",
+  "minCpuCores": 2.0,
+  "fastDisk": true,
+  "environment": "BARE_METAL",
+  "rebootGeneration": 0,
+  "currentRebootGeneration": 0,
+  "failCount": 0,
+  "hardwareFailure": false,
+  "wantToRetire": false,
+  "wantToDeprovision": false,
+  "history": [
+    {
+      "event": "provisioned",
+      "at": 123,
+      "agent": "system"
+    }
+  ],
+  "ipAddresses": [
+    "127.0.0.1"
+  ],
+  "additionalIpAddresses": []
+}
