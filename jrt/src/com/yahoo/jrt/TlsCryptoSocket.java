@@ -46,6 +46,11 @@ public class TlsCryptoSocket implements CryptoSocket {
         this.handshakeState = HandshakeState.NOT_STARTED;
     }
 
+    // inject pre-read data into the read pipeline (typically called by MaybeTlsCryptoSocket)
+    public void injectReadData(Buffer data) {
+        unwrapBuffer.getWritable(data.bytes()).put(data.getReadable());
+    }
+
     @Override
     public SocketChannel channel() {
         return channel;

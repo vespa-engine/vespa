@@ -19,7 +19,7 @@ public class SessionTest implements SessionHandler {
 
     @Parameter public CryptoEngine crypto;
     @Parameters(name = "{0}") public static Object[] engines() {
-        return new Object[] { CryptoEngine.createDefault(), new XorCryptoEngine(), new TlsCryptoEngine(createTestSslContext()) };
+        return new Object[] { new NullCryptoEngine(), new XorCryptoEngine(), new TlsCryptoEngine(createTestSslContext()) };
     }
 
     private static class Session {
