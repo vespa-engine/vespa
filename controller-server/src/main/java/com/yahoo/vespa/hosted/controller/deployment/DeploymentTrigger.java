@@ -114,9 +114,14 @@ public class DeploymentTrigger {
                 }
             }
             else {
-                triggering = application.get().deploymentJobs().statusOf(report.jobType()).flatMap(JobStatus::lastTriggered)
+                triggering = application.get().deploymentJobs().statusOf(report.jobType())
+                                        .filter(job ->    job.lastTriggered().isPresent()
+                                                       && job.lastCompleted()
+                                                             .map(completion -> ! completion.at().isAfter(job.lastTriggered().get().at()))
+                                                             .orElse(true))
                                         .orElseThrow(() -> new IllegalStateException("Notified of completion of " + report.jobType().jobName() + " for " +
-                                                                                     report.applicationId() + ", but that has neither been triggered nor deployed"));
+                                                                                     report.applicationId() + ", but that has neither been triggered nor deployed"))
+                                        .lastTriggered().get();
             }
             application = application.withJobCompletion(report.projectId(),
                                                         report.jobType(),
