@@ -952,8 +952,15 @@ public class ApplicationApiTest extends ControllerContainerTest {
         controllerTester.deploy(app, applicationPackage, TEST_ZONE);
         job.type(JobType.systemTest).submit();
 
-        // Notifying about unknown job fails
+        // Notifying about job started not by the controller fails
         Request request = request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
+                .data(asJson(job.type(JobType.systemTest).report()))
+                .userIdentity(HOSTED_VESPA_OPERATOR)
+                .get();
+        tester.assertResponse(request, new File("jobreport-unexpected-system-test-completion.json"), 400);
+
+        // Notifying about unknown job fails
+        request = request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
                 .data(asJson(job.type(JobType.productionUsEast3).report()))
                 .userIdentity(HOSTED_VESPA_OPERATOR)
                 .get();
