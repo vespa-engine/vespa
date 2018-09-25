@@ -541,7 +541,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
     if (!_isInitializing || _initDocumentDbsInSequence) {
         ret->waitForOnlineState();
     }
-    _metricsEngine->addDocumentDBMetrics(ret->getMetricsCollection());
+    _metricsEngine->addDocumentDBMetrics(ret->getMetrics());
     _metricsEngine->addMetricsHook(ret->getMetricsUpdateHook());
     _documentDBMap[docTypeName] = ret;
     if (_persistenceEngine) {
@@ -597,7 +597,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
     _summaryEngine->removeSearchHandler(docTypeName);
     _flushEngine->removeFlushHandler(docTypeName);
     _metricsEngine->removeMetricsHook(old->getMetricsUpdateHook());
-    _metricsEngine->removeDocumentDBMetrics(old->getMetricsCollection());
+    _metricsEngine->removeDocumentDBMetrics(old->getMetrics());
     _diskMemUsageSampler->notifier().removeDiskMemUsageListener(old->diskMemUsageListener());
     // Caller should have removed & drained relevant timer tasks
     old->close();
