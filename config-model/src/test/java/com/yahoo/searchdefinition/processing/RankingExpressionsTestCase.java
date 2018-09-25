@@ -41,7 +41,7 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
                                                                        new QueryProfileRegistry(),
                                                                        new ImportedModels(),
                                                                        new AttributeFields(search)).configProperties();
-        assertEquals(7, rankProperties.size());
+        assertEquals(6, rankProperties.size());
 
         assertEquals("rankingExpression(titlematch$).rankingScript", rankProperties.get(0).getFirst());
         assertEquals("var1 * var2 + 890", rankProperties.get(0).getSecond());
@@ -49,17 +49,14 @@ public class RankingExpressionsTestCase extends SearchDefinitionTestCase {
         assertEquals("rankingExpression(artistmatch).rankingScript", rankProperties.get(1).getFirst());
         assertEquals("78 + closeness(distance)", rankProperties.get(1).getSecond());
 
-        assertEquals("rankingExpression(firstphase).rankingScript", rankProperties.get(6).getFirst());
-        assertEquals("0.8 + 0.2 * rankingExpression(titlematch$@126063073eb2deb.ab95cd69909927c) + 0.8 * rankingExpression(titlematch$@c7e4c2d0e6d9f2a1.1d4ed08e56cce2e6) * closeness(distance)", rankProperties.get(6).getSecond());
+        assertEquals("rankingExpression(firstphase).rankingScript", rankProperties.get(5).getFirst());
+        assertEquals("0.8 + 0.2 * rankingExpression(titlematch$@126063073eb2deb.ab95cd69909927c) + 0.8 * rankingExpression(titlematch$@c7e4c2d0e6d9f2a1.1d4ed08e56cce2e6) * closeness(distance)", rankProperties.get(5).getSecond());
 
-        assertEquals("rankingExpression(titlematch$@c7e4c2d0e6d9f2a1.1d4ed08e56cce2e6).rankingScript", rankProperties.get(4).getFirst());
-        assertEquals("7 * 8 + 890", rankProperties.get(4).getSecond());
+        assertEquals("rankingExpression(titlematch$@c7e4c2d0e6d9f2a1.1d4ed08e56cce2e6).rankingScript", rankProperties.get(3).getFirst());
+        assertEquals("7 * 8 + 890", rankProperties.get(3).getSecond());
 
-        assertEquals("rankingExpression(artistmatch).type", rankProperties.get(2).getFirst());
-        assertEquals("tensor()", rankProperties.get(2).getSecond());
-
-        assertEquals("rankingExpression(titlematch$@126063073eb2deb.ab95cd69909927c).rankingScript", rankProperties.get(3).getFirst());
-        assertEquals("4 * 5 + 890", rankProperties.get(3).getSecond());
+        assertEquals("rankingExpression(titlematch$@126063073eb2deb.ab95cd69909927c).rankingScript", rankProperties.get(2).getFirst());
+        assertEquals("4 * 5 + 890", rankProperties.get(2).getSecond());
     }
 
     @Test(expected = IllegalArgumentException.class)
