@@ -3,11 +3,13 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.document.StructDataType;
 import com.yahoo.searchdefinition.derived.AttributeFields;
+import com.yahoo.searchdefinition.derived.IndexingScript;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.AttributesConfig;
+import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -154,24 +156,28 @@ public class AttributeSettingsTestCase extends SearchDefinitionTestCase {
         assertTrue(attr.isMutable());
     }
 
-    @Test
-    public void requireThatMutableConfigIsProperlyPropagated() throws ParseException{
-
-        AttributeFields attributes = new AttributeFields(getSearch(
+    private Search getSearchWithMutables() throws ParseException {
+        return getSearch(
                 "search test {\n" +
-                "  document test { \n" +
-                "    field a type int { \n" +
-                "      indexing: attribute \n" +
-                "    }\n" +
-                "  }\n" +
-                "  field m type long {\n" +
-                "    indexing: 0 | to_long | attribute\n" +
-                "    attribute: mutable\n" +
-                "  }\n" +
-                "  field f type long {\n" +
-                "    indexing: 0 | to_long | attribute\n" +
-                "  }\n" +
-                "}\n"));
+                    "  document test { \n" +
+                    "    field a type int { \n" +
+                    "      indexing: attribute \n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "  field m type long {\n" +
+                    "    indexing: 0 | to_long | attribute\n" +
+                    "    attribute: mutable\n" +
+                    "  }\n" +
+                    "  field f type long {\n" +
+                    "    indexing: 0 | to_long | attribute\n" +
+                    "  }\n" +
+                    "}\n");
+    }
+
+    @Test
+    public void requireThatMutableConfigIsProperlyPropagated() throws ParseException {
+
+        AttributeFields attributes = new AttributeFields(getSearchWithMutables());
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
         attributes.getConfig(builder);
         AttributesConfig cfg = new AttributesConfig(builder);
@@ -183,6 +189,21 @@ public class AttributeSettingsTestCase extends SearchDefinitionTestCase {
 
         assertEquals("m", cfg.attribute().get(2).name());
         assertTrue(cfg.attribute().get(2).ismutable());
+
+    }
+
+    @Test
+    public void requireThatMutableIsAllowedThroughIndexing() throws ParseException {
+        IndexingScript script = new IndexingScript(getSearchWithMutables());
+        IlscriptsConfig.Builder builder = new IlscriptsConfig.Builder();
+        script.getConfig(builder);
+        IlscriptsConfig cfg = new IlscriptsConfig(builder);
+        assertEquals(1, cfg.ilscript().size());
+        IlscriptsConfig.Ilscript ils = cfg.ilscript(0);
+        assertEquals("test", ils.doctype());
+        assertEquals(2, ils.docfield().size());
+        assertEquals("a", ils.docfield(0));
+        assertEquals("m", ils.docfield(1));
 
     }
 

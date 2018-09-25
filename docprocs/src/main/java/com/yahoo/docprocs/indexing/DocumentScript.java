@@ -20,7 +20,11 @@ import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.vespa.indexinglanguage.AdapterFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Simon Thoresen Hult
