@@ -74,7 +74,7 @@ public class VespaFeeder {
                 args.getPropertyProcessor(),
                 args.getSessionFactory(),
                 manager,
-                new ClusterList(), new NullFeedMetric());
+                new ClusterList(), new NullFeedMetric(true));
 
         final BufferedInputStream input = new BufferedInputStream(stdin);
         VespaFeedHandler handler = VespaFeedHandler.createFromContext(context, threadPool);
