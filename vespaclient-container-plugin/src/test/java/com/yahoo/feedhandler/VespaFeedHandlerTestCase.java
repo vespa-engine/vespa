@@ -67,7 +67,7 @@ public class VespaFeedHandlerTestCase {
             factory = DummySessionFactory.createDefault();
         }
 
-        context = new FeedContext(new MessagePropertyProcessor(new FeederConfig(new FeederConfig.Builder()), loadTypeCfg), factory, docMan, new ClusterList(), new NullFeedMetric());
+        context = new FeedContext(new MessagePropertyProcessor(new FeederConfig(new FeederConfig.Builder()), loadTypeCfg), factory, docMan, new ClusterList(), new NullFeedMetric(true));
 
         Executor threadPool = Executors.newCachedThreadPool();
         feedHandler = new VespaFeedHandler(context, threadPool);
@@ -918,7 +918,7 @@ public class VespaFeedHandlerTestCase {
                 new FeedContext(new MessagePropertyProcessor(
                         new FeederConfig(new FeederConfig.Builder()),
                         new LoadTypeConfig(new LoadTypeConfig.Builder())),
-                        factory, null, new ClusterList(), new NullFeedMetric()),
+                        factory, null, new ClusterList(), new NullFeedMetric(true)),
                 true, true,
                 Executors.newCachedThreadPool());
     }

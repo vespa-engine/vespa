@@ -78,7 +78,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType); // Needs auto-reply
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(newQuery("?id=userdoc:kittens:1:2"));
@@ -105,7 +105,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         Query query = newQuery("?id[0]=userdoc:kittens:1:2&id[1]=userdoc:kittens:3:4");
@@ -141,7 +141,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         String data = "userdoc:kittens:5:6\nuserdoc:kittens:7:8\nuserdoc:kittens:9:10";
@@ -161,7 +161,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         String data = "userdoc:kittens:5:6\nuserdoc:kittens:7:8\nuserdoc:kittens:9:10";
@@ -184,7 +184,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         HitGroup hits = new HitGroup("mock");
         hits.add(new Hit("blernsball"));
         Chain<Searcher> searchChain = new Chain<>(searcher, new MockBackend(hits));
@@ -212,7 +212,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType, null, false, replies);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         DocumentHit backendHit = new DocumentHit(new Document(docType, new DocumentId("userdoc:kittens:5678:bar")), 5);
         Chain<Searcher> searchChain = new Chain<>(searcher, new MockBackend(backendHit));
 
@@ -229,7 +229,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         HitGroup hits = new HitGroup("mock");
         hits.add(new Hit("blernsball"));
         Chain<Searcher> searchChain = new Chain<>(searcher, new MockBackend(hits));
@@ -257,7 +257,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(new FeederConfig(new FeederConfig.Builder().timeout(58).route("route66").retryenabled(false)), defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(newQuery("?id=doc:batman:dahnahnahnah"));
@@ -283,7 +283,7 @@ public class GetSearcherTestCase {
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(new FeederConfig(new FeederConfig.Builder().timeout(58).route("riksveg18").retryenabled(true)),
                             defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         new Execution(searchChain, Execution.Context.createContextStub()).search(newQuery("?id=doc:batman:dahnahnahnah"));
@@ -336,7 +336,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(
@@ -376,7 +376,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(
@@ -415,7 +415,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(
@@ -441,7 +441,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         {
@@ -513,7 +513,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType); // Needs auto-reply
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(
@@ -548,7 +548,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType, null, false, replies);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(
@@ -570,7 +570,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType, err, true);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(
@@ -618,7 +618,7 @@ public class GetSearcherTestCase {
         factory.setNullReply(true);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(
@@ -782,7 +782,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(
@@ -831,7 +831,7 @@ public class GetSearcherTestCase {
         factory.setNullReply(true);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         Result result = new Execution(searchChain, Execution.Context.createContextStub()).search(
@@ -978,7 +978,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType); // Needs auto-reply
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         Chain<Searcher> searchChain = new Chain<>(searcher);
 
         Query query = newQuery("?id=userdoc:kittens:1:2&format=json");
@@ -994,7 +994,7 @@ public class GetSearcherTestCase {
         DocumentSessionFactory factory = new DocumentSessionFactory(docType, null, false, replies);
         GetSearcher searcher = new GetSearcher(new FeedContext(
                 new MessagePropertyProcessor(defFeedCfg, defLoadTypeCfg),
-                factory, docMan, new ClusterList(), new NullFeedMetric()));
+                factory, docMan, new ClusterList(), new NullFeedMetric(true)));
         return new Chain<>(searcher);
     }
 

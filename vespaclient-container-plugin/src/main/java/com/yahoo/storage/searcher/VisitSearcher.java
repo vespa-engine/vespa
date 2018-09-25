@@ -4,7 +4,6 @@ package com.yahoo.storage.searcher;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.feedhandler.NullFeedMetric;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
@@ -14,6 +13,7 @@ import com.yahoo.documentapi.*;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.feedapi.FeedContext;
 import com.yahoo.feedapi.MessagePropertyProcessor;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -37,9 +37,13 @@ public class VisitSearcher extends Searcher {
                          LoadTypeConfig loadTypeConfig,
                          DocumentmanagerConfig documentmanagerConfig,
                          SlobroksConfig slobroksConfig,
-                         ClusterListConfig clusterListConfig) throws Exception {
-        this(FeedContext.getInstance(feederConfig, loadTypeConfig, documentmanagerConfig, 
-                                     slobroksConfig, clusterListConfig, new NullFeedMetric()));
+                         ClusterListConfig clusterListConfig,
+                         Metric metric)
+        throws Exception
+    {
+        this(FeedContext.getInstance(feederConfig, loadTypeConfig,
+                                     documentmanagerConfig, slobroksConfig,
+                                     clusterListConfig, metric));
     }
 
     VisitSearcher(FeedContext context) throws Exception {
