@@ -22,6 +22,7 @@ import java.util.stream.IntStream;
 import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl.TRANSITION_EXCEPTION_MESSAGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -172,19 +173,28 @@ public class NodeAdminStateUpdaterImplTest {
         // Let's start suspending, we are able to freeze the nodes, but orchestrator denies suspension
         when(nodeAdmin.subsystemFreezeDuration()).thenReturn(Duration.ofSeconds(1));
         when(nodeAdmin.setFrozen(eq(true))).thenReturn(true);
-        doThrow(new RuntimeException(exceptionMsg))
-                .when(orchestrator).suspend(eq(parentHostname));
+        doThrow(new RuntimeException(exceptionMsg)).when(orchestrator).suspend(eq(parentHostname));
 
         assertResumeStateError(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN, TRANSITION_EXCEPTION_MESSAGE);
-        tickAfter(0);
+        tickAfter(30);
         verify(nodeAdmin, times(1)).setFrozen(eq(true));
+        tickAfter(30);
+        verify(nodeAdmin, times(2)).setFrozen(eq(true));
+        verify(nodeAdmin, times(1)).setFrozen(eq(false)); // No new unfreezes during last 2 ticks
+        verify(nodeAdmin, times(1)).refreshContainersToRun(any());
         assertResumeStateError(NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN, exceptionMsg);
+
+        // Only resume and fetch containers when subsystem freeze duration expires
+        when(nodeAdmin.subsystemFreezeDuration()).thenReturn(Duration.ofHours(1));
+        tickAfter(30);
+        verify(nodeAdmin, times(2)).setFrozen(eq(false));
+        verify(nodeAdmin, times(2)).refreshContainersToRun(any());
 
         // We change our mind, want to remain resumed
         assertResumeStateError(NodeAdminStateUpdater.State.RESUMED, TRANSITION_EXCEPTION_MESSAGE);
-        tickAfter(0);
+        tickAfter(30);
         refresher.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.RESUMED);
-        verify(nodeAdmin, times(2)).setFrozen(eq(false)); // Make sure that we unfreeze!
+        verify(nodeAdmin, times(3)).setFrozen(eq(false)); // Make sure that we unfreeze!
     }
 
     @Test
