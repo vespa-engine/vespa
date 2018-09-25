@@ -9,13 +9,6 @@ import java.util.Map;
  * @since 5.1.20
  */
 public final class NullFeedMetric implements Metric {
-
-    public NullFeedMetric(boolean flag) {
-        if (!flag) {
-            throw new IllegalArgumentException("must set flag allowing to throw away metrics");
-        }
-    }
-
     @Override
     public void set(String key, Number val, Context ctx) {
     }

@@ -9,7 +9,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.feedapi.FeedContext;
 import com.yahoo.metrics.MetricManager;
@@ -29,12 +28,9 @@ public class VespaFeedHandlerStatus extends ThreadedHttpRequestHandler {
                                   DocumentmanagerConfig documentmanagerConfig, 
                                   SlobroksConfig slobroksConfig,
                                   ClusterListConfig clusterListConfig,
-                                  Executor executor,
-                                  Metric metric) {
-        this(FeedContext.getInstance(feederConfig, loadTypeConfig,
-                                     documentmanagerConfig, slobroksConfig, 
-                                     clusterListConfig, metric),
-             true, true, executor);
+                                  Executor executor) {
+        this(FeedContext.getInstance(feederConfig, loadTypeConfig, documentmanagerConfig, slobroksConfig, 
+                                     clusterListConfig, new NullFeedMetric()), true, true, executor);
     }
 
     VespaFeedHandlerStatus(FeedContext context, boolean doLog, boolean makeSnapshots, Executor executor) {

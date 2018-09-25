@@ -6,7 +6,7 @@ import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.jdisc.Metric;
+import com.yahoo.feedhandler.NullFeedMetric;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.document.DataType;
@@ -199,14 +199,9 @@ public class GetSearcher extends Searcher {
                        LoadTypeConfig loadTypeConfig,
                        DocumentmanagerConfig documentmanagerConfig,
                        SlobroksConfig slobroksConfig,
-                       ClusterListConfig clusterListConfig,
-                       Metric metric)
-        throws Exception
-    {
-        this(FeedContext.getInstance(feederConfig, loadTypeConfig,
-                                     documentmanagerConfig, slobroksConfig, 
-                                     clusterListConfig, metric),
-             (long)(feederConfig.timeout() * 1000));
+                       ClusterListConfig clusterListConfig) throws Exception {
+        this(FeedContext.getInstance(feederConfig, loadTypeConfig, documentmanagerConfig, slobroksConfig, 
+                                     clusterListConfig, new NullFeedMetric()), (long)(feederConfig.timeout() * 1000));
     }
 
     GetSearcher(FeedContext context) throws Exception {
