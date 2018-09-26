@@ -471,33 +471,33 @@ MergeThrottler::updateOperationMetrics(
 {
     switch (result.getResult()) {
     case api::ReturnCode::OK:
-        ++metrics.ok;
+        metrics.ok.inc();
         break;
     case api::ReturnCode::NOT_READY:
-        ++metrics.failures.notready;
+        metrics.failures.notready.inc();
         break;
     case api::ReturnCode::TIMEOUT:
-        ++metrics.failures.timeout;
+        metrics.failures.timeout.inc();
         break;
     case api::ReturnCode::ABORTED:
-        ++metrics.failures.aborted;
+        metrics.failures.aborted.inc();
         break;
     case api::ReturnCode::WRONG_DISTRIBUTION:
-        ++metrics.failures.wrongdistribution;
+        metrics.failures.wrongdistribution.inc();
         break;
     case api::ReturnCode::EXISTS:
-        ++metrics.failures.exists;
+        metrics.failures.exists.inc();
         break;
     case api::ReturnCode::REJECTED:
-        ++metrics.failures.rejected;
+        metrics.failures.rejected.inc();
         break;
     default:
         if (result.isBusy()) {
-            ++metrics.failures.busy;
+            metrics.failures.busy.inc();
         } else if (result.isBucketDisappearance()) {
-            ++metrics.failures.bucketnotfound;
+            metrics.failures.bucketnotfound.inc();
         } else {
-            ++metrics.failures.other;
+            metrics.failures.other.inc();
         }
     }
 }

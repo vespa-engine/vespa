@@ -79,21 +79,21 @@ void
 PersistenceOperationMetricSet::updateFromResult(const api::ReturnCode& result)
 {
     if (result.success()) {
-        ++ok;
+        ok.inc();
     } else if (result.getResult() == api::ReturnCode::WRONG_DISTRIBUTION) {
-        ++failures.wrongdistributor;
+        failures.wrongdistributor.inc();
     } else if (result.getResult() == api::ReturnCode::TIMEOUT) {
-        ++failures.timeout;
+        failures.timeout.inc();
     } else if (result.isBusy()) {
-        ++failures.busy;
+        failures.busy.inc();
     } else if (result.isBucketDisappearance()) {
         // Bucket not found/deleted codes imply that replicas are transiently
         // inconsistent in our DB or across replica nodes.
-        ++failures.inconsistent_bucket;
+        failures.inconsistent_bucket.inc();
     } else if (result.isNodeDownOrNetwork()) {
-        ++failures.notconnected;
+        failures.notconnected.inc();
     } else {
-        ++failures.storagefailure;
+        failures.storagefailure.inc();
     }
 }
 

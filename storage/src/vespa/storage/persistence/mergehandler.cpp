@@ -1301,7 +1301,7 @@ void
 MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply,
                                        MessageSender& sender)
 {
-    ++_env._metrics.getBucketDiffReply;
+    _env._metrics.getBucketDiffReply.inc();
     spi::Bucket bucket(reply.getBucket(), spi::PartitionId(_env._partition));
     LOG(debug, "GetBucketDiffReply(%s)", bucket.toString().c_str());
 
@@ -1479,7 +1479,7 @@ void
 MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,
                                          MessageSender& sender)
 {
-    ++_env._metrics.applyBucketDiffReply;
+    _env._metrics.applyBucketDiffReply.inc();
     spi::Bucket bucket(reply.getBucket(), spi::PartitionId(_env._partition));
     std::vector<api::ApplyBucketDiffCommand::Entry>& diff(reply.getDiff());
     LOG(debug, "%s", reply.toString().c_str());

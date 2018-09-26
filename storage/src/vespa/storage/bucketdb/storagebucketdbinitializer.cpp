@@ -438,7 +438,7 @@ StorageBucketDBInitializer::registerBucket(const document::Bucket &bucket,
                 _system._nodeState, _system._nodeIndex, bucketId.stripUnused(),
                 lib::Distribution::IDEAL_DISK_EVEN_IF_DOWN));
         if (disk != partition) {
-            ++_metrics._wrongDisk;
+            _metrics._wrongDisk.inc();
         }
 
         _metrics._insertedCount.inc();

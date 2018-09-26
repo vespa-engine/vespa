@@ -137,7 +137,7 @@ PersistenceThread::handleRemove(api::RemoveCommand& cmd)
         tracker->setReply(std::make_shared<api::RemoveReply>(cmd, response.wasFound() ? cmd.getTimestamp() : 0));
     }
     if (!response.wasFound()) {
-        ++_env._metrics.remove[cmd.getLoadType()].notFound;
+        _env._metrics.remove[cmd.getLoadType()].notFound.inc();
     }
     return tracker;
 }
@@ -177,7 +177,7 @@ PersistenceThread::handleGet(api::GetCommand& cmd)
 
     if (checkForError(result, *tracker)) {
         if (!result.hasDocument()) {
-            ++_env._metrics.get[cmd.getLoadType()].notFound;
+            _env._metrics.get[cmd.getLoadType()].notFound.inc();
         }
         tracker->setReply(std::make_shared<api::GetReply>(cmd, result.getDocumentPtr(), result.getTimestamp()));
     }
@@ -202,7 +202,7 @@ PersistenceThread::handleRepairBucket(RepairBucketCommand& cmd)
         reply->setAltered(!(after == before));
         if (reply->bucketAltered()) {
             notifyGuard.notifyAlways(cmd.getBucket(), after);
-            ++_env._metrics.repairFixed;
+            _env._metrics.repairFixed.inc();
         }
 
         _env.updateBucketDatabase(cmd.getBucket(), after);
@@ -810,7 +810,7 @@ PersistenceThread::processMessage(api::StorageMessage& msg)
 {
     MBUS_TRACE(msg.getTrace(), 5, "PersistenceThread: Processing message in persistence layer");
 
-    ++_env._metrics.operations;
+    _env._metrics.operations.inc();
     if (msg.getType().isReply()) {
         try{
             LOG(debug, "Handling reply: %s", msg.toString().c_str());
@@ -837,7 +837,7 @@ PersistenceThread::processMessage(api::StorageMessage& msg)
                      && tracker->getReply()->getResult().failed())
                     || tracker->getResult().failed())
                 {
-                    ++_env._metrics.failedOperations;
+                    _env._metrics.failedOperations.inc();
                 }
             }
 

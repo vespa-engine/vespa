@@ -78,11 +78,6 @@ public:
     void set(T value);
     void inc(T value = 1);
     void dec(T value = 1);
-    CountMetric & operator++() { inc(); return *this; }
-    CountMetric & operator--() { dec(); return *this; }
-
-    CountMetric operator++(int);
-    CountMetric operator--(int);
 
     CountMetric & operator+=(const CountMetric &);
     CountMetric & operator-=(const CountMetric &);
