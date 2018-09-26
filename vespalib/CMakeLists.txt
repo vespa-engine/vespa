@@ -12,6 +12,7 @@ vespa_define_module(
     src/apps/make_fixture_macros
     src/apps/vespa-detect-hostname
     src/apps/vespa-validate-hostname
+    src/apps/vespa-drop-file-from-cache
 
     TESTS
     src/tests/alignedmemory
@@ -36,6 +37,7 @@ vespa_define_module(
     src/tests/data/smart_buffer
     src/tests/delegatelist
     src/tests/dotproduct
+    src/tests/drop-file-from-cache
     src/tests/dual_merge_director
     src/tests/eventbarrier
     src/tests/exception_classes
