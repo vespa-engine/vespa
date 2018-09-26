@@ -28,7 +28,8 @@ public class NativeIO {
         }
     }
 
-    private final Field fieldFD;
+    private static final Field fieldFD = getField(FileDescriptor.class, "fd");
+
 
     private static native int posix_fadvise(int fd, long offset, long len, int flag) throws LastErrorException;
 
@@ -36,7 +37,6 @@ public class NativeIO {
         if (!initialized) {
             logger.warning("native IO not possible due to " + getError().getMessage());
         }
-        fieldFD = getField(FileDescriptor.class, "fd");
     }
 
     public boolean valid() { return initialized; }
@@ -50,7 +50,7 @@ public class NativeIO {
 
     public void dropFileFromCache(FileDescriptor fd) {
         if (initialized) {
-            posix_fadvise(getfh(fd), 0, 0, POSIX_FADV_DONTNEED);
+            posix_fadvise(getNativeFD(fd), 0, 0, POSIX_FADV_DONTNEED);
         }
     }
 
@@ -76,7 +76,7 @@ public class NativeIO {
         return field;
     }
 
-    private int getfh(FileDescriptor fd) {
+    private static int getNativeFD(FileDescriptor fd) {
         try {
             return fieldFD.getInt(fd);
         } catch (IllegalAccessException e) {

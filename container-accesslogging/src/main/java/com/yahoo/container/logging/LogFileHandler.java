@@ -276,16 +276,16 @@ public class LogFileHandler extends StreamHandler {
 
     private void triggerCompression(String oldFileName) {
         try {
-            String zippedFileName = oldFileName + ".gz";
+            String gzippedFileName = oldFileName + ".gz";
             Runtime r = Runtime.getRuntime();
             StringBuilder cmd = new StringBuilder("gzip");
-            cmd.append(" < "). append(oldFileName).append(" > ").append(zippedFileName);
+            cmd.append(" < "). append(oldFileName).append(" > ").append(gzippedFileName);
             Process p = r.exec(cmd.toString());
             NativeIO nativeIO = new NativeIO();
             File oldFile = new File(oldFileName);
-            nativeIO.dropFileFromCache(oldFile);
+            nativeIO.dropFileFromCache(oldFile); // Drop from cache in case somebody else has a reference to it preventing from dying quickly.
             oldFile.delete();
-            nativeIO.dropFileFromCache(new File(zippedFileName));
+            nativeIO.dropFileFromCache(new File(gzippedFileName));
             // Detonator pattern: Think of all the fun we can have if gzip isn't what we
             // think it is, if it doesn't return, etc, etc
         } catch (IOException e) {
