@@ -37,6 +37,7 @@ vespa_define_module(
     src/tests/data/smart_buffer
     src/tests/delegatelist
     src/tests/dotproduct
+    src/tests/drop-file-from-cache
     src/tests/dual_merge_director
     src/tests/eventbarrier
     src/tests/exception_classes

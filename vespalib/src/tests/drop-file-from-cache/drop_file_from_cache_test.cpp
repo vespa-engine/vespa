@@ -4,10 +4,22 @@
 
 using vespalib::SlaveProc;
 
-TEST("simple run") {
-    std::string out;
-    EXPECT_TRUE(SlaveProc::run("../../apps/vespa-drop-file-from-cache/vespa-drop-file-from-cache", out));
-    EXPECT_EQUAL(out, "foo");
+TEST("no arguments") {
+    SlaveProc drop("../../apps/vespa-drop-file-from-cache/vespa-drop-file-from-cache");
+    drop.wait();
+    EXPECT_EQUAL(1, drop.getExitCode());
+}
+
+TEST("file does not exist") {
+    SlaveProc drop("../../apps/vespa-drop-file-from-cache/vespa-drop-file-from-cache not_exist");
+    drop.wait();
+    EXPECT_EQUAL(2, drop.getExitCode());
+}
+
+TEST("All is well") {
+    SlaveProc drop("../../apps/vespa-drop-file-from-cache/vespa-drop-file-from-cache vespalib_drop_file_from_cache_test_app");
+    drop.wait();
+    EXPECT_EQUAL(0, drop.getExitCode());
 }
 
 TEST_MAIN_WITH_PROCESS_PROXY() { TEST_RUN_ALL(); }
