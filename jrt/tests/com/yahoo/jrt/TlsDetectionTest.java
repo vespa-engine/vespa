@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
+import static org.junit.Assert.assertEquals;
+
 public class TlsDetectionTest {
 
     static private String message(byte[] data, boolean actual) {
@@ -24,9 +26,7 @@ public class TlsDetectionTest {
             data[i] = (byte) values[i];
         }
         boolean actual = MaybeTlsCryptoSocket.looksLikeTlsToMe(data);
-        if(actual != expect) {
-            throw new AssertionError(message(data, actual));
-        }
+        assertEquals(message(data, actual), expect, actual);
     }
 
     @org.junit.Test public void testValidHandshake() {
