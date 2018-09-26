@@ -313,9 +313,13 @@ public class NodeAgentImpl implements NodeAgent {
         logger.info("Suspending services on node");
         if (containerState == ABSENT) return;
         try {
-            dockerOperations.trySuspendNode(containerName);
+            dockerOperations.suspendNode(containerName);
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
+        } catch (RuntimeException e) {
+            // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
+            // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
+            logger.warning("Failed trying to suspend container " + containerName.asString(), e);
         }
     }
 

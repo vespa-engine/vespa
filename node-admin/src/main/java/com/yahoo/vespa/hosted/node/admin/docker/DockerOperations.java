@@ -30,6 +30,8 @@ public interface DockerOperations {
 
     ProcessResult executeCommandInNetworkNamespace(ContainerName containerName, String... command);
 
+
+    /** Resume node. Resuming a node means that it is ready to take on traffic. */
     void resumeNode(ContainerName containerName);
 
     void restartVespaOnNode(ContainerName containerName);
@@ -37,11 +39,14 @@ public interface DockerOperations {
     void stopServicesOnNode(ContainerName containerName);
 
     /**
-     * Try to suspend node. Suspending a node means the node should be taken offline,
-     * such that maintenance of the node can be done (upgrading, rebooting, etc),
-     * and such that we will start serving again as soon as possible afterwards.
+     * Suspend node. Suspending a node means the node should be taken temporarly offline,
+     * such that maintenance of the node can be done (upgrading, rebooting, etc).
      */
-    void trySuspendNode(ContainerName containerName);
+    void suspendNode(ContainerName containerName);
+
+    void restartVespaOnNode(ContainerName containerName);
+
+    void stopServicesOnNode(ContainerName containerName);
 
     Optional<ContainerStats> getContainerStats(ContainerName containerName);
 

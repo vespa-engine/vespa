@@ -194,7 +194,7 @@ public class RunInContainerTest {
 
         // Allow stopping services in active nodes
         doNothing().when(dockerOperationsMock)
-                .trySuspendNode(eq(new ContainerName("host1")));
+                .suspendNode(eq(new ContainerName("host1")));
         doNothing().when(dockerOperationsMock)
                 .stopServicesOnNode(eq(new ContainerName("host1")));
 
