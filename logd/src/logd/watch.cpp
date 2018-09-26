@@ -41,7 +41,7 @@ void snooze(const struct timeval &start)
     tsp.tv_sec  = (wait_usecs / 1000000);
     tsp.tv_nsec = (wait_usecs % 1000000) * 1000;
 
-    if (nanosleep(&tsp, NULL) != 0 && errno != EINTR) {
+    if (nanosleep(&tsp, nullptr) != 0 && errno != EINTR) {
         LOG(error, "nanosleep %ld s %ld ns failed: %s",
             (long)tsp.tv_sec, (long)tsp.tv_nsec, strerror(errno));
         throw SomethingBad("nanosleep failed");
@@ -68,7 +68,7 @@ Watcher::Watcher(ConfSub &cfs, Forwarder &fw)
       _forwarder(fw),
       _wfd(-1)
 {
-    if (_buffer == NULL) {
+    if (_buffer == nullptr) {
         LOG(error, "could not allocate 1MB memory");
         throw SomethingBad("out of memory");
     }
@@ -174,7 +174,7 @@ Watcher::watchfile()
     struct donecache already;
 
     char *target = getenv("VESPA_LOG_TARGET");
-    if (target == NULL || strncmp(target, "file:", 5) != 0) {
+    if (target == nullptr || strncmp(target, "file:", 5) != 0) {
         LOG(error, "expected VESPA_LOG_TARGET (%s) to be a file: target",
             target);
         throw SomethingBad("bad log target");
@@ -251,13 +251,13 @@ Watcher::watchfile()
                 _buffer[rsize] = '\0';
                 char *l = _buffer;
                 char *nnl = (char *)memchr(_buffer, '\n', rsize);
-                if (nnl == NULL && rsize == bufsiz - 1) {
+                if (nnl == nullptr && rsize == bufsiz - 1) {
                     // incredibly long block without any newline ?
                     LOG(error, "no newline in %ld bytes, skipping",
                         static_cast<long>(rsize));
                     offset += rsize;
                 }
-                while (nnl != NULL && elapsed(tickStart) < 1) {
+                while (nnl != nullptr && elapsed(tickStart) < 1) {
                     ++nnl;
                     _forwarder.forwardLine(l, nnl);
                     ssize_t wsize = nnl - l;
@@ -276,7 +276,7 @@ Watcher::watchfile()
         already.st_dev = sb.st_dev;
         already.st_ino = sb.st_ino;
 
-        time_t now = time(NULL);
+        time_t now = time(nullptr);
         bool wantrotate = (now > created + _confsubscriber.getRotateAge())
                           || (sb.st_size > _confsubscriber.getRotateSize());
 
@@ -388,7 +388,7 @@ Watcher::removeOldLogs(const char *prefix)
     myglob.gl_pathc = 0;
     myglob.gl_offs = 0;
     myglob.gl_flags = 0;
-    myglob.gl_pathv = NULL;
+    myglob.gl_pathv = nullptr;
 
     off_t totalsize = 0;
 
@@ -404,10 +404,10 @@ Watcher::removeOldLogs(const char *prefix)
             }
             if (S_ISREG(sb.st_mode)) {
                 if (sb.st_mtime +
-                    _confsubscriber.getRemoveAge() * 86400 < time(NULL))
+                    _confsubscriber.getRemoveAge() * 86400 < time(nullptr))
                 {
                     LOG(info, "removing %s, too old (%f days)", fname,
-                        (double)(time(NULL)-sb.st_mtime)/86400.0);
+                        (double)(time(nullptr)-sb.st_mtime)/86400.0);
 
                     if (unlink(fname) != 0) {
                         LOG(warning, "cannot remove %s: %s",

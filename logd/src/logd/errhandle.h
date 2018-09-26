@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
+
 #include <stdexcept>
 #include <vespa/vespalib/stllike/string.h>
 
@@ -10,7 +11,7 @@ private:
     vespalib::string _string;
 public:
     MsgException(const char *s) : _string(s) {}
-    virtual ~MsgException() throw() {}
+    ~MsgException() override {}
     const char *what() const throw() override { return _string.c_str(); }
 };
 

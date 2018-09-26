@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/metrics/dummy_metrics_manager.h>
 #include <logd/forward.h>
+#include <logd/metrics.h>
 #include <sstream>
 #include <fcntl.h>
 #include <unistd.h>

@@ -1,25 +1,23 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
 #include <fcntl.h>
-#include <errno.h>
+#include <cerrno>
 #include <unistd.h>
-#include <time.h>
+#include <ctime>
 #include <sys/stat.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
 #include <vespa/log/control-file.h>
 LOG_SETUP("logdemon");
-LOG_RCSID("$Id$");
 
 #include "service.h"
 
 namespace logdemon {
 
 unsigned long Component::defFwd = (unsigned long)-1;
-
 
 void
 Component::doLogAtAll(LogLevel level)
@@ -72,10 +70,7 @@ Component::shouldLogAtAll(LogLevel level)
     try {
         ControlFile foo(lcfn, ControlFile::READWRITE);
         unsigned int *lstring = foo.getLevels(_logctlname);
-        if (lstring[level] == CHARS_TO_UINT(' ', ' ', 'O', 'N'))
-            return true;
-        else
-            return false;
+        return (lstring[level] == CHARS_TO_UINT(' ', ' ', 'O', 'N'));
     } catch (...) {
         LOG(debug, "exception checking logcontrol for %s", _myservice);
     }
@@ -114,8 +109,7 @@ Services::dumpState(int fildesc)
         while (it.valid()) {
             Component *cmp = it.value();
             char buf[1024];
-            int pos = snprintf(buf, 1024, "setstate %s %s ",
-                               sit.key(), it.key());
+            int pos = snprintf(buf, 1024, "setstate %s %s ", sit.key(), it.key());
             for (int i = 0; pos < 1000 && i < Logger::NUM_LOGLEVELS; i++) {
                 LogLevel l = static_cast<LogLevel>(i);
                 pos += snprintf(buf+pos, 1024-pos, "%s=%s,",
@@ -135,5 +129,4 @@ Services::dumpState(int fildesc)
     }
 }
 
-
-} // namespace
+}

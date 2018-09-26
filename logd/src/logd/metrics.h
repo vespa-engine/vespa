@@ -16,24 +16,10 @@ struct Metrics {
     const Dimension servicename;
     const Counter loglines;
 
-    Metrics(std::shared_ptr<MetricsManager> m)
-        : metrics(m),
-          loglevel(metrics->dimension("loglevel")),
-          servicename(metrics->dimension("service")),
-          loglines(metrics->counter("logd.processed.lines",
-                  "how many log lines have been processed"))
-    {}
+    Metrics(std::shared_ptr<MetricsManager> m);
+    ~Metrics();
 
-    ~Metrics() {}
-
-    void countLine(const vespalib::string &level,
-                   const vespalib::string &service) const
-    {
-        Point p = metrics->pointBuilder()
-                  .bind(loglevel, level)
-                  .bind(servicename, service);
-        loglines.add(1, p);
-    }
+    void countLine(const vespalib::string &level, const vespalib::string &service) const;
 };
 
 } // namespace logdemon

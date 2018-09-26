@@ -42,7 +42,7 @@ public:
         {
             assert(ns_log::Logger::NUM_LOGLEVELS < 32);
             const char *withoutprefix = strchr(name, '.');
-            if (withoutprefix != NULL) {
+            if (withoutprefix != nullptr) {
                 strcpy(_logctlname, withoutprefix);
             } else {
                 strcpy(_logctlname, "");
@@ -72,7 +72,7 @@ public:
         return _components[comp];
     }
     Service(const char *name)
-        : _myname(strdup(name)), _components(NULL) {}
+        : _myname(strdup(name)), _components(nullptr) {}
     ~Service();
 };
 
@@ -89,7 +89,7 @@ public:
         }
         return _services[serv];
     }
-    Services() : _services(NULL) {}
+    Services() : _services(nullptr) {}
     ~Services();
     void dumpState(int fildesc);
 };
