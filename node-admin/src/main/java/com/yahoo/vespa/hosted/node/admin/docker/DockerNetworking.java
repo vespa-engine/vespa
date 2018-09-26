@@ -28,7 +28,7 @@ public enum DockerNetworking {
     }
 
     public static DockerNetworking from(String cloud, NodeType nodeType, boolean hostAdmin) {
-        if (cloud.equals("AWS")) {
+        if (cloud.equals("aws")) {
             return DockerNetworking.NPT;
         } else if (nodeType == NodeType.confighost || nodeType == NodeType.proxyhost) {
             return DockerNetworking.HOST_NETWORK;
