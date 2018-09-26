@@ -25,6 +25,7 @@ public enum JobType {
     productionEuWest1      ("production-eu-west-1"        , ZoneId.from("prod"   , "eu-west-1")      , null                                                          ),
     productionAwsUsEast1a  ("production-aws-us-east-1a"   , ZoneId.from("prod"   , "aws-us-east-1a") , null                                                          ),
     productionAwsUsWest1b  ("production-aws-us-west-1b"   , ZoneId.from("prod"   , "aws-us-west-1b") , null                                                          ),
+    productionAwsUsEast1b  ("production-aws-us-east-1b"   , ZoneId.from("prod"   , "aws-us-east-1b") , null                                                          ),
     productionCdAwsUsEast1a("production-cd-aws-us-east-1a", null                                                       , ZoneId.from("prod"    , "cd-aws-us-east-1a")),
     productionCdUsCentral1 ("production-cd-us-central-1"  , null                                                       , ZoneId.from("prod"    , "cd-us-central-1")  ),
     productionCdUsCentral2 ("production-cd-us-central-2"  , null                                                       , ZoneId.from("prod"    , "cd-us-central-2")  );
