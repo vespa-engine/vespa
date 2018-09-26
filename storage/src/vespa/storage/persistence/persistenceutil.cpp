@@ -23,7 +23,7 @@ MessageTracker::MessageTracker(FileStorThreadMetrics::Op& metric,
       _result(api::ReturnCode::OK),
       _timer(clock)
 {
-    ++_metric.count;
+    _metric.count.inc();
 }
 
 MessageTracker::~MessageTracker()
@@ -53,7 +53,7 @@ MessageTracker::generateReply(api::StorageCommand& cmd)
     }
 
     if (!_reply->getResult().success()) {
-        ++_metric.failed;
+        _metric.failed.inc();
         LOGBP(debug, "Failed to handle command %s: %s",
               cmd.toString().c_str(),
               _result.toString().c_str());
