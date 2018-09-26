@@ -302,8 +302,18 @@ public class NodeAgentImpl implements NodeAgent {
         logger.info("Stopping services");
         if (containerState == ABSENT) return;
         try {
-            dockerOperations.trySuspendNode(containerName);
             dockerOperations.stopServicesOnNode(containerName);
+        } catch (ContainerNotFoundException e) {
+            containerState = ABSENT;
+        }
+    }
+
+    @Override
+    public void suspend() {
+        logger.info("Suspending services on node");
+        if (containerState == ABSENT) return;
+        try {
+            dockerOperations.trySuspendNode(containerName);
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
         }
@@ -344,6 +354,9 @@ public class NodeAgentImpl implements NodeAgent {
                 }
 
                 try {
+                    if (node.getState() != Node.State.dirty) {
+                        suspend();
+                    }
                     stopServices();
                 } catch (Exception e) {
                     logger.info("Failed stopping services, ignoring", e);

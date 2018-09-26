@@ -426,6 +426,8 @@ public class NodeAgentImplTest {
 
         verify(dockerOperations, never()).createContainer(eq(containerName), any(), any());
         verify(dockerOperations, never()).startContainer(eq(containerName));
+        verify(dockerOperations, never()).trySuspendNode(eq(containerName));
+        verify(dockerOperations, times(1)).stopServicesOnNode(eq(containerName));
         verify(orchestrator, never()).resume(any(String.class));
         verify(orchestrator, never()).suspend(any(String.class));
         // current Docker image and vespa version should be cleared

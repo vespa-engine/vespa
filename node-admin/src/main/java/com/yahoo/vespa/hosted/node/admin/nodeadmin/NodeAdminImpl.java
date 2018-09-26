@@ -145,7 +145,10 @@ public class NodeAdminImpl implements NodeAdmin {
         // Each container may spend 1-1:30 minutes stopping
         nodeAgentsByHostname.values().parallelStream()
                 .filter(nodeAgent -> hostnames.contains(nodeAgent.getHostname()))
-                .forEach(NodeAgent::stopServices);
+                .forEach(nodeAgent -> {
+                    nodeAgent.suspend();
+                    nodeAgent.stopServices();
+                });
     }
 
     public int getNumberOfNodeAgents() {

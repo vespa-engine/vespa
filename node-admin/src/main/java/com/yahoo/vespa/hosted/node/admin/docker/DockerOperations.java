@@ -38,7 +38,7 @@ public interface DockerOperations {
 
     /**
      * Try to suspend node. Suspending a node means the node should be taken offline,
-     * such that maintenance can be done of the node (upgrading, rebooting, etc),
+     * such that maintenance of the node can be done (upgrading, rebooting, etc),
      * and such that we will start serving again as soon as possible afterwards.
      */
     void trySuspendNode(ContainerName containerName);
