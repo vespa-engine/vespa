@@ -34,9 +34,6 @@ public interface ZoneRegistry {
     /** Returns the URI for the config server VIP in the given zone, or Optional.empty() if no VIP exists */
     default Optional<URI> getConfigServerVipUri(ZoneId zoneId) { return Optional.empty(); }
 
-    /** Returns all possible API endpoints of all known config servers and config server VIPs in the given zone */
-    List<URI> getConfigServerApiUris(ZoneId zoneId);
-
     /** Returns a URL with the logs for the given deployment, if logging is configured for its zone */
     Optional<URI> getLogServerUri(DeploymentId deploymentId);
 

@@ -3,10 +3,10 @@
     {
       "name": "cluster1",
       "type": "content",
-      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/service/container-clustercontroller-6s8slgtps7ry8uh6lx21ejjiv/cluster/v2/cluster1",
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/service/container-clustercontroller-6s8slgtps7ry8uh6lx21ejjiv/cluster/v2/cluster1",
       "services": [
         {
-          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/service/storagenode-awe3slno6mmq2fye191y324jl/state/v1/",
+          "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/service/storagenode-awe3slno6mmq2fye191y324jl/state/v1/",
           "serviceType": "storagenode",
           "serviceName": "storagenode",
           "configId": "cluster1/storage/0",
