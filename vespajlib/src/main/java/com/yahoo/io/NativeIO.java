@@ -12,8 +12,11 @@ import com.sun.jna.LastErrorException;
 import com.sun.jna.Native;
 import com.sun.jna.Platform;
 
+/**
+ * Provides functionality only possible through native C library.
+ */
 public class NativeIO {
-    private final Logger logger = Logger.getLogger(getClass().getName());
+    private final static Logger logger = Logger.getLogger(NativeIO.class.getName());
     private static final int POSIX_FADV_DONTNEED = 4; // See /usr/include/linux/fadvise.h
     private static boolean initialized = false;
     private static Throwable initError = null;
@@ -48,12 +51,20 @@ public class NativeIO {
         }
     }
 
+    /**
+     * Will hint the OS that this is will not be accessed again and should hence be dropped from the buffer cache.
+     * @param fd The file descriptor to drop from buffer cache.
+     */
     public void dropFileFromCache(FileDescriptor fd) {
         if (initialized) {
             posix_fadvise(getNativeFD(fd), 0, 0, POSIX_FADV_DONTNEED);
         }
     }
 
+    /**
+     * Will hint the OS that this is will not be accessed again and should hence be dropped from the buffer cache.
+     * @param file File to drop from buffer cache
+     */
     public void dropFileFromCache(File file) {
         try {
             dropFileFromCache(new FileInputStream(file).getFD());
