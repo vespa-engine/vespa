@@ -42,6 +42,8 @@ public interface DockerOperations {
 
     void restartVespa(ContainerName containerName);
 
+    void startServices(ContainerName containerName);
+
     void stopServices(ContainerName containerName);
 
     Optional<ContainerStats> getContainerStats(ContainerName containerName);
