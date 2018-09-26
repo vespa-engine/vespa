@@ -28,13 +28,14 @@ import java.util.logging.Logger;
  * This class is a bridge between Jetty's {@link org.eclipse.jetty.server.handler.RequestLogHandler}
  * and our own configurable access logging in different formats provided by {@link AccessLog}.
  *
- * @author bakksjo
+ * @author Oyvind Bakksjo
  * @author bjorncs
  */
 public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog {
 
     private static final Logger logger = Logger.getLogger(AccessLogRequestLog.class.getName());
 
+    // TODO These hardcoded headers should be provided by config instead
     private static final String HEADER_NAME_X_FORWARDED_FOR = "x-forwarded-for";
     private static final String HEADER_NAME_Y_RA = "y-ra";
     private static final String HEADER_NAME_Y_RP = "y-rp";
@@ -83,7 +84,6 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
     public static void populateAccessLogEntryFromHttpServletRequest(
             final HttpServletRequest request,
             final AccessLogEntry accessLogEntry) {
-        setUriFromRequest(request, accessLogEntry);
 
         accessLogEntry.setRawPath(request.getRequestURI());
         String queryString = request.getQueryString();
@@ -134,54 +134,5 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
         return Optional.ofNullable(request.getHeader(HEADER_NAME_Y_RP))
                 .map(Integer::valueOf)
                 .orElseGet(request::getRemotePort);
-    }
-
-    @SuppressWarnings("deprecation")
-    private static void setUriFromRequest(HttpServletRequest request, AccessLogEntry accessLogEntry) {
-        tryCreateUriFromRequest(request)
-                .ifPresent(accessLogEntry::setURI); // setURI is deprecated
-    }
-
-    // This is a mess and does not work correctly
-    private static Optional<URI> tryCreateUriFromRequest(HttpServletRequest request) {
-        final String quotedQuery = request.getQueryString();
-        final String quotedPath = request.getRequestURI();
-        try {
-            final StringBuilder uriBuffer = new StringBuilder();
-            uriBuffer.append(quotedPath);
-            if (quotedQuery != null) {
-                uriBuffer.append('?').append(quotedQuery);
-            }
-            return Optional.of(new URI(uriBuffer.toString()));
-        } catch (URISyntaxException e) {
-            return setUriFromMalformedInput(quotedPath, quotedQuery);
-        }
-    }
-
-    private static Optional<URI> setUriFromMalformedInput(final String quotedPath, final String quotedQuery) {
-        try {
-            final String scheme = null;
-            final String authority = null;
-            final String fragment = null;
-            return Optional.of(new URI(scheme, authority, unquote(quotedPath), unquote(quotedQuery), fragment));
-        } catch (URISyntaxException e) {
-            // I have no idea how this can happen here now...
-            logger.log(Level.WARNING, "Could not convert String URI to URI object", e);
-            return Optional.empty();
-        }
-    }
-
-    private static String unquote(final String quotedQuery) {
-        if (quotedQuery == null) {
-            return null;
-        }
-        try {
-            // inconsistent handling of semi-colon added here...
-            return URLDecoder.decode(quotedQuery, StandardCharsets.UTF_8.name());
-        } catch (IllegalArgumentException e) {
-            return quotedQuery;
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e); // should not happen
-        }
     }
 }
