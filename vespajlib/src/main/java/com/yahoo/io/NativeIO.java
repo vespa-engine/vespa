@@ -34,14 +34,18 @@ public class NativeIO {
 
     public NativeIO() {
         if (!initialized) {
-            logger.warning("native IO not possible due to " + initError);
-            if (initError != null) {
-                throw new RuntimeException(initError);
-            } else {
-                throw new RuntimeException("Platform is unsúpported. Only supported on linux.");
-            }
+            logger.warning("native IO not possible due to " + getError().getMessage());
         }
         fieldFD = getField(FileDescriptor.class, "fd");
+    }
+
+    public boolean valid() { return initialized; }
+    public Throwable getError() {
+        if (initError != null) {
+            return initError;
+        } else {
+            return new RuntimeException("Platform is unsúpported. Only supported on linux.");
+        }
     }
 
     public void dropFileFromCache(FileDescriptor fd) {

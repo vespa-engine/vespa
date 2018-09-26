@@ -9,6 +9,8 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+
 
 
 public class NativeIOTestCase {
@@ -20,16 +22,15 @@ public class NativeIOTestCase {
         output.write('t');
         output.flush();
         output.close();
-        try {
-            NativeIO nativeIO = new NativeIO();
-            nativeIO.dropFileFromCache(output.getFD());
-            nativeIO.dropFileFromCache(testFile);
-        } catch (Throwable e) {
-            if (Platform.isLinux()) {
-                assertTrue(false);
-            } else {
-                assertEquals("Platform is unsúpported. Only supported on linux.", e.getMessage());
-            }
+        NativeIO nativeIO = new NativeIO();
+        if (Platform.isLinux()) {
+            assertTrue(nativeIO.valid());
+        } else {
+            assertFalse(nativeIO.valid());
+            assertEquals("Platform is unsúpported. Only supported on linux.", nativeIO.getError().getMessage());
         }
+        nativeIO.dropFileFromCache(output.getFD());
+        nativeIO.dropFileFromCache(testFile);
+        testFile.delete();
     }
 }
