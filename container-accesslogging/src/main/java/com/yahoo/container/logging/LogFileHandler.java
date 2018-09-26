@@ -2,7 +2,6 @@
 package com.yahoo.container.logging;
 
 import com.yahoo.container.core.AccessLogConfig;
-import com.yahoo.io.NativeIO;
 import com.yahoo.log.LogFileDb;
 
 import java.io.File;
@@ -264,28 +263,15 @@ public class LogFileHandler extends StreamHandler {
         numberOfRecords = 0;
         lastRotationTime = now;
         nextRotationTime = 0; //figure it out later (lazy evaluation)
-        if ((oldFileName != null)) {
-            if (compressOnRotation) {
-                triggerCompression(oldFileName);
-            } else {
-                NativeIO nativeIO = new NativeIO();
-                nativeIO.dropFileFromCache(new File(oldFileName));
-            }
+        if (compressOnRotation && (oldFileName != null)) {
+            triggerCompression(oldFileName);
         }
     }
 
     private void triggerCompression(String oldFileName) {
         try {
-            String gzippedFileName = oldFileName + ".gz";
             Runtime r = Runtime.getRuntime();
-            StringBuilder cmd = new StringBuilder("gzip");
-            cmd.append(" < "). append(oldFileName).append(" > ").append(gzippedFileName);
-            Process p = r.exec(cmd.toString());
-            NativeIO nativeIO = new NativeIO();
-            File oldFile = new File(oldFileName);
-            nativeIO.dropFileFromCache(oldFile); // Drop from cache in case somebody else has a reference to it preventing from dying quickly.
-            oldFile.delete();
-            nativeIO.dropFileFromCache(new File(gzippedFileName));
+            Process p = r.exec(new String[] { "gzip", oldFileName });
             // Detonator pattern: Think of all the fun we can have if gzip isn't what we
             // think it is, if it doesn't return, etc, etc
         } catch (IOException e) {
