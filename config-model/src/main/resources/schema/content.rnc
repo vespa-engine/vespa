@@ -302,7 +302,6 @@ Tuning = element tuning {
                element maxage { xsd:nonNegativeInteger }?
             }? &
             element transactionlog {
-               element maxentries { xsd:nonNegativeInteger }? &
                element maxsize { xsd:nonNegativeInteger }?
             }? &
             element conservative {
@@ -336,16 +335,13 @@ Tuning = element tuning {
                element maxsize { xsd:nonNegativeInteger }? &
                element maxsize-percent { xsd:double { minInclusive = "0.0" maxInclusive = "50.0" } }? &
                element initialentries { xsd:nonNegativeInteger }? &
-               element maxentries { xsd:nonNegativeInteger }? &
                TuningCompression?
             }? &
             element logstore {
                element maxfilesize { xsd:nonNegativeInteger }? &
-               element maxdiskbloatfactor { xsd:double { minInclusive = "0.0" } }? &
                element minfilesizefactor { xsd:double { minInclusive = "0.10" maxInclusive = "1.0" } }? &
                element chunk {
                   element maxsize { xsd:nonNegativeInteger }? &
-                  element maxentries { xsd:nonNegativeInteger }? &
                   TuningCompression?
                }?
             }?
