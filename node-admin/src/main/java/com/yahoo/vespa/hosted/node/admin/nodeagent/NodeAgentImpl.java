@@ -293,7 +293,7 @@ public class NodeAgentImpl implements NodeAgent {
             logger.info("Restarting services");
             // Since we are restarting the services we need to suspend the node.
             orchestratorSuspendNode();
-            dockerOperations.restartVespaOnNode(containerName);
+            dockerOperations.restartVespa(containerName);
         }
     }
 
@@ -302,7 +302,7 @@ public class NodeAgentImpl implements NodeAgent {
         logger.info("Stopping services");
         if (containerState == ABSENT) return;
         try {
-            dockerOperations.stopServicesOnNode(containerName);
+            dockerOperations.stopServices(containerName);
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
         }

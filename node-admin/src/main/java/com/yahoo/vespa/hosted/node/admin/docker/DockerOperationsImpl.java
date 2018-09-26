@@ -296,12 +296,12 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void restartVespaOnNode(ContainerName containerName) {
+    public void restartVespa(ContainerName containerName) {
         executeCommandInContainer(containerName, nodeProgram, "restart-vespa");
     }
 
     @Override
-    public void stopServicesOnNode(ContainerName containerName) {
+    public void stopServices(ContainerName containerName) {
         executeCommandInContainer(containerName, nodeProgram, "stop");
     }
 

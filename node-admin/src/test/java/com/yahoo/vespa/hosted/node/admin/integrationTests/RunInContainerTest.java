@@ -196,7 +196,7 @@ public class RunInContainerTest {
         doNothing().when(dockerOperationsMock)
                 .suspendNode(eq(new ContainerName("host1")));
         doNothing().when(dockerOperationsMock)
-                .stopServicesOnNode(eq(new ContainerName("host1")));
+                .stopServices(eq(new ContainerName("host1")));
 
         assertTrue(verifyWithRetries("suspend", false));
         assertTrue(verifyWithRetries("suspend", true));
