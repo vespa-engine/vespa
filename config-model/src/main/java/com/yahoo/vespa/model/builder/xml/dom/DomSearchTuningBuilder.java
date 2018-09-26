@@ -128,9 +128,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                 }
             } else if (equals("transactionlog", e)) {
                 for (Element subElem : XML.getChildren(e)) {
-                    if (equals("maxentries", subElem)) {
-                        deployLogger.log(Level.WARNING, "Element 'transactionlog.maxentries is deprecated and ignored in 'native' flush strategy. Use 'transactionlog.maxsize' to limit by size.");
-                    } else if (equals("maxsize", subElem)) {
+                    if (equals("maxsize", subElem)) {
                         fs.transactionLogMaxSize = asLong(subElem);
                     }
                 }
@@ -224,8 +222,6 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                 c.maxSize = asLong(e);
             } else if (equals("maxsize-percent", e)) {
                 c.maxSizePercent = asDouble(e);
-            } else if (equals("maxentries", e)) {
-                deployLogger.log(Level.WARNING, "Element 'maxentries is deprecated and ignored. Will only limit by size.");
             } else if (equals("initialentries", e)) {
                 c.initialEntries = asLong(e);
             } else if (equals("compression", e)) {
@@ -250,10 +246,6 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         for (Element e : XML.getChildren(spec)) {
             if (equals("maxfilesize", e)) {
                 s.logStore.maxFileSize = asLong(e);
-            } else if (equals("maxdiskbloatfactor", e)) {
-                deployLogger.log(Level.WARNING,
-                        "Element 'maxdiskbloatfactor is deprecated and ignored." +
-                        " The min value from flush.memory.xxx.diskbloatfactor is used instead");
             } else if (equals("minfilesizefactor", e)) {
                 s.logStore.minFileSizeFactor = asDouble(e);
             } else if (equals("chunk", e)) {
