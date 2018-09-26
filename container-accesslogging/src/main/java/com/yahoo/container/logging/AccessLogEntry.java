@@ -61,7 +61,6 @@ public class AccessLogEntry {
     private long timeStampMillis;
     private long durationBetweenRequestResponseMillis;
     private long numBytesReturned;
-    private URI uri;
 
 
     private String remoteAddress;
@@ -597,27 +596,6 @@ public class AccessLogEntry {
     public long getReturnedContentSize() {
         synchronized (monitor) {
             return numBytesReturned;
-        }
-    }
-
-    /**
-     * @deprecated Use {@link #setRawPath(String)} and {@link #setRawQuery(String)} instead.
-     */
-    @Deprecated
-    public void setURI(final URI uri) {
-        synchronized (monitor) {
-            requireNull(this.uri);
-            this.uri = uri;
-        }
-    }
-
-    /**
-     * @deprecated Use {@link #getRawPath()} and {@link #getRawQuery()} instead. This method may return wrong path.
-     */
-    @Deprecated
-    public URI getURI() {
-        synchronized (monitor) {
-            return uri;
         }
     }
 
