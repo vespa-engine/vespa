@@ -5,6 +5,7 @@ import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.SyncFailedException;
 import java.lang.reflect.Field;
 import java.util.logging.Logger;
 
@@ -56,6 +57,11 @@ public class NativeIO {
      * @param fd The file descriptor to drop from buffer cache.
      */
     public void dropFileFromCache(FileDescriptor fd) {
+        try {
+            fd.sync();
+        } catch (SyncFailedException e) {
+            logger.warning("Sync failed while dropping cache: " + e.getMessage());
+        }
         if (initialized) {
             posix_fadvise(getNativeFD(fd), 0, 0, POSIX_FADV_DONTNEED);
         }
@@ -69,7 +75,7 @@ public class NativeIO {
         try {
             dropFileFromCache(new FileInputStream(file).getFD());
         } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
+            logger.warning("No point in dropping a non-existing file from the buffer cache: " + e.getMessage());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
