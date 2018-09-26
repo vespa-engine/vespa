@@ -49,13 +49,13 @@ public class AclMaintainerTest {
     @Before
     public void before() {
         when(dockerOperations.getAllManagedContainers()).thenReturn(containerList);
-        when(env.getCloud()).thenReturn("AWS");
+        when(env.getCloud()).thenReturn("aws");
         when(env.getDockerNetworking()).thenReturn(DockerNetworking.NPT);
     }
 
     @Test
     public void no_redirect_in_yahoo() {
-        when(env.getCloud()).thenReturn("YAHOO");
+        when(env.getCloud()).thenReturn("yahoo");
         when(env.getDockerNetworking()).thenReturn(DockerNetworking.MACVLAN);
 
         Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
