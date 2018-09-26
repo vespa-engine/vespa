@@ -279,10 +279,11 @@ public class LogFileHandler extends StreamHandler {
 
     private void triggerCompression(File oldFile) {
         try {
-            String gzippedFileName = oldFile.getName() + ".gz";
+            String oldFileName = oldFile.getPath();
+            String gzippedFileName = oldFileName + ".gz";
             Runtime r = Runtime.getRuntime();
             StringBuilder cmd = new StringBuilder("gzip");
-            cmd.append(" < "). append(oldFile.getName()).append(" > ").append(gzippedFileName);
+            cmd.append(" < "). append(oldFileName).append(" > ").append(gzippedFileName);
             Process p = r.exec(cmd.toString());
             NativeIO nativeIO = new NativeIO();
             nativeIO.dropFileFromCache(oldFile); // Drop from cache in case somebody else has a reference to it preventing from dying quickly.
