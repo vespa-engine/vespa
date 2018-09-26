@@ -31,6 +31,10 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-exec</artifactId>
     </dependency>
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+    </dependency>
 
 
     <!-- provided scope -->
