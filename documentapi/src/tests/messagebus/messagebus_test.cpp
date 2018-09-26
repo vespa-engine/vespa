@@ -4,6 +4,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/vdslib/state/clusterstate.h>

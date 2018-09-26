@@ -57,7 +57,6 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     std::vector<vespalib::VersionSpecification> from6  = { version6 };
 
     // Add 5.0 serialization
-    putRoutableFactory(MESSAGE_BATCHDOCUMENTUPDATE, IRoutableFactory::SP(new RoutableFactories50::BatchDocumentUpdateMessageFactory(*_repo)), from50);
     putRoutableFactory(MESSAGE_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories50::CreateVisitorMessageFactory(*_repo)), from50);
     putRoutableFactory(MESSAGE_DESTROYVISITOR, IRoutableFactory::SP(new RoutableFactories50::DestroyVisitorMessageFactory()), from50);
     putRoutableFactory(MESSAGE_DOCUMENTLIST, IRoutableFactory::SP(new RoutableFactories50::DocumentListMessageFactory(*_repo)), from50);
@@ -75,7 +74,6 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     putRoutableFactory(MESSAGE_STATBUCKET, IRoutableFactory::SP(new RoutableFactories50::StatBucketMessageFactory()), from50);
     putRoutableFactory(MESSAGE_UPDATEDOCUMENT, IRoutableFactory::SP(new RoutableFactories50::UpdateDocumentMessageFactory(*_repo)), from50);
     putRoutableFactory(MESSAGE_VISITORINFO, IRoutableFactory::SP(new RoutableFactories50::VisitorInfoMessageFactory()), from50);
-    putRoutableFactory(REPLY_BATCHDOCUMENTUPDATE, IRoutableFactory::SP(new RoutableFactories50::BatchDocumentUpdateReplyFactory()), from50);
     putRoutableFactory(REPLY_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories50::CreateVisitorReplyFactory()), from50);
     putRoutableFactory(REPLY_DESTROYVISITOR, IRoutableFactory::SP(new RoutableFactories50::DestroyVisitorReplyFactory()), from50);
     putRoutableFactory(REPLY_DOCUMENTLIST, IRoutableFactory::SP(new RoutableFactories50::DocumentListReplyFactory()), from50);

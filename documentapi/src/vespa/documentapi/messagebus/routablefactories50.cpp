@@ -4,6 +4,7 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/document/select/parser.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -65,69 +66,6 @@ RoutableFactories50::DocumentReplyFactory::decode(document::ByteBuffer &in, cons
 // Factories
 //
 ////////////////////////////////////////////////////////////////////////////////
-
-DocumentMessage::UP
-RoutableFactories50::BatchDocumentUpdateMessageFactory::doDecode(document::ByteBuffer &buf) const
-{
-    uint64_t userId = (uint64_t)decodeLong(buf);
-    string group = decodeString(buf);
-
-    auto msg = (group.length())
-               ? std::make_unique<BatchDocumentUpdateMessage>(group)
-               : std::make_unique<BatchDocumentUpdateMessage>(userId);
-
-    uint32_t len = decodeInt(buf);
-    for (uint32_t i = 0; i < len; i++) {
-        document::DocumentUpdate::SP upd = document::DocumentUpdate::createHEAD(_repo, buf);
-        msg->addUpdate(upd);
-    }
-
-    return msg;
-}
-
-bool
-RoutableFactories50::BatchDocumentUpdateMessageFactory::doEncode(const DocumentMessage &obj, vespalib::GrowableByteBuffer &buf) const
-{
-    const BatchDocumentUpdateMessage &msg = static_cast<const BatchDocumentUpdateMessage&>(obj);
-
-    buf.putLong(msg.getUserId());
-    buf.putString(msg.getGroup());
-    buf.putInt(msg.getUpdates().size());
-
-    vespalib::nbostream stream;
-    for (const auto & update : msg.getUpdates()) {
-        update->serializeHEAD(stream);
-    }
-    buf.putBytes(stream.c_str(), stream.size());
-
-    return true;
-}
-
-DocumentReply::UP
-RoutableFactories50::BatchDocumentUpdateReplyFactory::doDecode(document::ByteBuffer &buf) const
-{
-    auto reply = std::make_unique<BatchDocumentUpdateReply>();
-    reply->setHighestModificationTimestamp(decodeLong(buf));
-    std::vector<bool>& notFound = reply->getDocumentsNotFound();
-    notFound.resize(decodeInt(buf));
-    for (std::size_t i = 0; i < notFound.size(); ++i) {
-        notFound[i] = decodeBoolean(buf);
-    }
-    return reply;
-}
-
-bool
-RoutableFactories50::BatchDocumentUpdateReplyFactory::doEncode(const DocumentReply &obj, vespalib::GrowableByteBuffer &buf) const
-{
-    const BatchDocumentUpdateReply& reply = static_cast<const BatchDocumentUpdateReply&>(obj);
-    buf.putLong(reply.getHighestModificationTimestamp());
-    const std::vector<bool>& notFoundV = reply.getDocumentsNotFound();
-    buf.putInt(notFoundV.size());
-    for (bool notFound : notFoundV) {
-        buf.putBoolean(notFound);
-    }
-    return true;
-}
 
 DocumentMessage::UP
 RoutableFactories50::CreateVisitorMessageFactory::doDecode(document::ByteBuffer &buf) const

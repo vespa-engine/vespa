@@ -5,6 +5,7 @@
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
@@ -22,7 +23,6 @@ Messages50Test::Messages50Test()
 {
     // This list MUST mirror the list of routable factories from the DocumentProtocol constructor that support
     // version 5.0. When adding tests to this list, please KEEP THEM ORDERED alphabetically like they are now.
-    putTest(DocumentProtocol::MESSAGE_BATCHDOCUMENTUPDATE, TEST_METHOD(Messages50Test::testBatchDocumentUpdateMessage));
     putTest(DocumentProtocol::MESSAGE_CREATEVISITOR, TEST_METHOD(Messages50Test::testCreateVisitorMessage));
     putTest(DocumentProtocol::MESSAGE_DESTROYVISITOR, TEST_METHOD(Messages50Test::testDestroyVisitorMessage));
     putTest(DocumentProtocol::MESSAGE_DOCUMENTLIST, TEST_METHOD(Messages50Test::testDocumentListMessage));
@@ -41,7 +41,6 @@ Messages50Test::Messages50Test()
     putTest(DocumentProtocol::MESSAGE_UPDATEDOCUMENT, TEST_METHOD(Messages50Test::testUpdateDocumentMessage));
     putTest(DocumentProtocol::MESSAGE_VISITORINFO, TEST_METHOD(Messages50Test::testVisitorInfoMessage));
 
-    putTest(DocumentProtocol::REPLY_BATCHDOCUMENTUPDATE, TEST_METHOD(Messages50Test::testBatchDocumentUpdateReply));
     putTest(DocumentProtocol::REPLY_CREATEVISITOR, TEST_METHOD(Messages50Test::testCreateVisitorReply));
     putTest(DocumentProtocol::REPLY_DESTROYVISITOR, TEST_METHOD(Messages50Test::testDestroyVisitorReply));
     putTest(DocumentProtocol::REPLY_DOCUMENTLIST, TEST_METHOD(Messages50Test::testDocumentListReply));
@@ -259,38 +258,27 @@ Messages50Test::testDocumentSummaryMessage()
     EXPECT_EQUAL(srm.hasSequenceId(), false);
     EXPECT_EQUAL(srm.getSummaryCount(), size_t(0));
 
-    mbus::Blob data = encode(srm);
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + size_t(12), serialize("DocumentSummaryMessage-1", srm));
 
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + size_t(12), data.size());
-
-    writeFile(getPath("5-cpp-DocumentSummaryMessage-1.dat"), data);
-    // print(data);
-
-    mbus::Routable::UP routable = decode(data);
+    mbus::Routable::UP routable = deserialize("DocumentSummaryMessage-1", DocumentProtocol::MESSAGE_DOCUMENTSUMMARY, LANG_CPP);
     if (!EXPECT_TRUE(routable.get() != NULL)) {
         return false;
     }
-    EXPECT_EQUAL(routable->getType(), (uint32_t)DocumentProtocol::MESSAGE_DOCUMENTSUMMARY);
     DocumentSummaryMessage * dm = static_cast<DocumentSummaryMessage *>(routable.get());
     EXPECT_EQUAL(dm->getSummaryCount(), size_t(0));
 
     srm.addSummary("doc1", "summary1", 8);
     srm.addSummary("aoc17", "summary45", 9);
 
-    data = encode(srm);
-    //print(data);
-
     const void *summary(NULL);
     const char *docId(NULL);
     size_t sz(0);
 
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 52u, data.size());
-    writeFile(getPath("5-cpp-DocumentSummaryMessage-2.dat"), data);
-    routable = decode(data);
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 52u, serialize("DocumentSummaryMessage-2", srm));
+    routable = deserialize("DocumentSummaryMessage-2", DocumentProtocol::MESSAGE_DOCUMENTSUMMARY, LANG_CPP);
     if (!EXPECT_TRUE(routable.get() != NULL)) {
         return false;
     }
-    EXPECT_EQUAL(routable->getType(), (uint32_t)DocumentProtocol::MESSAGE_DOCUMENTSUMMARY);
     dm = static_cast<DocumentSummaryMessage *>(routable.get());
     EXPECT_EQUAL(dm->getSummaryCount(), size_t(2));
     dm->getSummary(0, docId, summary, sz);
@@ -304,14 +292,11 @@ Messages50Test::testDocumentSummaryMessage()
 
     srm.sort();
 
-    data = encode(srm);
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 52u, data.size());
-    writeFile(getPath("5-cpp-DocumentSummaryMessage-3.dat"), data);
-    routable = decode(data);
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 52u, serialize("DocumentSummaryMessage-3", srm));
+    routable = deserialize("DocumentSummaryMessage-3", DocumentProtocol::MESSAGE_DOCUMENTSUMMARY, LANG_CPP);
     if (!EXPECT_TRUE(routable.get() != NULL)) {
         return false;
     }
-    EXPECT_EQUAL(routable->getType(), (uint32_t)DocumentProtocol::MESSAGE_DOCUMENTSUMMARY);
     dm = static_cast<DocumentSummaryMessage *>(routable.get());
     EXPECT_EQUAL(dm->getSummaryCount(), size_t(2));
     dm->getSummary(0, docId, summary, sz);
@@ -524,38 +509,25 @@ Messages50Test::testSearchResultMessage()
     EXPECT_EQUAL(srm.vdslib::SearchResult::getSerializedSize(), 20u);
     EXPECT_EQUAL(srm.getSerializedSize(), 20u);
 
-    mbus::Blob data = encode(srm);
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + size_t(24), serialize("SearchResultMessage-1", srm));
 
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + size_t(24), data.size());
-
-    writeFile(getPath("5-cpp-SearchResultMessage-1.dat"), data);
-    // print(data);
-
-    mbus::Routable::UP routable = decode(data);
+    mbus::Routable::UP routable = deserialize("SearchResultMessage-1", DocumentProtocol::MESSAGE_SEARCHRESULT, LANG_CPP);
     if (!EXPECT_TRUE(routable.get() != NULL)) {
         return false;
     }
-    EXPECT_EQUAL(routable->getType(), (uint32_t)DocumentProtocol::MESSAGE_SEARCHRESULT);
     SearchResultMessage * dm = static_cast<SearchResultMessage *>(routable.get());
     EXPECT_EQUAL(dm->getSequenceId(), size_t(0));
     EXPECT_EQUAL(dm->getHitCount(), size_t(0));
 
     srm.addHit(0, "doc1", 89);
     srm.addHit(1, "doc17", 109);
-    //srm.setSequenceId(567);
 
-    data = encode(srm);
-    //EXPECT_EQUAL(srm.getSequenceId(), size_t(567));
-
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 55u, data.size());
-    writeFile(getPath("5-cpp-SearchResultMessage-2.dat"), data);
-    routable = decode(data);
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 55u, serialize("SearchResultMessage-2", srm));
+    routable = deserialize("SearchResultMessage-2", DocumentProtocol::MESSAGE_SEARCHRESULT, LANG_CPP);
     if (!EXPECT_TRUE(routable.get() != NULL)) {
         return false;
     }
-    EXPECT_EQUAL(routable->getType(), (uint32_t)DocumentProtocol::MESSAGE_SEARCHRESULT);
     dm = static_cast<SearchResultMessage *>(routable.get());
-//    EXPECT_EQUAL(dm->getSequenceId(), size_t(567));
     EXPECT_EQUAL(dm->getHitCount(), size_t(2));
     const char *docId;
     SearchResultMessage::RankType rank;
@@ -568,16 +540,12 @@ Messages50Test::testSearchResultMessage()
 
     srm.sort();
 
-    data = encode(srm);
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 55u, data.size());
-    writeFile(getPath("5-cpp-SearchResultMessage-3.dat"), data);
-    routable = decode(data);
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 55u, serialize("SearchResultMessage-3", srm));
+    routable = deserialize("SearchResultMessage-3", DocumentProtocol::MESSAGE_SEARCHRESULT, LANG_CPP);
     if (!EXPECT_TRUE(routable.get() != NULL)) {
         return false;
     }
-    EXPECT_EQUAL(routable->getType(), (uint32_t)DocumentProtocol::MESSAGE_SEARCHRESULT);
     dm = static_cast<SearchResultMessage *>(routable.get());
-//    EXPECT_EQUAL(dm->getSequenceId(), size_t(567));
     EXPECT_EQUAL(dm->getHitCount(), size_t(2));
     dm->getHit(0, docId, rank);
     EXPECT_EQUAL(rank, SearchResultMessage::RankType(109));
@@ -590,18 +558,13 @@ Messages50Test::testSearchResultMessage()
     srm2.addHit(0, "doc1", 89, "sortdata2", 9);
     srm2.addHit(1, "doc17", 109, "sortdata1", 9);
     srm2.addHit(2, "doc18", 90, "sortdata3", 9);
-    //srm2.setSequenceId(567);
-    data = encode(srm2);
 
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 108u, data.size());
-    writeFile(getPath("5-cpp-SearchResultMessage-4.dat"), data);
-    routable = decode(data);
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 108u, serialize("SearchResultMessage-4", srm2));
+    routable = deserialize("SearchResultMessage-4", DocumentProtocol::MESSAGE_SEARCHRESULT, LANG_CPP);
     if (!EXPECT_TRUE(routable.get() != NULL)) {
         return false;
     }
-    EXPECT_EQUAL(routable->getType(), (uint32_t)DocumentProtocol::MESSAGE_SEARCHRESULT);
     dm = static_cast<SearchResultMessage *>(routable.get());
-    //EXPECT_EQUAL(dm->getSequenceId(), size_t(567));
     EXPECT_EQUAL(dm->getHitCount(), size_t(3));
     dm->getHit(0, docId, rank);
     EXPECT_EQUAL(rank, SearchResultMessage::RankType(89));
@@ -635,16 +598,12 @@ Messages50Test::testSearchResultMessage()
     EXPECT_EQUAL(rank, SearchResultMessage::RankType(90));
     EXPECT_EQUAL(strcmp("doc18", docId), 0);
 
-    data = encode(srm2);
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 108u, data.size());
-    writeFile(getPath("5-cpp-SearchResultMessage-5.dat"), data);
-    routable = decode(data);
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 108u, serialize("SearchResultMessage-5", srm2));
+    routable = deserialize("SearchResultMessage-5", DocumentProtocol::MESSAGE_SEARCHRESULT, LANG_CPP);
     if (!EXPECT_TRUE(routable.get() != NULL)) {
         return false;
     }
-    EXPECT_EQUAL(routable->getType(), (uint32_t)DocumentProtocol::MESSAGE_SEARCHRESULT);
     dm = static_cast<SearchResultMessage *>(routable.get());
-//    EXPECT_EQUAL(dm->getSequenceId(), size_t(567));
     EXPECT_EQUAL(dm->getHitCount(), size_t(3));
     dm->getHit(0, docId, rank);
     dm->getSortBlob(0, buf, sz);
@@ -693,90 +652,6 @@ Messages50Test::testUpdateDocumentMessage()
 }
 
 bool
-Messages50Test::testBatchDocumentUpdateMessage()
-{
-    const DocumentTypeRepo &repo = getTypeRepo();
-    const document::DocumentType &docType = *repo.getDocumentType("testdoc");
-
-    BatchDocumentUpdateMessage msg(1234);
-
-    {
-        document::DocumentUpdate::SP upd;
-        upd.reset(new document::DocumentUpdate(repo, docType, document::DocumentId("userdoc:footype:1234:foo")));
-        upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
-                        new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
-        msg.addUpdate(upd);
-    }
-    {
-        document::DocumentUpdate::SP upd;
-        upd.reset(new document::DocumentUpdate(repo, docType, document::DocumentId("orderdoc(32,17):footype:1234:123456789:foo")));
-        upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
-                        new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
-        msg.addUpdate(upd);
-    }
-    try {
-        document::DocumentUpdate::SP upd;
-        upd.reset(new document::DocumentUpdate(repo, docType, document::DocumentId("userdoc:footype:5678:foo")));
-        upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
-                        new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
-        msg.addUpdate(upd);
-        EXPECT_TRUE(false);
-    } catch (...) {
-    }
-    try {
-        document::DocumentUpdate::SP upd;
-        upd.reset(new document::DocumentUpdate(repo, docType, document::DocumentId("groupdoc:footype:hable:foo")));
-        upd->addFieldPathUpdate(document::FieldPathUpdate::CP(
-                        new document::RemoveFieldPathUpdate("intfield", "testdoc.intfield > 0")));
-        msg.addUpdate(upd);
-        EXPECT_TRUE(false);
-    } catch (...) {
-    }
-
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 202u, serialize("BatchDocumentUpdateMessage", msg));
-    for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
-        mbus::Routable::UP obj = deserialize("BatchDocumentUpdateMessage", DocumentProtocol::MESSAGE_BATCHDOCUMENTUPDATE, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
-            BatchDocumentUpdateMessage &ref = static_cast<BatchDocumentUpdateMessage&>(*obj);
-            EXPECT_EQUAL(2u, ref.getUpdates().size());
-        }
-    }
-
-    return true;
-}
-
-bool
-Messages50Test::testBatchDocumentUpdateReply()
-{
-    BatchDocumentUpdateReply reply;
-    reply.setHighestModificationTimestamp(30);
-    {
-        std::vector<bool> notFound(3);
-        notFound[0] = false;
-        notFound[1] = true;
-        notFound[2] = true;
-        reply.getDocumentsNotFound() = notFound;
-    }
-
-    EXPECT_EQUAL(20u, serialize("BatchDocumentUpdateReply", reply));
-
-    for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
-        mbus::Routable::UP obj = deserialize("BatchDocumentUpdateReply", DocumentProtocol::REPLY_BATCHDOCUMENTUPDATE, lang);
-        if (EXPECT_TRUE(obj.get() != NULL)) {
-            BatchDocumentUpdateReply &ref = dynamic_cast<BatchDocumentUpdateReply&>(*obj);
-            EXPECT_EQUAL(30u, ref.getHighestModificationTimestamp());
-            {
-                const std::vector<bool>& notFound = ref.getDocumentsNotFound();
-                EXPECT_TRUE(notFound[0] == false);
-                EXPECT_TRUE(notFound[1] == true);
-                EXPECT_TRUE(notFound[2] == true);
-            }
-        }
-    }
-    return true;
-}
-
-bool
 Messages50Test::testQueryResultMessage()
 {
     QueryResultMessage srm;
@@ -787,18 +662,12 @@ Messages50Test::testQueryResultMessage()
     EXPECT_EQUAL(sr.getSerializedSize(), 20u);
     EXPECT_EQUAL(srm.getApproxSize(), 28u);
 
-    mbus::Blob data = encode(srm);
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + size_t(32), serialize("QueryResultMessage-1", srm));
 
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + size_t(32), data.size());
-
-    writeFile(getPath("5-cpp-QueryResultMessage-1.dat"), data);
-    // print(data);
-
-    mbus::Routable::UP routable = decode(data);
+    mbus::Routable::UP routable = deserialize("QueryResultMessage-1", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
     if (!EXPECT_TRUE(routable.get() != NULL)) {
         return false;
     }
-    EXPECT_EQUAL(routable->getType(), (uint32_t)DocumentProtocol::MESSAGE_QUERYRESULT);
     QueryResultMessage * dm = static_cast<QueryResultMessage *>(routable.get());
     vdslib::SearchResult * dr(&dm->getSearchResult());
     EXPECT_EQUAL(dm->getSequenceId(), size_t(0));
@@ -807,15 +676,11 @@ Messages50Test::testQueryResultMessage()
     sr.addHit(0, "doc1", 89);
     sr.addHit(1, "doc17", 109);
 
-    data = encode(srm);
-
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 63u, data.size());
-    writeFile(getPath("5-cpp-QueryResultMessage-2.dat"), data);
-    routable = decode(data);
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 63u, serialize("QueryResultMessage-2", srm));
+    routable = deserialize("QueryResultMessage-2", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
     if (!EXPECT_TRUE(routable.get() != NULL)) {
         return false;
     }
-    EXPECT_EQUAL(routable->getType(), (uint32_t)DocumentProtocol::MESSAGE_QUERYRESULT);
     dm = static_cast<QueryResultMessage *>(routable.get());
     dr = &dm->getSearchResult();
     EXPECT_EQUAL(dr->getHitCount(), size_t(2));
@@ -830,14 +695,11 @@ Messages50Test::testQueryResultMessage()
 
     sr.sort();
 
-    data = encode(srm);
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 63u, data.size());
-    writeFile(getPath("5-cpp-QueryResultMessage-3.dat"), data);
-    routable = decode(data);
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 63u, serialize("QueryResultMessage-3", srm));
+    routable = deserialize("QueryResultMessage-3", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
     if (!EXPECT_TRUE(routable.get() != NULL)) {
         return false;
     }
-    EXPECT_EQUAL(routable->getType(), (uint32_t)DocumentProtocol::MESSAGE_QUERYRESULT);
     dm = static_cast<QueryResultMessage *>(routable.get());
     dr = &dm->getSearchResult();
     EXPECT_EQUAL(dr->getHitCount(), size_t(2));
@@ -853,15 +715,12 @@ Messages50Test::testQueryResultMessage()
     sr2.addHit(0, "doc1", 89, "sortdata2", 9);
     sr2.addHit(1, "doc17", 109, "sortdata1", 9);
     sr2.addHit(2, "doc18", 90, "sortdata3", 9);
-    data = encode(srm2);
 
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 116u, data.size());
-    writeFile(getPath("5-cpp-QueryResultMessage-4.dat"), data);
-    routable = decode(data);
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 116u, serialize("QueryResultMessage-4", srm2));
+    routable = deserialize("QueryResultMessage-4", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
     if (!EXPECT_TRUE(routable.get() != NULL)) {
         return false;
     }
-    EXPECT_EQUAL(routable->getType(), (uint32_t)DocumentProtocol::MESSAGE_QUERYRESULT);
     dm = static_cast<QueryResultMessage *>(routable.get());
     dr = &dm->getSearchResult();
     EXPECT_EQUAL(dr->getHitCount(), size_t(3));
@@ -897,14 +756,11 @@ Messages50Test::testQueryResultMessage()
     EXPECT_EQUAL(rank, vdslib::SearchResult::RankType(90));
     EXPECT_EQUAL(strcmp("doc18", docId), 0);
 
-    data = encode(srm2);
-    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 116u, data.size());
-    writeFile(getPath("5-cpp-QueryResultMessage-5.dat"), data);
-    routable = decode(data);
+    EXPECT_EQUAL(MESSAGE_BASE_LENGTH + 116u, serialize("QueryResultMessage-5", srm2));
+    routable = deserialize("QueryResultMessage-5", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
     if (!EXPECT_TRUE(routable.get() != NULL)) {
         return false;
     }
-    EXPECT_EQUAL(routable->getType(), (uint32_t)DocumentProtocol::MESSAGE_QUERYRESULT);
     dm = static_cast<QueryResultMessage *>(routable.get());
     dr = &dm->getSearchResult();
     EXPECT_EQUAL(dr->getHitCount(), size_t(3));

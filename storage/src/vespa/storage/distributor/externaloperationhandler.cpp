@@ -15,7 +15,6 @@
 #include <vespa/document/util/stringutil.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
-#include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/stat.h>
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"

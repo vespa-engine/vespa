@@ -5,7 +5,6 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/internal.h>
 #include <vespa/storageapi/message/removelocation.h>
-#include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/mbusprot/storageprotocol.h>
 #include <vespa/storageapi/mbusprot/storagecommand.h>
 #include <vespa/storageapi/mbusprot/storagereply.h>
@@ -89,7 +88,6 @@ struct StorageProtocolTest : public CppUnit::TestFixture {
     void testSplitBucket51();
     void testSplitBucketChain51();
     void testJoinBuckets51();
-    void testBatchPutRemove51();
     void testCreateVisitor51();
     void testDestroyVisitor51();
     void testRemoveLocation51();
@@ -133,7 +131,6 @@ struct StorageProtocolTest : public CppUnit::TestFixture {
     CPPUNIT_TEST(testCreateVisitor51);
     CPPUNIT_TEST(testDestroyVisitor51);
     CPPUNIT_TEST(testRemoveLocation51);
-    CPPUNIT_TEST(testBatchPutRemove51);
     CPPUNIT_TEST(testInternalMessage);
     CPPUNIT_TEST(testSetBucketState51);
 
@@ -776,55 +773,6 @@ StorageProtocolTest::testApplyBucketDiff51()
     CPPUNIT_ASSERT_EQUAL(nodes, reply2->getNodes());
     CPPUNIT_ASSERT_EQUAL(entries, reply2->getDiff());
     CPPUNIT_ASSERT_EQUAL(1234u, reply2->getMaxBufferSize());
-
-    recordOutput(*cmd2);
-    recordOutput(*reply2);
-    recordSerialization50();
-}
-
-void
-StorageProtocolTest::testBatchPutRemove51()
-{
-    ScopedName test("testBatchPutRemove51");
-
-    document::BucketId bucketId(20, 0xf1f1f1f1f1ull);
-    document::Bucket bucket(makeDocumentBucket(bucketId));
-    BatchPutRemoveCommand::SP cmd(new BatchPutRemoveCommand(bucket));
-    cmd->addPut(_testDoc, 100);
-    cmd->addHeaderUpdate(_testDoc, 101, 1234);
-    cmd->addRemove(_testDoc->getId(), 102);
-    cmd->forceMsgId(556677);
-    BatchPutRemoveCommand::SP cmd2(copyCommand(cmd, _version5_1));
-    CPPUNIT_ASSERT_EQUAL(bucketId, cmd2->getBucketId());
-    CPPUNIT_ASSERT_EQUAL(3, (int)cmd2->getOperationCount());
-    CPPUNIT_ASSERT_EQUAL(*_testDoc, *(dynamic_cast<const BatchPutRemoveCommand::PutOperation&>(cmd2->getOperation(0)).document));
-    CPPUNIT_ASSERT_EQUAL((uint64_t)100, cmd2->getOperation(0).timestamp);
-    {
-        vespalib::nbostream header;
-        _testDoc->serializeHeader(header);
-        document::Document headerDoc(_docMan.getTypeRepo(), header);
-        CPPUNIT_ASSERT_EQUAL(
-                headerDoc,
-                *(dynamic_cast<const BatchPutRemoveCommand::HeaderUpdateOperation&>(
-                        cmd2->getOperation(1)).document));
-    }
-    CPPUNIT_ASSERT_EQUAL((uint64_t)101, cmd2->getOperation(1).timestamp);
-    CPPUNIT_ASSERT_EQUAL(1234, (int)dynamic_cast<const BatchPutRemoveCommand::HeaderUpdateOperation&>(cmd2->getOperation(1)).timestampToUpdate);
-    CPPUNIT_ASSERT_EQUAL(_testDoc->getId(), dynamic_cast<const BatchPutRemoveCommand::RemoveOperation&>(cmd2->getOperation(2)).documentId);
-    CPPUNIT_ASSERT_EQUAL((uint64_t)102, cmd2->getOperation(2).timestamp);
-    CPPUNIT_ASSERT_EQUAL(uint64_t(556677), cmd2->getMsgId());
-
-    BatchPutRemoveReply::SP reply(new BatchPutRemoveReply(*cmd2));
-    reply->getDocumentsNotFound().push_back(document::DocumentId("userdoc:footype:1234:foo1"));
-    reply->getDocumentsNotFound().push_back(document::DocumentId("userdoc:footype:1234:foo2"));
-    reply->getDocumentsNotFound().push_back(document::DocumentId("userdoc:footype:1234:foo3"));
-
-    BatchPutRemoveReply::SP reply2(copyReply(reply));
-
-    CPPUNIT_ASSERT_EQUAL(3, (int)reply2->getDocumentsNotFound().size());
-    CPPUNIT_ASSERT_EQUAL(document::DocumentId("userdoc:footype:1234:foo1"), reply2->getDocumentsNotFound()[0]);
-    CPPUNIT_ASSERT_EQUAL(document::DocumentId("userdoc:footype:1234:foo2"), reply2->getDocumentsNotFound()[1]);
-    CPPUNIT_ASSERT_EQUAL(document::DocumentId("userdoc:footype:1234:foo3"), reply2->getDocumentsNotFound()[2]);
 
     recordOutput(*cmd2);
     recordOutput(*reply2);

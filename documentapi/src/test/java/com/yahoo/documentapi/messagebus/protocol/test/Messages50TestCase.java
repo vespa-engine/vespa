@@ -344,73 +344,56 @@ public class Messages50TestCase extends MessagesTestBase {
 
         @Override
         public void run() {
-            try {
-                FileInputStream stream = new FileInputStream(getPath("5-cpp-DocumentSummaryMessage-1.dat"));
-                byte[] data = new byte[stream.available()];
-                assertEquals(data.length, stream.read(data));
+            Routable routable = deserialize("DocumentSummaryMessage-1", DocumentProtocol.MESSAGE_DOCUMENTSUMMARY, Language.CPP);
+            assertTrue(routable instanceof DocumentSummaryMessage);
 
-                Routable routable = decode(data);
-                assertTrue(routable instanceof DocumentSummaryMessage);
+            DocumentSummaryMessage msg = (DocumentSummaryMessage) routable;
+            assertEquals(0, msg.getResult().getSummaryCount());
 
-                DocumentSummaryMessage msg = (DocumentSummaryMessage)routable;
-                assertEquals(0, msg.getResult().getSummaryCount());
+            routable = deserialize("DocumentSummaryMessage-2", DocumentProtocol.MESSAGE_DOCUMENTSUMMARY, Language.CPP);
+            assertTrue(routable instanceof DocumentSummaryMessage);
 
-                stream = new FileInputStream(getPath("5-cpp-DocumentSummaryMessage-2.dat"));
-                data = new byte[stream.available()];
-                assertEquals(data.length, stream.read(data));
+            msg = (DocumentSummaryMessage) routable;
+            assertEquals(2, msg.getResult().getSummaryCount());
+            com.yahoo.vdslib.DocumentSummary.Summary s = msg.getResult().getSummary(0);
+            assertEquals("doc1", s.getDocId());
+            byte[] b = s.getSummary();
+            assertEquals(8, b.length);
+            byte[] c = {'s', 'u', 'm', 'm', 'a', 'r', 'y', '1'};
+            for (int i = 0; i < b.length; i++) {
+                assertEquals(c[i], b[i]);
+            }
 
-                routable = decode(data);
-                assertTrue(routable instanceof DocumentSummaryMessage);
+            s = msg.getResult().getSummary(1);
+            assertEquals("aoc17", s.getDocId());
+            b = s.getSummary();
+            assertEquals(9, b.length);
+            byte[] d = {'s', 'u', 'm', 'm', 'a', 'r', 'y', '4', '5'};
+            for (int i = 0; i < b.length; i++) {
+                assertEquals(d[i], b[i]);
+            }
+            routable = deserialize("DocumentSummaryMessage-3", DocumentProtocol.MESSAGE_DOCUMENTSUMMARY, Language.CPP);
+            assertTrue(routable instanceof DocumentSummaryMessage);
 
-                msg = (DocumentSummaryMessage)routable;
-                assertEquals(2, msg.getResult().getSummaryCount());
-                com.yahoo.vdslib.DocumentSummary.Summary s = msg.getResult().getSummary(0);
-                assertEquals("doc1", s.getDocId());
-                byte[] b = s.getSummary();
-                assertEquals(8, b.length);
-                byte[] c = { 's', 'u', 'm', 'm', 'a', 'r', 'y', '1' };
-                for (int i = 0; i < b.length; i++) {
-                    assertEquals(c[i], b[i]);
-                }
+            msg = (DocumentSummaryMessage) routable;
+            assertEquals(2, msg.getResult().getSummaryCount());
 
-                s = msg.getResult().getSummary(1);
-                assertEquals("aoc17", s.getDocId());
-                b = s.getSummary();
-                assertEquals(9, b.length);
-                byte[] d = { 's', 'u', 'm', 'm', 'a', 'r', 'y', '4', '5' };
-                for (int i = 0; i < b.length; i++) {
-                    assertEquals(d[i], b[i]);
-                }
+            s = msg.getResult().getSummary(0);
+            assertEquals("aoc17", s.getDocId());
+            b = s.getSummary();
+            assertEquals(9, b.length);
+            byte[] e = {'s', 'u', 'm', 'm', 'a', 'r', 'y', '4', '5'};
+            for (int i = 0; i < b.length; i++) {
+                assertEquals(e[i], b[i]);
+            }
 
-                stream = new FileInputStream(getPath("5-cpp-DocumentSummaryMessage-3.dat"));
-                data = new byte[stream.available()];
-                assertEquals(data.length, stream.read(data));
-
-                routable = decode(data);
-                assertTrue(routable instanceof DocumentSummaryMessage);
-
-                msg = (DocumentSummaryMessage)routable;
-                assertEquals(2, msg.getResult().getSummaryCount());
-
-                s = msg.getResult().getSummary(0);
-                assertEquals("aoc17", s.getDocId());
-                b = s.getSummary();
-                assertEquals(9, b.length);
-                byte[] e = { 's', 'u', 'm', 'm', 'a', 'r', 'y', '4', '5' };
-                for (int i = 0; i < b.length; i++) {
-                    assertEquals(e[i], b[i]);
-                }
-
-                s = msg.getResult().getSummary(1);
-                assertEquals("doc1", s.getDocId());
-                b = s.getSummary();
-                assertEquals(8, b.length);
-                byte[] f = { 's', 'u', 'm', 'm', 'a', 'r', 'y', '1' };
-                for (int i = 0; i < b.length; i++) {
-                    assertEquals(f[i], b[i]);
-                }
-            } catch (IOException e) {
-                fail(e.toString());
+            s = msg.getResult().getSummary(1);
+            assertEquals("doc1", s.getDocId());
+            b = s.getSummary();
+            assertEquals(8, b.length);
+            byte[] f = {'s', 'u', 'm', 'm', 'a', 'r', 'y', '1'};
+            for (int i = 0; i < b.length; i++) {
+                assertEquals(f[i], b[i]);
             }
         }
     }
@@ -488,21 +471,13 @@ public class Messages50TestCase extends MessagesTestBase {
 
         @Override
         public void run() throws Exception {
-            FileInputStream stream = new FileInputStream(getPath("5-cpp-SearchResultMessage-1.dat"));
-            byte[] data = new byte[stream.available()];
-            assertEquals(data.length, stream.read(data));
-
-            Routable routable = decode(data);
+            Routable routable = deserialize("SearchResultMessage-1", DocumentProtocol.MESSAGE_SEARCHRESULT, Language.CPP);
             assertTrue(routable instanceof SearchResultMessage);
 
             SearchResultMessage msg = (SearchResultMessage)routable;
             assertEquals(0, msg.getResult().getHitCount());
 
-            stream = new FileInputStream(getPath("5-cpp-SearchResultMessage-2.dat"));
-            data = new byte[stream.available()];
-            assertEquals(data.length, stream.read(data));
-
-            routable = decode(data);
+            routable = deserialize("SearchResultMessage-2", DocumentProtocol.MESSAGE_SEARCHRESULT, Language.CPP);
             assertTrue(routable instanceof SearchResultMessage);
 
             msg = (SearchResultMessage)routable;
@@ -514,11 +489,7 @@ public class Messages50TestCase extends MessagesTestBase {
             assertEquals(109.0, h.getRank(), 1E-6);
             assertEquals("doc17", h.getDocId());
 
-            stream = new FileInputStream(getPath("5-cpp-SearchResultMessage-3.dat"));
-            data = new byte[stream.available()];
-            assertEquals(data.length, stream.read(data));
-
-            routable = decode(data);
+            routable = deserialize("SearchResultMessage-3", DocumentProtocol.MESSAGE_SEARCHRESULT, Language.CPP);
             assertTrue(routable instanceof SearchResultMessage);
 
             msg = (SearchResultMessage)routable;
@@ -530,11 +501,7 @@ public class Messages50TestCase extends MessagesTestBase {
             assertEquals(89.0, h.getRank(), 1E-6);
             assertEquals("doc1", h.getDocId());
 
-            stream = new FileInputStream(getPath("5-cpp-SearchResultMessage-4.dat"));
-            data = new byte[stream.available()];
-            assertEquals(data.length, stream.read(data));
-
-            routable = decode(data);
+            routable = deserialize("SearchResultMessage-4", DocumentProtocol.MESSAGE_SEARCHRESULT, Language.CPP);
             assertTrue(routable instanceof SearchResultMessage);
 
             msg = (SearchResultMessage)routable;
@@ -732,21 +699,13 @@ public class Messages50TestCase extends MessagesTestBase {
 
         @Override
         public void run() throws Exception {
-            FileInputStream stream = new FileInputStream(getPath("5-cpp-QueryResultMessage-1.dat"));
-            byte[] data = new byte[stream.available()];
-            assertEquals(data.length, stream.read(data));
-
-            Routable routable = decode(data);
+            Routable routable = deserialize("QueryResultMessage-1", DocumentProtocol.MESSAGE_QUERYRESULT, Language.CPP);
             assertTrue(routable instanceof QueryResultMessage);
 
             QueryResultMessage msg = (QueryResultMessage)routable;
             assertEquals(0, msg.getResult().getHitCount());
 
-            stream = new FileInputStream(getPath("5-cpp-QueryResultMessage-2.dat"));
-            data = new byte[stream.available()];
-            assertEquals(data.length, stream.read(data));
-
-            routable = decode(data);
+            routable = deserialize("QueryResultMessage-2", DocumentProtocol.MESSAGE_QUERYRESULT, Language.CPP);
             assertTrue(routable instanceof QueryResultMessage);
 
             msg = (QueryResultMessage)routable;
@@ -758,11 +717,7 @@ public class Messages50TestCase extends MessagesTestBase {
             assertEquals(109.0, h.getRank(), 1E-6);
             assertEquals("doc17", h.getDocId());
 
-            stream = new FileInputStream(getPath("5-cpp-QueryResultMessage-3.dat"));
-            data = new byte[stream.available()];
-            assertEquals(data.length, stream.read(data));
-
-            routable = decode(data);
+            routable = deserialize("QueryResultMessage-3", DocumentProtocol.MESSAGE_QUERYRESULT, Language.CPP);
             assertTrue(routable instanceof QueryResultMessage);
 
             msg = (QueryResultMessage)routable;
@@ -774,11 +729,7 @@ public class Messages50TestCase extends MessagesTestBase {
             assertEquals(89.0, h.getRank(), 1E-6);
             assertEquals("doc1", h.getDocId());
 
-            stream = new FileInputStream(getPath("5-cpp-QueryResultMessage-4.dat"));
-            data = new byte[stream.available()];
-            assertEquals(data.length, stream.read(data));
-
-            routable = decode(data);
+            routable = deserialize("QueryResultMessage-4", DocumentProtocol.MESSAGE_QUERYRESULT, Language.CPP);
             assertTrue(routable instanceof QueryResultMessage);
 
             msg = (QueryResultMessage)routable;
