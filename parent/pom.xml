@@ -676,7 +676,7 @@
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
-                <version>4.5.2</version>
+                <version>${jna.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -685,6 +685,7 @@
         <antlr.version>3.5.2</antlr.version>
         <antlr4.version>4.5</antlr4.version>
         <asm.version>6.2</asm.version>
+        <jna.version>4.5.2</jna.version>
         <!-- Athenz dependencies. Make sure these dependencies matches those in Vespa's internal repositories -->
         <athenz.version>1.7.43</athenz.version>
         <commons-lang.version>2.6</commons-lang.version>
