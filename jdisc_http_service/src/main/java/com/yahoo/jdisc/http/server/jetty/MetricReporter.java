@@ -29,22 +29,18 @@ public class MetricReporter {
         this.requestStartTime = requestStartTime;
     }
 
-    @SuppressWarnings("deprecation")
     public void successfulWrite(int numBytes) {
         setTimeToFirstByteFirstTime();
 
         metric.add(Metrics.NUM_SUCCESSFUL_WRITES, 1, context);
         metric.set(Metrics.NUM_BYTES_SENT, numBytes, context);
-        metric.set(Metrics.MANHATTAN_NUM_BYTES_SENT, numBytes, context);
     }
 
-    @SuppressWarnings("deprecation")
     private void setTimeToFirstByteFirstTime() {
         boolean isFirstWrite = firstSetOfTimeToFirstByte.getAndSet(false);
         if (isFirstWrite) {
             long timeToFirstByte = getRequestLatency();
             metric.set(Metrics.TIME_TO_FIRST_BYTE, timeToFirstByte, context);
-            metric.set(Metrics.MANHATTAN_TIME_TO_FIRST_BYTE, timeToFirstByte, context);
         }
     }
 
@@ -52,14 +48,12 @@ public class MetricReporter {
         metric.add(Metrics.NUM_FAILED_WRITES, 1, context);
     }
 
-    @SuppressWarnings("deprecation")
     public void successfulResponse() {
         setTimeToFirstByteFirstTime();
 
         long requestLatency = getRequestLatency();
 
         metric.set(Metrics.TOTAL_SUCCESSFUL_LATENCY, requestLatency, context);
-        metric.set(Metrics.MANHATTAN_TOTAL_SUCCESSFUL_LATENCY, requestLatency, context);
 
         metric.add(Metrics.NUM_SUCCESSFUL_RESPONSES, 1, context);
     }
@@ -75,10 +69,8 @@ public class MetricReporter {
         metric.add(Metrics.NUM_PREMATURELY_CLOSED_CONNECTIONS, 1, context);
     }
 
-    @SuppressWarnings("deprecation")
     public void successfulRead(int bytes_received) {
         metric.set(JettyHttpServer.Metrics.NUM_BYTES_RECEIVED, bytes_received, context);
-        metric.set(JettyHttpServer.Metrics.MANHATTAN_NUM_BYTES_RECEIVED, bytes_received, context);
     }
 
     private long getRequestLatency() {
