@@ -30,5 +30,6 @@ public class NativeIOTestCase {
         nativeIO.dropFileFromCache(output.getFD());
         nativeIO.dropFileFromCache(testFile);
         testFile.delete();
+        nativeIO.dropFileFromCache(new File("file.that.does.not.exist"));
     }
 }
