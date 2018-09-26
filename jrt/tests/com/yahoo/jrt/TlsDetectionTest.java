@@ -5,18 +5,14 @@ import static org.junit.Assert.assertEquals;
 
 public class TlsDetectionTest {
 
-    static private String message(byte[] data, boolean actual) {
-        String msg = "[";
+    static private String message(byte[] data) {
+        String msg = "isTls([";
         String delimiter = "";
         for (byte b: data) {
             msg += delimiter + (b & 0xff);
             delimiter = ", ";
         }
-        if (actual) {
-            msg += "] wrongfully detected as tls";
-        } else {
-            msg += "] wrongfully rejected as not tls";
-        }
+        msg += "])";
         return msg;
     }
 
@@ -25,8 +21,7 @@ public class TlsDetectionTest {
         for (int i = 0; i < data.length; i++) {
             data[i] = (byte) values[i];
         }
-        boolean actual = MaybeTlsCryptoSocket.looksLikeTlsToMe(data);
-        assertEquals(message(data, actual), expect, actual);
+        assertEquals(message(data), expect, MaybeTlsCryptoSocket.looksLikeTlsToMe(data));
     }
 
     @org.junit.Test public void testValidHandshake() {
