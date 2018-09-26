@@ -2,10 +2,10 @@
 package com.yahoo.jrt;
 
 
-import com.yahoo.security.tls.TransportSecurityOptions;
+import com.yahoo.security.tls.TransportSecurityUtils;
+import com.yahoo.security.tls.TransportSecurityUtils.MixedMode;
 
 import java.nio.channels.SocketChannel;
-import java.nio.file.Paths;
 
 
 /**
@@ -16,12 +16,22 @@ import java.nio.file.Paths;
  **/
 public interface CryptoEngine {
     public CryptoSocket createCryptoSocket(SocketChannel channel, boolean isServer);
-    static public CryptoEngine createDefault() { // TODO Move this logic to a dedicated factory class
-        String tlsConfigParameter = System.getenv("VESPA_TLS_CONFIG_FILE");
-        if (tlsConfigParameter != null && !tlsConfigParameter.isEmpty()) {
-            return new TlsCryptoEngine(TransportSecurityOptions.fromJsonFile(Paths.get(tlsConfigParameter)));
-        } else {
+    static public CryptoEngine createDefault() {
+        if (!TransportSecurityUtils.isTransportSecurityEnabled()) {
             return new NullCryptoEngine();
+        }
+        TlsCryptoEngine tlsCryptoEngine = new TlsCryptoEngine(TransportSecurityUtils.getOptions().get());
+        if (!TransportSecurityUtils.isInsecureMixedModeEnabled()) {
+            return tlsCryptoEngine;
+        }
+        MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode().get();
+        switch (mixedMode) {
+            case PLAINTEXT_CLIENT_MIXED_SERVER:
+                return new MaybeTlsCryptoEngine(tlsCryptoEngine, false);
+            case TLS_CLIENT_MIXED_SERVER:
+                return new MaybeTlsCryptoEngine(tlsCryptoEngine, true);
+            default:
+                throw new IllegalArgumentException(mixedMode.toString());
         }
     }
 }
