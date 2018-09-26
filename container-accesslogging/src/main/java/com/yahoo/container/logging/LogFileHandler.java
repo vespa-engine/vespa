@@ -265,24 +265,26 @@ public class LogFileHandler extends StreamHandler {
         lastRotationTime = now;
         nextRotationTime = 0; //figure it out later (lazy evaluation)
         if ((oldFileName != null)) {
-            if (compressOnRotation) {
-                triggerCompression(oldFileName);
-            } else {
-                NativeIO nativeIO = new NativeIO();
-                nativeIO.dropFileFromCache(new File(oldFileName));
+            File oldFile = new File(oldFileName);
+            if (oldFile.exists()) {
+                if (compressOnRotation) {
+                    triggerCompression(oldFile);
+                } else {
+                    NativeIO nativeIO = new NativeIO();
+                    nativeIO.dropFileFromCache(oldFile);
+                }
             }
         }
     }
 
-    private void triggerCompression(String oldFileName) {
+    private void triggerCompression(File oldFile) {
         try {
-            String gzippedFileName = oldFileName + ".gz";
+            String gzippedFileName = oldFile.getName() + ".gz";
             Runtime r = Runtime.getRuntime();
             StringBuilder cmd = new StringBuilder("gzip");
-            cmd.append(" < "). append(oldFileName).append(" > ").append(gzippedFileName);
+            cmd.append(" < "). append(oldFile.getName()).append(" > ").append(gzippedFileName);
             Process p = r.exec(cmd.toString());
             NativeIO nativeIO = new NativeIO();
-            File oldFile = new File(oldFileName);
             nativeIO.dropFileFromCache(oldFile); // Drop from cache in case somebody else has a reference to it preventing from dying quickly.
             oldFile.delete();
             nativeIO.dropFileFromCache(new File(gzippedFileName));
