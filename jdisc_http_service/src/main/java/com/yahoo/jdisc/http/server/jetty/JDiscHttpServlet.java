@@ -84,7 +84,6 @@ class JDiscHttpServlet extends HttpServlet {
      * Override to set connector attribute before the request becomes an upgrade request in the web socket case.
      * (After the upgrade, the HttpConnection is no longer available.)
      */
-    @SuppressWarnings("deprecation")
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
@@ -93,7 +92,6 @@ class JDiscHttpServlet extends HttpServlet {
         Metric.Context metricContext = getMetricContext(request);
         context.metric.add(JettyHttpServer.Metrics.NUM_REQUESTS, 1, metricContext);
         context.metric.add(JettyHttpServer.Metrics.JDISC_HTTP_REQUESTS, 1, metricContext);
-        context.metric.add(JettyHttpServer.Metrics.MANHATTAN_NUM_REQUESTS, 1, metricContext);
 
         if (JETTY_UNSUPPORTED_METHODS.contains(request.getMethod().toUpperCase())) {
             dispatchHttpRequest(request, response);
