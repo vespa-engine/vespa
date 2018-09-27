@@ -297,7 +297,7 @@ Fdispatch::Init()
     
 
     LOG(debug, "Creating FNET transport");
-    _transport = std::make_unique<FNET_Transport>(std::make_shared<vespalib::NullCryptoEngine>(), _config->transportthreads); // disable encryption
+    _transport = std::make_unique<FNET_Transport>(_config->transportthreads);
 
     // grab node slowness limit defaults
 

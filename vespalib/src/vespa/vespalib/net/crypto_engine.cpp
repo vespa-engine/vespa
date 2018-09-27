@@ -9,6 +9,7 @@
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
+#include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <assert.h>
 
@@ -175,10 +176,22 @@ CryptoEngine::SP create_default_crypto_engine() {
     if (cfg_file.empty()) {
         return std::make_shared<NullCryptoEngine>();
     }
-
     LOG(debug, "Using TLS crypto engine with config file '%s'", cfg_file.c_str());
     auto tls_opts = net::tls::read_options_from_json_file(cfg_file);
-    return std::make_shared<TlsCryptoEngine>(*tls_opts);
+    auto tls = std::make_shared<TlsCryptoEngine>(*tls_opts);
+    env = getenv("VESPA_TLS_INSECURE_MIXED_MODE");
+    vespalib::string mixed_mode = env ? env : "";
+    if (mixed_mode == "plaintext_client_mixed_server") {
+        LOG(debug, "tls insecure mixed-mode activated: plaintext client, mixed server");
+        return std::make_shared<MaybeTlsCryptoEngine>(std::move(tls), false);
+    } else if (mixed_mode == "tls_client_mixed_server") {
+        LOG(debug, "tls insecure mixed-mode activated: tls client, mixed server");
+        return std::make_shared<MaybeTlsCryptoEngine>(std::move(tls), true);
+    } else if (!mixed_mode.empty()) {
+        LOG(warning, "bad tls insecure mixed-mode specified: '%s' (ignoring)",
+            mixed_mode.c_str());
+    }
+    return tls;
 }
 
 } // namespace vespalib::<unnamed>
