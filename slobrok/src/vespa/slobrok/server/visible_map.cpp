@@ -55,23 +55,10 @@ VisibleMap::removeUpdateListener(IUpdateListener *l)
 //-----------------------------------------------------------------------------
 
 NamedService *
-VisibleMap::lookup(const char *name) const {
+VisibleMap::lookup(const std::string &name) const {
     auto found = _map.find(name);
     return (found == _map.end()) ? nullptr : found->second;
 }
-
-std::vector<const NamedService *>
-VisibleMap::lookupPattern(const char *pattern) const
-{
-    std::vector<const NamedService *> retval;
-    for (const auto & entry : _map) {
-        if (match(entry.first.c_str(), pattern)) {
-            retval.push_back(entry.second);
-        }
-    }
-    return retval;
-}
-
 
 std::vector<const NamedService *>
 VisibleMap::allVisible() const
@@ -99,7 +86,7 @@ VisibleMap::addNew(NamedService *rpcsrv)
 
 
 NamedService *
-VisibleMap::remove(const char *name) {
+VisibleMap::remove(const std::string &name) {
 
     NamedService *d = _map[name];
     _map.erase(name);

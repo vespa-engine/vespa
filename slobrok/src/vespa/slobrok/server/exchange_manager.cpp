@@ -13,23 +13,23 @@ namespace slobrok {
 //-----------------------------------------------------------------------------
 
 ExchangeManager::ExchangeManager(SBEnv &env, RpcServerMap &rpcsrvmap)
-    : _partners(NULL),
+    : _partners(),
       _env(env),
       _rpcsrvmanager(env._rpcsrvmanager),
       _rpcsrvmap(rpcsrvmap)
 {
 }
 
+ExchangeManager::~ExchangeManager() = default;
 
 OkState
-ExchangeManager::addPartner(const char *name, const char *spec)
+ExchangeManager::addPartner(const std::string & name, const std::string & spec)
 {
-    RemoteSlobrok *oldremote = _partners[name];
-    if (oldremote != NULL) {
+    RemoteSlobrok *oldremote = lookupPartner(name);
+    if (oldremote != nullptr) {
         // already a partner, should be OK
-        if (strcmp(spec, oldremote->getSpec()) != 0) {
-            return OkState(FRTE_RPC_METHOD_FAILED,
-                           "name already partner with different spec");
+        if (spec != oldremote->getSpec()) {
+            return OkState(FRTE_RPC_METHOD_FAILED, "name already partner with different spec");
         }
         // this is probably a good time to try connecting again
         if (! oldremote->isConnected()) {
@@ -38,100 +38,81 @@ ExchangeManager::addPartner(const char *name, const char *spec)
         return OkState();
     }
 
-    RemoteSlobrok *partner = new RemoteSlobrok(name, spec, *this);
-    LOG_ASSERT(_partners.isSet(name) == false);
-    _partners.set(name, partner);
-    partner->tryConnect();
+    LOG_ASSERT(_partners.find(name) == _partners.end());
+    auto newPartner = std::make_unique<RemoteSlobrok>(name, spec, *this);
+    RemoteSlobrok & partner = *newPartner;
+    _partners[name] = std::move(newPartner);
+    partner.tryConnect();
     return OkState();
 }
 
-
 void
-ExchangeManager::removePartner(const char *name)
+ExchangeManager::removePartner(const std::string & name)
 {
     // assuming checks already done
-    RemoteSlobrok *oldremote = _partners.remove(name);
-    LOG_ASSERT(oldremote != NULL);
-    delete oldremote;
+    auto oldremote = std::move(_partners[name]);
+    LOG_ASSERT(oldremote);
+    _partners.erase(name);
 }
-
 
 std::vector<std::string>
 ExchangeManager::getPartnerList()
 {
     std::vector<std::string> partnerList;
-    HashMap<RemoteSlobrok *>::Iterator itr =  _partners.iterator();
-    for (; itr.valid(); itr.next()) {
-        partnerList.push_back(std::string(itr.value()->getSpec()));
+    for (const auto & entry : _partners) {
+        partnerList.push_back(entry.second->getSpec());
     }
     return partnerList;
 }
 
 
 void
-ExchangeManager::forwardRemove(const char *name, const char *spec)
+ExchangeManager::forwardRemove(const std::string & name, const std::string & spec)
 {
-    RegRpcSrvCommand remremhandler
-        = RegRpcSrvCommand::makeRemRemCmd(_env, name, spec);
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE,
-                                           name, spec, *this,
-                                           remremhandler);
-    HashMap<RemoteSlobrok *>::Iterator it = _partners.iterator();
-    while (it.valid()) {
-        RemoteSlobrok *partner = it.value();
-        package->addItem(partner);
-        it.next();
+    RegRpcSrvCommand remremhandler = RegRpcSrvCommand::makeRemRemCmd(_env, name, spec);
+    WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, name, spec, *this, remremhandler);
+    for (const auto & entry : _partners) {
+        package->addItem(entry.second.get());
     }
     package->expedite();
 }
 
 void
-ExchangeManager::doAdd(const char *name, const char *spec,
-                       RegRpcSrvCommand rdc)
+ExchangeManager::doAdd(const std::string &name, const std::string &spec, RegRpcSrvCommand rdc)
 {
-    HashMap<RemoteSlobrok *>::Iterator it =
-        _partners.iterator();
+    WorkPackage *package = new WorkPackage(WorkPackage::OP_DOADD, name, spec, *this, rdc);
 
-    WorkPackage *package =
-        new WorkPackage(WorkPackage::OP_DOADD, name, spec, *this, rdc);
-
-    while (it.valid()) {
-        RemoteSlobrok *partner = it.value();
-        package->addItem(partner);
-        it.next();
+    for (const auto & entry : _partners) {
+        package->addItem(entry.second.get());
     }
     package->expedite();
 }
 
 
 void
-ExchangeManager::wantAdd(const char *name, const char *spec,
-                         RegRpcSrvCommand rdc)
+ExchangeManager::wantAdd(const std::string &name, const std::string &spec, RegRpcSrvCommand rdc)
 {
-    WorkPackage *package =
-        new WorkPackage(WorkPackage::OP_WANTADD, name, spec, *this, rdc);
-    HashMap<RemoteSlobrok *>::Iterator it = _partners.iterator();
-    while (it.valid()) {
-        RemoteSlobrok *partner = it.value();
-        package->addItem(partner);
-        it.next();
+    WorkPackage *package = new WorkPackage(WorkPackage::OP_WANTADD, name, spec, *this, rdc);
+    for (const auto & entry : _partners) {
+        package->addItem(entry.second.get());
     }
     package->expedite();
 }
 
+RemoteSlobrok *
+ExchangeManager::lookupPartner(const std::string & name) const {
+    auto found = _partners.find(name);
+    return (found == _partners.end()) ? nullptr : found->second.get();
+}
 
 void
 ExchangeManager::healthCheck()
 {
-    int i=0;
-    HashMap<RemoteSlobrok *>::Iterator it = _partners.iterator();
-    while (it.valid()) {
-        RemoteSlobrok *partner = it.value();
+    for (const auto & entry : _partners) {
+        RemoteSlobrok *partner = entry.second.get();
         partner->healthCheck();
-        it.next();
-        i++;
     }
-    LOG(debug, "ExchangeManager::healthCheck for %d partners", i);
+    LOG(debug, "ExchangeManager::healthCheck for %ld partners", _partners.size());
 }
 
 //-----------------------------------------------------------------------------
@@ -152,8 +133,7 @@ ExchangeManager::WorkPackage::WorkItem::RequestDone(FRT_RPCRequest *req)
 
     if (!req->IsError() && strcmp(answer.GetTypeString(), "is") == 0) {
         if (answer[0]._intval32 != 0) {
-            LOG(warning, "request denied: %s [%d]",
-                answer[1]._string._str, answer[0]._intval32);
+            LOG(warning, "request denied: %s [%d]", answer[1]._string._str, answer[0]._intval32);
             denied = true;
         } else {
             LOG(spam, "request approved");
@@ -163,7 +143,7 @@ ExchangeManager::WorkPackage::WorkItem::RequestDone(FRT_RPCRequest *req)
         // XXX tell remslob?
     }
     req->SubRef();
-    _pendingReq = NULL;
+    _pendingReq = nullptr;
     _pkg.doneItem(denied);
 }
 
@@ -175,17 +155,15 @@ ExchangeManager::WorkPackage::WorkItem::expedite()
 
 ExchangeManager::WorkPackage::WorkItem::~WorkItem()
 {
-    if (_pendingReq != NULL) {
+    if (_pendingReq != nullptr) {
         _pendingReq->Abort();
-        LOG_ASSERT(_pendingReq == NULL);
+        LOG_ASSERT(_pendingReq == nullptr);
     }
 }
 
 
-ExchangeManager::WorkPackage::WorkPackage(op_type op,
-                                          const char *name, const char *spec,
-                                          ExchangeManager &exchanger,
-                                          RegRpcSrvCommand donehandler)
+ExchangeManager::WorkPackage::WorkPackage(op_type op, const std::string & name, const std::string & spec,
+                                          ExchangeManager &exchanger, RegRpcSrvCommand donehandler)
     : _work(),
       _doneCnt(0),
       _numDenied(0),
@@ -197,13 +175,7 @@ ExchangeManager::WorkPackage::WorkPackage(op_type op,
 {
 }
 
-ExchangeManager::WorkPackage::~WorkPackage()
-{
-    for (size_t i = 0; i < _work.size(); i++) {
-        delete _work[i];
-        _work[i] = NULL;
-    }
-}
+ExchangeManager::WorkPackage::~WorkPackage() = default;
 
 void
 ExchangeManager::WorkPackage::doneItem(bool denied)
@@ -240,15 +212,14 @@ ExchangeManager::WorkPackage::addItem(RemoteSlobrok *partner)
     } else if (_optype == OP_DOADD) {
         r->SetMethodName("slobrok.internal.doAdd");
     }
-    r->GetParams()->AddString(_exchanger._env.mySpec());
+    r->GetParams()->AddString(_exchanger._env.mySpec().c_str());
     r->GetParams()->AddString(_name.c_str());
     r->GetParams()->AddString(_spec.c_str());
 
-    WorkItem *item = new WorkItem(*this, partner, r);
-    _work.push_back(item);
+    _work.push_back(std::make_unique<WorkItem>(*this, partner, r));
     LOG(spam, "added %s(%s,%s,%s) for %s to workpackage",
-        r->GetMethodName(), _exchanger._env.mySpec(),
-        _name.c_str(), _spec.c_str(), partner->getName());
+        r->GetMethodName(), _exchanger._env.mySpec().c_str(),
+        _name.c_str(), _spec.c_str(), partner->getName().c_str());
 }
 
 

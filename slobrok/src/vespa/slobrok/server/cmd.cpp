@@ -30,14 +30,14 @@ public:
     const std::string      spec;
     FRT_RPCRequest * const registerRequest;
 
-    RegRpcSrvData(SBEnv &e, const char *n, const char *s, FRT_RPCRequest *r)
+    RegRpcSrvData(SBEnv &e, const std::string &n, const std::string &s, FRT_RPCRequest *r)
         : _state(RDC_INIT), env(e), name(n), spec(s), registerRequest(r)
     {}
 };
 
 RegRpcSrvCommand
 RegRpcSrvCommand::makeRegRpcSrvCmd(SBEnv &env,
-                                   const char *name, const char *spec,
+                                   const std::string &name, const std::string &spec,
                                    FRT_RPCRequest *req)
 {
     RegRpcSrvData *data = new RegRpcSrvData(env, name, spec, req);
@@ -45,7 +45,7 @@ RegRpcSrvCommand::makeRegRpcSrvCmd(SBEnv &env,
 }
 
 RegRpcSrvCommand
-RegRpcSrvCommand::makeRemRemCmd(SBEnv &env, const char *name, const char *spec)
+RegRpcSrvCommand::makeRemRemCmd(SBEnv &env, const std::string & name, const std::string &spec)
 {
     RegRpcSrvData *data = new RegRpcSrvData(env, name, spec, nullptr);
     data->_state = RegRpcSrvData::XCH_IGNORE;
@@ -99,7 +99,7 @@ RegRpcSrvCommand::doneHandler(OkState result)
         LOG(spam, "phase addManaged(%s,%s)",
             _data->name.c_str(), _data->spec.c_str());
         _data->_state = RegRpcSrvData::CHK_RPCSRV;
-        _data->env._rpcsrvmanager.addManaged(_data->name.c_str(), _data->spec.c_str(), *this);
+        _data->env._rpcsrvmanager.addManaged(_data->name, _data->spec.c_str(), *this);
         return;
     } else if (_data->_state == RegRpcSrvData::CHK_RPCSRV) {
         LOG(spam, "phase doAdd(%s,%s)", _data->name.c_str(), _data->spec.c_str());

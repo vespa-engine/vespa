@@ -42,7 +42,7 @@ SelfCheck::PerformTask()
         const NamedService *r = mrpcsrvlist[i];
         ManagedRpcServer *m = _rpcsrvmap.lookupManaged(r->getName());
         LOG_ASSERT(r == m);
-        LOG(debug, "managed: %s -> %s", m->getName(), m->getSpec());
+        LOG(debug, "managed: %s -> %s", m->getName().c_str(), m->getSpec().c_str());
         m->healthCheck();
     }
     // reschedule in 1-2 seconds:

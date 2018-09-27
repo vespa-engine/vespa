@@ -73,7 +73,7 @@ public:
     ExchangeManager          _exchanger;
     RpcServerMap             _rpcsrvmap;
 
-    const char *mySpec() const { return _me->getSpec(); }
+    const std::string & mySpec() const { return _me->getSpec(); }
 
     bool isSuspended() const { return false; }
     bool isShuttingDown() const { return _shuttingDown; }

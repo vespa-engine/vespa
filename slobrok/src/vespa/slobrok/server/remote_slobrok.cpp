@@ -25,18 +25,18 @@ class IgnoreReqDone: public FRT_IRequestWait
 
 //-----------------------------------------------------------------------------
 
-RemoteSlobrok::RemoteSlobrok(const char *name, const char *spec,
+RemoteSlobrok::RemoteSlobrok(const std::string &name, const std::string &spec,
                              ExchangeManager &manager)
     : _exchanger(manager),
       _rpcsrvmanager(manager._rpcsrvmanager),
-      _remote(NULL),
+      _remote(nullptr),
       _rpcserver(name, spec, *this),
       _reconnecter(getSupervisor()->GetScheduler(), *this),
       _failCnt(0),
-      _remAddPeerReq(NULL),
-      _remListReq(NULL),
-      _remAddReq(NULL),
-      _remRemReq(NULL),
+      _remAddPeerReq(nullptr),
+      _remListReq(nullptr),
+      _remAddReq(nullptr),
+      _remRemReq(nullptr),
       _pending()
 {
     _rpcserver.healthCheck();
@@ -48,21 +48,21 @@ RemoteSlobrok::~RemoteSlobrok()
 {
     _reconnecter.disable();
 
-    if (_remote != NULL) {
+    if (_remote != nullptr) {
         _remote->SubRef();
-        _remote = NULL;
+        _remote = nullptr;
     }
 
-    if (_remAddPeerReq != NULL) {
+    if (_remAddPeerReq != nullptr) {
         _remAddPeerReq->Abort();
     }
-    if (_remListReq != NULL) {
+    if (_remListReq != nullptr) {
         _remListReq->Abort();
     }
-    if (_remAddReq != NULL) {
+    if (_remAddReq != nullptr) {
         _remAddReq->Abort();
     }
-    if (_remRemReq != NULL) {
+    if (_remRemReq != nullptr) {
         _remRemReq->Abort();
     }
     // _rpcserver destructor called automatically
@@ -72,8 +72,8 @@ RemoteSlobrok::~RemoteSlobrok()
 void
 RemoteSlobrok::doPending()
 {
-    LOG_ASSERT(_remAddReq == NULL);
-    LOG_ASSERT(_remRemReq == NULL);
+    LOG_ASSERT(_remAddReq == nullptr);
+    LOG_ASSERT(_remRemReq == nullptr);
 
     if (_pending.size() > 0) {
         NamedService *todo = _pending.front();
@@ -81,19 +81,19 @@ RemoteSlobrok::doPending()
 
         NamedService *rpcsrv = _exchanger._rpcsrvmap.lookup(todo->getName());
 
-        if (rpcsrv == NULL) {
+        if (rpcsrv == nullptr) {
             _remRemReq = getSupervisor()->AllocRPCRequest();
             _remRemReq->SetMethodName("slobrok.internal.doRemove");
-            _remRemReq->GetParams()->AddString(_exchanger._env.mySpec());
-            _remRemReq->GetParams()->AddString(todo->getName());
-            _remRemReq->GetParams()->AddString(todo->getSpec());
+            _remRemReq->GetParams()->AddString(_exchanger._env.mySpec().c_str());
+            _remRemReq->GetParams()->AddString(todo->getName().c_str());
+            _remRemReq->GetParams()->AddString(todo->getSpec().c_str());
             _remote->InvokeAsync(_remRemReq, 2.0, this);
         } else {
             _remAddReq = getSupervisor()->AllocRPCRequest();
             _remAddReq->SetMethodName("slobrok.internal.doAdd");
-            _remAddReq->GetParams()->AddString(_exchanger._env.mySpec());
-            _remAddReq->GetParams()->AddString(todo->getName());
-            _remAddReq->GetParams()->AddString(rpcsrv->getSpec());
+            _remAddReq->GetParams()->AddString(_exchanger._env.mySpec().c_str());
+            _remAddReq->GetParams()->AddString(todo->getName().c_str());
+            _remAddReq->GetParams()->AddString(rpcsrv->getSpec().c_str());
             _remote->InvokeAsync(_remAddReq, 2.0, this);
         }
         // XXX should save this and pick up on RequestDone()
@@ -127,19 +127,18 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
             const char *myname     = args[0]._string._str;
             const char *myspec     = args[1]._string._str;
             LOG(error, "addPeer(%s, %s) on remote slobrok %s at %s: %s",
-                myname, myspec, getName(), getSpec(),
-                req->GetErrorMessage());
+                myname, myspec, getName().c_str(), getSpec().c_str(), req->GetErrorMessage());
             req->SubRef();
-            _remAddPeerReq = NULL;
+            _remAddPeerReq = nullptr;
             goto retrylater;
         }
         req->SubRef();
-        _remAddPeerReq = NULL;
+        _remAddPeerReq = nullptr;
         // next step is to ask the remote to send its list of managed names:
-        LOG_ASSERT(_remListReq == NULL);
+        LOG_ASSERT(_remListReq == nullptr);
         _remListReq = getSupervisor()->AllocRPCRequest();
         _remListReq->SetMethodName("slobrok.internal.listManagedRpcServers");
-        if (_remote != NULL) {
+        if (_remote != nullptr) {
             _remote->InvokeAsync(_remListReq, 3.0, this);
         }
         // when _remListReq is returned, our managed list is added
@@ -149,19 +148,18 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
             || strcmp(answer.GetTypeString(), "SS") != 0)
         {
             LOG(error, "error listing remote slobrok %s at %s: %s",
-                getName(), getSpec(), req->GetErrorMessage());
+                getName().c_str(), getSpec().c_str(), req->GetErrorMessage());
             req->SubRef();
-            _remListReq = NULL;
+            _remListReq = nullptr;
             goto retrylater;
         }
         uint32_t numNames = answer.GetValue(0)._string_array._len;
         uint32_t numSpecs = answer.GetValue(1)._string_array._len;
 
         if (numNames != numSpecs) {
-            LOG(error, "inconsistent array lengths from %s at %s",
-                getName(), getSpec());
+            LOG(error, "inconsistent array lengths from %s at %s", getName().c_str(), getSpec().c_str());
             req->SubRef();
-            _remListReq = NULL;
+            _remListReq = nullptr;
             goto retrylater;
         }
         FRT_StringValue *names = answer.GetValue(0)._string_array._pt;
@@ -171,7 +169,7 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
             _rpcsrvmanager.addRemote(names[idx]._str, specs[idx]._str);
         }
         req->SubRef();
-        _remListReq = NULL;
+        _remListReq = nullptr;
 
         // next step is to push the ones I own:
         pushMine();
@@ -180,10 +178,9 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
         if (req->IsError() && (req->GetErrorCode() == FRTE_RPC_CONNECTION ||
                                req->GetErrorCode() == FRTE_RPC_TIMEOUT))
         {
-            LOG(error, "connection error adding to remote slobrok: %s",
-                req->GetErrorMessage());
+            LOG(error, "connection error adding to remote slobrok: %s", req->GetErrorMessage());
             req->SubRef();
-            _remAddReq = NULL;
+            _remAddReq = nullptr;
             goto retrylater;
         }
         if (req->IsError()) {
@@ -195,7 +192,7 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
             _rpcsrvmanager.removeLocal(rpcsrvname, rpcsrvspec);
         }
         req->SubRef();
-        _remAddReq = NULL;
+        _remAddReq = nullptr;
         doPending();
     } else if (req == _remRemReq) {
         // handle response after pushing some remove we had pending:
@@ -205,7 +202,7 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
             LOG(error, "connection error adding to remote slobrok: %s",
                 req->GetErrorMessage());
             req->SubRef();
-            _remRemReq = NULL;
+            _remRemReq = nullptr;
             goto retrylater;
         }
         if (req->IsError()) {
@@ -213,11 +210,11 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
                 req->GetErrorMessage());
         }
         req->SubRef();
-        _remRemReq = NULL;
+        _remRemReq = nullptr;
         doPending();
     } else {
         LOG(error, "got unknown request back in RequestDone()");
-        LOG_ASSERT(req == NULL);
+        LOG_ASSERT(req == nullptr);
     }
 
     return;
@@ -232,10 +229,10 @@ RemoteSlobrok::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg)
 {
     if (++_failCnt > 10) {
         LOG(warning, "remote location broker at %s failed: %s",
-            rpcsrv->getSpec(), errmsg.c_str());
+            rpcsrv->getSpec().c_str(), errmsg.c_str());
     } else {
         LOG(debug, "remote location broker at %s failed: %s",
-            rpcsrv->getSpec(), errmsg.c_str());
+            rpcsrv->getSpec().c_str(), errmsg.c_str());
     }
     LOG_ASSERT(rpcsrv == &_rpcserver);
     fail();
@@ -246,9 +243,9 @@ void
 RemoteSlobrok::fail()
 {
     // disconnect
-    if (_remote != NULL) {
+    if (_remote != nullptr) {
         _remote->SubRef();
-        _remote = NULL;
+        _remote = nullptr;
     }
     // schedule reconnect attempt
     _reconnecter.scheduleTryConnect();
@@ -258,13 +255,13 @@ RemoteSlobrok::fail()
 void
 RemoteSlobrok::healthCheck()
 {
-    if (_remote != NULL &&
-        _remAddPeerReq == NULL &&
-        _remListReq == NULL &&
-        _remAddReq == NULL &&
-        _remRemReq == NULL)
+    if (_remote != nullptr &&
+        _remAddPeerReq == nullptr &&
+        _remListReq == nullptr &&
+        _remAddReq == nullptr &&
+        _remRemReq == nullptr)
     {
-        LOG(debug, "spamming remote at %s with my names", getName());
+        LOG(debug, "spamming remote at %s with my names", getName().c_str());
         pushMine();
     } else {
         LOG(debug, "not pushing mine, as we have: remote %p r.a.p.r=%p r.l.r=%p r.a.r=%p r.r.r=%p",
@@ -282,8 +279,8 @@ RemoteSlobrok::notifyOkRpcSrv(ManagedRpcServer *rpcsrv)
     // connection was OK, so disable any pending reconnect
     _reconnecter.disable();
 
-    if (_remote == NULL) {
-        _remote = getSupervisor()->GetTarget(getSpec());
+    if (_remote == nullptr) {
+        _remote = getSupervisor()->GetTarget(getSpec().c_str());
     }
 
     // at this point, we will do (in sequence):
@@ -294,8 +291,8 @@ RemoteSlobrok::notifyOkRpcSrv(ManagedRpcServer *rpcsrv)
 
     _remAddPeerReq = getSupervisor()->AllocRPCRequest();
     _remAddPeerReq->SetMethodName("slobrok.admin.addPeer");
-    _remAddPeerReq->GetParams()->AddString(_exchanger._env.mySpec());
-    _remAddPeerReq->GetParams()->AddString(_exchanger._env.mySpec());
+    _remAddPeerReq->GetParams()->AddString(_exchanger._env.mySpec().c_str());
+    _remAddPeerReq->GetParams()->AddString(_exchanger._env.mySpec().c_str());
     _remote->InvokeAsync(_remAddPeerReq, 3.0, this);
     // when _remAddPeerReq is returned, our managed list is added via doAdd()
 }

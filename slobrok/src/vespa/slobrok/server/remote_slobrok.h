@@ -62,19 +62,16 @@ private:
     void doPending();
 
 public:
-    RemoteSlobrok(const char *name, const char *spec,
-                  ExchangeManager &manager);
+    RemoteSlobrok(const std::string &name, const std::string &spec, ExchangeManager &manager);
     ~RemoteSlobrok();
 
     void fail();
-    bool isConnected() const { return (_remote != NULL); }
+    bool isConnected() const { return (_remote != nullptr); }
     void tryConnect();
     void healthCheck();
-    void invokeAsync(FRT_RPCRequest *req,
-                     double timeout,
-                     FRT_IRequestWait *rwaiter);
-    const char *getName() const { return _rpcserver.getName(); }
-    const char *getSpec() const { return _rpcserver.getSpec(); }
+    void invokeAsync(FRT_RPCRequest *req, double timeout, FRT_IRequestWait *rwaiter);
+    const std::string & getName() const { return _rpcserver.getName(); }
+    const std::string & getSpec() const { return _rpcserver.getSpec(); }
 
     // interfaces implemented:
     void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) override;

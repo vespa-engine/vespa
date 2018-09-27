@@ -22,7 +22,7 @@ private:
 public:
     const bool isLocal;
 
-    ReservedName(const char *name, const char *spec, bool local)
+    ReservedName(const std::string &name, const std::string &spec, bool local)
         : NamedService(name, spec), _reservedTime(), isLocal(local)
     {
         _reservedTime.SetNow();

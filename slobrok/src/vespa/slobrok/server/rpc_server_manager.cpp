@@ -24,15 +24,15 @@ RpcServerManager::RpcServerManager(SBEnv &sbenv)
 }
 
 static OkState
-validateName(const char *rpcsrvname)
+validateName(const std::string & rpcsrvname)
 {
-    const char *p = rpcsrvname;
+    const char *p = rpcsrvname.c_str();
     while (*p != '\0') {
         // important: disallow '*'
         if (strchr("+,-./:=@[]_{}~<>"
                    "0123456789"
                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                   "abcdefghijklmnopqrstuvwxyz", *p) == NULL)
+                   "abcdefghijklmnopqrstuvwxyz", *p) == nullptr)
         {
             std::ostringstream tmp;
             tmp << "Illegal character '" << *p << "' (";
@@ -49,22 +49,20 @@ validateName(const char *rpcsrvname)
 
 
 OkState
-RpcServerManager::checkPartner(const char *remslobrok)
+RpcServerManager::checkPartner(const std::string & remslobrok)
 {
-    if (strcmp(remslobrok, _env.mySpec()) == 0) {
+    if (remslobrok == _env.mySpec()) {
         return OkState(13, "remote slobrok using my rpcserver name");
     }
     RemoteSlobrok *partner = _exchanger.lookupPartner(remslobrok);
-    if (partner == NULL) {
+    if (partner == nullptr) {
         return OkState(13, "remote slobrok not a partner");
     }
     return OkState();
 }
 
 OkState
-RpcServerManager::addRemReservation(const char *remslobrok,
-                                    const char *name,
-                                    const char *spec)
+RpcServerManager::addRemReservation(const std::string & remslobrok, const std::string & name, const std::string &spec)
 {
     OkState state = checkPartner(remslobrok);
     if (state.failed()) return state;
@@ -73,30 +71,27 @@ RpcServerManager::addRemReservation(const char *remslobrok,
     if (valid.failed()) return valid;
 
     NamedService *old = _rpcsrvmap.lookupManaged(name);
-    if (old != NULL) {
-        if (strcmp(old->getSpec(), spec) == 0) {
+    if (old != nullptr) {
+        if (old->getSpec() == spec) {
             // was alright already
             return OkState(0, "already registered");
         }
         LOG(warning, "remote %s tried to register [%s -> %s] but we already have [%s -> %s] registered!",
-            remslobrok, name, spec, old->getName(), old->getSpec());
+            remslobrok.c_str(), name.c_str(), spec.c_str(), old->getName().c_str(), old->getSpec().c_str());
         return OkState(FRTE_RPC_METHOD_FAILED, "already managed by me");
     }
     if (_rpcsrvmap.conflictingReservation(name, spec)) {
-        return OkState(FRTE_RPC_METHOD_FAILED,
-                       "registration for name already in progress");
+        return OkState(FRTE_RPC_METHOD_FAILED, "registration for name already in progress");
     }
-    ReservedName *rpcsrv = new ReservedName(name, spec, false);
-    _rpcsrvmap.addReservation(rpcsrv);
+    _rpcsrvmap.addReservation(new ReservedName(name, spec, false));
     return OkState(0, "done");
 }
 
 
 OkState
-RpcServerManager::addPeer(const char *remsbname,
-                          const char *remsbspec)
+RpcServerManager::addPeer(const std::string & remsbname, const std::string &remsbspec)
 {
-    if (strcmp(remsbname, _env.mySpec()) == 0) {
+    if (remsbname == _env.mySpec()) {
         return OkState(13, "cannot add remote slobrok with my rpcserver name");
     }
     return _exchanger.addPartner(remsbname, remsbspec);
@@ -104,17 +99,16 @@ RpcServerManager::addPeer(const char *remsbname,
 
 
 OkState
-RpcServerManager::removePeer(const char *remsbname,
-                             const char *remsbspec)
+RpcServerManager::removePeer(const std::string & remsbname, const std::string & remsbspec)
 {
-    if (strcmp(remsbname, _env.mySpec()) == 0) {
+    if (remsbname == _env.mySpec()) {
         return OkState(13, "cannot remove my own rpcserver name");
     }
     RemoteSlobrok *partner = _exchanger.lookupPartner(remsbname);
-    if (partner == NULL) {
+    if (partner == nullptr) {
         return OkState(0, "remote slobrok not a partner");
     }
-    if (strcmp(partner->getSpec(), remsbspec) != 0) {
+    if (partner->getSpec() != remsbspec) {
         return OkState(13, "peer registered with different spec");
     }
     _exchanger.removePartner(remsbname);
@@ -123,20 +117,20 @@ RpcServerManager::removePeer(const char *remsbname,
 
 
 OkState
-RpcServerManager::addMyReservation(const char *name, const char *spec)
+RpcServerManager::addMyReservation(const std::string & name, const std::string & spec)
 {
     OkState valid = validateName(name);
     if (valid.failed()) return valid;
 
     NamedService *old = _rpcsrvmap.lookupManaged(name);
-    if (old != NULL) {
-        if (strcmp(old->getSpec(), spec) == 0) {
+    if (old != nullptr) {
+        if (old->getSpec() == spec) {
             // was alright already
             return OkState(0, "already registered");
         } else {
             return OkState(FRTE_RPC_METHOD_FAILED, vespalib::make_string(
                           "name %s registered (to %s), cannot register %s",
-                          name, old->getSpec(), spec));
+                          name.c_str(), old->getSpec().c_str(), spec.c_str()));
         }
     }
 
@@ -144,7 +138,7 @@ RpcServerManager::addMyReservation(const char *name, const char *spec)
     if (_rpcsrvmap.conflictingReservation(name, spec)) {
         const ReservedName * rsv = _rpcsrvmap.getReservation(name);
         LOG(warning, "conflicting registrations: wanted [%s -> %s] but [%s -> %s] already reserved",
-            name, spec, rsv->getName(), rsv->getSpec());
+            name.c_str(), spec.c_str(), rsv->getName().c_str(), rsv->getSpec().c_str());
         return OkState(FRTE_RPC_METHOD_FAILED,
                        "registration for name already in progress with a different spec");
     }
@@ -156,8 +150,7 @@ RpcServerManager::addMyReservation(const char *name, const char *spec)
 
 
 OkState
-RpcServerManager::addRemote(const char *name,
-                            const char *spec)
+RpcServerManager::addRemote(const std::string & name, const std::string &spec)
 {
     OkState valid = validateName(name);
     if (valid.failed()) return valid;
@@ -166,12 +159,11 @@ RpcServerManager::addRemote(const char *name,
         return OkState(0, "already correct");
     }
     NamedService *old = _rpcsrvmap.lookup(name);
-    if (old != NULL) {
-        if (strcmp(old->getSpec(), spec) != 0) {
-            LOG(warning, "collision on remote add: "
-                "name %s registered to %s locally, "
+    if (old != nullptr) {
+        if (old->getSpec() !=  spec) {
+            LOG(warning, "collision on remote add: name %s registered to %s locally, "
                 "but another location broker wants it registered to %s",
-                name, old->getSpec(), spec);
+                name.c_str(), old->getSpec().c_str(), spec.c_str());
             removeRemote(name, old->getSpec());
             return OkState(13, "registered, with different spec");
         }
@@ -199,16 +191,15 @@ RpcServerManager::remove(ManagedRpcServer *rpcsrv)
 
 
 OkState
-RpcServerManager::removeRemote(const char *name,
-                               const char *spec)
+RpcServerManager::removeRemote(const std::string &name, const std::string &spec)
 {
     NamedService *old = _rpcsrvmap.lookup(name);
-    if (old == NULL) {
+    if (old == nullptr) {
         // was alright already, remove any reservation too
         _rpcsrvmap.removeReservation(name);
         return OkState(0, "already done");
     }
-    if (strcmp(old->getSpec(), spec) != 0) {
+    if (old->getSpec() != spec) {
         return OkState(1, "name registered, but with different spec");
     }
     NamedService *td = _rpcsrvmap.remove(name);
@@ -218,25 +209,25 @@ RpcServerManager::removeRemote(const char *name,
 }
 
 OkState
-RpcServerManager::removeLocal(const char *name, const char *spec)
+RpcServerManager::removeLocal(const std::string & name, const std::string &spec)
 {
     NamedService *td = _rpcsrvmap.lookup(name);
-    if (td == NULL) {
+    if (td == nullptr) {
         // already removed, nop
         return OkState();
     }
 
     RemoteSlobrok *partner = _exchanger.lookupPartner(name);
-    if (partner != NULL) {
+    if (partner != nullptr) {
         return OkState(13, "cannot unregister partner slobrok");
     }
 
     ManagedRpcServer *rpcsrv = _rpcsrvmap.lookupManaged(name);
-    if (rpcsrv == NULL) {
+    if (rpcsrv == nullptr) {
         return OkState(13, "not a local rpcserver");
     }
 
-    if (strcmp(rpcsrv->getSpec(), spec) != 0) {
+    if (rpcsrv->getSpec() != spec) {
         // the client can probably ignore this "error"
         // or log it on level INFO?
         return OkState(1, "name registered, but with different spec");
@@ -250,13 +241,12 @@ RpcServerManager::removeLocal(const char *name, const char *spec)
 
 
 void
-RpcServerManager::addManaged(const char *name, const char *spec,
-                             RegRpcSrvCommand rdc)
+RpcServerManager::addManaged(const std::string &name, const std::string &spec, RegRpcSrvCommand rdc)
 {
     ManagedRpcServer *rpcsrv = new ManagedRpcServer(name, spec, *this);
     _rpcsrvmap.addNew(rpcsrv);
     for (size_t i = 0; i < _addManageds.size(); i++) {
-        if (_addManageds[i].rpcsrv == NULL) {
+        if (_addManageds[i].rpcsrv == nullptr) {
             _addManageds[i].rpcsrv = rpcsrv;
             _addManageds[i].handler = rdc;
             rpcsrv->healthCheck();
@@ -272,11 +262,11 @@ RpcServerManager::addManaged(const char *name, const char *spec,
 
 
 bool
-RpcServerManager::alreadyManaged(const char *name, const char *spec)
+RpcServerManager::alreadyManaged(const std::string &name, const std::string &spec)
 {
     ManagedRpcServer *rpcsrv = _rpcsrvmap.lookupManaged(name);
-    if (rpcsrv != NULL) {
-        if (strcmp(rpcsrv->getSpec(), spec) == 0) {
+    if (rpcsrv != nullptr) {
+        if (rpcsrv->getSpec() == spec) {
             return true;
         }
     }
@@ -312,7 +302,7 @@ RpcServerManager::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errms
         old = _rpcsrvmap.remove(rpcsrv->getName());
         LOG_ASSERT(old == rpcsrv);
         LOG(info, "managed server %s at %s failed: %s",
-            rpcsrv->getName(), rpcsrv->getSpec(), errmsg.c_str());
+            rpcsrv->getName().c_str(), rpcsrv->getSpec().c_str(), errmsg.c_str());
         logged = true;
     }
     _exchanger.forwardRemove(rpcsrv->getName(), rpcsrv->getSpec());
@@ -322,13 +312,13 @@ RpcServerManager::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errms
                 .doneHandler(OkState(13, "failed check using listNames callback"));
             _addManageds[i].rpcsrv = 0;
             LOG(warning, "rpcserver %s at %s failed while trying to register",
-                rpcsrv->getName(), rpcsrv->getSpec());
+                rpcsrv->getName().c_str(), rpcsrv->getSpec().c_str());
             logged = true;
         }
     }
     if (!logged) {
         LOG(warning, "unmanaged server %s at %s failed: %s",
-            rpcsrv->getName(), rpcsrv->getSpec(), errmsg.c_str());
+            rpcsrv->getName().c_str(), rpcsrv->getSpec().c_str(), errmsg.c_str());
     }
     _deleteList.push_back(rpcsrv);
     ScheduleNow();

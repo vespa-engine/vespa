@@ -63,11 +63,10 @@ public:
     void removeUpdateListener(IUpdateListener *l);
 
     void       addNew(NamedService *rpcsrv);
-    NamedService *remove(const char *name);
+    NamedService *remove(const std::string &name);
     NamedService *update(NamedService *rpcsrv);
 
-    NamedService *lookup(const char *name) const;
-    RpcSrvlist lookupPattern(const char *pattern) const;
+    NamedService *lookup(const std::string &name) const;
     RpcSrvlist allVisible() const;
 
     const vespalib::GenCnt& genCnt() { return _genCnt; }

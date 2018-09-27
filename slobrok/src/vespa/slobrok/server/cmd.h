@@ -40,13 +40,8 @@ public:
         return *this;
     }
 
-    static RegRpcSrvCommand makeRegRpcSrvCmd(SBEnv &env,
-                                             const char *name,
-                                             const char *spec,
-                                             FRT_RPCRequest *req);
-    static RegRpcSrvCommand makeRemRemCmd(SBEnv &env,
-                                          const char *name,
-                                          const char *spec);
+    static RegRpcSrvCommand makeRegRpcSrvCmd(SBEnv &env, const std::string &name, const std::string &spec, FRT_RPCRequest *req);
+    static RegRpcSrvCommand makeRemRemCmd(SBEnv &env, const std::string &name, const std::string &spec);
 };
 
 //-----------------------------------------------------------------------------

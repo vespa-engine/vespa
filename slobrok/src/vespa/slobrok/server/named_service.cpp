@@ -9,8 +9,7 @@ namespace slobrok {
 
 //-----------------------------------------------------------------------------
 
-NamedService::NamedService(const char *name,
-                     const char *spec)
+NamedService::NamedService(const std::string & name, const std::string & spec)
     : _name(name),
       _spec(spec)
 {
