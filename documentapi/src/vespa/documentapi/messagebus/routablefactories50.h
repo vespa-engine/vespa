@@ -84,11 +84,6 @@ public:
         virtual DocumentMessage::UP doDecode(document::ByteBuffer &buf) const = 0;
 
     public:
-        /**
-         * Convenience typedefs.
-         */
-        typedef std::unique_ptr<IRoutableFactory> UP;
-        typedef std::shared_ptr<IRoutableFactory> SP;
         bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const override;
         mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const override;
     };
@@ -123,33 +118,8 @@ public:
         virtual DocumentReply::UP doDecode(document::ByteBuffer &buf) const = 0;
 
     public:
-        /**
-         * Convenience typedefs.
-         */
-        typedef std::unique_ptr<IRoutableFactory> UP;
-        typedef std::shared_ptr<IRoutableFactory> SP;
-
         bool encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const override;
         mbus::Routable::UP decode(document::ByteBuffer &in, const LoadTypeSet& loadTypes) const override;
-    };
-
-    /**
-     * Implements a helper class to do feed message factories.
-     */
-    class FeedMessageFactory : public DocumentMessageFactory {
-    protected:
-        void myDecode(FeedMessage &msg, document::ByteBuffer &buf) const;
-        void myEncode(const FeedMessage &msg, vespalib::GrowableByteBuffer &buf) const;
-    };
-
-    /**
-     * Implements a helper class to do feed reply factories.
-     */
-    class FeedReplyFactory : public DocumentReplyFactory {
-    protected:
-        DocumentReply::UP doDecode(document::ByteBuffer &buf) const override;
-        bool doEncode(const DocumentReply &reply, vespalib::GrowableByteBuffer &buf) const override;
-        virtual uint32_t getType() const = 0;
     };
 
     ////////////////////////////////////////////////////////////////////////////////
