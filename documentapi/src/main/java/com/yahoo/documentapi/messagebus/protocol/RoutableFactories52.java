@@ -1,7 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
-import com.yahoo.document.*;
+import com.yahoo.document.BucketId;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.FixedBucketSpaces;
+import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.serialization.DocumentDeserializer;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
@@ -23,6 +29,7 @@ import static com.yahoo.documentapi.messagebus.protocol.AbstractRoutableFactory.
 
 
 /**
+ * @author Vegard Sjonfjell
  * This class encapsulates all the {@link RoutableFactory} classes needed to implement serialization for the document
  * protocol. When adding new factories to this class, please KEEP THE THEM ORDERED alphabetically like they are now.
  */

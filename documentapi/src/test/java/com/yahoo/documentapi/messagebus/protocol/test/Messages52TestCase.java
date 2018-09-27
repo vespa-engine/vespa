@@ -2,11 +2,48 @@
 package com.yahoo.documentapi.messagebus.protocol.test;
 
 import com.yahoo.component.Version;
-import com.yahoo.document.*;
+import com.yahoo.document.BucketId;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.GlobalId;
+import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
 import com.yahoo.document.idstring.IdString;
 import com.yahoo.document.select.OrderingSpecification;
-import com.yahoo.documentapi.messagebus.protocol.*;
+import com.yahoo.documentapi.messagebus.protocol.CreateVisitorMessage;
+import com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply;
+import com.yahoo.documentapi.messagebus.protocol.DestroyVisitorMessage;
+import com.yahoo.documentapi.messagebus.protocol.DocumentIgnoredReply;
+import com.yahoo.documentapi.messagebus.protocol.DocumentListMessage;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.DocumentReply;
+import com.yahoo.documentapi.messagebus.protocol.DocumentState;
+import com.yahoo.documentapi.messagebus.protocol.DocumentSummaryMessage;
+import com.yahoo.documentapi.messagebus.protocol.EmptyBucketsMessage;
+import com.yahoo.documentapi.messagebus.protocol.GetBucketListMessage;
+import com.yahoo.documentapi.messagebus.protocol.GetBucketListReply;
+import com.yahoo.documentapi.messagebus.protocol.GetBucketStateMessage;
+import com.yahoo.documentapi.messagebus.protocol.GetBucketStateReply;
+import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.GetDocumentReply;
+import com.yahoo.documentapi.messagebus.protocol.MapVisitorMessage;
+import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.QueryResultMessage;
+import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentReply;
+import com.yahoo.documentapi.messagebus.protocol.RemoveLocationMessage;
+import com.yahoo.documentapi.messagebus.protocol.SearchResultMessage;
+import com.yahoo.documentapi.messagebus.protocol.StatBucketMessage;
+import com.yahoo.documentapi.messagebus.protocol.StatBucketReply;
+import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentReply;
+import com.yahoo.documentapi.messagebus.protocol.VisitorInfoMessage;
+import com.yahoo.documentapi.messagebus.protocol.VisitorReply;
+import com.yahoo.documentapi.messagebus.protocol.WriteDocumentReply;
+import com.yahoo.documentapi.messagebus.protocol.WrongDistributionReply;
 import com.yahoo.messagebus.Routable;
 import com.yahoo.text.Utf8;
 import com.yahoo.vdslib.SearchResult;
@@ -15,7 +52,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
