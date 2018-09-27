@@ -103,7 +103,7 @@ ExternalPerformer::doCmd(char *line)
     if (isPrefix("list states ", line)) {
         char *servstr = line+5+7;
         char *compstr = strchr(servstr, ' ');
-        if (compstr == NULL) {
+        if (compstr == nullptr) {
             Service *svc = _services.getService(servstr);
             CompIter it = svc->_components.iterator();
             while (it.valid()) {
@@ -118,7 +118,7 @@ ExternalPerformer::doCmd(char *line)
     }
     if (isPrefix("setallstates", line)) {
         char *levmods = strchr(line, ' ');
-        if (levmods == NULL) {
+        if (levmods == nullptr) {
             LOG(error, "bad command: %s", line);
         } else {
             char *orig = strdup(line);
@@ -131,13 +131,13 @@ ExternalPerformer::doCmd(char *line)
     if (isPrefix("setstate ", line)) {
         char *servstr = line + 9;
         char *compstr = strchr(servstr, ' ');
-        if (compstr == NULL) {
+        if (compstr == nullptr) {
             LOG(error, "bad command: %s", line);
             return;
         }
         *compstr++ = '\0';
         char *levmods = strchr(compstr, ' ');
-        if (levmods == NULL) {
+        if (levmods == nullptr) {
             LOG(error, "bad command: %s %s", line, compstr);
             return;
         }
@@ -145,7 +145,7 @@ ExternalPerformer::doCmd(char *line)
 
         Service *svc = _services.getService(servstr);
         Component *cmp = svc->getComponent(compstr);
-        if (doSetState(levmods, cmp, line) == NULL) return;
+        if (doSetState(levmods, cmp, line) == nullptr) return;
 
         // maybe ???
         listStates(servstr, compstr);
@@ -237,7 +237,7 @@ ExternalPerformer::doSetState(char *levmods, Component *cmp, char * line) {
         if (!newval) {
             LOG(error, "bad command %s : expected level=value, got %s",
                 line, levmods);
-            return NULL;
+            return nullptr;
         }
         *newval++ = '\0';
 
@@ -258,7 +258,7 @@ ExternalPerformer::doSetState(char *levmods, Component *cmp, char * line) {
         } else {
             LOG(error, "bad command %s %s=%s: want forward/store/off",
                     line, levmods, newval);
-            return NULL;
+            return nullptr;
         }
         levmods = nextlev;
     }
@@ -271,20 +271,20 @@ InternalPerformer::doCmd(char *line)
     if (isPrefix("setstate ", line)){
         char *servstr = line + 9;
         char *compstr = strchr(servstr, ' ');
-        if (compstr == NULL) {
+        if (compstr == nullptr) {
             LOG(error, "bad internal command: %s", line);
             return;
         }
         *compstr++ = '\0';
         char *levmods = strchr(compstr, ' ');
-        if (levmods == NULL) {
+        if (levmods == nullptr) {
             LOG(error, "bad internal command: %s %s", line, compstr);
             return;
         }
         *levmods++ = '\0';
 
         // ignore services with slash in the name, invalid
-        if (strchr(servstr, '/') != NULL)
+        if (strchr(servstr, '/') != nullptr)
             return;
 
         Service *svc = _services.getService(servstr);

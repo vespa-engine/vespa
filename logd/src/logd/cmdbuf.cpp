@@ -77,7 +77,7 @@ CmdBuf::extend()
     _size *= 2;
     int pos = _bp - _buf;
     char *nbuf = (char *)realloc(_buf, _size);
-    if (nbuf == NULL) {
+    if (nbuf == nullptr) {
         free(_buf);
         LOG(error, "could not allocate %d bytes", _size);
         throw SomethingBad("realloc failed");
@@ -102,7 +102,7 @@ CmdBuf::maybeRead(int fd)
     FD_ZERO(&fdset);
     FD_SET(fd, &fdset);
         
-    while (select(fd + 1, &fdset, NULL, NULL, &notime) > 0) {
+    while (select(fd + 1, &fdset, nullptr, nullptr, &notime) > 0) {
         // usually loops just once
         int oflags = fcntl(fd, F_GETFL);
         int nbflags = oflags | O_NONBLOCK;
