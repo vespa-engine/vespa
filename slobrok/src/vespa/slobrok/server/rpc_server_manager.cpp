@@ -142,7 +142,7 @@ RpcServerManager::addMyReservation(const char *name, const char *spec)
 
     // check if we already are in the progress of adding this
     if (_rpcsrvmap.conflictingReservation(name, spec)) {
-        ReservedName * rsv = _rpcsrvmap.getReservation(name);
+        const ReservedName * rsv = _rpcsrvmap.getReservation(name);
         LOG(warning, "conflicting registrations: wanted [%s -> %s] but [%s -> %s] already reserved",
             name, spec, rsv->getName(), rsv->getSpec());
         return OkState(FRTE_RPC_METHOD_FAILED,

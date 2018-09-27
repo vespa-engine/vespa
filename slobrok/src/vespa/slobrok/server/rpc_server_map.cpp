@@ -12,33 +12,34 @@ namespace slobrok {
 
 //-----------------------------------------------------------------------------
 
+ManagedRpcServer *
+RpcServerMap::lookupManaged(const char *name) const {
+    auto found = _myrpcsrv_map.find(name);
+    return (found == _myrpcsrv_map.end()) ? nullptr : found->second.get();
+}
+
 NamedService *
 RpcServerMap::lookup(const char *name) const
 {
-    NamedService *d = _myrpcsrv_map[name];
-    return d;
+    return lookupManaged(name);
 }
-
 
 NamedService *
 RpcServerMap::remove(const char *name)
 {
     _visible_map.remove(name);
-    NamedService *d = _myrpcsrv_map.remove(name);
-    return d;
+    auto service = std::move(_myrpcsrv_map[name]);
+    _myrpcsrv_map.erase(name);
+    return service.release();
 }
-
-
 
 std::vector<const NamedService *>
 RpcServerMap::lookupPattern(const char *pattern) const
 {
     std::vector<const NamedService *> retval;
-    for (HashMap<ManagedRpcServer *>::Iterator it = _myrpcsrv_map.iterator();
-         it.valid(); it.next())
-    {
-        if (match(it.key(), pattern)) {
-            retval.push_back(it.value());
+    for (const auto & entry : _myrpcsrv_map) {
+        if (match(entry.first.c_str(), pattern)) {
+            retval.push_back(entry.second.get());
         }
     }
     return retval;
@@ -50,10 +51,8 @@ RpcServerMap::allManaged() const
 {
     std::vector<const NamedService *> retval;
     // get list of all names in myrpcsrv_map
-    for (HashMap<ManagedRpcServer *>::Iterator it = _myrpcsrv_map.iterator();
-         it.valid(); it.next())
-    {
-        retval.push_back(it.value());
+    for (const auto & entry : _myrpcsrv_map) {
+        retval.push_back(entry.second.get());
     }
     return retval;
 }
@@ -64,12 +63,12 @@ RpcServerMap::add(NamedService *rpcsrv)
 {
     const char *name = rpcsrv->getName();
 
-    LOG_ASSERT(rpcsrv != NULL);
-    LOG_ASSERT(_myrpcsrv_map.isSet(name) == false);
+    LOG_ASSERT(rpcsrv != nullptr);
+    LOG_ASSERT(_myrpcsrv_map.find(name) == _myrpcsrv_map.end());
 
     removeReservation(name);
 
-    LOG_ASSERT(_visible_map.lookup(name) == NULL);
+    LOG_ASSERT(_visible_map.lookup(name) == nullptr);
     _visible_map.addNew(rpcsrv);
 }
 
@@ -78,11 +77,12 @@ RpcServerMap::addNew(ManagedRpcServer *rpcsrv)
 {
     const char *name = rpcsrv->getName();
 
-    ManagedRpcServer  *oldman = _myrpcsrv_map.remove(name);
+    auto oldman = std::move(_myrpcsrv_map[name]);
+    _myrpcsrv_map.erase(name);
 
-    if (oldman != NULL) {
-        ReservedName *oldres = _reservations[name];
-        NamedService *oldvis = _visible_map.remove(name);
+    if (oldman) {
+        const ReservedName *oldres = _reservations[name].get();
+        const NamedService *oldvis = _visible_map.remove(name);
 
         const char *spec = rpcsrv->getSpec();
         const char *oldname = oldman->getName();
@@ -90,38 +90,37 @@ RpcServerMap::addNew(ManagedRpcServer *rpcsrv)
         if (strcmp(spec, oldspec) != 0)  {
             LOG(warning, "internal state problem: adding [%s at %s] but already had [%s at %s]",
                 name, spec, oldname, oldspec);
-            if (oldvis != oldman) {
+            if (oldvis != oldman.get()) {
                 const char *n = oldvis->getName();
                 const char *s = oldvis->getSpec();
                 LOG(warning, "BAD: different old visible: [%s at %s]", n, s);
             }
-            if (oldres != NULL) {
+            if (oldres != nullptr) {
                 const char *n = oldres->getName();
                 const char *s = oldres->getSpec();
                 LOG(warning, "old reservation: [%s at %s]", n, s);
             }
         }
-        delete oldman;
     }
     add(rpcsrv);
-    _myrpcsrv_map.set(name, rpcsrv);
+    _myrpcsrv_map[name].reset(rpcsrv);
 }
 
 
 void
 RpcServerMap::addReservation(ReservedName *rpcsrv)
 {
-    LOG_ASSERT(rpcsrv != NULL);
-    LOG_ASSERT(_myrpcsrv_map.isSet(rpcsrv->getName()) == false);
+    LOG_ASSERT(rpcsrv != nullptr);
+    LOG_ASSERT(_myrpcsrv_map.find(rpcsrv->getName()) == _myrpcsrv_map.end());
 
     // must not be reserved for something else already
     // this should have been checked already, so assert
     LOG_ASSERT(! conflictingReservation(rpcsrv->getName(), rpcsrv->getSpec()));
-    ReservedName *old = _reservations.set(rpcsrv->getName(), rpcsrv);
-    LOG_ASSERT(old == NULL
+    auto old = std::move(_reservations[rpcsrv->getName()]);
+    _reservations[rpcsrv->getName()].reset(rpcsrv);
+    LOG_ASSERT(!old
                || strcmp(old->getSpec(), rpcsrv->getSpec()) == 0
                || ! old->stillReserved());
-    delete old;
 }
 
 
@@ -129,37 +128,31 @@ RpcServerMap::addReservation(ReservedName *rpcsrv)
 bool
 RpcServerMap::conflictingReservation(const char *name, const char *spec)
 {
-    ReservedName *resv = _reservations[name];
-    return (resv != NULL &&
+    const ReservedName *resv = _reservations[name].get();
+    return (resv != nullptr &&
             resv->stillReserved() &&
             strcmp(resv->getSpec(), spec) != 0);
 }
 
-
-RpcServerMap::~RpcServerMap()
-{
-    // get list of names in rpcsrv_map
-    std::vector<const char *> names;
-    for (HashMap<ManagedRpcServer *>::Iterator it = _myrpcsrv_map.iterator();
-         it.valid(); it.next())
-    {
-        names.push_back(it.key());
-    }
-
-    for (uint32_t i = 0; i < names.size(); i++) {
-        NamedService *rpcsrv = _myrpcsrv_map.remove(names[i]);
-        LOG_ASSERT(rpcsrv != NULL);
-        delete rpcsrv;
-    }
-    LOG_ASSERT(_myrpcsrv_map.size() == 0);
+const ReservedName *
+RpcServerMap::getReservation(const char *name) const {
+    auto found = _reservations.find(name);
+    return (found == _reservations.end()) ? nullptr : found->second.get();
 }
 
+RpcServerMap::RpcServerMap()
+    : _myrpcsrv_map(),
+      _reservations()
+{
+}
+
+RpcServerMap::~RpcServerMap() = default;
 
 bool
 RpcServerMap::match(const char *name, const char *pattern)
 {
-    LOG_ASSERT(name != NULL);
-    LOG_ASSERT(pattern != NULL);
+    LOG_ASSERT(name != nullptr);
+    LOG_ASSERT(pattern != nullptr);
     while (*pattern != '\0') {
         if (*name == *pattern) {
             ++name;
@@ -179,8 +172,7 @@ RpcServerMap::match(const char *name, const char *pattern)
 void
 RpcServerMap::removeReservation(const char *name)
 {
-    delete _reservations.remove(name);
+    _reservations.erase(name);
 }
-
 
 } // namespace slobrok

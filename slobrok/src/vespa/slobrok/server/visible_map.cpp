@@ -87,7 +87,7 @@ VisibleMap::allVisible() const
 void
 VisibleMap::addNew(NamedService *rpcsrv)
 {
-    LOG_ASSERT(rpcsrv != NULL);
+    LOG_ASSERT(rpcsrv != nullptr);
     LOG_ASSERT(_map.isSet(rpcsrv->getName()) == false);
     _map.set(rpcsrv->getName(), rpcsrv);
 
@@ -100,7 +100,7 @@ NamedService *
 VisibleMap::remove(const char *name) {
 
     NamedService *d = _map.remove(name);
-    if (d != NULL) {
+    if (d != nullptr) {
         _history.add(name, _genCnt);
         updated();
     }
@@ -110,10 +110,10 @@ VisibleMap::remove(const char *name) {
 
 NamedService *
 VisibleMap::update(NamedService *rpcsrv) {
-    LOG_ASSERT(rpcsrv != NULL);
+    LOG_ASSERT(rpcsrv != nullptr);
 
     NamedService *d = _map.remove(rpcsrv->getName());
-    LOG_ASSERT(d != NULL);
+    LOG_ASSERT(d != nullptr);
 
     _map.set(rpcsrv->getName(), rpcsrv);
 
@@ -133,7 +133,7 @@ VisibleMap::history(const vespalib::GenCnt& gen) const
          ++it)
     {
         const NamedService *val = lookup(it->c_str());
-        if (val == NULL) {
+        if (val == nullptr) {
             retval.removed.push_back(*it);
         } else {
             retval.updated.push_back(val);
@@ -142,11 +142,11 @@ VisibleMap::history(const vespalib::GenCnt& gen) const
     return retval;
 }
 
-VisibleMap::MapDiff::MapDiff() {}
-VisibleMap::MapDiff::~MapDiff() {}
+VisibleMap::MapDiff::MapDiff() = default;
+VisibleMap::MapDiff::~MapDiff() = default;
 
 VisibleMap::VisibleMap()
-    : _map(NULL),
+    : _map(nullptr),
       _waitList(),
       _genCnt(1)
 {
@@ -160,8 +160,8 @@ VisibleMap::~VisibleMap()
 bool
 VisibleMap::match(const char *name, const char *pattern)
 {
-    LOG_ASSERT(name != NULL);
-    LOG_ASSERT(pattern != NULL);
+    LOG_ASSERT(name != nullptr);
+    LOG_ASSERT(pattern != nullptr);
     while (*pattern != '\0') {
         if (*name == *pattern) {
             ++name;

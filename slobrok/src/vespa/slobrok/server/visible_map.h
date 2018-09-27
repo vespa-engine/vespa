@@ -56,9 +56,6 @@ private:
 
     static bool match(const char *name, const char *pattern);
 
-    VisibleMap(const VisibleMap &);            // Not used
-    VisibleMap &operator=(const VisibleMap &); // Not use
-
     void updated();
     void aborted();
 
@@ -80,6 +77,8 @@ public:
 
     MapDiff history(const vespalib::GenCnt& gen) const;
 
+    VisibleMap(const VisibleMap &) = delete;
+    VisibleMap &operator=(const VisibleMap &) = delete;
     VisibleMap();
     ~VisibleMap();
 };

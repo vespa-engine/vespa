@@ -45,10 +45,9 @@ RegRpcSrvCommand::makeRegRpcSrvCmd(SBEnv &env,
 }
 
 RegRpcSrvCommand
-RegRpcSrvCommand::makeRemRemCmd(SBEnv &env,
-                                const char *name, const char *spec)
+RegRpcSrvCommand::makeRemRemCmd(SBEnv &env, const char *name, const char *spec)
 {
-    RegRpcSrvData *data = new RegRpcSrvData(env, name, spec, NULL);
+    RegRpcSrvData *data = new RegRpcSrvData(env, name, spec, nullptr);
     data->_state = RegRpcSrvData::XCH_IGNORE;
     return RegRpcSrvCommand(data);
 }
@@ -65,8 +64,8 @@ void
 RegRpcSrvCommand::cleanupReservation()
 {
     RpcServerMap &map = _data->env._rpcsrvmap;
-    ReservedName *rsvp = map.getReservation(_data->name.c_str());
-    if (rsvp != NULL && rsvp->isLocal) {
+    const ReservedName *rsvp = map.getReservation(_data->name.c_str());
+    if (rsvp != nullptr && rsvp->isLocal) {
         map.removeReservation(_data->name.c_str());
     }
 }
@@ -74,14 +73,14 @@ RegRpcSrvCommand::cleanupReservation()
 void
 RegRpcSrvCommand::doneHandler(OkState result)
 {
-    LOG_ASSERT(_data != NULL);
+    LOG_ASSERT(_data != nullptr);
 
     if (result.failed()) {
         LOG(warning, "failed in state %d: %s",
             _data->_state, result.errorMsg.c_str());
         cleanupReservation();
         // XXX should handle different state errors differently?
-        if (_data->registerRequest != NULL) {
+        if (_data->registerRequest != nullptr) {
             _data->registerRequest->SetError(FRTE_RPC_METHOD_FAILED,
                                              result.errorMsg.c_str());
             _data->registerRequest->Return();
@@ -121,7 +120,7 @@ RegRpcSrvCommand::doneHandler(OkState result)
  alldone:
     cleanupReservation();
     delete _data;
-    _data = NULL;
+    _data = nullptr;
 }
 
 //-----------------------------------------------------------------------------

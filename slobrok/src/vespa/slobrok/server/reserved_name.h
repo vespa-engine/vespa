@@ -27,10 +27,10 @@ public:
     {
         _reservedTime.SetNow();
     }
-    bool stillReserved() {
+    bool stillReserved() const {
         return (_reservedTime.MilliSecsToNow() < 15000);
     }
-    int seconds() { return _reservedTime.MilliSecsToNow() / 1000; }
+    int seconds() const { return _reservedTime.MilliSecsToNow() / 1000; }
 };
 
 //-----------------------------------------------------------------------------
