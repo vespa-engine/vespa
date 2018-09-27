@@ -54,7 +54,7 @@ VisibleMap::removeUpdateListener(IUpdateListener *l)
 
 //-----------------------------------------------------------------------------
 
-NamedService *
+const NamedService *
 VisibleMap::lookup(const std::string &name) const {
     auto found = _map.find(name);
     return (found == _map.end()) ? nullptr : found->second;
@@ -74,7 +74,7 @@ VisibleMap::allVisible() const
 
 
 void
-VisibleMap::addNew(NamedService *rpcsrv)
+VisibleMap::addNew(const NamedService *rpcsrv)
 {
     LOG_ASSERT(rpcsrv != nullptr);
     LOG_ASSERT(_map.find(rpcsrv->getName()) == _map.end());
@@ -85,10 +85,10 @@ VisibleMap::addNew(NamedService *rpcsrv)
 }
 
 
-NamedService *
+const NamedService *
 VisibleMap::remove(const std::string &name) {
 
-    NamedService *d = _map[name];
+    const NamedService *d = _map[name];
     _map.erase(name);
     if (d != nullptr) {
         _history.add(name, _genCnt);
@@ -98,11 +98,11 @@ VisibleMap::remove(const std::string &name) {
 }
 
 
-NamedService *
-VisibleMap::update(NamedService *rpcsrv) {
+const NamedService *
+VisibleMap::update(const NamedService *rpcsrv) {
     LOG_ASSERT(rpcsrv != nullptr);
 
-    NamedService *d = rpcsrv;
+    const NamedService *d = rpcsrv;
     std::swap(d, _map[rpcsrv->getName()]);
     LOG_ASSERT(d != nullptr);
 

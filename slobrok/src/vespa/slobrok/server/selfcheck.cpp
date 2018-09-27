@@ -51,5 +51,4 @@ SelfCheck::PerformTask()
     Schedule(seconds);
 }
 
-
 } // namespace slobrok

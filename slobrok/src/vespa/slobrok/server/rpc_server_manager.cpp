@@ -54,7 +54,7 @@ RpcServerManager::checkPartner(const std::string & remslobrok)
     if (remslobrok == _env.mySpec()) {
         return OkState(13, "remote slobrok using my rpcserver name");
     }
-    RemoteSlobrok *partner = _exchanger.lookupPartner(remslobrok);
+    const RemoteSlobrok *partner = _exchanger.lookupPartner(remslobrok);
     if (partner == nullptr) {
         return OkState(13, "remote slobrok not a partner");
     }
@@ -70,7 +70,7 @@ RpcServerManager::addRemReservation(const std::string & remslobrok, const std::s
     OkState valid = validateName(name);
     if (valid.failed()) return valid;
 
-    NamedService *old = _rpcsrvmap.lookupManaged(name);
+    const NamedService *old = _rpcsrvmap.lookupManaged(name);
     if (old != nullptr) {
         if (old->getSpec() == spec) {
             // was alright already
@@ -83,7 +83,7 @@ RpcServerManager::addRemReservation(const std::string & remslobrok, const std::s
     if (_rpcsrvmap.conflictingReservation(name, spec)) {
         return OkState(FRTE_RPC_METHOD_FAILED, "registration for name already in progress");
     }
-    _rpcsrvmap.addReservation(new ReservedName(name, spec, false));
+    _rpcsrvmap.addReservation(std::make_unique<ReservedName>(name, spec, false));
     return OkState(0, "done");
 }
 
@@ -104,7 +104,7 @@ RpcServerManager::removePeer(const std::string & remsbname, const std::string & 
     if (remsbname == _env.mySpec()) {
         return OkState(13, "cannot remove my own rpcserver name");
     }
-    RemoteSlobrok *partner = _exchanger.lookupPartner(remsbname);
+    const RemoteSlobrok *partner = _exchanger.lookupPartner(remsbname);
     if (partner == nullptr) {
         return OkState(0, "remote slobrok not a partner");
     }
@@ -122,7 +122,7 @@ RpcServerManager::addMyReservation(const std::string & name, const std::string &
     OkState valid = validateName(name);
     if (valid.failed()) return valid;
 
-    NamedService *old = _rpcsrvmap.lookupManaged(name);
+    const NamedService *old = _rpcsrvmap.lookupManaged(name);
     if (old != nullptr) {
         if (old->getSpec() == spec) {
             // was alright already
@@ -143,8 +143,7 @@ RpcServerManager::addMyReservation(const std::string & name, const std::string &
                        "registration for name already in progress with a different spec");
     }
     _rpcsrvmap.removeReservation(name);
-    ReservedName *rpcsrv = new ReservedName(name, spec, true);
-    _rpcsrvmap.addReservation(rpcsrv);
+    _rpcsrvmap.addReservation(std::make_unique<ReservedName>(name, spec, true));
     return OkState(0, "done");
 }
 
@@ -158,7 +157,7 @@ RpcServerManager::addRemote(const std::string & name, const std::string &spec)
     if (alreadyManaged(name, spec)) {
         return OkState(0, "already correct");
     }
-    NamedService *old = _rpcsrvmap.lookup(name);
+    const NamedService *old = _rpcsrvmap.lookup(name);
     if (old != nullptr) {
         if (old->getSpec() !=  spec) {
             LOG(warning, "collision on remote add: name %s registered to %s locally, "
@@ -172,16 +171,17 @@ RpcServerManager::addRemote(const std::string & name, const std::string &spec)
         return OkState(0, "already correct");
     }
     _rpcsrvmap.removeReservation(name);
-    ManagedRpcServer *rpcsrv = new ManagedRpcServer(name, spec, *this);
-    _rpcsrvmap.addNew(rpcsrv);
-    rpcsrv->healthCheck();
+    auto rpcsrv = std::make_unique<ManagedRpcServer>(name, spec, *this);
+    ManagedRpcServer & rpcServer = *rpcsrv;
+    _rpcsrvmap.addNew(std::move(rpcsrv));
+    rpcServer.healthCheck();
     return OkState(0, "done");
 }
 
 OkState
 RpcServerManager::remove(ManagedRpcServer *rpcsrv)
 {
-    NamedService *td = _rpcsrvmap.lookup(rpcsrv->getName());
+    const NamedService *td = _rpcsrvmap.lookup(rpcsrv->getName());
     if (td == rpcsrv) {
         return removeLocal(rpcsrv->getName(), rpcsrv->getSpec());
     } else {
@@ -193,7 +193,7 @@ RpcServerManager::remove(ManagedRpcServer *rpcsrv)
 OkState
 RpcServerManager::removeRemote(const std::string &name, const std::string &spec)
 {
-    NamedService *old = _rpcsrvmap.lookup(name);
+    const NamedService *old = _rpcsrvmap.lookup(name);
     if (old == nullptr) {
         // was alright already, remove any reservation too
         _rpcsrvmap.removeReservation(name);
@@ -202,27 +202,26 @@ RpcServerManager::removeRemote(const std::string &name, const std::string &spec)
     if (old->getSpec() != spec) {
         return OkState(1, "name registered, but with different spec");
     }
-    NamedService *td = _rpcsrvmap.remove(name);
-    LOG_ASSERT(td == old);
-    delete td;
+    std::unique_ptr<NamedService> td = _rpcsrvmap.remove(name);
+    LOG_ASSERT(td.get() == old);
     return OkState(0, "done");
 }
 
 OkState
 RpcServerManager::removeLocal(const std::string & name, const std::string &spec)
 {
-    NamedService *td = _rpcsrvmap.lookup(name);
+    const NamedService *td = _rpcsrvmap.lookup(name);
     if (td == nullptr) {
         // already removed, nop
         return OkState();
     }
 
-    RemoteSlobrok *partner = _exchanger.lookupPartner(name);
+    const RemoteSlobrok *partner = _exchanger.lookupPartner(name);
     if (partner != nullptr) {
         return OkState(13, "cannot unregister partner slobrok");
     }
 
-    ManagedRpcServer *rpcsrv = _rpcsrvmap.lookupManaged(name);
+    const ManagedRpcServer *rpcsrv = _rpcsrvmap.lookupManaged(name);
     if (rpcsrv == nullptr) {
         return OkState(13, "not a local rpcserver");
     }
@@ -232,9 +231,8 @@ RpcServerManager::removeLocal(const std::string & name, const std::string &spec)
         // or log it on level INFO?
         return OkState(1, "name registered, but with different spec");
     }
-    td = _rpcsrvmap.remove(name);
-    LOG_ASSERT(td == rpcsrv);
-    delete rpcsrv;
+    auto tdUP = _rpcsrvmap.remove(name);
+    LOG_ASSERT(tdUP.get() == rpcsrv);
     _exchanger.forwardRemove(name, spec);
     return OkState();
 }
@@ -243,19 +241,20 @@ RpcServerManager::removeLocal(const std::string & name, const std::string &spec)
 void
 RpcServerManager::addManaged(const std::string &name, const std::string &spec, RegRpcSrvCommand rdc)
 {
-    ManagedRpcServer *rpcsrv = new ManagedRpcServer(name, spec, *this);
-    _rpcsrvmap.addNew(rpcsrv);
+    auto newRpcServer = std::make_unique<ManagedRpcServer>(name, spec, *this);
+    ManagedRpcServer & rpcsrv = *newRpcServer;
+    _rpcsrvmap.addNew(std::move(newRpcServer));
     for (size_t i = 0; i < _addManageds.size(); i++) {
         if (_addManageds[i].rpcsrv == nullptr) {
-            _addManageds[i].rpcsrv = rpcsrv;
+            _addManageds[i].rpcsrv = &rpcsrv;
             _addManageds[i].handler = rdc;
-            rpcsrv->healthCheck();
+            rpcsrv.healthCheck();
             return;
         }
     }
-    MRSandRRSC pair(rpcsrv, rdc);
+    MRSandRRSC pair(&rpcsrv, rdc);
     _addManageds.push_back(pair);
-    rpcsrv->healthCheck();
+    rpcsrv.healthCheck();
     return;
 }
 
@@ -264,7 +263,7 @@ RpcServerManager::addManaged(const std::string &name, const std::string &spec, R
 bool
 RpcServerManager::alreadyManaged(const std::string &name, const std::string &spec)
 {
-    ManagedRpcServer *rpcsrv = _rpcsrvmap.lookupManaged(name);
+    const ManagedRpcServer *rpcsrv = _rpcsrvmap.lookupManaged(name);
     if (rpcsrv != nullptr) {
         if (rpcsrv->getSpec() == spec) {
             return true;
@@ -297,9 +296,9 @@ RpcServerManager::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errms
 {
     _env.countFailedHeartbeat();
     bool logged = false;
-    NamedService *old = _rpcsrvmap.lookup(rpcsrv->getName());
+    const NamedService *old = _rpcsrvmap.lookup(rpcsrv->getName());
     if (old == rpcsrv) {
-        old = _rpcsrvmap.remove(rpcsrv->getName());
+        old = _rpcsrvmap.remove(rpcsrv->getName()).release();
         LOG_ASSERT(old == rpcsrv);
         LOG(info, "managed server %s at %s failed: %s",
             rpcsrv->getName().c_str(), rpcsrv->getSpec().c_str(), errmsg.c_str());

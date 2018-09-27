@@ -79,7 +79,7 @@ RemoteSlobrok::doPending()
         NamedService *todo = _pending.front();
         _pending.pop_front();
 
-        NamedService *rpcsrv = _exchanger._rpcsrvmap.lookup(todo->getName());
+        const NamedService *rpcsrv = _exchanger._rpcsrvmap.lookup(todo->getName());
 
         if (rpcsrv == nullptr) {
             _remRemReq = getSupervisor()->AllocRPCRequest();

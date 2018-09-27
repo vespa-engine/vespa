@@ -18,19 +18,19 @@ RpcServerMap::lookupManaged(const std::string & name) const {
     return (found == _myrpcsrv_map.end()) ? nullptr : found->second.get();
 }
 
-NamedService *
+const NamedService *
 RpcServerMap::lookup(const std::string & name) const
 {
     return lookupManaged(name);
 }
 
-NamedService *
+std::unique_ptr<NamedService>
 RpcServerMap::remove(const std::string & name)
 {
     _visible_map.remove(name);
     auto service = std::move(_myrpcsrv_map[name]);
     _myrpcsrv_map.erase(name);
-    return service.release();
+    return service;
 }
 
 std::vector<const NamedService *>
@@ -73,7 +73,7 @@ RpcServerMap::add(NamedService *rpcsrv)
 }
 
 void
-RpcServerMap::addNew(ManagedRpcServer *rpcsrv)
+RpcServerMap::addNew(std::unique_ptr<ManagedRpcServer> rpcsrv)
 {
     const std::string &name = rpcsrv->getName();
 
@@ -102,13 +102,13 @@ RpcServerMap::addNew(ManagedRpcServer *rpcsrv)
             }
         }
     }
-    add(rpcsrv);
-    _myrpcsrv_map[name].reset(rpcsrv);
+    add(rpcsrv.get());
+    _myrpcsrv_map[name] = std::move(rpcsrv);
 }
 
 
 void
-RpcServerMap::addReservation(ReservedName *rpcsrv)
+RpcServerMap::addReservation(std::unique_ptr<ReservedName> rpcsrv)
 {
     LOG_ASSERT(rpcsrv != nullptr);
     LOG_ASSERT(_myrpcsrv_map.find(rpcsrv->getName()) == _myrpcsrv_map.end());
@@ -117,10 +117,10 @@ RpcServerMap::addReservation(ReservedName *rpcsrv)
     // this should have been checked already, so assert
     LOG_ASSERT(! conflictingReservation(rpcsrv->getName(), rpcsrv->getSpec()));
     auto old = std::move(_reservations[rpcsrv->getName()]);
-    _reservations[rpcsrv->getName()].reset(rpcsrv);
     LOG_ASSERT(!old
                || old->getSpec() == rpcsrv->getSpec()
                || ! old->stillReserved());
+    _reservations[rpcsrv->getName()] = std::move(rpcsrv);
 }
 
 

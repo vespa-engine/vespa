@@ -38,15 +38,14 @@ public:
 
     ManagedRpcServer *lookupManaged(const std::string & name) const;
 
-    NamedService *    lookup(const std::string & name) const;
+    const NamedService *    lookup(const std::string & name) const;
     RpcSrvlist        lookupPattern(const char *pattern) const;
-    RpcSrvlist        allVisible() const;
     RpcSrvlist        allManaged() const;
 
-    void              addNew(ManagedRpcServer *rpcsrv);
-    NamedService *    remove(const std::string & name);
+    void              addNew(std::unique_ptr<ManagedRpcServer> rpcsrv);
+    std::unique_ptr<NamedService> remove(const std::string & name);
 
-    void          addReservation(ReservedName *rpcsrv);
+    void          addReservation(std::unique_ptr<ReservedName>rpcsrv);
     bool          conflictingReservation(const std::string & name, const std::string &spec);
 
     const ReservedName *getReservation(const std::string & name) const;

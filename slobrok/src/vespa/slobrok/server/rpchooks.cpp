@@ -466,7 +466,7 @@ RPCHooks::rpc_lookupManaged(FRT_RPCRequest *req)
     FRT_Values &args = *req->GetParams();
     const char *name = args[0]._string._str;
     LOG(debug, "RPC: lookupManaged(%s)", name);
-    ManagedRpcServer *found = _rpcsrvmap.lookupManaged(name);
+    const ManagedRpcServer *found = _rpcsrvmap.lookupManaged(name);
 
     if (found == nullptr) {
         req->SetError(FRTE_RPC_METHOD_FAILED, "Not found");

@@ -45,7 +45,7 @@ public:
     };
 
 private:
-    using Map = std::unordered_map<std::string, NamedService *>;
+    using Map = std::unordered_map<std::string, const NamedService *>;
     using WaitList = std::vector<IUpdateListener *>;
 
     Map              _map;
@@ -62,11 +62,11 @@ public:
     void addUpdateListener(IUpdateListener *l);
     void removeUpdateListener(IUpdateListener *l);
 
-    void       addNew(NamedService *rpcsrv);
-    NamedService *remove(const std::string &name);
-    NamedService *update(NamedService *rpcsrv);
+    void       addNew(const NamedService *rpcsrv);
+    const NamedService *remove(const std::string &name);
+    const NamedService *update(const NamedService *rpcsrv);
 
-    NamedService *lookup(const std::string &name) const;
+    const NamedService *lookup(const std::string &name) const;
     RpcSrvlist allVisible() const;
 
     const vespalib::GenCnt& genCnt() { return _genCnt; }
