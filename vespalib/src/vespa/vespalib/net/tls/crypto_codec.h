@@ -43,6 +43,7 @@ struct DecodeResult {
     State state = State::Failed;
 
     bool failed() const noexcept { return (state == State::Failed); }
+    bool frame_decoded_ok() const noexcept { return (state == State::OK); }
 };
 
 class TlsContext;
