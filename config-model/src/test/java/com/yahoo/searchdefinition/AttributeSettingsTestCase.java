@@ -165,7 +165,7 @@ public class AttributeSettingsTestCase extends SearchDefinitionTestCase {
                     "    }\n" +
                     "  }\n" +
                     "  field m type long {\n" +
-                    "    indexing: 0 | to_long | attribute\n" +
+                    "    indexing: attribute\n" +
                     "    attribute: mutable\n" +
                     "  }\n" +
                     "  field f type long {\n" +

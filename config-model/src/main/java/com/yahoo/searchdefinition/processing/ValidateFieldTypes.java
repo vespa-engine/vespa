@@ -29,16 +29,24 @@ public class ValidateFieldTypes extends Processor {
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        if ( ! validate) return;
+        if (!validate) return;
 
         String searchName = search.getName();
         Map<String, DataType> seenFields = new HashMap<>();
+        verifySearchAndDocFields(searchName, seenFields);
+        verifySummaryFields(searchName, seenFields);
+    }
+
+    final protected void verifySearchAndDocFields(String searchName, Map<String, DataType> seenFields) {
         search.allFields().forEach(field -> {
             checkFieldType(searchName, "index field", field.getName(), field.getDataType(), seenFields);
             for (Map.Entry<String, Attribute> entry : field.getAttributes().entrySet()) {
                 checkFieldType(searchName, "attribute", entry.getKey(), entry.getValue().getDataType(), seenFields);
             }
         });
+
+    }
+    final protected void verifySummaryFields(String searchName, Map<String, DataType> seenFields) {
         for (DocumentSummary summary : search.getSummaries().values()) {
             for (SummaryField field : summary.getSummaryFields()) {
                 checkFieldType(searchName, "summary field", field.getName(), field.getDataType(), seenFields);

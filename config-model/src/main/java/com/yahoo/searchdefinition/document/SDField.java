@@ -799,4 +799,10 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         return aliasToName;
     }
 
+    @Override
+    public boolean hasFullIndexingDocprocRights() {
+        Attribute self = getAttributes().get(getName());
+        return (!isExtraField() || ((self != null) && self.isMutable()));
+    }
+
 }
