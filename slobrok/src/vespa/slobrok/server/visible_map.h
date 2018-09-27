@@ -3,7 +3,9 @@
 
 #include "history.h"
 #include "named_service.h"
-#include <vespa/vespalib/util/hashmap.h>
+#include <unordered_map>
+#include <string>
+#include <memory>
 
 namespace slobrok {
 
@@ -12,9 +14,6 @@ namespace slobrok {
  * @brief API to the collection of NamedService
  *        name->spec mappings visible to the world
  **/
-
-using vespalib::HashMap;
-
 
 class VisibleMap
 {
@@ -46,10 +45,10 @@ public:
     };
 
 private:
-    HashMap<NamedService *> _map;
-    typedef HashMap<NamedService *>::Iterator iter_t;
+    using Map = std::unordered_map<std::string, NamedService *>;
+    using WaitList = std::vector<IUpdateListener *>;
 
-    typedef std::vector<IUpdateListener *> WaitList;
+    Map              _map;
     WaitList         _waitList;
     vespalib::GenCnt _genCnt;
     History          _history;
@@ -67,7 +66,7 @@ public:
     NamedService *remove(const char *name);
     NamedService *update(NamedService *rpcsrv);
 
-    NamedService *lookup(const char *name) const { return _map[name]; }
+    NamedService *lookup(const char *name) const;
     RpcSrvlist lookupPattern(const char *pattern) const;
     RpcSrvlist allVisible() const;
 

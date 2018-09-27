@@ -2,9 +2,6 @@
 #pragma once
 
 #include "visible_map.h"
-#include <unordered_map>
-#include <string>
-#include <memory>
 
 namespace slobrok {
 
