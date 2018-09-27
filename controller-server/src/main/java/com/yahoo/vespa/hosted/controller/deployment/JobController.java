@@ -227,8 +227,7 @@ public class JobController {
                         });
             }
 
-            controller.applications().store(controller.applications().withUpdatedConfig(application.withBuiltInternally(true),
-                    new ApplicationPackage(applicationPackage)));
+            controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(applicationPackage));
 
             notifyOfNewSubmission(id, revision, run);
         });

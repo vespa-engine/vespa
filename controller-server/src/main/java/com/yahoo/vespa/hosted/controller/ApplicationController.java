@@ -331,13 +331,9 @@ public class ApplicationController {
                 validateRun(application.get(), zone, platformVersion, applicationVersion);
             }
 
-            validate(applicationPackage.deploymentSpec());
-
             // Update application with information from application package
-            if ( ! preferOldestVersion && ! application.get().deploymentJobs().builtInternally()) {
-                application = withUpdatedConfig(application, applicationPackage);
-                store(application); // store missing information even if we fail deployment below
-            }
+            if ( ! preferOldestVersion && ! application.get().deploymentJobs().builtInternally())
+                application = storeWithUpdatedConfig(application, applicationPackage);
 
             // Assign global rotation
             application = withRotation(application, zone);
@@ -360,8 +356,9 @@ public class ApplicationController {
     }
 
     /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
-    public LockedApplication withUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
-        // Store information about application package
+    public LockedApplication storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
+        validate(applicationPackage.deploymentSpec());
+
         application = application.with(applicationPackage.deploymentSpec());
         application = application.with(applicationPackage.validationOverrides());
 
