@@ -2,22 +2,55 @@
 // @author Vegard Sjonfjell
 #pragma once
 
-#include "messages51test.h"
+#include "testbase.h"
 
-class Messages52Test : public Messages51Test {
+class Messages52Test : public TestBase {
 protected:
-    const vespalib::Version getVersion() const override { return vespalib::Version(5, 115, 0); }
+    const vespalib::Version getVersion() const override { return vespalib::Version(5, 115); }
+    bool shouldTestCoverage() const override { return true; }
+    bool tryDocumentReply(const string &filename, uint32_t type);
+    bool tryVisitorReply(const string &filename, uint32_t type);
+
+    static size_t serializedLength(const string & str) { return sizeof(int32_t) + str.size(); }
 
 public:
     Messages52Test();
 
+    bool testCreateVisitorMessage();
+    bool testCreateVisitorReply();
+    bool testDestroyVisitorMessage();
+    bool testDestroyVisitorReply();
+    bool testDocumentIgnoredReply();
+    bool testDocumentListMessage();
+    bool testDocumentListReply();
+    bool testDocumentSummaryMessage();
+    bool testDocumentSummaryReply();
+    bool testEmptyBucketsMessage();
+    bool testEmptyBucketsReply();
+    bool testGetBucketListMessage();
+    bool testGetBucketListReply();
+    bool testGetBucketStateMessage();
+    bool testGetBucketStateReply();
+    bool testGetDocumentMessage();
+    bool testGetDocumentReply();
+    bool testMapVisitorMessage();
+    bool testMapVisitorReply();
     bool testPutDocumentMessage();
-    bool testUpdateDocumentMessage();
+    bool testPutDocumentReply();
+    bool testQueryResultMessage();
+    bool testQueryResultReply();
     bool testRemoveDocumentMessage();
-
-protected:
-    static size_t serializedLength(const string & str) {
-        return sizeof(int32_t) + str.size();
-    }
+    bool testRemoveDocumentReply();
+    bool testRemoveLocationMessage();
+    bool testRemoveLocationReply();
+    bool testSearchResultMessage();
+    bool testSearchResultReply();
+    bool testStatBucketMessage();
+    bool testStatBucketReply();
+    bool testUpdateDocumentMessage();
+    bool testUpdateDocumentReply();
+    bool testVisitorInfoMessage();
+    bool testVisitorInfoReply();
+    bool testWrongDistributionReply();
 };
 
