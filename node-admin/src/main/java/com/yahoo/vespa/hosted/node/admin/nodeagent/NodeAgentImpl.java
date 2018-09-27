@@ -88,7 +88,8 @@ public class NodeAgentImpl implements NodeAgent {
     private Consumer<String> serviceRestarter;
     private Optional<Future<?>> currentFilebeatRestarter = Optional.empty();
 
-    private boolean resumeScriptRun = false;
+    private boolean hasResumedNode = false;
+    private boolean hasStartedServices = false;
 
     /**
      * ABSENT means container is definitely absent - A container that was absent will not suddenly appear without
@@ -216,17 +217,26 @@ public class NodeAgentImpl implements NodeAgent {
      */
     protected void verifyHealth(NodeSpec node) { }
 
-    void runLocalResumeScriptIfNeeded(NodeSpec node) {
-        if (! resumeScriptRun) {
-            storageMaintainer.writeMetricsConfig(containerName, node);
-            storageMaintainer.writeFilebeatConfig(containerName, node);
-            stopFilebeatSchedulerIfNeeded();
-            currentFilebeatRestarter = Optional.of(filebeatRestarter.scheduleWithFixedDelay(
-                    () -> serviceRestarter.accept("filebeat"), 1, 1, TimeUnit.DAYS));
+    void startServicesIfNeeded() {
+        if (!hasStartedServices) {
+            logger.info("Starting services");
+            dockerOperations.startServices(containerName);
+            hasStartedServices = true;
+        }
+    }
+
+    void resumeNodeIfNeeded(NodeSpec node) {
+        if (!hasResumedNode) {
+            if (!currentFilebeatRestarter.isPresent()) {
+                storageMaintainer.writeMetricsConfig(containerName, node);
+                storageMaintainer.writeFilebeatConfig(containerName, node);
+                currentFilebeatRestarter = Optional.of(filebeatRestarter.scheduleWithFixedDelay(
+                        () -> serviceRestarter.accept("filebeat"), 1, 1, TimeUnit.DAYS));
+            }
 
             logger.debug("Starting optional node program resume command");
             dockerOperations.resumeNode(containerName);
-            resumeScriptRun = true;
+            hasResumedNode = true;
         }
     }
 
@@ -260,7 +270,8 @@ public class NodeAgentImpl implements NodeAgent {
         dockerOperations.startContainer(containerName);
         lastCpuMetric = new CpuUsageReporter();
 
-        resumeScriptRun = false;
+        hasStartedServices = true; // Automatically started with the container
+        hasResumedNode = false;
         logger.info("Container successfully started, new containerState is " + containerState);
     }
 
@@ -293,7 +304,7 @@ public class NodeAgentImpl implements NodeAgent {
             logger.info("Restarting services");
             // Since we are restarting the services we need to suspend the node.
             orchestratorSuspendNode();
-            dockerOperations.restartVespaOnNode(containerName);
+            dockerOperations.restartVespa(containerName);
         }
     }
 
@@ -302,7 +313,8 @@ public class NodeAgentImpl implements NodeAgent {
         logger.info("Stopping services");
         if (containerState == ABSENT) return;
         try {
-            dockerOperations.stopServicesOnNode(containerName);
+            hasStartedServices = hasResumedNode = false;
+            dockerOperations.stopServices(containerName);
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
         }
@@ -313,9 +325,14 @@ public class NodeAgentImpl implements NodeAgent {
         logger.info("Suspending services on node");
         if (containerState == ABSENT) return;
         try {
-            dockerOperations.trySuspendNode(containerName);
+            hasResumedNode = false;
+            dockerOperations.suspendNode(containerName);
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
+        } catch (RuntimeException e) {
+            // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
+            // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
+            logger.warning("Failed trying to suspend container " + containerName.asString(), e);
         }
     }
 
@@ -497,7 +514,8 @@ public class NodeAgentImpl implements NodeAgent {
                 }
 
                 verifyHealth(node);
-                runLocalResumeScriptIfNeeded(node);
+                startServicesIfNeeded();
+                resumeNodeIfNeeded(node);
 
                 athenzCredentialsMaintainer.converge();
 

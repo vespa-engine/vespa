@@ -131,6 +131,7 @@ public class NodeAgentImplTest {
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository);
         // TODO: Verify this isn't run unless 1st time
+        inOrder.verify(dockerOperations, times(1)).startServices(eq(containerName));
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName));
         inOrder.verify(orchestrator).resume(hostName);
     }
@@ -159,6 +160,41 @@ public class NodeAgentImplTest {
         verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(containerName));
     }
 
+    @Test
+    public void startsAfterStoppingServices() {
+        final InOrder inOrder = inOrder(dockerOperations);
+        final NodeSpec node = nodeBuilder
+                .wantedDockerImage(dockerImage)
+                .currentDockerImage(dockerImage)
+                .state(Node.State.active)
+                .wantedVespaVersion(vespaVersion)
+                .vespaVersion(vespaVersion)
+                .build();
+
+        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
+        when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
+        when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(187500000000L));
+
+        nodeAgent.converge();
+        inOrder.verify(dockerOperations, times(1)).startServices(eq(containerName));
+        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName));
+
+        nodeAgent.suspend();
+        nodeAgent.converge();
+        inOrder.verify(dockerOperations, never()).startServices(eq(containerName));
+        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName)); // Expect a resume, but no start services
+
+        // No new suspends/stops, so no need to resume/start
+        nodeAgent.converge();
+        inOrder.verify(dockerOperations, never()).startServices(eq(containerName));
+        inOrder.verify(dockerOperations, never()).resumeNode(eq(containerName));
+
+        nodeAgent.suspend();
+        nodeAgent.stopServices();
+        nodeAgent.converge();
+        inOrder.verify(dockerOperations, times(1)).startServices(eq(containerName));
+        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName));
+    }
 
     @Test
     public void absentContainerCausesStart() throws Exception {
@@ -184,6 +220,7 @@ public class NodeAgentImplTest {
         nodeAgent.converge();
 
         verify(dockerOperations, never()).removeContainer(any());
+        verify(dockerOperations, never()).startServices(any());
         verify(orchestrator, never()).suspend(any(String.class));
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository, aclMaintainer);
@@ -426,8 +463,8 @@ public class NodeAgentImplTest {
 
         verify(dockerOperations, never()).createContainer(eq(containerName), any(), any());
         verify(dockerOperations, never()).startContainer(eq(containerName));
-        verify(dockerOperations, never()).trySuspendNode(eq(containerName));
-        verify(dockerOperations, times(1)).stopServicesOnNode(eq(containerName));
+        verify(dockerOperations, never()).suspendNode(eq(containerName));
+        verify(dockerOperations, times(1)).stopServices(eq(containerName));
         verify(orchestrator, never()).resume(any(String.class));
         verify(orchestrator, never()).suspend(any(String.class));
         // current Docker image and vespa version should be cleared
@@ -581,7 +618,7 @@ public class NodeAgentImplTest {
         verify(dockerOperations, never()).removeContainer(any());
         verify(dockerOperations, times(1)).createContainer(eq(containerName), eq(node), any());
         verify(dockerOperations, times(1)).startContainer(eq(containerName));
-        verify(nodeAgent, never()).runLocalResumeScriptIfNeeded(any());
+        verify(nodeAgent, never()).resumeNodeIfNeeded(any());
 
         // The docker container was actually started and is running, but subsequent exec calls to set up
         // networking failed
@@ -591,7 +628,7 @@ public class NodeAgentImplTest {
         verify(dockerOperations, times(1)).removeContainer(any());
         verify(dockerOperations, times(2)).createContainer(eq(containerName), eq(node), any());
         verify(dockerOperations, times(2)).startContainer(eq(containerName));
-        verify(nodeAgent, times(1)).runLocalResumeScriptIfNeeded(any());
+        verify(nodeAgent, times(1)).resumeNodeIfNeeded(any());
     }
 
     @Test
