@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "watch.h"
 #include "errhandle.h"
 #include "service.h"
 #include "forward.h"
 #include "conf.h"
-#include "watch.h"
 #include "perform.h"
 #include "cmdbuf.h"
 #include <glob.h>
@@ -58,25 +58,20 @@ int elapsed(struct timeval &start) {
     return diffsecs;
 }
 
+constexpr size_t G_BUFSIZE = 1024*1024;
 } // namespace logdemon::<unnamed>
 
-static const int bufsiz = 1024*1024;
 
 Watcher::Watcher(ConfSub &cfs, Forwarder &fw)
-    : _buffer(new char[bufsiz]),
+    : _buffer(G_BUFSIZE),
       _confsubscriber(cfs),
       _forwarder(fw),
       _wfd(-1)
 {
-    if (_buffer == nullptr) {
-        LOG(error, "could not allocate 1MB memory");
-        throw SomethingBad("out of memory");
-    }
 }
 
 Watcher::~Watcher()
 {
-    delete[] _buffer;
     if (_wfd >= 0) {
         LOG(debug, "~Watcher closing %d", _wfd);
         close(_wfd);
@@ -103,8 +98,7 @@ private:
     int _cachecounter;
 };
 
-void StateSaver::saveState(const donecache& already,
-                           Services& currentserv)
+void StateSaver::saveState(const donecache& already, Services& currentserv)
 {
     if (_savefd < 0) {
         // cannot save state
@@ -125,8 +119,7 @@ void StateSaver::saveState(const donecache& already,
         if (here == (off_t)-1) {
             LOG(error, "lseek failed: %s", strerror(errno));
         } else if (ftruncate(_savefd, here) < 0) {
-            LOG(error, "ftruncate %d=%d failed: %s",
-                _savefd, (int)here, strerror(errno));
+            LOG(error, "ftruncate %d=%d failed: %s", _savefd, (int)here, strerror(errno));
         }
         _cachecounter = 0;
     }
@@ -155,8 +148,7 @@ StateSaver::StateSaver() : _savefd(-1), _cachecounter(300)
 {
     _savefd = open("var/db/vespa/logd.donestate", O_RDWR|O_CREAT, 0664);
     if (_savefd < 0) {
-        LOG(warning, "could not open var/db/vespa/logd.donestate: %s",
-            strerror(errno));
+        LOG(warning, "could not open var/db/vespa/logd.donestate: %s", strerror(errno));
     }
 }
 
@@ -175,8 +167,7 @@ Watcher::watchfile()
 
     char *target = getenv("VESPA_LOG_TARGET");
     if (target == nullptr || strncmp(target, "file:", 5) != 0) {
-        LOG(error, "expected VESPA_LOG_TARGET (%s) to be a file: target",
-            target);
+        LOG(error, "expected VESPA_LOG_TARGET (%s) to be a file: target", target);
         throw SomethingBad("bad log target");
     }
     const char *filename = target+5;
@@ -204,8 +195,7 @@ Watcher::watchfile()
     // XXX should close and/or check _wfd first ?
     _wfd = open(filename, O_RDONLY|O_CREAT, 0664);
     if (_wfd < 0) {
-        LOG(error, "open(%s) failed: %s", filename,
-            strerror(errno));
+        LOG(error, "open(%s) failed: %s", filename, strerror(errno));
         throw SomethingBad("could not create or open logfile");
     }
 
@@ -216,8 +206,7 @@ Watcher::watchfile()
     while (1) {
         struct stat sb;
         if (fstat(_wfd, &sb) != 0) {
-            LOG(error, "fstat(%s) failed: %s", filename,
-                strerror(errno));
+            LOG(error, "fstat(%s) failed: %s", filename, strerror(errno));
             throw SomethingBad("fstat failed");
         }
         if (created == 0) {
@@ -236,8 +225,7 @@ Watcher::watchfile()
 
         if (sb.st_size < offset) {
             // this is bad, maybe somebody else truncated the file
-            LOG(error, "file mysteriously shrunk %d -> %d",
-                (int)offset, (int)sb.st_size);
+            LOG(error, "file mysteriously shrunk %d -> %d", (int)offset, (int)sb.st_size);
             return;
         }
 
@@ -246,15 +234,14 @@ Watcher::watchfile()
 
         if (sb.st_size > offset) {
             lseek(_wfd, offset, SEEK_SET);
-            ssize_t rsize = read(_wfd, _buffer, bufsiz - 1);
+            char *buffer = getBuf();
+            ssize_t rsize = read(_wfd, buffer, (getBufSize() - 1));
             if (rsize > 0) {
-                _buffer[rsize] = '\0';
-                char *l = _buffer;
-                char *nnl = (char *)memchr(_buffer, '\n', rsize);
-                if (nnl == nullptr && rsize == bufsiz - 1) {
-                    // incredibly long block without any newline ?
-                    LOG(error, "no newline in %ld bytes, skipping",
-                        static_cast<long>(rsize));
+                buffer[rsize] = '\0';
+                char *l = buffer;
+                char *nnl = (char *)memchr(buffer, '\n', rsize);
+                if (nnl == nullptr && rsize == (getBufSize() - 1)) {
+                    LOG(error, "no newline in %ld bytes, skipping", static_cast<long>(rsize));
                     offset += rsize;
                 }
                 while (nnl != nullptr && elapsed(tickStart) < 1) {
@@ -266,8 +253,7 @@ Watcher::watchfile()
                     nnl = strchr(l, '\n');
                 }
             } else {
-                LOG(error, "could not read from %s: %s",
-                    filename, strerror(errno));
+                LOG(error, "could not read from %s: %s", filename, strerror(errno));
                 throw SomethingBad("read failed");
             }
         }
@@ -282,9 +268,7 @@ Watcher::watchfile()
 
         if (rotate) {
             int rotTime = elapsed(rotStart);
-            if (rotTime > 59 ||
-                  (sb.st_size == offset && rotTime > 4))
-            {
+            if (rotTime > 59 || (sb.st_size == offset && rotTime > 4)) {
                 removeOldLogs(filename);
                 if (sb.st_size != offset) {
                     LOG(warning, "logfile rotation incomplete after %d s (dropping %lu bytes)",
@@ -314,16 +298,14 @@ Watcher::watchfile()
             int l = strlen(filename);
             strcpy(newfn, filename);
             struct tm *nowtm = gmtime(&now);
-            if (strftime(newfn+l, FILENAME_MAX-l-1,
-                         "-%Y-%m-%d.%H-%M-%S", nowtm) < 10)
+            if (strftime(newfn+l, FILENAME_MAX-l-1, "-%Y-%m-%d.%H-%M-%S", nowtm) < 10)
             {
                 LOG(error, "could not strftime");
                 throw SomethingBad("strftime failed");
             }
 
             if (rename(filename, newfn) != 0) {
-                LOG(error, "could not rename logfile %s -> %s: %s",
-                    filename, newfn, strerror(errno));
+                LOG(error, "could not rename logfile %s -> %s: %s", filename, newfn, strerror(errno));
                 throw SomethingBad("rename failed");
             } else {
                 LOG(debug, "old logfile name: %s", newfn);
@@ -355,8 +337,7 @@ Watcher::watchfile()
         }
         if (++sleepcount > 99) {
             if (_forwarder._badLines) {
-                LOG(info, "seen %d bad loglines in %d iterations",
-                    _forwarder._badLines, sleepcount);
+                LOG(info, "seen %d bad loglines in %d iterations", _forwarder._badLines, sleepcount);
                 _forwarder._badLines = 0;
                 sleepcount=0;
             }
@@ -416,14 +397,11 @@ Watcher::removeOldLogs(const char *prefix)
                     continue;
                 }
                 totalsize += sb.st_size;
-                if (totalsize > (_confsubscriber.getRemoveMegabytes()
-                                 * 1048576LL))
+                if (totalsize > (_confsubscriber.getRemoveMegabytes() * 1048576LL))
                 {
-                    LOG(info, "removing %s, total size (%ld) too big",
-                        fname, static_cast<int64_t>(totalsize));
+                    LOG(info, "removing %s, total size (%ld) too big", fname, static_cast<int64_t>(totalsize));
                     if (unlink(fname) != 0) {
-                        LOG(warning, "cannot remove %s: %s",
-                            fname, strerror(errno));
+                        LOG(warning, "cannot remove %s: %s", fname, strerror(errno));
                     }
                 }
             } else {

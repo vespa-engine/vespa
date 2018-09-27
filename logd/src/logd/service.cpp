@@ -1,23 +1,30 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <cstdlib>
-#include <cstring>
-#include <cstdio>
-#include <fcntl.h>
-#include <cerrno>
-#include <unistd.h>
-#include <ctime>
-#include <sys/stat.h>
+#include "service.h"
 #include <cassert>
+#include <unistd.h>
 
 #include <vespa/log/log.h>
 #include <vespa/log/control-file.h>
 LOG_SETUP("logdemon");
 
-#include "service.h"
 
 namespace logdemon {
 
 unsigned long Component::defFwd = (unsigned long)-1;
+
+Component::Component(const char *servicename, const char *name)
+    : _isforwarding(defFwd), _lastseen(0.0), _lastpid(0),
+      _myservice(servicename), _myname(name),
+      _logctlname()
+{
+    assert(ns_log::Logger::NUM_LOGLEVELS < 32);
+    const char *withoutprefix = strchr(name, '.');
+    if (withoutprefix != nullptr) {
+        _logctlname =  withoutprefix;
+    }
+}
+
+Component::~Component() = default;
 
 void
 Component::doLogAtAll(LogLevel level)
@@ -31,7 +38,7 @@ Component::doLogAtAll(LogLevel level)
     }
     try {
         ControlFile foo(lcfn, ControlFile::READWRITE);
-        unsigned int *lstring = foo.getLevels(_logctlname);
+        unsigned int *lstring = foo.getLevels(_logctlname.c_str());
         lstring[level] = CHARS_TO_UINT(' ', ' ', 'O', 'N');
     } catch (...) {
         LOG(debug, "exception changing logcontrol for %s", _myservice);
@@ -50,7 +57,7 @@ Component::dontLogAtAll(LogLevel level)
     }
     try {
         ControlFile foo(lcfn, ControlFile::READWRITE);
-        unsigned int *lstring = foo.getLevels(_logctlname);
+        unsigned int *lstring = foo.getLevels(_logctlname.c_str());
         lstring[level] = CHARS_TO_UINT(' ', 'O', 'F', 'F');
     } catch (...) {
         LOG(debug, "exception changing logcontrol for %s", _myservice);
@@ -58,7 +65,7 @@ Component::dontLogAtAll(LogLevel level)
 }
 
 bool
-Component::shouldLogAtAll(LogLevel level)
+Component::shouldLogAtAll(LogLevel level) const
 {
     using ns_log::ControlFile;
 
@@ -69,7 +76,7 @@ Component::shouldLogAtAll(LogLevel level)
     }
     try {
         ControlFile foo(lcfn, ControlFile::READWRITE);
-        unsigned int *lstring = foo.getLevels(_logctlname);
+        unsigned int *lstring = foo.getLevels(_logctlname.c_str());
         return (lstring[level] == CHARS_TO_UINT(' ', ' ', 'O', 'N'));
     } catch (...) {
         LOG(debug, "exception checking logcontrol for %s", _myservice);
@@ -77,55 +84,61 @@ Component::shouldLogAtAll(LogLevel level)
     return true;
 }
 
-
-Service::~Service()
+Service::Service(const char *name)
+    : _myname(name),
+      _components()
 {
-    CompIter it = _components.iterator();
-    while (it.valid()) {
-        delete it.value();
-        it.next();
-    }
-    free(_myname);
 }
 
-Services::~Services()
-{
-    ServIter it = _services.iterator();
-    while (it.valid()) {
-        delete it.value();
-        it.next();
+Service::~Service() = default;
+
+Component *
+Service::getComponent(const vespalib::string & comp) {
+    auto found = _components.find(comp);
+    if (found == _components.end()) {
+        _components[comp] = std::make_unique<Component>(_myname.c_str(), comp.c_str());
+        found = _components.find(comp);
     }
+    return found->second.get();
 }
+
+Service *
+Services::getService(const vespalib::string & serv) {
+    auto found = _services.find(serv);
+    if (found == _services.end()) {
+        _services[serv] = std::make_unique<Service>(serv.c_str());
+        found = _services.find(serv);
+    }
+    return found->second.get();
+}
+
+Services::~Services() = default;
 
 void
 Services::dumpState(int fildesc)
 {
     using ns_log::Logger;
 
-    ServIter sit = _services.iterator();
-    while (sit.valid()) {
-        Service *svc = sit.value();
-        CompIter it = svc->_components.iterator();
-        while (it.valid()) {
-            Component *cmp = it.value();
+    for (const auto & serviceEntry : _services) {
+        const Service & svc = *serviceEntry.second;
+        const char * service = serviceEntry.first.c_str();
+        for (const auto & entry : svc._components) {
+            const Component & cmp = *entry.second;
+            const char * key = entry.first.c_str();
             char buf[1024];
-            int pos = snprintf(buf, 1024, "setstate %s %s ", sit.key(), it.key());
+            int pos = snprintf(buf, 1024, "setstate %s %s ", service, key);
             for (int i = 0; pos < 1000 && i < Logger::NUM_LOGLEVELS; i++) {
                 LogLevel l = static_cast<LogLevel>(i);
-                pos += snprintf(buf+pos, 1024-pos, "%s=%s,",
-                                Logger::logLevelNames[i],
-                                cmp->shouldForward(l) ? "forward" : "store");
+                pos += snprintf(buf+pos, 1024-pos, "%s=%s,", Logger::logLevelNames[i],
+                                cmp.shouldForward(l) ? "forward" : "store");
             }
             if (pos < 1000) {
                 buf[pos-1]='\n';
                 write(fildesc, buf, pos);
             } else {
-                LOG(warning, "buffer to small to dumpstate[%s, %s]",
-                    sit.key(), it.key());
+                LOG(warning, "buffer to small to dumpstate[%s, %s]", service, key);
             }
-            it.next();
         }
-        sit.next();
     }
 }
 

@@ -1,22 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+
+#include "cmdbuf.h"
+#include "errhandle.h"
+#include "perform.h"
 #include <fcntl.h>
-#include <errno.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/time.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("");
-LOG_RCSID("$Id$");
-
-#include "errhandle.h"
-#include "service.h"
-#include "forward.h"
-#include "perform.h"
-#include "cmdbuf.h"
 
 namespace logdemon {
 
@@ -27,12 +18,10 @@ CmdBuf::CmdBuf()
       _left(_size)
 { }
 
-
 CmdBuf::~CmdBuf()
 {
     free(_buf);
 }
-
 
 bool
 CmdBuf::hasCmd()
@@ -108,8 +97,7 @@ CmdBuf::maybeRead(int fd)
         int nbflags = oflags | O_NONBLOCK;
 
         if (fcntl(fd, F_SETFL, nbflags) != 0) {
-            LOG(error, "could not fcntl logserver socket: %s",
-                strerror(errno));
+            LOG(error, "could not fcntl logserver socket: %s", strerror(errno));
             throw SomethingBad("fcntl failed");
         }
 
@@ -121,8 +109,7 @@ CmdBuf::maybeRead(int fd)
                 extend();
             }
         } else if (len < 0) {
-            LOG(warning, "error reading from logserver socket: %s",
-                strerror(errno));
+            LOG(warning, "error reading from logserver socket: %s", strerror(errno));
             throw ConnectionException("error reading");
         }
         fcntl(fd, F_SETFL, oflags);
@@ -149,8 +136,7 @@ CmdBuf::readFile(int fd)
         return true;
     }
     if (len < 0) {
-        LOG(error, "error reading file: %s",
-            strerror(errno));
+        LOG(error, "error reading file: %s", strerror(errno));
         throw SomethingBad("read failed");
     }
     return false;

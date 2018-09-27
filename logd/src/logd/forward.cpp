@@ -172,7 +172,7 @@ Forwarder::parseline(const char *linestart, const char *lineend)
     }
 
     Service *svcp = knownServices.getService(service.c_str());
-    Component *cp = svcp->getComponent(component.c_str());
+    Component *cp = svcp->getComponent(component);
     cp->remember(logtime, pid);
     bool retval = cp->shouldForward(l);
     return retval;
