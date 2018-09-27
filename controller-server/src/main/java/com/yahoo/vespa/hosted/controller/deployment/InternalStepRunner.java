@@ -101,7 +101,7 @@ public class InternalStepRunner implements StepRunner {
                 case endTests: return endTests(id, logger);
                 case deactivateReal: return deactivateReal(id, logger);
                 case deactivateTester: return deactivateTester(id, logger);
-                case report: return report(id);
+                case report: return report(id, logger);
                 default: throw new AssertionError("Unknown step '" + step + "'!");
             }
         }
@@ -398,8 +398,13 @@ public class InternalStepRunner implements StepRunner {
         return Optional.of(running);
     }
 
-    private Optional<RunStatus> report(RunId id) {
-        controller.jobController().active(id).ifPresent(run -> controller.applications().deploymentTrigger().notifyOfCompletion(report(run)));
+    private Optional<RunStatus> report(RunId id, DualLogger logger) {
+        try {
+            controller.jobController().active(id).ifPresent(run -> controller.applications().deploymentTrigger().notifyOfCompletion(report(run)));
+        }
+        catch (IllegalStateException e) {
+            logger.log(INFO, "Job '" + id.type() + "'no longer supposed to run?:", e);
+        }
         return Optional.of(running);
     }
 
