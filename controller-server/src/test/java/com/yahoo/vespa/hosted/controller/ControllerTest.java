@@ -147,6 +147,19 @@ public class ControllerTest {
 
         assertEquals(5, applications.get(app1.id()).get().deploymentJobs().jobStatus().size());
 
+        // Production zone for which there is no JobType is not allowed.
+        applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("deep-space-9")
+                .build();
+        try {
+            tester.controller().jobController().submit(app1.id(), BuildJob.defaultSourceRevision, applicationPackage.zippedContent(), new byte[0]);
+            fail("Expected exception due to illegal deployment spec.");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("No job is known for zone prod.deep-space-9 in default.", e.getMessage());
+        }
+
         // prod zone removal is not allowed
         applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
