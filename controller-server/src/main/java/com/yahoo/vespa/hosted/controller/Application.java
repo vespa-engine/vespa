@@ -199,6 +199,7 @@ public class Application {
         // Rotation status only contains VIP host names, one per zone in the system. The only way to map VIP hostname to
         // this deployment, and thereby determine rotation status, is to check if VIP hostname contains the
         // deployment's environment and region.
+        // TODO: change this map to be indexed by zones, then?
         return rotationStatus.entrySet().stream()
                              .filter(kv -> kv.getKey().value().contains(deployment.zone().value()))
                              .map(Map.Entry::getValue)

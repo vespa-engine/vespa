@@ -203,32 +203,31 @@ public class JobController {
      * Accepts and stores a new application package and test jar pair under a generated application version key.
      */
     public ApplicationVersion submit(ApplicationId id, SourceRevision revision,
-                                     byte[] applicationPackage, byte[] applicationTestPackage) {
+                                     byte[] packageBytes, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
+            if ( ! application.get().deploymentJobs().builtInternally()) {
+                // Copy all current packages to the new application store
+                application.get().deployments().values().stream()
+                           .map(Deployment::applicationVersion)
+                           .distinct()
+                           .forEach(appVersion -> {
+                               byte[] content = controller.applications().artifacts().getApplicationPackage(application.get().id(), appVersion.id());
+                               controller.applications().applicationStore().putApplicationPackage(application.get().id(), appVersion.id(), content);
+                           });
+            }
+
             long run = nextBuild(id);
             version.set(ApplicationVersion.from(revision, run));
 
             controller.applications().applicationStore().putApplicationPackage(id,
-                    version.get().id(),
-                    applicationPackage);
+                                                                               version.get().id(),
+                                                                               packageBytes);
             controller.applications().applicationStore().putTesterPackage(testerOf(id),
                                                                           version.get().id(),
-                                                                          applicationTestPackage);
+                                                                          testPackageBytes);
 
-            if (!application.get().deploymentJobs().builtInternally()) {
-                // Copy all current packages to the new application store
-                application.get().deployments().values().stream()
-                        .map(Deployment::applicationVersion)
-                        .distinct()
-                        .forEach(appVersion -> {
-                            byte[] content = controller.applications().artifacts().getApplicationPackage(application.get().id(), appVersion.id());
-                            controller.applications().applicationStore().putApplicationPackage(application.get().id(), appVersion.id(), content);
-                        });
-            }
-
-            controller.applications().store(controller.applications().withUpdatedConfig(application.withBuiltInternally(true),
-                    new ApplicationPackage(applicationPackage)));
+            controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(packageBytes));
 
             notifyOfNewSubmission(id, revision, run);
         });
