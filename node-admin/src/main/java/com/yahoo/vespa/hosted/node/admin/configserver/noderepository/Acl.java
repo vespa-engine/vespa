@@ -1,16 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 
 import java.net.InetAddress;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -21,16 +23,16 @@ import java.util.stream.Collectors;
  */
 public class Acl {
 
-    private final List<InetAddress> trustedNodes;
-    private final List<Integer> trustedPorts;
+    private final Set<Node> trustedNodes;
+    private final Set<Integer> trustedPorts;
 
     /**
      * @param trustedPorts Ports that hostname should trust
-     * @param trustedNodes Other hostnames that this hostname should trust
+     * @param trustedNodes Other nodes that this hostname should trust
      */
-    public Acl(List<Integer> trustedPorts, List<InetAddress> trustedNodes) {
-        this.trustedNodes = trustedNodes != null ? ImmutableList.copyOf(trustedNodes) : Collections.emptyList();
-        this.trustedPorts = trustedPorts != null ? ImmutableList.copyOf(trustedPorts) : Collections.emptyList();
+    public Acl(Set<Integer> trustedPorts, Set<Node> trustedNodes) {
+        this.trustedNodes = trustedNodes != null ? Collections.unmodifiableSet(trustedNodes) : Collections.emptySet();
+        this.trustedPorts = trustedPorts != null ? Collections.unmodifiableSet(trustedPorts) : Collections.emptySet();
     }
 
     public List<String> toRules(IPVersion ipVersion) {
@@ -56,9 +58,8 @@ public class Acl {
             rules.add("-A INPUT -p tcp -m multiport --dports " + commaSeparatedPorts + " -j ACCEPT");
 
         // Allow traffic from trusted nodes
-        trustedNodes.stream()
-                .filter(ipVersion::match)
-                .map(ipAddress -> "-A INPUT -s " + InetAddresses.toAddrString(ipAddress) + ipVersion.singleHostCidr() + " -j ACCEPT")
+        getTrustedNodes(ipVersion).stream()
+                .map(node -> "-A INPUT -s " + node.inetAddressString() + ipVersion.singleHostCidr() + " -j ACCEPT")
                 .sorted()
                 .forEach(rules::add);
 
@@ -68,19 +69,22 @@ public class Acl {
         return Collections.unmodifiableList(rules);
     }
 
-    public List<String> getTrustedNodes(IPVersion ipVersion) {
-        return trustedNodes.stream()
-                .filter(ipVersion::match)
-                .map(InetAddresses::toAddrString)
-                .sorted()
-                .collect(Collectors.toList());
+    public Set<Node> getTrustedNodes() {
+        return trustedNodes;
     }
 
-    public List<String> getTrustedPorts(IPVersion ipVersion) {
-        return trustedPorts.stream()
-                .map(Object::toString)
-                .sorted()
-                .collect(Collectors.toList());
+    public Set<Node> getTrustedNodes(IPVersion ipVersion) {
+        return trustedNodes.stream()
+                .filter(node -> ipVersion.match(node.inetAddress()))
+                .collect(Collectors.toSet());
+    }
+
+    public Set<Integer> getTrustedPorts() {
+        return trustedPorts;
+    }
+
+    public Set<Integer> getTrustedPorts(IPVersion ipVersion) {
+        return trustedPorts;
     }
 
     @Override
@@ -93,7 +97,97 @@ public class Acl {
     }
 
     @Override
+    public String toString() {
+        return "Acl{" +
+                "trustedNodes=" + trustedNodes +
+                ", trustedPorts=" + trustedPorts +
+                '}';
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(trustedPorts, trustedNodes);
+    }
+
+    public static class Node {
+        private final String hostname;
+        private final InetAddress inetAddress;
+
+        public Node(String hostname, String ipAddress) {
+            this(hostname, InetAddresses.forString(ipAddress));
+        }
+
+        public Node(String hostname, InetAddress inetAddress) {
+            this.hostname = hostname;
+            this.inetAddress = inetAddress;
+        }
+
+        public String hostname() {
+            return hostname;
+        }
+
+        public InetAddress inetAddress() {
+            return inetAddress;
+        }
+
+        public String inetAddressString() {
+            return InetAddresses.toAddrString(inetAddress);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Node node = (Node) o;
+            return Objects.equals(hostname, node.hostname) &&
+                    Objects.equals(inetAddress, node.inetAddress);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(hostname, inetAddress);
+        }
+
+        @Override
+        public String toString() {
+            return "Node{" +
+                    "hostname='" + hostname + '\'' +
+                    ", inetAddress=" + inetAddress +
+                    '}';
+        }
+    }
+
+    public static class Builder {
+        private final Set<Node> trustedNodes = new HashSet<>();
+        private final Set<Integer> trustedPorts = new HashSet<>();
+
+        public Builder() { }
+
+        public Builder(Acl acl) {
+            trustedNodes.addAll(acl.trustedNodes);
+            trustedPorts.addAll(acl.trustedPorts);
+        }
+
+        public Builder withTrustedNode(String hostname, String ipAddress) {
+            return withTrustedNode(new Node(hostname, ipAddress));
+        }
+
+        public Builder withTrustedNode(String hostname, InetAddress inetAddress) {
+            return withTrustedNode(new Node(hostname, inetAddress));
+        }
+
+        public Builder withTrustedNode(Node node) {
+            trustedNodes.add(node);
+            return this;
+        }
+
+        public Builder withTrustedPorts(Integer... ports) {
+            trustedPorts.addAll(Arrays.asList(ports));
+            return this;
+        }
+
+        public Acl build() {
+            return new Acl(trustedPorts, trustedNodes);
+        }
     }
 }
