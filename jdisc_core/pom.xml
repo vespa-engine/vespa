@@ -232,6 +232,7 @@
                         <configuration>
                             <mainClass>com.yahoo.jdisc.core.ExportPackages</mainClass>
                             <classpathScope>test</classpathScope>
+                            <cleanupDaemonThreads>false</cleanupDaemonThreads>
                             <arguments>
                                 <argument>${exportPackagesFile}</argument>
                                 <argument>${project.build.directory}/dependency/commons-daemon.jar</argument>
