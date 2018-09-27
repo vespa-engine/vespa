@@ -111,6 +111,7 @@ public class ExternPolicy implements DocumentProtocolRoutingPolicy {
         }
     }
 
+    @Override
     public void select(RoutingContext ctx) {
         if (error != null) {
             ctx.setError(DocumentProtocol.ERROR_POLICY_FAILURE, error);
@@ -129,6 +130,7 @@ public class ExternPolicy implements DocumentProtocolRoutingPolicy {
         }
     }
 
+    @Override
     public void merge(RoutingContext ctx) {
         DocumentProtocol.merge(ctx);
     }
@@ -140,6 +142,7 @@ public class ExternPolicy implements DocumentProtocolRoutingPolicy {
         orb.transport().shutdown().join();
     }
 
+    @Override
     public MetricSet getMetrics() {
         return null;
     }
