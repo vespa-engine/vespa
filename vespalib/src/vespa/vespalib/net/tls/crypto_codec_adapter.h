@@ -12,9 +12,6 @@ namespace vespalib::net::tls {
 /**
  * Component adapting an underlying CryptoCodec to the CryptoSocket
  * interface by performing buffer and socket management.
- *
- * NOTE: initial implementation is for functionality/proof-of-concept
- * purposes, not performance.
  **/
 class CryptoCodecAdapter : public CryptoSocket
 {
