@@ -59,14 +59,6 @@ public class VisitorDataQueue extends VisitorDataHandler {
         }
     }
 
-    /**
-     * @deprecated This method is no longer called by the visitor subsystem. See onMessage instead.
-     */
-    @Deprecated
-    public void onDocuments(DocumentList docs, AckToken token) {
-        pendingResponses.add(new DocumentListVisitorResponse(docs, token));
-    }
-
     // Inherit doc from VisitorDataHandler
     @Override
     public VisitorResponse getNext() {
