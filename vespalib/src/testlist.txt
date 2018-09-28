@@ -31,7 +31,6 @@ tests/explore_modern_cpp
 tests/fiddle
 tests/gencnt
 tests/guard
-tests/hashmap
 tests/host_name
 tests/io/fileutil
 tests/left_right_heap

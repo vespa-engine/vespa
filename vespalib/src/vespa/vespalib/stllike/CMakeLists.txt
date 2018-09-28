@@ -4,6 +4,7 @@ vespa_add_library(vespalib_vespalib_stllike OBJECT
     asciistream.cpp
     hashtable.cpp
     hashtable.cpp
+    hash_fun.cpp
     hash_set.cpp
     hash_map.cpp
     string.cpp

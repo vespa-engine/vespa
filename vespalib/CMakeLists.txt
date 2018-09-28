@@ -47,7 +47,6 @@ vespa_define_module(
     src/tests/fiddle
     src/tests/gencnt
     src/tests/guard
-    src/tests/hashmap
     src/tests/host_name
     src/tests/io/fileutil
     src/tests/io/mapped_file_input

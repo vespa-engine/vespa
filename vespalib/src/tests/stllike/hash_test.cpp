@@ -29,6 +29,14 @@ namespace {
     };
 }
 
+TEST("test that hashValue gives expected response")
+{
+    const char * s("abcdefghi");
+    EXPECT_EQUAL(7045194595191919248ul, vespalib::hashValue(s));
+    EXPECT_EQUAL(vespalib::hashValue(s), vespalib::hashValue(s, strlen(s)));
+    EXPECT_NOT_EQUAL(vespalib::hashValue(s), vespalib::hashValue(s, strlen(s)-1));
+}
+
 TEST("test hash set with custom type and hash function")
 {
     const size_t testSize(2000);
