@@ -4,7 +4,6 @@
 #include "tls_crypto_socket.h"
 #include "protocol_snooping.h"
 #include <vespa/vespalib/data/smart_buffer.h>
-#include <cassert>
 
 namespace vespalib {
 
@@ -32,8 +31,7 @@ public:
     MyCryptoSocket(CryptoSocket::UP &self, SocketHandle socket, std::shared_ptr<TlsCryptoEngine> tls_engine)
         : _self(self), _socket(std::move(socket)), _factory(std::move(tls_engine)), _buffer(4096)
     {
-        assert(SNOOP_SIZE > 0); // we read before checking this
-        assert(SNOOP_SIZE <= 8); // we promise this in our comment
+        static_assert(SNOOP_SIZE == 8);
     }
     int get_fd() const override { return _socket.get(); }
     HandshakeResult handshake() override {
