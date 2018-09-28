@@ -41,7 +41,7 @@ ExchangeManager::addPartner(const std::string & name, const std::string & spec)
     LOG_ASSERT(_partners.find(name) == _partners.end());
     auto newPartner = std::make_unique<RemoteSlobrok>(name, spec, *this);
     RemoteSlobrok & partner = *newPartner;
-    _partners[name] = std::move(newPartner);
+    _partners.emplace(name, std::move(newPartner));
     partner.tryConnect();
     return OkState();
 }

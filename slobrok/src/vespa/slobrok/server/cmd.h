@@ -22,8 +22,8 @@ class RegRpcSrvCommand
 {
 private:
     std::unique_ptr<RegRpcSrvData> _data;
+    static void cleanupReservation(RegRpcSrvData &);
     RegRpcSrvCommand(std::unique_ptr<RegRpcSrvData> data);
-    void cleanupReservation();
 public:
     virtual void doneHandler(OkState result);
     void doRequest();
