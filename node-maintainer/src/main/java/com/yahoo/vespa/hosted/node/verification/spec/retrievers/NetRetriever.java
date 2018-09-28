@@ -60,6 +60,8 @@ public class NetRetriever implements HardwareRetriever {
         findInterfaceSpeed(parseResults);
         if (verifierSettings.isCheckIPv6()) {
             testPingResponse(parseResults);
+        } else {
+            hardwareInfo.setIpv6Connection(true);
         }
         updateHardwareInfoWithNet(parseResults);
     }
