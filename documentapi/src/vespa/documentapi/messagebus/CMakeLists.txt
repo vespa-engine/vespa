@@ -3,7 +3,6 @@ vespa_add_library(documentapi_documentapimessagebus OBJECT
     SOURCES
     documentprotocol.cpp
     replymerger.cpp
-    routablefactories52.cpp
     routablefactories60.cpp
     routablerepository.cpp
     routingpolicyfactories.cpp
