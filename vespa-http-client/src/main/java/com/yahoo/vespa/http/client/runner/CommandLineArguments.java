@@ -152,10 +152,6 @@ public class CommandLineArguments {
                     "to be pending at any given time.")
     private int maxPendingOperationCountArg = 10000;
 
-    @Option(name = {"--debugport"},
-            description = "Deprecated, not used.")
-    private int debugportArg = 9988;
-
     @Option(name = {"-v", "--verbose"},
             description = "Enable verbose output of progress.")
     private boolean verboaseArg = false;
