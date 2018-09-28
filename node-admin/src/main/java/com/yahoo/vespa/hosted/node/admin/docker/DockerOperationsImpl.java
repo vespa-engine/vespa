@@ -302,7 +302,7 @@ public class DockerOperationsImpl implements DockerOperations {
 
     @Override
     public void startServices(ContainerName containerName) {
-        executeCommandInContainer(containerName, nodeProgram, "stop");
+        executeCommandInContainer(containerName, nodeProgram, "start");
     }
 
     @Override
