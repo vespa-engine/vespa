@@ -113,7 +113,6 @@ public class CommandLineArgumentsTest {
         args.add("--useCompression");
         args.add("--useDynamicThrottling");
         add("maxpending", "3456");
-        add("debugport", "7890");
         args.add("--verbose");
         args.add("--useTls");
         add("header", "Header-Name: Header-Value");
