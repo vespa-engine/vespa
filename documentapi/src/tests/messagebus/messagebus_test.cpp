@@ -70,10 +70,10 @@ void Test::testMessage() {
     LoadTypeSet set;
     DocumentProtocol protocol(set, _repo);
 
-    Blob blob = protocol.encode(vespalib::Version(5,115), upd1);
+    Blob blob = protocol.encode(vespalib::Version(6,221), upd1);
     EXPECT_TRUE(blob.size() > 0);
 
-    Routable::UP dec1 = protocol.decode(vespalib::Version(5,115), blob);
+    Routable::UP dec1 = protocol.decode(vespalib::Version(6,221), blob);
     EXPECT_TRUE(dec1.get() != NULL);
     EXPECT_TRUE(dec1->isReply() == false);
     EXPECT_TRUE(dec1->getType() == DocumentProtocol::MESSAGE_UPDATEDOCUMENT);

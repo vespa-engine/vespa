@@ -1,17 +1,7 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_executable(documentapi_messages52_test_app TEST
-    SOURCES
-    testbase.cpp
-    messages52test.cpp
-    messages52app.cpp
-    DEPENDS
-    documentapi
-)
-vespa_add_test(NAME documentapi_messages52_test_app COMMAND documentapi_messages52_test_app)
 vespa_add_executable(documentapi_messages60_test_app TEST
     SOURCES
     testbase.cpp
-    messages52test.cpp
     messages60test.cpp
     messages60app.cpp
     DEPENDS
