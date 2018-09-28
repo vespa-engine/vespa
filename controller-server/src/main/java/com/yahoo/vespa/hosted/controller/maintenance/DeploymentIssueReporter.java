@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
@@ -90,6 +91,9 @@ public class DeploymentIssueReporter extends Maintainer {
      * longer than the set grace period, or update this list if the issue already exists.
      */
     private void maintainPlatformIssue(List<Application> applications) {
+        if (controller().system() == SystemName.cd)
+            return;
+        
         Version systemVersion = controller().systemVersion();
 
         if ((controller().versionStatus().version(systemVersion).confidence() != broken))
