@@ -89,7 +89,7 @@ public class NodeAgentImpl implements NodeAgent {
     private Optional<Future<?>> currentFilebeatRestarter = Optional.empty();
 
     private boolean hasResumedNode = false;
-    private boolean hasStartedServices = false;
+    private boolean hasStartedServices = true;
 
     /**
      * ABSENT means container is definitely absent - A container that was absent will not suddenly appear without

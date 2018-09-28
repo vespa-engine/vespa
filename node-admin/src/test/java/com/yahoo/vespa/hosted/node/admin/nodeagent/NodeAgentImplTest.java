@@ -131,7 +131,7 @@ public class NodeAgentImplTest {
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository);
         // TODO: Verify this isn't run unless 1st time
-        inOrder.verify(dockerOperations, times(1)).startServices(eq(containerName));
+        inOrder.verify(dockerOperations, never()).startServices(eq(containerName));
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName));
         inOrder.verify(orchestrator).resume(hostName);
     }
@@ -176,7 +176,7 @@ public class NodeAgentImplTest {
         when(storageMaintainer.getDiskUsageFor(eq(containerName))).thenReturn(Optional.of(187500000000L));
 
         nodeAgent.converge();
-        inOrder.verify(dockerOperations, times(1)).startServices(eq(containerName));
+        inOrder.verify(dockerOperations, never()).startServices(eq(containerName));
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(containerName));
 
         nodeAgent.suspend();
