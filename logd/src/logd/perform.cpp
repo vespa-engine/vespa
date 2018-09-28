@@ -1,29 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/time.h>
+
+#include "perform.h"
+#include "cmdbuf.h"
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP("");
-LOG_RCSID("$Id$");
-
-#include "service.h"
-#include "forward.h"
-#include "perform.h"
-#include "cmdbuf.h"
 
 namespace logdemon {
 
-Performer::~Performer()
-{
-}
+namespace {
 
-static bool
+bool
 isPrefix(const char *prefix, const char *line)
 {
     while (*prefix) {
@@ -32,9 +20,10 @@ isPrefix(const char *prefix, const char *line)
     return true;
 }
 
-ExternalPerformer::~ExternalPerformer()
-{
 }
+
+Performer::~Performer() = default;
+ExternalPerformer::~ExternalPerformer() = default;
 
 void
 ExternalPerformer::listStates(const char *service, const char *component)
@@ -56,16 +45,13 @@ ExternalPerformer::listStates(const char *service, const char *component)
                 levstate = "store";
             }
         }
-        pos += snprintf(buf+pos, 1024-pos, "%s=%s,",
-                        Logger::logLevelNames[i],
-                        levstate);
+        pos += snprintf(buf+pos, 1024-pos, "%s=%s,", Logger::logLevelNames[i], levstate);
     }
     if (pos < 1000) {
         buf[pos-1]='\n';
         _forwarder.forwardText(buf, pos);
     } else {
-        LOG(warning, "buffer to small to list states[%s, %s]",
-            service, component);
+        LOG(warning, "buffer to small to list states[%s, %s]", service, component);
     }
 }
 
@@ -73,42 +59,36 @@ void
 ExternalPerformer::doCmd(char *line)
 {
     if (isPrefix("list services", line)) {
-        ServIter it = _services._services.iterator();
-        while (it.valid()) {
+        for (const auto & entry : _services._services) {
             char buf[1024];
-            snprintf(buf, 1024, "service %s\n", it.key());
+            snprintf(buf, 1024, "service %s\n", entry.first.c_str());
             _forwarder.forwardText(buf, strlen(buf));
-            it.next();
         }
         return;
     }
     if (isPrefix("list components ", line)) {
         const char *servstr = line+5+11;
         Service *svc = _services.getService(servstr);
-        CompIter it = svc->_components.iterator();
-        while (it.valid()) {
+        for (const auto & entry : svc->components()) {
+            const char * key = entry.first.c_str();
             char buf[1024];
-            snprintf(buf, 1024, "component %s %s\n", servstr, it.key());
+            snprintf(buf, 1024, "component %s %s\n", servstr, key);
             int len = strlen(buf);
             if (len < 1000) {
                 _forwarder.forwardText(buf, len);
             } else {
-                LOG(warning, "buffer too small to list component %s %s",
-                    servstr, it.key());
+                LOG(warning, "buffer too small to list component %s %s", servstr, key);
             }
-            it.next();
         }
         return;
     }
     if (isPrefix("list states ", line)) {
         char *servstr = line+5+7;
         char *compstr = strchr(servstr, ' ');
-        if (compstr == NULL) {
+        if (compstr == nullptr) {
             Service *svc = _services.getService(servstr);
-            CompIter it = svc->_components.iterator();
-            while (it.valid()) {
-                listStates(servstr, it.key());
-                it.next();
+            for (const auto & entry : svc->components()) {
+                listStates(servstr, entry.first.c_str());
             }
             return;
         }
@@ -118,26 +98,25 @@ ExternalPerformer::doCmd(char *line)
     }
     if (isPrefix("setallstates", line)) {
         char *levmods = strchr(line, ' ');
-        if (levmods == NULL) {
+        if (levmods == nullptr) {
             LOG(error, "bad command: %s", line);
         } else {
-            char *orig = strdup(line);
+            std::string orig(line);
             *levmods++ = '\0';
-            doSetAllStates(levmods, orig);
-            free(orig);
+            doSetAllStates(levmods, orig.c_str());
         }
         return;
     }
     if (isPrefix("setstate ", line)) {
         char *servstr = line + 9;
         char *compstr = strchr(servstr, ' ');
-        if (compstr == NULL) {
+        if (compstr == nullptr) {
             LOG(error, "bad command: %s", line);
             return;
         }
         *compstr++ = '\0';
         char *levmods = strchr(compstr, ' ');
-        if (levmods == NULL) {
+        if (levmods == nullptr) {
             LOG(error, "bad command: %s %s", line, compstr);
             return;
         }
@@ -145,7 +124,7 @@ ExternalPerformer::doCmd(char *line)
 
         Service *svc = _services.getService(servstr);
         Component *cmp = svc->getComponent(compstr);
-        if (doSetState(levmods, cmp, line) == NULL) return;
+        if (doSetState(levmods, cmp, line) == nullptr) return;
 
         // maybe ???
         listStates(servstr, compstr);
@@ -183,12 +162,11 @@ ExternalPerformer::doCmd(char *line)
 }
 
 void
-ExternalPerformer::doSetAllStates(char *levmods, char *origline) {
+ExternalPerformer::doSetAllStates(char *levmods, const char *origline) {
     while (levmods) {
         char *newval = strchr(levmods, '=');
         if (!newval) {
-            LOG(error, "bad command %s : expected level=value, got %s",
-                origline, levmods);
+            LOG(error, "bad command %s : expected level=value, got %s", origline, levmods);
             return;
         }
         *newval++ = '\0';
@@ -196,12 +174,10 @@ ExternalPerformer::doSetAllStates(char *levmods, char *origline) {
         LogLevel level = _levelparser.parseLevel(levmods);
         char *nextlev = strchr(newval, ',');
         if (nextlev) *nextlev++ = '\0';
-        ServIter it = _services._services.iterator();
-        while (it.valid()) {
-            Service *svc = _services.getService(it.key());
-            CompIter cit = svc->_components.iterator();
-            while (cit.valid()) {
-                Component *cmp = svc->getComponent(cit.key());
+        for (const auto & serviceEntry : _services._services) {
+            Service *svc = _services.getService(serviceEntry.first);
+            for (const auto & entry : svc->components()) {
+                Component *cmp = svc->getComponent(entry.first);
                 assert(cmp != 0);
 
                 if (strcmp(newval, "forward") == 0) {
@@ -216,14 +192,10 @@ ExternalPerformer::doSetAllStates(char *levmods, char *origline) {
                     cmp->dontForward(level);
                     cmp->dontLogAtAll(level);
                 } else {
-                    LOG(error, "bad command %s: want forward/store/off, got %s",
-                        origline, newval);
+                    LOG(error, "bad command %s: want forward/store/off, got %s", origline, newval);
                     return;
                 }
-
-                cit.next();
             }
-            it.next();
         }
 
         levmods = nextlev;
@@ -235,9 +207,8 @@ ExternalPerformer::doSetState(char *levmods, Component *cmp, char * line) {
     while (levmods) {
         char *newval = strchr(levmods, '=');
         if (!newval) {
-            LOG(error, "bad command %s : expected level=value, got %s",
-                line, levmods);
-            return NULL;
+            LOG(error, "bad command %s : expected level=value, got %s", line, levmods);
+            return nullptr;
         }
         *newval++ = '\0';
 
@@ -256,9 +227,8 @@ ExternalPerformer::doSetState(char *levmods, Component *cmp, char * line) {
             cmp->dontForward(level);
             cmp->dontLogAtAll(level);
         } else {
-            LOG(error, "bad command %s %s=%s: want forward/store/off",
-                    line, levmods, newval);
-            return NULL;
+            LOG(error, "bad command %s %s=%s: want forward/store/off", line, levmods, newval);
+            return nullptr;
         }
         levmods = nextlev;
     }
@@ -271,20 +241,20 @@ InternalPerformer::doCmd(char *line)
     if (isPrefix("setstate ", line)){
         char *servstr = line + 9;
         char *compstr = strchr(servstr, ' ');
-        if (compstr == NULL) {
+        if (compstr == nullptr) {
             LOG(error, "bad internal command: %s", line);
             return;
         }
         *compstr++ = '\0';
         char *levmods = strchr(compstr, ' ');
-        if (levmods == NULL) {
+        if (levmods == nullptr) {
             LOG(error, "bad internal command: %s %s", line, compstr);
             return;
         }
         *levmods++ = '\0';
 
         // ignore services with slash in the name, invalid
-        if (strchr(servstr, '/') != NULL)
+        if (strchr(servstr, '/') != nullptr)
             return;
 
         Service *svc = _services.getService(servstr);
@@ -293,8 +263,7 @@ InternalPerformer::doCmd(char *line)
         while (levmods) {
             char *newval = strchr(levmods, '=');
             if (!newval) {
-                LOG(error, "bad internal %s %s: expected level=value, got %s",
-                    line, compstr, levmods);
+                LOG(error, "bad internal %s %s: expected level=value, got %s", line, compstr, levmods);
                 return;
             }
             *newval++ = '\0';
@@ -309,8 +278,7 @@ InternalPerformer::doCmd(char *line)
             } else if (strcmp(newval, "off") == 0) {
                 cmp->dontForward(level);
             } else {
-                LOG(error, "bad internal %s %s %s=%s: want forward/store/off",
-                    line, compstr, levmods, newval);
+                LOG(error, "bad internal %s %s %s=%s: want forward/store/off", line, compstr, levmods, newval);
                 return;
             }
             levmods = nextlev;

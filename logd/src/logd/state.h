@@ -19,7 +19,7 @@ class StateReporter {
     vespalib::metrics::Producer _producer;
 public:
     StateReporter();
-    ~StateReporter() {}
+    ~StateReporter();
     void setStatePort(int statePort);
     void gotConf(size_t generation);
     std::shared_ptr<vespalib::metrics::MetricsManager> metrics() { return _metrics; }

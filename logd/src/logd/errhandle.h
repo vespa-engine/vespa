@@ -1,16 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
+
 #include <stdexcept>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace logdemon {
 
 class MsgException : public std::exception {
 private:
-    vespalib::string _string;
+    std::string _string;
 public:
-    MsgException(const char *s) : _string(s) {}
-    virtual ~MsgException() throw() {}
+    MsgException(const std::string & s) : _string(s) {}
+    ~MsgException() override {}
     const char *what() const throw() override { return _string.c_str(); }
 };
 
@@ -32,4 +33,4 @@ public:
     SomethingBad(const char *s) : MsgException(s) {}
 };
 
-} // namespace
+}
