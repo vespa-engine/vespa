@@ -44,8 +44,6 @@ public final class FeedParams {
         private long clientTimeout = TimeUnit.SECONDS.toMillis(20);
         private String route = null;
         private int maxChunkSizeBytes = 50 * 1024;
-        // This value is deprecated, and the default is no longer used.
-        private int clientQueueSize = -1;
         private int maxInFlightRequests = 5000;
         private long localQueueTimeOut = 180000;
         private String priority = null;
