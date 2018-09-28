@@ -42,9 +42,9 @@ public class XgboostFeatureConverter extends ExpressionTransformer<RankProfileTr
 
         try {
             FeatureArguments arguments = asFeatureArguments(feature.getArguments());
-            Path modelPath = Path.fromString(FeatureArguments.asString(feature.getArguments().expressions().get(0))); // TODO: Keep in FeatureArguments
             ConvertedModel convertedModel =
-                    convertedXGBoostModels.computeIfAbsent(modelPath, __ -> ConvertedModel.fromSourceOrStore(modelPath, true, context));
+                    convertedXGBoostModels.computeIfAbsent(arguments.path(),
+                                                           path -> ConvertedModel.fromSourceOrStore(path, true, context));
             return convertedModel.expression(arguments, context);
         } catch (IllegalArgumentException | UncheckedIOException e) {
             throw new IllegalArgumentException("Could not use XGBoost model from " + feature, e);

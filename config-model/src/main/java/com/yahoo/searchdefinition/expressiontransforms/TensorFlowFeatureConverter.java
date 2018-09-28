@@ -41,9 +41,9 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
 
         try {
             FeatureArguments arguments = asFeatureArguments(feature.getArguments());
-            Path modelPath = Path.fromString(FeatureArguments.asString(feature.getArguments().expressions().get(0))); // TODO: Put in FeatureArguments
             ConvertedModel convertedModel =
-                    convertedTensorFlowModels.computeIfAbsent(modelPath, __ -> ConvertedModel.fromSourceOrStore(modelPath, false, context));
+                    convertedTensorFlowModels.computeIfAbsent(arguments.path(),
+                                                              path -> ConvertedModel.fromSourceOrStore(path, false, context));
             return convertedModel.expression(arguments, context);
         }
         catch (IllegalArgumentException | UncheckedIOException e) {
