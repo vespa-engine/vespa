@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.google.common.base.Strings;
-import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
@@ -11,7 +10,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.*;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.net.InetAddress;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -81,16 +79,18 @@ public class RealNodeRepository implements NodeRepository {
             final GetAclResponse response = configServerApi.get(path, GetAclResponse.class);
 
             // Group ports by container hostname that trusts them
-            Map<String, List<Integer>> trustedPorts = response.trustedPorts.stream()
+            Map<String, Set<Integer>> trustedPorts = response.trustedPorts.stream()
                     .collect(Collectors.groupingBy(
                             GetAclResponse.Port::getTrustedBy,
-                            Collectors.mapping(port -> port.port, Collectors.toList())));
+                            Collectors.mapping(port -> port.port, Collectors.toSet())));
 
             // Group node ip-addresses by container hostname that trusts them
-            Map<String, List<InetAddress>> trustedNodes = response.trustedNodes.stream()
+            Map<String, Set<Acl.Node>> trustedNodes = response.trustedNodes.stream()
                     .collect(Collectors.groupingBy(
                             GetAclResponse.Node::getTrustedBy,
-                            Collectors.mapping(node -> InetAddresses.forString(node.ipAddress), Collectors.toList())));
+                            Collectors.mapping(
+                                    node -> new Acl.Node(node.hostname, node.ipAddress),
+                                    Collectors.toSet())));
 
 
             // For each hostname create an ACL

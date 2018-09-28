@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
-import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
@@ -8,8 +7,6 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Collections;
 
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -24,8 +21,7 @@ public class IPTablesEditorTest {
 
     @Test
     public void filter_set_wanted_rules() {
-
-        Acl acl = new Acl(Collections.singletonList(22), Collections.singletonList(InetAddresses.forString("3001::1")));
+        Acl acl = new Acl.Builder().withTrustedPorts(22).withTrustedNode("hostname", "3001::1").build();
         FilterTableLineEditor filterLineEditor = FilterTableLineEditor.from(acl, IPVersion.IPv6);
 
         String currentFilterTable = "-P INPUT ACCEPT\n" +
