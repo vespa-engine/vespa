@@ -13,6 +13,7 @@
   "description": "Flavor-name-is-docker",
   "minCpuCores": 0.2,
   "fastDisk": true,
+  "bandwidth":0.0,
   "environment": "DOCKER_CONTAINER",
   "owner": {
     "tenant": "tenant3",
