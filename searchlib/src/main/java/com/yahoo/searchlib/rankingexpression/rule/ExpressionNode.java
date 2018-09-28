@@ -45,20 +45,6 @@ public abstract class ExpressionNode implements Serializable {
     public abstract StringBuilder toString(StringBuilder builder, SerializationContext context, Deque<String> path, CompositeNode parent);
 
     /**
-     * Returns a script instance of this based on the supplied script functions.
-     * @deprecated use the faster one that takes and returns a StringBuilder instead.
-     *
-     * @param context the serialization context
-     * @param path the call path to this, used for cycle detection, or null if this is a root
-     * @param parent the parent node of this, or null if it a root
-     * @return the main script, referring to script instances.
-     */
-    @Deprecated
-    public String toString(SerializationContext context, Deque<String> path, CompositeNode parent) {
-        return toString(new StringBuilder(), context, path, parent).toString();
-    }
-
-    /**
      * Returns the type this will return if evaluated with the given context.
      *
      * @param context the variable type bindings to use for this evaluation
