@@ -153,9 +153,6 @@ public class Tuning extends AbstractConfigProducer implements PartitionsConfig.P
                     if (read != null) {
                         builder.indexing.read.io(ProtonConfig.Indexing.Read.Io.Enum.valueOf(read.name));
                     }
-                    if (search != null) {
-                        builder.search.io(ProtonConfig.Search.Io.Enum.valueOf(search.name));
-                    }
                 }
 
             }
