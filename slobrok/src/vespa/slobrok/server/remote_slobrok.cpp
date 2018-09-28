@@ -12,16 +12,6 @@
 LOG_SETUP(".rpcserver");
 
 namespace slobrok {
-namespace {
-
-class IgnoreReqDone: public FRT_IRequestWait
-{
-    void RequestDone(FRT_RPCRequest *req) override {
-        req->SubRef();
-    }
-};
-
-} // namespace slobrok::<unnamed>
 
 //-----------------------------------------------------------------------------
 
@@ -41,8 +31,6 @@ RemoteSlobrok::RemoteSlobrok(const std::string &name, const std::string &spec,
 {
     _rpcserver.healthCheck();
 }
-
-static IgnoreReqDone ignorer;
 
 RemoteSlobrok::~RemoteSlobrok()
 {
@@ -75,8 +63,8 @@ RemoteSlobrok::doPending()
     LOG_ASSERT(_remAddReq == nullptr);
     LOG_ASSERT(_remRemReq == nullptr);
 
-    if (_pending.size() > 0) {
-        NamedService *todo = _pending.front();
+    if ( ! _pending.empty() ) {
+        std::unique_ptr<NamedService> todo = std::move(_pending.front());
         _pending.pop_front();
 
         const NamedService *rpcsrv = _exchanger._rpcsrvmap.lookup(todo->getName());
@@ -97,7 +85,6 @@ RemoteSlobrok::doPending()
             _remote->InvokeAsync(_remAddReq, 2.0, this);
         }
         // XXX should save this and pick up on RequestDone()
-        delete todo;
     }
 
 }
@@ -110,8 +97,7 @@ RemoteSlobrok::pushMine()
     while (mine.size() > 0) {
         const NamedService *now = mine.back();
         mine.pop_back();
-        NamedService *copy = new NamedService(now->getName(), now->getSpec());
-        _pending.push_back(copy);
+        _pending.push_back(std::make_unique<NamedService>(now->getName(), now->getSpec()));
     }
     doPending();
 }
@@ -199,15 +185,13 @@ RemoteSlobrok::RequestDone(FRT_RPCRequest *req)
         if (req->IsError() && (req->GetErrorCode() == FRTE_RPC_CONNECTION ||
                                req->GetErrorCode() == FRTE_RPC_TIMEOUT))
         {
-            LOG(error, "connection error adding to remote slobrok: %s",
-                req->GetErrorMessage());
+            LOG(error, "connection error adding to remote slobrok: %s", req->GetErrorMessage());
             req->SubRef();
             _remRemReq = nullptr;
             goto retrylater;
         }
         if (req->IsError()) {
-            LOG(warning, "error removing on remote slobrok: %s",
-                req->GetErrorMessage());
+            LOG(warning, "error removing on remote slobrok: %s", req->GetErrorMessage());
         }
         req->SubRef();
         _remRemReq = nullptr;

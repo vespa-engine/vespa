@@ -18,8 +18,6 @@ namespace slobrok {
 
 namespace {
 
-
-
 class MetricsReport : public FNET_Task
 {
     RPCHooks &_owner;
@@ -29,35 +27,29 @@ class MetricsReport : public FNET_Task
         Schedule(300.0);
     }
 public:
-    MetricsReport(FRT_Supervisor *orb,
-                  RPCHooks &owner)
+    MetricsReport(FRT_Supervisor *orb, RPCHooks &owner)
         :  FNET_Task(orb->GetScheduler()),
            _owner(owner)
     {
         Schedule(0.0);
     }
 
-    virtual ~MetricsReport() { Kill(); }
+    ~MetricsReport() override { Kill(); }
 };
 
 } // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
 
-RPCHooks::RPCHooks(SBEnv &env,
-                   RpcServerMap& rpcsrvmap,
-                   RpcServerManager& rpcsrvman)
+RPCHooks::RPCHooks(SBEnv &env, RpcServerMap& rpcsrvmap, RpcServerManager& rpcsrvman)
     : _env(env), _rpcsrvmap(rpcsrvmap), _rpcsrvmanager(rpcsrvman),
       _cnts(Metrics::zero()),
-      _m_reporter(nullptr)
+      _m_reporter()
 {
 }
 
 
-RPCHooks::~RPCHooks()
-{
-    delete _m_reporter;
-}
+RPCHooks::~RPCHooks() = default;
 
 void
 RPCHooks::reportMetrics()
@@ -76,7 +68,7 @@ RPCHooks::reportMetrics()
 void
 RPCHooks::initRPC(FRT_Supervisor *supervisor)
 {
-    _m_reporter = new MetricsReport(supervisor, *this);
+    _m_reporter = std::make_unique<MetricsReport>(supervisor, *this);
 
     FRT_ReflectionBuilder rb(supervisor);
 

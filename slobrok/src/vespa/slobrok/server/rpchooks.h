@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/fnet/frt/invokable.h>
+#include <memory>
 
 class FNET_Task;
 class FRT_Supervisor;
@@ -41,17 +42,12 @@ private:
     RpcServerMap &_rpcsrvmap;
     RpcServerManager &_rpcsrvmanager;
 
-    RPCHooks(const RPCHooks &);            // Not used
-    RPCHooks &operator=(const RPCHooks &); // Not used
-
     Metrics _cnts;
-    FNET_Task *_m_reporter;
+    std::unique_ptr<FNET_Task> _m_reporter;
 
 public:
-    explicit RPCHooks(SBEnv &env,
-                      RpcServerMap& rpcsrvmap,
-                      RpcServerManager& rpcsrvman);
-    virtual ~RPCHooks();
+    RPCHooks(SBEnv &env, RpcServerMap& rpcsrvmap, RpcServerManager& rpcsrvman);
+    ~RPCHooks() override;
 
     void initRPC(FRT_Supervisor *supervisor);
     void reportMetrics();
