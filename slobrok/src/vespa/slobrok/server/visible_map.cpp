@@ -13,22 +13,20 @@ VisibleMap::updated()
     _genCnt.add();
     WaitList waitList;
     std::swap(waitList, _waitList);
-    for (uint32_t i = 0; i < waitList.size(); ++i) {
-        waitList[i]->updated(*this);
+    for (auto & entry : waitList) {
+        entry->updated(*this);
     }
 }
-
 
 void
 VisibleMap::aborted()
 {
     WaitList waitList;
     std::swap(waitList, _waitList);
-    for (uint32_t i = 0; i < waitList.size(); ++i) {
-        waitList[i]->aborted(*this);
+    for (auto & entry : waitList) {
+        entry->aborted(*this);
     }
 }
-
 
 void
 VisibleMap::addUpdateListener(IUpdateListener *l)
@@ -56,28 +54,19 @@ VisibleMap::removeUpdateListener(IUpdateListener *l)
 
 //-----------------------------------------------------------------------------
 
-std::vector<const NamedService *>
-VisibleMap::lookupPattern(const char *pattern) const
-{
-    std::vector<const NamedService *> retval;
-    for (iter_t it = _map.iterator(); it.valid(); it.next())
-    {
-        if (match(it.key(), pattern)) {
-            retval.push_back(it.value());
-        }
-    }
-    return retval;
+const NamedService *
+VisibleMap::lookup(const std::string &name) const {
+    auto found = _map.find(name);
+    return (found == _map.end()) ? nullptr : found->second;
 }
-
 
 std::vector<const NamedService *>
 VisibleMap::allVisible() const
 {
     std::vector<const NamedService *> retval;
     // get list of all names in myrpcsrvmap
-    for (iter_t it = _map.iterator(); it.valid(); it.next())
-    {
-        retval.push_back(it.value());
+    for (const auto & entry : _map) {
+        retval.push_back(entry.second);
     }
     return retval;
 }
@@ -85,22 +74,23 @@ VisibleMap::allVisible() const
 
 
 void
-VisibleMap::addNew(NamedService *rpcsrv)
+VisibleMap::addNew(const NamedService *rpcsrv)
 {
-    LOG_ASSERT(rpcsrv != NULL);
-    LOG_ASSERT(_map.isSet(rpcsrv->getName()) == false);
-    _map.set(rpcsrv->getName(), rpcsrv);
+    LOG_ASSERT(rpcsrv != nullptr);
+    LOG_ASSERT(_map.find(rpcsrv->getName()) == _map.end());
+    _map[rpcsrv->getName()] = rpcsrv;
 
     _history.add(rpcsrv->getName(), _genCnt);
     updated();
 }
 
 
-NamedService *
-VisibleMap::remove(const char *name) {
+const NamedService *
+VisibleMap::remove(const std::string &name) {
 
-    NamedService *d = _map.remove(name);
-    if (d != NULL) {
+    const NamedService *d = _map[name];
+    _map.erase(name);
+    if (d != nullptr) {
         _history.add(name, _genCnt);
         updated();
     }
@@ -108,14 +98,13 @@ VisibleMap::remove(const char *name) {
 }
 
 
-NamedService *
-VisibleMap::update(NamedService *rpcsrv) {
-    LOG_ASSERT(rpcsrv != NULL);
+const NamedService *
+VisibleMap::update(const NamedService *rpcsrv) {
+    LOG_ASSERT(rpcsrv != nullptr);
 
-    NamedService *d = _map.remove(rpcsrv->getName());
-    LOG_ASSERT(d != NULL);
-
-    _map.set(rpcsrv->getName(), rpcsrv);
+    const NamedService *d = rpcsrv;
+    std::swap(d, _map[rpcsrv->getName()]);
+    LOG_ASSERT(d != nullptr);
 
     _history.add(rpcsrv->getName(), _genCnt);
     updated();
@@ -128,13 +117,11 @@ VisibleMap::history(const vespalib::GenCnt& gen) const
 {
     MapDiff retval;
     std::set<std::string> names = _history.since(gen);
-    for (std::set<std::string>::iterator it = names.begin();
-         it != names.end();
-         ++it)
+    for (const auto & name : names)
     {
-        const NamedService *val = lookup(it->c_str());
-        if (val == NULL) {
-            retval.removed.push_back(*it);
+        const NamedService *val = lookup(name.c_str());
+        if (val == nullptr) {
+            retval.removed.push_back(name);
         } else {
             retval.updated.push_back(val);
         }
@@ -142,11 +129,11 @@ VisibleMap::history(const vespalib::GenCnt& gen) const
     return retval;
 }
 
-VisibleMap::MapDiff::MapDiff() {}
-VisibleMap::MapDiff::~MapDiff() {}
+VisibleMap::MapDiff::MapDiff() = default;
+VisibleMap::MapDiff::~MapDiff() = default;
 
 VisibleMap::VisibleMap()
-    : _map(NULL),
+    : _map(),
       _waitList(),
       _genCnt(1)
 {
@@ -160,8 +147,8 @@ VisibleMap::~VisibleMap()
 bool
 VisibleMap::match(const char *name, const char *pattern)
 {
-    LOG_ASSERT(name != NULL);
-    LOG_ASSERT(pattern != NULL);
+    LOG_ASSERT(name != nullptr);
+    LOG_ASSERT(pattern != nullptr);
     while (*pattern != '\0') {
         if (*name == *pattern) {
             ++name;

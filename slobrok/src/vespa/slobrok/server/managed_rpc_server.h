@@ -25,14 +25,10 @@ class ManagedRpcServer: public NamedService,
                         public FRT_IRequestWait,
                         public IMonitoredServer
 {
-private:
-    ManagedRpcServer(const ManagedRpcServer&);            // Not used
-    ManagedRpcServer& operator=(const ManagedRpcServer&); // Not used
-
 public:
-    ManagedRpcServer(const char *name,
-                     const char *spec,
-                     IRpcServerManager &manager);
+    ManagedRpcServer(const ManagedRpcServer&) = delete;
+    ManagedRpcServer& operator=(const ManagedRpcServer&) = delete;
+    ManagedRpcServer(const std::string & name, const std::string & spec, IRpcServerManager &manager);
     ~ManagedRpcServer();
 
     void healthCheck();

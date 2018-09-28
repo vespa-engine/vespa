@@ -26,9 +26,6 @@ class RemoteSlobrok: public IRpcServerManager,
                      public FRT_IRequestWait
 {
 private:
-    RemoteSlobrok(const RemoteSlobrok&); // not used
-    RemoteSlobrok& operator= (const RemoteSlobrok&); // not used
-
     class Reconnecter : public FNET_Task
     {
     private:
@@ -38,13 +35,12 @@ private:
         Reconnecter &operator=(const Reconnecter &); // not used
     public:
         explicit Reconnecter(FNET_Scheduler *sched, RemoteSlobrok &owner);
-        ~Reconnecter();
+        ~Reconnecter() override;
         void scheduleTryConnect();
         void disable();
         void PerformTask() override;
     };
 
-private:
     ExchangeManager     &_exchanger;
     RpcServerManager    &_rpcsrvmanager;
     FRT_Target          *_remote;
@@ -57,24 +53,23 @@ private:
     FRT_RPCRequest      *_remAddReq;
     FRT_RPCRequest      *_remRemReq;
 
-    std::deque<NamedService *> _pending;
+    std::deque<std::unique_ptr<NamedService>> _pending;
     void pushMine();
     void doPending();
 
 public:
-    RemoteSlobrok(const char *name, const char *spec,
-                  ExchangeManager &manager);
-    ~RemoteSlobrok();
+    RemoteSlobrok(const RemoteSlobrok&) = delete;
+    RemoteSlobrok& operator= (const RemoteSlobrok&) = delete;
+    RemoteSlobrok(const std::string &name, const std::string &spec, ExchangeManager &manager);
+    ~RemoteSlobrok() override;
 
     void fail();
-    bool isConnected() const { return (_remote != NULL); }
+    bool isConnected() const { return (_remote != nullptr); }
     void tryConnect();
     void healthCheck();
-    void invokeAsync(FRT_RPCRequest *req,
-                     double timeout,
-                     FRT_IRequestWait *rwaiter);
-    const char *getName() const { return _rpcserver.getName(); }
-    const char *getSpec() const { return _rpcserver.getSpec(); }
+    void invokeAsync(FRT_RPCRequest *req, double timeout, FRT_IRequestWait *rwaiter);
+    const std::string & getName() const { return _rpcserver.getName(); }
+    const std::string & getSpec() const { return _rpcserver.getSpec(); }
 
     // interfaces implemented:
     void notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errmsg) override;

@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <deque>
-#include <string>
-
-#include <vespa/vespalib/util/hashmap.h>
 #include "ok_state.h"
 #include "cmd.h"
 #include "remote_slobrok.h"
+
+#include <deque>
+#include <string>
+#include <unordered_map>
 
 namespace slobrok {
 
@@ -16,8 +16,6 @@ namespace slobrok {
 class SBEnv;
 class RpcServerMap;
 class RpcServerManager;
-
-using vespalib::HashMap;
 
 //-----------------------------------------------------------------------------
 
@@ -31,10 +29,8 @@ using vespalib::HashMap;
 class ExchangeManager
 {
 private:
-    ExchangeManager(const ExchangeManager &);            // Not used
-    ExchangeManager &operator=(const ExchangeManager &); // Not used
-
-    HashMap<RemoteSlobrok *> _partners;
+    using PartnerMap = std::unordered_map<std::string, std::unique_ptr<RemoteSlobrok>>;
+    PartnerMap _partners;
 
     class WorkPackage;
 
@@ -48,27 +44,21 @@ private:
     class WorkPackage
     {
     private:
-        WorkPackage(const WorkPackage&); // not used
-        WorkPackage& operator= (const WorkPackage&); // not used
-
         class WorkItem: public FRT_IRequestWait
         {
         private:
             WorkPackage    &_pkg;
             FRT_RPCRequest *_pendingReq;
             RemoteSlobrok  *_remslob;
-
-            WorkItem(const WorkItem&); // not used
-            WorkItem& operator= (const WorkItem&); // not used
         public:
             void expedite();
             void RequestDone(FRT_RPCRequest *req) override;
-            WorkItem(WorkPackage &pkg,
-                     RemoteSlobrok *rem,
-                     FRT_RPCRequest *req);
+            WorkItem(WorkPackage &pkg, RemoteSlobrok *rem, FRT_RPCRequest *req);
+            WorkItem(const WorkItem&) = delete;
+            WorkItem& operator= (const WorkItem&) = delete;
             ~WorkItem();
         };
-        std::vector<WorkItem *> _work;
+        std::vector<std::unique_ptr<WorkItem>> _work;
         size_t                  _doneCnt;
         size_t                  _numDenied;
         RegRpcSrvCommand        _donehandler;
@@ -81,41 +71,36 @@ private:
         void addItem(RemoteSlobrok *partner);
         void doneItem(bool denied);
         void expedite();
-        WorkPackage(op_type op,
-                    const char *name, const char *spec,
-                    ExchangeManager &exchanger,
-                    RegRpcSrvCommand  donehandler);
+        WorkPackage(const WorkPackage&) = delete;
+        WorkPackage& operator= (const WorkPackage&) = delete;
+        WorkPackage(op_type op, const std::string & name, const std::string & spec,
+                    ExchangeManager &exchanger, RegRpcSrvCommand  donehandler);
         ~WorkPackage();
     };
 
 public:
+    ExchangeManager(const ExchangeManager &) = delete;
+    ExchangeManager &operator=(const ExchangeManager &) = delete;
     ExchangeManager(SBEnv &env, RpcServerMap &rpcsrvmap);
-    ~ExchangeManager() {}
+    ~ExchangeManager();
 
     SBEnv             &_env;
     RpcServerManager  &_rpcsrvmanager;
     RpcServerMap      &_rpcsrvmap;
 
-    OkState addPartner(const char *name, const char *spec);
-    void removePartner(const char *name);
+    OkState addPartner(const std::string & name, const std::string & spec);
+    void removePartner(const std::string & name);
     std::vector<std::string> getPartnerList();
 
-    void registerFrom(RemoteSlobrok *partner);
-    void reregisterTo(RemoteSlobrok *partner);
+    void forwardRemove(const std::string & name, const std::string & spec);
 
-    void forwardRemove(const char *name, const char *spec);
+    void wantAdd(const std::string & name, const std::string & spec, RegRpcSrvCommand rdc);
+    void doAdd(const std::string & name, const std::string & spec, RegRpcSrvCommand rdc);
 
-    void wantAdd(const char *name, const char *spec, RegRpcSrvCommand rdc);
-    void doAdd(const char *name, const char *spec, RegRpcSrvCommand rdc);
-
-    RemoteSlobrok *lookupPartner(const char *name) const {
-        return _partners[name];
-    }
-
+    RemoteSlobrok *lookupPartner(const std::string & name) const;
     void healthCheck();
 };
 
 //-----------------------------------------------------------------------------
 
 } // namespace slobrok
-

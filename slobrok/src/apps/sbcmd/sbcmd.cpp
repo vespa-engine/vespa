@@ -12,14 +12,14 @@ LOG_SETUP("vespa-slobrok-cmd");
 class Slobrok_CMD : public FastOS_Application
 {
 private:
-    FRT_Supervisor *_supervisor;
+    std::unique_ptr<FRT_Supervisor> _supervisor;
     FRT_Target     *_target;
 
     Slobrok_CMD(const Slobrok_CMD &);
     Slobrok_CMD &operator=(const Slobrok_CMD &);
 
 public:
-    Slobrok_CMD() : _supervisor(NULL), _target(NULL) {}
+    Slobrok_CMD() : _supervisor(), _target(nullptr) {}
     virtual ~Slobrok_CMD();
     int usage();
     void initRPC(const char *spec);
@@ -29,8 +29,8 @@ public:
 
 Slobrok_CMD::~Slobrok_CMD()
 {
-    LOG_ASSERT(_supervisor == NULL);
-    LOG_ASSERT(_target == NULL);
+    LOG_ASSERT(! _supervisor);
+    LOG_ASSERT(_target == nullptr);
 }
 
 int
@@ -56,7 +56,7 @@ Slobrok_CMD::usage()
 void
 Slobrok_CMD::initRPC(const char *spec)
 {
-    _supervisor = new FRT_Supervisor();
+    _supervisor = std::make_unique<FRT_Supervisor>();
     _target     = _supervisor->GetTarget(spec);
     _supervisor->Start();
 }
@@ -65,14 +65,13 @@ Slobrok_CMD::initRPC(const char *spec)
 void
 Slobrok_CMD::finiRPC()
 {
-    if (_target != NULL) {
+    if (_target != nullptr) {
         _target->SubRef();
-        _target = NULL;
+        _target = nullptr;
     }
-    if (_supervisor != NULL) {
+    if (_supervisor) {
         _supervisor->ShutDown(true);
-        delete _supervisor;
-        _supervisor = NULL;
+        _supervisor.reset();
     }
 }
 
@@ -165,7 +164,7 @@ Slobrok_CMD::Main()
         } else {
             fprintf(stderr, "vespa-slobrok-cmd OK, returntypes '%s'\n", atypes);
             uint32_t idx = 0;
-            while (atypes != NULL && *atypes != '\0') {
+            while (atypes != nullptr && *atypes != '\0') {
                 switch (*atypes) {
                 case 's':
                     printf("    string = '%s'\n", answer[idx]._string._str);

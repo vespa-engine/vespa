@@ -18,8 +18,6 @@ namespace slobrok {
 
 namespace {
 
-
-
 class MetricsReport : public FNET_Task
 {
     RPCHooks &_owner;
@@ -29,35 +27,29 @@ class MetricsReport : public FNET_Task
         Schedule(300.0);
     }
 public:
-    MetricsReport(FRT_Supervisor *orb,
-                  RPCHooks &owner)
+    MetricsReport(FRT_Supervisor *orb, RPCHooks &owner)
         :  FNET_Task(orb->GetScheduler()),
            _owner(owner)
     {
         Schedule(0.0);
     }
 
-    virtual ~MetricsReport() { Kill(); }
+    ~MetricsReport() override { Kill(); }
 };
 
 } // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
 
-RPCHooks::RPCHooks(SBEnv &env,
-                   RpcServerMap& rpcsrvmap,
-                   RpcServerManager& rpcsrvman)
+RPCHooks::RPCHooks(SBEnv &env, RpcServerMap& rpcsrvmap, RpcServerManager& rpcsrvman)
     : _env(env), _rpcsrvmap(rpcsrvmap), _rpcsrvmanager(rpcsrvman),
       _cnts(Metrics::zero()),
-      _m_reporter(nullptr)
+      _m_reporter()
 {
 }
 
 
-RPCHooks::~RPCHooks()
-{
-    delete _m_reporter;
-}
+RPCHooks::~RPCHooks() = default;
 
 void
 RPCHooks::reportMetrics()
@@ -76,7 +68,7 @@ RPCHooks::reportMetrics()
 void
 RPCHooks::initRPC(FRT_Supervisor *supervisor)
 {
-    _m_reporter = new MetricsReport(supervisor, *this);
+    _m_reporter = std::make_unique<MetricsReport>(supervisor, *this);
 
     FRT_ReflectionBuilder rb(supervisor);
 
@@ -236,7 +228,7 @@ RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req)
 {
     FRT_Values &dst = *req->GetReturn();
     FRT_StringValue *names = dst.AddStringArray(1);
-    dst.SetString(names, _env.mySpec());
+    dst.SetString(names, _env.mySpec().c_str());
     _cnts.otherReqs++;
     return;
 }
@@ -422,8 +414,8 @@ RPCHooks::rpc_lookupRpcServer(FRT_RPCRequest *req)
     FRT_StringValue *names = dst.AddStringArray(rpcsrvlist.size());
     FRT_StringValue *specs = dst.AddStringArray(rpcsrvlist.size());
     for (uint32_t i = 0; i < rpcsrvlist.size(); ++i) {
-        dst.SetString(&names[i], rpcsrvlist[i]->getName());
-        dst.SetString(&specs[i], rpcsrvlist[i]->getSpec());
+        dst.SetString(&names[i], rpcsrvlist[i]->getName().c_str());
+        dst.SetString(&specs[i], rpcsrvlist[i]->getSpec().c_str());
     }
     if (rpcsrvlist.size() < 1) {
         LOG(debug, "RPC: lookupRpcServers(%s) -> no match",
@@ -431,7 +423,7 @@ RPCHooks::rpc_lookupRpcServer(FRT_RPCRequest *req)
     } else {
         LOG(debug, "RPC: lookupRpcServers(%s) -> %u matches, first [%s,%s]",
             rpcserverPattern, (unsigned int)rpcsrvlist.size(),
-            rpcsrvlist[0]->getName(), rpcsrvlist[0]->getSpec());
+            rpcsrvlist[0]->getName().c_str(), rpcsrvlist[0]->getSpec().c_str());
     }
     return;
 }
@@ -446,15 +438,15 @@ RPCHooks::rpc_listManagedRpcServers(FRT_RPCRequest *req)
     FRT_StringValue *names = dst.AddStringArray(rpcsrvlist.size());
     FRT_StringValue *specs = dst.AddStringArray(rpcsrvlist.size());
     for (uint32_t i = 0; i < rpcsrvlist.size(); ++i) {
-        dst.SetString(&names[i], rpcsrvlist[i]->getName());
-        dst.SetString(&specs[i], rpcsrvlist[i]->getSpec());
+        dst.SetString(&names[i], rpcsrvlist[i]->getName().c_str());
+        dst.SetString(&specs[i], rpcsrvlist[i]->getSpec().c_str());
     }
     if (rpcsrvlist.size() < 1) {
         LOG(debug, "RPC: listManagedRpcServers() -> 0 managed");
     } else {
         LOG(debug, "RPC: listManagedRpcServers() -> %u managed, first [%s,%s]",
             (unsigned int)rpcsrvlist.size(),
-            rpcsrvlist[0]->getName(), rpcsrvlist[0]->getSpec());
+            rpcsrvlist[0]->getName().c_str(), rpcsrvlist[0]->getSpec().c_str());
     }
     return;
 }
@@ -466,14 +458,14 @@ RPCHooks::rpc_lookupManaged(FRT_RPCRequest *req)
     FRT_Values &args = *req->GetParams();
     const char *name = args[0]._string._str;
     LOG(debug, "RPC: lookupManaged(%s)", name);
-    ManagedRpcServer *found = _rpcsrvmap.lookupManaged(name);
+    const ManagedRpcServer *found = _rpcsrvmap.lookupManaged(name);
 
     if (found == nullptr) {
         req->SetError(FRTE_RPC_METHOD_FAILED, "Not found");
     } else {
         FRT_Values &dst = *req->GetReturn();
-        dst.AddString(found->getName());
-        dst.AddString(found->getSpec());
+        dst.AddString(found->getName().c_str());
+        dst.AddString(found->getSpec().c_str());
     }
     return;
 }
@@ -493,9 +485,9 @@ RPCHooks::rpc_listAllRpcServers(FRT_RPCRequest *req)
 
     int j = 0;
     for (uint32_t i = 0; i < mrpcsrvlist.size(); ++i, ++j) {
-        dst.SetString(&names[j], mrpcsrvlist[i]->getName());
-        dst.SetString(&specs[j], mrpcsrvlist[i]->getSpec());
-        dst.SetString(&owner[j], _env.mySpec());
+        dst.SetString(&names[j], mrpcsrvlist[i]->getName().c_str());
+        dst.SetString(&specs[j], mrpcsrvlist[i]->getSpec().c_str());
+        dst.SetString(&owner[j], _env.mySpec().c_str());
     }
 
     if (sz > 0) {
