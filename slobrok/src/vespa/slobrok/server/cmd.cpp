@@ -81,45 +81,43 @@ void
 RegRpcSrvCommand::doneHandler(OkState result)
 {
     LOG_ASSERT(_data != nullptr);
-
+    RegRpcSrvData & data = *_data;
     if (result.failed()) {
-        LOG(warning, "failed in state %d: %s",
-            _data->_state, result.errorMsg.c_str());
+        LOG(warning, "failed in state %d: %s", data._state, result.errorMsg.c_str());
         cleanupReservation();
         // XXX should handle different state errors differently?
-        if (_data->registerRequest != nullptr) {
-            _data->registerRequest->SetError(FRTE_RPC_METHOD_FAILED,
-                                             result.errorMsg.c_str());
-            _data->registerRequest->Return();
+        if (data.registerRequest != nullptr) {
+            data.registerRequest->SetError(FRTE_RPC_METHOD_FAILED, result.errorMsg.c_str());
+            data.registerRequest->Return();
         } else {
             LOG(warning, "ignored: %s", result.errorMsg.c_str());
         }
         goto alldone;
     }
-    if (_data->_state == RegRpcSrvData::RDC_INIT) {
+    if (data._state == RegRpcSrvData::RDC_INIT) {
         LOG(spam, "phase wantAdd(%s,%s)",
-            _data->name.c_str(), _data->spec.c_str());
-        _data->_state = RegRpcSrvData::XCH_WANTADD;
-        _data->env._exchanger.wantAdd(_data->name.c_str(), _data->spec.c_str(), std::move(*this));
+            data.name.c_str(), data.spec.c_str());
+        data._state = RegRpcSrvData::XCH_WANTADD;
+        data.env._exchanger.wantAdd(data.name.c_str(), data.spec.c_str(), std::move(*this));
         return;
-    } else if (_data->_state == RegRpcSrvData::XCH_WANTADD) {
+    } else if (data._state == RegRpcSrvData::XCH_WANTADD) {
         LOG(spam, "phase addManaged(%s,%s)",
-            _data->name.c_str(), _data->spec.c_str());
-        _data->_state = RegRpcSrvData::CHK_RPCSRV;
-        _data->env._rpcsrvmanager.addManaged(_data->name, _data->spec.c_str(), std::move(*this));
+            data.name.c_str(), data.spec.c_str());
+        data._state = RegRpcSrvData::CHK_RPCSRV;
+        data.env._rpcsrvmanager.addManaged(data.name, data.spec.c_str(), std::move(*this));
         return;
-    } else if (_data->_state == RegRpcSrvData::CHK_RPCSRV) {
-        LOG(spam, "phase doAdd(%s,%s)", _data->name.c_str(), _data->spec.c_str());
-        _data->_state = RegRpcSrvData::XCH_DOADD;
-        _data->env._exchanger.doAdd(_data->name.c_str(), _data->spec.c_str(), std::move(*this));
+    } else if (data._state == RegRpcSrvData::CHK_RPCSRV) {
+        LOG(spam, "phase doAdd(%s,%s)", data.name.c_str(), data.spec.c_str());
+        data._state = RegRpcSrvData::XCH_DOADD;
+        data.env._exchanger.doAdd(data.name.c_str(), data.spec.c_str(), std::move(*this));
         return;
-    } else if (_data->_state == RegRpcSrvData::XCH_DOADD) {
-        LOG(debug, "done doAdd(%s,%s)", _data->name.c_str(), _data->spec.c_str());
-        _data->_state = RegRpcSrvData::RDC_INVAL;
+    } else if (data._state == RegRpcSrvData::XCH_DOADD) {
+        LOG(debug, "done doAdd(%s,%s)", data.name.c_str(), data.spec.c_str());
+        data._state = RegRpcSrvData::RDC_INVAL;
         // all OK
-        _data->registerRequest->Return();
+        data.registerRequest->Return();
         goto alldone;
-    } else if (_data->_state == RegRpcSrvData::XCH_IGNORE) {
+    } else if (data._state == RegRpcSrvData::XCH_IGNORE) {
         goto alldone;
     }
     // no other state should be possible
