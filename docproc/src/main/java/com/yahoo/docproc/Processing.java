@@ -61,16 +61,6 @@ public class Processing {
         return new Processing(documentOperation);
     }
 
-    /**
-     * Create a Processing from the given document operation
-     * @deprecated Use {@link #of(DocumentOperation)} instead
-     */
-    @Deprecated
-    @SuppressWarnings("unused")
-    public static Processing fromDocumentOperation(DocumentOperation documentOperation) {
-        return Processing.of(documentOperation);
-    }
-
     private Processing(DocumentOperation documentOperation) {
         this();
         addDocumentOperation(documentOperation);
