@@ -12,6 +12,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 
@@ -90,7 +91,47 @@ public class LambdaFunctionNode extends CompositeNode {
         if (arguments.size() > 2)
             throw new IllegalStateException("Cannot apply " + this + " as a DoubleBinaryOperator: " +
                                             "Must have at most two argument " + " but has " + arguments);
-        return new DoubleBinaryLambda();
+
+        // Optimization: if possible, calculate directly rather than creating a context and evaluating the expression
+        return getDirectEvaluator().orElseGet(DoubleBinaryLambda::new);
+    }
+
+    private Optional<DoubleBinaryOperator> getDirectEvaluator() {
+        if ( ! (functionExpression instanceof ArithmeticNode)) {
+            return Optional.empty();
+        }
+        ArithmeticNode node = (ArithmeticNode) functionExpression;
+        if ( ! (node.children().get(0) instanceof ReferenceNode) || ! (node.children().get(1) instanceof ReferenceNode)) {
+            return Optional.empty();
+        }
+        if (node.operators().size() != 1) {
+            return Optional.empty();
+        }
+        ArithmeticOperator operator = node.operators().get(0);
+        switch (operator) {
+            case OR: return asDoubleBinaryOperator((left, right) -> ((left != 0.0) || (right != 0.0)) ? 1.0 : 0.0);
+            case AND: return asDoubleBinaryOperator((left, right) -> ((left != 0.0) && (right != 0.0)) ? 1.0 : 0.0);
+            case PLUS: return asDoubleBinaryOperator((left, right) -> left + right);
+            case MINUS: return asDoubleBinaryOperator((left, right) -> left - right);
+            case MULTIPLY: return asDoubleBinaryOperator((left, right) -> left * right);
+            case DIVIDE: return asDoubleBinaryOperator((left, right) -> left / right);
+            case MODULO: return asDoubleBinaryOperator((left, right) -> left % right);
+            case POWER: return asDoubleBinaryOperator(Math::pow);
+        }
+        return Optional.empty();
+    }
+
+    private Optional<DoubleBinaryOperator> asDoubleBinaryOperator(DoubleBinaryOperator operator) {
+        return Optional.of(new DoubleBinaryOperator() {
+            @Override
+            public double applyAsDouble(double left, double right) {
+                return operator.applyAsDouble(left, right);
+            }
+            @Override
+            public String toString() {
+                return LambdaFunctionNode.this.toString();
+            }
+        });
     }
 
     private class DoubleUnaryLambda implements DoubleUnaryOperator {

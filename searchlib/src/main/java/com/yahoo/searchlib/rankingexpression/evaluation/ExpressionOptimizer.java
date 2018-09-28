@@ -4,6 +4,7 @@ package com.yahoo.searchlib.rankingexpression.evaluation;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.gbdtoptimization.GBDTForestOptimizer;
 import com.yahoo.searchlib.rankingexpression.evaluation.gbdtoptimization.GBDTOptimizer;
+import com.yahoo.searchlib.rankingexpression.evaluation.tensoroptimization.TensorOptimizer;
 
 /**
  * This class will perform various optimizations on the ranking expressions. Clients using optimized expressions
@@ -32,8 +33,8 @@ import com.yahoo.searchlib.rankingexpression.evaluation.gbdtoptimization.GBDTOpt
 public class ExpressionOptimizer {
 
     private GBDTOptimizer gbdtOptimizer = new GBDTOptimizer();
-
     private GBDTForestOptimizer gbdtForestOptimizer = new GBDTForestOptimizer();
+    private TensorOptimizer tensorOptimizer = new TensorOptimizer();
 
     /** Gets an optimizer instance used by this by class name, or null if the optimizer is not known */
     public Optimizer getOptimizer(Class<?> clazz) {
@@ -41,6 +42,8 @@ public class ExpressionOptimizer {
             return gbdtOptimizer;
         if (clazz == gbdtForestOptimizer.getClass())
             return gbdtForestOptimizer;
+        if (clazz == tensorOptimizer.getClass())
+            return tensorOptimizer;
         return null;
     }
 
@@ -49,6 +52,7 @@ public class ExpressionOptimizer {
         // Note: Order of optimizations matter
         gbdtOptimizer.optimize(expression, contextIndex, report);
         gbdtForestOptimizer.optimize(expression, contextIndex, report);
+        tensorOptimizer.optimize(expression, contextIndex, report);
         return report;
     }
 

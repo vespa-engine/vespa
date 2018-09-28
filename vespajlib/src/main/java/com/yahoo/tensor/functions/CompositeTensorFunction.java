@@ -22,7 +22,7 @@ public abstract class CompositeTensorFunction extends TensorFunction {
 
     /** Evaluates this by first converting it to a primitive function */
     @Override
-    public final <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
+    public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         return toPrimitive().evaluate(context);
     }
 

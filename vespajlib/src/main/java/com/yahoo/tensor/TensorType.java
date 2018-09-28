@@ -462,7 +462,7 @@ public class TensorType {
             return add(new MappedDimension(name));
         }
 
-        /** Adds the give dimension */
+        /** Adds the given dimension */
         public Builder dimension(Dimension dimension) {
             return add(dimension);
         }
