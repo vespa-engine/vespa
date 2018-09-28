@@ -13,12 +13,7 @@ import java.util.Optional;
 public class SyncParameters extends Parameters {
     private final Duration defaultTimeout;
 
-    /**
-     * @deprecated Use {@link Builder} instead.
-     */
-    @Deprecated
-    // TODO Vespa 7: Make private
-    public SyncParameters() {
+    private SyncParameters() {
         this(null);
     }
 
