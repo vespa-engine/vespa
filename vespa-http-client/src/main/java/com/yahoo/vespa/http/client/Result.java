@@ -29,7 +29,6 @@ public class Result {
 
     private final Document document;
     private final boolean success;
-    private final boolean _transient;
     private final List<Detail> details;
     private final String localTrace;
 
@@ -37,13 +36,10 @@ public class Result {
         this.document = document;
         this.details = Collections.unmodifiableList(new ArrayList<>(values));
         boolean totalSuccess = true;
-        boolean totalTransient = true;
         for (Detail d : details) {
             if (d.getResultType() != ResultType.OPERATION_EXECUTED) {totalSuccess = false; }
-            if (d.getResultType() != ResultType.TRANSITIVE_ERROR) {totalTransient = false; }
         }
         this.success = totalSuccess;
-        this._transient = totalTransient;
         this.localTrace = localTrace == null ? null : localTrace.toString();
     }
 
@@ -71,18 +67,6 @@ public class Result {
      */
     public boolean isSuccess() {
         return success;
-    }
-
-    /**
-     * @deprecated use resultType on items getDetails() to check  operations.
-     * Returns true if an error is transient, false if it is permanent. Irrelevant
-     * if {@link #isSuccess()} is true (returns true in those cases).
-     *
-     * @return true if an error is transient (or there is no error), false otherwise.
-     */
-    @Deprecated
-    public boolean isTransient() {
-        return _transient;
     }
 
     public List<Detail> getDetails() { return details; }
@@ -138,18 +122,6 @@ public class Result {
          */
         public boolean isSuccess() {
             return resultType == ResultType.OPERATION_EXECUTED;
-        }
-
-        /**
-         * @deprecated use getResultType.
-         * Returns true if an error is transient, false if it is permanent. Irrelevant
-         * if {@link #isSuccess()} is true (returns true in those cases).
-         *
-         * @return true if an error is transient (or there is no error), false otherwise.
-         */
-        @Deprecated
-        public boolean isTransient() {
-            return resultType == ResultType.TRANSITIVE_ERROR || resultType == ResultType.OPERATION_EXECUTED;
         }
 
         /**
