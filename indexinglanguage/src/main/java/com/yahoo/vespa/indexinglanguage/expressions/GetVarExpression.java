@@ -64,4 +64,5 @@ public class GetVarExpression extends Expression {
     public int hashCode() {
         return getClass().hashCode() + varName.hashCode();
     }
+
 }

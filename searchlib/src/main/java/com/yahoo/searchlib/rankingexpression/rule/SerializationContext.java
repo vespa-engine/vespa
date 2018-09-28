@@ -3,6 +3,8 @@ package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
+import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.tensor.TensorType;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -80,9 +82,15 @@ public class SerializationContext extends FunctionReferenceContext {
         serializedFunctions.put(name, expressionString);
     }
 
-    /** Returns the existing serialization of a function, or null if none */
-    public String getFunctionSerialization(String name) {
-        return serializedFunctions.get(name);
+    /** Adds the serialization of the an argument type to a function */
+    public void addArgumentTypeSerialization(String functionName, String argumentName, TensorType type) {
+        serializedFunctions.put("rankingExpression(" + functionName + ")." + argumentName + ".type", type.toString());
+    }
+
+    /** Adds the serialization of the return type of a function */
+    public void addFunctionTypeSerialization(String functionName, TensorType type) {
+        if (type.rank() == 0) return; // no explicit type implies scalar (aka rank 0 tensor)
+        serializedFunctions.put("rankingExpression(" + functionName + ").type", type.toString());
     }
 
     @Override

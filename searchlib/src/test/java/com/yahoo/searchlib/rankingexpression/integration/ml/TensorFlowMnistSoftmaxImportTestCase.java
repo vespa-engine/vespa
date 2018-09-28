@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.integration.ml;
 
+import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -38,10 +39,10 @@ public class TensorFlowMnistSoftmaxImportTestCase {
         assertEquals(0, model.get().functions().size());
 
         // Check required functions
-        assertEquals(1, model.get().requiredFunctions().size());
-        assertTrue(model.get().requiredFunctions().containsKey("Placeholder"));
+        assertEquals(1, model.get().inputs().size());
+        assertTrue(model.get().inputs().containsKey("Placeholder"));
         assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(),
-                     model.get().requiredFunctions().get("Placeholder"));
+                     model.get().inputs().get("Placeholder"));
 
         // Check signatures
         assertEquals(1, model.get().signatures().size());
@@ -56,11 +57,12 @@ public class TensorFlowMnistSoftmaxImportTestCase {
 
         // ... signature outputs
         assertEquals(1, signature.outputs().size());
-        RankingExpression output = signature.outputExpression("y");
+        ExpressionFunction output = signature.outputExpression("y");
         assertNotNull(output);
-        assertEquals("add", output.getName());
+        assertEquals("add", output.getBody().getName());
         assertEquals("join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(test_Variable_read), f(a,b)(a * b)), sum, d2), constant(test_Variable_1_read), f(a,b)(a + b))",
-                     output.getRoot().toString());
+                     output.getBody().getRoot().toString());
+        assertEquals("{x=tensor(d0[],d1[784])}", output.argumentTypes().toString());
 
         // Test execution
         model.assertEqualResult("Placeholder", "MatMul");

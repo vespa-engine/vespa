@@ -32,7 +32,8 @@ public class GetFieldExpression extends Expression {
         StructuredFieldValue struct = (StructuredFieldValue)input;
         Field field = struct.getField(fieldName);
         if (field == null) {
-            throw new IllegalArgumentException("Field '" + fieldName + "' not found.");
+            throw new IllegalArgumentException("Field '" + fieldName + "' not found in struct type '" +
+                                               struct.getDataType().getName() + "'");
         }
         ctx.setValue(struct.getFieldValue(field));
     }
@@ -45,7 +46,8 @@ public class GetFieldExpression extends Expression {
         }
         Field field = ((StructuredDataType)input).getField(fieldName);
         if (field == null) {
-            throw new VerificationException(this, "Field '" + fieldName + "' not found.");
+            throw new VerificationException(this, "Field '" + fieldName + "' not found in struct type '" +
+                                                  input.getName() + "'");
         }
         context.setValue(field.getDataType());
     }

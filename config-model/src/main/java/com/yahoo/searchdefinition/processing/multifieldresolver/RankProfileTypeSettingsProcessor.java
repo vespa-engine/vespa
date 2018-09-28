@@ -44,6 +44,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void processAttributeFields() {
+        if (search == null) return; // we're processing global profiles
         for (SDField field : search.allConcreteFields()) {
             Attribute attribute = field.getAttributes().get(field.getName());
             if (attribute != null && attribute.tensorType().isPresent()) {
@@ -53,6 +54,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void processImportedFields() {
+        if (search == null) return; // we're processing global profiles
         Optional<ImportedFields> importedFields = search.importedFields();
         if (importedFields.isPresent()) {
             importedFields.get().fields().forEach((fieldName, field) -> processImportedField(field));

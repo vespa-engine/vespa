@@ -15,6 +15,7 @@ import org.junit.Test;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import static org.junit.Assert.fail;
@@ -41,7 +42,7 @@ public class GroupingSerializationTest {
             t.assertMatch(new StringResultNode("7.3"));
             t.assertMatch(new StringResultNode(
                     new String(new byte[]{(byte)0xe5, (byte)0xa6, (byte)0x82, (byte)0xe6, (byte)0x9e, (byte)0x9c},
-                               java.nio.charset.StandardCharsets.UTF_8)));
+                               StandardCharsets.UTF_8)));
             t.assertMatch(new RawResultNode(new byte[]{'7', '.', '4'}));
             t.assertMatch(new IntegerBucketResultNode());
             t.assertMatch(new FloatBucketResultNode());
