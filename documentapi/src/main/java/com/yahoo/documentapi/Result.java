@@ -66,20 +66,6 @@ public class Result {
     public long getRequestId() { return requestId; }
 
     /**
-     * @deprecated use type() instead.
-     * Returns the type of result.
-     *
-     * @return the type of result, typically if this is an error or a success, and what kind of error.
-     *          Does not return CONDITION_NOT_MET_ERROR for backward compatibility.
-     * @see com.yahoo.documentapi.Result.ResultType
-     */
-    @Deprecated
-    public ResultType getType() { return
-            type == ResultType.CONDITION_NOT_MET_ERROR
-                    ? ResultType.FATAL_ERROR
-                    : type;}
-
-    /**
      * Returns the type of result.
      *
      * @return the type of result, typically if this is an error or a success, and what kind of error.
