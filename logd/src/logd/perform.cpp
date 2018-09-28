@@ -69,7 +69,7 @@ ExternalPerformer::doCmd(char *line)
     if (isPrefix("list components ", line)) {
         const char *servstr = line+5+11;
         Service *svc = _services.getService(servstr);
-        for (const auto & entry : svc->_components) {
+        for (const auto & entry : svc->components()) {
             const char * key = entry.first.c_str();
             char buf[1024];
             snprintf(buf, 1024, "component %s %s\n", servstr, key);
@@ -87,7 +87,7 @@ ExternalPerformer::doCmd(char *line)
         char *compstr = strchr(servstr, ' ');
         if (compstr == nullptr) {
             Service *svc = _services.getService(servstr);
-            for (const auto & entry : svc->_components) {
+            for (const auto & entry : svc->components()) {
                 listStates(servstr, entry.first.c_str());
             }
             return;
@@ -101,7 +101,7 @@ ExternalPerformer::doCmd(char *line)
         if (levmods == nullptr) {
             LOG(error, "bad command: %s", line);
         } else {
-            vespalib::string orig(line);
+            std::string orig(line);
             *levmods++ = '\0';
             doSetAllStates(levmods, orig.c_str());
         }
@@ -176,7 +176,7 @@ ExternalPerformer::doSetAllStates(char *levmods, const char *origline) {
         if (nextlev) *nextlev++ = '\0';
         for (const auto & serviceEntry : _services._services) {
             Service *svc = _services.getService(serviceEntry.first);
-            for (const auto & entry : svc->_components) {
+            for (const auto & entry : svc->components()) {
                 Component *cmp = svc->getComponent(entry.first);
                 assert(cmp != 0);
 

@@ -12,16 +12,12 @@ namespace logdemon {
 
 unsigned long Component::defFwd = (unsigned long)-1;
 
-Component::Component(const char *servicename, const char *name)
+Component::Component(const std::string & servicename, const std::string & name)
     : _isforwarding(defFwd), _lastseen(0.0), _lastpid(0),
       _myservice(servicename), _myname(name),
-      _logctlname()
+      _logctlname(name.substr(name.find('.')))
 {
     assert(ns_log::Logger::NUM_LOGLEVELS < 32);
-    const char *withoutprefix = strchr(name, '.');
-    if (withoutprefix != nullptr) {
-        _logctlname =  withoutprefix;
-    }
 }
 
 Component::~Component() = default;
@@ -32,8 +28,8 @@ Component::doLogAtAll(LogLevel level)
     using ns_log::ControlFile;
 
     char lcfn[FILENAME_MAX];
-    if (! ControlFile::makeName(_myservice, lcfn, FILENAME_MAX)) {
-        LOG(debug, "no logcontrol file for service '%s'", _myservice);
+    if (! ControlFile::makeName(_myservice.c_str(), lcfn, FILENAME_MAX)) {
+        LOG(debug, "no logcontrol file for service '%s'", _myservice.c_str());
         return;
     }
     try {
@@ -41,7 +37,7 @@ Component::doLogAtAll(LogLevel level)
         unsigned int *lstring = foo.getLevels(_logctlname.c_str());
         lstring[level] = CHARS_TO_UINT(' ', ' ', 'O', 'N');
     } catch (...) {
-        LOG(debug, "exception changing logcontrol for %s", _myservice);
+        LOG(debug, "exception changing logcontrol for %s", _myservice.c_str());
     }
 }
 
@@ -51,8 +47,8 @@ Component::dontLogAtAll(LogLevel level)
     using ns_log::ControlFile;
 
     char lcfn[FILENAME_MAX];
-    if (! ControlFile::makeName(_myservice, lcfn, FILENAME_MAX)) {
-        LOG(debug, "no logcontrol file for service '%s'", _myservice);
+    if (! ControlFile::makeName(_myservice.c_str(), lcfn, FILENAME_MAX)) {
+        LOG(debug, "no logcontrol file for service '%s'", _myservice.c_str());
         return;
     }
     try {
@@ -60,7 +56,7 @@ Component::dontLogAtAll(LogLevel level)
         unsigned int *lstring = foo.getLevels(_logctlname.c_str());
         lstring[level] = CHARS_TO_UINT(' ', 'O', 'F', 'F');
     } catch (...) {
-        LOG(debug, "exception changing logcontrol for %s", _myservice);
+        LOG(debug, "exception changing logcontrol for %s", _myservice.c_str());
     }
 }
 
@@ -70,8 +66,8 @@ Component::shouldLogAtAll(LogLevel level) const
     using ns_log::ControlFile;
 
     char lcfn[FILENAME_MAX];
-    if (! ControlFile::makeName(_myservice, lcfn, FILENAME_MAX)) {
-        LOG(spam, "no logcontrol file for service '%s'", _myservice);
+    if (! ControlFile::makeName(_myservice.c_str(), lcfn, FILENAME_MAX)) {
+        LOG(spam, "no logcontrol file for service '%s'", _myservice.c_str());
         return true;
     }
     try {
@@ -79,12 +75,12 @@ Component::shouldLogAtAll(LogLevel level) const
         unsigned int *lstring = foo.getLevels(_logctlname.c_str());
         return (lstring[level] == CHARS_TO_UINT(' ', ' ', 'O', 'N'));
     } catch (...) {
-        LOG(debug, "exception checking logcontrol for %s", _myservice);
+        LOG(debug, "exception checking logcontrol for %s", _myservice.c_str());
     }
     return true;
 }
 
-Service::Service(const char *name)
+Service::Service(const std::string & name)
     : _myname(name),
       _components()
 {
@@ -93,25 +89,26 @@ Service::Service(const char *name)
 Service::~Service() = default;
 
 Component *
-Service::getComponent(const vespalib::string & comp) {
+Service::getComponent(const std::string & comp) {
     auto found = _components.find(comp);
     if (found == _components.end()) {
-        _components[comp] = std::make_unique<Component>(_myname.c_str(), comp.c_str());
+        _components[comp] = std::make_unique<Component>(_myname, comp);
         found = _components.find(comp);
     }
     return found->second.get();
 }
 
 Service *
-Services::getService(const vespalib::string & serv) {
+Services::getService(const std::string & serv) {
     auto found = _services.find(serv);
     if (found == _services.end()) {
-        _services[serv] = std::make_unique<Service>(serv.c_str());
+        _services[serv] = std::make_unique<Service>(serv);
         found = _services.find(serv);
     }
     return found->second.get();
 }
 
+Services::Services() = default;
 Services::~Services() = default;
 
 void
@@ -122,7 +119,7 @@ Services::dumpState(int fildesc)
     for (const auto & serviceEntry : _services) {
         const Service & svc = *serviceEntry.second;
         const char * service = serviceEntry.first.c_str();
-        for (const auto & entry : svc._components) {
+        for (const auto & entry : svc.components()) {
             const Component & cmp = *entry.second;
             const char * key = entry.first.c_str();
             char buf[1024];

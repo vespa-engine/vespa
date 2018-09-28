@@ -22,11 +22,7 @@ ConfSub::configure(std::unique_ptr<LogdConfig> cfg)
 {
     const LogdConfig &newconf(*cfg);
     if (newconf.logserver.host != _logServer) {
-        if (newconf.logserver.host.size() > 255) {
-            LOG(warning, "too long logserver hostname: %s", newconf.logserver.host.c_str());
-            return;
-        }
-        strcpy(_logServer, newconf.logserver.host.c_str());
+        _logServer = newconf.logserver.host;
         _needToConnect = true;
     }
     if (newconf.logserver.use != _use_logserver) {
@@ -100,12 +96,12 @@ ConfSub::latch()
 void
 ConfSub::connectToLogserver()
 {
-    int newfd = makeconn(_logServer, _logPort);
+    int newfd = makeconn(_logServer.c_str(), _logPort);
     if (newfd >= 0) {
         resetFileDescriptor(newfd);
-        LOG(debug, "connected to logserver at %s:%d", _logServer, _logPort);
+        LOG(debug, "connected to logserver at %s:%d", _logServer.c_str(), _logPort);
     } else {
-        LOG(debug, "could not connect to %s:%d", _logServer, _logPort);
+        LOG(debug, "could not connect to %s:%d", _logServer.c_str(), _logPort);
     }
 }
 
@@ -141,7 +137,8 @@ ConfSub::closeConn()
 }
 
 ConfSub::ConfSub(Forwarder &fw, const config::ConfigUri & configUri)
-    : _logPort(0),
+    : _logServer(),
+      _logPort(0),
       _logserverfd(-1),
       _statePort(0),
       _rotate_size(INT_MAX),
@@ -155,18 +152,17 @@ ConfSub::ConfSub(Forwarder &fw, const config::ConfigUri & configUri)
       _hasAvailable(false),
       _needToConnect(true)
 {
-    _logServer[0] = '\0';
     _handle = _subscriber.subscribe<LogdConfig>(configUri.getConfigId());
     _subscriber.nextConfig(0);
     configure(_handle->getConfig());
 
-    LOG(debug, "got logServer %s", _logServer);
+    LOG(debug, "got logServer %s", _logServer.c_str());
     LOG(debug, "got handle %p", _handle.get());
 }
 
 ConfSub::~ConfSub()
 {
-    LOG(debug, "forget logServer %s", _logServer);
+    LOG(debug, "forget logServer %s", _logServer.c_str());
     LOG(debug, "done ~ConfSub()");
 }
 

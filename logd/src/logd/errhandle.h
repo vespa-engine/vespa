@@ -2,15 +2,15 @@
 #pragma once
 
 #include <stdexcept>
-#include <vespa/vespalib/stllike/string.h>
+#include <string>
 
 namespace logdemon {
 
 class MsgException : public std::exception {
 private:
-    vespalib::string _string;
+    std::string _string;
 public:
-    MsgException(const char *s) : _string(s) {}
+    MsgException(const std::string & s) : _string(s) {}
     ~MsgException() override {}
     const char *what() const throw() override { return _string.c_str(); }
 };
@@ -33,4 +33,4 @@ public:
     SomethingBad(const char *s) : MsgException(s) {}
 };
 
-} // namespace
+}

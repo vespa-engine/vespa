@@ -11,12 +11,12 @@ typedef ns_log::Logger::LogLevel LogLevel;
 
 class Component
 {
-    unsigned long    _isforwarding;
-    double           _lastseen;
-    int              _lastpid;
-    const char      *_myservice;
-    vespalib::string _myname;
-    vespalib::string _logctlname;
+    unsigned long  _isforwarding;
+    double         _lastseen;
+    int            _lastpid;
+    std::string    _myservice;
+    std::string    _myname;
+    std::string    _logctlname;
 
     static unsigned long defFwd;
 public:
@@ -31,7 +31,7 @@ public:
     void doLogAtAll(LogLevel level);
     void dontLogAtAll(LogLevel level);
     bool shouldLogAtAll(LogLevel level) const;
-    Component(const char *servicename, const char *name);
+    Component(const std::string & servicename, const std::string & name);
     ~Component();
     void remember(double t, int p) { _lastseen = t; _lastpid = p; }
     double lastSeen() const { return _lastseen; }
@@ -40,23 +40,25 @@ public:
 
 class Service
 {
-private:
-    vespalib::string _myname;
-    Service(const Service& other);
-    Service& operator= (const Service& other);
 public:
-    std::unordered_map<std::string, std::unique_ptr<Component>> _components;
-    Component *getComponent(const vespalib::string & comp);
-    Service(const char *name);
+    using ComponentMap = std::unordered_map<std::string, std::unique_ptr<Component>>;
+    Service(const Service& other) = delete;
+    Service& operator= (const Service& other) = delete;
+    Service(const std::string & name);
     ~Service();
+    Component *getComponent(const std::string & comp);
+    const ComponentMap & components() const { return _components; }
+private:
+    std::string  _myname;
+    ComponentMap _components;
 };
 
 class Services
 {
 public:
     std::unordered_map<std::string, std::unique_ptr<Service>> _services;
-    Service *getService(const vespalib::string & serv);
-    Services() : _services() {}
+    Service *getService(const std::string & serv);
+    Services();
     ~Services();
     void dumpState(int fildesc);
 };

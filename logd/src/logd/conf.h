@@ -10,7 +10,7 @@ class Forwarder;
 
 class ConfSub {
 private:
-    char _logServer[256];
+    std::string _logServer;
     int _logPort;
     int _logserverfd;
     int _statePort;

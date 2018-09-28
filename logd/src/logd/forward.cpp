@@ -69,8 +69,6 @@ Forwarder::forwardLine(const char *line, const char *eol)
 bool
 Forwarder::parseline(const char *linestart, const char *lineend)
 {
-    using vespalib::string;
-
     int llength = lineend - linestart;
 
     const char *fieldstart = linestart;
@@ -133,7 +131,7 @@ Forwarder::parseline(const char *linestart, const char *lineend)
     if (tab == fieldstart) {
         LOG(spam, "empty service in logline: %.*s", llength, linestart);
     }
-    string service(fieldstart, tab-fieldstart);
+    std::string service(fieldstart, tab-fieldstart);
 
     // component
     fieldstart = tab + 1;
@@ -143,7 +141,7 @@ Forwarder::parseline(const char *linestart, const char *lineend)
         ++_badLines;
         return false;
     }
-    string component(fieldstart, tab-fieldstart);
+    std::string component(fieldstart, tab-fieldstart);
 
     // level
     fieldstart = tab + 1;
@@ -153,7 +151,7 @@ Forwarder::parseline(const char *linestart, const char *lineend)
         ++_badLines;
         return false;
     }
-    string level(fieldstart, tab-fieldstart);
+    std::string level(fieldstart, tab-fieldstart);
     LogLevel l = _levelparser.parseLevel(level.c_str());
 
     // rest is freeform message, must be on this line:
@@ -171,7 +169,7 @@ Forwarder::parseline(const char *linestart, const char *lineend)
         return found->second;
     }
 
-    Service *svcp = knownServices.getService(service.c_str());
+    Service *svcp = knownServices.getService(service);
     Component *cp = svcp->getComponent(component);
     cp->remember(logtime, pid);
     bool retval = cp->shouldForward(l);
