@@ -2,8 +2,6 @@
 vespa_add_executable(documentapi_messages52_test_app TEST
     SOURCES
     testbase.cpp
-    messages50test.cpp
-    messages51test.cpp
     messages52test.cpp
     messages52app.cpp
     DEPENDS
@@ -13,8 +11,6 @@ vespa_add_test(NAME documentapi_messages52_test_app COMMAND documentapi_messages
 vespa_add_executable(documentapi_messages60_test_app TEST
     SOURCES
     testbase.cpp
-    messages50test.cpp
-    messages51test.cpp
     messages52test.cpp
     messages60test.cpp
     messages60app.cpp

@@ -22,14 +22,14 @@ public:
             : RoutableFactories52::CreateVisitorMessageFactory(r) {}
     };
 
-    class StatBucketMessageFactory : public RoutableFactories50::StatBucketMessageFactory {
+    class StatBucketMessageFactory : public RoutableFactories52::StatBucketMessageFactory {
         bool encodeBucketSpace(vespalib::stringref bucketSpace, vespalib::GrowableByteBuffer& buf) const override;
         string decodeBucketSpace(document::ByteBuffer&) const override;
     public:
         StatBucketMessageFactory() = default;
     };
 
-    class GetBucketListMessageFactory : public RoutableFactories50::GetBucketListMessageFactory {
+    class GetBucketListMessageFactory : public RoutableFactories52::GetBucketListMessageFactory {
         bool encodeBucketSpace(vespalib::stringref bucketSpace, vespalib::GrowableByteBuffer& buf) const override;
         string decodeBucketSpace(document::ByteBuffer&) const override;
     public:
