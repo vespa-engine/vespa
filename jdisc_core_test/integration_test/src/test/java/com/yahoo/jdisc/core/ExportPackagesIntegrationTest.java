@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.core;
 
 import com.yahoo.jdisc.test.TestDriver;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
@@ -17,6 +18,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class ExportPackagesIntegrationTest {
 
+    @Ignore // jdisc_core.jar cannot be installed as a bundle since Felix 6.0, due to exporting java.* packages.
     @Test
     public void requireThatManifestContainsExportPackage() throws BundleException {
         FelixFramework felix = TestDriver.newOsgiFramework();
