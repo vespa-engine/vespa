@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "routablefactories52.h"
 #include "routablefactories60.h"
 #include "routingpolicyfactories.h"
 #include "routablerepository.h"
@@ -44,54 +43,47 @@ DocumentProtocol::DocumentProtocol(const LoadTypeSet& loadTypes,
     putRoutingPolicyFactory("LoadBalancer", IRoutingPolicyFactory::SP(new RoutingPolicyFactories::LoadBalancerPolicyFactory()));
 
     // Prepare version specifications to use when adding routable factories.
-    vespalib::VersionSpecification version52(5, 115);
     vespalib::VersionSpecification version6(6, 221);
 
-    std::vector<vespalib::VersionSpecification> from52 = { version52, version6 };
     std::vector<vespalib::VersionSpecification> from6  = { version6 };
 
-    // Add 5.2 serialization
-    putRoutableFactory(MESSAGE_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories52::CreateVisitorMessageFactory(*_repo)), from52);
-    putRoutableFactory(MESSAGE_DESTROYVISITOR, IRoutableFactory::SP(new RoutableFactories52::DestroyVisitorMessageFactory()), from52);
-    putRoutableFactory(MESSAGE_DOCUMENTLIST, IRoutableFactory::SP(new RoutableFactories52::DocumentListMessageFactory(*_repo)), from52);
-    putRoutableFactory(MESSAGE_DOCUMENTSUMMARY, IRoutableFactory::SP(new RoutableFactories52::DocumentSummaryMessageFactory()), from52);
-    putRoutableFactory(MESSAGE_EMPTYBUCKETS, IRoutableFactory::SP(new RoutableFactories52::EmptyBucketsMessageFactory()), from52);
-    putRoutableFactory(MESSAGE_GETBUCKETLIST, IRoutableFactory::SP(new RoutableFactories52::GetBucketListMessageFactory()), from52);
-    putRoutableFactory(MESSAGE_GETBUCKETSTATE, IRoutableFactory::SP(new RoutableFactories52::GetBucketStateMessageFactory()), from52);
-    putRoutableFactory(MESSAGE_GETDOCUMENT, IRoutableFactory::SP(new RoutableFactories52::GetDocumentMessageFactory()), from52);
-    putRoutableFactory(MESSAGE_MAPVISITOR, IRoutableFactory::SP(new RoutableFactories52::MapVisitorMessageFactory(*_repo)), from52);
-    putRoutableFactory(MESSAGE_PUTDOCUMENT, IRoutableFactory::SP(new RoutableFactories52::PutDocumentMessageFactory(*_repo)), from52);
-    putRoutableFactory(MESSAGE_QUERYRESULT, IRoutableFactory::SP(new RoutableFactories52::QueryResultMessageFactory()), from52);
-    putRoutableFactory(MESSAGE_REMOVEDOCUMENT, IRoutableFactory::SP(new RoutableFactories52::RemoveDocumentMessageFactory()), from52);
-    putRoutableFactory(MESSAGE_REMOVELOCATION, IRoutableFactory::SP(new RoutableFactories52::RemoveLocationMessageFactory(*_repo)), from52);
-    putRoutableFactory(MESSAGE_SEARCHRESULT, IRoutableFactory::SP(new RoutableFactories52::SearchResultMessageFactory()), from52);
-    putRoutableFactory(MESSAGE_STATBUCKET, IRoutableFactory::SP(new RoutableFactories52::StatBucketMessageFactory()), from52);
-    putRoutableFactory(MESSAGE_UPDATEDOCUMENT, IRoutableFactory::SP(new RoutableFactories52::UpdateDocumentMessageFactory(*_repo)), from52);
-    putRoutableFactory(MESSAGE_VISITORINFO, IRoutableFactory::SP(new RoutableFactories52::VisitorInfoMessageFactory()), from52);
-    putRoutableFactory(REPLY_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories52::CreateVisitorReplyFactory()), from52);
-    putRoutableFactory(REPLY_DESTROYVISITOR, IRoutableFactory::SP(new RoutableFactories52::DestroyVisitorReplyFactory()), from52);
-    putRoutableFactory(REPLY_DOCUMENTIGNORED, IRoutableFactory::SP(new RoutableFactories52::DocumentIgnoredReplyFactory()), from52);
-    putRoutableFactory(REPLY_DOCUMENTLIST, IRoutableFactory::SP(new RoutableFactories52::DocumentListReplyFactory()), from52);
-    putRoutableFactory(REPLY_DOCUMENTSUMMARY, IRoutableFactory::SP(new RoutableFactories52::DocumentSummaryReplyFactory()), from52);
-    putRoutableFactory(REPLY_EMPTYBUCKETS, IRoutableFactory::SP(new RoutableFactories52::EmptyBucketsReplyFactory()), from52);
-    putRoutableFactory(REPLY_GETBUCKETLIST, IRoutableFactory::SP(new RoutableFactories52::GetBucketListReplyFactory()), from52);
-    putRoutableFactory(REPLY_GETBUCKETSTATE, IRoutableFactory::SP(new RoutableFactories52::GetBucketStateReplyFactory()), from52);
-    putRoutableFactory(REPLY_GETDOCUMENT, IRoutableFactory::SP(new RoutableFactories52::GetDocumentReplyFactory(*_repo)), from52);
-    putRoutableFactory(REPLY_MAPVISITOR, IRoutableFactory::SP(new RoutableFactories52::MapVisitorReplyFactory()), from52);
-    putRoutableFactory(REPLY_PUTDOCUMENT, IRoutableFactory::SP(new RoutableFactories52::PutDocumentReplyFactory()), from52);
-    putRoutableFactory(REPLY_QUERYRESULT, IRoutableFactory::SP(new RoutableFactories52::QueryResultReplyFactory()), from52);
-    putRoutableFactory(REPLY_REMOVEDOCUMENT, IRoutableFactory::SP(new RoutableFactories52::RemoveDocumentReplyFactory()), from52);
-    putRoutableFactory(REPLY_REMOVELOCATION, IRoutableFactory::SP(new RoutableFactories52::RemoveLocationReplyFactory()), from52);
-    putRoutableFactory(REPLY_SEARCHRESULT, IRoutableFactory::SP(new RoutableFactories52::SearchResultReplyFactory()), from52);
-    putRoutableFactory(REPLY_STATBUCKET, IRoutableFactory::SP(new RoutableFactories52::StatBucketReplyFactory()), from52);
-    putRoutableFactory(REPLY_UPDATEDOCUMENT, IRoutableFactory::SP(new RoutableFactories52::UpdateDocumentReplyFactory()), from52);
-    putRoutableFactory(REPLY_VISITORINFO, IRoutableFactory::SP(new RoutableFactories52::VisitorInfoReplyFactory()), from52);
-    putRoutableFactory(REPLY_WRONGDISTRIBUTION, IRoutableFactory::SP(new RoutableFactories52::WrongDistributionReplyFactory()), from52);
-
-    // Add 6.x serialization (TODO finalize version)
+    // Add 6.x serialization
     putRoutableFactory(MESSAGE_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories60::CreateVisitorMessageFactory(*_repo)), from6);
-    putRoutableFactory(MESSAGE_STATBUCKET, IRoutableFactory::SP(new RoutableFactories60::StatBucketMessageFactory()), from6);
+    putRoutableFactory(MESSAGE_DESTROYVISITOR, IRoutableFactory::SP(new RoutableFactories60::DestroyVisitorMessageFactory()), from6);
+    putRoutableFactory(MESSAGE_DOCUMENTLIST, IRoutableFactory::SP(new RoutableFactories60::DocumentListMessageFactory(*_repo)), from6);
+    putRoutableFactory(MESSAGE_DOCUMENTSUMMARY, IRoutableFactory::SP(new RoutableFactories60::DocumentSummaryMessageFactory()), from6);
+    putRoutableFactory(MESSAGE_EMPTYBUCKETS, IRoutableFactory::SP(new RoutableFactories60::EmptyBucketsMessageFactory()), from6);
     putRoutableFactory(MESSAGE_GETBUCKETLIST, IRoutableFactory::SP(new RoutableFactories60::GetBucketListMessageFactory()), from6);
+    putRoutableFactory(MESSAGE_GETBUCKETSTATE, IRoutableFactory::SP(new RoutableFactories60::GetBucketStateMessageFactory()), from6);
+    putRoutableFactory(MESSAGE_GETDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::GetDocumentMessageFactory()), from6);
+    putRoutableFactory(MESSAGE_MAPVISITOR, IRoutableFactory::SP(new RoutableFactories60::MapVisitorMessageFactory(*_repo)), from6);
+    putRoutableFactory(MESSAGE_PUTDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::PutDocumentMessageFactory(*_repo)), from6);
+    putRoutableFactory(MESSAGE_QUERYRESULT, IRoutableFactory::SP(new RoutableFactories60::QueryResultMessageFactory()), from6);
+    putRoutableFactory(MESSAGE_REMOVEDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::RemoveDocumentMessageFactory()), from6);
+    putRoutableFactory(MESSAGE_REMOVELOCATION, IRoutableFactory::SP(new RoutableFactories60::RemoveLocationMessageFactory(*_repo)), from6);
+    putRoutableFactory(MESSAGE_SEARCHRESULT, IRoutableFactory::SP(new RoutableFactories60::SearchResultMessageFactory()), from6);
+    putRoutableFactory(MESSAGE_STATBUCKET, IRoutableFactory::SP(new RoutableFactories60::StatBucketMessageFactory()), from6);
+    putRoutableFactory(MESSAGE_UPDATEDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::UpdateDocumentMessageFactory(*_repo)), from6);
+    putRoutableFactory(MESSAGE_VISITORINFO, IRoutableFactory::SP(new RoutableFactories60::VisitorInfoMessageFactory()), from6);
+    putRoutableFactory(REPLY_CREATEVISITOR, IRoutableFactory::SP(new RoutableFactories60::CreateVisitorReplyFactory()), from6);
+    putRoutableFactory(REPLY_DESTROYVISITOR, IRoutableFactory::SP(new RoutableFactories60::DestroyVisitorReplyFactory()), from6);
+    putRoutableFactory(REPLY_DOCUMENTIGNORED, IRoutableFactory::SP(new RoutableFactories60::DocumentIgnoredReplyFactory()), from6);
+    putRoutableFactory(REPLY_DOCUMENTLIST, IRoutableFactory::SP(new RoutableFactories60::DocumentListReplyFactory()), from6);
+    putRoutableFactory(REPLY_DOCUMENTSUMMARY, IRoutableFactory::SP(new RoutableFactories60::DocumentSummaryReplyFactory()), from6);
+    putRoutableFactory(REPLY_EMPTYBUCKETS, IRoutableFactory::SP(new RoutableFactories60::EmptyBucketsReplyFactory()), from6);
+    putRoutableFactory(REPLY_GETBUCKETLIST, IRoutableFactory::SP(new RoutableFactories60::GetBucketListReplyFactory()), from6);
+    putRoutableFactory(REPLY_GETBUCKETSTATE, IRoutableFactory::SP(new RoutableFactories60::GetBucketStateReplyFactory()), from6);
+    putRoutableFactory(REPLY_GETDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::GetDocumentReplyFactory(*_repo)), from6);
+    putRoutableFactory(REPLY_MAPVISITOR, IRoutableFactory::SP(new RoutableFactories60::MapVisitorReplyFactory()), from6);
+    putRoutableFactory(REPLY_PUTDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::PutDocumentReplyFactory()), from6);
+    putRoutableFactory(REPLY_QUERYRESULT, IRoutableFactory::SP(new RoutableFactories60::QueryResultReplyFactory()), from6);
+    putRoutableFactory(REPLY_REMOVEDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::RemoveDocumentReplyFactory()), from6);
+    putRoutableFactory(REPLY_REMOVELOCATION, IRoutableFactory::SP(new RoutableFactories60::RemoveLocationReplyFactory()), from6);
+    putRoutableFactory(REPLY_SEARCHRESULT, IRoutableFactory::SP(new RoutableFactories60::SearchResultReplyFactory()), from6);
+    putRoutableFactory(REPLY_STATBUCKET, IRoutableFactory::SP(new RoutableFactories60::StatBucketReplyFactory()), from6);
+    putRoutableFactory(REPLY_UPDATEDOCUMENT, IRoutableFactory::SP(new RoutableFactories60::UpdateDocumentReplyFactory()), from6);
+    putRoutableFactory(REPLY_VISITORINFO, IRoutableFactory::SP(new RoutableFactories60::VisitorInfoReplyFactory()), from6);
+    putRoutableFactory(REPLY_WRONGDISTRIBUTION, IRoutableFactory::SP(new RoutableFactories60::WrongDistributionReplyFactory()), from6);
 }
 
 DocumentProtocol::~DocumentProtocol() = default;
