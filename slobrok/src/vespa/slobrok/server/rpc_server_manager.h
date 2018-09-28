@@ -7,6 +7,7 @@
 #include "named_service.h"
 #include <vespa/fnet/task.h>
 #include <vector>
+#include <memory>
 
 namespace slobrok {
 
@@ -55,7 +56,7 @@ private:
         }
     };
     std::vector<MRSandRRSC>         _addManageds;
-    std::vector<ManagedRpcServer *> _deleteList;
+    std::vector<std::unique_ptr<ManagedRpcServer>> _deleteList;
 public:
     OkState checkPartner(const std::string & remslobrok);
 

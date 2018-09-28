@@ -283,11 +283,8 @@ RpcServerManager::~RpcServerManager()
 void
 RpcServerManager::PerformTask()
 {
-    std::vector<ManagedRpcServer *> dl;
-    std::swap(dl, _deleteList);
-    for (uint32_t i = 0; i < dl.size(); ++i) {
-        delete dl[i];
-    }
+    std::vector<std::unique_ptr<ManagedRpcServer>> deleteAfterSwap;
+    std::swap(deleteAfterSwap, _deleteList);
 }
 
 
@@ -319,7 +316,7 @@ RpcServerManager::notifyFailedRpcSrv(ManagedRpcServer *rpcsrv, std::string errms
         LOG(warning, "unmanaged server %s at %s failed: %s",
             rpcsrv->getName().c_str(), rpcsrv->getSpec().c_str(), errmsg.c_str());
     }
-    _deleteList.push_back(rpcsrv);
+    _deleteList.push_back(std::unique_ptr<ManagedRpcServer>(rpcsrv));
     ScheduleNow();
 }
 
