@@ -56,6 +56,16 @@ CryptoCodecAdapter::flush_all()
     return res;
 }
 
+void
+CryptoCodecAdapter::inject_read_data(const char *buf, size_t len)
+{
+    if (len > 0) {
+        auto dst = _input.reserve(len);
+        memcpy(dst.data, buf, len);
+        _input.commit(len);
+    }
+}
+
 CryptoSocket::HandshakeResult
 CryptoCodecAdapter::handshake() 
 {

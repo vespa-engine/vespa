@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/net/crypto_socket.h>
+#include "tls_crypto_socket.h"
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include "crypto_codec.h"
@@ -12,11 +12,8 @@ namespace vespalib::net::tls {
 /**
  * Component adapting an underlying CryptoCodec to the CryptoSocket
  * interface by performing buffer and socket management.
- *
- * NOTE: initial implementation is for functionality/proof-of-concept
- * purposes, not performance.
  **/
-class CryptoCodecAdapter : public CryptoSocket
+class CryptoCodecAdapter : public TlsCryptoSocket
 {
 private:
     SmartBuffer                  _input;
@@ -34,6 +31,7 @@ private:
 public:
     CryptoCodecAdapter(SocketHandle socket, std::unique_ptr<CryptoCodec> codec)
         : _input(64 * 1024), _output(64 * 1024), _socket(std::move(socket)), _codec(std::move(codec)) {}
+    void inject_read_data(const char *buf, size_t len) override;
     int get_fd() const override { return _socket.get(); }
     HandshakeResult handshake() override;
     size_t min_read_buffer_size() const override { return _codec->min_decode_buffer_size(); }

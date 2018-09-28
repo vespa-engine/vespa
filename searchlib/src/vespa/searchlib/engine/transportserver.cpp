@@ -359,7 +359,7 @@ TransportServer::TransportServer(SearchServer &searchServer,
     : _searchServer(searchServer),
       _docsumServer(docsumServer),
       _monitorServer(monitorServer),
-      _transport(std::make_shared<vespalib::NullCryptoEngine>(), 1), // disable encryption
+      _transport(),
       _ready(false),
       _failed(false),
       _doListen(true),

@@ -4,9 +4,12 @@ vespa_add_library(vespalib_vespalib_net_tls OBJECT
     crypto_codec.cpp
     crypto_codec_adapter.cpp
     crypto_exception.cpp
+    maybe_tls_crypto_engine.cpp
+    maybe_tls_crypto_socket.cpp
     protocol_snooping.cpp
     tls_context.cpp
     tls_crypto_engine.cpp
+    tls_crypto_socket.cpp
     transport_security_options.cpp
     transport_security_options_reading.cpp
     DEPENDS
