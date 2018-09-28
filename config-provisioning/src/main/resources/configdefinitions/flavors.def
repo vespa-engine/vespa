@@ -14,7 +14,7 @@ flavor[].name string
 # c may be satisfied by assigning nodes of flavor a.
 flavor[].replaces[].name string
 
-# The monthly Total Cost of Ownership (TCO) in USD. Typically calculated as TCO divered by
+# The monthly Total Cost of Ownership (TCO) in USD. Typically calculated as TCO divided by
 # the expected lifetime of the node (usually three years).
 flavor[].cost int default=0
 
@@ -39,6 +39,9 @@ flavor[].minDiskAvailableGb double default=0.0
 
 # Whether the disk is fast (typically SSD) or slow (typically spinning HDD).
 flavor[].fastDisk bool default=true
+
+# Expected network interface bandwidth available for this flavor, in Mbit/s.
+flavor[].bandwidth double default=0.0
 
 # Human readable free text for description of node.
 flavor[].description string default=""

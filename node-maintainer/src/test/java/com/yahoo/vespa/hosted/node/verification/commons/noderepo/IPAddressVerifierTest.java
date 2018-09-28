@@ -17,7 +17,7 @@ public class IPAddressVerifierTest {
 
     private final String ipv4Address = "10.2.4.8";
     private final String ipv6Address = "fdab:0:0:0:0:0:0:1234";
-    private final NodeSpec nodeSpec = new NodeSpec(1920, 256, 48, true, new String[]{ipv4Address, ipv6Address});
+    private final NodeSpec nodeSpec = new NodeSpec(1920, 256, 48, true, 10_000, new String[]{ipv4Address, ipv6Address});
     private final String hostname = "test123.region.domain.tld";
 
     private IPAddressVerifier ipAddressVerifier = spy(new IPAddressVerifier(hostname));
@@ -63,7 +63,7 @@ public class IPAddressVerifierTest {
 
     @Test
     public void getFaultyIpAddresses_should_return_empty_array_when_parameters_are_invalid() {
-        final NodeSpec nodeWithNoIP = new NodeSpec(1920, 256, 48, true, new String[0]);
+        final NodeSpec nodeWithNoIP = new NodeSpec(1920, 256, 48, true, 10_000, new String[0]);
         assertEquals(0, ipAddressVerifier.getFaultyIpAddresses(nodeWithNoIP).length);
     }
 

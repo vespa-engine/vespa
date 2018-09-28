@@ -39,6 +39,9 @@ public class SpecVerifier extends Main.VerifierCommand {
     @Option(name = {"-s", "--is_ssd"}, required = true, description = "Set to true if disk is SSD", allowedValues = {"true", "false"})
     private String fastDisk;
 
+    @Option(name = {"-b", "--bandwidth"}, required = true, description = "Expected network interface speed in Mbit/s")
+    private double bandwidth;
+
     @Option(name = {"-i", "--ips"}, description = "Comma separated list of IP addresses assigned to this node")
     private String ipAddresses;
 
@@ -49,14 +52,14 @@ public class SpecVerifier extends Main.VerifierCommand {
                 .map(s -> s.split(","))
                 .orElse(new String[0]);
 
-        NodeSpec nodeSpec = new NodeSpec(diskAvailableGb, mainMemoryAvailableGb, cpuCores, Boolean.valueOf(fastDisk), ips);
+        NodeSpec nodeSpec = new NodeSpec(diskAvailableGb, mainMemoryAvailableGb, cpuCores, Boolean.valueOf(fastDisk), bandwidth, ips);
         SpecVerificationReport specVerificationReport = verifySpec(nodeSpec, commandExecutor);
 
         hardwareDivergenceReport.setSpecVerificationReport(specVerificationReport);
     }
 
     private SpecVerificationReport verifySpec(NodeSpec nodeSpec, CommandExecutor commandExecutor) {
-        VerifierSettings verifierSettings = new VerifierSettings(nodeSpec);
+        VerifierSettings verifierSettings = new VerifierSettings(false);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor, verifierSettings);
         return makeVerificationReport(actualHardware, nodeSpec);
     }

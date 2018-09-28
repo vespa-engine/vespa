@@ -13,6 +13,7 @@
   "minCpuCores": 6.0,
   "cost": 200,
   "fastDisk": true,
+  "bandwidth":0.0,
   "environment": "BARE_METAL",
   "rebootGeneration": 1,
   "currentRebootGeneration": 0,

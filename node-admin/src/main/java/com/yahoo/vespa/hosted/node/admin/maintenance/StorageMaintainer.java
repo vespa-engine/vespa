@@ -421,6 +421,7 @@ public class StorageMaintainer {
                 "--memory", Double.toString(node.getMinMainMemoryAvailableGb()),
                 "--cpu_cores", Double.toString(node.getMinCpuCores()),
                 "--is_ssd", Boolean.toString(node.isFastDisk()),
+                "--bandwidth", Double.toString(node.getBandwidth()),
                 "--ips", String.join(",", node.getIpAddresses())));
 
         node.getHardwareDivergence().ifPresent(hardwareDivergence -> {

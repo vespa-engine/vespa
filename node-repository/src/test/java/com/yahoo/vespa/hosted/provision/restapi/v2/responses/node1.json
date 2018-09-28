@@ -12,6 +12,7 @@
   "description": "Flavor-name-is-default",
   "minCpuCores": 2.0,
   "fastDisk": true,
+  "bandwidth":0.0,
   "environment": "BARE_METAL",
   "owner": {
     "tenant": "tenant1",

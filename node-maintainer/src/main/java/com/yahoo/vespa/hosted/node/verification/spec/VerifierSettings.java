@@ -17,6 +17,10 @@ public class VerifierSettings {
         this.checkIPv6 = true;
     }
 
+    public VerifierSettings(boolean checkIPv6) {
+        this.checkIPv6 = checkIPv6;
+    }
+
     public VerifierSettings(NodeSpec nodeSpec) {
         checkIPv6 = nodeSpec.getIpv6Address() != null;
     }
