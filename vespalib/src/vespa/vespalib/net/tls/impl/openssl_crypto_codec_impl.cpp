@@ -137,6 +137,12 @@ BioPtr new_tls_frame_const_memory_bio() {
     return bio;
 }
 
+vespalib::string ssl_error_from_stack() {
+    char buf[256];
+    ERR_error_string_n(ERR_get_error(), buf, sizeof(buf));
+    return vespalib::string(buf);
+}
+
 } // anon ns
 
 OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(::SSL_CTX& ctx, Mode mode)
@@ -236,10 +242,8 @@ HandshakeResult OpenSslCryptoCodecImpl::do_handshake_and_consume_peer_input_byte
         LOG(debug, "SSL_do_handshake() is complete, using protocol %s", SSL_get_version(_ssl.get()));
         return handshake_consumed_bytes_and_is_complete(static_cast<size_t>(consumed));
     } else {
-        LOG(error, "SSL_do_handshake() returned unexpected error: %s", ssl_error_to_str(ssl_result));
-        char buf[256];
-        ERR_error_string_n(ERR_get_error(), buf, sizeof(buf));
-        LOG(error, "%s", buf);
+        LOG(error, "SSL_do_handshake() returned unexpected error: %s (%s)",
+            ssl_error_to_str(ssl_result), ssl_error_from_stack().c_str());
         return handshake_failed();
     }
 }
@@ -258,13 +262,15 @@ EncodeResult OpenSslCryptoCodecImpl::encode(const char* plaintext, size_t plaint
 
     size_t bytes_consumed = 0;
     if (plaintext_size != 0) {
+        ::ERR_clear_error();
         int to_consume = static_cast<int>(std::min(plaintext_size, MaximumFramePlaintextSize));
         // SSL_write encodes plaintext to ciphertext and writes to _output_bio
         int consumed = ::SSL_write(_ssl.get(), plaintext, to_consume);
         LOG(spam, "After SSL_write() -> %d _output_bio pending=%d", consumed, BIO_pending(_output_bio));
         if (consumed < 0) {
             int ssl_error = ::SSL_get_error(_ssl.get(), consumed);
-            LOG(error, "SSL_write() failed to write frame, got error %s", ssl_error_to_str(ssl_error));
+            LOG(error, "SSL_write() failed to write frame, got error %s (%s)",
+                ssl_error_to_str(ssl_error), ssl_error_from_stack().c_str());
             // TODO explicitly detect and log TLS renegotiation error (SSL_ERROR_WANT_READ)?
             return encode_failed();
         } else if (consumed != to_consume) {
@@ -301,6 +307,7 @@ DecodeResult OpenSslCryptoCodecImpl::decode(const char* ciphertext, size_t ciphe
 
 DecodeResult OpenSslCryptoCodecImpl::drain_and_produce_plaintext_from_ssl(
         char* plaintext, size_t plaintext_size) noexcept {
+    ::ERR_clear_error();
     // SSL_read() is named a bit confusingly. We read _from_ the SSL-internal state
     // via the input BIO _into_ to the receiving plaintext buffer.
     // This may consume the entire, parts of, or none of the input BIO's data,
@@ -319,7 +326,8 @@ DecodeResult OpenSslCryptoCodecImpl::drain_and_produce_plaintext_from_ssl(
             LOG(spam, "SSL_read() returned SSL_ERROR_WANT_READ, must get more ciphertext");
             return decode_needs_more_peer_data();
         default:
-            LOG(error, "SSL_read() returned unexpected error: %s", ssl_error_to_str(ssl_error));
+            LOG(error, "SSL_read() returned unexpected error: %s (%s)",
+                ssl_error_to_str(ssl_error), ssl_error_from_stack().c_str());
             return decode_failed();
         }
     }

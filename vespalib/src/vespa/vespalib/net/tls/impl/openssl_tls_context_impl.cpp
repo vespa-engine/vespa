@@ -3,6 +3,7 @@
 #include "openssl_tls_context_impl.h"
 #include <vespa/vespalib/net/tls/crypto_exception.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <mutex>
 #include <vector>
 #include <memory>
@@ -99,6 +100,21 @@ BioPtr bio_from_string(vespalib::stringref str) {
     return bio;
 }
 
+bool has_pem_eof_on_stack() {
+    const auto err = ERR_peek_last_error();
+    if (!err) {
+        return false;
+    }
+    return ((ERR_GET_LIB(err) == ERR_LIB_PEM)
+            && (ERR_GET_REASON(err) == PEM_R_NO_START_LINE));
+}
+
+vespalib::string ssl_error_from_stack() {
+    char buf[256];
+    ERR_error_string_n(ERR_get_error(), buf, sizeof(buf));
+    return vespalib::string(buf);
+}
+
 // Several OpenSSL functions take a magical user passphrase argument with
 // potentially horrible default behavior for password protected input.
 //
@@ -117,14 +133,28 @@ constexpr inline void *empty_passphrase() {
     return const_cast<void *>(static_cast<const void *>(""));
 }
 
+void verify_pem_ok_or_eof(::X509* x509) {
+    // It's OK if we don't have an X509 cert returned iff we failed to find
+    // something that looks like the start of a PEM entry. This is to catch
+    // cases where the PEM itself is malformed, since the X509 read routines
+    // just return either nullptr or a cert object, making it hard to debug.
+    if (!x509 && !has_pem_eof_on_stack()) {
+        throw CryptoException(make_string("Failed to add X509 certificate from PEM: %s",
+                                          ssl_error_from_stack().c_str()));
+    }
+}
+
 // Attempt to read a PEM encoded (trusted) certificate from the given BIO.
 // BIO might contain further certificates if function returns non-nullptr.
 // Returns nullptr if no certificate could be loaded. This is usually an error,
 // as this should be the first certificate in the chain.
 X509Ptr read_trusted_x509_from_bio(::BIO& bio) {
+    ::ERR_clear_error();
     // "_AUX" means the certificate is trusted. Why they couldn't name this function
     // something with "trusted" instead is left as an exercise to the reader.
-    return X509Ptr(::PEM_read_bio_X509_AUX(&bio, nullptr, nullptr, empty_passphrase()));
+    X509Ptr x509(::PEM_read_bio_X509_AUX(&bio, nullptr, nullptr, empty_passphrase()));
+    verify_pem_ok_or_eof(x509.get());
+    return x509;
 }
 
 // Attempt to read a PEM encoded certificate from the given BIO.
@@ -132,7 +162,10 @@ X509Ptr read_trusted_x509_from_bio(::BIO& bio) {
 // Returns nullptr if no certificate could be loaded. This usually implies
 // that there are no more certificates left in the chain.
 X509Ptr read_untrusted_x509_from_bio(::BIO& bio) {
-    return X509Ptr(::PEM_read_bio_X509(&bio, nullptr, nullptr, empty_passphrase()));
+    ::ERR_clear_error();
+    X509Ptr x509(::PEM_read_bio_X509(&bio, nullptr, nullptr, empty_passphrase()));
+    verify_pem_ok_or_eof(x509.get());
+    return x509;
 }
 
 SslCtxPtr new_tls_ctx_with_auto_init() {
@@ -157,9 +190,11 @@ OpenSslTlsContextImpl::OpenSslTlsContextImpl(const TransportSecurityOptions& ts_
         throw CryptoException("Failed to create new TLS context");
     }
     add_certificate_authorities(ts_opts.ca_certs_pem());
-    add_certificate_chain(ts_opts.cert_chain_pem());
-    use_private_key(ts_opts.private_key_pem());
-    verify_private_key();
+    if (!ts_opts.cert_chain_pem().empty() && !ts_opts.private_key_pem().empty()) {
+        add_certificate_chain(ts_opts.cert_chain_pem());
+        use_private_key(ts_opts.private_key_pem());
+        verify_private_key();
+    }
     enable_ephemeral_key_exchange();
     disable_compression();
     enforce_peer_certificate_verification();
@@ -170,7 +205,6 @@ OpenSslTlsContextImpl::OpenSslTlsContextImpl(const TransportSecurityOptions& ts_
 OpenSslTlsContextImpl::~OpenSslTlsContextImpl() = default;
 
 void OpenSslTlsContextImpl::add_certificate_authorities(vespalib::stringref ca_pem) {
-    // TODO support empty CA set...? Ever useful?
     auto bio = bio_from_string(ca_pem);
     ::X509_STORE* cert_store = ::SSL_CTX_get_cert_store(_ctx.get()); // Internal pointer, not owned by us.
     while (true) {
@@ -185,7 +219,6 @@ void OpenSslTlsContextImpl::add_certificate_authorities(vespalib::stringref ca_p
 }
 
 void OpenSslTlsContextImpl::add_certificate_chain(vespalib::stringref chain_pem) {
-    ::ERR_clear_error();
     auto bio = bio_from_string(chain_pem);
     // First certificate in the chain is the node's own (trusted) certificate.
     auto own_cert = read_trusted_x509_from_bio(*bio);
@@ -201,9 +234,7 @@ void OpenSslTlsContextImpl::add_certificate_chain(vespalib::stringref chain_pem)
     while (true) {
         auto ca_cert = read_untrusted_x509_from_bio(*bio);
         if (!ca_cert) {
-            // No more certificates in chain, hooray!
-            ::ERR_clear_error();
-            break;
+            break; // No more certificates in chain, hooray!
         }
         // Ownership of certificate _is_ transferred here!
         if (!::SSL_CTX_add_extra_chain_cert(_ctx.get(), ca_cert.release())) {
