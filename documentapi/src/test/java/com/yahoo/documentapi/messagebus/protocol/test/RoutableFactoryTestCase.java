@@ -8,7 +8,7 @@ import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.DocumentReply;
-import com.yahoo.documentapi.messagebus.protocol.RoutableFactories50;
+import com.yahoo.documentapi.messagebus.protocol.RoutableFactories52;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.messagebus.DestinationSession;
@@ -130,7 +130,7 @@ public class RoutableFactoryTestCase {
         assertFalse(reply.hasErrors());
     }
 
-    private static class MyMessageFactory extends RoutableFactories50.DocumentMessageFactory {
+    private static class MyMessageFactory extends RoutableFactories52.DocumentMessageFactory {
 
         @Override
         protected DocumentMessage doDecode(DocumentDeserializer buf) {
@@ -143,7 +143,7 @@ public class RoutableFactoryTestCase {
         }
     }
 
-    private static class MyReplyFactory extends RoutableFactories50.DocumentReplyFactory {
+    private static class MyReplyFactory extends RoutableFactories52.DocumentReplyFactory {
 
         @Override
         protected DocumentReply doDecode(DocumentDeserializer buf) {

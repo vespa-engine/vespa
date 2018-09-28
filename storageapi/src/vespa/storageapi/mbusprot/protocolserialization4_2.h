@@ -28,8 +28,6 @@ protected:
     void onEncode(GBBuf&, const api::RemoveLocationReply&) const override;
 
     // Not supported on 4.2, but implemented here for simplicity.
-    void onEncode(GBBuf&, const api::BatchPutRemoveCommand&) const override;
-    void onEncode(GBBuf&, const api::BatchPutRemoveReply&) const override;
     void onEncode(GBBuf&, const api::SetBucketStateCommand&) const override;
     void onEncode(GBBuf&, const api::SetBucketStateReply&) const override;
 
@@ -58,10 +56,6 @@ protected:
     SRep::UP onDecodeDestroyVisitorReply(const SCmd&, BBuf&) const override;
     SCmd::UP onDecodeRemoveLocationCommand(BBuf&) const override;
     SRep::UP onDecodeRemoveLocationReply(const SCmd&, BBuf&) const override;
-
-    // Not supported on 4.2, but implemented here for simplicity.
-    SCmd::UP onDecodeBatchPutRemoveCommand(BBuf&) const override;
-    SRep::UP onDecodeBatchPutRemoveReply(const SCmd&, BBuf&) const override;
 
     virtual void onDecodeBucketInfoCommand(BBuf&, api::BucketInfoCommand&) const;
     virtual void onDecodeBucketInfoReply(BBuf&, api::BucketInfoReply&) const = 0;

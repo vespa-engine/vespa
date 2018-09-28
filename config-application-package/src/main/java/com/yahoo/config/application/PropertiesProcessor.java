@@ -16,7 +16,6 @@ import java.util.logging.Logger;
  * Handles getting properties from services.xml and replacing references to properties with their real values
  *
  * @author hmusum
- * @since 5.22
  */
 class PropertiesProcessor implements PreProcessor {
     private final static Logger log = Logger.getLogger(PropertiesProcessor.class.getName());
@@ -82,8 +81,8 @@ class PropertiesProcessor implements PreProcessor {
     }
 
     private String replaceValue(String propertyValue) {
-        /*  Use a list with keys sorted by length (longest key first)
-        Needed for replacing values where you have overlapping keys */
+        // Use a list with keys sorted by length (longest key first)
+        // Needed for replacing values where you have overlapping keys
         ArrayList<String> keys = new ArrayList<>(properties.keySet());
         Collections.sort(keys, Collections.reverseOrder(Comparator.comparing(String::length)));
 

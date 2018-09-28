@@ -41,17 +41,12 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
         derive(search);
     }
 
-    private boolean hasFullIndexingDocprocRights(ImmutableSDField field) {
-        Attribute self = field.getAttributes().get(field.getName());
-        return (!field.isExtraField() || ((self != null) && self.isMutable()));
-    }
-
     @Override
     protected void derive(ImmutableSDField field, Search search) {
         if (field.isImportedField()) {
             return;
         }
-        if (hasFullIndexingDocprocRights(field)) {
+        if (field.hasFullIndexingDocprocRights()) {
             docFields.add(field.getName());
         }
         if (field.usesStructOrMap() &&
@@ -93,7 +88,7 @@ public final class IndexingScript extends Derived implements IlscriptsConfig.Pro
             if (modifiesSelf(exp)) {
                 later.add(exp);
             } else {
-              ilscriptBuilder.content(exp.toString());
+                ilscriptBuilder.content(exp.toString());
             }
             fieldFetcher.visit(exp);
             touchedFields.addAll(fieldFetcher.touchedFields());

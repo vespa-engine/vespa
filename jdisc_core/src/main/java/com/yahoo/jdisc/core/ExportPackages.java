@@ -1,20 +1,31 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
-import org.apache.felix.framework.util.Util;
+import com.yahoo.io.IOUtils;
+import com.yahoo.yolean.Exceptions;
+import org.apache.felix.framework.Felix;
+import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
+import org.osgi.framework.launch.Framework;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.jar.JarInputStream;
+import java.util.logging.Logger;
 
 /**
  * @author Simon Thoresen Hult
+ * @author gjoranv
  */
 public class ExportPackages {
+    private static final Logger log = Logger.getLogger(ExportPackages.class.getName());
 
     public static final String PROPERTIES_FILE = "/exportPackages.properties";
     public static final String EXPORT_PACKAGES = "exportPackages";
@@ -75,7 +86,38 @@ public class ExportPackages {
     }
 
     public static String getSystemPackages() {
-        return Util.getDefaultProperty(null, "org.osgi.framework.system.packages");
+        File cache;
+        try {
+            cache = Files.createTempDirectory("felix-cache").toAbsolutePath().toFile();
+        } catch (IOException e) {
+            throw new RuntimeException("Could not create temp bundle-cache.", e);
+        }
+        Framework framework = new Felix(felixCacheParams(cache.getAbsolutePath()));
+        try {
+            framework.init();
+            framework.start();
+            return framework.getHeaders().get(Constants.EXPORT_PACKAGE);
+        } catch (BundleException e) {
+            throw new RuntimeException("Failed retrieving exported system packages. ", e);
+        } finally {
+            try {
+                framework.stop();
+                framework.waitForStop(10000);
+            } catch (BundleException | InterruptedException e) {
+                log.warning("Failed to stop Felix framework:\n" + Exceptions.toMessageString(e));
+            }
+            if (! IOUtils.recursiveDeleteDir(cache)) {
+                log.warning("Failed to delete temp dir, must be deleted manually: " + cache.getAbsolutePath());
+            }
+        }
+    }
+
+    private static Map<String, Object> felixCacheParams(String cache) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("felix.cache.profiledir", cache);
+        params.put("felix.cache.dir", cache);
+        params.put(Constants.FRAMEWORK_STORAGE, cache);
+        return params;
     }
 
     private static String getExportedPackages(String argument) throws IOException {
@@ -92,4 +134,5 @@ public class ExportPackages {
             return jar.getManifest().getMainAttributes().getValue(Constants.EXPORT_PACKAGE);
         }
     }
+
 }

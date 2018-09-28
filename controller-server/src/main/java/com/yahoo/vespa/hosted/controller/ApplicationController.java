@@ -44,6 +44,7 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
@@ -330,13 +331,9 @@ public class ApplicationController {
                 validateRun(application.get(), zone, platformVersion, applicationVersion);
             }
 
-            validate(applicationPackage.deploymentSpec());
-
             // Update application with information from application package
-            if ( ! preferOldestVersion && ! application.get().deploymentJobs().builtInternally()) {
-                application = withUpdatedConfig(application, applicationPackage);
-                store(application); // store missing information even if we fail deployment below
-            }
+            if ( ! preferOldestVersion && ! application.get().deploymentJobs().builtInternally())
+                application = storeWithUpdatedConfig(application, applicationPackage);
 
             // Assign global rotation
             application = withRotation(application, zone);
@@ -359,8 +356,9 @@ public class ApplicationController {
     }
 
     /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
-    public LockedApplication withUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
-        // Store information about application package
+    public LockedApplication storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
+        validate(applicationPackage.deploymentSpec());
+
         application = application.with(applicationPackage.deploymentSpec());
         application = application.with(applicationPackage.validationOverrides());
 
@@ -649,6 +647,7 @@ public class ApplicationController {
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system. */
     private void validate(DeploymentSpec deploymentSpec) {
+        new DeploymentSteps(deploymentSpec, controller::system).jobs();
         deploymentSpec.zones().stream()
                 .filter(zone -> zone.environment() == Environment.prod)
                 .forEach(zone -> {

@@ -50,10 +50,6 @@ class SetBucketStateReply;
 class CreateVisitorCommand;
 class RemoveLocationCommand;
 class RemoveLocationReply;
-class BatchPutRemoveCommand;
-class BatchPutRemoveReply;
-class BatchDocumentUpdateCommand;
-class BatchDocumentUpdateReply;
 }
 
 namespace storage::mbusprot {
@@ -125,8 +121,6 @@ protected:
     virtual void onEncode(GBBuf&, const api::DestroyVisitorReply&) const = 0;
     virtual void onEncode(GBBuf&, const api::RemoveLocationCommand&) const = 0;
     virtual void onEncode(GBBuf&, const api::RemoveLocationReply&) const = 0;
-    virtual void onEncode(GBBuf&, const api::BatchPutRemoveCommand&) const = 0;
-    virtual void onEncode(GBBuf&, const api::BatchPutRemoveReply&) const = 0;
 
     virtual SCmd::UP onDecodePutCommand(BBuf&) const = 0;
     virtual SRep::UP onDecodePutReply(const SCmd&, BBuf&) const = 0;
@@ -166,8 +160,6 @@ protected:
     virtual SRep::UP onDecodeDestroyVisitorReply(const SCmd&, BBuf&) const = 0;
     virtual SCmd::UP onDecodeRemoveLocationCommand(BBuf&) const = 0;
     virtual SRep::UP onDecodeRemoveLocationReply(const SCmd&, BBuf&) const = 0;
-    virtual SCmd::UP onDecodeBatchPutRemoveCommand(BBuf&) const = 0;
-    virtual SRep::UP onDecodeBatchPutRemoveReply(const SCmd&, BBuf&) const = 0;
 
     virtual document::Bucket getBucket(document::ByteBuffer& buf) const = 0;
     virtual void putBucket(const document::Bucket& bucket, vespalib::GrowableByteBuffer& buf) const = 0;

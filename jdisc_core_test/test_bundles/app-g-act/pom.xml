@@ -23,13 +23,13 @@
                 <configuration>
                     <instructions>
                         <X-JDisc-Application>
-                            com.yahoo.jdisc.bundle.ApplicationG
+                            com.yahoo.jdisc.bundle.g_act.ApplicationG
                         </X-JDisc-Application>
                         <Bundle-Activator>
-                            com.yahoo.jdisc.bundle.MyBundleActivator
+                            com.yahoo.jdisc.bundle.g_act.MyBundleActivator
                         </Bundle-Activator>
                         <Export-Package>
-                            com.yahoo.jdisc.bundle
+                            com.yahoo.jdisc.bundle.g_act
                         </Export-Package>
                     </instructions>
                 </configuration>

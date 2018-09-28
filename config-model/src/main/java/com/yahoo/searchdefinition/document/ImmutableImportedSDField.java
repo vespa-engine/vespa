@@ -169,4 +169,9 @@ public class ImmutableImportedSDField implements ImmutableSDField {
         return new UnsupportedOperationException("'" + aspect + "' is not meaningful or relevant for an imported field.");
     }
 
+    @Override
+    public boolean hasFullIndexingDocprocRights() {
+        return importedField.targetField().hasFullIndexingDocprocRights();
+    }
+
 }

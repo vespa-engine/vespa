@@ -3,9 +3,9 @@
 #include "documentapiconverter.h"
 #include "priorityconverter.h"
 #include <vespa/document/bucket/bucketidfactory.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/storage/common/bucket_resolver.h>
-#include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/documentsummary.h>
 #include <vespa/storageapi/message/persistence.h>
@@ -98,12 +98,6 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
     {
         documentapi::DestroyVisitorMessage& from(static_cast<documentapi::DestroyVisitorMessage&>(fromMsg));
         toMsg = std::make_unique<api::DestroyVisitorCommand>(from.getInstanceId());
-        break;
-    }
-    case DocumentProtocol::MESSAGE_BATCHDOCUMENTUPDATE:
-    {
-        documentapi::BatchDocumentUpdateMessage& from(static_cast<documentapi::BatchDocumentUpdateMessage&>(fromMsg));
-        toMsg = std::make_unique<api::BatchDocumentUpdateCommand>(from.getUpdates());
         break;
     }
     case DocumentProtocol::MESSAGE_STATBUCKET:
@@ -377,10 +371,6 @@ DocumentApiConverter::transferReplyState(api::StorageReply& fromMsg, mbus::Reply
         documentapi::CreateVisitorReply& to(static_cast<documentapi::CreateVisitorReply&>(toMsg));
         to.setLastBucket(from.getLastBucket());
         to.setVisitorStatistics(from.getVisitorStatistics());
-    } else if (toMsg.getType() == DocumentProtocol::REPLY_BATCHDOCUMENTUPDATE) {
-        api::BatchDocumentUpdateReply& from(static_cast<api::BatchDocumentUpdateReply&>(fromMsg));
-        documentapi::BatchDocumentUpdateReply& to(static_cast<documentapi::BatchDocumentUpdateReply&>(toMsg));
-        to.getDocumentsNotFound() = from.getDocumentsNotFound();
     }
 }
 

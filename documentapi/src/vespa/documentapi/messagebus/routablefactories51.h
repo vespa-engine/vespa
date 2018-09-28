@@ -10,7 +10,7 @@ namespace documentapi {
  * This class encapsulates all the {@link RoutableFactory} classes needed to implement factories for the document
  * routable. When adding new factories to this class, please KEEP THE THEM ORDERED alphabetically like they are now.
  */
-class RoutableFactories51 {
+class RoutableFactories51 : public RoutableFactories50 {
 public:
     RoutableFactories51() = delete;
 

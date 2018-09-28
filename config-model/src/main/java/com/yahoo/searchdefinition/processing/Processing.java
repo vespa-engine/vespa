@@ -31,6 +31,7 @@ public class Processing {
                 UriHack::new,
                 LiteralBoost::new,
                 TagType::new,
+                ValidateFieldTypesDocumentsOnly::new,
                 IndexingInputs::new,
                 OptimizeIlscript::new,
                 ValidateFieldWithIndexSettingsCreatesIndex::new,

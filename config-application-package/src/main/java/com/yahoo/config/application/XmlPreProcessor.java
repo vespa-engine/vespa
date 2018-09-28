@@ -22,7 +22,6 @@ import java.util.List;
  * and create a new Document which is based on the supplied environment and region
  *
  * @author hmusum
- * @since 5.22
  */
 public class XmlPreProcessor {
 
@@ -51,7 +50,7 @@ public class XmlPreProcessor {
 
     public Document run() throws ParserConfigurationException, IOException, SAXException, TransformerException {
         DocumentBuilder docBuilder = Xml.getPreprocessDocumentBuilder();
-        final Document document = docBuilder.parse(new InputSource(xmlInput));
+        Document document = docBuilder.parse(new InputSource(xmlInput));
         return execute(document);
     }
 

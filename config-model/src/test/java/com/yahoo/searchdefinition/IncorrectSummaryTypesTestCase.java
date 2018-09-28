@@ -17,7 +17,18 @@ public class IncorrectSummaryTypesTestCase extends SearchDefinitionTestCase {
     @Test
     public void testImportingIncorrect() throws IOException, ParseException {
         try {
-            SearchBuilder.buildFromFile("src/test/examples/incorrectsummarytypes.sd");
+            SearchBuilder.createFromString(
+                    "search incorrectsummarytypes {\n" +
+                    "  document incorrectsummarytypes {\n" +
+                    "    field somestring type string {\n" +
+                    "      indexing: summary\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "  document-summary incorrect {\n" +
+                    "    summary somestring type int {\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "}\n");
             fail("processing should have failed");
         } catch (RuntimeException e) {
             assertEquals("'summary somestring type string' in 'destinations(default )' is inconsistent with 'summary somestring type int' in 'destinations(incorrect )': All declarations of the same summary field must have the same type", e.getMessage());

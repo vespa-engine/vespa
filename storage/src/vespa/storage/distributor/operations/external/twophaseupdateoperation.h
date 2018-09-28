@@ -15,7 +15,6 @@ namespace storage {
 
 namespace api {
 class UpdateCommand;
-class BatchDocumentUpdateCommand;
 class CreateBucketReply;
 }
 

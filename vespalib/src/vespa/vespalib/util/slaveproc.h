@@ -8,14 +8,9 @@
 #include <queue>
 #include "sync.h"
 
+namespace vespalib::slaveproc { class Timer; }
+
 namespace vespalib {
-
-namespace slaveproc {
-
-class Timer;
-
-} // namespace slaveproc
-
 /**
  * @brief Slave Process utility class for running external programs
  *
@@ -56,12 +51,12 @@ private:
     bool           _failed;
     int            _exitCode;
 
-    SlaveProc(const SlaveProc &);            // no copy
-    SlaveProc &operator=(const SlaveProc &); // no assignment
-
     void checkProc();
 
 public:
+    SlaveProc(const SlaveProc &) = delete;
+    SlaveProc &operator=(const SlaveProc &) = delete;
+    
     /**
      * @brief Run a slave process
      *

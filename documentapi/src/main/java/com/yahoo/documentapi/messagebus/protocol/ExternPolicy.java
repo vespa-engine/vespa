@@ -13,6 +13,7 @@ import com.yahoo.messagebus.routing.RoutingContext;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This policy implements the necessary logic to communicate with an external Vespa application and resolve its list of
@@ -30,6 +31,7 @@ public class ExternPolicy implements DocumentProtocolRoutingPolicy {
     private int offset = 0;
     private int generation = 0;
     private final List<Hop> recipients = new ArrayList<>();
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
 
     /**
      * Constructs a new instance of this policy. The argument given is the connection spec to the slobrok to use for
@@ -110,13 +112,6 @@ public class ExternPolicy implements DocumentProtocolRoutingPolicy {
     }
 
     @Override
-    @SuppressWarnings("deprecation")  // finalize() is deprecated from Java 9
-    public void finalize() throws Throwable {
-        super.finalize();
-        mirror.shutdown();
-        orb.transport().shutdown().join();
-    }
-
     public void select(RoutingContext ctx) {
         if (error != null) {
             ctx.setError(DocumentProtocol.ERROR_POLICY_FAILURE, error);
@@ -135,13 +130,19 @@ public class ExternPolicy implements DocumentProtocolRoutingPolicy {
         }
     }
 
+    @Override
     public void merge(RoutingContext ctx) {
         DocumentProtocol.merge(ctx);
     }
 
+    @Override
     public void destroy() {
+        if (destroyed.getAndSet(true)) throw new RuntimeException("Already destroyed");
+        mirror.shutdown();
+        orb.transport().shutdown().join();
     }
 
+    @Override
     public MetricSet getMetrics() {
         return null;
     }

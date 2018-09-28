@@ -12,7 +12,6 @@
 #include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/stat.h>
-#include <vespa/storageapi/message/batch.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -249,8 +248,6 @@ FileStorHandlerImpl::messageMayBeAborted(const api::StorageMessage& msg)
     case api::MessageType::JOINBUCKETS_ID:
     case api::MessageType::UPDATE_ID:
     case api::MessageType::REMOVELOCATION_ID:
-    case api::MessageType::BATCHPUTREMOVE_ID:
-    case api::MessageType::BATCHDOCUMENTUPDATE_ID:
     case api::MessageType::SETBUCKETSTATE_ID:
         return true;
     default:
@@ -587,7 +584,6 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
         break;
     }
     case api::MessageType::STAT_ID:
-    case api::MessageType::BATCHPUTREMOVE_ID:
     case api::MessageType::REVERT_ID:
     case api::MessageType::REMOVELOCATION_ID:
     case api::MessageType::SETBUCKETSTATE_ID:

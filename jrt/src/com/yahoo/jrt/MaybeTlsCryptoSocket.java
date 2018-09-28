@@ -16,13 +16,13 @@ import java.nio.channels.SocketChannel;
  **/
 public class MaybeTlsCryptoSocket implements CryptoSocket {
 
-    private static final int snoop_size = 9;
+    private static final int SNOOP_SIZE = 9;
 
     private CryptoSocket socket;
 
     // 'data' is the first 9 bytes received from the client
     public static boolean looksLikeTlsToMe(byte[] data) {
-        if (data.length != snoop_size) {
+        if (data.length != SNOOP_SIZE) {
             return false; // wrong data size for tls detection
         }
         if (data[0] != 22) {
@@ -67,13 +67,13 @@ public class MaybeTlsCryptoSocket implements CryptoSocket {
 
         @Override public HandshakeResult handshake() throws IOException {
             if (factory != null) {
-                channel().read(buffer.getWritable(snoop_size));
-                if (buffer.bytes() < snoop_size) {
+                channel().read(buffer.getWritable(SNOOP_SIZE));
+                if (buffer.bytes() < SNOOP_SIZE) {
                     return HandshakeResult.NEED_READ;
                 }
-                byte[] data = new byte[snoop_size];
+                byte[] data = new byte[SNOOP_SIZE];
                 ByteBuffer src = buffer.getReadable();
-                for (int i = 0; i < snoop_size; i++) {
+                for (int i = 0; i < SNOOP_SIZE; i++) {
                     data[i] = src.get(i);
                 }
                 if (looksLikeTlsToMe(data)) {
