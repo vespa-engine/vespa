@@ -40,20 +40,7 @@ private:
         ManagedRpcServer *rpcsrv;
         RegRpcSrvCommand      handler;
         MRSandRRSC(ManagedRpcServer *d, RegRpcSrvCommand h)
-            : rpcsrv(d), handler(h) {}
-
-        MRSandRRSC(const MRSandRRSC &rhs)
-            : rpcsrv(rhs.rpcsrv),
-              handler(rhs.handler)
-        {
-        }
-
-        MRSandRRSC& operator=(const MRSandRRSC &rhs)
-        {
-            rpcsrv = rhs.rpcsrv;
-            handler = rhs.handler;
-            return *this;
-        }
+            : rpcsrv(d), handler(std::move(h)) {}
     };
     std::vector<MRSandRRSC>         _addManageds;
     std::vector<std::unique_ptr<ManagedRpcServer>> _deleteList;

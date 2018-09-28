@@ -69,8 +69,8 @@ ExchangeManager::getPartnerList()
 void
 ExchangeManager::forwardRemove(const std::string & name, const std::string & spec)
 {
-    RegRpcSrvCommand remremhandler = RegRpcSrvCommand::makeRemRemCmd(_env, name, spec);
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, name, spec, *this, remremhandler);
+    WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, name, spec, *this,
+                                           RegRpcSrvCommand::makeRemRemCmd(_env, name, spec));
     for (const auto & entry : _partners) {
         package->addItem(entry.second.get());
     }
@@ -80,7 +80,7 @@ ExchangeManager::forwardRemove(const std::string & name, const std::string & spe
 void
 ExchangeManager::doAdd(const std::string &name, const std::string &spec, RegRpcSrvCommand rdc)
 {
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_DOADD, name, spec, *this, rdc);
+    WorkPackage *package = new WorkPackage(WorkPackage::OP_DOADD, name, spec, *this, std::move(rdc));
 
     for (const auto & entry : _partners) {
         package->addItem(entry.second.get());
@@ -92,7 +92,7 @@ ExchangeManager::doAdd(const std::string &name, const std::string &spec, RegRpcS
 void
 ExchangeManager::wantAdd(const std::string &name, const std::string &spec, RegRpcSrvCommand rdc)
 {
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_WANTADD, name, spec, *this, rdc);
+    WorkPackage *package = new WorkPackage(WorkPackage::OP_WANTADD, name, spec, *this, std::move(rdc));
     for (const auto & entry : _partners) {
         package->addItem(entry.second.get());
     }
@@ -167,7 +167,7 @@ ExchangeManager::WorkPackage::WorkPackage(op_type op, const std::string & name, 
     : _work(),
       _doneCnt(0),
       _numDenied(0),
-      _donehandler(donehandler),
+      _donehandler(std::move(donehandler)),
       _exchanger(exchanger),
       _optype(op),
       _name(name),

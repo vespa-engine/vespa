@@ -35,21 +35,28 @@ public:
     {}
 };
 
+RegRpcSrvCommand::RegRpcSrvCommand(std::unique_ptr<RegRpcSrvData> data)
+    : _data(std::move(data))
+{}
+
+RegRpcSrvCommand::RegRpcSrvCommand(RegRpcSrvCommand &&) = default;
+RegRpcSrvCommand & RegRpcSrvCommand::operator =(RegRpcSrvCommand &&) = default;
+RegRpcSrvCommand::~RegRpcSrvCommand() = default;
+
 RegRpcSrvCommand
 RegRpcSrvCommand::makeRegRpcSrvCmd(SBEnv &env,
                                    const std::string &name, const std::string &spec,
                                    FRT_RPCRequest *req)
 {
-    RegRpcSrvData *data = new RegRpcSrvData(env, name, spec, req);
-    return RegRpcSrvCommand(data);
+    return RegRpcSrvCommand(std::make_unique<RegRpcSrvData>(env, name, spec, req));
 }
 
 RegRpcSrvCommand
 RegRpcSrvCommand::makeRemRemCmd(SBEnv &env, const std::string & name, const std::string &spec)
 {
-    RegRpcSrvData *data = new RegRpcSrvData(env, name, spec, nullptr);
+    auto data = std::make_unique<RegRpcSrvData>(env, name, spec, nullptr);
     data->_state = RegRpcSrvData::XCH_IGNORE;
-    return RegRpcSrvCommand(data);
+    return RegRpcSrvCommand(std::move(data));
 }
 
 
@@ -93,18 +100,18 @@ RegRpcSrvCommand::doneHandler(OkState result)
         LOG(spam, "phase wantAdd(%s,%s)",
             _data->name.c_str(), _data->spec.c_str());
         _data->_state = RegRpcSrvData::XCH_WANTADD;
-        _data->env._exchanger.wantAdd(_data->name.c_str(), _data->spec.c_str(), *this);
+        _data->env._exchanger.wantAdd(_data->name.c_str(), _data->spec.c_str(), std::move(*this));
         return;
     } else if (_data->_state == RegRpcSrvData::XCH_WANTADD) {
         LOG(spam, "phase addManaged(%s,%s)",
             _data->name.c_str(), _data->spec.c_str());
         _data->_state = RegRpcSrvData::CHK_RPCSRV;
-        _data->env._rpcsrvmanager.addManaged(_data->name, _data->spec.c_str(), *this);
+        _data->env._rpcsrvmanager.addManaged(_data->name, _data->spec.c_str(), std::move(*this));
         return;
     } else if (_data->_state == RegRpcSrvData::CHK_RPCSRV) {
         LOG(spam, "phase doAdd(%s,%s)", _data->name.c_str(), _data->spec.c_str());
         _data->_state = RegRpcSrvData::XCH_DOADD;
-        _data->env._exchanger.doAdd(_data->name.c_str(), _data->spec.c_str(), *this);
+        _data->env._exchanger.doAdd(_data->name.c_str(), _data->spec.c_str(), std::move(*this));
         return;
     } else if (_data->_state == RegRpcSrvData::XCH_DOADD) {
         LOG(debug, "done doAdd(%s,%s)", _data->name.c_str(), _data->spec.c_str());
@@ -119,8 +126,7 @@ RegRpcSrvCommand::doneHandler(OkState result)
     LOG_ABORT("should not be reached");
  alldone:
     cleanupReservation();
-    delete _data;
-    _data = nullptr;
+    _data.reset();
 }
 
 //-----------------------------------------------------------------------------

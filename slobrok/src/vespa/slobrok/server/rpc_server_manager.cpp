@@ -247,13 +247,12 @@ RpcServerManager::addManaged(const std::string &name, const std::string &spec, R
     for (size_t i = 0; i < _addManageds.size(); i++) {
         if (_addManageds[i].rpcsrv == nullptr) {
             _addManageds[i].rpcsrv = &rpcsrv;
-            _addManageds[i].handler = rdc;
+            _addManageds[i].handler = std::move(rdc);
             rpcsrv.healthCheck();
             return;
         }
     }
-    MRSandRRSC pair(&rpcsrv, rdc);
-    _addManageds.push_back(pair);
+    _addManageds.emplace_back(&rpcsrv, std::move(rdc));
     rpcsrv.healthCheck();
     return;
 }
