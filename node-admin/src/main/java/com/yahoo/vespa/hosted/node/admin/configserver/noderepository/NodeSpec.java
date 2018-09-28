@@ -45,6 +45,7 @@ public class NodeSpec {
     private final double minDiskAvailableGb;
 
     private final boolean fastDisk;
+    private final double bandwidth;
     private final Set<String> ipAddresses;
 
     private final Optional<String> hardwareDivergence;
@@ -75,6 +76,7 @@ public class NodeSpec {
             final double minMainMemoryAvailableGb,
             final double minDiskAvailableGb,
             final boolean fastDisk,
+            final double bandwidth,
             final Set<String> ipAddresses,
             final Optional<String> hardwareDivergence,
             final Optional<String> hardwareFailureDescription,
@@ -102,6 +104,7 @@ public class NodeSpec {
         this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
         this.minDiskAvailableGb = minDiskAvailableGb;
         this.fastDisk = fastDisk;
+        this.bandwidth = bandwidth;
         this.ipAddresses = Objects.requireNonNull(ipAddresses);
         this.hardwareDivergence = Objects.requireNonNull(hardwareDivergence);
         this.hardwareFailureDescription = Objects.requireNonNull(hardwareFailureDescription);
@@ -200,6 +203,10 @@ public class NodeSpec {
         return fastDisk;
     }
 
+    public double getBandwidth() {
+        return bandwidth;
+    }
+
     public Set<String> getIpAddresses() {
         return ipAddresses;
     }
@@ -246,6 +253,7 @@ public class NodeSpec {
                 Objects.equals(minMainMemoryAvailableGb, that.minMainMemoryAvailableGb) &&
                 Objects.equals(minDiskAvailableGb, that.minDiskAvailableGb) &&
                 Objects.equals(fastDisk, that.fastDisk) &&
+                Objects.equals(bandwidth, that.bandwidth) &&
                 Objects.equals(ipAddresses, that.ipAddresses) &&
                 Objects.equals(hardwareDivergence, that.hardwareDivergence) &&
                 Objects.equals(hardwareFailureDescription, that.hardwareFailureDescription) &&
@@ -278,6 +286,7 @@ public class NodeSpec {
                 minMainMemoryAvailableGb,
                 minDiskAvailableGb,
                 fastDisk,
+                bandwidth,
                 ipAddresses,
                 hardwareDivergence,
                 hardwareFailureDescription,
@@ -310,6 +319,7 @@ public class NodeSpec {
                 + " minMainMemoryAvailableGb=" + minMainMemoryAvailableGb
                 + " minDiskAvailableGb=" + minDiskAvailableGb
                 + " fastDisk=" + fastDisk
+                + " bandwidth=" + bandwidth
                 + " ipAddresses=" + ipAddresses
                 + " hardwareDivergence=" + hardwareDivergence
                 + " hardwareFailureDescription=" + hardwareFailureDescription
@@ -466,6 +476,7 @@ public class NodeSpec {
         private double minMainMemoryAvailableGb;
         private double minDiskAvailableGb;
         private boolean fastDisk = false;
+        private double bandwidth;
         private Set<String> ipAddresses = Collections.emptySet();
         private Optional<String> hardwareDivergence = Optional.empty();
         private Optional<String> hardwareFailureDescription = Optional.empty();
@@ -483,6 +494,7 @@ public class NodeSpec {
             minMainMemoryAvailableGb(node.minMainMemoryAvailableGb);
             minDiskAvailableGb(node.minDiskAvailableGb);
             fastDisk(node.fastDisk);
+            bandwidth(node.bandwidth);
             ipAddresses(node.ipAddresses);
             wantedRebootGeneration(node.wantedRebootGeneration);
             currentRebootGeneration(node.currentRebootGeneration);
@@ -619,6 +631,11 @@ public class NodeSpec {
             return this;
         }
 
+        public Builder bandwidth(double bandwidth) {
+            this.bandwidth = bandwidth;
+            return this;
+        }
+
         public Builder ipAddresses(Set<String> ipAddresses) {
             this.ipAddresses = ipAddresses;
             return this;
@@ -742,6 +759,10 @@ public class NodeSpec {
             return fastDisk;
         }
 
+        public double getBandwidth() {
+            return bandwidth;
+        }
+
         public Set<String> getIpAddresses() {
             return ipAddresses;
         }
@@ -766,7 +787,7 @@ public class NodeSpec {
                     wantedRestartGeneration, currentRestartGeneration,
                     wantedRebootGeneration, currentRebootGeneration,
                     minCpuCores, minMainMemoryAvailableGb, minDiskAvailableGb,
-                    fastDisk, ipAddresses, hardwareDivergence, hardwareFailureDescription,
+                    fastDisk, bandwidth, ipAddresses, hardwareDivergence, hardwareFailureDescription,
                     parentHostname);
         }
 
