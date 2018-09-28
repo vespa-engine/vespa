@@ -35,10 +35,11 @@ public class SpecVerifierTest {
 
         String result = Main.execute(new String[] {
                 "specification",
-                "-d", "250",
+                "-d", "2500",
                 "-m", "64",
                 "-c", "1.5",
                 "-s", "true",
+                "-b", "10000.0",
                 "-i", "10.11.12.13,::1234"
         }, commandExecutor);
 
@@ -46,6 +47,7 @@ public class SpecVerifierTest {
                 "{\"specVerificationReport\":{\"" +
                         "actualMemoryAvailable\":4.042128,\"" +
                         "actualDiskSpaceAvailable\":1760.0,\"" +
+                        "actualInterfaceSpeed\":1000.0,\"" +
                         "actualcpuCores\":4,\"" +
                         "faultyIpAddresses\":[\"10.11.12.13\",\"0:0:0:0:0:0:0:1234\"]}}", result);
     }
@@ -66,6 +68,7 @@ public class SpecVerifierTest {
                 "-m", "4",
                 "-c", "4",
                 "-s", "true",
+                "-b", "1000"
         }, commandExecutor);
 
         assertEquals("null", result);
@@ -90,6 +93,7 @@ public class SpecVerifierTest {
                 "-m", "4",
                 "-c", "4",
                 "-s", "true",
+                "-b", "1000",
                 "-h", previousResult
         }, commandExecutor);
 
