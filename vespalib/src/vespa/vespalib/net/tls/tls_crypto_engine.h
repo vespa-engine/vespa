@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/net/crypto_engine.h>
+#include "tls_crypto_socket.h"
 #include "transport_security_options.h"
 #include "tls_context.h"
 
@@ -17,7 +18,10 @@ private:
     std::unique_ptr<net::tls::TlsContext> _tls_ctx;    
 public:
     TlsCryptoEngine(net::tls::TransportSecurityOptions tls_opts);
-    CryptoSocket::UP create_crypto_socket(SocketHandle socket, bool is_server) override;
+    std::unique_ptr<TlsCryptoSocket> create_tls_crypto_socket(SocketHandle socket, bool is_server);
+    CryptoSocket::UP create_crypto_socket(SocketHandle socket, bool is_server) override {
+        return create_tls_crypto_socket(std::move(socket), is_server);
+    }
 };
 
 } // namespace vespalib

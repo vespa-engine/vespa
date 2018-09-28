@@ -11,8 +11,8 @@ TlsCryptoEngine::TlsCryptoEngine(net::tls::TransportSecurityOptions tls_opts)
 {
 }
 
-CryptoSocket::UP
-TlsCryptoEngine::create_crypto_socket(SocketHandle socket, bool is_server)
+std::unique_ptr<TlsCryptoSocket>
+TlsCryptoEngine::create_tls_crypto_socket(SocketHandle socket, bool is_server)
 {
     auto mode = is_server ? net::tls::CryptoCodec::Mode::Server : net::tls::CryptoCodec::Mode::Client;
     auto codec = net::tls::CryptoCodec::create_default_codec(*_tls_ctx, mode);

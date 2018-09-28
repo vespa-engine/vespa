@@ -51,10 +51,8 @@ public:
             }
             if (looksLikeTlsToMe(src.data)) {
                 CryptoSocket::UP &self = _self; // need copy due to self destruction
-                auto tls_socket = _factory->create_crypto_socket(std::move(_socket), true);
-                TlsCryptoSocket *covariant = dynamic_cast<TlsCryptoSocket*>(tls_socket.get());
-                assert(covariant != nullptr);
-                covariant->inject_read_data(src.data, src.size);
+                auto tls_socket = _factory->create_tls_crypto_socket(std::move(_socket), true);
+                tls_socket->inject_read_data(src.data, src.size);
                 self = std::move(tls_socket);
                 return self->handshake();
             } else {
