@@ -30,6 +30,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
+ * Tests stateless model evaluation (turned on by the "model-evaluation" tag in "container")
+ *
  * @author bratseth
  */
 public class ModelEvaluationTest {
@@ -58,7 +60,7 @@ public class ModelEvaluationTest {
 
     /** Tests that we do not load models (which will waste memory) when not requested */
     @Test
-    public void testMl_serving_not_activated() throws IOException {
+    public void testMl_serving_not_activated() {
         Path appDir = Path.fromString("src/test/cfg/application/ml_serving_not_activated");
         try {
             ImportedModelTester tester = new ImportedModelTester("ml_serving", appDir);

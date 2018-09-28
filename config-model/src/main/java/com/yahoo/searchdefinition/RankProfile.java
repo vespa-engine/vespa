@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -128,7 +129,7 @@ public class RankProfile implements Serializable, Cloneable {
     /**
      * Creates a global rank profile
      *
-     * @param name   the name of the new profile
+     * @param name  the name of the new profile
      * @param model the model owning this profile
      */
     public RankProfile(String name, VespaModel model, RankProfileRegistry rankProfileRegistry) {
@@ -231,8 +232,8 @@ public class RankProfile implements Serializable, Cloneable {
     /**
      * Returns the a rank setting of a field, or null if there is no such rank setting in this profile
      *
-     * @param field The field whose settings to return.
-     * @param type  The type that the field is required to be.
+     * @param field the field whose settings to return.
+     * @param type  the type that the field is required to be.
      * @return the rank setting found, or null.
      */
     public RankSetting getDeclaredRankSetting(String field, RankSetting.Type type) {
@@ -539,11 +540,11 @@ public class RankProfile implements Serializable, Cloneable {
         return rankingExpressionFunction;
     }
 
-    /** Returns an unmodifiable view of the functions in this */
+    /** Returns an unmodifiable snapshot of the functions in this */
     public Map<String, RankingExpressionFunction> getFunctions() {
         if (functions.isEmpty() && getInherited() == null) return Collections.emptyMap();
         if (functions.isEmpty()) return getInherited().getFunctions();
-        if (getInherited() == null) return Collections.unmodifiableMap(functions);
+        if (getInherited() == null) return Collections.unmodifiableMap(new LinkedHashMap<>(functions));
 
         // Neither is null
         Map<String, RankingExpressionFunction> allFunctions = new LinkedHashMap<>(getInherited().getFunctions());
@@ -663,10 +664,10 @@ public class RankProfile implements Serializable, Cloneable {
 
         // Function compiling first pass: compile inline functions without resolving other functions
         Map<String, RankingExpressionFunction> inlineFunctions =
-                compileFunctions(getInlineFunctions(), queryProfiles, importedModels, Collections.emptyMap(), expressionTransforms);
+                compileFunctions(this::getInlineFunctions, queryProfiles, importedModels, Collections.emptyMap(), expressionTransforms);
 
         // Function compiling second pass: compile all functions and insert previously compiled inline functions
-        functions = compileFunctions(getFunctions(), queryProfiles, importedModels, inlineFunctions, expressionTransforms);
+        functions = compileFunctions(this::getFunctions, queryProfiles, importedModels, inlineFunctions, expressionTransforms);
 
         firstPhaseRanking = compile(this.getFirstPhaseRanking(), queryProfiles, importedModels, getConstants(), inlineFunctions, expressionTransforms);
         secondPhaseRanking = compile(this.getSecondPhaseRanking(), queryProfiles, importedModels, getConstants(), inlineFunctions, expressionTransforms);
@@ -685,18 +686,32 @@ public class RankProfile implements Serializable, Cloneable {
                              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private Map<String, RankingExpressionFunction> compileFunctions(Map<String, RankingExpressionFunction> functions,
+    private Map<String, RankingExpressionFunction> compileFunctions(Supplier<Map<String, RankingExpressionFunction>> functions,
                                                                     QueryProfileRegistry queryProfiles,
                                                                     ImportedModels importedModels,
                                                                     Map<String, RankingExpressionFunction> inlineFunctions,
                                                                     ExpressionTransforms expressionTransforms) {
         Map<String, RankingExpressionFunction> compiledFunctions = new LinkedHashMap<>();
-        for (Map.Entry<String, RankingExpressionFunction> entry : functions.entrySet()) {
+        Map.Entry<String, RankingExpressionFunction> entry;
+        // Compile all functions. Why iterate in such a complicated way?
+        // Because some functions (imported models adding generated macros) may add other functions during compiling.
+        // A straightforward iteration will either miss those functions, or may cause a ConcurrentModificationException
+        while (null != (entry = findUncompiledFunction(functions.get(), compiledFunctions.keySet()))) {
             RankingExpressionFunction rankingExpressionFunction = entry.getValue();
-            RankingExpression compiled = compile(rankingExpressionFunction.function().getBody(), queryProfiles, importedModels, getConstants(), inlineFunctions, expressionTransforms);
+            RankingExpression compiled = compile(rankingExpressionFunction.function().getBody(), queryProfiles,
+                                                 importedModels, getConstants(), inlineFunctions, expressionTransforms);
             compiledFunctions.put(entry.getKey(), rankingExpressionFunction.withExpression(compiled));
         }
         return compiledFunctions;
+    }
+
+    private Map.Entry<String, RankingExpressionFunction> findUncompiledFunction(Map<String, RankingExpressionFunction> functions,
+                                                                                Set<String> compiledFunctionNames) {
+        for (Map.Entry<String, RankingExpressionFunction> entry : functions.entrySet()) {
+            if ( ! compiledFunctionNames.contains(entry.getKey()))
+                return entry;
+        }
+        return null;
     }
 
     private RankingExpression compile(RankingExpression expression,

@@ -91,18 +91,26 @@ public class ConvertedModel {
      * @param pathIsFile true if that path (this kind of model) is stored in a file, false if it is in a directory
      */
     public static ConvertedModel fromSourceOrStore(Path modelPath, boolean pathIsFile, RankProfileTransformContext context) {
-        File sourceModel = sourceModelFile(context.rankProfile().applicationPackage(), modelPath);
+        ImportedModel sourceModel = // TODO: Convert to name here, make sure its done just one way
+                context.importedModels().get(sourceModelFile(context.rankProfile().applicationPackage(), modelPath));
         ModelName modelName = new ModelName(context.rankProfile().getName(), modelPath, pathIsFile);
-        if (sourceModel.exists())
+
+        if (sourceModel == null && ! new ModelStore(context.rankProfile().applicationPackage(), modelName).exists())
+            throw new IllegalArgumentException("No model '" + modelPath + "' is available. Available models: " +
+                                               context.importedModels().all().stream().map(ImportedModel::source).collect(Collectors.joining(", ")));
+
+        if (sourceModel != null) {
             return fromSource(modelName,
                               modelPath.toString(),
                               context.rankProfile(),
                               context.queryProfiles(),
-                              context.importedModels().get(sourceModel)); // TODO: Convert to name here, make sure its done just one way
-        else
+                              sourceModel);
+        }
+        else {
             return fromStore(modelName,
                              modelPath.toString(),
                              context.rankProfile());
+        }
     }
 
     public static ConvertedModel fromSource(ModelName modelName,
@@ -518,6 +526,11 @@ public class ConvertedModel {
         ModelStore(ApplicationPackage application, ModelName modelName) {
             this.application = application;
             this.modelFiles = new ModelFiles(modelName);
+        }
+
+        /** Returns whether a model store for this application and model name exists */
+        public boolean exists() {
+            return application.getFile(modelFiles.storedModelReplicatedPath()).exists();
         }
 
         /**

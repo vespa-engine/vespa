@@ -1,0 +1,41 @@
+search test {
+
+    document test {
+        field argument type tensor(d0[],d1[784]) {
+            indexing: attribute
+        }
+    }
+
+    rank-profile test {
+
+        function input() {
+            expression: attribute(argument)
+        }
+
+        function Placeholder() {
+            expression: attribute(argument)
+        }
+
+        function mnist_tensorflow() {
+            expression: tensorflow("mnist/saved")
+        }
+
+        function mnist_softmax_tensorflow() {
+            expression: tensorflow("mnist_softmax/saved")
+        }
+
+        function mnist_softmax_onnx() {
+            expression: onnx("mnist_softmax")
+        }
+
+        function my_xgboost() {
+            expression: xgboost("xgboost_2_2")
+        }
+
+        first-phase {
+            expression: mnist_tensorflow + mnist_softmax_tensorflow + mnist_softmax_onnx + my_xgboost
+        }
+
+    }
+
+}

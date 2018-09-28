@@ -213,8 +213,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                     context.addArgumentTypeSerialization(e.getKey(), argumentType.getKey(), argumentType.getValue());
                 if (e.getValue().function().returnType().isPresent())
                     context.addFunctionTypeSerialization(e.getKey(), e.getValue().function().returnType().get());
-                else if (e.getValue().function().arguments().isEmpty())
-                    throw new IllegalStateException("Type of function '" + e.getKey() + "' is not resolved");
+                // else if (e.getValue().function().arguments().isEmpty()) TODO: Enable this check when we resolve all types
+                //     throw new IllegalStateException("Type of function '" + e.getKey() + "' is not resolved");
             }
             return context.serializedFunctions();
         }

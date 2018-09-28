@@ -244,6 +244,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             ApplicationFile generatedModelsDir = applicationPackage.getFile(ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR);
             for (ApplicationFile generatedModelDir : generatedModelsDir.listFiles()) {
                 String modelName = generatedModelDir.getPath().last();
+                if (modelName.contains(".")) continue; // Name space: Not a global profile
                 RankProfile profile = new RankProfile(modelName, this, rankProfileRegistry);
                 rankProfileRegistry.add(profile);
                 ConvertedModel convertedModel = ConvertedModel.fromStore(new ModelName(modelName), modelName, profile);
