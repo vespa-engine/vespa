@@ -9,9 +9,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP("");
 
-//#include "service.h"
-//#include <vespa/config/common/exceptions.h>
-
 using cloud::config::log::LogdConfig;
 using ns_log::Logger;
 
