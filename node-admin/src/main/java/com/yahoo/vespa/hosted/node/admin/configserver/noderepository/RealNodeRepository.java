@@ -194,6 +194,7 @@ public class RealNodeRepository implements NodeRepository {
                 node.minMainMemoryAvailableGb,
                 node.minDiskAvailableGb,
                 node.fastDisk,
+                node.bandwidth,
                 node.ipAddresses,
                 Optional.ofNullable(node.hardwareDivergence),
                 Optional.ofNullable(node.hardwareFailureDescription),

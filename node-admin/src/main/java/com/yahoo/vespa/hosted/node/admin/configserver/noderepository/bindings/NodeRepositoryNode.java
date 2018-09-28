@@ -52,6 +52,8 @@ public class NodeRepositoryNode {
     public Integer failCount;
     @JsonProperty("fastDisk")
     public Boolean fastDisk;
+    @JsonProperty("bandwidth")
+    public Double bandwidth;
     @JsonProperty("hardwareFailure")
     public Boolean hardwareFailure;
     @JsonProperty("hardwareFailureDescription")
@@ -102,6 +104,8 @@ public class NodeRepositoryNode {
                 ", currentOsVersion='" + currentOsVersion + '\'' +
                 ", wantedOsVersion='" + wantedOsVersion + '\'' +
                 ", failCount=" + failCount +
+                ", fastDisk=" + fastDisk +
+                ", bandwidth=" + bandwidth +
                 ", hardwareFailure=" + hardwareFailure +
                 ", hardwareFailureDescription='" + hardwareFailureDescription + '\'' +
                 ", hardwareDivergence='" + hardwareDivergence + '\'' +
