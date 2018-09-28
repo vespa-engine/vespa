@@ -7,6 +7,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -25,8 +26,12 @@ public class BundleActivatorIntegrationTest {
         Class<?> serviceClass = bundle.loadClass("com.yahoo.jdisc.bundle.my_act.MyService");
         assertNotNull(serviceClass);
         BundleContext ctx = osgi.bundleContext();
-        ServiceReference<?> serviceRef = ctx.getServiceReference(serviceClass.getName());
+
+        ServiceReference<?>[] serviceRefs = bundle.getRegisteredServices();
+        assertEquals(1, serviceRefs.length);
+        ServiceReference<?> serviceRef = serviceRefs[0];
         assertNotNull(serviceRef);
+
         Object service = ctx.getService(serviceRef);
         assertNotNull(service);
         assertTrue(serviceClass.isInstance(service));
@@ -37,11 +42,16 @@ public class BundleActivatorIntegrationTest {
     public void requireThatApplicationBundleActivatorHasAccessToCurrentContainer() throws Exception {
         TestDriver driver = TestDriver.newApplicationBundleInstance("app-g-act.jar", false);
         OsgiFramework osgi = driver.osgiFramework();
-        Class<?> serviceClass = osgi.bundles().get(1).loadClass("com.yahoo.jdisc.bundle.g_act.MyService");
+        Bundle bundle = osgi.bundles().get(1);
+        Class<?> serviceClass = bundle.loadClass("com.yahoo.jdisc.bundle.g_act.MyService");
         assertNotNull(serviceClass);
         BundleContext ctx = osgi.bundleContext();
-        ServiceReference<?> serviceRef = ctx.getServiceReference(serviceClass.getName());
+
+        ServiceReference<?>[] serviceRefs = bundle.getRegisteredServices();
+        assertEquals(1, serviceRefs.length);
+        ServiceReference<?> serviceRef = serviceRefs[0];
         assertNotNull(serviceRef);
+
         Object service = ctx.getService(serviceRef);
         assertNotNull(service);
         assertTrue(serviceClass.isInstance(service));
