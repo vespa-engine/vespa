@@ -32,7 +32,7 @@ public class Reduce extends PrimitiveTensorFunction {
     private final List<String> dimensions;
     private final Aggregator aggregator;
 
-    /** Creates a reduce function reducing aLL dimensions */
+    /** Creates a reduce function reducing all dimensions */
     public Reduce(TensorFunction argument, Aggregator aggregator) {
         this(argument, aggregator, Collections.emptyList());
     }
@@ -61,6 +61,7 @@ public class Reduce extends PrimitiveTensorFunction {
     }
 
     public static TensorType outputType(TensorType inputType, List<String> reduceDimensions) {
+        if (reduceDimensions.isEmpty()) return TensorType.empty; // means reduce all
         TensorType.Builder b = new TensorType.Builder();
         for (TensorType.Dimension dimension : inputType.dimensions()) {
             if ( ! reduceDimensions.contains(dimension.name()))
@@ -70,6 +71,10 @@ public class Reduce extends PrimitiveTensorFunction {
     }
 
     public TensorFunction argument() { return argument; }
+
+    Aggregator aggregator() { return aggregator; }
+
+    List<String> dimensions() { return dimensions; }
 
     @Override
     public List<TensorFunction> arguments() { return Collections.singletonList(argument); }
@@ -91,7 +96,7 @@ public class Reduce extends PrimitiveTensorFunction {
         return "reduce(" + argument.toString(context) + ", " + aggregator + commaSeparated(dimensions) + ")";
     }
 
-    private String commaSeparated(List<String> list) {
+    static String commaSeparated(List<String> list) {
         StringBuilder b = new StringBuilder();
         for (String element  : list)
             b.append(", ").append(element);
@@ -100,10 +105,10 @@ public class Reduce extends PrimitiveTensorFunction {
 
     @Override
     public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) {
-        return type(argument.type(context));
+        return type(argument.type(context), dimensions);
     }
 
-    private TensorType type(TensorType argumentType) {
+    private static TensorType type(TensorType argumentType, List<String> dimensions) {
         if (dimensions.isEmpty()) return TensorType.empty; // means reduce all
         TensorType.Builder builder = new TensorType.Builder();
         for (TensorType.Dimension dimension : argumentType.dimensions())
@@ -114,7 +119,10 @@ public class Reduce extends PrimitiveTensorFunction {
 
     @Override
     public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
-        Tensor argument = this.argument.evaluate(context);
+        return evaluate(this.argument.evaluate(context), dimensions, aggregator);
+    }
+
+    static Tensor evaluate(Tensor argument, List<String> dimensions, Aggregator aggregator) {
         if ( ! dimensions.isEmpty() && ! argument.type().dimensionNames().containsAll(dimensions))
             throw new IllegalArgumentException("Cannot reduce " + argument + " over dimensions " +
                                                dimensions + ": Not all those dimensions are present in this tensor");
@@ -122,17 +130,17 @@ public class Reduce extends PrimitiveTensorFunction {
         // Special case: Reduce all
         if (dimensions.isEmpty() || dimensions.size() == argument.type().dimensions().size())
             if (argument.type().dimensions().size() == 1 && argument instanceof IndexedTensor)
-                return reduceIndexedVector((IndexedTensor)argument);
+                return reduceIndexedVector((IndexedTensor)argument, aggregator);
             else
-                return reduceAllGeneral(argument);
+                return reduceAllGeneral(argument, aggregator);
 
-        TensorType reducedType = type(argument.type());
+        TensorType reducedType = type(argument.type(), dimensions);
 
         // Reduce cells
         Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>();
         for (Iterator<Tensor.Cell> i = argument.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
-            TensorAddress reducedAddress = reduceDimensions(cell.getKey(), argument.type(), reducedType);
+            TensorAddress reducedAddress = reduceDimensions(cell.getKey(), argument.type(), reducedType, dimensions);
             aggregatingCells.putIfAbsent(reducedAddress, ValueAggregator.ofType(aggregator));
             aggregatingCells.get(reducedAddress).aggregate(cell.getValue());
         }
@@ -141,11 +149,12 @@ public class Reduce extends PrimitiveTensorFunction {
             reducedBuilder.cell(aggregatingCell.getKey(), aggregatingCell.getValue().aggregatedValue());
 
         return reducedBuilder.build();
+
     }
 
-    private TensorAddress reduceDimensions(TensorAddress address, TensorType argumentType, TensorType reducedType) {
+    private static TensorAddress reduceDimensions(TensorAddress address, TensorType argumentType, TensorType reducedType, List<String> dimensions) {
         Set<Integer> indexesToRemove = new HashSet<>();
-        for (String dimensionToRemove : this.dimensions)
+        for (String dimensionToRemove : dimensions)
             indexesToRemove.add(argumentType.indexOfDimension(dimensionToRemove).get());
 
         String[] reducedLabels = new String[reducedType.dimensions().size()];
@@ -156,23 +165,23 @@ public class Reduce extends PrimitiveTensorFunction {
         return TensorAddress.of(reducedLabels);
     }
 
-    private Tensor reduceAllGeneral(Tensor argument) {
+    private static Tensor reduceAllGeneral(Tensor argument, Aggregator aggregator) {
         ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
         for (Iterator<Double> i = argument.valueIterator(); i.hasNext(); )
             valueAggregator.aggregate(i.next());
         return Tensor.Builder.of(TensorType.empty).cell((valueAggregator.aggregatedValue())).build();
     }
 
-    private Tensor reduceIndexedVector(IndexedTensor argument) {
+    private static Tensor reduceIndexedVector(IndexedTensor argument, Aggregator aggregator) {
         ValueAggregator valueAggregator = ValueAggregator.ofType(aggregator);
         for (int i = 0; i < argument.dimensionSizes().size(0); i++)
             valueAggregator.aggregate(argument.get(i));
         return Tensor.Builder.of(TensorType.empty).cell((valueAggregator.aggregatedValue())).build();
     }
 
-    private static abstract class ValueAggregator {
+    static abstract class ValueAggregator {
 
-        private static ValueAggregator ofType(Aggregator aggregator) {
+        static ValueAggregator ofType(Aggregator aggregator) {
             switch (aggregator) {
                 case avg : return new AvgAggregator();
                 case count : return new CountAggregator();
@@ -190,6 +199,9 @@ public class Reduce extends PrimitiveTensorFunction {
 
         /** Returns the value aggregated by this */
         public abstract double aggregatedValue();
+
+        /** Resets the aggregator */
+        public abstract void reset();
 
     }
 
@@ -209,6 +221,11 @@ public class Reduce extends PrimitiveTensorFunction {
             return valueSum / valueCount;
         }
 
+        @Override
+        public void reset() {
+            valueCount = 0;
+            valueSum = 0.0;
+        }
     }
 
     private static class CountAggregator extends ValueAggregator {
@@ -225,6 +242,10 @@ public class Reduce extends PrimitiveTensorFunction {
             return valueCount;
         }
 
+        @Override
+        public void reset() {
+            valueCount = 0;
+        }
     }
 
     private static class ProdAggregator extends ValueAggregator {
@@ -241,6 +262,10 @@ public class Reduce extends PrimitiveTensorFunction {
             return valueProd;
         }
 
+        @Override
+        public void reset() {
+            valueProd = 1.0;
+        }
     }
 
     private static class SumAggregator extends ValueAggregator {
@@ -257,6 +282,10 @@ public class Reduce extends PrimitiveTensorFunction {
             return valueSum;
         }
 
+        @Override
+        public void reset() {
+            valueSum = 0.0;
+        }
     }
 
     private static class MaxAggregator extends ValueAggregator {
@@ -274,6 +303,10 @@ public class Reduce extends PrimitiveTensorFunction {
             return maxValue;
         }
 
+        @Override
+        public void reset() {
+            maxValue = Double.MIN_VALUE;
+        }
     }
 
     private static class MinAggregator extends ValueAggregator {
@@ -289,6 +322,11 @@ public class Reduce extends PrimitiveTensorFunction {
         @Override
         public double aggregatedValue() {
             return minValue;
+        }
+
+        @Override
+        public void reset() {
+            minValue = Double.MAX_VALUE;
         }
 
     }

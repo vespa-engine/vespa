@@ -3,6 +3,8 @@ package com.yahoo.searchlib.rankingexpression.integration.ml;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
+import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
+import com.yahoo.searchlib.rankingexpression.evaluation.ExpressionOptimizer;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.integration.ml.importer.tensorflow.TensorConverter;
@@ -50,7 +52,11 @@ public class TestableTensorFlowModel {
 
         model.functions().forEach((k, v) -> evaluateFunction(context, model, k));
 
-        Tensor vespaResult = model.expressions().get(operationName).evaluate(context).asTensor();
+        RankingExpression expression = model.expressions().get(operationName);
+        ExpressionOptimizer optimizer = new ExpressionOptimizer();
+        optimizer.optimize(expression, (ContextIndex)context);
+
+        Tensor vespaResult = expression.evaluate(context).asTensor();
         assertEquals("Operation '" + operationName + "' produces equal results",
                      tfResult.sum().asDouble(), vespaResult.sum().asDouble(), delta);
     }
@@ -64,7 +70,11 @@ public class TestableTensorFlowModel {
 
         model.functions().forEach((k, v) -> evaluateFunction(context, model, k));
 
-        Tensor vespaResult = model.expressions().get(operationName).evaluate(context).asTensor();
+        RankingExpression expression = model.expressions().get(operationName);
+        ExpressionOptimizer optimizer = new ExpressionOptimizer();
+        optimizer.optimize(expression, (ContextIndex)context);
+
+        Tensor vespaResult = expression.evaluate(context).asTensor();
         assertEquals("Operation '" + operationName + "' produces equal results", tfResult, vespaResult);
     }
 
@@ -82,7 +92,7 @@ public class TestableTensorFlowModel {
     }
 
     private Context contextFrom(ImportedModel result) {
-        MapContext context = new MapContext();
+        TestableModelContext context = new TestableModelContext();
         result.largeConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
         result.smallConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
         return context;
@@ -115,6 +125,17 @@ public class TestableTensorFlowModel {
             for (ExpressionNode child : ((CompositeNode)node).children()) {
                 evaluateFunctionDependencies(context, model, child);
             }
+        }
+    }
+
+    private static class TestableModelContext extends MapContext implements ContextIndex {
+        @Override
+        public int size() {
+            return bindings().size();
+        }
+        @Override
+        public int getIndex(String name) {
+            throw new UnsupportedOperationException(this + " does not support index lookup by name");
         }
     }
 
