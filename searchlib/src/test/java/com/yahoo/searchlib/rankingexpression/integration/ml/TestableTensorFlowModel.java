@@ -91,7 +91,7 @@ public class TestableTensorFlowModel {
         return TensorConverter.toVespaTensor(results.get(0));
     }
 
-    private Context contextFrom(ImportedModel result) {
+    static Context contextFrom(ImportedModel result) {
         TestableModelContext context = new TestableModelContext();
         result.largeConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
         result.smallConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
