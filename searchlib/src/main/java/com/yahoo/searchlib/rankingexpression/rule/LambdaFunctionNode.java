@@ -109,19 +109,19 @@ public class LambdaFunctionNode extends CompositeNode {
         }
         ArithmeticOperator operator = node.operators().get(0);
         switch (operator) {
-            case OR: return asDoubleBinaryOperator((left, right) -> ((left != 0.0) || (right != 0.0)) ? 1.0 : 0.0);
-            case AND: return asDoubleBinaryOperator((left, right) -> ((left != 0.0) && (right != 0.0)) ? 1.0 : 0.0);
-            case PLUS: return asDoubleBinaryOperator((left, right) -> left + right);
-            case MINUS: return asDoubleBinaryOperator((left, right) -> left - right);
-            case MULTIPLY: return asDoubleBinaryOperator((left, right) -> left * right);
-            case DIVIDE: return asDoubleBinaryOperator((left, right) -> left / right);
-            case MODULO: return asDoubleBinaryOperator((left, right) -> left % right);
-            case POWER: return asDoubleBinaryOperator(Math::pow);
+            case OR: return asFunctionExpression((left, right) -> ((left != 0.0) || (right != 0.0)) ? 1.0 : 0.0);
+            case AND: return asFunctionExpression((left, right) -> ((left != 0.0) && (right != 0.0)) ? 1.0 : 0.0);
+            case PLUS: return asFunctionExpression((left, right) -> left + right);
+            case MINUS: return asFunctionExpression((left, right) -> left - right);
+            case MULTIPLY: return asFunctionExpression((left, right) -> left * right);
+            case DIVIDE: return asFunctionExpression((left, right) -> left / right);
+            case MODULO: return asFunctionExpression((left, right) -> left % right);
+            case POWER: return asFunctionExpression(Math::pow);
         }
         return Optional.empty();
     }
 
-    private Optional<DoubleBinaryOperator> asDoubleBinaryOperator(DoubleBinaryOperator operator) {
+    private Optional<DoubleBinaryOperator> asFunctionExpression(DoubleBinaryOperator operator) {
         return Optional.of(new DoubleBinaryOperator() {
             @Override
             public double applyAsDouble(double left, double right) {
