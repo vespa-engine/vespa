@@ -31,7 +31,7 @@ public class FelixParamsTestCase {
     public void requireThatSystemPackagesAreNotReplaced() {
         String systemPackages = ExportPackages.getSystemPackages();
 
-        FelixParams params = new FelixParams();
+        FelixParams params = new FelixParams(systemPackages);
         Map<String, String> config = params.toConfig();
         assertNotNull(config);
         String str = config.get(Constants.FRAMEWORK_SYSTEMPACKAGES);
