@@ -12,9 +12,20 @@ import java.util.Map;
  */
 public class FelixParams {
 
-    private final StringBuilder exportPackages = new StringBuilder(ExportPackages.readExportProperty());
+    private final StringBuilder exportPackages;
     private String cachePath = null;
     private boolean loggerEnabled = true;
+
+    public FelixParams() {
+        this(ExportPackages.readExportProperty());
+    }
+
+    // For testing only
+    // Needed because the set of system packages is no longer constant between JVM invocations,
+    // since Felix 6 and JDK 9.
+    FelixParams(String exportPackages) {
+        this.exportPackages = new StringBuilder(exportPackages);
+    }
 
     public FelixParams exportPackage(String pkg) {
         exportPackages.append(",").append(pkg);
