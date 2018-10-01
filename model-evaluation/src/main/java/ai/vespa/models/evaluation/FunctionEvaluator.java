@@ -38,7 +38,7 @@ public class FunctionEvaluator {
      */
     public FunctionEvaluator bind(String name, Tensor value) {
         if (evaluated)
-            throw new IllegalStateException("You cannot bind a value in a used evaluator");
+            throw new IllegalStateException("Cannot bind a new value in a used evaluator");
         TensorType requiredType = function.argumentTypes().get(name);
         if (requiredType == null)
             throw new IllegalArgumentException("'" + name + "' is not a valid argument in " + function +
