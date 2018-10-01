@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -74,10 +75,10 @@ public class RankProfilesConfigImporter {
         for (RankProfilesConfig.Rankprofile.Fef.Property property : profile.fef().property()) {
             Optional<FunctionReference> reference = FunctionReference.fromSerial(property.name());
             Optional<Pair<FunctionReference, String>> argumentType = FunctionReference.fromTypeArgumentSerial(property.name());
+            Optional<FunctionReference> returnType = FunctionReference.fromReturnTypeSerial(property.name());
             if ( reference.isPresent()) {
-                List<String> arguments = new ArrayList<>(); // TODO: Arguments?
                 RankingExpression expression = new RankingExpression(reference.get().functionName(), property.value());
-                ExpressionFunction function = new ExpressionFunction(reference.get().functionName(), arguments, expression);
+                ExpressionFunction function = new ExpressionFunction(reference.get().functionName(), Collections.emptyList(), expression);
 
                 if (reference.get().isFree()) // make available in model under configured name
                     functions.put(reference.get(), function);
@@ -91,6 +92,13 @@ public class RankProfilesConfigImporter {
                 if (argReference.isFree())
                     functions.put(argReference, function);
                 referencedFunctions.put(argReference, function);
+            }
+            else if (returnType.isPresent()) { // Return type always follows the function in properties
+                ExpressionFunction function = referencedFunctions.get(returnType.get());
+                function = function.withReturnType(TensorType.fromSpec(property.value()));
+                if (returnType.get().isFree())
+                    functions.put(returnType.get(), function);
+                referencedFunctions.put(returnType.get(), function);
             }
             else if (property.name().equals("vespa.rank.firstphase")) { // Include in addition to functions
                 firstPhase = new ExpressionFunction("firstphase", new ArrayList<>(),

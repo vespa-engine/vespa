@@ -6,6 +6,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
@@ -60,7 +61,7 @@ public class RankingExpressionTypeResolver extends Processor {
     private void resolveTypesIn(RankProfile profile, boolean validate) {
         TypeContext<Reference> context = profile.typeContext(queryProfiles);
         for (Map.Entry<String, RankProfile.RankingExpressionFunction> function : profile.getFunctions().entrySet()) {
-            if ( ! function.getValue().function().arguments().isEmpty()) continue;
+            if (hasUntypedArguments(function.getValue().function())) continue;
             TensorType type = resolveType(function.getValue().function().getBody(),
                                           "function '" + function.getKey() + "'",
                                           context);
@@ -72,6 +73,10 @@ public class RankingExpressionTypeResolver extends Processor {
             ensureValidDouble(profile.getFirstPhaseRanking(), "first-phase expression", context);
             ensureValidDouble(profile.getSecondPhaseRanking(), "second-phase expression", context);
         }
+    }
+
+    private boolean hasUntypedArguments(ExpressionFunction function) {
+        return function.arguments().size() > function.argumentTypes().size();
     }
 
     private TensorType resolveType(RankingExpression expression, String expressionDescription, TypeContext context) {

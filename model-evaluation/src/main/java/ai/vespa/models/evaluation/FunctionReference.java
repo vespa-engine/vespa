@@ -28,6 +28,8 @@ class FunctionReference {
             Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)(\\.rankingScript)?");
     private static final Pattern argumentTypePattern =
             Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)\\.([a-zA-Z0-9_]+)\\.type?");
+    private static final Pattern returnTypePattern =
+            Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)\\.type?");
 
     /** The name of the function referenced */
     private final String name;
@@ -90,6 +92,19 @@ class FunctionReference {
         String instance = expressionMatcher.group(2);
         String argument = expressionMatcher.group(3);
         return Optional.of(new Pair<>(new FunctionReference(name, instance), argument));
+    }
+
+    /**
+     * Returns a function reference from the given return type serial form,
+     * or empty if the string is not a valid function return typoe serial form
+     */
+    static Optional<FunctionReference> fromReturnTypeSerial(String serialForm) {
+        Matcher expressionMatcher = returnTypePattern.matcher(serialForm);
+        if ( ! expressionMatcher.matches()) return Optional.empty();
+
+        String name = expressionMatcher.group(1);
+        String instance = expressionMatcher.group(2);
+        return Optional.of(new FunctionReference(name, instance));
     }
 
     public static FunctionReference fromName(String name) {
