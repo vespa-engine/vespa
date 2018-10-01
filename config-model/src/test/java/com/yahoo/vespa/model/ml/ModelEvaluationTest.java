@@ -36,6 +36,27 @@ import static org.junit.Assert.assertTrue;
  */
 public class ModelEvaluationTest {
 
+    /** Tests that we do not load models (which would waste memory) when not requested */
+    @Test
+    public void testMl_serving_not_activated() {
+        Path appDir = Path.fromString("src/test/cfg/application/ml_serving_not_activated");
+        try {
+            ImportedModelTester tester = new ImportedModelTester("ml_serving", appDir);
+            VespaModel model = tester.createVespaModel();
+            ContainerCluster cluster = model.getContainerClusters().get("container");
+            assertNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluator.class.getName())));
+
+            RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
+            cluster.getConfig(b);
+            RankProfilesConfig config = new RankProfilesConfig(b);
+
+            assertEquals(0, config.rankprofile().size());
+        }
+        finally {
+            IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+        }
+    }
+
     @Test
     public void testMl_serving() throws IOException {
         Path appDir = Path.fromString("src/test/cfg/application/ml_serving");
@@ -58,27 +79,6 @@ public class ModelEvaluationTest {
         }
     }
 
-    /** Tests that we do not load models (which will waste memory) when not requested */
-    @Test
-    public void testMl_serving_not_activated() {
-        Path appDir = Path.fromString("src/test/cfg/application/ml_serving_not_activated");
-        try {
-            ImportedModelTester tester = new ImportedModelTester("ml_serving", appDir);
-            VespaModel model = tester.createVespaModel();
-            ContainerCluster cluster = model.getContainerClusters().get("container");
-            assertNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluator.class.getName())));
-
-            RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
-            cluster.getConfig(b);
-            RankProfilesConfig config = new RankProfilesConfig(b);
-
-            assertEquals(0, config.rankprofile().size());
-        }
-        finally {
-            IOUtils.recursiveDeleteDir(appDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
-        }
-    }
-
     private void assertHasMlModels(VespaModel model) {
         ContainerCluster cluster = model.getContainerClusters().get("container");
         assertNotNull(cluster.getComponentsMap().get(new ComponentId(ModelsEvaluator.class.getName())));
@@ -90,6 +90,7 @@ public class ModelEvaluationTest {
         RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
         cluster.getConfig(b);
         RankProfilesConfig config = new RankProfilesConfig(b);
+        System.out.println(config);
 
         RankingConstantsConfig.Builder cb = new RankingConstantsConfig.Builder();
         cluster.getConfig(cb);
@@ -101,6 +102,12 @@ public class ModelEvaluationTest {
         assertTrue(modelNames.contains("mnist_saved"));
         assertTrue(modelNames.contains("mnist_softmax"));
         assertTrue(modelNames.contains("mnist_softmax_saved"));
+
+        // Compare profile content in a denser format than config:
+        StringBuilder sb = new StringBuilder();
+        for (RankProfilesConfig.Rankprofile.Fef.Property p : findProfile("mnist_saved", config).property())
+            sb.append(p.name()).append(": ").append(p.value()).append("\n");
+        assertEquals(mnistProfile, sb.toString());
 
         ModelsEvaluator evaluator = new ModelsEvaluator(new ToleratingMissingConstantFilesRankProfilesConfigImporter(MockFileAcquirer.returnFile(null))
                                                                 .importFrom(config, constantsConfig));
@@ -134,6 +141,20 @@ public class ModelEvaluationTest {
         assertNotNull(tensorflow_mnist_softmax.evaluatorOf());
         assertNotNull(tensorflow_mnist_softmax.evaluatorOf("serving_default"));
         assertNotNull(tensorflow_mnist_softmax.evaluatorOf("serving_default", "y"));
+    }
+
+    private final String mnistProfile =
+            "rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add).rankingScript: join(reduce(join(rename(input, (d0, d1), (d0, d4)), constant(mnist_saved_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(mnist_saved_dnn_hidden1_bias_read), f(a,b)(a + b))\n" +
+            "rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add).type: tensor(d3[300])\n" +
+            "rankingExpression(serving_default.y).rankingScript: join(reduce(join(map(join(reduce(join(join(join(rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add), 0.009999999776482582, f(a,b)(a * b)), rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add), f(a,b)(max(a,b))), constant(mnist_saved_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(mnist_saved_dnn_hidden2_bias_read), f(a,b)(a + b)), f(a)(1.050701 * if (a >= 0, a, 1.673263 * (exp(a) - 1)))), constant(mnist_saved_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(mnist_saved_dnn_outputs_bias_read), f(a,b)(a + b))\n" +
+            "rankingExpression(serving_default.y).x.type: tensor(d0[],d1[784])\n";
+
+    private RankProfilesConfig.Rankprofile.Fef findProfile(String name, RankProfilesConfig config) {
+        for (RankProfilesConfig.Rankprofile profile : config.rankprofile()) {
+            if (profile.name().equals(name))
+                return profile.fef();
+        }
+        throw new IllegalArgumentException("No profile named " + name);
     }
 
     // We don't have function file distribution so just return empty tensor constants

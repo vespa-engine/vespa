@@ -45,7 +45,6 @@ public class Model {
           Collection<ExpressionFunction> functions,
           Map<FunctionReference, ExpressionFunction> referencedFunctions,
           List<Constant> constants) {
-        // TODO: Optimize functions
         this.name = name;
         this.functions = ImmutableList.copyOf(functions);
 
@@ -79,7 +78,10 @@ public class Model {
 
     public String name() { return name; }
 
-    /** Returns an immutable list of the free functions of this */
+    /**
+     * Returns an immutable list of the free functions of this.
+     * The functions returned always specifies types of all arguments and the return value
+     */
     public List<ExpressionFunction> functions() { return functions; }
 
     /** Returns the given function, or throws a IllegalArgumentException if it does not exist */

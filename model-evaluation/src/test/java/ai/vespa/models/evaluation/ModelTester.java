@@ -60,7 +60,6 @@ public class ModelTester {
     public void assertBoundFunction(String name, String expression, Model model) {
         ExpressionFunction function = model.referencedFunctions().get(FunctionReference.fromSerial(name).get());
         assertNotNull("Function '" + name + "' is present", function);
-        assertEquals(name, function.getName());
         assertEquals(expression, function.getBody().getRoot().toString());
     }
 

@@ -1,6 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import com.yahoo.collections.Pair;
+import com.yahoo.tensor.TensorType;
+
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -23,6 +26,8 @@ class FunctionReference {
 
     private static final Pattern referencePattern =
             Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)(\\.rankingScript)?");
+    private static final Pattern argumentTypePattern =
+            Pattern.compile("rankingExpression\\(([a-zA-Z0-9_.]+)(@[a-f0-9]+\\.[a-f0-9]+)?\\)\\.([a-zA-Z0-9_]+)\\.type?");
 
     /** The name of the function referenced */
     private final String name;
@@ -71,6 +76,24 @@ class FunctionReference {
         String name = expressionMatcher.group(1);
         String instance = expressionMatcher.group(2);
         return Optional.of(new FunctionReference(name, instance));
+    }
+
+    /**
+     * Returns a function reference and argument name string from the given serial form,
+     * or empty if the string is not a valid function argument serial form
+     */
+    static Optional<Pair<FunctionReference, String>> fromTypeArgumentSerial(String serialForm) {
+        Matcher expressionMatcher = argumentTypePattern.matcher(serialForm);
+        if ( ! expressionMatcher.matches()) return Optional.empty();
+
+        String name = expressionMatcher.group(1);
+        String instance = expressionMatcher.group(2);
+        String argument = expressionMatcher.group(3);
+        return Optional.of(new Pair<>(new FunctionReference(name, instance), argument));
+    }
+
+    public static FunctionReference fromName(String name) {
+        return new FunctionReference(name, null);
     }
 
 }
