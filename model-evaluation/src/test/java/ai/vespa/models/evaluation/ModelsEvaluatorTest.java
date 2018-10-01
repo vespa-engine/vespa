@@ -99,7 +99,6 @@ public class ModelsEvaluatorTest {
     }
 
     // TODO: Test argument-less function
-    // TODO: Test that rebinding doesn't work
     // TODO: Test with nested functions
 
     private ModelsEvaluator createModels(String path) {
