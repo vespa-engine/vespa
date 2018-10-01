@@ -30,13 +30,13 @@ public class DropoutImportTestCase {
         assertEquals("Has skipped outputs",
                      0, model.get().signature("serving_default").skippedOutputs().size());
 
-        ExpressionFunction output = signature.outputExpression("y");
-        assertNotNull(output);
-        assertEquals("outputs/Maximum", output.getBody().getName());
+        ExpressionFunction function = signature.outputExpression("y");
+        assertNotNull(function);
+        assertEquals("outputs/Maximum", function.getBody().getName());
         assertEquals("join(join(imported_ml_function_test_outputs_BiasAdd, reduce(constant(test_outputs_Const), sum, d1), f(a,b)(a * b)), imported_ml_function_test_outputs_BiasAdd, f(a,b)(max(a,b)))",
-                     output.getBody().getRoot().toString());
-        model.assertEqualResult("X", output.getBody().getName());
-        assertEquals("{x=tensor(d0[],d1[784])}", output.argumentTypes().toString());
+                     function.getBody().getRoot().toString());
+        model.assertEqualResult("X", function.getBody().getName());
+        assertEquals("{X=tensor(d0[],d1[784])}", function.argumentTypes().toString());
     }
 
 }
