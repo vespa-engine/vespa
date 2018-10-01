@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import com.yahoo.collections.Pair;
 import com.yahoo.config.FileReference;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.io.GrowableByteBuffer;
@@ -18,7 +19,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -60,26 +64,43 @@ public class RankProfilesConfigImporter {
 
     private Model importProfile(RankProfilesConfig.Rankprofile profile, RankingConstantsConfig constantsConfig)
             throws ParseException {
-        List<ExpressionFunction> functions = new ArrayList<>();
-        Map<FunctionReference, ExpressionFunction> referencedFunctions = new HashMap<>();
-        SmallConstantsInfo smallConstantsInfo = new SmallConstantsInfo();
-        ExpressionFunction firstPhase = null;
-        ExpressionFunction secondPhase = null;
 
         List<Constant> constants = readLargeConstants(constantsConfig);
 
+        Map<FunctionReference, ExpressionFunction> functions = new LinkedHashMap<>();
+        Map<FunctionReference, ExpressionFunction> referencedFunctions = new LinkedHashMap<>();
+        SmallConstantsInfo smallConstantsInfo = new SmallConstantsInfo();
+        ExpressionFunction firstPhase = null;
+        ExpressionFunction secondPhase = null;
         for (RankProfilesConfig.Rankprofile.Fef.Property property : profile.fef().property()) {
             Optional<FunctionReference> reference = FunctionReference.fromSerial(property.name());
+            Optional<Pair<FunctionReference, String>> argumentType = FunctionReference.fromTypeArgumentSerial(property.name());
+            Optional<FunctionReference> returnType = FunctionReference.fromReturnTypeSerial(property.name());
             if ( reference.isPresent()) {
-                List<String> arguments = new ArrayList<>(); // TODO: Arguments?
                 RankingExpression expression = new RankingExpression(reference.get().functionName(), property.value());
+                ExpressionFunction function = new ExpressionFunction(reference.get().functionName(),
+                                                                     Collections.emptyList(),
+                                                                     expression);
 
                 if (reference.get().isFree()) // make available in model under configured name
-                    functions.add(new ExpressionFunction(reference.get().functionName(), arguments, expression)); //
-
-                // Make all functions, bound or not available under the name they are referenced by in expressions
-                referencedFunctions.put(reference.get(),
-                                        new ExpressionFunction(reference.get().serialForm(), arguments, expression));
+                    functions.put(reference.get(), function);
+                // Make all functions, bound or not, available under the name they are referenced by in expressions
+                referencedFunctions.put(reference.get(), function);
+            }
+            else if (argumentType.isPresent()) { // Arguments always follows the function in properties
+                FunctionReference argReference = argumentType.get().getFirst();
+                ExpressionFunction function = referencedFunctions.get(argReference);
+                function = function.withArgument(argumentType.get().getSecond(), TensorType.fromSpec(property.value()));
+                if (argReference.isFree())
+                    functions.put(argReference, function);
+                referencedFunctions.put(argReference, function);
+            }
+            else if (returnType.isPresent()) { // Return type always follows the function in properties
+                ExpressionFunction function = referencedFunctions.get(returnType.get());
+                function = function.withReturnType(TensorType.fromSpec(property.value()));
+                if (returnType.get().isFree())
+                    functions.put(returnType.get(), function);
+                referencedFunctions.put(returnType.get(), function);
             }
             else if (property.name().equals("vespa.rank.firstphase")) { // Include in addition to functions
                 firstPhase = new ExpressionFunction("firstphase", new ArrayList<>(),
@@ -93,10 +114,10 @@ public class RankProfilesConfigImporter {
                 smallConstantsInfo.addIfSmallConstantInfo(property.name(), property.value());
             }
         }
-        if (functionByName("firstphase", functions) == null && firstPhase != null) // may be already included, depending on body
-            functions.add(firstPhase);
-        if (functionByName("secondphase", functions) == null && secondPhase != null) // may be already included, depending on body
-            functions.add(secondPhase);
+        if (functionByName("firstphase", functions.values()) == null && firstPhase != null) // may be already included, depending on body
+            functions.put(FunctionReference.fromName("firstphase"), firstPhase);
+        if (functionByName("secondphase", functions.values()) == null && secondPhase != null) // may be already included, depending on body
+            functions.put(FunctionReference.fromName("secondphase"), secondPhase);
 
         constants.addAll(smallConstantsInfo.asConstants());
 
@@ -108,7 +129,7 @@ public class RankProfilesConfigImporter {
         }
     }
 
-    private ExpressionFunction functionByName(String name, List<ExpressionFunction> functions) {
+    private ExpressionFunction functionByName(String name, Collection<ExpressionFunction> functions) {
         for (ExpressionFunction function : functions)
             if (function.getName().equals(name))
                 return function;

@@ -9,7 +9,6 @@ import com.yahoo.searchlib.rankingexpression.rule.TruthOperator;
  * In a boolean context doubles are true if they are different from 0.0
  *
  * @author bratseth
- * @since  5.1.5
  */
 public final class DoubleValue extends DoubleCompatibleValue {
 

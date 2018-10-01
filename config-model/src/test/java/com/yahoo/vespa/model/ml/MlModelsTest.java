@@ -54,7 +54,7 @@ public class MlModelsTest {
         assertEquals("test", config.rankprofile(2).name());
         RankProfilesConfig.Rankprofile.Fef test = config.rankprofile(2).fef();
 
-        // Compare string content in a denser for that config:
+        // Compare profile content in a denser format than config:
         StringBuilder b = new StringBuilder();
         for (RankProfilesConfig.Rankprofile.Fef.Property p : test.property())
             b.append(p.name()).append(": ").append(p.value()).append("\n");

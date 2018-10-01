@@ -15,17 +15,18 @@ public class BatchNormImportTestCase {
 
     @Test
     public void testBatchNormImport() {
-        TestableTensorFlowModel model = new TestableTensorFlowModel("test", "src/test/files/integration/tensorflow/batch_norm/saved");
+        TestableTensorFlowModel model = new TestableTensorFlowModel("test",
+                                                                    "src/test/files/integration/tensorflow/batch_norm/saved");
         ImportedModel.Signature signature = model.get().signature("serving_default");
 
         assertEquals("Has skipped outputs",
                      0, model.get().signature("serving_default").skippedOutputs().size());
 
-        ExpressionFunction output = signature.outputExpression("y");
-        assertNotNull(output);
-        assertEquals("dnn/batch_normalization_3/batchnorm/add_1", output.getBody().getName());
-        model.assertEqualResult("X", output.getBody().getName());
-        assertEquals("{x=tensor(d0[],d1[784])}", output.argumentTypes().toString());
+        ExpressionFunction function = signature.outputExpression("y");
+        assertNotNull(function);
+        assertEquals("dnn/batch_normalization_3/batchnorm/add_1", function.getBody().getName());
+        model.assertEqualResult("X", function.getBody().getName());
+        assertEquals("{X=tensor(d0[],d1[784])}", function.argumentTypes().toString());
     }
 
 }

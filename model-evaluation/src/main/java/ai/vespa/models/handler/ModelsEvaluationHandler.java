@@ -10,13 +10,16 @@ import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.JsonFormat;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
@@ -60,14 +63,17 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
             return listModelInformation(request, model, function);
 
         } catch (IllegalArgumentException e) {
-            return new ErrorResponse(404, e.getMessage());
+            return new ErrorResponse(404, Exceptions.toMessageString(e));
+        } catch (IllegalStateException e) { // On missing bindings
+            return new ErrorResponse(400, Exceptions.toMessageString(e));
         }
     }
 
     private HttpResponse evaluateModel(HttpRequest request, Model model, String[] function)  {
         FunctionEvaluator evaluator = model.evaluatorOf(function);
-        for (String bindingName : evaluator.context().names()) {
-            property(request, bindingName).ifPresent(s -> evaluator.bind(bindingName, Tensor.from(s)));
+        for (Map.Entry<String, TensorType> argument : evaluator.function().argumentTypes().entrySet()) {
+            property(request, argument.getKey()).ifPresent(value -> evaluator.bind(argument.getKey(),
+                                                                                   Tensor.from(argument.getValue(), value)));
         }
         Tensor result = evaluator.evaluate();
         return new Response(200, JsonFormat.encode(result));

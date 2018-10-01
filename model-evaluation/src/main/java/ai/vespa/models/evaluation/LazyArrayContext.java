@@ -2,6 +2,7 @@
 package ai.vespa.models.evaluation;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -27,6 +28,8 @@ import java.util.Set;
  * @author bratseth
  */
 public final class LazyArrayContext extends Context implements ContextIndex {
+
+    public final static Value defaultContextValue = DoubleValue.zero;
 
     private final IndexedBindings indexedBindings;
 
@@ -110,6 +113,9 @@ public final class LazyArrayContext extends Context implements ContextIndex {
     @Override
     public Set<String> names() { return indexedBindings.names(); }
 
+    /** Returns the (immutable) subset of names in this which must be bound when invoking */
+    public Set<String> arguments() { return indexedBindings.arguments(); }
+
     private Integer requireIndexOf(String name) {
         Integer index = indexedBindings.indexOf(name);
         if (index == null)
@@ -130,12 +136,18 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         /** The mapping from variable name to index */
         private final ImmutableMap<String, Integer> nameToIndex;
 
+        /** The names which neeeds to be bound externally when envoking this (i.e not constant or invocation */
+        private final ImmutableSet<String> arguments;
+
         /** The current values set, pre-converted to doubles */
         private final Value[] values;
 
-        private IndexedBindings(ImmutableMap<String, Integer> nameToIndex, Value[] values) {
+        private IndexedBindings(ImmutableMap<String, Integer> nameToIndex,
+                                Value[] values,
+                                ImmutableSet<String> arguments) {
             this.nameToIndex = nameToIndex;
             this.values = values;
+            this.arguments = arguments;
         }
 
         /**
@@ -149,10 +161,12 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                         Model model) {
             // 1. Determine and prepare bind targets
             Set<String> bindTargets = new LinkedHashSet<>();
-            extractBindTargets(expression.getRoot(), functions, bindTargets);
+            Set<String> arguments = new LinkedHashSet<>(); // Arguments: Bind targets which need to be bound before invocation
+            extractBindTargets(expression.getRoot(), functions, bindTargets, arguments);
 
+            this.arguments = ImmutableSet.copyOf(arguments);
             values = new Value[bindTargets.size()];
-            Arrays.fill(values, DoubleValue.zero);
+            Arrays.fill(values, defaultContextValue);
 
             int i = 0;
             ImmutableMap.Builder<String, Integer> nameToIndexBuilder = new ImmutableMap.Builder<>();
@@ -178,23 +192,25 @@ public final class LazyArrayContext extends Context implements ContextIndex {
 
         private void extractBindTargets(ExpressionNode node,
                                         Map<FunctionReference, ExpressionFunction> functions,
-                                        Set<String> bindTargets) {
+                                        Set<String> bindTargets,
+                                        Set<String> arguments) {
             if (isFunctionReference(node)) {
                 FunctionReference reference = FunctionReference.fromSerial(node.toString()).get();
                 bindTargets.add(reference.serialForm());
 
-                extractBindTargets(functions.get(reference).getBody().getRoot(), functions, bindTargets);
+                extractBindTargets(functions.get(reference).getBody().getRoot(), functions, bindTargets, arguments);
             }
             else if (isConstant(node)) {
                 bindTargets.add(node.toString());
             }
             else if (node instanceof ReferenceNode) {
                 bindTargets.add(node.toString());
+                arguments.add(node.toString());
             }
             else if (node instanceof CompositeNode) {
                 CompositeNode cNode = (CompositeNode)node;
                 for (ExpressionNode child : cNode.children())
-                    extractBindTargets(child, functions, bindTargets);
+                    extractBindTargets(child, functions, bindTargets, arguments);
             }
         }
 
@@ -215,13 +231,14 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         Value get(int index) { return values[index]; }
         void set(int index, Value value) { values[index] = value; }
         Set<String> names() { return nameToIndex.keySet(); }
+        Set<String> arguments() { return arguments; }
         Integer indexOf(String name) { return nameToIndex.get(name); }
 
         IndexedBindings copy(Context context) {
             Value[] valueCopy = new Value[values.length];
             for (int i = 0; i < values.length; i++)
                 valueCopy[i] = values[i] instanceof LazyValue ? ((LazyValue)values[i]).copyFor(context) : values[i];
-            return new IndexedBindings(nameToIndex, valueCopy);
+            return new IndexedBindings(nameToIndex, valueCopy, arguments);
         }
 
     }

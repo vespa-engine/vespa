@@ -11,6 +11,7 @@ import com.yahoo.text.Utf8;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -97,7 +98,12 @@ public class ExpressionFunction {
         return new ExpressionFunction(name, arguments, body, argumentTypes, Optional.of(returnType));
     }
 
-    public ExpressionFunction withArgumentTypes(Map<String, TensorType> argumentTypes) {
+    /** Returns a copy of this with the given argument and argument type added */
+    public ExpressionFunction withArgument(String argument, TensorType type) {
+        List<String> arguments = new ArrayList<>(this.arguments);
+        arguments.add(argument);
+        Map<String, TensorType> argumentTypes = new HashMap<>(this.argumentTypes);
+        argumentTypes.put(argument, type);
         return new ExpressionFunction(name, arguments, body, argumentTypes, returnType);
     }
 
