@@ -227,13 +227,14 @@
                         <id>export-packages</id>
                         <phase>compile</phase>
                         <goals>
-                            <goal>java</goal>
+                            <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <mainClass>com.yahoo.jdisc.core.ExportPackages</mainClass>
-                            <classpathScope>test</classpathScope>
-                            <cleanupDaemonThreads>false</cleanupDaemonThreads>
+                            <executable>java</executable>
                             <arguments>
+                                <argument>-classpath</argument>
+                                <classpath />
+                                <argument>com.yahoo.jdisc.core.ExportPackages</argument>
                                 <argument>${exportPackagesFile}</argument>
                                 <argument>${project.build.directory}/dependency/commons-daemon.jar</argument>
                                 <argument>__REPLACE_VERSION__${project.build.directory}/dependency/guava.jar</argument>
