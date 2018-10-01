@@ -29,15 +29,16 @@ public class MlModelsImportingTest {
         // TODO: When we get type information in Models, replace the evaluator.context().names() check below by that
         {
             Model xgboost = tester.models().get("xgboost_2_2");
-            tester.assertFunction("xgboost_2_2",
-                                  "(optimized sum of condition trees of size 192 bytes)",
-                                  xgboost);
 
             // Function
             assertEquals(1, xgboost.functions().size());
+            tester.assertFunction("xgboost_2_2",
+                                  "(optimized sum of condition trees of size 192 bytes)",
+                                  xgboost);
             ExpressionFunction function = xgboost.functions().get(0);
-            assertEquals("xgboost_2_2", function.getName());
-            // assertEquals("f109, f29, f56, f60", commaSeparated(xgboost.functions().get(0).arguments())); TODO
+            assertEquals(TensorType.fromSpec("tensor()"), function.returnType().get());
+            assertEquals("f109, f29, f56, f60", commaSeparated(function.arguments()));
+            function.arguments().forEach(arg -> assertEquals(TensorType.empty, function.argumentTypes().get(arg)));
 
             // Evaluator
             FunctionEvaluator evaluator = xgboost.evaluatorOf();
@@ -48,14 +49,12 @@ public class MlModelsImportingTest {
         {
 
             Model onnxMnistSoftmax = tester.models().get("mnist_softmax");
-            tester.assertFunction("default.add",
-                                  "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(mnist_softmax_Variable), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_Variable_1), f(a,b)(a + b))",
-                                  onnxMnistSoftmax);
-            assertEquals("tensor(d1[10],d2[784])",
-                         onnxMnistSoftmax.evaluatorOf("default.add").context().get("constant(mnist_softmax_Variable)").type().toString());
 
             // Function
             assertEquals(1, onnxMnistSoftmax.functions().size());
+            tester.assertFunction("default.add",
+                                  "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(mnist_softmax_Variable), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_Variable_1), f(a,b)(a + b))",
+                                  onnxMnistSoftmax);
             ExpressionFunction function = onnxMnistSoftmax.functions().get(0);
             assertEquals(TensorType.fromSpec("tensor(d1[10])"), function.returnType().get());
             assertEquals(1, function.arguments().size());
@@ -63,6 +62,8 @@ public class MlModelsImportingTest {
             assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"), function.argumentTypes().get("Placeholder"));
 
             // Evaluator
+            assertEquals("tensor(d1[10],d2[784])",
+                         onnxMnistSoftmax.evaluatorOf("default.add").context().get("constant(mnist_softmax_Variable)").type().toString());
             FunctionEvaluator evaluator = onnxMnistSoftmax.evaluatorOf(); // Verify exactly one output available
             assertEquals("Placeholder, constant(mnist_softmax_Variable), constant(mnist_softmax_Variable_1)", evaluator.context().names().stream().sorted().collect(Collectors.joining(", ")));
             assertEquals(-1.6372650861740112E-6, evaluator.evaluate().sum().asDouble(), delta);
@@ -70,17 +71,17 @@ public class MlModelsImportingTest {
 
         {
             Model tfMnistSoftmax = tester.models().get("mnist_softmax_saved");
-            tester.assertFunction("serving_default.y",
-                                  "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(mnist_softmax_saved_layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_saved_layer_Variable_1_read), f(a,b)(a + b))",
-                                  tfMnistSoftmax);
 
             // Function
             assertEquals(1, tfMnistSoftmax.functions().size());
+            tester.assertFunction("serving_default.y",
+                                  "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(mnist_softmax_saved_layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_saved_layer_Variable_1_read), f(a,b)(a + b))",
+                                  tfMnistSoftmax);
             ExpressionFunction function = tfMnistSoftmax.functions().get(0);
             assertEquals(TensorType.fromSpec("tensor(d1[10])"), function.returnType().get());
             assertEquals(1, function.arguments().size());
-            assertEquals("x", function.arguments().get(0));
-            assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"), function.argumentTypes().get("x"));
+            assertEquals("Placeholder", function.arguments().get(0));
+            assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"), function.argumentTypes().get("Placeholder"));
 
             // Evaluator
             FunctionEvaluator evaluator = tfMnistSoftmax.evaluatorOf(); // Verify exactly one output available
@@ -90,10 +91,6 @@ public class MlModelsImportingTest {
 
         {
             Model tfMnist = tester.models().get("mnist_saved");
-            tester.assertFunction("serving_default.y",
-                                  "join(reduce(join(map(join(reduce(join(join(join(rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add), 0.009999999776482582, f(a,b)(a * b)), rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add), f(a,b)(max(a,b))), constant(mnist_saved_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(mnist_saved_dnn_hidden2_bias_read), f(a,b)(a + b)), f(a)(1.050701 * if (a >= 0, a, 1.673263 * (exp(a) - 1)))), constant(mnist_saved_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(mnist_saved_dnn_outputs_bias_read), f(a,b)(a + b))",
-                                  tfMnist);
-
             // Generated function
             tester.assertFunction("imported_ml_function_mnist_saved_dnn_hidden1_add",
                                   "join(reduce(join(rename(input, (d0, d1), (d0, d4)), constant(mnist_saved_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(mnist_saved_dnn_hidden1_bias_read), f(a,b)(a + b))",
@@ -101,11 +98,14 @@ public class MlModelsImportingTest {
 
             // Function
             assertEquals(2, tfMnist.functions().size()); // TODO: Filter out generated function
+            tester.assertFunction("serving_default.y",
+                                  "join(reduce(join(map(join(reduce(join(join(join(rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add), 0.009999999776482582, f(a,b)(a * b)), rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add), f(a,b)(max(a,b))), constant(mnist_saved_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(mnist_saved_dnn_hidden2_bias_read), f(a,b)(a + b)), f(a)(1.050701 * if (a >= 0, a, 1.673263 * (exp(a) - 1)))), constant(mnist_saved_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(mnist_saved_dnn_outputs_bias_read), f(a,b)(a + b))",
+                                  tfMnist);
             ExpressionFunction function = tfMnist.functions().get(1);
             assertEquals(TensorType.fromSpec("tensor(d1[10])"), function.returnType().get());
             assertEquals(1, function.arguments().size());
-            assertEquals("x", function.arguments().get(0));
-            assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"), function.argumentTypes().get("x"));
+            assertEquals("input", function.arguments().get(0));
+            assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"), function.argumentTypes().get("input"));
 
             // Evaluator
             FunctionEvaluator evaluator = tfMnist.evaluatorOf("serving_default");

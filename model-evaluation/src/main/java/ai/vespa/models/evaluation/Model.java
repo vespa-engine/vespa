@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
 import com.yahoo.searchlib.rankingexpression.evaluation.ExpressionOptimizer;
+import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,28 +39,39 @@ public class Model {
 
     /** Programmatically create a model containing functions without constant of function references only */
     public Model(String name, Collection<ExpressionFunction> functions) {
-        this(name, functions, Collections.emptyMap(), Collections.emptyList());
+        this(name,
+             functions.stream().collect(Collectors.toMap(f -> FunctionReference.fromName(f.getName()), f -> f)),
+             Collections.emptyMap(),
+             Collections.emptyList());
     }
 
     Model(String name,
-          Collection<ExpressionFunction> functions,
+          Map<FunctionReference, ExpressionFunction> functions,
           Map<FunctionReference, ExpressionFunction> referencedFunctions,
           List<Constant> constants) {
         this.name = name;
-        this.functions = ImmutableList.copyOf(functions);
 
+        // Build context and add missing function arguments (missing because it is legal to omit scalar type arguments)
         ImmutableMap.Builder<String, LazyArrayContext> contextBuilder = new ImmutableMap.Builder<>();
-        for (ExpressionFunction function : functions) {
+        for (Map.Entry<FunctionReference, ExpressionFunction> function : functions.entrySet()) {
             try {
-                contextBuilder.put(function.getName(),
-                                   new LazyArrayContext(function.getBody(), referencedFunctions, constants, this));
+                LazyArrayContext context = new LazyArrayContext(function.getValue().getBody(), referencedFunctions, constants, this);
+                contextBuilder.put(function.getValue().getName(), context);
+                for (String argument : context.arguments()) {
+                    if (function.getValue().argumentTypes().get(argument) == null)
+                        functions.put(function.getKey(), function.getValue().withArgument(argument, TensorType.empty));
+                }
+                if ( ! function.getValue().returnType().isPresent())
+                    functions.put(function.getKey(), function.getValue().withReturnType(TensorType.empty));
             }
             catch (RuntimeException e) {
                 throw new IllegalArgumentException("Could not prepare an evaluation context for " + function, e);
             }
         }
         this.contextPrototypes = contextBuilder.build();
+        this.functions = ImmutableList.copyOf(functions.values());
 
+        // Optimize functions
         ImmutableMap.Builder<FunctionReference, ExpressionFunction> functionsBuilder = new ImmutableMap.Builder<>();
         for (Map.Entry<FunctionReference, ExpressionFunction> function : referencedFunctions.entrySet()) {
             ExpressionFunction optimizedFunction = optimize(function.getValue(),

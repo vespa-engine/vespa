@@ -90,7 +90,7 @@ public class ModelEvaluationTest {
         RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
         cluster.getConfig(b);
         RankProfilesConfig config = new RankProfilesConfig(b);
-        // System.out.println(config);
+        System.out.println(config);
 
         RankingConstantsConfig.Builder cb = new RankingConstantsConfig.Builder();
         cluster.getConfig(cb);
@@ -147,7 +147,7 @@ public class ModelEvaluationTest {
             "rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add).rankingScript: join(reduce(join(rename(input, (d0, d1), (d0, d4)), constant(mnist_saved_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(mnist_saved_dnn_hidden1_bias_read), f(a,b)(a + b))\n" +
             "rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add).type: tensor(d3[300])\n" +
             "rankingExpression(serving_default.y).rankingScript: join(reduce(join(map(join(reduce(join(join(join(rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add), 0.009999999776482582, f(a,b)(a * b)), rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add), f(a,b)(max(a,b))), constant(mnist_saved_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(mnist_saved_dnn_hidden2_bias_read), f(a,b)(a + b)), f(a)(1.050701 * if (a >= 0, a, 1.673263 * (exp(a) - 1)))), constant(mnist_saved_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(mnist_saved_dnn_outputs_bias_read), f(a,b)(a + b))\n" +
-            "rankingExpression(serving_default.y).x.type: tensor(d0[],d1[784])\n" +
+            "rankingExpression(serving_default.y).input.type: tensor(d0[],d1[784])\n" +
             "rankingExpression(serving_default.y).type: tensor(d1[10])\n";
 
     private RankProfilesConfig.Rankprofile.Fef findProfile(String name, RankProfilesConfig config) {

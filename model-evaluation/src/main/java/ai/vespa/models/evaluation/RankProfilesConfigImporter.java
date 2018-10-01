@@ -78,7 +78,9 @@ public class RankProfilesConfigImporter {
             Optional<FunctionReference> returnType = FunctionReference.fromReturnTypeSerial(property.name());
             if ( reference.isPresent()) {
                 RankingExpression expression = new RankingExpression(reference.get().functionName(), property.value());
-                ExpressionFunction function = new ExpressionFunction(reference.get().functionName(), Collections.emptyList(), expression);
+                ExpressionFunction function = new ExpressionFunction(reference.get().functionName(),
+                                                                     Collections.emptyList(),
+                                                                     expression);
 
                 if (reference.get().isFree()) // make available in model under configured name
                     functions.put(reference.get(), function);
@@ -120,14 +122,13 @@ public class RankProfilesConfigImporter {
         constants.addAll(smallConstantsInfo.asConstants());
 
         try {
-            return new Model(profile.name(), functions.values(), referencedFunctions, constants);
+            return new Model(profile.name(), functions, referencedFunctions, constants);
         }
         catch (RuntimeException e) {
             throw new IllegalArgumentException("Could not load model '" + profile.name() + "'", e);
         }
     }
 
-    // TODO: Replace by lookup in map
     private ExpressionFunction functionByName(String name, Collection<ExpressionFunction> functions) {
         for (ExpressionFunction function : functions)
             if (function.getName().equals(name))

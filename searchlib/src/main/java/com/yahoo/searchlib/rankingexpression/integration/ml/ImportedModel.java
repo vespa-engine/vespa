@@ -121,7 +121,7 @@ public class ImportedModel {
             if (signatureEntry.getValue().outputs().isEmpty()) // fallback: Signature without outputs
                 expressions.add(new Pair<>(signatureEntry.getKey(),
                                            new ExpressionFunction(signatureEntry.getKey(),
-                                                                  new ArrayList<>(signatureEntry.getValue().inputs().keySet()),
+                                                                  new ArrayList<>(signatureEntry.getValue().inputs().values()),
                                                                   expressions().get(signatureEntry.getKey()),
                                                                   signatureEntry.getValue().inputMap(),
                                                                   Optional.empty())));
@@ -182,8 +182,11 @@ public class ImportedModel {
         /** Returns the name and type of all inputs in this signature as an immutable map */
         public Map<String, TensorType> inputMap() {
             ImmutableMap.Builder<String, TensorType> inputs = new ImmutableMap.Builder<>();
+            // Note: We're naming inputs by their actual name (used in the expression, given by what the input maps *to*
+            // in the model, as these are the names which must actually be bound, if we are to avoid creating an
+            // "input mapping" to accomodate this complexity in
             for (Map.Entry<String, String> inputEntry : inputs().entrySet())
-                inputs.put(inputEntry.getKey(), owner().inputs().get(inputEntry.getValue()));
+                inputs.put(inputEntry.getValue(), owner().inputs().get(inputEntry.getValue()));
             return inputs.build();
         }
 
@@ -207,7 +210,7 @@ public class ImportedModel {
         /** Returns the expression this output references */
         public ExpressionFunction outputExpression(String outputName) {
             return new ExpressionFunction(outputName,
-                                          new ArrayList<>(inputs.keySet()),
+                                          new ArrayList<>(inputs.values()),
                                           owner().expressions().get(outputs.get(outputName)),
                                           inputMap(),
                                           Optional.empty());
