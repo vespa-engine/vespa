@@ -102,7 +102,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
      * Returns whether we need to send the query when fetching summaries.
      * This is necessary if the query requests summary features or dynamic snippeting
      */
-    boolean summaryNeedsQuery(Query query) {
+    public boolean summaryNeedsQuery(Query query) {
         if (query.getRanking().getQueryCache()) return false;  // Query is cached in backend
 
         DocumentDatabase documentDb = getDocumentDatabase(query);

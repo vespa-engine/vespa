@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
-import com.yahoo.compress.CompressionType;
 import com.yahoo.prelude.fastsearch.DocsumDefinition;
 import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
 import com.yahoo.prelude.fastsearch.DocsumField;
@@ -10,15 +9,15 @@ import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 
 /**
@@ -36,7 +35,7 @@ public class FillTestCase {
         nodes.put(0, client.createConnection("host0", 123));
         nodes.put(1, client.createConnection("host1", 123));
         nodes.put(2, client.createConnection("host2", 123));
-        Dispatcher dispatcher = new Dispatcher(nodes, client);
+        RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
 
         Query query = new Query();
         Result result = new Result(query);
@@ -52,7 +51,7 @@ public class FillTestCase {
         client.setDocsumReponse("host2", 3, "summaryClass1", map("field1", "s.2.3", "field2", 3));
         client.setDocsumReponse("host0", 4, "summaryClass1", map("field1", "s.0.4", "field2", 4));
 
-        dispatcher.fill(result, "summaryClass1", db(), CompressionType.valueOf("LZ4"));
+        rpcResourcePool.getFillInvoker(db()).fill(result, "summaryClass1");
 
         assertEquals("s.0.0", result.hits().get("hit:0").getField("field1").toString());
         assertEquals("s.2.1", result.hits().get("hit:1").getField("field1").toString());
@@ -72,7 +71,7 @@ public class FillTestCase {
         nodes.put(0, client.createConnection("host0", 123));
         nodes.put(1, client.createConnection("host1", 123));
         nodes.put(2, client.createConnection("host2", 123));
-        Dispatcher dispatcher = new Dispatcher(nodes, client);
+        RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
 
         Query query = new Query();
         Result result = new Result(query);
@@ -87,7 +86,8 @@ public class FillTestCase {
         client.setDocsumReponse("host1", 2, "summaryClass1", new HashMap<>());
         client.setDocsumReponse("host2", 3, "summaryClass1", map("field1", "s.2.3", "field2", 3));
         client.setDocsumReponse("host0", 4, "summaryClass1",new HashMap<>());
-        dispatcher.fill(result, "summaryClass1", db(), CompressionType.valueOf("LZ4"));
+
+        rpcResourcePool.getFillInvoker(db()).fill(result, "summaryClass1");
 
         assertEquals("s.0.0", result.hits().get("hit:0").getField("field1").toString());
         assertEquals("s.2.1", result.hits().get("hit:1").getField("field1").toString());
@@ -110,13 +110,13 @@ public class FillTestCase {
 
         Map<Integer, Client.NodeConnection> nodes = new HashMap<>();
         nodes.put(0, client.createConnection("host0", 123));
-        Dispatcher dispatcher = new Dispatcher(nodes, client);
+        RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
 
         Query query = new Query();
         Result result = new Result(query);
         result.hits().add(createHit(0, 0));
 
-        dispatcher.fill(result, "summaryClass1", db(), CompressionType.valueOf("LZ4"));
+        rpcResourcePool.getFillInvoker(db()).fill(result, "summaryClass1");
 
         assertEquals("Malfunctioning", result.hits().getError().getDetailedMessage());
     }

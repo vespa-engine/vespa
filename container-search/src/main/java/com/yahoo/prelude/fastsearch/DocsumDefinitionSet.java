@@ -50,7 +50,7 @@ public final class DocsumDefinitionSet {
         this.emulationConfig = emulConfig;
     }
 
-    LegacyEmulationConfig legacyEmulationConfig() { return emulationConfig; }
+    public LegacyEmulationConfig legacyEmulationConfig() { return emulationConfig; }
 
     /**
      * Returns the summary definition of the given name, or the default if not found.

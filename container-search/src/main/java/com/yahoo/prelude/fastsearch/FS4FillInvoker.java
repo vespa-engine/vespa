@@ -7,50 +7,38 @@ import com.yahoo.fs4.DocsumPacket;
 import com.yahoo.fs4.GetDocSumsPacket;
 import com.yahoo.fs4.Packet;
 import com.yahoo.fs4.QueryPacket;
-import com.yahoo.fs4.QueryResultPacket;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.fs4.mplex.FS4Channel;
 import com.yahoo.fs4.mplex.InvalidChannelException;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher.FillHitsResult;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.CloseableChannel;
+import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static com.yahoo.prelude.fastsearch.VespaBackEndSearcher.hitIterator;
-import static java.util.Arrays.asList;
 
 /**
- * {@link CloseableChannel} implementation for FS4 nodes and fdispatch
+ * {@link FillInvoker} implementation for FS4 nodes and fdispatch
  *
  * @author ollivir
  */
-public class FS4CloseableChannel extends CloseableChannel {
+public class FS4FillInvoker extends FillInvoker {
     private final VespaBackEndSearcher searcher;
     private FS4Channel channel;
-    private final Optional<Integer> distributionKey;
-
-    private ErrorMessage pendingSearchError = null;
-    private Query query = null;
-    private QueryPacket queryPacket = null;
 
     private int expectedFillResults = 0;
     private CacheKey summaryCacheKey = null;
     private DocsumPacketKey[] summaryPacketKeys = null;
 
-    public FS4CloseableChannel(VespaBackEndSearcher searcher, Query query, FS4ResourcePool fs4ResourcePool, String hostname, int port,
+    public FS4FillInvoker(VespaBackEndSearcher searcher, Query query, FS4ResourcePool fs4ResourcePool, String hostname, int port,
             int distributionKey) {
         this.searcher = searcher;
-        this.distributionKey = Optional.of(distributionKey);
 
         Backend backend = fs4ResourcePool.getBackend(hostname, port);
         this.channel = backend.openChannel();
@@ -58,96 +46,14 @@ public class FS4CloseableChannel extends CloseableChannel {
     }
 
     // fdispatch code path
-    public FS4CloseableChannel(VespaBackEndSearcher searcher, Query query, Backend backend) {
+    public FS4FillInvoker(VespaBackEndSearcher searcher, Query query, Backend backend) {
         this.searcher = searcher;
-        this.distributionKey = Optional.empty();
         this.channel = backend.openChannel();
         channel.setQuery(query);
     }
 
     @Override
-    protected void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException {
-        if (isLoggingFine())
-            getLogger().finest("sending query packet");
-
-        if(queryPacket == null) {
-            // query changed for subchannel
-            queryPacket = searcher.createQueryPacket(query);
-        }
-
-        this.query = query;
-        this.queryPacket = queryPacket;
-
-        try {
-            boolean couldSend = channel.sendPacket(queryPacket);
-            if (!couldSend) {
-                pendingSearchError = ErrorMessage.createBackendCommunicationError("Could not reach '" + getName() + "'");
-            }
-        } catch (InvalidChannelException e) {
-            pendingSearchError = ErrorMessage.createBackendCommunicationError("Invalid channel " + getName());
-        } catch (IllegalStateException e) {
-            pendingSearchError = ErrorMessage.createBackendCommunicationError("Illegal state in FS4: " + e.getMessage());
-        }
-    }
-
-    @Override
-    protected List<Result> getSearchResults(CacheKey cacheKey) throws IOException {
-        if(pendingSearchError != null) {
-            return asList(new Result(query, pendingSearchError));
-        }
-        BasicPacket[] basicPackets;
-
-        try {
-            basicPackets = channel.receivePackets(query.getTimeLeft(), 1);
-        } catch (ChannelTimeoutException e) {
-            return asList(new Result(query, ErrorMessage.createTimeout("Timeout while waiting for " + getName())));
-        } catch (InvalidChannelException e) {
-            return asList(new Result(query, ErrorMessage.createBackendCommunicationError("Invalid channel for " + getName())));
-        }
-
-        if (basicPackets.length == 0) {
-            return asList(new Result(query, ErrorMessage.createBackendCommunicationError(getName() + " got no packets back")));
-        }
-
-        if (isLoggingFine())
-            getLogger().finest("got packets " + basicPackets.length + " packets");
-
-        basicPackets[0].ensureInstanceOf(QueryResultPacket.class, getName());
-        QueryResultPacket resultPacket = (QueryResultPacket) basicPackets[0];
-
-        if (isLoggingFine())
-            getLogger().finest("got query packet. " + "docsumClass=" + query.getPresentation().getSummary());
-
-        if (query.getPresentation().getSummary() == null)
-            query.getPresentation().setSummary(searcher.getDefaultDocsumClass());
-
-        Result result = new Result(query);
-
-        searcher.addMetaInfo(query, queryPacket.getQueryPacketData(), resultPacket, result);
-
-        searcher.addUnfilledHits(result, resultPacket.getDocuments(), false, queryPacket.getQueryPacketData(), cacheKey, distributionKey);
-        Packet[] packets;
-        CacheControl cacheControl = searcher.getCacheControl();
-        PacketWrapper packetWrapper = cacheControl.lookup(cacheKey, query);
-
-        if (packetWrapper != null) {
-            cacheControl.updateCacheEntry(cacheKey, query, resultPacket);
-        } else {
-            if (resultPacket.getCoverageFeature() && !resultPacket.getCoverageFull()) {
-                // Don't add error here, it was done in first phase
-                // No check if packetWrapper already exists, since incomplete
-                // first phase data won't be cached anyway.
-            } else {
-                packets = new Packet[1];
-                packets[0] = resultPacket;
-                cacheControl.cache(cacheKey, query, new DocsumPacketKey[0], packets, distributionKey);
-            }
-        }
-        return asList(result);
-    }
-
-    @Override
-    protected void sendPartialFillRequest(Result result, String summaryClass) {
+    protected void sendFillRequest(Result result, String summaryClass) {
         summaryCacheKey = null;
         if (searcher.getCacheControl().useCache(channel.getQuery())) {
             summaryCacheKey = fetchCacheKeyFromHits(result.hits(), summaryClass);
@@ -185,7 +91,7 @@ public class FS4CloseableChannel extends CloseableChannel {
 
 
     @Override
-    protected void getPartialFillResults(Result result, String summaryClass) {
+    protected void getFillResults(Result result, String summaryClass) {
         if (expectedFillResults == 0) {
             return;
         }
@@ -248,7 +154,7 @@ public class FS4CloseableChannel extends CloseableChannel {
     }
 
     @Override
-    public void closeChannel() {
+    public void release() {
         if (channel != null) {
             channel.close();
             channel = null;
@@ -382,13 +288,5 @@ public class FS4CloseableChannel extends CloseableChannel {
 
     private String getName() {
         return searcher.getName();
-    }
-
-    private Logger getLogger() {
-        return searcher.getLogger();
-    }
-
-    private boolean isLoggingFine() {
-        return getLogger().isLoggable(Level.FINE);
     }
 }

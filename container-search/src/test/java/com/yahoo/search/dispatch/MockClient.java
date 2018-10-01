@@ -36,7 +36,7 @@ public class MockClient implements Client {
 
     @Override
     public void getDocsums(List<FastHit> hitsContext, NodeConnection node, CompressionType compression,
-                           int uncompressedSize, byte[] compressedSlime, Dispatcher.GetDocsumsResponseReceiver responseReceiver,
+                           int uncompressedSize, byte[] compressedSlime, RpcFillInvoker.GetDocsumsResponseReceiver responseReceiver,
                            double timeoutSeconds) {
         if (malfunctioning) {
             responseReceiver.receive(GetDocsumsResponseOrError.fromError("Malfunctioning"));
