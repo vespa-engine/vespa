@@ -62,7 +62,7 @@ public class ApplicationMojo extends AbstractMojo {
 
     private File createComponentsDir(File applicationDestination) throws MojoExecutionException {
         File componentsDir = new File(applicationDestination, "components");
-        componentsDir.mkdir();
+        componentsDir.mkdirs();
         if (!componentsDir.exists() || !componentsDir.isDirectory()) {
             throw new MojoExecutionException("Failed creating components directory (" + componentsDir + ")");
         }
