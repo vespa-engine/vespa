@@ -3,9 +3,13 @@ package ai.vespa.models.evaluation;
 
 import com.google.common.annotations.Beta;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
+import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * An evaluator which can be used to evaluate a single function once.
@@ -35,6 +39,14 @@ public class FunctionEvaluator {
     public FunctionEvaluator bind(String name, Tensor value) {
         if (evaluated)
             throw new IllegalStateException("You cannot bind a value in a used evaluator");
+        TensorType requiredType = function.argumentTypes().get(name);
+        if (requiredType == null)
+            throw new IllegalArgumentException("'" + name + "' is not a valid argument in " + function +
+                                               ". Expected arguments: " + function.argumentTypes().entrySet().stream()
+                                                                                  .map(e -> e.getKey() + ": " + e.getValue())
+                                                                                  .collect(Collectors.joining(", ")));
+        if ( ! value.type().isAssignableTo(requiredType))
+            throw new IllegalArgumentException("'" + name + "' must be of type " + requiredType + ", not " + value.type());
         context.put(name, new TensorValue(value));
         return this;
     }
@@ -52,9 +64,18 @@ public class FunctionEvaluator {
     }
 
     public Tensor evaluate() {
+        for (Map.Entry<String, TensorType> argument : function.argumentTypes().entrySet()) {
+            if (argument.getValue().rank() == 0) continue; // Scalar argumentds can be skipped (defaults to 0)
+            if (context.get(argument.getKey()) == LazyArrayContext.defaultContextValue)
+                throw new IllegalStateException("Missing argument '" + argument.getKey() +
+                                                "': Must be bound to a value of type " + argument.getValue());
+        }
         evaluated = true;
         return function.getBody().evaluate(context).asTensor();
     }
+
+    /** Returns the function evaluated by this */
+    public ExpressionFunction function() { return function; }
 
     public LazyArrayContext context() { return context; }
 

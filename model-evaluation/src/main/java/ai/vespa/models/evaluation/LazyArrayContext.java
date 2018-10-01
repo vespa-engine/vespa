@@ -32,6 +32,8 @@ import java.util.Set;
  */
 public final class LazyArrayContext extends Context implements ContextIndex {
 
+    public final static Value defaultContextValue = DoubleValue.zero;
+
     private final IndexedBindings indexedBindings;
 
     private LazyArrayContext(IndexedBindings indexedBindings) {
@@ -167,7 +169,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
 
             this.arguments = ImmutableSet.copyOf(arguments);
             values = new Value[bindTargets.size()];
-            Arrays.fill(values, DoubleValue.zero);
+            Arrays.fill(values, defaultContextValue);
 
             int i = 0;
             ImmutableMap.Builder<String, Integer> nameToIndexBuilder = new ImmutableMap.Builder<>();

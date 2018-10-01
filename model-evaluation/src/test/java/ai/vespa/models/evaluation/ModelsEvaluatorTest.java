@@ -20,16 +20,7 @@ public class ModelsEvaluatorTest {
     private static final double delta = 0.00000000001;
 
     @Test
-    public void testTensorEvaluation() {
-        ModelsEvaluator models = createModels("src/test/resources/config/rankexpression/");
-        FunctionEvaluator function = models.evaluatorOf("macros", "fourtimessum");
-        function.bind("var1", Tensor.from("{{x:0}:3,{x:1}:5}"));
-        function.bind("var2", Tensor.from("{{x:0}:7,{x:1}:11}"));
-        assertEquals(Tensor.from("{{x:0}:40.0,{x:1}:64.0}"), function.evaluate());
-    }
-
-    @Test
-    public void testEvaluationDependingOnMacroTakingArguments() {
+    public void testEvaluationDependingFunctionTakingArguments() {
         ModelsEvaluator models = createModels("src/test/resources/config/rankexpression/");
         FunctionEvaluator function = models.evaluatorOf("macros", "secondphase");
         function.bind("match", 3);
@@ -40,7 +31,7 @@ public class ModelsEvaluatorTest {
     // TODO: Test argument-less function
     // TODO: Test that binding nonexisting variable doesn't work
     // TODO: Test that rebinding doesn't work
-    // TODO: Test with nested macros
+    // TODO: Test with nested functions
 
     private ModelsEvaluator createModels(String path) {
         Path configDir = Path.fromString(path);

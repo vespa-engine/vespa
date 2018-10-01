@@ -65,7 +65,7 @@ public class MlModelsImportingTest {
             assertEquals("tensor(d1[10],d2[784])",
                          onnxMnistSoftmax.evaluatorOf("default.add").context().get("constant(mnist_softmax_Variable)").type().toString());
             FunctionEvaluator evaluator = onnxMnistSoftmax.evaluatorOf(); // Verify exactly one output available
-            assertEquals("Placeholder, constant(mnist_softmax_Variable), constant(mnist_softmax_Variable_1)", evaluator.context().names().stream().sorted().collect(Collectors.joining(", ")));
+            evaluator.bind("Placeholder", inputTensor());
             assertEquals(-1.6372650861740112E-6, evaluator.evaluate().sum().asDouble(), delta);
         }
 
@@ -85,7 +85,7 @@ public class MlModelsImportingTest {
 
             // Evaluator
             FunctionEvaluator evaluator = tfMnistSoftmax.evaluatorOf(); // Verify exactly one output available
-            assertEquals("Placeholder, constant(mnist_softmax_saved_layer_Variable_1_read), constant(mnist_softmax_saved_layer_Variable_read)", evaluator.context().names().stream().sorted().collect(Collectors.joining(", ")));
+            evaluator.bind("Placeholder", inputTensor());
             assertEquals(-1.6372650861740112E-6, evaluator.evaluate().sum().asDouble(), delta);
         }
 
@@ -109,9 +109,16 @@ public class MlModelsImportingTest {
 
             // Evaluator
             FunctionEvaluator evaluator = tfMnist.evaluatorOf("serving_default");
-            assertEquals("constant(mnist_saved_dnn_hidden1_bias_read), constant(mnist_saved_dnn_hidden1_weights_read), constant(mnist_saved_dnn_hidden2_bias_read), constant(mnist_saved_dnn_hidden2_weights_read), constant(mnist_saved_dnn_outputs_bias_read), constant(mnist_saved_dnn_outputs_weights_read), input, rankingExpression(imported_ml_function_mnist_saved_dnn_hidden1_add)", evaluator.context().names().stream().sorted().collect(Collectors.joining(", ")));
+            evaluator.bind("input", inputTensor());
             assertEquals(-0.714629131972222, evaluator.evaluate().sum().asDouble(), delta);
         }
+    }
+
+    private Tensor inputTensor() {
+        Tensor.Builder b = Tensor.Builder.of(TensorType.fromSpec("tensor(d0[],d1[784])"));
+        for (int i = 0; i < 784; i++)
+            b.cell(0.0, 0, i);
+        return b.build();
     }
 
     private String commaSeparated(List<?> items) {

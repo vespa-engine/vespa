@@ -27,7 +27,7 @@ class TensorParser {
             else {
                 if (type.isPresent() && ! type.get().equals(TensorType.empty))
                     throw new IllegalArgumentException("Got zero-dimensional tensor '" + tensorString +
-                                                       "but type is not empty but " + type.get());
+                                                       "' where type " + type.get() + " is required");
                 return Tensor.Builder.of(TensorType.empty).cell(Double.parseDouble(tensorString)).build();
             }
         }
