@@ -117,7 +117,7 @@ public class Container {
     }
 
     private void invalidateGeneration(long generation, Throwable cause) {
-        Duration maxWaitToExit = Duration.ofSeconds(60);
+        Duration maxWaitToExit = Duration.ofDays(1);
         leastGeneration = Math.max(configurer.getComponentsGeneration(), configurer.getBootstrapGeneration()) + 1;
         if (!(cause instanceof InterruptedException) && !(cause instanceof ConfigInterruptedException)) {
             log.log(Level.WARNING, newGraphErrorMessage(generation, cause, maxWaitToExit), cause);
