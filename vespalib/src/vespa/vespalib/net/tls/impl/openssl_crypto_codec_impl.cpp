@@ -325,6 +325,9 @@ DecodeResult OpenSslCryptoCodecImpl::drain_and_produce_plaintext_from_ssl(
             // we've fed it thus far; caller must feed it some and then try again.
             LOG(spam, "SSL_read() returned SSL_ERROR_WANT_READ, must get more ciphertext");
             return decode_needs_more_peer_data();
+        case SSL_ERROR_ZERO_RETURN:
+            LOG(debug, "SSL_read() returned SSL_ERROR_ZERO_RETURN; connection has been shut down normally by the peer");
+            return decode_failed(); // We'll just break the connection as per usual.
         default:
             LOG(error, "SSL_read() returned unexpected error: %s (%s)",
                 ssl_error_to_str(ssl_error), ssl_error_from_stack().c_str());
