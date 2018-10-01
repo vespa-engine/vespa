@@ -33,7 +33,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -140,7 +139,7 @@ public class ApplicationSerializerTest {
         assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
 
         assertEquals(original.change(), serialized.change());
-        assertEquals(original.rotation().get().id(), serialized.rotation().get().id());
+        assertEquals(original.rotation().get(), serialized.rotation().get());
         assertEquals(original.rotationStatus(), serialized.rotationStatus());
 
         // Test cluster utilization

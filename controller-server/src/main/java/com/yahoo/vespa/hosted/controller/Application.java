@@ -8,15 +8,16 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
-import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.GlobalDnsName;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
@@ -184,9 +185,14 @@ public class Application {
                                       .min(Comparator.naturalOrder());
     }
 
-    /** Returns the global rotation of this, if present */
-    public Optional<ApplicationRotation> rotation() {
-        return rotation.map(rotation -> new ApplicationRotation(id, rotation));
+    /** Returns the global rotation id of this, if present */
+    public Optional<RotationId> rotation() {
+        return rotation;
+    }
+
+    /** Returns the global rotation dns name, if present */
+    public Optional<GlobalDnsName> globalDnsName(SystemName system) {
+        return rotation.map(rotation -> new GlobalDnsName(id, rotation, system));
     }
 
     /** Returns the status of the global rotation assigned to this. Wil be empty if this does not have a global rotation. */

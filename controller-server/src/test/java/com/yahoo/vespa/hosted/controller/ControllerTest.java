@@ -391,7 +391,7 @@ public class ControllerTest {
                     .build();
             tester.deployCompletely(app1, applicationPackage);
             app1 = tester.applications().require(app1.id());
-            assertEquals("rotation-id-02", app1.rotation().get().id().asString());
+            assertEquals("rotation-id-02", app1.rotation().get().asString());
 
             // Existing DNS records are updated to point to the newly assigned rotation
             assertEquals(6, tester.controllerTester().nameService().records().size());

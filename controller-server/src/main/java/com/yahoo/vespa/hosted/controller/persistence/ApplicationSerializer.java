@@ -146,7 +146,7 @@ public class ApplicationSerializer {
         application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
-        application.rotation().ifPresent(rotation -> root.setString(rotationField, rotation.id().asString()));
+        application.rotation().ifPresent(rotation -> root.setString(rotationField, rotation.asString()));
         toSlime(application.rotationStatus(), root.setArray(rotationStatusField));
         return slime;
     }

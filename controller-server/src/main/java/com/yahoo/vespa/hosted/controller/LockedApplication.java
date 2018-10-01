@@ -10,19 +10,18 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService.ApplicationMetrics;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
-import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.time.Instant;
@@ -66,7 +65,7 @@ public class LockedApplication {
              application.deployments(),
              application.deploymentJobs(), application.change(), application.outstandingChange(),
              application.ownershipIssueId(), application.metrics(),
-             application.rotation().map(ApplicationRotation::id),
+             application.rotation(),
              application.rotationStatus());
     }
 

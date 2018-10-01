@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.net.URI;
@@ -11,7 +12,7 @@ import java.net.URI;
  *
  * @author mpolden
  */
-public class ApplicationRotation {
+public class GlobalDnsName {
 
     // TODO: TLS: Remove all non-secure stuff when all traffic is on HTTPS.
     public static final String DNS_SUFFIX = "global.vespa.yahooapis.com";
@@ -22,30 +23,32 @@ public class ApplicationRotation {
     private final URI url;
     private final URI secureUrl;
     private final URI oathUrl;
-    private final RotationId id;
 
-    public ApplicationRotation(ApplicationId application, RotationId id) {
-        this.url = URI.create(String.format("http://%s.%s.%s:%d/",
+    public GlobalDnsName(ApplicationId application, RotationId id, SystemName system) {
+        this.url = URI.create(String.format("http://%s%s.%s.%s:%d/",
+                                            getSystemPart(system, "."),
                                             sanitize(application.application().value()),
                                             sanitize(application.tenant().value()),
                                             DNS_SUFFIX,
                                             port));
-        this.secureUrl = URI.create(String.format("https://%s--%s.%s:%d/",
+        this.secureUrl = URI.create(String.format("https://%s%s--%s.%s:%d/",
+                                                  getSystemPart(system, "--"),
                                                   sanitize(application.application().value()),
                                                   sanitize(application.tenant().value()),
                                                   DNS_SUFFIX,
                                                   securePort));
-        this.oathUrl = URI.create(String.format("https://%s--%s.%s:%d/",
-                                                  sanitize(application.application().value()),
-                                                  sanitize(application.tenant().value()),
-                                                  OATH_DNS_SUFFIX,
-                                                  securePort));
-        this.id = id;
+        this.oathUrl = URI.create(String.format("https://%s%s--%s.%s:%d/",
+                                                getSystemPart(system, "--"),
+                                                sanitize(application.application().value()),
+                                                sanitize(application.tenant().value()),
+                                                OATH_DNS_SUFFIX,
+                                                securePort));
     }
 
-    /** ID of the rotation */
-    public RotationId id() {
-        return id;
+    private String getSystemPart(SystemName system, String separator) {
+        return SystemName.main.equals(system)
+                ? ""
+                : system.name() + separator;
     }
 
     /** URL to this rotation */
