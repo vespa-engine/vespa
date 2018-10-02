@@ -55,7 +55,7 @@ public class Model {
         ImmutableMap.Builder<String, LazyArrayContext> contextBuilder = new ImmutableMap.Builder<>();
         for (Map.Entry<FunctionReference, ExpressionFunction> function : functions.entrySet()) {
             try {
-                LazyArrayContext context = new LazyArrayContext(function.getValue().getBody(), referencedFunctions, constants, this);
+                LazyArrayContext context = new LazyArrayContext(function.getValue(), referencedFunctions, constants, this);
                 contextBuilder.put(function.getValue().getName(), context);
                 for (String argument : context.arguments()) {
                     if (function.getValue().argumentTypes().get(argument) == null)
