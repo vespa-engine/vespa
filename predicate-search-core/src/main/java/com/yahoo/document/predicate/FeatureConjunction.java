@@ -13,6 +13,7 @@ import java.util.List;
  * @author bjorncs
  */
 public class FeatureConjunction extends PredicateOperator {
+
     private final List<Predicate> operands;
 
     public FeatureConjunction(List<Predicate> operands) {
@@ -99,6 +100,5 @@ public class FeatureConjunction extends PredicateOperator {
         }
         return true;
     }
-
 
 }

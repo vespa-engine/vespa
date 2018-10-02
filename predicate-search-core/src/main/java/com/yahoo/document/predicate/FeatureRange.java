@@ -187,4 +187,5 @@ public class FeatureRange extends PredicateValue {
         }
         return new FeatureRange(key, fromInclusive, toInclusive);
     }
+
 }

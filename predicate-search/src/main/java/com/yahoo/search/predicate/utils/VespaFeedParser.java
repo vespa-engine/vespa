@@ -41,4 +41,5 @@ public class VespaFeedParser {
     private static String extractBooleanExpression(String line) {
         return line.substring(9, line.length() - 10);
     }
+
 }

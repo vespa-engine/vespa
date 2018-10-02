@@ -9,6 +9,7 @@ import java.util.Map;
  * @author bjorncs
  */
 public class ResultMetrics {
+
     private static final int MAX_LATENCY = 100; // ms
     private static final int RESOLUTION = 25; // sample points per ms
     private static final int SLOTS = MAX_LATENCY * RESOLUTION;

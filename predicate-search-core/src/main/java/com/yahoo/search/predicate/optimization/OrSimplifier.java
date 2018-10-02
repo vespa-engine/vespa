@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * Simplifies Disjunction nodes where all children are of type FeatureSet. All FeatureSet that share the same key
  * are merged into a single FeatureSet. The Disjunction is removed if all children merges into a single feature set.
+ *
  * @author bjorncs
  */
 public class OrSimplifier implements PredicateProcessor {
@@ -68,4 +69,5 @@ public class OrSimplifier implements PredicateProcessor {
             return new Disjunction(newChildren);
         }
     }
+
 }

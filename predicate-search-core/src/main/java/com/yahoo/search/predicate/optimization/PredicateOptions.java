@@ -8,10 +8,11 @@ import java.util.OptionalLong;
  * The adjusted bounds are extended to the nearest power of the arity (-1)
  * and are used to generate more efficient indexes.
  *
- * @author magnarn
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public class PredicateOptions {
+
     public static final long DEFAULT_LOWER_BOUND = 0x8000000000000000L;
     public static final long DEFAULT_UPPER_BOUND = 0x7fffffffffffffffL;
 

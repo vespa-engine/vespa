@@ -11,9 +11,10 @@ import java.util.Map;
  * Holds annotations for all the features of a predicate.
  * This is sufficient information to insert the predicate into a PredicateIndex.
  *
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  */
 public class PredicateTreeAnnotations {
+
     public final int minFeature;
     public final int intervalEnd;
     public final Map<Long, List<Integer>> intervalMap;
@@ -32,4 +33,5 @@ public class PredicateTreeAnnotations {
         this.boundsMap = boundsMap;
         this.featureConjunctions = featureConjunctions;
     }
+
 }

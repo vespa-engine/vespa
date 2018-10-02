@@ -27,7 +27,7 @@ public class PredicateTreeAnalyzer {
 
     /**
      * @param predicate The predicate tree.
-     * @return A result object containing the min-feature value, the tree size and sub-tree sizes.
+     * @return a result object containing the min-feature value, the tree size and sub-tree sizes.
      */
     public static PredicateTreeAnalyzerResult analyzePredicateTree(Predicate predicate) {
         AnalyzerContext context = new AnalyzerContext();
@@ -145,4 +145,5 @@ public class PredicateTreeAnalyzer {
         // Does the tree contain any Negation nodes?
         public boolean hasNegationPredicate = false;
     }
+
 }

@@ -2,9 +2,10 @@
 package com.yahoo.document.predicate;
 
 /**
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  */
 public class RangeEdgePartition extends RangePartition {
+
     private final long value;
     private final int lowerBound;
     private final int upperBound;

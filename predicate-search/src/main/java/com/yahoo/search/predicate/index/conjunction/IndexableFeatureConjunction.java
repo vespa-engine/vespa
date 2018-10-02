@@ -17,6 +17,7 @@ import java.util.Set;
  * @author bjorncs
  */
 public class IndexableFeatureConjunction {
+
     /** Conjunction id */
     public final long id;
     /** K value - number of non-negated operands */
@@ -72,4 +73,5 @@ public class IndexableFeatureConjunction {
     public int hashCode() {
         return (int) (id ^ (id >>> 32));
     }
+
 }

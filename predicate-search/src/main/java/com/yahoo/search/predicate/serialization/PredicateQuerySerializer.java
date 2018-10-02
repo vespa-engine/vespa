@@ -32,6 +32,7 @@ import static java.util.stream.Collectors.toList;
  * @author bjorncs
  */
 public class PredicateQuerySerializer {
+
     private final JsonFactory factory = new JsonFactory();
     private final PredicateQueryParser parser = new PredicateQueryParser();
 
@@ -105,4 +106,5 @@ public class PredicateQuerySerializer {
     private static String toHexString(long subqueryBitMap) {
         return "0x" + Long.toHexString(subqueryBitMap);
     }
+
 }

@@ -4,9 +4,10 @@ package com.yahoo.search.predicate.index;
 /**
  * Interface for posting lists to be used by the algorithm implemented in PredicateSearch.
  *
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  */
 public interface PostingList {
+
     /**
      * Moves the posting list past the supplied document id.
      * @param docId Document id to move past.
@@ -50,4 +51,5 @@ public interface PostingList {
      * @return The document ids
      */
     int[] getDocIds();
+
 }

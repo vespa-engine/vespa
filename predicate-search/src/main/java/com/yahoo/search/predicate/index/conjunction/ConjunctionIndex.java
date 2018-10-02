@@ -23,12 +23,14 @@ import java.util.Optional;
 
 /**
  * A searchable index of conjunctions (see {@link FeatureConjunction} / {@link IndexableFeatureConjunction}).
- * Implements the algorithm described in the paper <a href="http://dl.acm.org/citation.cfm?id=1687633">Indexing Boolean Expressions</a>.
+ * Implements the algorithm described in the paper
+ * <a href="http://dl.acm.org/citation.cfm?id=1687633">Indexing Boolean Expressions</a>.
  *
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public class ConjunctionIndex {
+
     // A map from K value to FeatureIndex
     private final IntObjectMap<FeatureIndex> kIndex;
     private final int[] zList;
@@ -276,4 +278,5 @@ public class ConjunctionIndex {
             return idMapping[internalId >>> 1];
         }
     }
+
 }

@@ -44,4 +44,5 @@ public class ConjunctionIdIterator {
     public int[] getConjunctionIds() {
         return conjunctionIds;
     }
+
 }

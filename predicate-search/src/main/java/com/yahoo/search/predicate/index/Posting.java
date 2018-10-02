@@ -4,7 +4,7 @@ package com.yahoo.search.predicate.index;
 /**
  * Represents an entry in a posting list, containing an integer id and integer data reference.
  *
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  */
 public class Posting implements Comparable<Posting> {
 
@@ -47,4 +47,5 @@ public class Posting implements Comparable<Posting> {
         result = 31 * result + dataRef;
         return result;
     }
+
 }

@@ -32,11 +32,12 @@ import java.util.stream.Stream;
  * Note that the {@link PredicateIndex} is thread-safe, but a {@link Searcher} is not.
  * Each thread <strong>must</strong> use its own searcher.
  * </p>
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  * @author bjorncs
  */
 @Beta
 public class PredicateIndex {
+
     private static final int SERIALIZATION_FORMAT_VERSION = 3;
 
     private final PredicateRangeTermExpander expander;
@@ -222,4 +223,5 @@ public class PredicateIndex {
         }
 
     }
+
 }

@@ -17,7 +17,8 @@ import java.util.Map;
 
 /**
  * An index mapping keys of type Long to lists of postings of generic data.
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ *
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public class SimpleIndex {
@@ -30,8 +31,9 @@ public class SimpleIndex {
 
     /**
      * Retrieves a posting list for a given key
-     * @param key Key to lookup
-     * @return List of postings
+     *
+     * @param key the key to lookup
+     * @return list of postings
      */
     public Entry getPostingList(long key) {
         return dictionary.get(key);

@@ -12,7 +12,7 @@ package com.yahoo.search.predicate.index;
  * ZStar1 intervals have end value in 16 MSB and begin in 16 LSB.
  * ZStar2 intervals have only an end value located at 16 LSB.
  *
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public class Interval {

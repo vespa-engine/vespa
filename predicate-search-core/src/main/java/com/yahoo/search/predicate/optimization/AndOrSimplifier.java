@@ -14,7 +14,7 @@ import java.util.List;
  *  - Combining child-AND/OR nodes with direct parents of the same type
  *  - Pushing negations down to leaf nodes by using De Morgan's law.
  *
- * @author magnarn
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public class AndOrSimplifier implements PredicateProcessor {

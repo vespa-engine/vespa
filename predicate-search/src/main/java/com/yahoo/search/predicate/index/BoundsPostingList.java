@@ -5,7 +5,7 @@ package com.yahoo.search.predicate.index;
  * Wraps a posting stream of IntervalWithBounds objects (for collapsed
  * fixed tree leaf nodes) into a PostingList.
  *
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public class BoundsPostingList extends MultiIntervalPostingList {

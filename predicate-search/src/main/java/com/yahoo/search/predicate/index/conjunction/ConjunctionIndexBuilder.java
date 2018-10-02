@@ -22,6 +22,7 @@ import java.util.TreeSet;
  * @author bjorncs
  */
 public class ConjunctionIndexBuilder {
+
     // A map from K value to FeatureIndex
     private final HashMap<Integer, FeatureIndexBuilder> kIndexBuilder = new HashMap<>();
     private final List<Integer> zListBuilder = new ArrayList<>();
