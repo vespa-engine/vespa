@@ -425,10 +425,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Rotation
         Cursor globalRotationsArray = object.setArray("globalRotations");
-        application.rotation().ifPresent(rotation -> {
+
+        application.globalDnsName(controller.system()).ifPresent(rotation -> {
             globalRotationsArray.addString(rotation.url().toString());
             globalRotationsArray.addString(rotation.secureUrl().toString());
-            object.setString("rotationId", rotation.id().asString());
+            object.setString("rotationId", application.rotation().get().asString());
         });
 
         // Deployments sorted according to deployment spec

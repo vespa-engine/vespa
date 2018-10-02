@@ -5,7 +5,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
-import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
+import com.yahoo.vespa.hosted.controller.application.GlobalDnsName;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
@@ -60,8 +60,8 @@ public class DnsMaintainer extends Maintainer {
     /** Returns whether we can update the given record */
     private static boolean canUpdate(Record record) {
         String recordName = record.name().asString();
-        return recordName.endsWith(ApplicationRotation.DNS_SUFFIX) ||
-                recordName.endsWith(ApplicationRotation.OATH_DNS_SUFFIX);
+        return recordName.endsWith(GlobalDnsName.DNS_SUFFIX) ||
+               recordName.endsWith(GlobalDnsName.OATH_DNS_SUFFIX);
     }
 
 }

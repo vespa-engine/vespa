@@ -339,8 +339,9 @@ public class ApplicationController {
             application = withRotation(application, zone);
             Set<String> rotationNames = new HashSet<>();
             Set<String> cnames = new HashSet<>();
-            application.get().rotation().ifPresent(applicationRotation -> {
-                rotationNames.add(applicationRotation.id().asString());
+            Application app = application.get();
+            app.globalDnsName(controller.system()).ifPresent(applicationRotation -> {
+                rotationNames.add(app.rotation().orElseThrow(() -> new RuntimeException("Global Dns assigned, but no rotation id present")).asString());
                 cnames.add(applicationRotation.dnsName());
                 cnames.add(applicationRotation.secureDnsName());
                 cnames.add(applicationRotation.oathDnsName());
@@ -415,9 +416,9 @@ public class ApplicationController {
                 application = application.with(rotation.id());
                 store(application); // store assigned rotation even if deployment fails
 
-                registerRotationInDns(rotation, application.get().rotation().get().dnsName());
-                registerRotationInDns(rotation, application.get().rotation().get().secureDnsName());
-                registerRotationInDns(rotation, application.get().rotation().get().oathDnsName());
+                registerRotationInDns(rotation, application.get().globalDnsName(controller.system()).get().dnsName());
+                registerRotationInDns(rotation, application.get().globalDnsName(controller.system()).get().secureDnsName());
+                registerRotationInDns(rotation, application.get().globalDnsName(controller.system()).get().oathDnsName());
             }
         }
         return application;
