@@ -29,6 +29,8 @@ public interface NodeRepositoryClientInterface {
 
     void deleteNode(ZoneId zone, String hostname) throws IOException;
 
+    boolean hasNode(ZoneId zone, String hostname) throws IOException;
+
     NodeList listNodes(ZoneId zone, boolean recursive) throws IOException;
 
     NodeList listNodes(ZoneId zone, String tenant, String applicationId, String instance) throws IOException;
