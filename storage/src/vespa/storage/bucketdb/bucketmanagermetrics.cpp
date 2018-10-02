@@ -10,7 +10,7 @@ using vespalib::IllegalStateException;
 using vespalib::make_string;
 
 DataStoredMetrics::DataStoredMetrics(const std::string& name, metrics::MetricSet* owner)
-    : metrics::MetricSet(name, "partofsum yamasdefault", "", owner, "disk"),
+    : metrics::MetricSet(name, "partofsum yamasdefault", "", owner),
       buckets("buckets", "", "buckets managed", this),
       docs("docs", "", "documents stored", this),
       bytes("bytes", "", "bytes stored", this),
