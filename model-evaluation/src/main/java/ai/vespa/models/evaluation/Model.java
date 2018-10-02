@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
 import com.yahoo.searchlib.rankingexpression.evaluation.ExpressionOptimizer;
+import com.yahoo.searchlib.rankingexpression.integration.ml.importer.operations.IntermediateOperation;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
@@ -28,6 +29,9 @@ public class Model {
 
     /** Free functions */
     private final ImmutableList<ExpressionFunction> functions;
+
+    /** The subset of the free functions which are public (additional non-public methods are generated during import) */
+    private final ImmutableList<ExpressionFunction> publicFunctions;
 
     /** Instances of each usage of the above function, where variables (if any) are replaced by their bindings */
     private final ImmutableMap<FunctionReference, ExpressionFunction> referencedFunctions;
@@ -70,6 +74,9 @@ public class Model {
         }
         this.contextPrototypes = contextBuilder.build();
         this.functions = ImmutableList.copyOf(functions.values());
+        this.publicFunctions = ImmutableList.copyOf(functions.values().stream()
+                                                                      .filter(f ->  ! f.getName().startsWith(IntermediateOperation.FUNCTION_PREFIX))
+                                                                      .collect(Collectors.toList()));
 
         // Optimize functions
         ImmutableMap.Builder<FunctionReference, ExpressionFunction> functionsBuilder = new ImmutableMap.Builder<>();
@@ -91,10 +98,12 @@ public class Model {
     public String name() { return name; }
 
     /**
-     * Returns an immutable list of the free functions of this.
+     * Returns an immutable list of the free, public functions of this.
      * The functions returned always specifies types of all arguments and the return value
      */
-    public List<ExpressionFunction> functions() { return functions; }
+    public List<ExpressionFunction> functions() {
+        return publicFunctions;
+    }
 
     /** Returns the given function, or throws a IllegalArgumentException if it does not exist */
     ExpressionFunction requireFunction(String name) {

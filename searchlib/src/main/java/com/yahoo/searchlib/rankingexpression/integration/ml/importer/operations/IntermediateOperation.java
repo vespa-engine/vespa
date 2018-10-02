@@ -29,7 +29,7 @@ import java.util.function.Function;
  */
 public abstract class IntermediateOperation {
 
-    private final static String FUNCTION_PREFIX = "imported_ml_function_";
+    public final static String FUNCTION_PREFIX = "imported_ml_function_";
 
     protected final String name;
     protected final String modelName;
