@@ -98,12 +98,24 @@ public class ExpressionFunction {
         return new ExpressionFunction(name, arguments, body, argumentTypes, Optional.of(returnType));
     }
 
-    /** Returns a copy of this with the given argument and argument type added */
-    public ExpressionFunction withArgument(String argument, TensorType type) {
+    /** Returns a copy of this with the given argument added (if not already present) */
+    public ExpressionFunction withArgument(String argument) {
+        if (arguments.contains(argument)) return this;
+
         List<String> arguments = new ArrayList<>(this.arguments);
         arguments.add(argument);
+        return new ExpressionFunction(name, arguments, body, argumentTypes, returnType);
+    }
+
+    /** Returns a copy of this with the given argument (if not present) and argument type added */
+    public ExpressionFunction withArgument(String argument, TensorType type) {
+        List<String> arguments = new ArrayList<>(this.arguments);
+        if ( ! arguments.contains(argument))
+            arguments.add(argument);
+
         Map<String, TensorType> argumentTypes = new HashMap<>(this.argumentTypes);
         argumentTypes.put(argument, type);
+
         return new ExpressionFunction(name, arguments, body, argumentTypes, returnType);
     }
 

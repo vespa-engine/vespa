@@ -42,7 +42,7 @@ class LazyValue extends Value {
 
     @Override
     public TensorType type() {
-        return computedValue().type(); // TODO: Keep type information in this/ExpressionFunction to avoid computing here
+        return model.requireReferencedFunction(function).returnType().get();
     }
 
     @Override

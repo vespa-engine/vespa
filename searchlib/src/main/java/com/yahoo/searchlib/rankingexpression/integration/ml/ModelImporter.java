@@ -196,7 +196,9 @@ public abstract class ModelImporter {
         if (operation.rankingExpressionFunction().isPresent()) {
             TensorFunction function = operation.rankingExpressionFunction().get();
             try {
-                model.function(operation.rankingExpressionFunctionName(), new RankingExpression(operation.rankingExpressionFunctionName(), function.toString()));
+                model.function(operation.rankingExpressionFunctionName(),
+                               new RankingExpression(operation.rankingExpressionFunctionName(),
+                                                     function.toString()));
             }
             catch (ParseException e) {
                 throw new RuntimeException("Tensorflow function " + function +

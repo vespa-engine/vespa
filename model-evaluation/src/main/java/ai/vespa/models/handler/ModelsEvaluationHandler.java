@@ -115,18 +115,11 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         cursor.setString("function", compactedFunction);
         cursor.setString("info", baseUrl(request) + model.name() + "/" + compactedFunction);
         cursor.setString("eval", baseUrl(request) + model.name() + "/" + compactedFunction + "/" + EVALUATE);
-        Cursor bindings = cursor.setArray("bindings");
-        for (String bindingName : evaluator.context().names()) {
-            // TODO: Use an API which exposes only the external binding names instead of this
-            if (bindingName.startsWith("constant(")) {
-                continue;
-            }
-            if (bindingName.startsWith("rankingExpression(")) {
-                continue;
-            }
+        Cursor bindings = cursor.setArray("arguments");
+        for (Map.Entry<String, TensorType> argument : evaluator.function().argumentTypes().entrySet()) {
             Cursor binding = bindings.addObject();
-            binding.setString("binding", bindingName);
-            binding.setString("type", "");  // TODO: implement type information when available
+            binding.setString("name", argument.getKey());
+            binding.setString("type", argument.getValue().toString());
         }
     }
 

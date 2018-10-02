@@ -49,12 +49,13 @@ public class ModelTester {
                        .importFrom(config, constantsConfig);
     }
 
-    public void assertFunction(String name, String expression, Model model) {
+    public ExpressionFunction assertFunction(String name, String expression, Model model) {
         assertNotNull("Model is present in config", model);
         ExpressionFunction function = model.function(name);
         assertNotNull("Function '" + name + "' is in " + model, function);
         assertEquals(name, function.getName());
         assertEquals(expression, function.getBody().getRoot().toString());
+        return function;
     }
 
     public void assertBoundFunction(String name, String expression, Model model) {

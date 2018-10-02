@@ -90,7 +90,7 @@ public class ModelEvaluationTest {
         RankProfilesConfig.Builder b = new RankProfilesConfig.Builder();
         cluster.getConfig(b);
         RankProfilesConfig config = new RankProfilesConfig(b);
-        System.out.println(config);
+        // System.out.println(config);
 
         RankingConstantsConfig.Builder cb = new RankingConstantsConfig.Builder();
         cluster.getConfig(cb);
