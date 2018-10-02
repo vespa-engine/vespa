@@ -116,6 +116,7 @@ void
 Metric::assignMangledNameWithDimensions()
 {
     if (!tagsSpecifyAtLeastOneDimension(_tags)) {
+        _mangledName = _name;
         return;
     }
     sortTagsInDeterministicOrder();
