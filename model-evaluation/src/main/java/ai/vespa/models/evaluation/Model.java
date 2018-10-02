@@ -61,12 +61,22 @@ public class Model {
             try {
                 LazyArrayContext context = new LazyArrayContext(function.getValue(), referencedFunctions, constants, this);
                 contextBuilder.put(function.getValue().getName(), context);
-                for (String argument : context.arguments()) {
-                    if (function.getValue().argumentTypes().get(argument) == null)
-                        functions.put(function.getKey(), function.getValue().withArgument(argument, TensorType.empty));
-                }
-                if ( ! function.getValue().returnType().isPresent())
+                if ( ! function.getValue().returnType().isPresent()) {
                     functions.put(function.getKey(), function.getValue().withReturnType(TensorType.empty));
+                }
+
+                for (String argument : context.arguments()) {
+                    if (function.getValue().getName().startsWith(IntermediateOperation.FUNCTION_PREFIX)) {
+                        // Internal (generated) functions do not have type info - add arguments
+                        if (!function.getValue().arguments().contains(argument))
+                            functions.put(function.getKey(), function.getValue().withArgument(argument));
+                    }
+                    else {
+                        // External functions have type info (when not scalar) - add argument types
+                        if (function.getValue().argumentTypes().get(argument) == null)
+                            functions.put(function.getKey(), function.getValue().withArgument(argument, TensorType.empty));
+                    }
+                }
             }
             catch (RuntimeException e) {
                 throw new IllegalArgumentException("Could not prepare an evaluation context for " + function, e);
