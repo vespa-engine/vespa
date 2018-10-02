@@ -1,8 +1,6 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
-import com.yahoo.compress.CompressionType;
-import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.fs4.BasicPacket;
 import com.yahoo.fs4.ChannelTimeoutException;
 import com.yahoo.fs4.PingPacket;
@@ -17,9 +15,10 @@ import com.yahoo.prelude.querytransform.QueryRewrite;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.CloseableChannel;
 import com.yahoo.search.dispatch.Dispatcher;
+import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.SearchCluster;
+import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.Ranking;
@@ -51,22 +50,12 @@ public class FastSearcher extends VespaBackEndSearcher {
     /** If this is turned on this will make search queries directly to the local search node when possible */
     private final static CompoundName dispatchDirect = new CompoundName("dispatch.direct");
 
-    /** Unless turned off this will fill summaries by dispatching directly to search nodes over RPC when possible */
-    private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
-
-    /** The compression method which will be used with rpc dispatch. "lz4" (default) and "none" is supported. */
-    private final static CompoundName dispatchCompression = new CompoundName("dispatch.compression");
-
-    /** If enabled, the dispatcher internal to the search container will be preferred over fdispatch
-     * whenever possible */
-    private static final CompoundName dispatchInternal = new CompoundName("dispatch.internal");
-
     /** Used to dispatch directly to search nodes over RPC, replacing the old fnet communication path */
     private final Dispatcher dispatcher;
 
     private final Backend dispatchBackend;
 
-    private final FS4ResourcePool fs4ResourcePool;
+    private final FS4InvokerFactory fs4InvokerFactory;
 
     /**
      * Creates a Fastsearcher.
@@ -89,8 +78,8 @@ public class FastSearcher extends VespaBackEndSearcher {
                         CacheParams cacheParams, DocumentdbInfoConfig documentdbInfoConfig) {
         init(docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
         this.dispatchBackend = dispatchBackend;
-        this.fs4ResourcePool = fs4ResourcePool;
         this.dispatcher = dispatcher;
+        this.fs4InvokerFactory = new FS4InvokerFactory(fs4ResourcePool, dispatcher.searchCluster(), this);
     }
 
     /**
@@ -161,8 +150,8 @@ public class FastSearcher extends VespaBackEndSearcher {
     public Result doSearch2(Query query, QueryPacket queryPacket, CacheKey cacheKey, Execution execution) {
         if (dispatcher.searchCluster().groupSize() == 1)
             forceSinglePassGrouping(query);
-        try(CloseableChannel channel = getChannel(query)) {
-            List<Result> results = channel.search(query, queryPacket, cacheKey);
+        try(SearchInvoker invoker = getSearchInvoker(query)) {
+            List<Result> results = invoker.search(query, queryPacket, cacheKey);
             Result result = mergeResults(results, query, execution);
 
             if (query.properties().getBoolean(Ranking.RANKFEATURES, false)) {
@@ -186,47 +175,6 @@ public class FastSearcher extends VespaBackEndSearcher {
         }
     }
 
-    /** When we only search a single node, doing all grouping in one pass is more efficient */
-    private void forceSinglePassGrouping(Query query) {
-        for (GroupingRequest groupingRequest : query.getSelect().getGrouping())
-            forceSinglePassGrouping(groupingRequest.getRootOperation());
-    }
-
-    private void forceSinglePassGrouping(GroupingOperation operation) {
-        operation.setForceSinglePass(true);
-        for (GroupingOperation childOperation : operation.getChildren())
-            forceSinglePassGrouping(childOperation);
-    }
-
-    /**
-     * Returns a request interface object for the given query.
-     * Normally this is built from the backend field of this instance, which connects to the dispatch node
-     * this component talks to (which is why this instance was chosen by the cluster controller). However,
-     * under certain conditions we will instead return an interface which connects directly to the relevant
-     * search nodes.
-     */
-    private CloseableChannel getChannel(Query query) {
-        if (query.properties().getBoolean(dispatchInternal, false)) {
-            Optional<CloseableChannel> dispatchedChannel = dispatcher.getDispatchedChannel(this, query);
-            if (dispatchedChannel.isPresent()) {
-                return dispatchedChannel.get();
-            }
-        }
-        if (!query.properties().getBoolean(dispatchDirect, true))
-            return new FS4CloseableChannel(this, query, dispatchBackend);
-        if (query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE))
-            return new FS4CloseableChannel(this, query, dispatchBackend);
-
-        Optional<SearchCluster.Node> directDispatchRecipient = dispatcher.searchCluster().directDispatchTarget();
-        if (!directDispatchRecipient.isPresent())
-            return new FS4CloseableChannel(this, query, dispatchBackend);
-
-        // Dispatch directly to the single, local search node
-        SearchCluster.Node local = directDispatchRecipient.get();
-        query.trace(false, 2, "Dispatching directly to ", directDispatchRecipient.get());
-        return new FS4CloseableChannel(this, query, fs4ResourcePool, local.hostname(), local.fs4port(), local.key());
-    }
-
     /**
      * Perform a partial docsum fill for a temporary result
      * representing a partition of the complete fill request.
@@ -241,29 +189,78 @@ public class FastSearcher extends VespaBackEndSearcher {
         Query query = result.getQuery();
         traceQuery(getName(), "fill", query, query.getOffset(), query.getHits(), 1, quotedSummaryClass(summaryClass));
 
-        if (query.properties().getBoolean(dispatchSummaries, true)
-            && ! summaryNeedsQuery(query)
-            && query.getRanking().getLocation() == null
-            && ! cacheControl.useCache(query)
-            && ! legacyEmulationConfigIsSet(getDocumentDatabase(query))) {
-
-            CompressionType compression =
-                CompressionType.valueOf(query.properties().getString(dispatchCompression, "LZ4").toUpperCase());
-            dispatcher.fill(result, summaryClass, getDocumentDatabase(query), compression);
-            return;
-        }
-
-        try (CloseableChannel channel = getChannel(query)) {
-            channel.partialFill(result, summaryClass);
+        try (FillInvoker invoker = getFillInvoker(result)) {
+            invoker.fill(result, summaryClass);
         }
     }
 
-    private boolean legacyEmulationConfigIsSet(DocumentDatabase db) {
-        LegacyEmulationConfig config = db.getDocsumDefinitionSet().legacyEmulationConfig();
-        if (config.forceFillEmptyFields()) return true;
-        if (config.stringBackedFeatureData()) return true;
-        if (config.stringBackedStructuredData()) return true;
-        return false;
+    /** When we only search a single node, doing all grouping in one pass is more efficient */
+    private void forceSinglePassGrouping(Query query) {
+        for (GroupingRequest groupingRequest : query.getSelect().getGrouping())
+            forceSinglePassGrouping(groupingRequest.getRootOperation());
+    }
+
+    private void forceSinglePassGrouping(GroupingOperation operation) {
+        operation.setForceSinglePass(true);
+        for (GroupingOperation childOperation : operation.getChildren())
+            forceSinglePassGrouping(childOperation);
+    }
+
+    /**
+     * Returns an invocation object for use in a single search request. The specific implementation returned
+     * depends on query properties with the default being an invoker that interfaces with a dispatcher
+     * on the same host.
+     */
+    private SearchInvoker getSearchInvoker(Query query) {
+        Optional<SearchInvoker> invoker = dispatcher.getSearchInvoker(query, fs4InvokerFactory);
+        if (invoker.isPresent()) {
+            return invoker.get();
+        }
+
+        Optional<SearchCluster.Node> direct = getDirectNode(query);
+        if(direct.isPresent()) {
+            return fs4InvokerFactory.getSearchInvoker(query, direct.get());
+        }
+        return new FS4SearchInvoker(this, query, dispatchBackend);
+    }
+
+    /**
+     * Returns an invocation object for use in a single fill request. The specific implementation returned
+     * depends on query properties with the default being an invoker that uses RPC to interface with
+     * content nodes.
+     */
+    private FillInvoker getFillInvoker(Result result) {
+        Query query = result.getQuery();
+        Optional<FillInvoker> invoker = dispatcher.getFillInvoker(result, this, getDocumentDatabase(query), fs4InvokerFactory);
+        if (invoker.isPresent()) {
+            return invoker.get();
+        }
+
+        Optional<SearchCluster.Node> direct = getDirectNode(query);
+        if (direct.isPresent()) {
+            return fs4InvokerFactory.getFillInvoker(query, direct.get());
+        }
+        return new FS4FillInvoker(this, query, dispatchBackend);
+    }
+
+    /**
+     * If the query can be directed to a single local content node, returns that node. Otherwise,
+     * returns an empty value.
+     */
+    private Optional<SearchCluster.Node> getDirectNode(Query query) {
+        if (!query.properties().getBoolean(dispatchDirect, true))
+            return Optional.empty();
+        if (query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE))
+            return Optional.empty();
+
+        Optional<SearchCluster.Node> directDispatchRecipient = dispatcher.searchCluster().directDispatchTarget();
+        if (!directDispatchRecipient.isPresent())
+            return Optional.empty();
+
+        // Dispatch directly to the single, local search node
+        SearchCluster.Node local = directDispatchRecipient.get();
+        query.trace(false, 2, "Dispatching directly to ", local);
+        return Optional.of(local);
     }
 
     private Result mergeResults(List<Result> results, Query query, Execution execution) {
@@ -288,8 +285,6 @@ public class FastSearcher extends VespaBackEndSearcher {
             }
             result.hits().trim(query.getOffset(), query.getHits());
         }
-
-        // TODO grouping
 
         return result;
     }

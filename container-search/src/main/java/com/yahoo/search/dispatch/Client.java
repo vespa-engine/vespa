@@ -15,7 +15,7 @@ import java.util.Optional;
 interface Client {
 
     void getDocsums(List<FastHit> hits, NodeConnection node, CompressionType compression,
-                    int uncompressedLength, byte[] compressedSlime, Dispatcher.GetDocsumsResponseReceiver responseReceiver,
+                    int uncompressedLength, byte[] compressedSlime, RpcFillInvoker.GetDocsumsResponseReceiver responseReceiver,
                     double timeoutSeconds);
 
     /** Creates a connection to a particular node in this */
