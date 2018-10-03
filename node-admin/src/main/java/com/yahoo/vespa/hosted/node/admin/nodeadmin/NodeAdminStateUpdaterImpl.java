@@ -137,6 +137,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             // Only update hardware divergence if there is a change.
             if (!node.getHardwareDivergence().orElse("null").equals(hardwareDivergence)) {
                 NodeAttributes nodeAttributes = new NodeAttributes().withHardwareDivergence(hardwareDivergence);
+                log.info("Updating hardware divergence to " + hardwareDivergence);
                 nodeRepository.updateNodeAttributes(dockerHostHostName, nodeAttributes);
             }
         } catch (RuntimeException e) {

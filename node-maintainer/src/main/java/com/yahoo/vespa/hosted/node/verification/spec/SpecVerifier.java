@@ -45,6 +45,9 @@ public class SpecVerifier extends Main.VerifierCommand {
     @Option(name = {"-i", "--ips"}, description = "Comma separated list of IP addresses assigned to this node")
     private String ipAddresses;
 
+    @Option(name = {"-S", "--skip-reverse-lookup"}, required = false, description = "Skip verification of reverse lookup of IP addresses")
+    private boolean skipReverseLookup = false;
+
     @Override
     public void run(HardwareDivergenceReport hardwareDivergenceReport, CommandExecutor commandExecutor) {
         String[] ips = Optional.ofNullable(ipAddresses)
@@ -61,12 +64,12 @@ public class SpecVerifier extends Main.VerifierCommand {
     private SpecVerificationReport verifySpec(NodeSpec nodeSpec, CommandExecutor commandExecutor) {
         VerifierSettings verifierSettings = new VerifierSettings(false);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor, verifierSettings);
-        return makeVerificationReport(actualHardware, nodeSpec);
+        return makeVerificationReport(actualHardware, nodeSpec, skipReverseLookup);
     }
 
-    private static SpecVerificationReport makeVerificationReport(HardwareInfo actualHardware, NodeSpec nodeSpec) {
+    private static SpecVerificationReport makeVerificationReport(HardwareInfo actualHardware, NodeSpec nodeSpec, boolean skipReverseLookup) {
         SpecVerificationReport specVerificationReport = HardwareNodeComparator.compare(NodeJsonConverter.convertJsonModelToHardwareInfo(nodeSpec), actualHardware);
-        IPAddressVerifier ipAddressVerifier = new IPAddressVerifier(Defaults.getDefaults().vespaHostname());
+        IPAddressVerifier ipAddressVerifier = new IPAddressVerifier(Defaults.getDefaults().vespaHostname(), skipReverseLookup);
         ipAddressVerifier.reportFaultyIpAddresses(nodeSpec, specVerificationReport);
         return specVerificationReport;
     }

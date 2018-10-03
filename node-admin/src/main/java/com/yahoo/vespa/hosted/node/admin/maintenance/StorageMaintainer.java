@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.logging.FilebeatConfigProvider;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
@@ -423,6 +424,10 @@ public class StorageMaintainer {
                 "--is_ssd", Boolean.toString(node.isFastDisk()),
                 "--bandwidth", Double.toString(node.getBandwidth()),
                 "--ips", String.join(",", node.getIpAddresses())));
+
+        if (environment.getDockerNetworking() == DockerNetworking.HOST_NETWORK) {
+            arguments.add("--skip-reverse-lookup");
+        }
 
         node.getHardwareDivergence().ifPresent(hardwareDivergence -> {
             arguments.add("--divergence");
