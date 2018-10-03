@@ -239,7 +239,7 @@ RpcServerManager::removeLocal(const std::string & name, const std::string &spec)
 
 
 void
-RpcServerManager::addManaged(const std::string &name, const std::string &spec, RegRpcSrvCommand rdc)
+RpcServerManager::addManaged(const std::string &name, const std::string &spec, ScriptCommand rdc)
 {
     auto newRpcServer = std::make_unique<ManagedRpcServer>(name, spec, *this);
     ManagedRpcServer & rpcsrv = *newRpcServer;

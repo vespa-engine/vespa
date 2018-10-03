@@ -269,8 +269,8 @@ RPCHooks::rpc_registerRpcServer(FRT_RPCRequest *req)
     }
     // need to actually setup management and decide result later
     req->Detach();
-    RegRpcSrvCommand completer
-        = RegRpcSrvCommand::makeRegRpcSrvCmd(_env, dName, dSpec, req);
+    ScriptCommand completer
+        = ScriptCommand::makeRegRpcSrvCmd(_env, dName, dSpec, req);
     completer.doRequest();
 }
 

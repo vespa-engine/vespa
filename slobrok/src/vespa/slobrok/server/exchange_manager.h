@@ -62,7 +62,7 @@ private:
         std::vector<std::unique_ptr<WorkItem>> _work;
         size_t                  _doneCnt;
         size_t                  _numDenied;
-        RegRpcSrvCommand        _donehandler;
+        ScriptCommand        _donehandler;
     public:
         ExchangeManager        &_exchanger;
         enum op_type { OP_NOP, OP_WANTADD, OP_DOADD, OP_REMOVE };
@@ -75,7 +75,7 @@ private:
         WorkPackage(const WorkPackage&) = delete;
         WorkPackage& operator= (const WorkPackage&) = delete;
         WorkPackage(op_type op, const std::string & name, const std::string & spec,
-                    ExchangeManager &exchanger, RegRpcSrvCommand  donehandler);
+                    ExchangeManager &exchanger, ScriptCommand  donehandler);
         ~WorkPackage();
     };
 
@@ -95,8 +95,8 @@ public:
 
     void forwardRemove(const std::string & name, const std::string & spec);
 
-    void wantAdd(const std::string & name, const std::string & spec, RegRpcSrvCommand rdc);
-    void doAdd(const std::string & name, const std::string & spec, RegRpcSrvCommand rdc);
+    void wantAdd(const std::string & name, const std::string & spec, ScriptCommand rdc);
+    void doAdd(const std::string & name, const std::string & spec, ScriptCommand rdc);
 
     RemoteSlobrok *lookupPartner(const std::string & name) const;
     void healthCheck();

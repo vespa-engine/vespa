@@ -70,7 +70,7 @@ void
 ExchangeManager::forwardRemove(const std::string & name, const std::string & spec)
 {
     WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, name, spec, *this,
-                                           RegRpcSrvCommand::makeRemRemCmd(_env, name, spec));
+                                           ScriptCommand::makeRemRemCmd(_env, name, spec));
     for (const auto & entry : _partners) {
         package->addItem(entry.second.get());
     }
@@ -78,7 +78,7 @@ ExchangeManager::forwardRemove(const std::string & name, const std::string & spe
 }
 
 void
-ExchangeManager::doAdd(const std::string &name, const std::string &spec, RegRpcSrvCommand rdc)
+ExchangeManager::doAdd(const std::string &name, const std::string &spec, ScriptCommand rdc)
 {
     WorkPackage *package = new WorkPackage(WorkPackage::OP_DOADD, name, spec, *this, std::move(rdc));
 
@@ -90,7 +90,7 @@ ExchangeManager::doAdd(const std::string &name, const std::string &spec, RegRpcS
 
 
 void
-ExchangeManager::wantAdd(const std::string &name, const std::string &spec, RegRpcSrvCommand rdc)
+ExchangeManager::wantAdd(const std::string &name, const std::string &spec, ScriptCommand rdc)
 {
     WorkPackage *package = new WorkPackage(WorkPackage::OP_WANTADD, name, spec, *this, std::move(rdc));
     for (const auto & entry : _partners) {
@@ -170,7 +170,7 @@ ExchangeManager::WorkPackage::WorkItem::~WorkItem()
 
 
 ExchangeManager::WorkPackage::WorkPackage(op_type op, const std::string & name, const std::string & spec,
-                                          ExchangeManager &exchanger, RegRpcSrvCommand donehandler)
+                                          ExchangeManager &exchanger, ScriptCommand donehandler)
     : _work(),
       _doneCnt(0),
       _numDenied(0),
