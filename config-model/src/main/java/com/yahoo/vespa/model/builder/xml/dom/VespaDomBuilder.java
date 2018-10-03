@@ -8,6 +8,7 @@ import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.XML;
@@ -116,9 +117,9 @@ public class VespaDomBuilder extends VespaModelBuilder {
             T t = doBuild(ancestor, producerSpec);
 
             if (t instanceof AbstractService) {
-                initializeService((AbstractService)t, ancestor, producerSpec);
+                initializeService((AbstractService)t, ancestor.getRoot(), ancestor.getHostSystem(), producerSpec);
             } else {
-                initializeProducer(t, ancestor, producerSpec);
+                initializeProducer(t, ancestor.getRoot(), producerSpec);
             }
 
             return t;
@@ -127,9 +128,9 @@ public class VespaDomBuilder extends VespaModelBuilder {
         protected abstract T doBuild(AbstractConfigProducer ancestor, Element producerSpec);
 
         private void initializeProducer(AbstractConfigProducer child,
-                                        AbstractConfigProducer ancestor,
+                                        AbstractConfigProducerRoot ancestorRoot,
                                         Element producerSpec) {
-            UserConfigRepo userConfigs = UserConfigBuilder.build(producerSpec, ancestor.getRoot().getDeployState(), ancestor.getRoot().deployLogger());
+            UserConfigRepo userConfigs = UserConfigBuilder.build(producerSpec, ancestorRoot.getDeployState(), ancestorRoot.deployLogger());
             // TODO: must be made to work:
             //userConfigs.applyWarnings(child);
             log.log(LogLevel.DEBUG, "Adding user configs " + userConfigs + " for " + producerSpec);
@@ -137,9 +138,10 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
 
         private void initializeService(AbstractService t,
-                                       AbstractConfigProducer ancestor,
+                                       AbstractConfigProducerRoot ancestorRoot,
+                                       HostSystem hostSystem,
                                        Element producerSpec) {
-            initializeProducer(t, ancestor, producerSpec);
+            initializeProducer(t, ancestorRoot, producerSpec);
             if (producerSpec != null) {
                 if (producerSpec.hasAttribute(JVMARGS_ATTRIB_NAME)) {
                     t.appendJvmArgs(producerSpec.getAttribute(JVMARGS_ATTRIB_NAME));
@@ -172,7 +174,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
                 if (port > 0) {
                     t.setBasePort(port);
                 }
-                allocateHost(t, ancestor.getHostSystem(), producerSpec);
+                allocateHost(t, hostSystem, producerSpec);
             }
             // This depends on which constructor in AbstractService is used, but the best way
             // is to let this method do initialize.
