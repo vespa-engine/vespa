@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model;
 
+import com.yahoo.config.model.deploy.DeployState;
+
 /**
  * A config model is an abstract representation of a subsystem, which is used
  * by the builder of that subsystem to derive a config producer tree for the subsystem, and by other
@@ -52,7 +54,7 @@ public abstract class ConfigModel {
      *
      * @param configModelRepo The ConfigModelRepo of the system model
      */
-    public void prepare(ConfigModelRepo configModelRepo) { return; }
+    public void prepare(ConfigModelRepo configModelRepo, DeployState deployState) { return; }
 
     /**
      * <p>Returns whether this model must be maintained in memory for serving config requests.

@@ -164,8 +164,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         configModelRegistry = new VespaConfigModelRegistry(configModelRegistry);
         VespaModelBuilder builder = new VespaDomBuilder();
         this.applicationPackage = deployState.getApplicationPackage();
-        this.deployState = deployState;
-        this.deployLogger = deployState.getDeployLogger();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
 
         HostSystem hostSystem = root.getHostSystem();
@@ -179,25 +177,25 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                                    deployState.getImportedModels());
 
         if (complete) { // create a a completed, frozen model
+            this.deployLogger = deployState.getDeployLogger();
+            this.deployState = deployState;
             configModelRepo.readConfigModels(deployState, this, builder, root, configModelRegistry);
+            this.deployState = null;
             addServiceClusters(deployState.getApplicationPackage(), builder);
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs()); // must happen after the two lines above
-
-            setupRouting();
+            setupRouting(deployState);
             this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
             getAdmin().addPerHostServices(hostSystem.getHosts(), deployState);
+            this.deployLogger = null;
             freezeModelTopology();
             root.prepare(configModelRepo);
-            configModelRepo.prepareConfigModels();
-            this.deployState = null;
+            configModelRepo.prepareConfigModels(deployState);
             validateWrapExceptions();
-            this.deployLogger = null;
         }
         else { // create a model with no services instantiated and the given file distributor
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
             this.fileDistributor = fileDistributor;
         }
-        this.deployState = null;
     }
 
     /** Returns the application package owning this */
@@ -259,8 +257,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /** Returns the global rank profiles as a rank profile list */
     public RankProfileList rankProfileList() { return rankProfileList; }
 
-    private void setupRouting() {
-        root.setupRouting(this, configModelRepo);
+    private void setupRouting(DeployState deployState) {
+        root.setupRouting(deployState, this, configModelRepo);
     }
 
     /** Returns the one and only HostSystem of this VespaModel */

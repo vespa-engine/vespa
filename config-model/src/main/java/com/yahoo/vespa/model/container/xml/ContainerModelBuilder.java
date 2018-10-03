@@ -149,7 +149,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return new VespaDomBuilder.DomConfigProducerBuilder<ContainerCluster>() {
             @Override
             protected ContainerCluster doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
-                return new ContainerCluster(ancestor, modelContext.getProducerId(), modelContext.getProducerId());
+                return new ContainerCluster(ancestor, modelContext.getProducerId(),
+                                            modelContext.getProducerId(), modelContext.getDeployState());
             }
         }.build(modelContext.getParentProducer(), spec);
     }

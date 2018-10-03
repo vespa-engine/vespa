@@ -283,11 +283,11 @@ public class IndexedSearchCluster extends SearchCluster
             }
         }
     }
-    protected void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches) {
+    @Override
+    protected void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches, DeployState deployState) {
         for (SearchDefinitionSpec spec : localSearches) {
             com.yahoo.searchdefinition.Search search = spec.getSearchDefinition().getSearch();
             if ( ! (search instanceof DocumentOnlySearch)) {
-                DeployState deployState = getRoot().getDeployState();
                 DocumentDatabase db = new DocumentDatabase(this, search.getName(),
                                                            new DerivedConfiguration(search, deployLogger(),
                                                                                     deployState.rankProfileRegistry(),

@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRepo;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 
@@ -35,9 +36,9 @@ public class ContainerModel extends ConfigModel {
     public ContainerCluster getCluster() { return containerCluster; }
 
     @Override
-    public void prepare(ConfigModelRepo plugins) {
+    public void prepare(ConfigModelRepo plugins, DeployState deployState) {
         assert (getCluster() != null) : "Null container cluster!";
-        getCluster().prepare();
+        getCluster().prepare(deployState);
     }
 
     @Override

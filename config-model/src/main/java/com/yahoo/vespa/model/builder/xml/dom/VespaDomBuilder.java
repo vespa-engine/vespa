@@ -95,7 +95,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
     public ApplicationConfigProducerRoot getRoot(String name, DeployState deployState, AbstractConfigProducer parent) {
         try {
             return new DomRootBuilder(name, deployState).
-                    build(parent, XmlHelper.getDocument(deployState.getApplicationPackage().getServices()).getDocumentElement());
+                    build(deployState, parent, XmlHelper.getDocument(deployState.getApplicationPackage().getServices()).getDocumentElement());
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
@@ -120,12 +120,16 @@ public class VespaDomBuilder extends VespaModelBuilder {
 
         // TODO: find good way to provide access to app package
         public final T build(AbstractConfigProducer ancestor, Element producerSpec) {
+            return build(ancestor.getRoot().getDeployState(), ancestor, producerSpec);
+        }
+
+        public final T build(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             T t = doBuild(ancestor, producerSpec);
 
             if (t instanceof AbstractService) {
-                initializeService((AbstractService)t, ancestor.getRoot(), ancestor.getHostSystem(), producerSpec);
+                initializeService((AbstractService)t, deployState, ancestor.getHostSystem(), producerSpec);
             } else {
-                initializeProducer(t, ancestor.getRoot(), producerSpec);
+                initializeProducer(t, deployState, producerSpec);
             }
 
             return t;
@@ -134,9 +138,9 @@ public class VespaDomBuilder extends VespaModelBuilder {
         protected abstract T doBuild(AbstractConfigProducer ancestor, Element producerSpec);
 
         private void initializeProducer(AbstractConfigProducer child,
-                                        AbstractConfigProducerRoot ancestorRoot,
+                                        DeployState deployState,
                                         Element producerSpec) {
-            UserConfigRepo userConfigs = UserConfigBuilder.build(producerSpec, ancestorRoot.getDeployState(), ancestorRoot.deployLogger());
+            UserConfigRepo userConfigs = UserConfigBuilder.build(producerSpec, deployState, deployState.getDeployLogger());
             // TODO: must be made to work:
             //userConfigs.applyWarnings(child);
             log.log(LogLevel.DEBUG, "Adding user configs " + userConfigs + " for " + producerSpec);
@@ -144,10 +148,10 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
 
         private void initializeService(AbstractService t,
-                                       AbstractConfigProducerRoot ancestorRoot,
+                                       DeployState deployState,
                                        HostSystem hostSystem,
                                        Element producerSpec) {
-            initializeProducer(t, ancestorRoot, producerSpec);
+            initializeProducer(t, deployState, producerSpec);
             if (producerSpec != null) {
                 if (producerSpec.hasAttribute(JVMARGS_ATTRIB_NAME)) {
                     t.appendJvmArgs(producerSpec.getAttribute(JVMARGS_ATTRIB_NAME));
