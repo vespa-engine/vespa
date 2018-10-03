@@ -62,13 +62,11 @@ private:
         std::vector<std::unique_ptr<WorkItem>> _work;
         size_t        _doneCnt;
         size_t        _numDenied;
-        ScriptCommand _donehandler;
+        ScriptCommand _script;
     public:
         ExchangeManager &_exchanger;
         enum op_type { OP_NOP, OP_WANTADD, OP_DOADD, OP_REMOVE };
         op_type _optype;
-        const std::string _name;
-        const std::string _spec;
         void addItem(RemoteSlobrok *partner);
         void doneItem(bool denied);
         void expedite();

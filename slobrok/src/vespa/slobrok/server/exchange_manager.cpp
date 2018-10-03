@@ -175,11 +175,9 @@ ExchangeManager::WorkPackage::WorkPackage(op_type op,
     : _work(),
       _doneCnt(0),
       _numDenied(0),
-      _donehandler(std::move(script)),
+      _script(std::move(script)),
       _exchanger(exchanger),
-      _optype(op),
-      _name(_donehandler.name()),
-      _spec(_donehandler.spec())
+      _optype(op)
 {
 }
 
@@ -196,9 +194,9 @@ ExchangeManager::WorkPackage::doneItem(bool denied)
         (int)_doneCnt, (int)_work.size(), (int)_numDenied);
     if (_doneCnt == _work.size()) {
         if (_numDenied > 0) {
-            _donehandler.doneHandler(OkState(_numDenied, "denied by remote"));
+            _script.doneHandler(OkState(_numDenied, "denied by remote"));
         } else {
-            _donehandler.doneHandler(OkState());
+            _script.doneHandler(OkState());
         }
         delete this;
     }
@@ -211,6 +209,9 @@ ExchangeManager::WorkPackage::addItem(RemoteSlobrok *partner)
     if (! partner->isConnected()) {
         return;
     }
+    const char *name_p = _script.name().c_str();
+    const char *spec_p = _script.spec().c_str();
+
     FRT_RPCRequest *r = _exchanger._env.getSupervisor()->AllocRPCRequest();
     // XXX should recheck rpcsrvmap again
     if (_optype == OP_REMOVE) {
@@ -221,13 +222,13 @@ ExchangeManager::WorkPackage::addItem(RemoteSlobrok *partner)
         r->SetMethodName("slobrok.internal.doAdd");
     }
     r->GetParams()->AddString(_exchanger._env.mySpec().c_str());
-    r->GetParams()->AddString(_name.c_str());
-    r->GetParams()->AddString(_spec.c_str());
+    r->GetParams()->AddString(name_p);
+    r->GetParams()->AddString(spec_p);
 
     _work.push_back(std::make_unique<WorkItem>(*this, partner, r));
     LOG(spam, "added %s(%s,%s,%s) for %s to workpackage",
         r->GetMethodName(), _exchanger._env.mySpec().c_str(),
-        _name.c_str(), _spec.c_str(), partner->getName().c_str());
+        name_p, spec_p, partner->getName().c_str());
 }
 
 
@@ -237,7 +238,7 @@ ExchangeManager::WorkPackage::expedite()
     size_t sz = _work.size();
     if (sz == 0) {
         // no remotes need doing.
-        _donehandler.doneHandler(OkState());
+        _script.doneHandler(OkState());
         delete this;
         return;
     }
