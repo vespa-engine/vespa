@@ -132,6 +132,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
 
         try {
             NodeSpec node = nodeRepository.getNode(dockerHostHostName);
+            if (node.getState() == Node.State.parked) return;
             String hardwareDivergence = maintainer.getHardwareDivergence(node);
 
             // Only update hardware divergence if there is a change.
