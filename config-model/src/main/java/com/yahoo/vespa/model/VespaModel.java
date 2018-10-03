@@ -195,6 +195,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         else { // create a model with no services instantiated and the given file distributor
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
             this.fileDistributor = fileDistributor;
+            this.deployState = deployState;
+            this.deployLogger = deployState.getDeployLogger();
         }
     }
 
