@@ -339,7 +339,7 @@ public final class ContainerCluster
     }
 
     public void prepare() {
-        addAndSendApplicationBundles();
+        addAndSendApplicationBundles(getRoot().getDeployState());
         if (modelEvaluation != null)
             modelEvaluation.prepare(containers);
         sendUserConfiguredFiles();
@@ -362,8 +362,8 @@ public final class ContainerCluster
                         null))));
     }
 
-    private void addAndSendApplicationBundles() {
-        for (ComponentInfo component : getRoot().getDeployState().getApplicationPackage().getComponentsInfo(getRoot().getDeployState().getProperties().vespaVersion())) {
+    private void addAndSendApplicationBundles(DeployState deployState) {
+        for (ComponentInfo component : deployState.getApplicationPackage().getComponentsInfo(deployState.getProperties().vespaVersion())) {
             FileReference reference = FileSender.sendFileToServices(component.getPathRelativeToAppDir(), containers);
             applicationBundles.add(reference);
         }
