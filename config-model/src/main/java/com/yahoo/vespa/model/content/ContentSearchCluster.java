@@ -171,7 +171,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             cluster.setQueryTimeout(queryTimeout);
         }
         cluster.defaultDocumentsConfig();
-        cluster.deriveSearchDefinitions(new ArrayList<>());
+        cluster.deriveSearchDefinitions();
         addCluster(cluster);
     }
 

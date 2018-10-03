@@ -16,7 +16,6 @@ import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.List;
 
 /**
  * A set of all derived configuration of a search definition. Use this as a facade to individual configurations when
@@ -51,7 +50,7 @@ public class DerivedConfiguration {
                                 RankProfileRegistry rankProfileRegistry,
                                 QueryProfileRegistry queryProfiles,
                                 ImportedModels importedModels) {
-        this(search, null, new BaseDeployLogger(), rankProfileRegistry, queryProfiles, importedModels);
+        this(search, new BaseDeployLogger(), rankProfileRegistry, queryProfiles, importedModels);
     }
 
     /**
@@ -60,15 +59,12 @@ public class DerivedConfiguration {
      * @param search             The search to derive a configuration from. Derived objects will be snapshots, but this
      *                           argument is live. Which means that this object will be inconsistent when the given
      *                           search definition is later modified.
-     * @param abstractSearchList Search definition this one inherits from, only superclass configuration should be
-     *                           generated. Null or empty list if there is none.
      * @param deployLogger       a {@link DeployLogger} for logging when
      *                           doing operations on this
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
      * @param queryProfiles      the query profiles of this application
      */
     public DerivedConfiguration(Search search,
-                                List<Search> abstractSearchList,
                                 DeployLogger deployLogger,
                                 RankProfileRegistry rankProfileRegistry,
                                 QueryProfileRegistry queryProfiles,

@@ -48,8 +48,8 @@ public abstract class SearchCluster extends AbstractSearchCluster
      * Also stores the document names contained in the search
      * definitions.
      */
-    public void deriveSearchDefinitions(List<com.yahoo.searchdefinition.Search> global) {
-        deriveAllSearchDefinitions(getLocalSDS(), global);
+    public void deriveSearchDefinitions() {
+        deriveAllSearchDefinitions(getLocalSDS());
     }
 
     @Override
@@ -139,8 +139,7 @@ public abstract class SearchCluster extends AbstractSearchCluster
         return false;
     }
 
-    protected abstract void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches,
-                                                       List<com.yahoo.searchdefinition.Search> globalSearches);
+    protected abstract void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches);
 
     public abstract void defaultDocumentsConfig();
     public abstract DerivedConfiguration getSdConfig();

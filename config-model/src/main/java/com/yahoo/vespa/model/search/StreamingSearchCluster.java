@@ -89,20 +89,18 @@ public class StreamingSearchCluster extends SearchCluster implements
         }
     }
 
-    protected void deriveAllSearchDefinitions(List<SearchDefinitionSpec> local,
-                                              List<com.yahoo.searchdefinition.Search> global) {
+    protected void deriveAllSearchDefinitions(List<SearchDefinitionSpec> local) {
         if (local.size() == 1) {
-            deriveSingleSearchDefinition(local.get(0).getSearchDefinition().getSearch(), global);
+            deriveSingleSearchDefinition(local.get(0).getSearchDefinition().getSearch());
         } else if (local.size() > 1){
             throw new IllegalStateException("Logical indexes are not supported: Got " + local.size() + " search definitions, expected 1");
         }
     }
-    private void deriveSingleSearchDefinition(com.yahoo.searchdefinition.Search localSearch,
-                                              List<com.yahoo.searchdefinition.Search> globalSearches) {
+    private void deriveSingleSearchDefinition(com.yahoo.searchdefinition.Search localSearch) {
         if (!localSearch.getName().equals(docTypeName)) {
             throw new IllegalStateException("Mismatch between document type name (" + docTypeName + ") and name of search definition (" + localSearch.getName() + ")");
         }
-        this.sdConfig = new DerivedConfiguration(localSearch, globalSearches, deployLogger(),
+        this.sdConfig = new DerivedConfiguration(localSearch, deployLogger(),
                                                  getRoot().getDeployState().rankProfileRegistry(),
                                                  getRoot().getDeployState().getQueryProfiles().getRegistry(),
                                                  getRoot().getDeployState().getImportedModels());
