@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
-import com.yahoo.config.model.*;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.ApplicationConfigProducerRoot;
+import com.yahoo.config.model.ConfigModel;
+import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
@@ -13,7 +15,11 @@ import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.documentmodel.DocumentModel;
-import com.yahoo.vespa.model.*;
+import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.Affinity;
+import com.yahoo.vespa.model.Client;
+import com.yahoo.vespa.model.HostSystem;
+import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.builder.UserConfigBuilder;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -211,8 +217,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
 
         @Override
-        protected SimpleConfigProducer doBuild(AbstractConfigProducer parent,
-                                               Element producerSpec) {
+        protected SimpleConfigProducer doBuild(AbstractConfigProducer parent, Element producerSpec) {
             return new SimpleConfigProducer(parent, configId);
         }
     }
@@ -321,8 +326,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
     }
 
     @Override
-    public List<ServiceCluster> getClusters(ApplicationPackage pkg,
-                                            AbstractConfigProducer parent) {
+    public List<ServiceCluster> getClusters(ApplicationPackage pkg, AbstractConfigProducer parent) {
         List<ServiceCluster> clusters = new ArrayList<>();
         Document services = XmlHelper.getDocument(pkg.getServices());
         for (Element clusterSpec : XML.getChildren(services.getDocumentElement(), "cluster")) {
