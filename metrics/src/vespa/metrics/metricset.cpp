@@ -15,12 +15,10 @@ LOG_SETUP(".metrics.metricsset");
 namespace metrics {
 
 MetricSet::MetricSet(const String& name, const String& tags,
-                     const String& description, MetricSet* owner,
-                     const std::string& dimensionKey)
+                     const String& description, MetricSet* owner)
     : Metric(name, tags, description, owner),
       _metricOrder(),
-      _registrationAltered(false),
-      _dimensionKey(dimensionKey)
+      _registrationAltered(false)
 {
 }
 
@@ -28,8 +26,7 @@ MetricSet::MetricSet(const String& name, Tags dimensions,
                      const String& description, MetricSet* owner)
     : Metric(name, std::move(dimensions), description, owner),
       _metricOrder(),
-      _registrationAltered(false),
-      _dimensionKey()
+      _registrationAltered(false)
 {
 }
 
@@ -40,13 +37,8 @@ MetricSet::MetricSet(const MetricSet& other,
                      bool includeUnused)
     : Metric(other, owner),
       _metricOrder(),
-      _registrationAltered(false),
-      _dimensionKey(other._dimensionKey)
+      _registrationAltered(false)
 {
-    if (copyType == INACTIVE && owner == NULL && includeUnused) {
-        _dimensionKey = "";
-    }
-
     for (const Metric* metric : other._metricOrder) {
         if (copyType != INACTIVE || includeUnused || metric->used()) {
             Metric* m = metric->clone(ownerList, copyType, this, includeUnused);

@@ -20,14 +20,10 @@ class MetricSet : public Metric
     bool _registrationAltered; // Set to true if metrics have been
                                // registered/unregistered since last time
                                // it was reset
-    std::string _dimensionKey; // If this metric is part of a monitoring dimension,
-                               // the key of the dimension should be set here.
-                               // If so, the name of the metric is used as dimension value.
 
 public:
     MetricSet(const String& name, const String& tags,
-              const String& description, MetricSet* owner = 0,
-              const std::string& dimensionKey = "");
+              const String& description, MetricSet* owner = 0);
 
     MetricSet(const String& name, Tags dimensions,
               const String& description, MetricSet* owner = 0);
@@ -84,11 +80,6 @@ public:
     void printDebug(std::ostream&, const std::string& indent="") const override;
     bool isMetricSet() const override { return true; }
     void addToPart(Metric& m) const override { addTo(m, 0); }
-
-    /**
-     * Returns the key of the dimension this metric is part of (if any).
-     */
-    const std::string& getDimensionKey() const { return _dimensionKey; }
 
 private:
         // Do not generate default copy constructor or assignment operator
