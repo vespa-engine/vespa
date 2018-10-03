@@ -21,7 +21,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class ModelFactoryRegistryTest {
     @Test(expected = IllegalArgumentException.class)

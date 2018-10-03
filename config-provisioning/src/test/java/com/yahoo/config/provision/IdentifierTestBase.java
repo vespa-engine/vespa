@@ -12,7 +12,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Generic test for identifiers such as {@link Environment} and {@link RegionName}.
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.23
  */
 public abstract class IdentifierTestBase<ID_TYPE> {

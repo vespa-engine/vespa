@@ -2,7 +2,7 @@
 package com.yahoo.vespa.curator;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class CompletionTimeoutException extends RuntimeException {

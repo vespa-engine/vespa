@@ -9,7 +9,7 @@ import org.w3c.dom.Element;
 import java.util.Map;
 
 /**
-* @author lulf
+* @author Ulf Lilleengen
 * @since 5.1
 */
 public class DomServiceClusterBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ServiceCluster> {

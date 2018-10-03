@@ -17,7 +17,7 @@ import com.yahoo.messagebus.MessagebusConfig;
 /**
  * This interface describes the configs that are produced by the model producer root.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public interface CommonConfigsProducer extends DocumentmanagerConfig.Producer,

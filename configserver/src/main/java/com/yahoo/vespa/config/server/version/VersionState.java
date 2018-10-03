@@ -15,7 +15,7 @@ import java.io.IOException;
 /**
  * Contains version information for this configserver.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class VersionState {
 

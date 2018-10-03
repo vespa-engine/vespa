@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * must be named 'config' and have a 'name' attribute that matches the name of the {@link ConfigDefinition}. The values
  * are not validated against their types. That task is moved to the builders.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class DomConfigPayloadBuilder {
 

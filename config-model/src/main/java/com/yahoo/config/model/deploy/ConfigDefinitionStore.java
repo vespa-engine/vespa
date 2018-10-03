@@ -7,7 +7,7 @@ import com.yahoo.vespa.config.ConfigDefinitionKey;
 import java.util.Optional;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public interface ConfigDefinitionStore {

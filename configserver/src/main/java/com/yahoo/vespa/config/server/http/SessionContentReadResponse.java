@@ -14,7 +14,7 @@ import static com.yahoo.jdisc.http.HttpResponse.Status.*;
 /**
  * Represents a response for a request to read contents of a file.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class SessionContentReadResponse extends HttpResponse {

@@ -3,7 +3,7 @@ package com.yahoo.config.subscription;
 
 /**
  * This exception is thrown when any blocking call within the Config API is interrupted.
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 @SuppressWarnings("serial")

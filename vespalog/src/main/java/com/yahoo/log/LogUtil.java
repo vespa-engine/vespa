@@ -2,7 +2,7 @@
 package com.yahoo.log;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 class LogUtil {

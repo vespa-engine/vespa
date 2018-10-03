@@ -4,7 +4,7 @@ package com.yahoo.log;
 import java.io.*;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class FileLogTarget implements LogTarget {

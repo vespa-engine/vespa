@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @author gjoranv
  */
 public class TestUtil {

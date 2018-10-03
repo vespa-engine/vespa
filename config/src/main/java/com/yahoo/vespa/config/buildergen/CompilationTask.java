@@ -10,7 +10,7 @@ import javax.tools.JavaFileObject;
  * Represents a compilation task that can be run and also collects diagnostic messages from the compilation.
  * TODO: Assumes that diagnostics is the same as given to the task, not ideal.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.2
  */
 class CompilationTask {

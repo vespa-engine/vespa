@@ -11,7 +11,7 @@ import static com.yahoo.vespa.config.server.session.LocalSession.Mode;
 /**
  * Represents a {@link ContentRequest}, and contains common functionality for content requests for all content handlers.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.3
  */
 public abstract class ContentRequest {

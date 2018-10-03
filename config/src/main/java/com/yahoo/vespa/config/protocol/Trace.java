@@ -12,7 +12,7 @@ import java.time.Clock;
 /**
  * A trace utility that can serialize/deserialize to/from {@link Slime}
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.3
  */
 public class Trace {

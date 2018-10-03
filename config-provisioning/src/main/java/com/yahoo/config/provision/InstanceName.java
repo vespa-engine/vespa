@@ -7,7 +7,7 @@ import java.util.Objects;
  * Represents an applications instance name, which may be any kind of string or default. This type is defined
  * in order to provide a type safe API for defining environments.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.25
  */
 public class InstanceName implements Comparable<InstanceName> {

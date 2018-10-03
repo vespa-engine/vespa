@@ -10,7 +10,7 @@ import java.time.Duration;
 import static org.junit.Assert.fail;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class CuratorCompletionWaiterTest {
 

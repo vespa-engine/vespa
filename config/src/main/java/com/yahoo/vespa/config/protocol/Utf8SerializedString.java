@@ -11,7 +11,7 @@ import java.nio.ByteBuffer;
 /**
  * Wraps utf8array as a {@link com.fasterxml.jackson.core.SerializableString} to avoid extra copy.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.17
  */
 public class Utf8SerializedString implements SerializableString {

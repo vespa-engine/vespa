@@ -9,7 +9,7 @@ import com.yahoo.config.subscription.impl.JRTConfigRequester;
  * A Config URI is a class that can be used to encapsulate a config source and a config id into one
  * object to simplify parameter passing.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class ConfigURI {
 

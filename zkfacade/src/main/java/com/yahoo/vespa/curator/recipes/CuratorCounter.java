@@ -8,7 +8,7 @@ import org.apache.curator.framework.recipes.atomic.DistributedAtomicLong;
 /**
  * A distributed atomic counter.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class CuratorCounter {

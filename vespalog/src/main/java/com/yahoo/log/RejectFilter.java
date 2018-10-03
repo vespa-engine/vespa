@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * A RejectFilter can be queried to see if a log message should be rejected.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class RejectFilter {

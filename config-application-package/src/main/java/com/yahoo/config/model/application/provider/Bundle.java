@@ -17,7 +17,7 @@ import java.util.zip.ZipException;
  * A Bundle represents an OSGi bundle inside the model, and provides utilities
  * for accessing resources within that bundle.
  *
- * @author Tony Vaagenes, lulf
+ * @author Tony Vaagenes, Ulf Lilleengen
  * @since 5.1
  */
 public class Bundle {

@@ -8,7 +8,7 @@ import org.apache.curator.framework.api.transaction.CuratorTransaction;
 /**
  * The ZooKeeper operations that we support doing transactional.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @author bratseth
  */
 public interface CuratorOperation extends Transaction.Operation {

@@ -8,7 +8,7 @@ import com.yahoo.slime.Slime;
 /**
  * Implements a config instance serializer, serializing a config instance to a slime object.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1.14
  */
 public class ConfigInstanceSerializer implements Serializer {

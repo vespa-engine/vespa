@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server;
 import com.yahoo.vespa.config.GenerationCounter;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.
  */
 public class MemoryGenerationCounter implements GenerationCounter {

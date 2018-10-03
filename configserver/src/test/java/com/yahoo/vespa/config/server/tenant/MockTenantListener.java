@@ -6,7 +6,7 @@ import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 import com.yahoo.vespa.config.server.tenant.TenantListener;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.8
  */
 public class MockTenantListener implements TenantListener {

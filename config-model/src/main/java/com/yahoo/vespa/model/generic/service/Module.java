@@ -8,7 +8,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
  * in the tree. Could might as well have used an AbstractConfigProducer as well,
  * but that makes the code very confusing to read.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class Module extends AbstractConfigProducer {
 

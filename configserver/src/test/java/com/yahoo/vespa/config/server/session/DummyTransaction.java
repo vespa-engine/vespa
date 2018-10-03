@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * Dummy transaction implementation that only does stuff in memory and does not adhere to contract.
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class DummyTransaction implements Transaction {
 

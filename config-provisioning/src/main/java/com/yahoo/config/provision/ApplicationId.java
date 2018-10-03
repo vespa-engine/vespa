@@ -6,7 +6,7 @@ import com.yahoo.cloud.config.ApplicationIdConfig;
 /**
  * A complete, immutable identification of an application instance.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @author vegard
  * @author bratseth
  * @since 5.1

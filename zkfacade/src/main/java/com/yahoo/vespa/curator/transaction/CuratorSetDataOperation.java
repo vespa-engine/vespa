@@ -8,7 +8,7 @@ import org.apache.curator.framework.api.transaction.CuratorTransaction;
 /**
  * ZooKeeper setData operation.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @author bratseth
  */
 class CuratorSetDataOperation implements CuratorOperation {

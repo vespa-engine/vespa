@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * This class implements a lookup table for result node type conversion.
  *
- * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
+ * @author Ulf Lilleengen
  */
 public class ArithmeticTypeConversion {
     private static final Map<Integer, Map<Integer, Integer>> types = new HashMap<Integer, Map<Integer, Integer>>();

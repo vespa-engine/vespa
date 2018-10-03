@@ -17,7 +17,7 @@ import static org.junit.Assert.assertThat;
 /**
  * SEO keywords: test override() on builders. overrideTest, testOverride
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class ConfigBuilderMergeTest {

@@ -7,7 +7,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 /**
  * A service handler that is able to map a request to a key and retrieve a value given a key.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1.21
  */
 @Beta

@@ -10,7 +10,7 @@ import com.yahoo.vespa.config.server.rpc.UncompressedConfigResponseFactory;
  * Logic to select the appropriate response factory based on config.
  * TODO: Move this to {@link ConfigResponseFactory} when we have java 8.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.20
  */
 public class ConfigResponseFactoryFactory {

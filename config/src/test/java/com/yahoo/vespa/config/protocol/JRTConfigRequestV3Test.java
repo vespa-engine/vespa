@@ -16,7 +16,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.19
  */
 public class JRTConfigRequestV3Test extends JRTConfigRequestBase {

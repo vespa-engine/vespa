@@ -15,7 +15,7 @@ import com.yahoo.log.LogLevel;
  * TODO: Maybe we should have a Host type, but using String for now.
  * TODO: Is there a generalized version of this pattern? Need some sort mix of Bimap and Multimap
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class HostRegistry<T> implements HostValidator<T> {
 

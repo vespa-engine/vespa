@@ -14,7 +14,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.*;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.3
  */
 public class HostRegistryTest {

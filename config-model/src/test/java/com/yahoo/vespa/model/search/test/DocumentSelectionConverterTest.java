@@ -10,7 +10,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for RemoveSelection.
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class DocumentSelectionConverterTest {
     @Test

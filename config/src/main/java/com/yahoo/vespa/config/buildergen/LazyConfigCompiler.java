@@ -16,7 +16,7 @@ import java.util.Locale;
  * Represents a compiler that waits performing the compilation until the requested builder is requested from the
  * {@link CompiledBuilder}.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.2
  */
 public class LazyConfigCompiler implements ConfigCompiler {

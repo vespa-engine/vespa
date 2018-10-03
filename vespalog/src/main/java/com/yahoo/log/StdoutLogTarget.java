@@ -4,7 +4,7 @@ package com.yahoo.log;
 import java.io.OutputStream;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class StdoutLogTarget implements LogTarget {

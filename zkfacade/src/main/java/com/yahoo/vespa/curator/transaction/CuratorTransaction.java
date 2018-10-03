@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 /**
  * Transaction implementation against ZooKeeper.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class CuratorTransaction extends AbstractTransaction {
 

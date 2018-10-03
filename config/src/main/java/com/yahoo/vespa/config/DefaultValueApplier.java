@@ -10,7 +10,7 @@ import com.yahoo.slime.*;
  * Applies default values of a given config definition to a slime payload.
  * TODO: Support giving correct type of default values
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class DefaultValueApplier {

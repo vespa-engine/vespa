@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Test utility class that provides many methods for inspecting the state of a completely built model
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 @Beta

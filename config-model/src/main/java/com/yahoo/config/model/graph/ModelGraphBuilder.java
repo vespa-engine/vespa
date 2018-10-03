@@ -11,7 +11,7 @@ import java.util.List;
  * Used to add builders and elements in addBuilder, and then build a dependency graph based on the
  * constructor arguments.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class ModelGraphBuilder {

@@ -11,7 +11,7 @@ import java.util.*;
  * from the Slime tree.
  *
  * TODO: Add toString
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class ConfigPayloadBuilder {

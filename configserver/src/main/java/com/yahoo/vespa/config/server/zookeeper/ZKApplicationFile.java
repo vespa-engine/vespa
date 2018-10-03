@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @author vegardh
  * @since 5.1
  */

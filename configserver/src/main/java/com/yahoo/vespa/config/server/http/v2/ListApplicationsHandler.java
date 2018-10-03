@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * Handler for listing currently active applications for a tenant.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class ListApplicationsHandler extends HttpHandler {

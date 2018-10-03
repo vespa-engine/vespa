@@ -15,7 +15,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.21
  */
 public class PayloadTest {

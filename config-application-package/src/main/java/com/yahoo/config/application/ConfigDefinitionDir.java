@@ -10,7 +10,7 @@ import java.util.List;
  * A @{link ConfigDefinitionDir} contains a set of config definitions. New definitions may be added,
  * but they cannot conflict with the existing ones.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class ConfigDefinitionDir {

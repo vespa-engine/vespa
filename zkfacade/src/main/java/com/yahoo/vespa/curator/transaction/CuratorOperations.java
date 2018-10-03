@@ -14,7 +14,7 @@ import java.util.Optional;
  * This mirrors the operations which are actually available in Curator, which unfortunately does not include
  * variants that deletes children, creates parents etc. in a single operation.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @author bratseth
  */
 public class CuratorOperations {

@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * Internal helper class to retrieve document model and search definitions.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class SearchDocumentModel {

@@ -19,7 +19,7 @@ import static com.yahoo.test.json.JsonTestHelper.inputJson;
 import static org.junit.Assert.fail;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @author Vegard Sjonfjell
  * @since 5.1
  */
@@ -55,8 +55,8 @@ public class ConfigInstanceSerializerTest {
         StructtypesConfig.Nested.Builder nestedBuilder = new StructtypesConfig.Nested.Builder();
         StructtypesConfig.Nested.Inner.Builder innerBuilder = new StructtypesConfig.Nested.Inner.Builder();
         innerBuilder.name("foo");
-        innerBuilder.emails("lulf@foo");
-        innerBuilder.emails("lulf@bar");
+        innerBuilder.emails("Ulf Lilleengen@foo");
+        innerBuilder.emails("Ulf Lilleengen@bar");
         innerBuilder.gender(StructtypesConfig.Nested.Inner.Gender.Enum.MALE);
         nestedBuilder.inner(innerBuilder);
         builder.nested(nestedBuilder);
@@ -75,8 +75,8 @@ public class ConfigInstanceSerializerTest {
                 "    'nested': {",
                 "        'inner': {",
                 "            'emails': [",
-                "                'lulf@foo',",
-                "                'lulf@bar'",
+                "                'Ulf Lilleengen@foo',",
+                "                'Ulf Lilleengen@bar'",
                 "            ],",
                 "            'gender': 'MALE',",
                 "            'name': 'foo'",

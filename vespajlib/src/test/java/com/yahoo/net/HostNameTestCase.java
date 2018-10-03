@@ -6,7 +6,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertFalse;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class HostNameTestCase {
 

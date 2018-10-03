@@ -16,7 +16,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 /**
- * @author lulf                                               3
+ * @author Ulf Lilleengen                                               3
  * @since 5.1
  */
 public class ConfigPayloadTest {

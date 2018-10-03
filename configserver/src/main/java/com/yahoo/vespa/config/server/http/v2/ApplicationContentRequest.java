@@ -12,7 +12,7 @@ import com.yahoo.vespa.config.server.http.Utils;
 /**
  * Represents a content request for an application.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.3
  */
 public class ApplicationContentRequest extends ContentRequest {

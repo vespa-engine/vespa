@@ -10,7 +10,7 @@ import com.yahoo.config.ConfigInstance;
  * A generic config with an internal generic builder that mimics a real config builder in order to support builders
  * when we don't have the schema.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class GenericConfig {

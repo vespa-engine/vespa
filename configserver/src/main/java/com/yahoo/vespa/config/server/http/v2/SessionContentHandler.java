@@ -17,7 +17,7 @@ import com.yahoo.vespa.config.server.http.Utils;
  * A handler that will return content or content status for files or directories
  * in the session's application package
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class SessionContentHandler extends SessionHandler {

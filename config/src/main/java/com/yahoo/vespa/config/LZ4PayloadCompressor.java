@@ -8,7 +8,7 @@ import net.jpountz.lz4.LZ4Factory;
 /**
  * Wrapper for LZ4 compression that selects compression level based on properties.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class LZ4PayloadCompressor {
 

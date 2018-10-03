@@ -7,7 +7,7 @@ import java.util.Arrays;
  * This class is used in {@link Group} instances where the identifying
  * expression evaluated to a {@link com.yahoo.search.grouping.request.RawBucket}.
  *
- * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
+ * @author Ulf Lilleengen
  */
 public class RawBucketId extends BucketGroupId<byte[]> {
 

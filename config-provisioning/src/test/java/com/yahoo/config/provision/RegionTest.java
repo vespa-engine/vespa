@@ -2,7 +2,7 @@
 package com.yahoo.config.provision;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.23
  */
 public class RegionTest extends IdentifierTestBase<RegionName> {

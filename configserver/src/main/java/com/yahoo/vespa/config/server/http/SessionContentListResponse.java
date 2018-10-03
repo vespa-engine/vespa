@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Represents a request for listing files within an application package.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 class SessionContentListResponse extends SessionResponse {

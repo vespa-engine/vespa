@@ -5,7 +5,7 @@ import com.google.common.testing.EqualsTester;
 import org.junit.Test;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class ClusterSpecTest {
 

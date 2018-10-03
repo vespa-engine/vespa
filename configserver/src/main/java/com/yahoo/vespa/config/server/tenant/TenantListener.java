@@ -7,7 +7,7 @@ import com.yahoo.vespa.config.server.tenant.TenantHandlerProvider;
 /**
  * Interface for something that listens for created and deleted tenants.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.8
  */
 public interface TenantListener {

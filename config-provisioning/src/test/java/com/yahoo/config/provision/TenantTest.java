@@ -8,7 +8,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.26
  */
 public class TenantTest extends IdentifierTestBase<TenantName> {

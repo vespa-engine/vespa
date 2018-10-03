@@ -13,7 +13,7 @@ import static com.yahoo.jdisc.http.HttpResponse.Status.OK;
 /**
  * HTTP getConfig response
  * 
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class HttpConfigResponse extends HttpResponse {
 

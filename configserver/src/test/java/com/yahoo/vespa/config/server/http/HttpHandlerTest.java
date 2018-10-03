@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class HttpHandlerTest {
     @Test

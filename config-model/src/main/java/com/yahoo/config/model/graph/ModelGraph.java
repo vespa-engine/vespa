@@ -8,7 +8,7 @@ import java.util.*;
 /**
  * A model graph contains the dependency graph of config models.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class ModelGraph {

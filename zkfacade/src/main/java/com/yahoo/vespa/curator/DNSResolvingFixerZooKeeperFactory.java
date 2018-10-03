@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 /**
  * A ZooKeeper handle factory that handles unknown host exceptions.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.9
  */
 class DNSResolvingFixerZooKeeperFactory implements ZookeeperFactory {

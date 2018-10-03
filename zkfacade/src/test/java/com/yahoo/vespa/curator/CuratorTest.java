@@ -16,7 +16,7 @@ import static org.junit.Assert.assertThat;
 /**
  * Sets up actual ZooKeeper servers and verifies we can talk to them.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class CuratorTest {
 
