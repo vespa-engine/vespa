@@ -69,7 +69,7 @@ ExchangeManager::getPartnerList()
 void
 ExchangeManager::forwardRemove(const std::string & name, const std::string & spec)
 {
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, name, spec, *this,
+    WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, *this,
                                            ScriptCommand::makeRemRemCmd(_env, name, spec));
     for (const auto & entry : _partners) {
         package->addItem(entry.second.get());
@@ -78,9 +78,9 @@ ExchangeManager::forwardRemove(const std::string & name, const std::string & spe
 }
 
 void
-ExchangeManager::doAdd(const std::string &name, const std::string &spec, ScriptCommand rdc)
+ExchangeManager::doAdd(ScriptCommand rdc)
 {
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_DOADD, name, spec, *this, std::move(rdc));
+    WorkPackage *package = new WorkPackage(WorkPackage::OP_DOADD, *this, std::move(rdc));
 
     for (const auto & entry : _partners) {
         package->addItem(entry.second.get());
@@ -90,9 +90,9 @@ ExchangeManager::doAdd(const std::string &name, const std::string &spec, ScriptC
 
 
 void
-ExchangeManager::wantAdd(const std::string &name, const std::string &spec, ScriptCommand rdc)
+ExchangeManager::wantAdd(ScriptCommand rdc)
 {
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_WANTADD, name, spec, *this, std::move(rdc));
+    WorkPackage *package = new WorkPackage(WorkPackage::OP_WANTADD, *this, std::move(rdc));
     for (const auto & entry : _partners) {
         package->addItem(entry.second.get());
     }
@@ -169,16 +169,17 @@ ExchangeManager::WorkPackage::WorkItem::~WorkItem()
 }
 
 
-ExchangeManager::WorkPackage::WorkPackage(op_type op, const std::string & name, const std::string & spec,
-                                          ExchangeManager &exchanger, ScriptCommand donehandler)
+ExchangeManager::WorkPackage::WorkPackage(op_type op,
+                                          ExchangeManager &exchanger,
+                                          ScriptCommand script)
     : _work(),
       _doneCnt(0),
       _numDenied(0),
-      _donehandler(std::move(donehandler)),
+      _donehandler(std::move(script)),
       _exchanger(exchanger),
       _optype(op),
-      _name(name),
-      _spec(spec)
+      _name(_donehandler.name()),
+      _spec(_donehandler.spec())
 {
 }
 

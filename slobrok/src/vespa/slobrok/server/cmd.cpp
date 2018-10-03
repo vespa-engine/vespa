@@ -100,17 +100,17 @@ ScriptCommand::doneHandler(OkState result)
     if (data._state == ScriptData::RDC_INIT) {
         LOG(spam, "phase wantAdd(%s,%s)", data.name.c_str(), data.spec.c_str());
         data._state = ScriptData::XCH_WANTADD;
-        data.env._exchanger.wantAdd(data.name.c_str(), data.spec.c_str(), std::move(dataUP));
+        data.env._exchanger.wantAdd(std::move(dataUP));
         return;
     } else if (data._state == ScriptData::XCH_WANTADD) {
         LOG(spam, "phase addManaged(%s,%s)", data.name.c_str(), data.spec.c_str());
         data._state = ScriptData::CHK_RPCSRV;
-        data.env._rpcsrvmanager.addManaged(data.name, data.spec.c_str(), std::move(dataUP));
+        data.env._rpcsrvmanager.addManaged(std::move(dataUP));
         return;
     } else if (data._state == ScriptData::CHK_RPCSRV) {
         LOG(spam, "phase doAdd(%s,%s)", data.name.c_str(), data.spec.c_str());
         data._state = ScriptData::XCH_DOADD;
-        data.env._exchanger.doAdd(data.name.c_str(), data.spec.c_str(), std::move(dataUP));
+        data.env._exchanger.doAdd(std::move(dataUP));
         return;
     } else if (data._state == ScriptData::XCH_DOADD) {
         LOG(debug, "done doAdd(%s,%s)", data.name.c_str(), data.spec.c_str());

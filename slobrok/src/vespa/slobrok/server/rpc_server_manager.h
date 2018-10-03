@@ -38,7 +38,7 @@ private:
 
     struct MRSandRRSC {
         ManagedRpcServer *rpcsrv;
-        ScriptCommand      handler;
+        ScriptCommand     handler;
         MRSandRRSC(ManagedRpcServer *d, ScriptCommand h)
             : rpcsrv(d), handler(std::move(h)) {}
     };
@@ -55,7 +55,7 @@ public:
     OkState addMyReservation(const std::string & name, const std::string & spec);
 
     bool alreadyManaged(const std::string & name, const std::string & spec);
-    void addManaged(const std::string & name, const std::string & spec, ScriptCommand rdc);
+    void addManaged(ScriptCommand rdc);
 
     OkState remove(ManagedRpcServer *rpcsrv);
 
