@@ -25,11 +25,6 @@ ConfigFetcher::ConfigFetcher(const SourceSpec & spec)
 }
 
 void
-ConfigFetcher::subscribeGenerationChanges(IGenerationCallback * callback) {
-    _poller.subscribeGenerationChanges(callback);
-}
-
-void
 ConfigFetcher::start()
 {
     if (!_closed) {

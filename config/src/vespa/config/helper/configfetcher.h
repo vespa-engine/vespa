@@ -22,8 +22,6 @@ public:
     template <typename ConfigType>
     void subscribe(const std::string & configId, IFetcherCallback<ConfigType> * callback, uint64_t subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
 
-    void subscribeGenerationChanges(IGenerationCallback * callback);
-
     void start();
     void close();
     int64_t getGeneration() const { return _poller.getGeneration(); }

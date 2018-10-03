@@ -20,7 +20,6 @@ public:
     void run() override;
     template <typename ConfigType>
     void subscribe(const std::string & configId, IFetcherCallback<ConfigType> * callback, uint64_t subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
-    void subscribeGenerationChanges(IGenerationCallback * callback) { _genCallback = callback; }
     void poll();
     void close();
     int64_t getGeneration() const { return _generation; }
@@ -29,7 +28,6 @@ private:
     ConfigSubscriber _subscriber;
     std::vector<IHandle::UP> _handleList;
     std::vector<ICallback *> _callbackList;
-    IGenerationCallback *_genCallback;
 };
 
 } // namespace config

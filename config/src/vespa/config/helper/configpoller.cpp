@@ -12,12 +12,11 @@ ConfigPoller::ConfigPoller(const IConfigContext::SP & context)
     : _generation(-1),
       _subscriber(context),
       _handleList(),
-      _callbackList(),
-      _genCallback(0)
+      _callbackList()
 {
 }
 
-ConfigPoller::~ConfigPoller() { }
+ConfigPoller::~ConfigPoller() = default;
 
 void
 ConfigPoller::run()
@@ -45,9 +44,6 @@ ConfigPoller::poll()
             ICallback * callback(_callbackList[i]);
             if (_handleList[i]->isChanged())
                 callback->configure(std::move(_handleList[i]->getConfig()));
-        }
-        if (_genCallback) {
-            _genCallback->notifyGenerationChange(_generation);
         }
     } else {
         LOG(debug, "No new config available");
