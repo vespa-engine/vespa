@@ -251,49 +251,6 @@ public class SerializationTest {
         node = createNode();
         copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
         assertEquals(node.additionalIpAddresses(), copy.additionalIpAddresses());
-
-        // TODO remove after MAI 2017
-        // Test deserialization of a json file without the additional ip addresses field
-        String json = "{\n" +
-                "  \"url\": \"http://localhost:8080/nodes/v2/node/host1.yahoo.com\",\n" +
-                "  \"id\": \"host1.yahoo.com\",\n" +
-                "  \"state\": \"active\",\n" +
-                "  \"type\": \"tenant\",\n" +
-                "  \"hostname\": \"host1.yahoo.com\",\n" +
-                "  \"openStackId\": \"node1\",\n" +
-                "  \"flavor\": \"default\",\n" +
-                "  \"canonicalFlavor\": \"default\",\n" +
-                "  \"minDiskAvailableGb\":400.0,\n" +
-                "  \"minMainMemoryAvailableGb\":16.0,\n" +
-                "  \"description\":\"Flavor-name-is-default\",\n" +
-                "  \"minCpuCores\":2.0,\n" +
-                "  \"environment\":\"BARE_METAL\",\n" +
-                "  \"owner\": {\n" +
-                "    \"tenant\": \"tenant2\",\n" +
-                "    \"application\": \"application2\",\n" +
-                "    \"instance\": \"instance2\"\n" +
-                "  },\n" +
-                "  \"membership\": {\n" +
-                "    \"clustertype\": \"content\",\n" +
-                "    \"clusterid\": \"id2\",\n" +
-                "    \"group\": \"0\",\n" +
-                "    \"index\": 0,\n" +
-                "    \"retired\": false\n" +
-                "  },\n" +
-                "  \"restartGeneration\": 0,\n" +
-                "  \"currentRestartGeneration\": 0,\n" +
-                "  \"wantedDockerImage\":\"foo:6.42.0\",\n" +
-                "  \"wantedVespaVersion\":\"6.42.0\",\n" +
-                "  \"rebootGeneration\": 1,\n" +
-                "  \"currentRebootGeneration\": 0,\n" +
-                "  \"failCount\": 0,\n" +
-                "  \"wantToRetire\" : false,\n" +
-                "  \"history\":[{\"type\":\"readied\",\"at\":123,\"type\":\"system\"},{\"type\":\"reserved\",\"at\":123,\"agent\":\"application\"},{\"type\":\"activated\",\"at\":123,\"agent\":\"application\"}],\n" +
-                "  \"ipAddresses\":[\"::1\", \"127.0.0.1\"]\n" +
-                "}";
-
-        node = nodeSerializer.fromJson(State.active, Utf8.toBytes(json));
-        assertEquals(Collections.emptySet(), node.additionalIpAddresses());
     }
 
     @Test
@@ -352,6 +309,13 @@ public class SerializationTest {
                                                .withOsVersion(Version.fromString("7.1")));
         serialized = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(serialized));
         assertEquals(Version.fromString("7.1"), serialized.status().osVersion().get());
+    }
+
+    @Test
+    public void serialize_node_types() {
+        for (NodeType t : NodeType.values()) {
+            assertEquals(t, NodeSerializer.nodeTypeFromString(NodeSerializer.toString(t)));
+        }
     }
 
     private byte[] createNodeJson(String hostname, String... ipAddress) {

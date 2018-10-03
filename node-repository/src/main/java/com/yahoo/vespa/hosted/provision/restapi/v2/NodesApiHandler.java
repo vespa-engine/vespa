@@ -32,6 +32,7 @@ import com.yahoo.yolean.Exceptions;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +55,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private final NodeRepository nodeRepository;
     private final NodeRepositoryMaintenance maintenance;
     private final NodeFlavors nodeFlavors;
+    private final NodeSerializer serializer = new NodeSerializer();
 
     @Inject
     public NodesApiHandler(LoggingRequestHandler.Context parentCtx, Orchestrator orchestrator,
@@ -185,7 +187,6 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private Node nodeFromRequest(HttpRequest request) {
         String hostname = lastElement(request.getUri().getPath());
-
         return nodeRepository.getNode(hostname).orElseThrow(() ->
                 new NotFoundException("No node found with hostname " + hostname));
     }
@@ -200,7 +201,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
             byte[] jsonBytes = IOUtils.readBytes(jsonStream, 1000 * 1000);
             return SlimeUtils.jsonToSlime(jsonBytes);
         } catch (IOException e) {
-            throw new RuntimeException();
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -227,18 +228,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 nodeTypeFromSlime(inspector.field("type")));
     }
 
-    private static NodeType nodeTypeFromSlime(Inspector object) {
+    private NodeType nodeTypeFromSlime(Inspector object) {
         if (! object.valid()) return NodeType.tenant; // default
-        switch (object.asString()) {
-            case "tenant": return NodeType.tenant;
-            case "host": return NodeType.host;
-            case "proxy": return NodeType.proxy;
-            case "proxyhost": return NodeType.proxyhost;
-            case "config": return NodeType.config;
-            case "confighost": return NodeType.confighost;
-            case "controller": return NodeType.controller;
-            default: throw new IllegalArgumentException("Unknown node type '" + object.asString() + "'");
-        }
+        return serializer.typeFrom(object.asString());
     }
 
     public static NodeFilter toNodeFilter(HttpRequest request) {
