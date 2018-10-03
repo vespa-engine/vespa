@@ -7,9 +7,10 @@ import com.yahoo.document.predicate.PredicateHash;
  * Expands range terms from a query to find the set of features they translate to.
  *
  * @author bjorncs
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  */
 public class PredicateRangeTermExpander {
+
     private final int arity;
     private final int maxPositiveLevels;
     private final int maxNegativeLevels;
@@ -113,4 +114,5 @@ public class PredicateRangeTermExpander {
     public interface EdgeHandler {
         void handleEdge(long featureHash, int value);
     }
+
 }

@@ -17,6 +17,7 @@ import java.util.List;
  * @author bjorncs
  */
 public class CachedPostingListCounter {
+
     // Only use bit vector for counting if the documents covered is more than the threshold (relative to nDocuments)
     private static final double THRESHOLD_USE_BIT_VECTOR = 1;
 

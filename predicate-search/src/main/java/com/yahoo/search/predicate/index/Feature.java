@@ -9,6 +9,7 @@ import com.yahoo.document.predicate.PredicateHash;
  * @author bjorncs
  */
 public class Feature {
+
     public static final String Z_STAR_COMPRESSED_ATTRIBUTE_NAME = "z-star-compressed";
     public static final long Z_STAR_COMPRESSED_ATTRIBUTE_HASH = PredicateHash.hash64(Z_STAR_COMPRESSED_ATTRIBUTE_NAME);
 
@@ -17,4 +18,5 @@ public class Feature {
     public static long createHash(String key, String value) {
         return PredicateHash.hash64(key + "=" + value);
     }
+
 }

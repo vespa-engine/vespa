@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Represents a query in the form of a set of boolean variables that are considered true.
  *
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  * @author bjorncs
  */
 @Beta
@@ -19,15 +19,18 @@ public class PredicateQuery {
     private final ArrayList<RangeFeature> rangeFeatures = new ArrayList<>();
 
     /**
-     * Adds a feature to the query.
-     * @param key Feature key
-     * @param value Feature value
+     * Adds a feature to the query
+     *
+     * @param key a feature key
+     * @param value a feature value
      */
     public void addFeature(String key, String value) {
         addFeature(key, value, SubqueryBitmap.DEFAULT_VALUE);
     }
+
     /**
      * Adds a feature to the query, e.g. gender = male.
+     *
      * @param key Feature key
      * @param value Feature value
      * @param subqueryBitMap The subquery bitmap for which this term is true
@@ -35,27 +38,28 @@ public class PredicateQuery {
     public void addFeature(String key, String value, long subqueryBitMap) {
         features.add(new Feature(key, value, subqueryBitMap));
     }
+
     public void addRangeFeature(String key, long value) { addRangeFeature(key, value, SubqueryBitmap.DEFAULT_VALUE);}
+
     /**
      * Adds a range feature to the query, e.g. age = 25.
-     * @param key Feature key
-     * @param value Feature value
-     * @param subqueryBitMap The subquery bitmap for which this term is true
+     *
+     * @param key a feature key
+     * @param value a feature value
+     * @param subqueryBitMap the subquery bitmap for which this term is true
      */
     public void addRangeFeature(String key, long value, long subqueryBitMap) {
         rangeFeatures.add(new RangeFeature(key, value, subqueryBitMap));
     }
-    /**
-     * @return A list of features
-     */
+
+    /** Returns a list of features */
     public List<Feature> getFeatures() { return features; }
 
-    /**
-     * @return A list of range features
-     */
+    /** Returns a list of range features */
     public List<RangeFeature> getRangeFeatures() { return rangeFeatures; }
 
     public static class Feature {
+
         public final String key;
         public final String value;
         public final long subqueryBitmap;
@@ -67,9 +71,11 @@ public class PredicateQuery {
             this.value = value;
             this.key = key;
         }
+
     }
 
     public static class RangeFeature {
+
         public final String key;
         public final long value;
         public final long subqueryBitmap;
@@ -79,6 +85,7 @@ public class PredicateQuery {
             this.value = value;
             this.subqueryBitmap = subqueryBitmap;
         }
+
     }
 
 }

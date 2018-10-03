@@ -9,9 +9,10 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  */
 public class VespaFeedWriter extends BufferedWriter {
+
     private String namespace;
     private String documentType;
 
@@ -40,4 +41,5 @@ public class VespaFeedWriter extends BufferedWriter {
             throw new RuntimeException(e);
         }
     }
+
 }

@@ -102,4 +102,5 @@ public class VespaQueryParser {
             return result;
         }
     }
+
 }

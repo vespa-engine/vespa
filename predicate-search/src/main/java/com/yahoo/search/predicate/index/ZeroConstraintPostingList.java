@@ -6,10 +6,12 @@ import com.yahoo.search.predicate.SubqueryBitmap;
 /**
  * Wraps an int stream of document ids into a PostingList.
  * All documents in the stream are considered matches.
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ *
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public class ZeroConstraintPostingList implements PostingList {
+
     private final int[] docIds;
     private final int length;
     private int currentIndex;

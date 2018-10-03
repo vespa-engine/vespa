@@ -2,7 +2,7 @@
 package com.yahoo.document.predicate;
 
 /**
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  */
 public class RangePartition extends PredicateValue {
 

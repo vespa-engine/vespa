@@ -25,4 +25,5 @@ public class ConjunctionId {
     public static int nextId(int c) {
         return (c | 1) + 1;
     }
+
 }

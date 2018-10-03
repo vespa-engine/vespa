@@ -8,10 +8,12 @@ import com.yahoo.search.predicate.SubqueryBitmap;
  * The compression works by implying an interval of size 1 after each
  * stored interval, unless the next interval starts with 16 bits of 0,
  * in which case the current interval is extended to the next.
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ *
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public class ZstarCompressedPostingList extends MultiIntervalPostingList {
+
     private final PredicateIntervalStore store;
     private int[] currentIntervals;
     private int currentIntervalIndex;
@@ -63,4 +65,5 @@ public class ZstarCompressedPostingList extends MultiIntervalPostingList {
     public int getInterval() {
         return currentInterval;
     }
+
 }

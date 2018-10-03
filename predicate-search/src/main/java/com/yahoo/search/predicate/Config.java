@@ -14,6 +14,7 @@ import java.io.IOException;
  */
 @Beta
 public class Config {
+
     public final int arity;
     public final long lowerBound;
     public final long upperBound;
@@ -72,4 +73,5 @@ public class Config {
         }
 
     }
+
 }

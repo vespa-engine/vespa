@@ -71,7 +71,7 @@ public class PredicateIndexBuilder {
     /**
      * Creates a PredicateIndexBuilder with default upper and lower bounds.
      *
-     * @param arity The arity to use when indexing range predicates.
+     * @param arity the arity to use when indexing range predicates.
      *              Small arity gives smaller index, but more expensive searches.
      */
     public PredicateIndexBuilder(int arity) {
@@ -83,10 +83,10 @@ public class PredicateIndexBuilder {
      * Limiting the range of possible values in range predicates reduces index size
      * and increases search performance.
      *
-     * @param arity      The arity to use when indexing range predicates.
+     * @param arity      the arity to use when indexing range predicates.
      *                   Small arity gives smaller index, but more expensive searches.
-     * @param lowerBound The lower bound for the range of values used by range predicates.
-     * @param upperBound The upper bound for the range of values used by range predicates.
+     * @param lowerBound the lower bound for the range of values used by range predicates
+     * @param upperBound the upper bound for the range of values used by range predicates
      */
     public PredicateIndexBuilder(int arity, long lowerBound, long upperBound) {
         this(new Config.Builder().setArity(arity).setLowerBound(lowerBound).setUpperBound(upperBound).build());
@@ -95,7 +95,7 @@ public class PredicateIndexBuilder {
     /**
      * Creates a PredicateIndexBuilder based on a Config object.
      *
-     * @param config Configuration for the PredicateIndexBuilder.
+     * @param config configuration for the PredicateIndexBuilder
      */
     public PredicateIndexBuilder(Config config) {
         this.config = config;
@@ -106,8 +106,8 @@ public class PredicateIndexBuilder {
     /**
      * Indexes a predicate with the given id.
      *
-     * @param docId     A 32-bit document id, returned in the Hit objects when the predicate matches.
-     * @param predicate The predicate to index.
+     * @param docId     a 32-bit document id, returned in the Hit objects when the predicate matches
+     * @param predicate the predicate to index
      */
     public void indexDocument(int docId, Predicate predicate) {
         if (documentIdCounter == Integer.MAX_VALUE) {
@@ -213,8 +213,9 @@ public class PredicateIndexBuilder {
     }
 
     /**
-     * Retrieve metrics about the current index.
-     * @return An object containing metrics.
+     * Retrieves metrics about the current index.
+     *
+     * @return an object containing metrics
      */
     public PredicateIndexStats getStats() {
         return new PredicateIndexStats(zeroConstraintDocuments, intervalIndexBuilder,
@@ -266,4 +267,5 @@ public class PredicateIndexBuilder {
                     .collect(joining("\n"));
         }
     }
+
 }

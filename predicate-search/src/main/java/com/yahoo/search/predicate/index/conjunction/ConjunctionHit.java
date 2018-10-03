@@ -9,6 +9,7 @@ import com.yahoo.search.predicate.SubqueryBitmap;
  * @author bjorncs
  */
 public class ConjunctionHit implements Comparable<ConjunctionHit> {
+
     public final long conjunctionId;
     public final long subqueryBitmap;
 
@@ -49,4 +50,5 @@ public class ConjunctionHit implements Comparable<ConjunctionHit> {
             return "[" + conjunctionId + ",0x" + Long.toHexString(subqueryBitmap) + "]";
         }
     }
+
 }

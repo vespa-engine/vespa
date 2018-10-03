@@ -5,10 +5,12 @@ import com.yahoo.search.predicate.utils.PostingListSearch;
 
 /**
  * Shared implementation for posting lists that may have multiple intervals.
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ *
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public abstract class MultiIntervalPostingList implements PostingList {
+
     private final int[] docIds;
     private final int[] dataRefs;
     private final long subquery;
@@ -64,4 +66,5 @@ public abstract class MultiIntervalPostingList implements PostingList {
     public final long getSubquery() {
         return subquery;
     }
+
 }

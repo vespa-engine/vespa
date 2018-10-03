@@ -15,7 +15,7 @@ import static java.lang.Math.abs;
  * partitions and edge partitions.
  * This is required to be able to store a range in the PredicateIndex.
  *
- * @author magnarn
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public class ComplexNodeTransformer implements PredicateProcessor {
@@ -156,4 +156,5 @@ public class ComplexNodeTransformer implements PredicateProcessor {
             return to;
         }
     }
+
 }

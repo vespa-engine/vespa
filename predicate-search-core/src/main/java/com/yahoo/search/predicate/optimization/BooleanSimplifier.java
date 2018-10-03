@@ -16,7 +16,7 @@ import java.util.List;
  * E.g. if an AND node has a FALSE child, the entire node is replaced by FALSE.
  * Replaces single-child AND/OR-nodes with the child.
  *
- * @author magnarn
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public class BooleanSimplifier implements PredicateProcessor {
@@ -90,4 +90,5 @@ public class BooleanSimplifier implements PredicateProcessor {
     public Predicate process(Predicate predicate, PredicateOptions options) {
         return simplifySubTree(predicate);
     }
+
 }

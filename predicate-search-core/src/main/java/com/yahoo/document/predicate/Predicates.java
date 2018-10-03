@@ -66,4 +66,5 @@ public class Predicates {
             return new Negation(new FeatureSet(key, values));
         }
     }
+
 }

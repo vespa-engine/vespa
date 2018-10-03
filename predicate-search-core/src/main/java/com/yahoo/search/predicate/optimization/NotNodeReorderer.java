@@ -13,12 +13,13 @@ import java.util.List;
  * Reorders not nodes to improve the efficiency of the z-star posting list compression.
  * It puts negative children first in AND-nodes, and last in OR-nodes.
  *
- * @author magnarn
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public class NotNodeReorderer implements PredicateProcessor {
+
     /**
-     * @return true if the predicate ends in a negation.
+     * Returns true if the predicate ends in a negation.
      */
     public boolean processSubTree(Predicate predicate) {
         if (predicate == null) {
@@ -64,4 +65,5 @@ public class NotNodeReorderer implements PredicateProcessor {
         processSubTree(predicate);
         return predicate;
     }
+
 }

@@ -19,6 +19,7 @@ import com.yahoo.search.predicate.optimization.PredicateProcessor;
  * @author bjorncs
  */
 public class PredicateOptimizer {
+
     private final PredicateProcessor[] processors;
     private final PredicateOptions options;
 
@@ -43,4 +44,5 @@ public class PredicateOptimizer {
         }
         return predicate;
     }
+
 }
