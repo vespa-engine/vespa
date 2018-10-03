@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
@@ -13,11 +14,11 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.service.monitor.application.ConfigServerApplication;
 import com.yahoo.vespa.service.monitor.application.ConfigServerHostApplication;
 import com.yahoo.vespa.service.monitor.application.ControllerApplication;
+import com.yahoo.vespa.service.monitor.application.ControllerHostApplication;
 import com.yahoo.vespa.service.monitor.application.HostedVespaApplication;
 import com.yahoo.vespa.service.monitor.application.ProxyHostApplication;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -33,11 +34,12 @@ import java.util.stream.Collectors;
 public class InfrastructureProvisioner extends Maintainer {
 
     private static final Logger logger = Logger.getLogger(InfrastructureProvisioner.class.getName());
-    private static final List<HostedVespaApplication> HOSTED_VESPA_APPLICATIONS = Arrays.asList(
+    private static final List<HostedVespaApplication> HOSTED_VESPA_APPLICATIONS = ImmutableList.of(
             ConfigServerApplication.CONFIG_SERVER_APPLICATION,
             ConfigServerHostApplication.CONFIG_SERVER_HOST_APPLICATION,
             ProxyHostApplication.PROXY_HOST_APPLICATION,
-            ControllerApplication.CONTROLLER_APPLICATION);
+            ControllerApplication.CONTROLLER_APPLICATION,
+            ControllerHostApplication.CONTROLLER_HOST_APPLICATION);
 
     private final Provisioner provisioner;
     private final InfrastructureVersions infrastructureVersions;
