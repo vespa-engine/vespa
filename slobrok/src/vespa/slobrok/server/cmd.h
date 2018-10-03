@@ -2,6 +2,7 @@
 #pragma once
 
 #include "ok_state.h"
+#include <memory>
 
 class FRT_RPCRequest;
 
@@ -20,33 +21,19 @@ struct RegRpcSrvData;
 class RegRpcSrvCommand
 {
 private:
-    RegRpcSrvData *_data;
-    RegRpcSrvCommand(RegRpcSrvData *data) : _data(data) {}
-    void cleanupReservation();
+    std::unique_ptr<RegRpcSrvData> _data;
+    static void cleanupReservation(RegRpcSrvData &);
+    RegRpcSrvCommand(std::unique_ptr<RegRpcSrvData> data);
 public:
     virtual void doneHandler(OkState result);
     void doRequest();
 
-    RegRpcSrvCommand(const RegRpcSrvCommand &rhs)
-        : _data(rhs._data)
-    {
-    }
+    RegRpcSrvCommand(RegRpcSrvCommand &&);
+    RegRpcSrvCommand & operator=(RegRpcSrvCommand &&);
+    virtual ~RegRpcSrvCommand();
 
-    virtual ~RegRpcSrvCommand() {}
-
-    RegRpcSrvCommand& operator=(const RegRpcSrvCommand &rhs)
-    {
-        _data = rhs._data;
-        return *this;
-    }
-
-    static RegRpcSrvCommand makeRegRpcSrvCmd(SBEnv &env,
-                                             const char *name,
-                                             const char *spec,
-                                             FRT_RPCRequest *req);
-    static RegRpcSrvCommand makeRemRemCmd(SBEnv &env,
-                                          const char *name,
-                                          const char *spec);
+    static RegRpcSrvCommand makeRegRpcSrvCmd(SBEnv &env, const std::string &name, const std::string &spec, FRT_RPCRequest *req);
+    static RegRpcSrvCommand makeRemRemCmd(SBEnv &env, const std::string &name, const std::string &spec);
 };
 
 //-----------------------------------------------------------------------------

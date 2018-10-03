@@ -25,6 +25,7 @@ import java.util.Arrays;
  * @author bjorncs
  */
 public class PredicateQueryParser {
+
     private final JsonFactory factory = new JsonFactory();
 
     @FunctionalInterface
@@ -129,4 +130,5 @@ public class PredicateQueryParser {
     private interface ValueParser<V> {
         V parse(JsonParser parser) throws IOException;
     }
+
 }

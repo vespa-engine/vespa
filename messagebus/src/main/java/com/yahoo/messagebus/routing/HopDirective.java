@@ -14,13 +14,14 @@ public interface HopDirective {
      * @param dir The directive to compare this to.
      * @return True if this matches the argument.
      */
-    public boolean matches(HopDirective dir);
+    boolean matches(HopDirective dir);
 
     /**
      * Returns a string representation of this that can be debugged but not parsed.
      *
      * @return The debug string.
      */
-    public String toDebugString();
+    String toDebugString();
+
 }
 

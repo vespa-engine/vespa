@@ -15,6 +15,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
 import com.yahoo.text.XML;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
 import com.yahoo.vespa.model.clients.Clients;
 import com.yahoo.vespa.model.content.Content;
@@ -71,10 +72,13 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
     public Map<String,ConfigModel> asMap() { return Collections.unmodifiableMap(configModelMap); }
 
     /** Initialize part 1.: Reads the config models used in the application package. */
-    public void readConfigModels(DeployState deployState, VespaModelBuilder builder,
-                                 ApplicationConfigProducerRoot root, ConfigModelRegistry configModelRegistry) throws IOException, SAXException {
+    public void readConfigModels(DeployState deployState,
+                                 VespaModel vespaModel,
+                                 VespaModelBuilder builder,
+                                 ApplicationConfigProducerRoot root,
+                                 ConfigModelRegistry configModelRegistry) throws IOException, SAXException {
         Element userServicesElement = getServicesFromApp(deployState.getApplicationPackage());
-        readConfigModels(root, userServicesElement, deployState, configModelRegistry);
+        readConfigModels(root, userServicesElement, deployState, vespaModel, configModelRegistry);
         builder.postProc(root, this);
     }
 
@@ -104,7 +108,11 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
      * @param servicesRoot XML root node of the services file
      */
     @SuppressWarnings("deprecation")
-    private void readConfigModels(ApplicationConfigProducerRoot root, Element servicesRoot, DeployState deployState, ConfigModelRegistry configModelRegistry) throws IOException, SAXException {
+    private void readConfigModels(ApplicationConfigProducerRoot root,
+                                  Element servicesRoot,
+                                  DeployState deployState,
+                                  VespaModel vespaModel,
+                                  ConfigModelRegistry configModelRegistry) throws IOException, SAXException {
         final Map<ConfigModelBuilder, List<Element>> model2Element = new LinkedHashMap<>();
         ModelGraphBuilder graphBuilder = new ModelGraphBuilder();
 
@@ -140,7 +148,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
         }
 
         for (ModelNode node : graphBuilder.build().topologicalSort())
-            buildModels(node, getApplicationType(servicesRoot), deployState, root, model2Element.get(node.builder));
+            buildModels(node, getApplicationType(servicesRoot), deployState, vespaModel, root, model2Element.get(node.builder));
         for (ConfigModel model : configModels)
             model.initialize(ConfigModelRepo.this); // XXX deprecated
     }
@@ -174,10 +182,11 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
     private void buildModels(ModelNode node,
                              ApplicationType applicationType,
                              DeployState deployState,
+                             VespaModel vespaModel,
                              AbstractConfigProducer parent,
                              List<Element> elements) {
         for (Element servicesElement : elements) {
-            ConfigModel model = buildModel(node, applicationType, deployState, parent, servicesElement);
+            ConfigModel model = buildModel(node, applicationType, deployState, vespaModel, parent, servicesElement);
             if (model.isServing())
                 add(model);
         }
@@ -186,10 +195,11 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
     private ConfigModel buildModel(ModelNode node,
                                    ApplicationType applicationType,
                                    DeployState deployState,
+                                   VespaModel vespaModel,
                                    AbstractConfigProducer parent,
                                    Element servicesElement) {
         ConfigModelBuilder builder = node.builder;
-        ConfigModelContext context = ConfigModelContext.create(applicationType, deployState, this, parent, getIdString(servicesElement));
+        ConfigModelContext context = ConfigModelContext.create(applicationType, deployState, vespaModel, this, parent, getIdString(servicesElement));
         return builder.build(node, servicesElement, context);
     }
 

@@ -6,6 +6,7 @@
 #include <memory>
 #include <vector>
 #include <vespa/vespalib/net/async_resolver.h>
+#include <vespa/vespalib/net/crypto_engine.h>
 
 class FastOS_TimeInterface;
 class FNET_TransportThread;
@@ -28,6 +29,7 @@ private:
     using Threads = std::vector<Thread>;
 
     vespalib::AsyncResolver::SP _async_resolver;
+    vespalib::CryptoEngine::SP _crypto_engine;
     Threads _threads;
 
 public:
@@ -38,9 +40,16 @@ public:
      * the current thread become the transport thread. Main may only
      * be called for single-threaded transports.
      **/
-    FNET_Transport(vespalib::AsyncResolver::SP resolver, size_t num_threads);
-    FNET_Transport(size_t num_threads = 1)
-        : FNET_Transport(vespalib::AsyncResolver::get_shared(), num_threads) {}
+    FNET_Transport(vespalib::AsyncResolver::SP resolver, vespalib::CryptoEngine::SP crypto, size_t num_threads);
+
+    FNET_Transport(vespalib::AsyncResolver::SP resolver, size_t num_threads)
+        : FNET_Transport(std::move(resolver), vespalib::CryptoEngine::get_default(), num_threads) {}
+    FNET_Transport(vespalib::CryptoEngine::SP crypto, size_t num_threads)
+        : FNET_Transport(vespalib::AsyncResolver::get_shared(), std::move(crypto), num_threads) {}
+    FNET_Transport(size_t num_threads)
+        : FNET_Transport(vespalib::AsyncResolver::get_shared(), vespalib::CryptoEngine::get_default(), num_threads) {}
+    FNET_Transport()
+        : FNET_Transport(vespalib::AsyncResolver::get_shared(), vespalib::CryptoEngine::get_default(), 1) {}
     ~FNET_Transport();
 
     /**
@@ -55,6 +64,19 @@ public:
      **/
     void resolve_async(const vespalib::string &spec,
                        vespalib::AsyncResolver::ResultHandler::WP result_handler);
+
+    /**
+     * Wrap a plain socket endpoint in a CryptoSocket. The
+     * implementation will be determined by the CryptoEngine used by
+     * this Transport.
+     *
+     * @return socket abstraction able to perform encryption and decryption
+     * @param socket low-level socket
+     * @param is_server which end of the connection the socket
+     *                  represents. This is needed to support
+     *                  asymmetrical handshaking.
+     **/
+    vespalib::CryptoSocket::UP create_crypto_socket(vespalib::SocketHandle socket, bool is_server);
 
     /**
      * Select one of the underlying transport threads. The selection
@@ -165,28 +187,12 @@ public:
     void SetMaxOutputBufferSize(uint32_t bytes);
 
     /**
-     * Enable or disable the direct write optimization. This is
-     * enabled by default and favors low latency above throughput.
-     *
-     * @param directWrite enable direct write?
-     **/
-    void SetDirectWrite(bool directWrite);
-
-    /**
      * Enable or disable use of the TCP_NODELAY flag with sockets
      * created by this transport object.
      *
      * @param noDelay true if TCP_NODELAY flag should be used.
      **/
     void SetTCPNoDelay(bool noDelay);
-
-    /**
-     * Enable or disable logging of FNET statistics. This feature is
-     * disabled by default.
-     *
-     * @param logStats true if stats should be logged.
-     **/
-    void SetLogStats(bool logStats);
 
     /**
      * Synchronize with all transport threads. This method will block

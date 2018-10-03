@@ -2,17 +2,29 @@
 package com.yahoo.searchlib.rankingexpression;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.yahoo.log.event.Collection;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
-import com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
- * A function defined by a ranking expression
+ * A function defined by a ranking expression, optionally containing type information
+ * for inputs and outputs.
+ *
+ * Immutable, but note that ranking expressions are *not* immutable.
  *
  * @author Simon Thoresen Hult
  * @author bratseth
@@ -21,7 +33,22 @@ public class ExpressionFunction {
 
     private final String name;
     private final ImmutableList<String> arguments;
+
+    /** Types of the inputs, if known. The keys here is any subset (including empty and identity) of the argument list */
+    private final ImmutableMap<String, TensorType> argumentTypes;
     private final RankingExpression body;
+
+    private final Optional<TensorType> returnType;
+
+    /**
+     * Constructs a new function with no arguments
+     *
+     * @param name the name of this function
+     * @param body the ranking expression that defines this function
+     */
+    public ExpressionFunction(String name, RankingExpression body) {
+        this(name, Collections.emptyList(), body);
+    }
 
     /**
      * Constructs a new function
@@ -31,9 +58,18 @@ public class ExpressionFunction {
      * @param body the ranking expression that defines this function
      */
     public ExpressionFunction(String name, List<String> arguments, RankingExpression body) {
-        this.name = name;
+        this(name, arguments, body, ImmutableMap.of(), Optional.empty());
+    }
+
+    public ExpressionFunction(String name, List<String> arguments, RankingExpression body,
+                              Map<String, TensorType> argumentTypes, Optional<TensorType> returnType) {
+        this.name = Objects.requireNonNull(name, "name cannot be null");
         this.arguments = arguments==null ? ImmutableList.of() : ImmutableList.copyOf(arguments);
-        this.body = body;
+        this.body = Objects.requireNonNull(body, "body cannot be null");
+        if ( ! this.arguments.containsAll(argumentTypes.keySet()))
+            throw new IllegalArgumentException("Argument type keys must be a subset of the argument keys");
+        this.argumentTypes = ImmutableMap.copyOf(argumentTypes);
+        this.returnType = Objects.requireNonNull(returnType, "returnType cannot be null");
     }
 
     public String getName() { return name; }
@@ -43,9 +79,44 @@ public class ExpressionFunction {
 
     public RankingExpression getBody() { return body; }
 
+    /** Returns the types of the arguments of this, if specified. The keys of this may be any subset of the arguments */
+    public Map<String, TensorType> argumentTypes() { return argumentTypes; }
+
+    /** Returns the return type of this, or empty if not specified */
+    public Optional<TensorType> returnType() { return returnType; }
+
+    public ExpressionFunction withName(String name) {
+        return new ExpressionFunction(name, arguments, body, argumentTypes, returnType);
+    }
+
     /** Returns a copy of this with the body changed to the given value */
     public ExpressionFunction withBody(RankingExpression body) {
-        return new ExpressionFunction(name, arguments, body);
+        return new ExpressionFunction(name, arguments, body, argumentTypes, returnType);
+    }
+
+    public ExpressionFunction withReturnType(TensorType returnType) {
+        return new ExpressionFunction(name, arguments, body, argumentTypes, Optional.of(returnType));
+    }
+
+    /** Returns a copy of this with the given argument added (if not already present) */
+    public ExpressionFunction withArgument(String argument) {
+        if (arguments.contains(argument)) return this;
+
+        List<String> arguments = new ArrayList<>(this.arguments);
+        arguments.add(argument);
+        return new ExpressionFunction(name, arguments, body, argumentTypes, returnType);
+    }
+
+    /** Returns a copy of this with the given argument (if not present) and argument type added */
+    public ExpressionFunction withArgument(String argument, TensorType type) {
+        List<String> arguments = new ArrayList<>(this.arguments);
+        if ( ! arguments.contains(argument))
+            arguments.add(argument);
+
+        Map<String, TensorType> argumentTypes = new HashMap<>(this.argumentTypes);
+        argumentTypes.put(argument, type);
+
+        return new ExpressionFunction(name, arguments, body, argumentTypes, returnType);
     }
 
     /**

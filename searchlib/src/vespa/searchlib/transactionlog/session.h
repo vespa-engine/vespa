@@ -4,9 +4,9 @@
 #include "common.h"
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/fnet/frt/invoker.h>
 #include <chrono>
 #include <deque>
+#include <atomic>
 
 class FastOS_FileInterface;
 
@@ -16,22 +16,29 @@ class Domain;
 class DomainPart;
 using DomainSP = std::shared_ptr<Domain>;
 
-class Session : public FRT_IRequestWait
+class Session
 {
 private:
     using Task = vespalib::Executor::Task;
     using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 
 public:
+    class Destination {
+    public:
+        virtual ~Destination() {}
+        virtual bool send(int32_t id, const vespalib::string & domain, const Packet & packet) = 0;
+        virtual bool sendDone(int32_t id, const vespalib::string & domain) = 0;
+        virtual bool connected() const = 0;
+        virtual bool ok() const = 0;
+    };
     typedef std::shared_ptr<Session> SP;
     Session(const Session &) = delete;
     Session & operator = (const Session &) = delete;
-    Session(int sId, const SerialNumRange & r, const DomainSP & d, FRT_Supervisor & supervisor, FNET_Connection *conn);
+    Session(int sId, const SerialNumRange & r, const DomainSP & d, std::unique_ptr<Destination> destination);
     ~Session();
     const SerialNumRange & range() const { return _range; }
     int                       id() const { return _id; }
     bool inSync()    const { return _inSync; }
-    bool ok()        const { return _ok; }
     bool finished()  const;
     static Task::UP createTask(const Session::SP & session);
     void setStartTime(time_point startTime) { _startTime = startTime; }
@@ -47,8 +54,7 @@ private:
         Session::SP _session;
     };
 
-    bool send(FRT_RPCRequest * req);
-    void RequestDone(FRT_RPCRequest *req) override;
+    bool ok()        const { return _destination->ok(); }
     bool send(const Packet & packet);
     bool sendDone();
     void visit();
@@ -56,17 +62,14 @@ private:
     void startVisit();
     void finalize();
     bool visit(FastOS_FileInterface & file, DomainPart & dp) __attribute__((noinline));
-    int32_t rpc(FRT_RPCRequest * req);
-    FRT_Supervisor          & _supervisor;
-    FNET_Connection         * _connection;
-    DomainSP                  _domain;
-    SerialNumRange            _range;
-    int                       _id;
-    bool                      _ok;
-    std::atomic<bool>         _visitRunning;
-    std::atomic<bool>         _inSync;
-    std::atomic<bool>         _finished;
-    time_point                _startTime;
+    std::unique_ptr<Destination> _destination;
+    DomainSP                     _domain;
+    SerialNumRange               _range;
+    int                          _id;
+    std::atomic<bool>            _visitRunning;
+    std::atomic<bool>            _inSync;
+    std::atomic<bool>            _finished;
+    time_point                   _startTime;
 };
 
 }

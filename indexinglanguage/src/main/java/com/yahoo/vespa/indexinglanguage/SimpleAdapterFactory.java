@@ -48,23 +48,31 @@ public class SimpleAdapterFactory implements AdapterFactory {
         DocumentId docId = upd.getId();
         Document complete = new Document(docType, upd.getId());
         for (FieldPathUpdate fieldUpd : upd) {
-            if (FieldPathUpdateHelper.isComplete(fieldUpd)) {
-                // A 'complete' field path update is basically a regular top-level field update
-                // in wolf's clothing. Convert it to a regular field update to be friendlier
-                // towards the search core backend.
-                FieldPathUpdateHelper.applyUpdate(fieldUpd, complete);
-            } else {
-                ret.add(new IdentityFieldPathUpdateAdapter(fieldUpd, newDocumentAdapter(complete, true)));
+            try {
+                if (FieldPathUpdateHelper.isComplete(fieldUpd)) {
+                    // A 'complete' field path update is basically a regular top-level field update
+                    // in wolf's clothing. Convert it to a regular field update to be friendlier
+                    // towards the search core backend.
+                    FieldPathUpdateHelper.applyUpdate(fieldUpd, complete);
+                } else {
+                    ret.add(new IdentityFieldPathUpdateAdapter(fieldUpd, newDocumentAdapter(complete, true)));
+                }
+            } catch (NullPointerException e) {
+                throw new IllegalArgumentException("Exception during handling of update '" + fieldUpd + "' to field '" + fieldUpd.getFieldPath() + "'", e);
             }
         }
         for (FieldUpdate fieldUpd : upd.getFieldUpdates()) {
             Field field = fieldUpd.getField();
             for (ValueUpdate valueUpd : fieldUpd.getValueUpdates()) {
-                if (FieldUpdateHelper.isComplete(field, valueUpd)) {
-                    FieldUpdateHelper.applyUpdate(field, valueUpd, complete);
-                } else {
-                    Document partial = FieldUpdateHelper.newPartialDocument(docType, docId, field, valueUpd);
-                    ret.add(FieldUpdateAdapter.fromPartialUpdate(expressionSelector.selectExpression(docType, field.getName()),newDocumentAdapter(partial, true), valueUpd));
+                try {
+                    if (FieldUpdateHelper.isComplete(field, valueUpd)) {
+                        FieldUpdateHelper.applyUpdate(field, valueUpd, complete);
+                    } else {
+                        Document partial = FieldUpdateHelper.newPartialDocument(docType, docId, field, valueUpd);
+                        ret.add(FieldUpdateAdapter.fromPartialUpdate(expressionSelector.selectExpression(docType, field.getName()), newDocumentAdapter(partial, true), valueUpd));
+                    }
+                } catch (NullPointerException e) {
+                    throw new IllegalArgumentException("Exception during handling of update '" + valueUpd + "' to field '" + field + "'", e);
                 }
             }
         }

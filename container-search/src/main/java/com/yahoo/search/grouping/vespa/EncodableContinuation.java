@@ -11,9 +11,13 @@ abstract class EncodableContinuation extends Continuation {
     public abstract void encode(IntegerEncoder out);
 
     @Override
+    public abstract EncodableContinuation copy();
+
+    @Override
     public final String toString() {
         IntegerEncoder encoder = new IntegerEncoder();
         encode(encoder);
         return encoder.toString();
     }
+
 }

@@ -37,8 +37,6 @@ public interface BuildService {
     }
 
 
-    // TODO jvenstad: Argh, refactor this, considering the new JobId, etc..
-    // TODO jvenstad: Probably: make jobName JobType instead.
     class BuildJob {
 
         private final ApplicationId applicationId;

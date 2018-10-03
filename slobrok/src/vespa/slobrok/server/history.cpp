@@ -22,7 +22,7 @@ History::verify() const
 }
 
 void
-History::add(const char *name, vespalib::GenCnt gen)
+History::add(const std::string &name, vespalib::GenCnt gen)
 {
     HistoryEntry h;
     _entries.push_back(h);

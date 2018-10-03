@@ -51,6 +51,15 @@ public:
     IdentifiablePtr(const IdentifiablePtr &) = default;
     IdentifiablePtr & operator = (const IdentifiablePtr &) = default;
     IdentifiablePtr(T * p=NULL) : CloneablePtr<T>(p) { }
+    IdentifiablePtr(std::unique_ptr<T> &&rhs)
+        : CloneablePtr<T>(std::move(rhs))
+    {
+    }
+    IdentifiablePtr &operator=(std::unique_ptr<T> &&rhs)
+    {
+        CloneablePtr<T>::operator=(std::move(rhs));
+        return *this;
+    }
     int cmp(const IdentifiablePtr<T> &rhs) const {
         const T *a = this->get();
         const T *b = rhs.get();

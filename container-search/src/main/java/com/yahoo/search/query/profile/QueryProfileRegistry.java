@@ -16,9 +16,6 @@ public class QueryProfileRegistry extends ComponentRegistry<QueryProfile> {
 
     private QueryProfileTypeRegistry queryProfileTypeRegistry = new QueryProfileTypeRegistry();
 
-    /** The current default instance of this registry */
-    private static QueryProfileRegistry instance = new QueryProfileRegistry();
-
     /** Register this type by its id */
     public void register(QueryProfile profile) {
         super.register(profile.getId(), profile);

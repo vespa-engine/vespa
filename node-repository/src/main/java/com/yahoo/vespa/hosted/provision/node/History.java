@@ -39,6 +39,20 @@ public class History {
     /** Returns this event if it is present in this history */
     public Optional<Event> event(Event.Type type) { return Optional.ofNullable(events.get(type)); }
 
+    /** Returns true if a given event is registered in this history after the given time */
+    public boolean hasEventAfter(Event.Type type, Instant time) {
+        return event(type)
+                .map(event -> event.at().isAfter(time))
+                .orElse(false);
+    }
+
+    /** Returns true if a given event is registered in this history before the given time */
+    public boolean hasEventBefore(Event.Type type, Instant time) {
+        return event(type)
+                .map(event -> event.at().isBefore(time))
+                .orElse(false);
+    }
+
     public Collection<Event> events() { return events.values(); }
 
     /** Returns a copy of this history with the given event added */

@@ -42,7 +42,6 @@ namespace search {
 
     template <typename T> class ComponentGuard;
     class AttributeReadGuard;
-    class AttributeWriteGuard;
     class AttributeSaver;
     class EnumStoreBase;
     class IAttributeSaveTarget;
@@ -121,33 +120,30 @@ protected:
     using QueryTermSimpleUP = std::unique_ptr<QueryTermSimple>;
     using QueryPacketT = vespalib::stringref;
     using LoadedBufferUP = std::unique_ptr<fileutil::LoadedBuffer>;
+    using stringref = vespalib::stringref;
 public:
     typedef std::shared_ptr<AttributeVector> SP;
     class BaseName : public vespalib::string
     {
     public:
         typedef vespalib::string string;
-        BaseName(const vespalib::stringref &s)
+        BaseName(vespalib::stringref s)
             : string(s),
               _name(createAttributeName(s))
         { }
-        BaseName & operator = (const vespalib::stringref & s) {
+        BaseName & operator = (vespalib::stringref s) {
             BaseName n(s);
             std::swap(*this, n);
             return *this;
         }
 
-        BaseName(const vespalib::stringref &base,
-                 const vespalib::stringref &snap,
-                 const vespalib::stringref &name);
+        BaseName(vespalib::stringref base, vespalib::stringref name);
         ~BaseName();
 
-        string getIndexName() const;
-        string getSnapshotName() const;
         const string & getAttributeName() const { return _name; }
         string getDirName() const;
     private:
-        static string createAttributeName(const vespalib::stringref & s);
+        static string createAttributeName(vespalib::stringref s);
         string _name;
     };
 
@@ -205,7 +201,7 @@ protected:
     }
 
 
-    AttributeVector(const vespalib::stringref &baseFileName, const Config & c);
+    AttributeVector(vespalib::stringref baseFileName, const Config & c);
 
     void checkSetMaxValueCount(int index) {
         _highestValueCount = std::max(index, _highestValueCount);
@@ -230,7 +226,7 @@ protected:
     private:
         AttributeVector * stealAttr() const {
             AttributeVector * ret(_attr);
-            _attr = NULL;
+            _attr = nullptr;
             return ret;
         }
 
@@ -241,8 +237,7 @@ protected:
     {
         std::unique_lock<std::shared_timed_mutex> _enumLock;
     public:
-        EnumModifier(std::shared_timed_mutex &lock,
-                     attribute::InterlockGuard &interlockGuard)
+        EnumModifier(std::shared_timed_mutex &lock, attribute::InterlockGuard &interlockGuard)
             : _enumLock(lock)
         {
             (void) interlockGuard;
@@ -391,6 +386,7 @@ protected:
 
     virtual AddressSpace getEnumStoreAddressSpaceUsage() const;
     virtual AddressSpace getMultiValueAddressSpaceUsage() const;
+    void logEnumStoreEvent(const char *reason, const char *stage);
 
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(AttributeVector);
@@ -402,14 +398,12 @@ public:
     BasicType getInternalBasicType() const { return _config.basicType(); }
     CollectionType getInternalCollectionType() const { return _config.collectionType(); }
     const BaseName & getBaseFileName() const { return _baseFileName; }
-    void setBaseFileName(const vespalib::stringref & name) { _baseFileName = name; }
+    void setBaseFileName(vespalib::stringref name) { _baseFileName = name; }
 
-    // Implements IAttributeVector
     const vespalib::string & getName() const override final { return _baseFileName.getAttributeName(); }
 
     bool hasArrayType() const { return _config.collectionType().isArray(); }
     bool hasEnum() const override final;
-    virtual bool hasEnum2Value() const;
     uint32_t getMaxValueCount() const override;
     uint32_t getEnumMax() const { return _enumMax; }
 
@@ -433,24 +427,17 @@ public:
     bool isImported() const override;
 
     /**
-     * Updates the base file name of this attribute vector and saves
-     * it to file(s)
+     * Saves this attribute vector to named file(s)
      */
-    bool saveAs(const vespalib::stringref &baseFileName);
-
-    /**
-     * Updates the base file name of this attribute vector and saves
-     * it using the given saveTarget
-     */
-    bool saveAs(const vespalib::stringref &baseFileName, IAttributeSaveTarget &saveTarget);
+    bool save(vespalib::stringref fileName);
 
     /** Saves this attribute vector to file(s) **/
     bool save();
 
-    /** Saves this attribute vector using the given saveTarget **/
-    bool save(IAttributeSaveTarget & saveTarget);
+    /** Saves this attribute vector using the given saveTarget and fileName **/
+    bool save(IAttributeSaveTarget & saveTarget, vespalib::stringref fileName);
 
-    attribute::AttributeHeader createAttributeHeader() const;
+    attribute::AttributeHeader createAttributeHeader(vespalib::stringref fileName) const;
 
     /** Returns whether this attribute has load data files on disk **/
     bool hasLoadData() const;
@@ -472,13 +459,6 @@ public:
 
     virtual uint32_t clearDoc(DocId doc) = 0;
     virtual largeint_t getDefaultValue() const = 0;
-    virtual void getEnumValue(const EnumHandle *v, uint32_t *e, uint32_t sz) const = 0;
-
-    uint32_t getEnumValue(EnumHandle eh) const {
-        uint32_t e(0);
-        getEnumValue(&eh, &e, 1);
-        return e;
-    }
 
     // Implements IAttributeVector
     virtual uint32_t get(DocId doc, EnumHandle *v, uint32_t sz) const override = 0;
@@ -568,8 +548,8 @@ public:
     };
 
     SearchContext::UP getSearch(QueryPacketT searchSpec, const attribute::SearchContextParams &params) const;
-    virtual attribute::ISearchContext::UP createSearchContext(QueryTermSimpleUP term,
-                                                              const attribute::SearchContextParams &params) const override;
+    attribute::ISearchContext::UP createSearchContext(QueryTermSimpleUP term,
+                                                      const attribute::SearchContextParams &params) const override;
     virtual SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams &params) const = 0;
     virtual const EnumStoreBase *getEnumStoreBase() const;
     virtual const attribute::MultiValueMappingBase *getMultiValueBase() const;
@@ -659,15 +639,15 @@ public:
     bool hasPostings();
     virtual uint64_t getUniqueValueCount() const;
     virtual uint64_t getTotalValueCount() const;
-    virtual void compactLidSpace(uint32_t wantedLidLimit) override;
+    void compactLidSpace(uint32_t wantedLidLimit) override;
     virtual void clearDocs(DocId lidLow, DocId lidLimit);
     bool wantShrinkLidSpace() const { return _committedDocIdLimit < getNumDocs(); }
-    virtual bool canShrinkLidSpace() const override;
-    virtual void shrinkLidSpace() override;
+    bool canShrinkLidSpace() const override;
+    void shrinkLidSpace() override;
     virtual void onShrinkLidSpace();
-    virtual size_t getEstimatedShrinkLidSpaceGain() const override;
+    size_t getEstimatedShrinkLidSpaceGain() const override;
 
-    virtual std::unique_ptr<attribute::AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
+    std::unique_ptr<attribute::AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
 
     void setInterlock(const std::shared_ptr<attribute::Interlock> &interlock);
 
@@ -675,9 +655,9 @@ public:
         return _interlock;
     }
 
-    std::unique_ptr<AttributeSaver> initSave();
+    std::unique_ptr<AttributeSaver> initSave(vespalib::stringref fileName);
 
-    virtual std::unique_ptr<AttributeSaver> onInitSave();
+    virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName);
     virtual uint64_t getEstimatedSaveByteSize() const;
 
     static bool isEnumerated(const vespalib::GenericHeader &header);

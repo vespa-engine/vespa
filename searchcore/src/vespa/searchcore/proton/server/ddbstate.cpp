@@ -33,10 +33,7 @@ DDBState::DDBState()
 }
 
 
-DDBState::~DDBState()
-{
-
-}
+DDBState::~DDBState() = default;
 
 
 bool

@@ -3,7 +3,9 @@
 #pragma once
 
 #include "rankedhit.h"
-#include <vespa/vespalib/util/alloc.h>
+#include <vespa/vespalib/util/array.h>
+
+class FastS_IResultSorter;
 
 namespace search {
 
@@ -12,36 +14,30 @@ class BitVector;
 class ResultSet
 {
 private:
-    ResultSet& operator=(const ResultSet &);
-
-    unsigned int _elemsUsedInRankedHitsArray;
-    unsigned int _rankedHitsArrayAllocElements;
     std::unique_ptr<BitVector> _bitOverflow;
-    vespalib::alloc::Alloc     _rankedHitsArray;
-
+    vespalib::Array<RankedHit> _rankedHitsArray;
 public:
-    typedef std::unique_ptr<ResultSet> UP;
-    typedef std::shared_ptr<ResultSet> SP;
+    using UP = std::unique_ptr<ResultSet>;
+    ResultSet& operator=(const ResultSet &) = delete;
+    ResultSet(const ResultSet &) = delete;
     ResultSet();
-    ResultSet(const ResultSet &);  // Used only for testing .....
-    virtual ~ResultSet();
+    ~ResultSet();
 
     void allocArray(unsigned int arrayAllocated);
 
-    void setArrayUsed(unsigned int arrayUsed);
     void setBitOverflow(std::unique_ptr<BitVector> newBitOverflow);
-    const RankedHit * getArray() const { return static_cast<const RankedHit *>(_rankedHitsArray.get()); }
-    RankedHit *       getArray()       { return static_cast<RankedHit *>(_rankedHitsArray.get()); }
-    unsigned int      getArrayUsed() const { return _elemsUsedInRankedHitsArray; }
-    unsigned int getArrayAllocated() const { return _rankedHitsArrayAllocElements; }
+    const RankedHit * getArray() const { return &_rankedHitsArray[0]; }
+    RankedHit & operator [](uint32_t i) { return _rankedHitsArray[i]; }
+    void push_back(RankedHit hit) { _rankedHitsArray.push_back_fast(hit); }
+    unsigned int      getArrayUsed() const { return _rankedHitsArray.size(); }
 
     const BitVector * getBitOverflow() const { return _bitOverflow.get(); }
     BitVector *       getBitOverflow()       { return _bitOverflow.get(); }
     unsigned int getNumHits() const;
     void mergeWithBitOverflow(HitRank default_value = default_rank_value);
-
-    /* isEmpty() is allowed to return false even if bitmap has no hits */
-    bool isEmpty() const { return (_bitOverflow == NULL && _elemsUsedInRankedHitsArray == 0); }
+    void sort(FastS_IResultSorter & sorter, unsigned int ntop);
+    static std::pair<std::unique_ptr<BitVector>, vespalib::Array<RankedHit>>
+    stealResult(ResultSet && rhs);
 };
 
 } // namespace search

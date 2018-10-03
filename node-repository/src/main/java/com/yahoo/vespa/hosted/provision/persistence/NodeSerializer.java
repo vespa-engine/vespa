@@ -58,6 +58,7 @@ public class NodeSerializer {
     private static final String wantToRetireKey = "wantToRetire";
     private static final String wantToDeprovisionKey = "wantToDeprovision";
     private static final String hardwareDivergenceKey = "hardwareDivergence";
+    private static final String osVersionKey = "osVersion";
 
     // Configuration fields
     private static final String flavorKey = "flavor";
@@ -114,6 +115,7 @@ public class NodeSerializer {
         object.setString(nodeTypeKey, toString(node.type()));
         node.status().hardwareDivergence().ifPresent(hardwareDivergence -> object.setString(hardwareDivergenceKey,
                                                                                             hardwareDivergence));
+        node.status().osVersion().ifPresent(version -> object.setString(osVersionKey, version.toString()));
     }
 
     private void toSlime(Allocation allocation, Cursor object) {
@@ -163,15 +165,14 @@ public class NodeSerializer {
     }
 
     private Status statusFromSlime(Inspector object) {
-        // TODO: Simplify after June 2017
-        boolean wantToDeprovision = object.field(wantToDeprovisionKey).valid() && object.field(wantToDeprovisionKey).asBool();
         return new Status(generationFromSlime(object, rebootGenerationKey, currentRebootGenerationKey),
                           versionFromSlime(object.field(vespaVersionKey)),
                           (int)object.field(failCountKey).asLong(),
                           hardwareFailureDescriptionFromSlime(object),
                           object.field(wantToRetireKey).asBool(),
-                          wantToDeprovision,
-                          removeQuotedNulls(hardwareDivergenceFromSlime(object)));
+                          object.field(wantToDeprovisionKey).asBool(),
+                          removeQuotedNulls(hardwareDivergenceFromSlime(object)),
+                          versionFromSlime(object.field(osVersionKey)));
     }
 
     private Flavor flavorFromSlime(Inspector object) {
@@ -319,12 +320,14 @@ public class NodeSerializer {
 
     static NodeType nodeTypeFromString(String typeString) {
         switch (typeString) {
-            case "tenant" : return NodeType.tenant;
-            case "host" : return NodeType.host;
-            case "proxy" : return NodeType.proxy;
-            case "proxyhost" : return NodeType.proxyhost;
-            case "config" : return NodeType.config;
-            case "confighost" : return NodeType.confighost;
+            case "tenant": return NodeType.tenant;
+            case "host": return NodeType.host;
+            case "proxy": return NodeType.proxy;
+            case "proxyhost": return NodeType.proxyhost;
+            case "config": return NodeType.config;
+            case "confighost": return NodeType.confighost;
+            case "controller": return NodeType.controller;
+            case "controllerhost": return NodeType.controllerhost;
             default : throw new IllegalArgumentException("Unknown node type '" + typeString + "'");
         }
     }
@@ -337,6 +340,8 @@ public class NodeSerializer {
             case proxyhost: return "proxyhost";
             case config: return "config";
             case confighost: return "confighost";
+            case controller: return "controller";
+            case controllerhost: return "controllerhost";
         }
         throw new IllegalArgumentException("Serialized form of '" + type + "' not defined");
     }

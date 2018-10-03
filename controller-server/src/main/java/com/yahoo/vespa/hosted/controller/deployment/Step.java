@@ -1,3 +1,4 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableList;
@@ -40,7 +41,7 @@ public enum Step {
     deployTester,
 
     /** See that tester is done deploying, and is ready to serve. */
-    installTester(deployTester),
+    installTester(deployReal, deployTester),
 
     /** Ask the tester to run its tests. */
     startTests(installReal, installTester),
@@ -66,6 +67,7 @@ public enum Step {
 
     public List<Step> prerequisites() { return prerequisites; }
 
+
     public enum Status {
 
         /** Step still has unsatisfied finish criteria -- it may not even have started. */
@@ -75,7 +77,16 @@ public enum Step {
         failed,
 
         /** Step succeeded and subsequent steps may now start. */
-        succeeded
+        succeeded;
+
+        public static Step.Status of(RunStatus status) {
+            switch (status) {
+                case success : throw new AssertionError("Unexpected run status '" + status + "'!");
+                case aborted : return unfinished;
+                case running : return succeeded;
+                default      : return failed;
+            }
+        }
 
     }
 

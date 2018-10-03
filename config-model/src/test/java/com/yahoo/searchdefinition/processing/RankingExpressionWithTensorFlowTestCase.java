@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.io.IOUtils;
+import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstant;
@@ -14,25 +15,22 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
+import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.ml.ImportedModelTester;
 import com.yahoo.yolean.Exceptions;
 import org.junit.After;
 import org.junit.Test;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
 import java.io.UncheckedIOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.*;
 
 /**
@@ -41,11 +39,39 @@ import static org.junit.Assert.*;
 public class RankingExpressionWithTensorFlowTestCase {
 
     private final Path applicationDir = Path.fromString("src/test/integration/tensorflow/");
-    private final String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(mnist_softmax_saved_layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_saved_layer_Variable_1_read), f(a,b)(a + b))";
+
+    /** The model name */
+    private final String name = "mnist_softmax_saved";
+
+    private final String vespaExpression = "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(" + name + "_layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_layer_Variable_1_read), f(a,b)(a + b))";
 
     @After
-    public void removeGeneratedConstantTensorFiles() {
+    public void removeGeneratedModelFiles() {
         IOUtils.recursiveDeleteDir(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+    }
+
+    @Test
+    public void testGlobalTensorFlowModel() throws IOException {
+        ImportedModelTester tester = new ImportedModelTester(name, applicationDir);
+        VespaModel model = tester.createVespaModel();
+        assertLargeConstant(name + "_layer_Variable_1_read", model, Optional.of(10L));
+        assertLargeConstant(name + "_layer_Variable_read", model, Optional.of(7840L));
+
+        // At this point the expression is stored - copy application to another location which do not have a models dir
+        Path storedAppDir = applicationDir.append("copy");
+        try {
+            storedAppDir.toFile().mkdirs();
+            IOUtils.copy(applicationDir.append("services.xml").toString(), storedAppDir.append("services.xml").toString());
+            IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
+                                  storedAppDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
+            ImportedModelTester storedTester = new ImportedModelTester(name, storedAppDir);
+            VespaModel storedModel = storedTester.createVespaModel();
+            tester.assertLargeConstant(name + "_layer_Variable_1_read", storedModel, Optional.of(10L));
+            tester.assertLargeConstant(name + "_layer_Variable_read", storedModel, Optional.of(7840L));
+        }
+        finally {
+            IOUtils.recursiveDeleteDir(storedAppDir.toFile());
+        }
     }
 
     @Test
@@ -53,8 +79,6 @@ public class RankingExpressionWithTensorFlowTestCase {
         RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                                                       "tensorflow('mnist_softmax/saved')");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -64,8 +88,6 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "constant mytensor { file: ignored\ntype: tensor(d0[7],d1[784]) }",
                                                       null);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -84,8 +106,6 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "Placeholder",
                                                       application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -98,8 +118,6 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "Placeholder",
                                                       application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -118,8 +136,6 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "Placeholder",
                                                       application);
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -127,8 +143,6 @@ public class RankingExpressionWithTensorFlowTestCase {
         RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                                                       "5 + sum(tensorflow('mnist_softmax/saved'))");
         search.assertFirstPhaseExpression("5 + reduce(" + vespaExpression + ", sum)", "my_profile");
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
@@ -146,7 +160,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testTensorFlowReferenceMissingMacro() throws ParseException {
+    public void testTensorFlowReferenceMissingFunction() throws ParseException {
         try {
             RankProfileSearchFixture search = new RankProfileSearchFixture(
                     new StoringApplicationPackage(applicationDir),
@@ -156,20 +170,21 @@ public class RankingExpressionWithTensorFlowTestCase {
                     "      expression: tensorflow('mnist_softmax/saved')" +
                     "    }\n" +
                     "  }");
+            search.compileRankProfile("my_profile", applicationDir.append("models"));
             search.assertFirstPhaseExpression(vespaExpression, "my_profile");
             fail("Expecting exception");
         }
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from " +
                          "tensorflow('mnist_softmax/saved'): " +
-                         "Model refers input 'Placeholder' of type tensor(d0[],d1[784]) but this macro is " +
+                         "Model refers input 'Placeholder' of type tensor(d0[],d1[784]) but this function is " +
                          "not present in rank profile 'my_profile'",
                          Exceptions.toMessageString(expected));
         }
     }
 
     @Test
-    public void testTensorFlowReferenceWithWrongMacroType() {
+    public void testTensorFlowReferenceWithWrongFunctionType() {
         try {
             RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d5[10])(0.0)",
                                                           "tensorflow('mnist_softmax/saved')");
@@ -180,7 +195,7 @@ public class RankingExpressionWithTensorFlowTestCase {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from " +
                          "tensorflow('mnist_softmax/saved'): " +
                          "Model refers input 'Placeholder'. The required type of this is tensor(d0[],d1[784]), " +
-                         "but this macro returns tensor(d0[2],d5[10])",
+                         "but this function returns tensor(d0[2],d5[10])",
                          Exceptions.toMessageString(expected));
         }
     }
@@ -196,7 +211,8 @@ public class RankingExpressionWithTensorFlowTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from " +
                          "tensorflow('mnist_softmax/saved','serving_defaultz'): " +
-                         "Model does not have the specified signature 'serving_defaultz'",
+                         "No expressions named 'serving_defaultz' in model 'mnist_softmax/saved'. "+
+                         "Available expressions: serving_default.y",
                          Exceptions.toMessageString(expected));
         }
     }
@@ -212,7 +228,8 @@ public class RankingExpressionWithTensorFlowTestCase {
         catch (IllegalArgumentException expected) {
             assertEquals("Rank profile 'my_profile' is invalid: Could not use tensorflow model from " +
                          "tensorflow('mnist_softmax/saved','serving_default','x'): " +
-                         "Model does not have the specified output 'x'",
+                         "No expression 'serving_default.x' in model 'mnist_softmax/saved'. " +
+                         "Available expressions: serving_default.y",
                          Exceptions.toMessageString(expected));
         }
     }
@@ -222,9 +239,6 @@ public class RankingExpressionWithTensorFlowTestCase {
         RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
                                                       "tensorflow('mnist_softmax/saved')");
         search.assertFirstPhaseExpression(vespaExpression, "my_profile");
-
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
         Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
@@ -240,10 +254,6 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                                     "Placeholder",
                                                                     storedApplication);
             searchFromStored.assertFirstPhaseExpression(vespaExpression, "my_profile");
-            // Verify that the constants exists, but don't verify the content as we are not
-            // simulating file distribution in this test
-            assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", searchFromStored, Optional.empty());
-            assertLargeConstant("mnist_softmax_saved_layer_Variable_read", searchFromStored, Optional.empty());
         }
         finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
@@ -251,29 +261,32 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     @Test
-    public void testImportingFromStoredExpressionsWithMacroOverridingConstant() throws IOException {
-        String rankProfile =
+    public void testImportingFromStoredExpressionsWithFunctionOverridingConstantAndInheritance() throws IOException {
+        String rankProfiles =
                 "  rank-profile my_profile {\n" +
-                "    macro Placeholder() {\n" +
+                "    function Placeholder() {\n" +
                 "      expression: tensor(d0[2],d1[784])(0.0)\n" +
                 "    }\n" +
-                "    macro mnist_softmax_saved_layer_Variable_read() {\n" +
+                "    function " + name + "_layer_Variable_read() {\n" +
                 "      expression: tensor(d1[10],d2[784])(0.0)\n" +
                 "    }\n" +
                 "    first-phase {\n" +
                 "      expression: tensorflow('mnist_softmax/saved')" +
                 "    }\n" +
+                "  }" +
+                "  rank-profile my_profile_child inherits my_profile {\n" +
                 "  }";
 
-
         String vespaExpressionWithoutConstant =
-                "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), mnist_softmax_saved_layer_Variable_read, f(a,b)(a * b)), sum, d2), constant(mnist_softmax_saved_layer_Variable_1_read), f(a,b)(a + b))";
-        RankProfileSearchFixture search = fixtureWith(rankProfile, new StoringApplicationPackage(applicationDir));
+                "join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), " + name + "_layer_Variable_read, f(a,b)(a * b)), sum, d2), constant(" + name + "_layer_Variable_1_read), f(a,b)(a + b))";
+        RankProfileSearchFixture search = fixtureWithUncompiled(rankProfiles, new StoringApplicationPackage(applicationDir));
+        search.compileRankProfile("my_profile", applicationDir.append("models"));
+        search.compileRankProfile("my_profile_child", applicationDir.append("models"));
         search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
+        search.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile_child");
 
-        assertNull("Constant overridden by macro is not added",
-                   search.search().getRankingConstants().get("mnist_softmax_saved_layer_Variable_read"));
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
+        assertNull("Constant overridden by function is not added",
+                   search.search().rankingConstants().get("mnist_softmax_saved_layer_Variable_read"));
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
         Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
@@ -282,11 +295,13 @@ public class RankingExpressionWithTensorFlowTestCase {
             IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                                   storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
-            RankProfileSearchFixture searchFromStored = fixtureWith(rankProfile, storedApplication);
+            RankProfileSearchFixture searchFromStored = fixtureWithUncompiled(rankProfiles, storedApplication);
+            searchFromStored.compileRankProfile("my_profile", applicationDir.append("models"));
+            searchFromStored.compileRankProfile("my_profile_child", applicationDir.append("models"));
             searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile");
-            assertNull("Constant overridden by macro is not added",
-                       searchFromStored.search().getRankingConstants().get("mnist_softmax_saved_layer_Variable_read"));
-            assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", searchFromStored, Optional.of(10L));
+            searchFromStored.assertFirstPhaseExpression(vespaExpressionWithoutConstant, "my_profile_child");
+            assertNull("Constant overridden by function is not added",
+                       searchFromStored.search().rankingConstants().get("mnist_softmax_saved_layer_Variable_read"));
         }
         finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
@@ -295,19 +310,18 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     @Test
     public void testTensorFlowReduceBatchDimension() {
-        final String expression = "join(join(reduce(join(reduce(rename(Placeholder, (d0, d1), (d0, d2)), sum, d0), constant(mnist_softmax_saved_layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(mnist_softmax_saved_layer_Variable_1_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
+        final String expression = "join(join(reduce(join(reduce(rename(Placeholder, (d0, d1), (d0, d2)), sum, d0), constant(" + name + "_layer_Variable_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_layer_Variable_1_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
         RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
-                "tensorflow('mnist_softmax/saved')");
+                                                      "tensorflow('mnist_softmax/saved')");
         search.assertFirstPhaseExpression(expression, "my_profile");
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_1_read", search, Optional.of(10L));
-        assertLargeConstant("mnist_softmax_saved_layer_Variable_read", search, Optional.of(7840L));
     }
 
     @Test
-    public void testMacroGeneration() {
-        final String expression = "join(join(reduce(join(join(join(imported_ml_macro_mnist_saved_dnn_hidden2_add, reduce(constant(mnist_saved_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), imported_ml_macro_mnist_saved_dnn_hidden2_add, f(a,b)(max(a,b))), constant(mnist_saved_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(mnist_saved_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
-        final String macroExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(mnist_saved_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(mnist_saved_dnn_hidden1_bias_read), f(a,b)(a + b))";
-        final String macroExpression2 = "join(reduce(join(join(join(imported_ml_macro_mnist_saved_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), imported_ml_macro_mnist_saved_dnn_hidden1_add, f(a,b)(max(a,b))), constant(mnist_saved_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(mnist_saved_dnn_hidden2_bias_read), f(a,b)(a + b))";
+    public void testFunctionGeneration() {
+        final String name = "mnist_saved";
+        final String expression = "join(join(reduce(join(join(join(imported_ml_function_" + name + "_dnn_hidden2_add, reduce(constant(" + name + "_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden2_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
+        final String functionExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(" + name + "_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(" + name + "_dnn_hidden1_bias_read), f(a,b)(a + b))";
+        final String functionExpression2 = "join(reduce(join(join(join(imported_ml_function_" + name + "_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden1_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(" + name + "_dnn_hidden2_bias_read), f(a,b)(a + b))";
 
         RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
                                     "tensorflow('mnist/saved')",
@@ -316,27 +330,39 @@ public class RankingExpressionWithTensorFlowTestCase {
                                                       "input",
                                                       new StoringApplicationPackage(applicationDir));
         search.assertFirstPhaseExpression(expression, "my_profile");
-        search.assertMacro(macroExpression1, "imported_ml_macro_mnist_saved_dnn_hidden1_add", "my_profile");
-        search.assertMacro(macroExpression2, "imported_ml_macro_mnist_saved_dnn_hidden2_add", "my_profile");
+        search.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile");
+        search.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile");
     }
 
     @Test
-    public void testImportingFromStoredExpressionsWithSmallConstants() throws IOException {
-        final String expression = "join(join(reduce(join(join(join(imported_ml_macro_mnist_saved_dnn_hidden2_add, reduce(constant(mnist_saved_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), imported_ml_macro_mnist_saved_dnn_hidden2_add, f(a,b)(max(a,b))), constant(mnist_saved_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(mnist_saved_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
-        final String macroExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(mnist_saved_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(mnist_saved_dnn_hidden1_bias_read), f(a,b)(a + b))";
-        final String macroExpression2 = "join(reduce(join(join(join(imported_ml_macro_mnist_saved_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), imported_ml_macro_mnist_saved_dnn_hidden1_add, f(a,b)(max(a,b))), constant(mnist_saved_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(mnist_saved_dnn_hidden2_bias_read), f(a,b)(a + b))";
+    public void testImportingFromStoredExpressionsWithSmallConstantsAndInheritance() throws IOException {
+        final String name = "mnist_saved";
+        final String rankProfiles =
+                "  rank-profile my_profile {\n" +
+                "    function input() {\n" +
+                "      expression: tensor(d0[1],d1[784])(0.0)\n" +
+                "    }\n" +
+                "    first-phase {\n" +
+                "      expression: tensorflow('mnist/saved')" +
+                "    }\n" +
+                "  }" +
+                "  rank-profile my_profile_child inherits my_profile {\n" +
+                "  }";
 
-        StoringApplicationPackage application = new StoringApplicationPackage(applicationDir);
-        RankProfileSearchFixture search = fixtureWith("tensor(d0[1],d1[784])(0.0)",
-                "tensorflow('mnist/saved')",
-                null,
-                null,
-                "input",
-                application);
+        final String expression = "join(join(reduce(join(join(join(imported_ml_function_" + name + "_dnn_hidden2_add, reduce(constant(" + name + "_dnn_hidden2_Const), sum, d2), f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden2_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_outputs_weights_read), f(a,b)(a * b)), sum, d2), constant(" + name + "_dnn_outputs_bias_read), f(a,b)(a + b)), tensor(d0[1])(1.0), f(a,b)(a * b))";
+        final String functionExpression1 = "join(reduce(join(reduce(rename(input, (d0, d1), (d0, d4)), sum, d0), constant(" + name + "_dnn_hidden1_weights_read), f(a,b)(a * b)), sum, d4), constant(" + name + "_dnn_hidden1_bias_read), f(a,b)(a + b))";
+        final String functionExpression2 = "join(reduce(join(join(join(imported_ml_function_" + name + "_dnn_hidden1_add, 0.009999999776482582, f(a,b)(a * b)), imported_ml_function_" + name + "_dnn_hidden1_add, f(a,b)(max(a,b))), constant(" + name + "_dnn_hidden2_weights_read), f(a,b)(a * b)), sum, d3), constant(" + name + "_dnn_hidden2_bias_read), f(a,b)(a + b))";
+
+        RankProfileSearchFixture search = fixtureWithUncompiled(rankProfiles, new StoringApplicationPackage(applicationDir));
+        search.compileRankProfile("my_profile", applicationDir.append("models"));
+        search.compileRankProfile("my_profile_child", applicationDir.append("models"));
         search.assertFirstPhaseExpression(expression, "my_profile");
-        assertSmallConstant("mnist_saved_dnn_hidden1_mul_x", TensorType.fromSpec("tensor()"), search);
-        search.assertMacro(macroExpression1, "imported_ml_macro_mnist_saved_dnn_hidden1_add", "my_profile");
-        search.assertMacro(macroExpression2, "imported_ml_macro_mnist_saved_dnn_hidden2_add", "my_profile");
+        search.assertFirstPhaseExpression(expression, "my_profile_child");
+        assertSmallConstant(name + "_dnn_hidden1_mul_x", TensorType.fromSpec("tensor()"), search);
+        search.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile");
+        search.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile_child");
+        search.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile");
+        search.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile_child");
 
         // At this point the expression is stored - copy application to another location which do not have a models dir
         Path storedApplicationDirectory = applicationDir.getParentPath().append("copy");
@@ -345,16 +371,16 @@ public class RankingExpressionWithTensorFlowTestCase {
             IOUtils.copyDirectory(applicationDir.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile(),
                     storedApplicationDirectory.append(ApplicationPackage.MODELS_GENERATED_DIR).toFile());
             StoringApplicationPackage storedApplication = new StoringApplicationPackage(storedApplicationDirectory);
-            RankProfileSearchFixture searchFromStored = fixtureWith("tensor(d0[1],d1[784])(0.0)",
-                    "tensorflow('mnist/saved')",
-                    null,
-                    null,
-                    "input",
-                    storedApplication);
+            RankProfileSearchFixture searchFromStored = fixtureWithUncompiled(rankProfiles, storedApplication);
+            searchFromStored.compileRankProfile("my_profile", applicationDir.append("models"));
+            searchFromStored.compileRankProfile("my_profile_child", applicationDir.append("models"));
             searchFromStored.assertFirstPhaseExpression(expression, "my_profile");
-            assertSmallConstant("mnist_saved_dnn_hidden1_mul_x", TensorType.fromSpec("tensor()"), search);
-            searchFromStored.assertMacro(macroExpression1, "imported_ml_macro_mnist_saved_dnn_hidden1_add", "my_profile");
-            searchFromStored.assertMacro(macroExpression2, "imported_ml_macro_mnist_saved_dnn_hidden2_add", "my_profile");
+            searchFromStored.assertFirstPhaseExpression(expression, "my_profile_child");
+            assertSmallConstant(name + "_dnn_hidden1_mul_x", TensorType.fromSpec("tensor()"), search);
+            searchFromStored.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile");
+            searchFromStored.assertFunction(functionExpression1, "imported_ml_function_" + name + "_dnn_hidden1_add", "my_profile_child");
+            searchFromStored.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile");
+            searchFromStored.assertFunction(functionExpression2, "imported_ml_function_" + name + "_dnn_hidden2_add", "my_profile_child");
         }
         finally {
             IOUtils.recursiveDeleteDir(storedApplicationDirectory.toFile());
@@ -362,7 +388,7 @@ public class RankingExpressionWithTensorFlowTestCase {
     }
 
     private void assertSmallConstant(String name, TensorType type, RankProfileSearchFixture search) {
-        Value value = search.rankProfile("my_profile").getConstants().get(name);
+        Value value = search.compiledRankProfile("my_profile").getConstants().get(name);
         assertNotNull(value);
         assertEquals(type, value.type());
     }
@@ -371,11 +397,11 @@ public class RankingExpressionWithTensorFlowTestCase {
      * Verifies that the constant with the given name exists, and - only if an expected size is given -
      * that the content of the constant is available and has the expected size.
      */
-    private void assertLargeConstant(String name, RankProfileSearchFixture search, Optional<Long> expectedSize) {
+    private void assertLargeConstant(String constantName, VespaModel model, Optional<Long> expectedSize) {
         try {
-            Path constantApplicationPackagePath = Path.fromString("models.generated/mnist_softmax/saved/constants").append(name + ".tbf");
-            RankingConstant rankingConstant = search.search().getRankingConstants().get(name);
-            assertEquals(name, rankingConstant.getName());
+            Path constantApplicationPackagePath = Path.fromString("models.generated/" + name + "/constants").append(constantName + ".tbf");
+            RankingConstant rankingConstant = model.rankingConstants().get(constantName);
+            assertEquals(constantName, rankingConstant.getName());
             assertTrue(rankingConstant.getFileName().endsWith(constantApplicationPackagePath.toString()));
 
             if (expectedSize.isPresent()) {
@@ -403,19 +429,19 @@ public class RankingExpressionWithTensorFlowTestCase {
                            new StoringApplicationPackage(applicationDir));
     }
 
-    private RankProfileSearchFixture fixtureWith(String macroExpression,
+    private RankProfileSearchFixture fixtureWith(String functionExpression,
                                                  String firstPhaseExpression,
                                                  String constant,
                                                  String field,
-                                                 String macroName,
+                                                 String functionName,
                                                  StoringApplicationPackage application) {
         try {
-            return new RankProfileSearchFixture(
+            RankProfileSearchFixture fixture = new RankProfileSearchFixture(
                     application,
                     application.getQueryProfiles(),
                     "  rank-profile my_profile {\n" +
-                    "    macro " + macroName + "() {\n" +
-                    "      expression: " + macroExpression +
+                    "    function " + functionName + "() {\n" +
+                    "      expression: " + functionExpression +
                     "    }\n" +
                     "    first-phase {\n" +
                     "      expression: " + firstPhaseExpression +
@@ -423,13 +449,15 @@ public class RankingExpressionWithTensorFlowTestCase {
                     "  }",
                     constant,
                     field);
+            fixture.compileRankProfile("my_profile", applicationDir.append("models"));
+            return fixture;
         }
         catch (ParseException e) {
             throw new IllegalArgumentException(e);
         }
     }
 
-    private RankProfileSearchFixture fixtureWith(String rankProfile, StoringApplicationPackage application) {
+    private RankProfileSearchFixture fixtureWithUncompiled(String rankProfile, StoringApplicationPackage application) {
         try {
             return new RankProfileSearchFixture(application, application.getQueryProfiles(),
                                                 rankProfile, null, null);
@@ -441,145 +469,34 @@ public class RankingExpressionWithTensorFlowTestCase {
 
     static class StoringApplicationPackage extends MockApplicationPackage {
 
-        private final File root;
-
         StoringApplicationPackage(Path applicationPackageWritableRoot) {
             this(applicationPackageWritableRoot, null, null);
         }
 
         StoringApplicationPackage(Path applicationPackageWritableRoot, String queryProfile, String queryProfileType) {
-            super(null, null, Collections.emptyList(), null,
+            super(new File(applicationPackageWritableRoot.toString()),
+                  null, null, Collections.emptyList(), null,
                   null, null, false, queryProfile, queryProfileType);
-            this.root = new File(applicationPackageWritableRoot.toString());
-        }
-
-        @Override
-        public File getFileReference(Path path) {
-            return Path.fromString(root.toString()).append(path).toFile();
         }
 
         @Override
         public ApplicationFile getFile(Path file) {
-            return new StoringApplicationPackageFile(file, Path.fromString(root.toString()));
-        }
-
-    }
-
-    static class StoringApplicationPackageFile extends ApplicationFile {
-
-        /** The path to the application package root */
-        private final Path root;
-
-        /** The File pointing to the actual file represented by this */
-        private final File file;
-
-        StoringApplicationPackageFile(Path filePath, Path applicationPackagePath) {
-            super(filePath);
-            this.root = applicationPackagePath;
-            file = applicationPackagePath.append(filePath).toFile();
+            return new MockApplicationFile(file, Path.fromString(root().toString()));
         }
 
         @Override
-        public boolean isDirectory() {
-            return file.isDirectory();
-        }
-
-        @Override
-        public boolean exists() {
-            return file.exists();
-        }
-
-        @Override
-        public Reader createReader() throws FileNotFoundException {
-            try {
-                if ( ! exists()) throw new FileNotFoundException("File '" + file + "' does not exist");
-                return IOUtils.createReader(file, "UTF-8");
+        public List<NamedReader> getFiles(Path path, String suffix) {
+            List<NamedReader> readers = new ArrayList<>();
+            for (File file : getFileReference(path).listFiles()) {
+                if ( ! file.getName().endsWith(suffix)) continue;
+                try {
+                    readers.add(new NamedReader(file.getName(), new FileReader(file)));
+                }
+                catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
             }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        @Override
-        public InputStream createInputStream() throws FileNotFoundException {
-            try {
-                if ( ! exists()) throw new FileNotFoundException("File '" + file + "' does not exist");
-                return new BufferedInputStream(new FileInputStream(file));
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        @Override
-        public ApplicationFile createDirectory() {
-            file.mkdirs();
-            return this;
-        }
-
-        @Override
-        public ApplicationFile writeFile(Reader input) {
-            try {
-                IOUtils.writeFile(file, IOUtils.readAll(input), false);
-                return this;
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        @Override
-        public ApplicationFile appendFile(String value) {
-            try {
-                IOUtils.writeFile(file, value, true);
-                return this;
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-        }
-
-        @Override
-        public List<ApplicationFile> listFiles(PathFilter filter) {
-            if ( ! isDirectory()) return Collections.emptyList();
-            return Arrays.stream(file.listFiles()).filter(f -> filter.accept(Path.fromString(f.toString())))
-                                                  .map(f -> new StoringApplicationPackageFile(asApplicationRelativePath(f),
-                                                                                              root))
-                                                  .collect(Collectors.toList());
-        }
-
-        @Override
-        public ApplicationFile delete() {
-            file.delete();
-            return this;
-        }
-
-        @Override
-        public MetaData getMetaData() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int compareTo(ApplicationFile other) {
-            return this.getPath().getName().compareTo((other).getPath().getName());
-        }
-
-        /** Strips the application package root path prefix from the path of the given file */
-        private Path asApplicationRelativePath(File file) {
-            Path path = Path.fromString(file.toString());
-
-            Iterator<String> pathIterator = path.iterator();
-            // Skip the path elements this shares with the root
-            for (Iterator<String> rootIterator = root.iterator(); rootIterator.hasNext(); ) {
-                String rootElement = rootIterator.next();
-                String pathElement = pathIterator.next();
-                if ( ! rootElement.equals(pathElement)) throw new RuntimeException("Assumption broken");
-            }
-            // Build a path from the remaining
-            Path relative = Path.fromString("");
-            while (pathIterator.hasNext())
-                relative = relative.append(pathIterator.next());
-            return relative;
+            return readers;
         }
 
     }

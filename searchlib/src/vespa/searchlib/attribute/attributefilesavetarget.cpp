@@ -21,19 +21,14 @@ AttributeFileSaveTarget::
 AttributeFileSaveTarget(const TuneFileAttributes &tuneFileAttributes,
                         const FileHeaderContext &fileHeaderContext)
     : IAttributeSaveTarget(),
-      _datWriter(tuneFileAttributes, fileHeaderContext, _header,
-                 "Attribute vector data file"),
-      _idxWriter(tuneFileAttributes, fileHeaderContext, _header,
-                 "Attribute vector idx file"),
-      _weightWriter(tuneFileAttributes, fileHeaderContext, _header,
-                    "Attribute vector weight file"),
-      _udatWriter(tuneFileAttributes, fileHeaderContext, _header,
-                  "Attribute vector unique data file")
+      _datWriter(tuneFileAttributes, fileHeaderContext, _header, "Attribute vector data file"),
+      _idxWriter(tuneFileAttributes, fileHeaderContext, _header, "Attribute vector idx file"),
+      _weightWriter(tuneFileAttributes, fileHeaderContext, _header, "Attribute vector weight file"),
+      _udatWriter(tuneFileAttributes, fileHeaderContext, _header, "Attribute vector unique data file")
 {
 }
 
-AttributeFileSaveTarget::~AttributeFileSaveTarget() {
-}
+AttributeFileSaveTarget::~AttributeFileSaveTarget() = default;
 
 bool
 AttributeFileSaveTarget::setup()

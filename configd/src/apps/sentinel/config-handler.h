@@ -6,7 +6,6 @@
 #include "state-api.h"
 #include <vespa/config-sentinel.h>
 #include <vespa/config/config.h>
-#include <vespa/vespalib/util/hashmap.h>
 #include <sys/types.h>
 #include <sys/select.h>
 

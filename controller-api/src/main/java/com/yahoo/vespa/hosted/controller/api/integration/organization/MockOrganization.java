@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import com.google.inject.Inject;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
 import java.net.URI;
@@ -12,13 +13,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author jvenstad
  */
-public class MockOrganization implements Organization {
+public class MockOrganization extends AbstractComponent implements Organization {
 
     private final Clock clock;
     private final AtomicLong counter = new AtomicLong();
@@ -37,6 +39,8 @@ public class MockOrganization implements Organization {
 
     @Override
     public IssueId file(Issue issue) {
+        if ( ! properties.containsKey(issue.propertyId()))
+            throw new NoSuchElementException("Unknown property '" + issue.propertyId() + "'!");
         IssueId issueId = IssueId.from("" + counter.incrementAndGet());
         issues.put(issueId, new MockIssue(issue));
         return issueId;
@@ -89,44 +93,57 @@ public class MockOrganization implements Organization {
 
     @Override
     public URI issueCreationUri(PropertyId propertyId) {
-        return URI.create("www.issues.tld/" + propertyId.id());
+        return properties.getOrDefault(propertyId, new PropertyInfo()).issueUrl;
     }
 
     @Override
     public URI contactsUri(PropertyId propertyId) {
-        return URI.create("www.contacts.tld/" + propertyId.id());
+        return properties.getOrDefault(propertyId, new PropertyInfo()).contactsUrl;
     }
 
     @Override
     public URI propertyUri(PropertyId propertyId) {
-        return URI.create("www.properties.tld/" + propertyId.id());
+        return properties.getOrDefault(propertyId, new PropertyInfo()).propertyUrl;
     }
 
     public Map<IssueId, MockIssue> issues() {
         return Collections.unmodifiableMap(issues);
     }
 
-    public void close(IssueId issueId) {
+    public MockOrganization close(IssueId issueId) {
         issues.get(issueId).open = false;
         touch(issueId);
+        return this;
     }
 
-    public void setDefaultAssigneeFor(PropertyId propertyId, User defaultAssignee) {
-        properties.get(propertyId).defaultAssignee = defaultAssignee;
-    }
-
-    public void setContactsFor(PropertyId propertyId, List<List<User>> contacts) {
+    public MockOrganization setContactsFor(PropertyId propertyId, List<List<User>> contacts) {
         properties.get(propertyId).contacts = contacts;
+        return this;
     }
 
-    public void addProperty(PropertyId propertyId) {
+    public MockOrganization setPropertyUrl(PropertyId propertyId, URI url) {
+        properties.get(propertyId).propertyUrl = url;
+        return this;
+    }
+
+    public MockOrganization setContactsUrl(PropertyId propertyId, URI url) {
+        properties.get(propertyId).contactsUrl = url;
+        return this;
+    }
+
+    public MockOrganization setIssueUrl(PropertyId propertyId, URI url) {
+        properties.get(propertyId).issueUrl = url;
+        return this;
+    }
+
+    public MockOrganization addProperty(PropertyId propertyId) {
         properties.put(propertyId, new PropertyInfo());
+        return this;
     }
 
     private void touch(IssueId issueId) {
         issues.get(issueId).updated = clock.instant();
     }
-
 
     public class MockIssue {
 
@@ -139,7 +156,7 @@ public class MockOrganization implements Organization {
             this.issue = issue;
             this.updated = clock.instant();
             this.open = true;
-            this.assignee = issue.assignee().orElse(properties.get(issue.propertyId()).defaultAssignee);
+            this.assignee = issue.assignee().orElse(null);
         }
 
         public Issue issue() { return issue; }
@@ -148,11 +165,12 @@ public class MockOrganization implements Organization {
 
     }
 
-
     private class PropertyInfo {
 
-        private User defaultAssignee;
         private List<List<User>> contacts = Collections.emptyList();
+        private URI issueUrl = URI.create("issues.tld");
+        private URI contactsUrl = URI.create("contacts.tld");
+        private URI propertyUrl = URI.create("properties.tld");
 
     }
 

@@ -1672,7 +1672,7 @@ public:
     writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength);
 
     void
-    writeString(const vespalib::stringref &buf);
+    writeString(vespalib::stringref buf);
 
     virtual void
     writeHeader(const vespalib::GenericHeader &header);

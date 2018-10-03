@@ -4,7 +4,6 @@
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
 #include <vespa/messagebus/messagebus.h>
-#include <vespa/vespalib/util/hashmap.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".localservicepolicy");
@@ -16,7 +15,6 @@ LocalServicePolicy::CacheEntry::CacheEntry() :
     _generation(0),
     _recipients()
 {
-    // empty
 }
 
 LocalServicePolicy::LocalServicePolicy(const string &param) :
@@ -24,13 +22,9 @@ LocalServicePolicy::LocalServicePolicy(const string &param) :
     _address(param),
     _cache()
 {
-    // empty
 }
 
-LocalServicePolicy::~LocalServicePolicy()
-{
-    // empty
-}
+LocalServicePolicy::~LocalServicePolicy() = default;
 
 void
 LocalServicePolicy::select(mbus::RoutingContext &ctx)

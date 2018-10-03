@@ -1,6 +1,8 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=container.jdisc.config
 
+# TODO Vespa 7: Remove this config and its adapter in config-model (ConnectorFactory)
+
 serverName                            string default="default"
 tcpKeepAliveEnabled                   bool   default=false
 httpKeepAliveEnabled                  bool   default=true

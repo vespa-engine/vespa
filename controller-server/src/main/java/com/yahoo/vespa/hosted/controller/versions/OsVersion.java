@@ -1,0 +1,63 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.controller.versions;
+
+import com.yahoo.component.Version;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Objects;
+
+/**
+ * An OS version for a cloud in this system.
+ *
+ * @author mpolden
+ */
+public class OsVersion implements Comparable<OsVersion> {
+
+    private final Version version;
+    private final CloudName cloud;
+
+    public OsVersion(Version version, CloudName cloud) {
+        this.version = Objects.requireNonNull(version, "version must be non-null");
+        this.cloud = Objects.requireNonNull(cloud, "cloud must be non-null");
+    }
+
+    /** The version number of this */
+    public Version version() {
+        return version;
+    }
+
+    /** The cloud where this OS version is used */
+    public CloudName cloud() {
+        return cloud;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OsVersion osVersion = (OsVersion) o;
+        return Objects.equals(version, osVersion.version) &&
+               Objects.equals(cloud, osVersion.cloud);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(version, cloud);
+    }
+
+    @Override
+    public String toString() {
+        return "version " + version + " for " + cloud + " cloud";
+    }
+
+    @Override
+    public int compareTo(@NotNull OsVersion o) {
+        int cloudCmp = cloud.compareTo(o.cloud());
+        if (cloudCmp == 0) { // Same cloud, sort by version
+            return version.compareTo(o.version());
+        }
+        return cloudCmp;
+    }
+
+}

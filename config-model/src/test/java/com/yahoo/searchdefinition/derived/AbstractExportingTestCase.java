@@ -8,6 +8,7 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
 
@@ -23,50 +24,6 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
     static final String tempDir = "temp/";
     static final String searchDefRoot = "src/test/derived/";
 
-    private static final boolean WRITE_FILES = false;
-
-    static {
-        if ("true".equals(System.getProperty("sd.updatetests"))) {
-            /*
-             * Use this when you know that your code is correct, and don't want to manually check and fix the .cfg files
-             * in the exporting tests.
-             */
-            setUpUpdateTest();
-        }
-        // Or uncomment the lines you want below AND set WRITE_FILES to true
-        //System.setProperty("sd.updatetests", "true");
-        //System.setProperty("sd.updatetestfile", "attributes");
-        //System.setProperty("sd.updatetestfile", "documentmanager");
-        //System.setProperty("sd.updatetestfile", "fdispatchrc");
-        //System.setProperty("sd.updatetestfile", "ilscripts");
-        //System.setProperty("sd.updatetestfile", "index-info");
-        //System.setProperty("sd.updatetestfile", "indexschema");
-        //System.setProperty("sd.updatetestfile", "juniperrc");
-        //System.setProperty("sd.updatetestfile", "partitions");
-        //System.setProperty("sd.updatetestfile", "qr-logging");
-        //System.setProperty("sd.updatetestfile", "qr-searchers");
-        //System.setProperty("sd.updatetestfile", "rank-profiles");
-        //System.setProperty("sd.updatetestfile", "summary");
-        //System.setProperty("sd.updatetestfile", "summarymap");
-        //System.setProperty("sd.updatetestfile", "translogserver");
-        //System.setProperty("sd.updatetestfile", "vsmsummary");
-        //System.setProperty("sd.updatetestfile", "vsmfields");
-    }
-
-    private static void setUpUpdateTest() {
-        try {
-            System.out.println("Property sd.updatetests is true, updating test files from generated ones...");
-            System.out.println("Enter export test file name to be updated (eg. index-info), or blank to update every file. 'q' to quit: ");
-            String fileName = new BufferedReader(new InputStreamReader(System.in)).readLine();
-            if ("q".equals(fileName)) {
-                throw new IllegalArgumentException("Aborted by user");
-            }
-            System.setProperty("sd.updatetestfile", fileName);
-        } catch (IOException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
     protected DerivedConfiguration derive(String dirName, String searchDefinitionName) throws IOException, ParseException {
         File toDir = new File(tempDir + dirName);
         toDir.mkdirs();
@@ -80,14 +37,16 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
     protected DerivedConfiguration derive(String dirName, String searchDefinitionName, SearchBuilder builder) throws IOException {
         DerivedConfiguration config = new DerivedConfiguration(builder.getSearch(searchDefinitionName),
                                                                builder.getRankProfileRegistry(),
-                                                               builder.getQueryProfileRegistry());
+                                                               builder.getQueryProfileRegistry(),
+                                                               new ImportedModels());
         return export(dirName, builder, config);
     }
 
     protected DerivedConfiguration derive(String dirName, SearchBuilder builder, Search search) throws IOException {
         DerivedConfiguration config = new DerivedConfiguration(search,
                                                                builder.getRankProfileRegistry(),
-                                                               builder.getQueryProfileRegistry());
+                                                               builder.getQueryProfileRegistry(),
+                                                               new ImportedModels());
         return export(dirName, builder, config);
     }
 
@@ -155,23 +114,9 @@ public abstract class AbstractExportingTestCase extends SearchDefinitionTestCase
         }
     }
 
-    protected void assertEqualConfig(String name, String config) throws IOException {
-        final String expectedConfigDirName = searchDefRoot + name + "/";
-        assertEqualFiles(expectedConfigDirName + config + ".cfg",
-                         tempDir + name + "/" + config + ".cfg");
-    }
-
-    @SuppressWarnings({ "ConstantConditions" })
     public static void assertEqualFiles(String correctFileName, String checkFileName) throws IOException {
-        if (WRITE_FILES || "true".equals(System.getProperty("sd.updatetests"))) {
-            String updateFile = System.getProperty("sd.updatetestfile");
-            if (WRITE_FILES || "".equals(updateFile) || correctFileName.endsWith(updateFile + ".cfg") || correctFileName.endsWith(updateFile + ".MODEL.cfg")) {
-                System.out.println("Copying " + checkFileName + " to " + correctFileName);
-                IOUtils.copy(checkFileName, correctFileName);
-                return;
-            }
-        }
-        assertConfigFiles(correctFileName, checkFileName);
+        // Set updateOnAssert to true if you want update the files with correct answer.
+        assertConfigFiles(correctFileName, checkFileName, false);
     }
 
     protected void deleteContent(File dir) {

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.log.LogLevel;
@@ -10,8 +11,16 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 
 import javax.xml.transform.TransformerException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Handles overrides in a XML document according to the rules defined for multi environment application packages.
@@ -23,8 +32,7 @@ import java.util.logging.Logger;
  * 3. When multiple XML elements with the same name is specified (i.e. when specifying search or docproc chains),
  *    the id attribute of the element is used together with the element name when applying directives
  *
- * @author lulf
- * @since 5.22
+ * @author Ulf Lilleengen
  */
 class OverrideProcessor implements PreProcessor {
 
@@ -71,15 +79,13 @@ class OverrideProcessor implements PreProcessor {
     }
 
     private Context getParentContext(Element parent, Context context) {
-        Optional<Environment> environment = context.environment;
-        RegionName region = context.region;
-        if ( ! environment.isPresent()) {
-            environment = getEnvironment(parent);
-        }
-        if (region.isDefault()) {
-            region = getRegion(parent);
-        }
-        return Context.create(environment, region);
+        Set<Environment> environments = context.environments;
+        Set<RegionName> regions = context.regions;
+        if (environments.isEmpty())
+            environments = getEnvironments(parent);
+        if (regions.isEmpty())
+            regions = getRegions(parent);
+        return Context.create(environments, regions);
     }
 
     /**
@@ -100,13 +106,13 @@ class OverrideProcessor implements PreProcessor {
      */
     private void checkConsistentInheritance(List<Element> children, Context context) {
         for (Element child : children) {
-            Optional<Environment> env = getEnvironment(child);
-            RegionName reg = getRegion(child);
-            if (env.isPresent() && context.environment.isPresent() && !env.equals(context.environment)) {
-                throw new IllegalArgumentException("Environment in child (" + env.get() + ") differs from that inherited from parent (" + context.environment + ") at " + child);
+            Set<Environment> environments = getEnvironments(child);
+            Set<RegionName> regions = getRegions(child);
+            if ( ! environments.isEmpty() &&  ! context.environments.isEmpty() && !environments.equals(context.environments)) {
+                throw new IllegalArgumentException("Environments in child (" + environments + ") differs from that inherited from parent (" + context.environments + ") at " + child);
             }
-            if (!reg.isDefault() && !context.region.isDefault() && !reg.equals(context.region)) {
-                throw new IllegalArgumentException("Region in child (" + reg + ") differs from that inherited from parent (" + context.region + ") at " + child);
+            if ( ! regions.isEmpty() && ! context.regions.isEmpty() && ! regions.equals(context.regions)) {
+                throw new IllegalArgumentException("Regions in child (" + regions + ") differs from that inherited from parent (" + context.regions + ") at " + child);
             }
         }
     }
@@ -118,22 +124,24 @@ class OverrideProcessor implements PreProcessor {
         Iterator<Element> elemIt = children.iterator();
         while (elemIt.hasNext()) {
             Element child = elemIt.next();
-            if ( ! matches(getEnvironment(child), getRegion(child))) {
+            if ( ! matches(getEnvironments(child), getRegions(child))) {
                 parent.removeChild(child);
                 elemIt.remove();
             }
         }
     }
     
-    private boolean matches(Optional<Environment> elementEnvironment, RegionName elementRegion) {
-        if (elementEnvironment.isPresent()) { // match environment
-            if (! environment.equals(elementEnvironment.get())) return false;
+    private boolean matches(Set<Environment> elementEnvironments, Set<RegionName> elementRegions) {
+        if ( ! elementEnvironments.isEmpty()) { // match environment
+            if ( ! elementEnvironments.contains(environment)) return false;
         }
 
-        if ( ! elementRegion.isDefault()) { // match region
-            if ( ! region.equals(elementRegion)) return false;
-            // match region but no environment in prod only to avoid a region attribute overriding capacity policies outside prod
-            if ( ! elementEnvironment.isPresent() && ! environment.equals(Environment.prod)) return false;
+        if ( ! elementRegions.isEmpty()) { // match region
+            // match region in prod only
+            if ( environment.equals(Environment.prod) && ! elementRegions.contains(region)) return false;
+
+            // explicit region implies prod
+            if ( ! environment.equals(Environment.prod) && elementEnvironments.isEmpty() ) return false;
         }
 
         return true;
@@ -174,11 +182,11 @@ class OverrideProcessor implements PreProcessor {
 
     private int getNumberOfOverrides(Element child, Context context) {
         int currentMatch = 0;
-        Optional<Environment> elementEnvironment = hasEnvironment(child) ? getEnvironment(child) : context.environment;
-        RegionName elementRegion = hasRegion(child) ? getRegion(child) : context.region;
-        if (elementEnvironment.isPresent() && elementEnvironment.get().equals(environment))
+        Set<Environment> elementEnvironments = hasEnvironment(child) ? getEnvironments(child) : context.environments;
+        Set<RegionName> elementRegions = hasRegion(child) ? getRegions(child) : context.regions;
+        if ( ! elementEnvironments.isEmpty() && elementEnvironments.contains(environment))
             currentMatch++;
-        if ( ! elementRegion.isDefault() && elementRegion.equals(region))
+        if ( ! elementRegions.isEmpty() && elementRegions.contains(region))
             currentMatch++;
         return currentMatch;
     }
@@ -220,20 +228,16 @@ class OverrideProcessor implements PreProcessor {
         return element.hasAttributeNS(XmlPreProcessor.deployNamespaceUri, ATTR_ENV);
     }
 
-    private Optional<Environment> getEnvironment(Element element) {
+    private Set<Environment> getEnvironments(Element element) {
         String env = element.getAttributeNS(XmlPreProcessor.deployNamespaceUri, ATTR_ENV);
-        if (env == null || env.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(Environment.from(env));
+        if (env == null || env.isEmpty()) return Collections.emptySet();
+        return Arrays.stream(env.split(" ")).map(Environment::from).collect(Collectors.toSet());
     }
 
-    private RegionName getRegion(Element element) {
+    private Set<RegionName> getRegions(Element element) {
         String reg = element.getAttributeNS(XmlPreProcessor.deployNamespaceUri, ATTR_REG);
-        if (reg == null || reg.isEmpty()) {
-            return RegionName.defaultName();
-        }
-        return RegionName.from(reg);
+        if (reg == null || reg.isEmpty()) return Collections.emptySet();
+        return Arrays.stream(reg.split(" ")).map(RegionName::from).collect(Collectors.toSet());
     }
 
     private Map<String, List<Element>> elementsByTagNameAndId(List<Element> children) {
@@ -287,21 +291,21 @@ class OverrideProcessor implements PreProcessor {
      */
     private static final class Context {
 
-        final Optional<Environment> environment;
+        final ImmutableSet<Environment> environments;
 
-        final RegionName region;
+        final ImmutableSet<RegionName> regions;
 
-        private Context(Optional<Environment> environment, RegionName region) {
-            this.environment = environment;
-            this.region = region;
+        private Context(Set<Environment> environments, Set<RegionName> regions) {
+            this.environments = ImmutableSet.copyOf(environments);
+            this.regions = ImmutableSet.copyOf(regions);
         }
 
         static Context empty() {
-            return new Context(Optional.empty(), RegionName.defaultName());
+            return new Context(ImmutableSet.of(), ImmutableSet.of());
         }
 
-        public static Context create(Optional<Environment> environment, RegionName region) {
-            return new Context(environment, region);
+        public static Context create(Set<Environment> environments, Set<RegionName> regions) {
+            return new Context(environments, regions);
         }
 
     }

@@ -20,15 +20,15 @@ public class Hop {
     private String cache = null;
 
     /**
-     * <p>Constructs an empty hop. You will need to add directives to the
-     * selector to make this usable.</p>
+     * Constructs an empty hop. You will need to add directives to the
+     * selector to make this usable.
      */
     public Hop() {
         // empty
     }
 
     /**
-     * <p>Implements the copy constructor.</p>
+     * Implements the copy constructor.
      *
      * @param hop The hop to copy.
      */
@@ -38,8 +38,8 @@ public class Hop {
     }
 
     /**
-     * <p>Constructs a fully populated hop. This is package private and used by
-     * the {@link HopBlueprint#create()} method.</p>
+     * Constructs a fully populated hop. This is package private and used by
+     * the {@link HopBlueprint#create()} method.
      *
      * @param selector     The selector to copy.
      * @param ignoreResult Whether or not to ignore the result of this hop.
@@ -50,8 +50,8 @@ public class Hop {
     }
 
     /**
-     * <p>Parses the given string as a single hop. The {@link #toString()}
-     * method is compatible with this parser.</p>
+     * Parses the given string as a single hop. The {@link #toString()}
+     * method is compatible with this parser.
      *
      * @param str The string to parse.
      * @return A hop that corresponds to the string.
@@ -65,8 +65,7 @@ public class Hop {
     }
 
     /**
-     * <p>Returns whether or not there are any directives contained in this
-     * hop.</p>
+     * Returns whether or not there are any directives contained in this hop.
      *
      * @return True if there is at least one directive.
      */
@@ -75,7 +74,7 @@ public class Hop {
     }
 
     /**
-     * <p>Returns the number of directives contained in this hop.</p>
+     * Returns the number of directives contained in this hop.
      *
      * @return The number of directives.
      */
@@ -84,7 +83,7 @@ public class Hop {
     }
 
     /**
-     * <p>Returns the directive at the given index.</p>
+     * Returns the directive at the given index.
      *
      * @param i The index of the directive to return.
      * @return The item.
@@ -94,7 +93,7 @@ public class Hop {
     }
 
     /**
-     * <p>Adds a new directive to this hop.</p>
+     * Adds a new directive to this hop.
      *
      * @param directive The directive to add.
      * @return This, to allow chaining.
@@ -106,7 +105,7 @@ public class Hop {
     }
 
     /**
-     * <p>Sets the directive at a given index.</p>
+     * Sets the directive at a given index.
      *
      * @param i         The index at which to set the directive.
      * @param directive The directive to set.
@@ -283,9 +282,10 @@ public class Hop {
 
     @Override
     public int hashCode() {
-        int result = selector != null ? selector.hashCode() : 0;
+        int result = selector.hashCode();
         result = 31 * result + (ignoreResult ? 1 : 0);
         result = 31 * result + (cache != null ? cache.hashCode() : 0);
         return result;
     }
+
 }

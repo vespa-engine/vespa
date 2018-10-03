@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
-import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
@@ -9,28 +8,27 @@ import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.anyVararg;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.anyVararg;
 
 public class AclMaintainerTest {
 
@@ -48,12 +46,14 @@ public class AclMaintainerTest {
     @Before
     public void before() {
         when(dockerOperations.getAllManagedContainers()).thenReturn(containerList);
-        when(env.getCloud()).thenReturn("AWS");
+        when(env.getCloud()).thenReturn("aws");
+        when(env.getDockerNetworking()).thenReturn(DockerNetworking.NPT);
     }
 
     @Test
     public void no_redirect_in_yahoo() {
-        when(env.getCloud()).thenReturn("YAHOO");
+        when(env.getCloud()).thenReturn("yahoo");
+        when(env.getDockerNetworking()).thenReturn(DockerNetworking.MACVLAN);
 
         Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
         Map<String, Acl> acls = makeAcl(container.hostname, "4321", "2001::1");
@@ -246,19 +246,17 @@ public class AclMaintainerTest {
     }
 
     private Map<String, Acl> makeAcl(String containerHostname, String portsCommaSeparated, String... addresses) {
-        Map<String, Acl> map = new HashMap<>();
+        Acl.Builder aclBuilder = new Acl.Builder();
 
-        List<Integer> ports = Arrays.stream(portsCommaSeparated.split(","))
+        Arrays.stream(portsCommaSeparated.split(","))
                 .map(Integer::valueOf)
-                .collect(Collectors.toList());
+                .forEach(aclBuilder::withTrustedPorts);
 
-        List<InetAddress> hosts = Arrays.stream(addresses)
-                .map(InetAddresses::forString)
-                .collect(Collectors.toList());
+        Arrays.stream(addresses)
+                .forEach(address -> aclBuilder.withTrustedNode("hostname", address));
 
-        Acl acl = new Acl(ports, hosts);
-        map.put(containerHostname, acl);
-
+        Map<String, Acl> map = new HashMap<>();
+        map.put(containerHostname, aclBuilder.build());
         return map;
     }
 }

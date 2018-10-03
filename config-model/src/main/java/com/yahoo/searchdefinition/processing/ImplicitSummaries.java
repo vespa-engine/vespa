@@ -28,7 +28,7 @@ public class ImplicitSummaries extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         DocumentSummary defaultSummary = search.getSummary("default");
         if (defaultSummary == null) {
             defaultSummary = new DocumentSummary("default");
@@ -83,7 +83,7 @@ public class ImplicitSummaries extends Processor {
             }
         }
 
-        if (addedSummaryField != null && isComplexFieldWithOnlyStructFieldAttributes(field, search.getDocument())) {
+        if (addedSummaryField != null && isComplexFieldWithOnlyStructFieldAttributes(field)) {
             addedSummaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
         }
 

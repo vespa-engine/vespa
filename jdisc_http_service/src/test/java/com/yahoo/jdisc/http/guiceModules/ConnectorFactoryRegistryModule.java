@@ -10,9 +10,7 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ConnectorConfig.Builder;
 
 import com.yahoo.jdisc.http.server.jetty.ConnectorFactory;
-import com.yahoo.jdisc.http.server.jetty.TestDrivers;
-import com.yahoo.jdisc.http.ssl.DefaultSslKeyStoreConfigurator;
-import com.yahoo.jdisc.http.ssl.DefaultSslTrustStoreConfigurator;
+import com.yahoo.jdisc.http.ssl.impl.DefaultSslContextFactoryProvider;
 
 /**
  * Guice module for test ConnectorFactories
@@ -48,19 +46,7 @@ public class ConnectorFactoryRegistryModule implements Module {
     private static class StaticKeyDbConnectorFactory extends ConnectorFactory {
 
         public StaticKeyDbConnectorFactory(ConnectorConfig connectorConfig) {
-            super(connectorConfig,
-                  new DefaultSslKeyStoreConfigurator(connectorConfig, new MockSecretStore()),
-                  new DefaultSslTrustStoreConfigurator(connectorConfig, new MockSecretStore()));
-        }
-
-    }
-
-    @SuppressWarnings("deprecation")
-    private static final class MockSecretStore implements com.yahoo.jdisc.http.SecretStore {
-
-        @Override
-        public String getSecret(String key) {
-            return TestDrivers.KEY_STORE_PASSWORD;
+            super(connectorConfig, new DefaultSslContextFactoryProvider(connectorConfig));
         }
 
     }

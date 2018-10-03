@@ -24,7 +24,7 @@ public class FieldSetValidity extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
         for (FieldSet fieldSet : search.fieldSets().userFieldSets().values()) {

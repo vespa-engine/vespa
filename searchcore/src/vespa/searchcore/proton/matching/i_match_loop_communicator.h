@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/queryeval/scores.h>
+#include <vespa/searchlib/queryeval/sorted_hit_sequence.h>
 #include <utility>
 #include <cstddef>
 #include <cstdint>
@@ -13,7 +14,8 @@ namespace proton::matching {
 struct IMatchLoopCommunicator {
     using Range = search::queryeval::Scores;
     using RangePair = std::pair<Range, Range>;
-    using Hit = std::pair<uint32_t, search::feature_t>;
+    using SortedHitSequence = search::queryeval::SortedHitSequence;
+    using Hit = SortedHitSequence::Hit;
     using Hits = std::vector<Hit>;
     struct Matches {
         size_t hits;
@@ -26,7 +28,7 @@ struct IMatchLoopCommunicator {
         }
     };
     virtual double estimate_match_frequency(const Matches &matches) = 0;
-    virtual Hits selectBest(Hits sortedHits) = 0;
+    virtual Hits selectBest(SortedHitSequence sortedHits) = 0;
     virtual RangePair rangeCover(const RangePair &ranges) = 0;
     virtual ~IMatchLoopCommunicator() {}
 };

@@ -190,6 +190,10 @@
   "trustedNetworks": [],
   "trustedPorts": [
     {
+      "port": 22,
+      "trustedBy": "cfg1.yahoo.com"
+    },
+    {
       "port": 4443,
       "trustedBy": "cfg1.yahoo.com"
     }

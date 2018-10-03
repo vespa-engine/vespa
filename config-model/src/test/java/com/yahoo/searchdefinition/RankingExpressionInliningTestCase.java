@@ -6,12 +6,15 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
@@ -19,7 +22,7 @@ import static org.junit.Assert.assertTrue;
 public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase {
 
     @Test
-    public void testMacroInliningPreserveArithemticOrdering() throws ParseException {
+    public void testFunctionInliningPreserveArithemticOrdering() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(
@@ -41,18 +44,18 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
                         "        first-phase {\n" +
                         "            expression: p1 * add\n" +
                         "        }\n" +
-                        "        macro inline add() {\n" +
+                        "        function inline add() {\n" +
                         "            expression: 3 + attribute(a) + attribute(b) * mul3\n" +
                         "        }\n" +
-                        "        macro inline mul3() {\n" +
+                        "        function inline mul3() {\n" +
                         "            expression: attribute(a) * 3 + singleif\n" +
                         "        }\n" +
-                        "        macro inline singleif() {\n" +
+                        "        function inline singleif() {\n" +
                         "            expression: if (p1 < attribute(a), 1, 2) == 0\n" +
                         "        }\n" +
                         "    }\n" +
                         "    rank-profile child inherits parent {\n" +
-                        "        macro inline add() {\n" +
+                        "        function inline add() {\n" +
                         "            expression: 9 + attribute(a)\n" +
                         "        }\n" +
                         "    }\n" +
@@ -61,10 +64,10 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
         builder.build();
         Search s = builder.getSearch();
 
-        RankProfile parent = rankProfileRegistry.getRankProfile(s, "parent").compile(new QueryProfileRegistry());
+        RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedModels());
         assertEquals("7.0 * (3 + attribute(a) + attribute(b) * (attribute(a) * 3 + if (7.0 < attribute(a), 1, 2) == 0))",
                      parent.getFirstPhaseRanking().getRoot().toString());
-        RankProfile child = rankProfileRegistry.getRankProfile(s, "child").compile(new QueryProfileRegistry());
+        RankProfile child = rankProfileRegistry.get(s, "child").compile(new QueryProfileRegistry(), new ImportedModels());
         assertEquals("7.0 * (9 + attribute(a))",
                      child.getFirstPhaseRanking().getRoot().toString());
     }
@@ -92,7 +95,7 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
                         "        second-phase {\n" +
                         "            expression: p2 * foo\n" +
                         "        }\n" +
-                        "        macro inline foo() {\n" +
+                        "        function inline foo() {\n" +
                         "            expression: 3 + p1 + p2\n" +
                         "        }\n" +
                         "    }\n" +
@@ -103,16 +106,16 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
                         "        constants {\n" +
                         "            p2: 2.0 \n" +
                         "        }\n" +
-                        "        macro bar() {\n" +
+                        "        function bar() {\n" +
                         "            expression: p2*p1\n" +
                         "        }\n" +
-                        "        macro inline baz() {\n" +
+                        "        function inline baz() {\n" +
                         "            expression: p2+p1+boz\n" +
                         "        }\n" +
-                        "        macro inline boz() {\n" +
+                        "        function inline boz() {\n" +
                         "            expression: 3.0\n" +
                         "        }\n" +
-                        "        macro inline arg(a1) {\n" +
+                        "        function inline arg(a1) {\n" +
                         "            expression: a1*2\n" +
                         "        }\n" +
                         "    }\n" +
@@ -121,14 +124,14 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
         builder.build();
         Search s = builder.getSearch();
 
-        RankProfile parent = rankProfileRegistry.getRankProfile(s, "parent").compile(new QueryProfileRegistry());
+        RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedModels());
         assertEquals("17.0", parent.getFirstPhaseRanking().getRoot().toString());
         assertEquals("0.0", parent.getSecondPhaseRanking().getRoot().toString());
         assertEquals("10.0", getRankingExpression("foo", parent, s));
         assertEquals("17.0", getRankingExpression("firstphase", parent, s));
         assertEquals("0.0", getRankingExpression("secondphase", parent, s));
 
-        RankProfile child = rankProfileRegistry.getRankProfile(s, "child").compile(new QueryProfileRegistry());
+        RankProfile child = rankProfileRegistry.get(s, "child").compile(new QueryProfileRegistry(), new ImportedModels());
         assertEquals("31.0 + bar + arg(4.0)", child.getFirstPhaseRanking().getRoot().toString());
         assertEquals("24.0", child.getSecondPhaseRanking().getRoot().toString());
         assertEquals("12.0", getRankingExpression("foo", child, s));
@@ -159,16 +162,16 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
                         "        first-phase {\n" +
                         "            expression: A + C + D\n" +
                         "        }\n" +
-                        "        macro inline D() {\n" +
+                        "        function inline D() {\n" +
                         "            expression: B + 1\n" +
                         "        }\n" +
-                        "        macro C() {\n" +
+                        "        function C() {\n" +
                         "            expression: A + B\n" +
                         "        }\n" +
-                        "        macro inline B() {\n" +
+                        "        function inline B() {\n" +
                         "            expression: attribute(b)\n" +
                         "        }\n" +
-                        "        macro inline A() {\n" +
+                        "        function inline A() {\n" +
                         "            expression: attribute(a)\n" +
                         "        }\n" +
                         "    }\n" +
@@ -177,15 +180,15 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
         builder.build();
         Search s = builder.getSearch();
 
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry());
+        RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedModels());
         assertEquals("attribute(a) + C + (attribute(b) + 1)", test.getFirstPhaseRanking().getRoot().toString());
         assertEquals("attribute(a) + attribute(b)", getRankingExpression("C", test, s));
         assertEquals("attribute(b) + 1", getRankingExpression("D", test, s));
     }
 
     /**
-     * Expression evaluation has no stack so macro arguments are bound at config time creating a separate version of
-     * each macro for each binding, using hashes to name the bound variants of the macro.
+     * Expression evaluation has no stack so function arguments are bound at config time creating a separate version of
+     * each function for each binding, using hashes to name the bound variants of the function.
      * This method censors those hashes for string comparison.
      */
     private String censorBindingHash(String s) {
@@ -208,7 +211,7 @@ public class RankingExpressionInliningTestCase extends SearchDefinitionTestCase 
 
     private String getRankingExpression(String name, RankProfile rankProfile, Search search) {
         Optional<String> rankExpression =
-                new RawRankProfile(rankProfile, new QueryProfileRegistry(), new AttributeFields(search))
+                new RawRankProfile(rankProfile, new QueryProfileRegistry(), new ImportedModels(), new AttributeFields(search))
                         .configProperties()
                         .stream()
                         .filter(r -> r.getFirst().equals("rankingExpression(" + name + ").rankingScript"))

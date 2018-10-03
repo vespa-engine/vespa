@@ -1,11 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -34,6 +36,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private List<ZoneId> zones = new ArrayList<>();
     private SystemName system = SystemName.main;
     private UpgradePolicy upgradePolicy = null;
+    private Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
 
     @Inject
     public ZoneRegistryMock() {
@@ -73,6 +76,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
         return this;
     }
 
+    public ZoneRegistryMock setOsUpgradePolicy(CloudName cloud, UpgradePolicy upgradePolicy) {
+        osUpgradePolicies.put(cloud, upgradePolicy);
+        return this;
+    }
+
     @Override
     public SystemName system() {
         return system;
@@ -90,6 +98,16 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public UpgradePolicy upgradePolicy() {
         return upgradePolicy;
+    }
+
+    @Override
+    public UpgradePolicy osUpgradePolicy(CloudName cloud) {
+        return osUpgradePolicies.get(cloud);
+    }
+
+    @Override
+    public List<UpgradePolicy> osUpgradePolicies() {
+        return ImmutableList.copyOf(osUpgradePolicies.values());
     }
 
     @Override

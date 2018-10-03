@@ -17,7 +17,7 @@ public:
      * @param the name of the library. Like 'vesparise'.
      * @return the factory that is created.
      */
-    IIndexManagerFactory::UP create(const vespalib::stringref & factory);
+    IIndexManagerFactory::UP create(vespalib::stringref factory);
 private:
     vespalib::LibraryPool _libraries;
 };

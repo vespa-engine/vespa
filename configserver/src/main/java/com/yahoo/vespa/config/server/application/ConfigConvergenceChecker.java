@@ -23,7 +23,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -58,7 +60,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         this.stateApiFactory = stateApiFactory;
     }
 
-    /** Check all services in given application */
+    /** Check all services in given application. Returns the minimum current generation of all services */
     public ServiceListResponse servicesToCheck(Application application, URI requestUrl, Duration timeoutPerService) {
         List<ServiceInfo> servicesToCheck = new ArrayList<>();
         application.getModel().getHosts()
@@ -66,8 +68,9 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                                         .filter(service -> serviceTypesToCheck.contains(service.getServiceType()))
                                         .forEach(service -> getStatePort(service).ifPresent(port -> servicesToCheck.add(service))));
 
-        long currentGeneration = getServiceGeneration(servicesToCheck, timeoutPerService);
-        return new ServiceListResponse(200, servicesToCheck, requestUrl, application.getApplicationGeneration(),
+        Map<ServiceInfo, Long> currentGenerations = getServiceGenerations(servicesToCheck, timeoutPerService);
+        long currentGeneration = currentGenerations.values().stream().mapToLong(Long::longValue).min().orElse(-1);
+        return new ServiceListResponse(200, currentGenerations, requestUrl, application.getApplicationGeneration(),
                                        currentGeneration);
     }
 
@@ -99,24 +102,22 @@ public class ConfigConvergenceChecker extends AbstractComponent {
         StateApi createStateApi(Client client, URI serviceUri);
     }
 
-    /** Get service generation for a list of services. Returns the minimum generation of all services */
-    private long getServiceGeneration(List<ServiceInfo> services, Duration timeout) {
-        List<URI> serviceUris = services.stream()
-                                        .map(s -> "http://" + s.getHostName() + ":" + getStatePort(s).get())
-                                        .map(URI::create)
-                                        .collect(Collectors.toList());
-        long generation = -1;
-        for (URI uri : serviceUris) {
-            try {
-                long serviceGeneration = getServiceGeneration(uri, timeout);
-                if (generation == -1 || serviceGeneration < generation) {
-                    generation = serviceGeneration;
-                }
-            } catch (ProcessingException e) { // Cannot connect to service to determine service generation
-                return -1;
-            }
-        }
-        return generation;
+    /** Gets service generation for a list of services (in parallel). */
+    private Map<ServiceInfo, Long> getServiceGenerations(List<ServiceInfo> services, Duration timeout) {
+        return services.parallelStream()
+                       .collect(Collectors.toMap(service -> service,
+                                                 service -> {
+                                                     try {
+                                                         return getServiceGeneration(URI.create("http://" + service.getHostName()
+                                                                                                + ":" + getStatePort(service).get()), timeout);
+                                                     }
+                                                     catch (ProcessingException e) { // Cannot connect to service to determine service generation
+                                                         return -1L;
+                                                     }
+                                                 },
+                                                 (v1, v2) -> { throw new IllegalStateException("Duplicate keys for values '" + v1 + "' and '" + v2 + "'."); },
+                                                 LinkedHashMap::new
+                                                ));
     }
 
     /** Get service generation of service at given URL */
@@ -160,7 +161,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     }
 
     private static long generationFromContainerState(JsonNode state) {
-        return state.get("config").get("generation").asLong();
+        return state.get("config").get("generation").asLong(-1);
     }
 
     private static StateApi createStateApi(Client client, URI uri) {
@@ -171,19 +172,20 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     private static class ServiceListResponse extends JSONResponse {
 
         // Pre-condition: servicesToCheck has a state port
-        private ServiceListResponse(int status, List<ServiceInfo> servicesToCheck, URI uri, long wantedGeneration,
+        private ServiceListResponse(int status, Map<ServiceInfo, Long> servicesToCheck, URI uri, long wantedGeneration,
                                     long currentGeneration) {
             super(status);
             Cursor serviceArray = object.setArray("services");
-            for (ServiceInfo s : servicesToCheck) {
-                Cursor service = serviceArray.addObject();
-                String hostName = s.getHostName();
-                int statePort = getStatePort(s).get();
-                service.setString("host", hostName);
-                service.setLong("port", statePort);
-                service.setString("type", s.getServiceType());
-                service.setString("url", uri.toString() + "/" + hostName + ":" + statePort);
-            }
+            servicesToCheck.forEach((service, generation) -> {
+                Cursor serviceObject = serviceArray.addObject();
+                String hostName = service.getHostName();
+                int statePort = getStatePort(service).get();
+                serviceObject.setString("host", hostName);
+                serviceObject.setLong("port", statePort);
+                serviceObject.setString("type", service.getServiceType());
+                serviceObject.setString("url", uri.toString() + "/" + hostName + ":" + statePort);
+                serviceObject.setLong("currentGeneration", generation);
+            });
             object.setString("url", uri.toString());
             object.setLong("currentGeneration", currentGeneration);
             object.setLong("wantedGeneration", wantedGeneration);

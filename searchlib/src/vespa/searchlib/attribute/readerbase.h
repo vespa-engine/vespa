@@ -32,8 +32,7 @@ public:
     }
 
     static bool
-    extractFileSize(const vespalib::GenericHeader &header,
-                    FastOS_FileInterface &file, uint64_t &fileSize);
+    extractFileSize(const vespalib::GenericHeader &header, FastOS_FileInterface &file, uint64_t &fileSize);
 
     size_t getNumValues();
     int32_t getNextWeight() { return _weightReader.readHostOrder(); }

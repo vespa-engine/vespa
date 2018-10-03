@@ -103,6 +103,24 @@ public class DocumentPathUpdateTestCase {
     }
 
     @Test
+    public void testApplyRemoveMultiList2() {
+        Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
+        assertNull(doc.getFieldValue("strarray"));
+        Array<StringFieldValue> strArray = new Array<>(doc.getField("strarray").getDataType());
+        strArray.add(new StringFieldValue("remove val 0 and 1"));
+        strArray.add(new StringFieldValue("remove val 0 and 1"));
+        strArray.add(new StringFieldValue("hello hello"));
+        doc.setFieldValue("strarray", strArray);
+        assertNotNull(doc.getFieldValue("strarray"));
+        DocumentUpdate docUp = new DocumentUpdate(docType, new DocumentId("doc:foo:bar"));
+        docUp.addFieldPathUpdate(new RemoveFieldPathUpdate(doc.getDataType(), "strarray[$x]", "foobar.strarray[$x] == \"remove val 0 and 1\""));
+        docUp.applyTo(doc);
+        assertEquals(1, ((List) doc.getFieldValue("strarray")).size());
+        List docList = (List) doc.getFieldValue("strarray");
+        assertEquals(new StringFieldValue("hello hello"), docList.get(0));
+    }
+
+    @Test
     public void testApplyRemoveEntireListField() {
         Document doc = new Document(docMan.getDocumentType("foobar"), new DocumentId("doc:something:foooo"));
         assertNull(doc.getFieldValue("strarray"));

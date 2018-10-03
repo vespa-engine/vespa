@@ -11,7 +11,7 @@ namespace document::select {
 
 namespace {
     bool documentTypeEqualsName(const DocumentType& type,
-                                const vespalib::stringref& name)
+                                vespalib::stringref name)
     {
         if (type.getName() == name) return true;
         for (std::vector<const DocumentType *>::const_iterator it
@@ -24,7 +24,7 @@ namespace {
     }
 }
 
-DocType::DocType(const vespalib::stringref& doctype)
+DocType::DocType(vespalib::stringref doctype)
     : Node("DocType"),
       _doctype(doctype)
 {

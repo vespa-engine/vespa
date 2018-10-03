@@ -3,7 +3,9 @@
 
 #include "history.h"
 #include "named_service.h"
-#include <vespa/vespalib/util/hashmap.h>
+#include <unordered_map>
+#include <string>
+#include <memory>
 
 namespace slobrok {
 
@@ -12,9 +14,6 @@ namespace slobrok {
  * @brief API to the collection of NamedService
  *        name->spec mappings visible to the world
  **/
-
-using vespalib::HashMap;
-
 
 class VisibleMap
 {
@@ -46,18 +45,15 @@ public:
     };
 
 private:
-    HashMap<NamedService *> _map;
-    typedef HashMap<NamedService *>::Iterator iter_t;
+    using Map = std::unordered_map<std::string, const NamedService *>;
+    using WaitList = std::vector<IUpdateListener *>;
 
-    typedef std::vector<IUpdateListener *> WaitList;
+    Map              _map;
     WaitList         _waitList;
     vespalib::GenCnt _genCnt;
     History          _history;
 
     static bool match(const char *name, const char *pattern);
-
-    VisibleMap(const VisibleMap &);            // Not used
-    VisibleMap &operator=(const VisibleMap &); // Not use
 
     void updated();
     void aborted();
@@ -66,12 +62,11 @@ public:
     void addUpdateListener(IUpdateListener *l);
     void removeUpdateListener(IUpdateListener *l);
 
-    void       addNew(NamedService *rpcsrv);
-    NamedService *remove(const char *name);
-    NamedService *update(NamedService *rpcsrv);
+    void       addNew(const NamedService *rpcsrv);
+    const NamedService *remove(const std::string &name);
+    const NamedService *update(const NamedService *rpcsrv);
 
-    NamedService *lookup(const char *name) const { return _map[name]; }
-    RpcSrvlist lookupPattern(const char *pattern) const;
+    const NamedService *lookup(const std::string &name) const;
     RpcSrvlist allVisible() const;
 
     const vespalib::GenCnt& genCnt() { return _genCnt; }
@@ -80,6 +75,8 @@ public:
 
     MapDiff history(const vespalib::GenCnt& gen) const;
 
+    VisibleMap(const VisibleMap &) = delete;
+    VisibleMap &operator=(const VisibleMap &) = delete;
     VisibleMap();
     ~VisibleMap();
 };

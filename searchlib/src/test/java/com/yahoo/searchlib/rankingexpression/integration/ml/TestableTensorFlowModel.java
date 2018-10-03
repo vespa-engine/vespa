@@ -3,6 +3,8 @@ package com.yahoo.searchlib.rankingexpression.integration.ml;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
+import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
+import com.yahoo.searchlib.rankingexpression.evaluation.ExpressionOptimizer;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.integration.ml.importer.tensorflow.TensorConverter;
@@ -36,20 +38,43 @@ public class TestableTensorFlowModel {
 
     public TestableTensorFlowModel(String modelName, String modelDir) {
         tensorFlowModel = SavedModelBundle.load(modelDir, "serve");
-        model = new TensorFlowImporter().importModel(modelName, tensorFlowModel);
+        model = new TensorFlowImporter().importModel(modelName, modelDir, tensorFlowModel);
     }
 
     public ImportedModel get() { return model; }
 
+    /** Compare that summing the tensors produce the same result to within some tolerance delta */
+    public void assertEqualResultSum(String inputName, String operationName, double delta) {
+        Tensor tfResult = tensorFlowExecute(tensorFlowModel, inputName, operationName);
+        Context context = contextFrom(model);
+        Tensor placeholder = placeholderArgument();
+        context.put(inputName, new TensorValue(placeholder));
+
+        model.functions().forEach((k, v) -> evaluateFunction(context, model, k));
+
+        RankingExpression expression = model.expressions().get(operationName);
+        ExpressionOptimizer optimizer = new ExpressionOptimizer();
+        optimizer.optimize(expression, (ContextIndex)context);
+
+        Tensor vespaResult = expression.evaluate(context).asTensor();
+        assertEquals("Operation '" + operationName + "' produces equal results",
+                     tfResult.sum().asDouble(), vespaResult.sum().asDouble(), delta);
+    }
+
+    /** Compare tensors 100% exactly */
     public void assertEqualResult(String inputName, String operationName) {
         Tensor tfResult = tensorFlowExecute(tensorFlowModel, inputName, operationName);
         Context context = contextFrom(model);
         Tensor placeholder = placeholderArgument();
         context.put(inputName, new TensorValue(placeholder));
 
-        model.macros().forEach((k,v) -> evaluateMacro(context, model, k));
+        model.functions().forEach((k, v) -> evaluateFunction(context, model, k));
 
-        Tensor vespaResult = model.expressions().get(operationName).evaluate(context).asTensor();
+        RankingExpression expression = model.expressions().get(operationName);
+        ExpressionOptimizer optimizer = new ExpressionOptimizer();
+        optimizer.optimize(expression, (ContextIndex)context);
+
+        Tensor vespaResult = expression.evaluate(context).asTensor();
         assertEquals("Operation '" + operationName + "' produces equal results", tfResult, vespaResult);
     }
 
@@ -66,8 +91,8 @@ public class TestableTensorFlowModel {
         return TensorConverter.toVespaTensor(results.get(0));
     }
 
-    private Context contextFrom(ImportedModel result) {
-        MapContext context = new MapContext();
+    static Context contextFrom(ImportedModel result) {
+        TestableModelContext context = new TestableModelContext();
         result.largeConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
         result.smallConstants().forEach((name, tensor) -> context.put("constant(" + name + ")", new TensorValue(tensor)));
         return context;
@@ -81,25 +106,36 @@ public class TestableTensorFlowModel {
         return b.build();
     }
 
-    private void evaluateMacro(Context context, ImportedModel model, String macroName) {
-        if (!context.names().contains(macroName)) {
-            RankingExpression e = model.macros().get(macroName);
-            evaluateMacroDependencies(context, model, e.getRoot());
-            context.put(macroName, new TensorValue(e.evaluate(context).asTensor()));
+    private void evaluateFunction(Context context, ImportedModel model, String functionName) {
+        if (!context.names().contains(functionName)) {
+            RankingExpression e = model.functions().get(functionName);
+            evaluateFunctionDependencies(context, model, e.getRoot());
+            context.put(functionName, new TensorValue(e.evaluate(context).asTensor()));
         }
     }
 
-    private void evaluateMacroDependencies(Context context, ImportedModel model, ExpressionNode node) {
+    private void evaluateFunctionDependencies(Context context, ImportedModel model, ExpressionNode node) {
         if (node instanceof ReferenceNode) {
             String name = node.toString();
-            if (model.macros().containsKey(name)) {
-                evaluateMacro(context, model, name);
+            if (model.functions().containsKey(name)) {
+                evaluateFunction(context, model, name);
             }
         }
         else if (node instanceof CompositeNode) {
             for (ExpressionNode child : ((CompositeNode)node).children()) {
-                evaluateMacroDependencies(context, model, child);
+                evaluateFunctionDependencies(context, model, child);
             }
+        }
+    }
+
+    private static class TestableModelContext extends MapContext implements ContextIndex {
+        @Override
+        public int size() {
+            return bindings().size();
+        }
+        @Override
+        public int getIndex(String name) {
+            throw new UnsupportedOperationException(this + " does not support index lookup by name");
         }
     }
 

@@ -110,23 +110,27 @@ public class ContainerTester {
         assertEquals("Status code", expectedStatusCode, response.getStatus());
     }
 
-    public void assertResponse(Supplier<Request> request, String expectedResponse) throws IOException {
+    public void assertResponse(Supplier<Request> request, String expectedResponse) {
         assertResponse(request.get(), expectedResponse, 200);
     }
 
-    public void assertResponse(Request request, String expectedResponse) throws IOException {
+    public void assertResponse(Request request, String expectedResponse) {
         assertResponse(request, expectedResponse, 200);
     }
 
-    public void assertResponse(Supplier<Request> request, String expectedResponse, int expectedStatusCode) throws IOException {
+    public void assertResponse(Supplier<Request> request, String expectedResponse, int expectedStatusCode) {
         assertResponse(request.get(), expectedResponse, expectedStatusCode);
     }
 
-    public void assertResponse(Request request, String expectedResponse, int expectedStatusCode) throws IOException {
+    public void assertResponse(Request request, String expectedResponse, int expectedStatusCode) {
         FilterResult filterResult = invokeSecurityFilters(request);
         request = filterResult.request;
         Response response = filterResult.response != null ? filterResult.response : container.handleRequest(request);
-        assertEquals(expectedResponse, response.getBodyAsString());
+        try {
+            assertEquals(expectedResponse, response.getBodyAsString());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         assertEquals("Status code", expectedStatusCode, response.getStatus());
     }
 

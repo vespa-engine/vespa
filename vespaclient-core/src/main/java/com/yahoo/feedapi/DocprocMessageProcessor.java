@@ -7,7 +7,6 @@ import com.yahoo.docproc.DocprocService;
 import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.Processing;
 import com.yahoo.document.*;
-import com.yahoo.documentapi.messagebus.protocol.BatchDocumentUpdateMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
@@ -40,10 +39,6 @@ public class DocprocMessageProcessor implements MessageProcessor {
                 documentBases.add(((UpdateDocumentMessage) m).getDocumentUpdate());
             } else if (m.getType() == DocumentProtocol.MESSAGE_REMOVEDOCUMENT) {
                 documentBases.add(((RemoveDocumentMessage) m).getDocumentRemove());
-            } else if (m.getType() == DocumentProtocol.MESSAGE_BATCHDOCUMENTUPDATE) {
-                for (DocumentUpdate update : ((BatchDocumentUpdateMessage) m).getUpdates()) {
-                    documentBases.add(update);
-                }
             }
 
             if (docproc != null) {

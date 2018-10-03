@@ -93,11 +93,11 @@ public class RemoteSession extends Session {
         Curator.CompletionWaiter waiter = zooKeeperClient.getActiveWaiter();
         log.log(LogLevel.DEBUG, logPre() + "Getting session from repo: " + getSessionId());
         ApplicationSet app = ensureApplicationLoaded();
-        log.log(LogLevel.DEBUG, logPre() + "Reloading config for " + app);
+        log.log(LogLevel.DEBUG, logPre() + "Reloading config for " + getSessionId());
         reloadHandler.reloadConfig(app);
         log.log(LogLevel.DEBUG, logPre() + "Notifying " + waiter);
         notifyCompletion(waiter);
-        log.log(LogLevel.DEBUG, logPre() + "Session activated: " + app);
+        log.log(LogLevel.INFO, logPre() + "Session activated: " + getSessionId());
     }
     
     @Override
@@ -135,6 +135,7 @@ public class RemoteSession extends Session {
     public void delete() {
         Transaction transaction = zooKeeperClient.deleteTransaction();
         transaction.commit();
+        transaction.close();
     }
 
 }

@@ -32,8 +32,6 @@ class FNET_Packet;
 class FNET_PacketQueue;
 class FNET_Scheduler;
 class FNET_SimplePacketStreamer;
-class FNET_StatCounters;
-class FNET_Stats;
 class FNET_Task;
 class FNET_Transport;
 class FNET_TransportThread;
@@ -52,7 +50,6 @@ class FNET_TransportThread;
 #include "task.h"
 #include "scheduler.h"
 #include "config.h"
-#include "stats.h"
 #include "databuffer.h"
 #include "packet.h"
 #include "dummypacket.h"

@@ -6,11 +6,12 @@
 #include "configstore.h"
 #include "ddbstate.h"
 #include "disk_mem_usage_forwarder.h"
+#include "documentdb_metrics_updater.h"
+#include "document_db_config_owner.h"
 #include "documentdbconfig.h"
 #include "documentsubdbcollection.h"
 #include "executorthreadingservice.h"
 #include "feedhandler.h"
-#include "document_db_config_owner.h"
 #include "i_document_subdb_owner.h"
 #include "i_feed_handler_owner.h"
 #include "i_lid_space_compaction_handler.h"
@@ -73,6 +74,13 @@ private:
         DocumentDBMetricsCollection &getMetrics() { return _metrics; }
     };
 
+    struct DocumentStoreCacheStats {
+        search::CacheStats total;
+        search::CacheStats readySubDb;
+        search::CacheStats notReadySubDb;
+        search::CacheStats removedSubDb;
+        DocumentStoreCacheStats() : total(), readySubDb(), notReadySubDb(), removedSubDb() {}
+    };
 
     using InitializeThreads = std::shared_ptr<vespalib::ThreadStackExecutorBase>;
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
@@ -128,10 +136,8 @@ private:
     VisibilityHandler             _visibility;
     ILidSpaceCompactionHandler::Vector _lidSpaceCompactionHandlers;
     DocumentDBJobTrackers         _jobTrackers;
-
-    // Last updated cache statistics. Necessary due to metrics implementation is upside down.
-    search::CacheStats            _lastDocStoreCacheStats;
     IBucketStateCalculator::SP    _calc;
+    DocumentDBMetricsUpdater      _metricsUpdater;
 
     void registerReference();
     void setActiveConfig(const DocumentDBConfig::SP &config, SerialNum serialNum, int64_t generation);
@@ -199,10 +205,6 @@ private:
     virtual void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
     void notifyAllBucketsChanged();
 
-    void updateLegacyMetrics(LegacyDocumentDBMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats);
-    void updateMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats);
-    void updateMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics);
-
     /*
      * Tear down references to this document db (e.g. listeners for
      * gid to lid changes) from other document dbs.
@@ -243,7 +245,7 @@ public:
                const ProtonConfig &protonCfg,
                IDocumentDBOwner &owner,
                vespalib::ThreadExecutor &warmupExecutor,
-               vespalib::ThreadStackExecutorBase &summaryExecutor,
+               vespalib::ThreadStackExecutorBase &sharedExecutor,
                search::transactionlog::Writer &tlsDirectWriter,
                MetricsWireService &metricsWireService,
                const search::common::FileHeaderContext &fileHeaderContext,

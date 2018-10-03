@@ -65,10 +65,10 @@ FlagAttributeT<B>::getSearch(QueryTermSimple::UP qTerm,
 template <typename B>
 void FlagAttributeT<B>::clearOldValues(DocId doc)
 {
-    const typename B::WType * values(NULL);
+    const typename B::WType * values(nullptr);
     for (uint32_t i(0), m(this->get(doc, values)); i < m; i++) {
         BitVector * bv = _bitVectors[getOffset(values[i].value())];
-        if (bv != NULL) {
+        if (bv != nullptr) {
             bv->clearBit(doc);
         }
     }

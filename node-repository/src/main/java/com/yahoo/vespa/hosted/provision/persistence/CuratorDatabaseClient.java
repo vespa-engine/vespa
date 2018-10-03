@@ -23,12 +23,13 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -47,16 +48,13 @@ public class CuratorDatabaseClient {
     private static final Logger log = Logger.getLogger(CuratorDatabaseClient.class.getName());
 
     private static final Path root = Path.fromString("/provision/v1");
-
+    private static final Path lockRoot = root.append("locks");
     private static final Duration defaultLockTimeout = Duration.ofMinutes(2);
 
     private final NodeSerializer nodeSerializer;
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
-
     private final CuratorDatabase curatorDatabase;
-
     private final Clock clock;
-    
     private final Zone zone;
 
     public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache) {
@@ -73,6 +71,7 @@ public class CuratorDatabaseClient {
             curatorDatabase.create(toPath(state));
         curatorDatabase.create(inactiveJobsPath());
         curatorDatabase.create(infrastructureVersionsPath());
+        curatorDatabase.create(osVersionsPath());
     }
 
     /**
@@ -278,9 +277,8 @@ public class CuratorDatabaseClient {
 
     /** Creates an returns the path to the lock for this application */
     private Path lockPath(ApplicationId application) {
-        Path lockPath = 
-                root
-                .append("locks")
+        Path lockPath =
+                lockRoot
                 .append(application.tenant().value())
                 .append(application.application().value())
                 .append(application.instance().value());
@@ -304,7 +302,7 @@ public class CuratorDatabaseClient {
 
     /** Acquires the single cluster-global, reentrant lock for all non-active nodes */
     public Lock lockInactive() {
-        return lock(root.append("locks").append("unallocatedLock"), defaultLockTimeout);
+        return lock(lockRoot.append("unallocatedLock"), defaultLockTimeout);
     }
 
     /** Acquires the single cluster-global, reentrant lock for active nodes of this application */
@@ -326,11 +324,13 @@ public class CuratorDatabaseClient {
         return curatorDatabase.lock(path, timeout);
     }
 
+    private <T> Optional<T> read(Path path, Function<byte[], T> mapper) {
+        return curatorDatabase.getData(path).filter(data -> data.length > 0).map(mapper);
+    }
+
     public Set<String> readInactiveJobs() {
         try {
-            byte[] data = curatorDatabase.getData(inactiveJobsPath()).get();
-            if (data.length == 0) return new HashSet<>(); // inactive jobs has never been written
-            return stringSetSerializer.fromJson(data);
+            return read(inactiveJobsPath(), stringSetSerializer::fromJson).orElseGet(HashSet::new);
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Error reading inactive jobs, deleting inactive state");
@@ -348,33 +348,50 @@ public class CuratorDatabaseClient {
     }
     
     public Lock lockInactiveJobs() {
-        return lock(root.append("locks").append("inactiveJobsLock"), defaultLockTimeout);
+        return lock(lockRoot.append("inactiveJobsLock"), defaultLockTimeout);
     }
 
     private Path inactiveJobsPath() {
         return root.append("inactiveJobs");
     }
 
-
     public Map<NodeType, Version> readInfrastructureVersions() {
-        byte[] data = curatorDatabase.getData(infrastructureVersionsPath()).get();
-        if (data.length == 0) return new HashMap<>(); // infrastructure versions have never been written
-        return InfrastructureVersionsSerializer.fromJson(data);
+        return read(infrastructureVersionsPath(), NodeTypeVersionsSerializer::fromJson).orElseGet(TreeMap::new);
     }
 
     public void writeInfrastructureVersions(Map<NodeType, Version> infrastructureVersions) {
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.setData(infrastructureVersionsPath().getAbsolute(),
-                InfrastructureVersionsSerializer.toJson(infrastructureVersions)));
+                                                         NodeTypeVersionsSerializer.toJson(infrastructureVersions)));
         transaction.commit();
     }
 
     public Lock lockInfrastructureVersions() {
-        return lock(root.append("locks").append("infrastructureVersionsLock"), defaultLockTimeout);
+        return lock(lockRoot.append("infrastructureVersionsLock"), defaultLockTimeout);
     }
 
     private Path infrastructureVersionsPath() {
         return root.append("infrastructureVersions");
+    }
+
+    public Map<NodeType, Version> readOsVersions() {
+        return read(osVersionsPath(), NodeTypeVersionsSerializer::fromJson).orElseGet(TreeMap::new);
+    }
+
+    public void writeOsVersions(Map<NodeType, Version> versions) {
+        NestedTransaction transaction = new NestedTransaction();
+        CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
+        curatorTransaction.add(CuratorOperations.setData(osVersionsPath().getAbsolute(),
+                                                         NodeTypeVersionsSerializer.toJson(versions)));
+        transaction.commit();
+    }
+
+    public Lock lockOsVersions() {
+        return lock(lockRoot.append("osVersionsLock"), defaultLockTimeout);
+    }
+
+    private Path osVersionsPath() {
+        return root.append("osVersions");
     }
 }

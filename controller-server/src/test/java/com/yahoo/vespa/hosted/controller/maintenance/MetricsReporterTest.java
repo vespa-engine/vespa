@@ -3,18 +3,19 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
-import com.yahoo.vespa.hosted.controller.integration.MetricsMock.MapContext;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.rest.PartialNodeResult;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
+import com.yahoo.vespa.hosted.controller.integration.MetricsMock.MapContext;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,6 +44,7 @@ import static org.junit.Assert.assertNull;
 public class MetricsReporterTest {
 
     private static final Path testData = Paths.get("src/test/resources/");
+
     private MetricsMock metrics;
 
     @Before
@@ -75,7 +77,7 @@ public class MetricsReporterTest {
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
-        MetricsReporter metricsReporter = createReporter(tester.controller(), metrics, SystemName.cd);
+        MetricsReporter metricsReporter = createReporter(tester.controller(), metrics, SystemName.main);
 
         metricsReporter.maintain();
         assertEquals(0.0, metrics.getMetric(MetricsReporter.deploymentFailMetric));
@@ -102,7 +104,7 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void it_omits_zone_when_unknown() {
+    public void test_chef_metrics_omit_zone_when_unknown() {
         ControllerTester tester = new ControllerTester();
         String hostname = "fake-node2.test";
         MapContext metricContext = getMetricContextByHost(tester.controller(), hostname);
@@ -117,7 +119,7 @@ public class MetricsReporterTest {
                 .region("us-west-1")
                 .build();
 
-        MetricsReporter reporter = createReporter(tester.controller(), metrics, SystemName.cd);
+        MetricsReporter reporter = createReporter(tester.controller(), metrics, SystemName.main);
 
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.deployCompletely(app, applicationPackage);
@@ -136,7 +138,7 @@ public class MetricsReporterTest {
         tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
         reporter.maintain();
 
-        // Average time is 1 hour
+        // Average time is 1 hour (system-test) + 90 minutes (staging-test runs in parallel with system-test) + 90 minutes (production) / 3 jobs
         assertEquals(Duration.ofMinutes(80), getAverageDeploymentDuration(app));
 
         // Another deployment starts and stalls for 12 hours
@@ -151,11 +153,69 @@ public class MetricsReporterTest {
                      getAverageDeploymentDuration(app));
     }
 
+    @Test
+    public void test_deployments_failing_upgrade() {
+        DeploymentTester tester = new DeploymentTester();
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+
+        MetricsReporter reporter = createReporter(tester.controller(), metrics, SystemName.main);
+        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
+
+        // Initial deployment without failures
+        tester.deployCompletely(app, applicationPackage);
+        reporter.maintain();
+        assertEquals(0, getDeploymentsFailingUpgrade(app));
+
+        // Failing application change is not counted
+        tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        tester.deployAndNotify(app, applicationPackage, false, systemTest);
+        reporter.maintain();
+        assertEquals(0, getDeploymentsFailingUpgrade(app));
+
+        // Application change completes
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
+        assertFalse("Change deployed", tester.controller().applications().require(app.id()).change().isPresent());
+
+        // New versions is released and upgrade fails in test environments
+        Version version = Version.fromString("7.1");
+        tester.upgradeSystem(version);
+        tester.upgrader().maintain();
+        tester.deployAndNotify(app, applicationPackage, false, systemTest);
+        tester.deployAndNotify(app, applicationPackage, false, stagingTest);
+        reporter.maintain();
+        assertEquals(2, getDeploymentsFailingUpgrade(app));
+
+        // Test and staging pass and upgrade fails in production
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
+        tester.deployAndNotify(app, applicationPackage, false, productionUsWest1);
+        reporter.maintain();
+        assertEquals(1, getDeploymentsFailingUpgrade(app));
+
+        // Upgrade eventually succeeds
+        tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
+        assertFalse("Upgrade deployed", tester.controller().applications().require(app.id()).change().isPresent());
+        reporter.maintain();
+        assertEquals(0, getDeploymentsFailingUpgrade(app));
+    }
+
     private Duration getAverageDeploymentDuration(Application application) {
+        return Duration.ofSeconds(getMetric(MetricsReporter.deploymentAverageDuration, application).longValue());
+    }
+
+    private int getDeploymentsFailingUpgrade(Application application) {
+        return getMetric(MetricsReporter.deploymentFailingUpgrades, application).intValue();
+    }
+
+    private Number getMetric(String name, Application application) {
         return metrics.getMetric((dimensions) -> application.id().tenant().value().equals(dimensions.get("tenant")) &&
                                                  appDimension(application).equals(dimensions.get("app")),
-                                 MetricsReporter.deploymentAverageDuration)
-                      .map(seconds -> Duration.ofSeconds(seconds.longValue()))
+                                 name)
                       .orElseThrow(() -> new RuntimeException("Expected metric to exist for " + application.id()));
     }
 

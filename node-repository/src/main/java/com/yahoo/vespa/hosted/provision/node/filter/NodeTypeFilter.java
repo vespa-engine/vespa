@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.node.filter;
 
 import com.google.common.collect.ImmutableSet;
-import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -21,8 +20,7 @@ public class NodeTypeFilter extends NodeFilter {
     
     protected NodeTypeFilter(Set<NodeType> types, NodeFilter next) {
         super(next);
-        Objects.requireNonNull(types, "Node types cannot be null");
-        this.types = ImmutableSet.copyOf(types);
+        this.types = ImmutableSet.copyOf(Objects.requireNonNull(types, "Node types cannot be null"));
     }
 
     @Override

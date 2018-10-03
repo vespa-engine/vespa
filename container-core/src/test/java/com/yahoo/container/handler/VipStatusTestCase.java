@@ -13,13 +13,22 @@ import org.junit.Test;
 public class VipStatusTestCase {
 
     @Test
-    public final void testSmoke() {
+    public void testVipStatusWorksWithClusters() {
+        ClustersStatus clustersStatus = new ClustersStatus();
+        clustersStatus.setContainerHasClusters(true);
+        VipStatus v = new VipStatus(clustersStatus);
+
         Object cluster1 = new Object();
         Object cluster2 = new Object();
         Object cluster3 = new Object();
-        VipStatus v = new VipStatus();
+
         // initial state
+        assertFalse(v.isInRotation());
+
+        // one cluster becomes up
+        v.addToRotation(cluster1);
         assertTrue(v.isInRotation());
+
         // all clusters down
         v.removeFromRotation(cluster1);
         v.removeFromRotation(cluster2);

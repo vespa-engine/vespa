@@ -10,6 +10,7 @@ import com.yahoo.document.StructDataType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 
@@ -19,10 +20,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
-
-import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isArrayOfSimpleStruct;
-import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isMapOfPrimitiveType;
-import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isMapOfSimpleStruct;
 
 /**
  * Validates the changes between the current and next set of struct field attributes in a document database.
@@ -66,7 +63,7 @@ public class StructFieldAttributeChangeValidator {
 
     private List<VespaConfigChangeAction> validateAddAttributeAspect(Context current, Context next, ValidationOverrides overrides, Instant now) {
         return next.structFieldAttributes.stream()
-                .filter(nextAttr -> current.hasFieldFor(nextAttr) &&
+                .filter(nextAttr -> current.hasFieldForStructFieldAttribute(nextAttr) &&
                         !current.hasStructFieldAttribute(nextAttr))
                 .map(nextAttr -> VespaRefeedAction.of("field-type-change",
                         overrides,
@@ -94,23 +91,23 @@ public class StructFieldAttributeChangeValidator {
                     .anyMatch(attr -> attr.getName().equals(structFieldAttribute.getName()));
         }
 
-        public boolean hasFieldFor(Attribute structFieldAttribute) {
+        public boolean hasFieldForStructFieldAttribute(Attribute structFieldAttribute) {
             StringTokenizer fieldNames = new StringTokenizer(structFieldAttribute.getName(), ".");
             if (!fieldNames.nextToken().equals(field.getName())) {
                 return false;
             }
-            if (isArrayOfSimpleStruct(dataType())) {
+            if (isArrayOfStructType(dataType())) {
                 StructDataType nestedType = (StructDataType)((ArrayDataType)dataType()).getNestedType();
-                if (hasLastFieldInStructType(fieldNames, nestedType)) {
+                if (structTypeContainsLastFieldNameComponent(nestedType, fieldNames)) {
                     return true;
                 }
-            } else if (isMapOfSimpleStruct(dataType())) {
+            } else if (isMapOfStructType(dataType())) {
                 MapDataType mapType = (MapDataType)dataType();
                 StructDataType valueType = (StructDataType)mapType.getValueType();
                 String subFieldName = fieldNames.nextToken();
                 if (subFieldName.equals("key") && !fieldNames.hasMoreTokens()) {
                     return true;
-                } else if (subFieldName.equals("value") && hasLastFieldInStructType(fieldNames, valueType)) {
+                } else if (subFieldName.equals("value") && structTypeContainsLastFieldNameComponent(valueType, fieldNames)) {
                     return true;
                 }
             } else if (isMapOfPrimitiveType(dataType())) {
@@ -123,10 +120,42 @@ public class StructFieldAttributeChangeValidator {
             return false;
         }
 
-        private static boolean hasLastFieldInStructType(StringTokenizer fieldNames, StructDataType structType) {
-            return structType.getField(fieldNames.nextToken()) != null && !fieldNames.hasMoreTokens();
+        private static boolean isArrayOfStructType(DataType type) {
+            if (type instanceof ArrayDataType) {
+                ArrayDataType arrayType = (ArrayDataType)type;
+                return isStructType(arrayType.getNestedType());
+            } else {
+                return false;
+            }
         }
 
+        private static boolean isMapOfStructType(DataType type) {
+            if (type instanceof MapDataType) {
+                MapDataType mapType = (MapDataType)type;
+                return ComplexAttributeFieldUtils.isPrimitiveType(mapType.getKeyType()) &&
+                        isStructType(mapType.getValueType());
+            } else {
+                return false;
+            }
+        }
+
+        public static boolean isMapOfPrimitiveType(DataType type) {
+            if (type instanceof MapDataType) {
+                MapDataType mapType = (MapDataType)type;
+                return ComplexAttributeFieldUtils.isPrimitiveType(mapType.getKeyType()) &&
+                        ComplexAttributeFieldUtils.isPrimitiveType(mapType.getValueType());
+            } else {
+                return false;
+            }
+        }
+
+        private static boolean isStructType(DataType type) {
+            return (type instanceof StructDataType);
+        }
+
+        private static boolean structTypeContainsLastFieldNameComponent(StructDataType structType, StringTokenizer fieldNames) {
+            return structType.getField(fieldNames.nextToken()) != null && !fieldNames.hasMoreTokens();
+        }
     }
 
 }

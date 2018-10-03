@@ -73,7 +73,7 @@ private:
 
 public:
     ReturnCode();
-    explicit ReturnCode(Result result, const vespalib::stringref & msg = "");
+    explicit ReturnCode(Result result, vespalib::stringref msg = "");
     ReturnCode(const document::DocumentTypeRepo &repo,
                document::ByteBuffer& buffer);
     ReturnCode(const ReturnCode &);
@@ -87,7 +87,7 @@ public:
     size_t getSerializedSize() const override;
 
     const vespalib::string& getMessage() const { return _message; }
-    void setMessage(const vespalib::stringref & message) { _message = message; }
+    void setMessage(vespalib::stringref message) { _message = message; }
 
     Result getResult() const { return _result; }
 

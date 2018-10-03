@@ -1,13 +1,19 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.provision;
 
+import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
+import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
@@ -16,6 +22,7 @@ import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -927,6 +934,37 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testLogserverContainerWhenDedicatedLogserver() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                        "<services>" +
+                        "  <admin version='4.0'>" +
+                        "    <logservers>" +
+                        "      <nodes count='1' dedicated='true'/>" +
+                        "    </logservers>" +
+                        "  </admin>" +
+                        "  <container version='1.0' id='foo'>" +
+                        "     <nodes count='1'/>" +
+                        "  </container>" +
+                        "</services>";
+        boolean useDedicatedNodeForLogserver = false;
+        testContainerOnLogserverHost(services, useDedicatedNodeForLogserver);
+    }
+
+    @Test
+    public void testImplicitLogserverContainer() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                        "<services>" +
+                        "  <container version='1.0' id='foo'>" +
+                        "     <nodes count='1'/>" +
+                        "  </container>" +
+                        "</services>";
+        boolean useDedicatedNodeForLogserver = true;
+        testContainerOnLogserverHost(services, useDedicatedNodeForLogserver);
+    }
+
+    @Test
     public void testUsingNodesAndGroupCountAttributesAndGettingTooFewNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
@@ -1710,6 +1748,38 @@ public class ModelProvisioningTest {
         ProtonConfig.Builder builder = new ProtonConfig.Builder();
         model.getConfig(builder, configId);
         return new ProtonConfig(builder);
+    }
+
+    // Tests that a container is allocated on logserver host and that
+    // it is able to get config
+    private void testContainerOnLogserverHost(String services, boolean useDedicatedNodeForLogserver) {
+        int numberOfHosts = 2;
+        VespaModelTester tester = new VespaModelTester();
+        tester.useDedicatedNodeForLogserver(useDedicatedNodeForLogserver);
+        tester.addHosts(numberOfHosts);
+        Zone zone = new Zone(SystemName.cd, Environment.dev, RegionName.defaultName());
+
+        VespaModel model = tester.createModel(zone, services, true);
+        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+
+        Admin admin = model.getAdmin();
+        Logserver logserver = admin.getLogserver();
+        HostResource hostResource = logserver.getHostResource();
+        assertNotNull(hostResource.getService("logserver"));
+        assertNotNull(hostResource.getService("container"));
+
+        // Test that the container gets config
+        String configId = admin.getLogserver().getHostResource().getService("container").getConfigId();
+        ApplicationMetadataConfig.Builder builder = new ApplicationMetadataConfig.Builder();
+        model.getConfig(builder, configId);
+        ApplicationMetadataConfig cfg = new ApplicationMetadataConfig(builder);
+        assertEquals(1, cfg.generation());
+
+        LogdConfig.Builder logdConfigBuilder = new LogdConfig.Builder();
+        model.getConfig(logdConfigBuilder, configId);
+        LogdConfig logdConfig = new LogdConfig(logdConfigBuilder);
+        // Logd should use logserver (forward logs to it)
+        assertTrue(logdConfig.logserver().use());
     }
 
 }

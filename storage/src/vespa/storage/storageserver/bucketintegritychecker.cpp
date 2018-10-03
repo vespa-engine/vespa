@@ -2,7 +2,6 @@
 
 #include "bucketintegritychecker.h"
 #include <vespa/storage/common/bucketmessages.h>
-#include <vespa/storage/storageutil/log.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vdslib/distribution/distribution.h>

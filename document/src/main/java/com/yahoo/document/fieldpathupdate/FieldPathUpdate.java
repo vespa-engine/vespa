@@ -12,6 +12,7 @@ import com.yahoo.document.select.ResultList;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.serialization.DocumentUpdateReader;
 import com.yahoo.document.serialization.VespaDocumentSerializerHead;
+import java.util.ListIterator;
 
 /**
  * @author Thomas Gundersen
@@ -115,8 +116,9 @@ public abstract class FieldPathUpdate {
             doc.iterateNested(fieldPath, 0, handler);
         } else {
             ResultList results = selector.getMatchingResultList(new DocumentPut(doc));
-
-            for (ResultList.ResultPair rp : results.getResults()) {
+            ListIterator<ResultList.ResultPair> resultIter = results.getResults().listIterator(results.getResults().size());
+            while (resultIter.hasPrevious()) {
+                ResultList.ResultPair rp = resultIter.previous();
                 if (rp.getResult() == Result.TRUE) {
                     FieldPathIteratorHandler handler = getIteratorHandler(doc);
                     handler.getVariables().clear();

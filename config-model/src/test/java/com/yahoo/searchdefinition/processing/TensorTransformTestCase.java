@@ -17,6 +17,7 @@ import com.yahoo.searchdefinition.SearchDefinitionTestCase;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import org.junit.Test;
 
 import java.util.List;
@@ -57,8 +58,8 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
                                     "max(attribute(tensor_field_1),x)");
         assertTransformedExpression("1+reduce(attribute(tensor_field_1),max,x)",
                                     "1 + max(attribute(tensor_field_1),x)");
-        assertTransformedExpression("if(attribute(double_field),1+reduce(attribute(tensor_field_1),max,x),0)",
-                                    "if(attribute(double_field),1 + max(attribute(tensor_field_1),x),0)");
+        assertTransformedExpression("if(attribute(double_field),1+reduce(attribute(tensor_field_1),max,x),attribute(tensor_field_1))",
+                                    "if(attribute(double_field),1 + max(attribute(tensor_field_1),x),attribute(tensor_field_1))");
         assertTransformedExpression("reduce(max(attribute(tensor_field_1),attribute(tensor_field_2)),max,x)",
                                     "max(max(attribute(tensor_field_1),attribute(tensor_field_2)),x)");
         assertTransformedExpression("reduce(if(attribute(double_field),attribute(tensor_field_2),attribute(tensor_field_2)),max,x)",
@@ -112,7 +113,7 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
     }
 
     @Test
-    public void requireThatMaxAndMinWithTensorsReturnedFromMacrosAreReplaced() throws ParseException {
+    public void requireThatMaxAndMinWithTensorsReturnedFromFunctionsAreReplaced() throws ParseException {
         assertTransformedExpression("reduce(rankingExpression(returns_tensor),max,x)",
                                     "max(returns_tensor,x)");
         assertTransformedExpression("reduce(rankingExpression(wraps_returns_tensor),max,x)",
@@ -170,7 +171,7 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
                 "                value: { {x:0}:0 }\n" +
                 "            }\n" +
                 "        }\n" +
-                "        macro base_tensor() {\n" +
+                "        function base_tensor() {\n" +
                 "            expression: constant(base_constant_tensor)\n" +
                 "        }\n" +
                 "    }\n" +
@@ -180,28 +181,29 @@ public class TensorTransformTestCase extends SearchDefinitionTestCase {
                 "                value: { {x:0}:1 }\n" +
                 "            }\n" +
                 "        }\n" +
-                "        macro returns_tensor_with_arg(arg1) {\n" +
+                "        function returns_tensor_with_arg(arg1) {\n" +
                 "            expression: 2.0 * arg1\n" +
                 "        }\n" +
-                "        macro wraps_returns_tensor() {\n" +
+                "        function wraps_returns_tensor() {\n" +
                 "            expression: returns_tensor\n" +
                 "        }\n" +
-                "        macro returns_tensor() {\n" +
+                "        function returns_tensor() {\n" +
                 "            expression: attribute(tensor_field_2)\n" +
                 "        }\n" +
-                "        macro tensor_inheriting() {\n" +
+                "        function tensor_inheriting() {\n" +
                 "            expression: base_tensor\n" +
                 "        }\n" +
-                "        macro testexpression() {\n" +
+                "        function testexpression() {\n" +
                 "            expression: " + expression + "\n" +
                 "        }\n" +
                 "    }\n" +
                 "}\n");
         builder.build(true, new BaseDeployLogger());
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(queryProfiles);
+        RankProfile test = rankProfileRegistry.get(s, "test").compile(queryProfiles, new ImportedModels());
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
                                                                            queryProfiles,
+                                                                           new ImportedModels(),
                                                                            new AttributeFields(s)).configProperties();
         return testRankProperties;
     }

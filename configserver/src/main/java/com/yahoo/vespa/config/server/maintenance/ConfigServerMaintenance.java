@@ -19,7 +19,7 @@ import java.time.Duration;
  */
 public class ConfigServerMaintenance extends AbstractComponent {
 
-    private final TenantsMaintainer tenantsMaintainer;
+    //private final TenantsMaintainer tenantsMaintainer;
     private final ZooKeeperDataMaintainer zooKeeperDataMaintainer;
     private final FileDistributionMaintainer fileDistributionMaintainer;
     private final SessionsMaintainer sessionsMaintainer;
@@ -30,7 +30,8 @@ public class ConfigServerMaintenance extends AbstractComponent {
                                    Curator curator,
                                    FileDistributionFactory fileDistributionFactory) {
         DefaultTimes defaults = new DefaultTimes(configserverConfig);
-        tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, defaults.tenantsMaintainerInterval);
+        // TODO: Disabled until we have application metadata about applications
+        //tenantsMaintainer = new TenantsMaintainer(applicationRepository, curator, defaults.tenantsMaintainerInterval);
         zooKeeperDataMaintainer = new ZooKeeperDataMaintainer(applicationRepository, curator, defaults.defaultInterval);
         fileDistributionMaintainer = new FileDistributionMaintainer(applicationRepository, curator, defaults.defaultInterval, configserverConfig);
         sessionsMaintainer = new SessionsMaintainer(applicationRepository, curator, defaults.defaultInterval);
@@ -38,7 +39,7 @@ public class ConfigServerMaintenance extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        tenantsMaintainer.deconstruct();
+        //tenantsMaintainer.deconstruct();
         zooKeeperDataMaintainer.deconstruct();
         fileDistributionMaintainer.deconstruct();
         sessionsMaintainer.deconstruct();

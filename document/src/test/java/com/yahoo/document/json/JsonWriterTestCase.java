@@ -213,7 +213,7 @@ public class JsonWriterTestCase {
     @Test
     public void arrayTest() throws IOException {
         roundTripEquality("id:unittest:testarray::whee", "{ \"actualarray\": ["
-                + " \"nalle\"," + " \"tralle\"]}");
+                + " \"nalle\"," + " \"\"," + " \"tralle\"]}");
     }
 
     @Test
@@ -342,6 +342,10 @@ public class JsonWriterTestCase {
         ObjectMapper m = new ObjectMapper();
         Map<?, ?> exp = m.readValue(expected, Map.class);
         Map<?, ?> gen = m.readValue(generated, Map.class);
+        if (! exp.equals(gen)) {
+            System.err.println("expected:  "+Utf8.toString(expected));
+            System.err.println("generated: "+Utf8.toString(generated));
+        }
         assertEquals(exp, gen);
     }
 

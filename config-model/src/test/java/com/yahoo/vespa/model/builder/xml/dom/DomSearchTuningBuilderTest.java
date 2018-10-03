@@ -152,7 +152,6 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
         String cfg = getProtonCfg(t);
         assertThat(cfg, containsString("indexing.write.io DIRECTIO"));
         assertThat(cfg, containsString("indexing.read.io NORMAL"));
-        assertThat(cfg, containsString("search.io MMAP"));
     }
 
     @Test

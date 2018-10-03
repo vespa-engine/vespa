@@ -7,10 +7,9 @@ package com.yahoo.prelude.query;
  * <p>
  * Most composites, like AND and OR, are reducible as e.g (AND a) is semantically equal to (a).
  * <p>
- * This type functions as a marked interfaces for query rewriters.
+ * This type functions as a marker type for query rewriters.
  *
  * @author bratseth
- * @since 5.1.22
  */
 public abstract class NonReducibleCompositeItem extends CompositeItem {
 }

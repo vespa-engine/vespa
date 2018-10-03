@@ -24,7 +24,7 @@ Regexp::Flags::enableICASE()
 }
 
 bool
-Regexp::compile(const vespalib::stringref & re, Flags flags)
+Regexp::compile(vespalib::stringref re, Flags flags)
 {
     re_set_syntax(flags.flags());
     regex_t *preg = (regex_t *)_data;
@@ -45,7 +45,7 @@ Regexp::compile(const vespalib::stringref & re, Flags flags)
 }
 
 
-Regexp::Regexp(const vespalib::stringref & re, Flags flags)
+Regexp::Regexp(vespalib::stringref re, Flags flags)
     : _valid(false),
       _data(new regex_t)
 {
@@ -53,7 +53,7 @@ Regexp::Regexp(const vespalib::stringref & re, Flags flags)
 }
 
 bool
-Regexp::match(const vespalib::stringref & s) const
+Regexp::match(vespalib::stringref s) const
 {
     if ( ! valid() ) { return false; }
     regex_t *preg = const_cast<regex_t *>(static_cast<const regex_t *>(_data));
@@ -64,7 +64,7 @@ Regexp::match(const vespalib::stringref & s) const
     return pos >= 0;
 }
 
-vespalib::string Regexp::replace(const vespalib::stringref & s, const vespalib::stringref & replacement) const
+vespalib::string Regexp::replace(vespalib::stringref s, vespalib::stringref replacement) const
 {
     if ( ! valid() ) { return s; }
     regex_t *preg = const_cast<regex_t *>(static_cast<const regex_t *>(_data));
@@ -92,7 +92,7 @@ Regexp::~Regexp()
 
 namespace {
 
-bool has_option(const vespalib::stringref & re) {
+bool has_option(vespalib::stringref re) {
     return (re.find('|') != re.npos);
 }
 
@@ -105,7 +105,7 @@ bool maybe_none(char c) {
 const vespalib::string special("^|()[]{}.*?+\\$");
 bool is_special(char c) { return special.find(c) != special.npos; }
 
-vespalib::string escape(const vespalib::stringref &str) {
+vespalib::string escape(vespalib::stringref str) {
     vespalib::string result;
     for (char c: str) {
         if (is_special(c)) {
@@ -119,7 +119,7 @@ vespalib::string escape(const vespalib::stringref &str) {
 } // namespace vespalib::<unnamed>
 
 vespalib::string
-Regexp::get_prefix(const vespalib::stringref & re)
+Regexp::get_prefix(vespalib::stringref re)
 {
     vespalib::string prefix;
     if ((re.size() > 0) && (re.data()[0] == '^') && !has_option(re)) {
@@ -136,19 +136,19 @@ Regexp::get_prefix(const vespalib::stringref & re)
 }
 
 vespalib::string
-Regexp::make_from_prefix(const vespalib::stringref &prefix)
+Regexp::make_from_prefix(vespalib::stringref prefix)
 {
     return "^" + escape(prefix);
 }
 
 vespalib::string
-Regexp::make_from_suffix(const vespalib::stringref &suffix)
+Regexp::make_from_suffix(vespalib::stringref suffix)
 {
     return escape(suffix) + "$";
 }
 
 vespalib::string
-Regexp::make_from_substring(const vespalib::stringref &substring)
+Regexp::make_from_substring(vespalib::stringref substring)
 {
     return escape(substring);
 }

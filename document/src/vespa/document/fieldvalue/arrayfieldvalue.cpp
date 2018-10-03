@@ -180,7 +180,7 @@ ArrayFieldValue::hasChanged() const
 
 fieldvalue::ModificationStatus
 ArrayFieldValue::iterateSubset(int startPos, int endPos,
-                               const vespalib::stringref & variable,
+                               vespalib::stringref variable,
                                PathRange nested,
                                fieldvalue::IteratorHandler& handler) const
 {
@@ -243,6 +243,8 @@ ArrayFieldValue::onIterateNested(PathRange nested, IteratorHandler & handler) co
 
                 if (idx < (int)_array->size()) {
                     return iterateSubset(idx, idx, "", nested.next(), handler);
+                } else {
+                    return ModificationStatus::NOT_MODIFIED;
                 }
             } else {
                 return iterateSubset(0, static_cast<int>(_array->size()) - 1,

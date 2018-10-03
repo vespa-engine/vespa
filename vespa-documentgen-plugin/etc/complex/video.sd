@@ -37,7 +37,7 @@ search video {
 
    rank-profile default {
       first-phase {
-         expression: nativeRank
+         expression: file:non-existing.expression
       }
    }
    rank-profile rp1 inherits default {

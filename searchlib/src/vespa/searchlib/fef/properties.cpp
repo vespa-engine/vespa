@@ -84,7 +84,7 @@ Properties::~Properties()
 }
 
 Properties &
-Properties::add(const vespalib::stringref &key, const vespalib::stringref &value)
+Properties::add(vespalib::stringref key, vespalib::stringref value)
 {
     if (!key.empty()) {
         Value & v = _data[key];
@@ -95,7 +95,7 @@ Properties::add(const vespalib::stringref &key, const vespalib::stringref &value
 }
 
 uint32_t
-Properties::count(const vespalib::stringref &key) const
+Properties::count(vespalib::stringref key) const
 {
     if (!key.empty()) {
         Map::const_iterator node = _data.find(key);
@@ -107,7 +107,7 @@ Properties::count(const vespalib::stringref &key) const
 }
 
 Properties &
-Properties::remove(const vespalib::stringref &key)
+Properties::remove(vespalib::stringref key)
 {
     if (!key.empty()) {
         Map::iterator node = _data.find(key);
@@ -186,7 +186,7 @@ Properties::visitProperties(IPropertiesVisitor &visitor) const
 }
 
 void
-Properties::visitNamespace(const vespalib::stringref &ns,
+Properties::visitNamespace(vespalib::stringref ns,
                            IPropertiesVisitor &visitor) const
 {
     vespalib::string tmp;
@@ -205,7 +205,7 @@ Properties::visitNamespace(const vespalib::stringref &ns,
 }
 
 Property
-Properties::lookup(const vespalib::stringref &key) const
+Properties::lookup(vespalib::stringref key) const
 {
     if (key.empty()) {
         return Property();
@@ -217,8 +217,8 @@ Properties::lookup(const vespalib::stringref &key) const
     return Property(node->second);
 }
 
-Property Properties::lookup(const vespalib::stringref &namespace1,
-                            const vespalib::stringref &key) const
+Property Properties::lookup(vespalib::stringref namespace1,
+                            vespalib::stringref key) const
 {
     if (namespace1.empty() ||
         key.empty())
@@ -228,9 +228,9 @@ Property Properties::lookup(const vespalib::stringref &namespace1,
     return lookup(namespace1 + "." + key);
 }
 
-Property Properties::lookup(const vespalib::stringref &namespace1,
-                            const vespalib::stringref &namespace2,
-                            const vespalib::stringref &key) const
+Property Properties::lookup(vespalib::stringref namespace1,
+                            vespalib::stringref namespace2,
+                            vespalib::stringref key) const
 {
     if (namespace1.empty() ||
         namespace2.empty() ||
@@ -241,10 +241,10 @@ Property Properties::lookup(const vespalib::stringref &namespace1,
     return lookup(namespace1 + "." + namespace2 + "." + key);
 }
 
-Property Properties::lookup(const vespalib::stringref &namespace1,
-                            const vespalib::stringref &namespace2,
-                            const vespalib::stringref &namespace3,
-                            const vespalib::stringref &key) const
+Property Properties::lookup(vespalib::stringref namespace1,
+                            vespalib::stringref namespace2,
+                            vespalib::stringref namespace3,
+                            vespalib::stringref key) const
 {
     if (namespace1.empty() ||
         namespace2.empty() ||

@@ -11,7 +11,7 @@
 #include <mutex>
 
 namespace proton::matching {
-
+    
 /**
  * This class is responsible for creating attribute-based search
  * iterators that are used to limit the search space. Each search
@@ -34,7 +34,7 @@ public:
     search::queryeval::SearchIterator::UP create_search(size_t want_hits, size_t max_group_size, bool strictSearch);
     bool was_used() const { return ((!_match_datas.empty()) || (_blueprint.get() != nullptr)); }
     ssize_t getEstimatedHits() const { return _estimatedHits; }
-    static DiversityCutoffStrategy toDiversityCutoffStrategy(const vespalib::stringref & strategy);
+    static DiversityCutoffStrategy toDiversityCutoffStrategy(vespalib::stringref strategy);
 private:
     const vespalib::string & toString(DiversityCutoffStrategy strategy);
     search::queryeval::Searchable            & _searchable_attributes;

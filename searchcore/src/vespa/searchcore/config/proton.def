@@ -228,8 +228,8 @@ summary.cache.compression.type enum {NONE, LZ4, ZSTD} default=LZ4
 
 ## Control compression level of the summary while in cache.
 ## LZ4 has normal range 1..9 while ZSTD has range 1..19
-## 9 is a reasonable default for both
-summary.cache.compression.level int default=9
+## 6 is a default for lz4 to prioritize speed.
+summary.cache.compression.level int default=6
 
 ## Control if cache entry is updated or ivalidated when changed.
 summary.cache.update_strategy enum {INVALIDATE, UPDATE} default=INVALIDATE

@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.yahoo.vespa</groupId>
+    <artifactId>tenant-base</artifactId>
+    <version>6-SNAPSHOT</version>
+    <name>Hosted Vespa tenant base</name>
+    <description>Parent POM for all hosted Vespa applications.</description>
+    <url>https://github.com/vespa-engine</url>
+    <packaging>pom</packaging>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <name>Vespa</name>
+            <url>https://github.com/vespa-engine</url>
+        </developer>
+    </developers>
+    <scm>
+        <connection>scm:git:git@github.com:vespa-engine/vespa.git</connection>
+        <developerConnection>scm:git:git@github.com:vespa-engine/vespa.git</developerConnection>
+        <url>git@github.com:vespa-engine/vespa.git</url>
+    </scm>
+
+    <properties>
+        <vespaversion>${project.version}</vespaversion>
+        <target_jdk_version>1.8</target_jdk_version>
+        <compiler_plugin_version>3.8.0</compiler_plugin_version>
+        <surefire_version>2.22.0</surefire_version> <!-- NOTE bjorncs 15.06.2017: Version 2.20 has OoM issues -->
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+
+            <dependency>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>container-dependency-versions</artifactId>
+                <version>${vespaversion}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>tenant-cd</artifactId>
+            <version>${vespaversion}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container</artifactId>
+            <version>${vespaversion}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-test</artifactId>
+            <version>${vespaversion}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <!-- Build *-fat-test.jar file that includes all classes and resources
+                 that are part of the class path during test and put it inside a zip:
+                   1. application classes and resources
+                   2. test classes and resources
+                   3. classes and resources in all dependencies of both (1) and (2)
+                   4. copy the fat-test-jar to application-test/artifacts directory
+                   5. zip application-test -->
+            <id>fat-test-application</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <!-- dependencies, see (3) above -->
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.1.1</version>
+                        <executions>
+                            <execution>
+                                <!-- JAR-like dependencies -->
+                                <id>unpack-dependencies</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>unpack-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <includeTypes>jar,test-jar</includeTypes>
+                                    <outputDirectory>target/fat-test-classes</outputDirectory>
+                                    <!-- WARNING(2018-06-27): bcpkix-jdk15on-1.58.jar and
+                                         bcprov-jdk15on-1.58.jar are pulled in via
+                                         container-dev and both contains the same set of
+                                         bouncycastle signature files in META-INF:
+                                         BC1024KE.DSA, BC1024KE.SF, BC2048KE.DSA, and
+                                         BC2048KE.SF. By merging any of these two with any
+                                         other JAR file like we're doing here, the signatures
+                                         are wrong. Worse, what we're doing is WRONG but not
+                                         yet fatal.
+
+                                     The symptom of this happening is that the tester fails
+                                     to load the SystemTest class(!?), and subsequently
+                                     tries to run all test-like files in the fat test JAR.
+
+                                     The solution is to exclude such files. This happens
+                                     automatically with maven-assembly-plugin. -->
+                                    <excludes>META-INF/*.SF,META-INF/*.DSA</excludes>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <!-- non-JAR-like dependencies -->
+                                <id>non-jar-dependencies</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <excludeTypes>jar,test-jar</excludeTypes>
+                                    <outputDirectory>target/fat-test-classes</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>copy-resources</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>target/fat-test-classes</outputDirectory>
+                                    <resources>
+                                        <!-- application classes and resources, see 1. above -->
+                                        <resource>
+                                            <directory>target/classes</directory>
+                                        </resource>
+                                        <!-- test classes and resources, see 2. above -->
+                                        <resource>
+                                            <directory>target/test-classes</directory>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classesDirectory>target/fat-test-classes</classesDirectory>
+                                    <classifier>fat-test</classifier>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-artifact</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <!-- copy fat test-jar to application-test artifacts directory, see 4. above -->
+                                        <copy file="target/${project.artifactId}-fat-test.jar"
+                                              todir="target/application-test/artifacts/" />
+
+                                        <!-- zip application-test, see 5. above -->
+                                        <zip destfile="target/application-test.zip"
+                                             basedir="target/application-test/" />
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>system-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${surefire_version}</version>
+                        <configuration>
+                            <groups>com.yahoo.vespa.tenant.cd.SystemTest</groups>
+                            <excludedGroups />
+                            <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                            <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-report-plugin</artifactId>
+                        <version>${surefire_version}</version>
+                        <configuration>
+                            <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>staging-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${surefire_version}</version>
+                        <configuration>
+                            <groups>com.yahoo.vespa.tenant.cd.StagingTest</groups>
+                            <excludedGroups />
+                            <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                            <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-report-plugin</artifactId>
+                        <version>${surefire_version}</version>
+                        <configuration>
+                            <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>production-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${surefire_version}</version>
+                        <configuration>
+                            <groups>com.yahoo.vespa.tenant.cd.ProductionTest</groups>
+                            <excludedGroups />
+                            <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                            <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-report-plugin</artifactId>
+                        <version>${surefire_version}</version>
+                        <configuration>
+                            <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.0.0-M2</version>
+                <executions>
+                    <execution>
+                        <id>enforce-java</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[1.8, 9)</version>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>[3.5, )</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${compiler_plugin_version}</version>
+                <configuration>
+                    <source>${target_jdk_version}</source>
+                    <target>${target_jdk_version}</target>
+                    <showWarnings>true</showWarnings>
+                    <showDeprecation>true</showDeprecation>
+                    <compilerArgs>
+                        <arg>-Xlint:all</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>vespa-application-maven-plugin</artifactId>
+                <version>${vespaversion}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>packageApplication</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>bundle-plugin</artifactId>
+                <version>${vespaversion}</version>
+                <extensions>true</extensions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire_version}</version>
+                <configuration>
+                    <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                    <excludedGroups>
+                        com.yahoo.vespa.tenant.cd.SystemTest,
+                        com.yahoo.vespa.tenant.cd.StagingTest,
+                        com.yahoo.vespa.tenant.cd.ProductionTest
+                    </excludedGroups>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>${surefire_version}</version>
+                <configuration>
+                    <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

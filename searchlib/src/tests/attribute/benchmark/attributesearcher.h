@@ -15,7 +15,7 @@ namespace search {
 std::unique_ptr<ResultSet>
 performSearch(queryeval::SearchIterator & sb, uint32_t numDocs)
 {
-    queryeval::HitCollector hc(numDocs, numDocs, 0);
+    queryeval::HitCollector hc(numDocs, numDocs);
     // assume strict toplevel search object located at start
     for (sb.seek(1); ! sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
         hc.addHit(sb.getDocId(), 0.0);

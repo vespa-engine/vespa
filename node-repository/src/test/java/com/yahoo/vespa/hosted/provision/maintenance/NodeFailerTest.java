@@ -8,14 +8,13 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
-import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,64 @@ import static org.mockito.Mockito.when;
 public class NodeFailerTest {
 
     @Test
-    public void nodes_for_suspended_applications_are_not_failed() throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException {
+    public void fail_nodes_with_hardware_failure_if_allowed_to_be_down() {
+        NodeFailTester tester = NodeFailTester.withTwoApplicationsOnDocker(6);
+        String hostWithHwFailure = selectFirstParentHostWithNActiveNodesExcept(tester.nodeRepository, 2);
+
+        // Set hardware failure to the parent and all its children
+        tester.nodeRepository.getNodes().stream()
+                .filter(node -> node.parentHostname().map(parent -> parent.equals(hostWithHwFailure))
+                        .orElse(node.hostname().equals(hostWithHwFailure)))
+                .forEach(node -> {
+            Node updatedNode = node.with(node.status().withHardwareFailureDescription(Optional.of("HW failure")));
+            tester.nodeRepository.write(updatedNode);
+        });
+
+        // The host should have 2 nodes in active and 1 ready
+        Map<Node.State, List<String>> hostnamesByState = tester.nodeRepository.getChildNodes(hostWithHwFailure).stream()
+                .collect(Collectors.groupingBy(Node::state, Collectors.mapping(Node::hostname, Collectors.toList())));
+        assertEquals(2, hostnamesByState.get(Node.State.active).size());
+        assertEquals(1, hostnamesByState.get(Node.State.ready).size());
+
+        // Suspend the first of the active nodes
+        tester.suspend(hostnamesByState.get(Node.State.active).get(0));
+
+        tester.failer.run();
+        tester.clock.advance(Duration.ofHours(25));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.failer.run();
+
+        // The first (and the only) ready node and the 1st active node that was allowed to fail should be failed
+        Map<Node.State, List<String>> expectedHostnamesByState1Iter = new HashMap<>();
+        expectedHostnamesByState1Iter.put(Node.State.failed,
+                Arrays.asList(hostnamesByState.get(Node.State.active).get(0), hostnamesByState.get(Node.State.ready).get(0)));
+        expectedHostnamesByState1Iter.put(Node.State.active, hostnamesByState.get(Node.State.active).subList(1, 2));
+        Map<Node.State, List<String>> hostnamesByState1Iter = tester.nodeRepository.getChildNodes(hostWithHwFailure).stream()
+                .collect(Collectors.groupingBy(Node::state, Collectors.mapping(Node::hostname, Collectors.toList())));
+        assertEquals(expectedHostnamesByState1Iter, hostnamesByState1Iter);
+
+        // Suspend the second of the active nodes
+        tester.suspend(hostnamesByState.get(Node.State.active).get(1));
+
+        tester.clock.advance(Duration.ofHours(25));
+        tester.allNodesMakeAConfigRequestExcept();
+        tester.failer.run();
+
+        // All of the children should be failed now
+        Set<Node.State> childStates2Iter = tester.nodeRepository.getChildNodes(hostWithHwFailure).stream()
+                .map(Node::state).collect(Collectors.toSet());
+        assertEquals(Collections.singleton(Node.State.failed), childStates2Iter);
+        // The host itself is still active as it too must be allowed to suspend
+        assertEquals(Node.State.active, tester.nodeRepository.getNode(hostWithHwFailure).get().state());
+
+        tester.suspend(hostWithHwFailure);
+        tester.failer.run();
+        assertEquals(Node.State.failed, tester.nodeRepository.getNode(hostWithHwFailure).get().state());
+        assertEquals(4, tester.nodeRepository.getNodes(Node.State.failed).size());
+    }
+
+    @Test
+    public void nodes_for_suspended_applications_are_not_failed() {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
         tester.suspend(NodeFailTester.app1);
 
@@ -57,7 +113,7 @@ public class NodeFailerTest {
     }
 
     @Test
-    public void node_failing() throws InterruptedException {
+    public void node_failing() {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
 
         // For a day all nodes work so nothing happens
@@ -196,7 +252,9 @@ public class NodeFailerTest {
 
     @Test
     public void docker_host_failed_without_config_requests() {
-        NodeFailTester tester = NodeFailTester.withTwoApplications();
+        NodeFailTester tester = NodeFailTester.withTwoApplications(
+                new ConfigserverConfig(new ConfigserverConfig.Builder().nodeAdminInContainer(true))
+        );
 
         // For a day all nodes work so nothing happens
         for (int minutes = 0, interval = 30; minutes < 24 * 60; minutes += interval) {

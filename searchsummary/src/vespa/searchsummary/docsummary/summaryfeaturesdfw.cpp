@@ -79,7 +79,7 @@ SummaryFeaturesDFW::insertField(uint32_t docid, GeneralResult *, GetDocsumsState
     }
 }
 
-void FeaturesDFW::featureDump(vespalib::JSONStringer & json, const vespalib::stringref & name, double feature)
+void FeaturesDFW::featureDump(vespalib::JSONStringer & json, vespalib::stringref name, double feature)
 {
     json.appendKey(name);
     if (std::isnan(feature) || std::isinf(feature)) {

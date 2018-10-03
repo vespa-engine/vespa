@@ -15,7 +15,6 @@ import com.yahoo.jrt.Values;
 import com.yahoo.prelude.fastsearch.FastHit;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A client which uses rpc request to search nodes to implement the Client API.
@@ -33,7 +32,7 @@ class RpcClient implements Client {
 
     @Override
     public void getDocsums(List<FastHit> hits, NodeConnection node, CompressionType compression, int uncompressedLength,
-                           byte[] compressedSlime, Dispatcher.GetDocsumsResponseReceiver responseReceiver, double timeoutSeconds) {
+                           byte[] compressedSlime, RpcFillInvoker.GetDocsumsResponseReceiver responseReceiver, double timeoutSeconds) {
         Request request = new Request("proton.getDocsums");
         request.parameters().add(new Int8Value(compression.getCode()));
         request.parameters().add(new Int32Value(uncompressedLength));
@@ -90,9 +89,9 @@ class RpcClient implements Client {
         private final RpcNodeConnection node;
 
         /** The handler to which the response is forwarded */
-        private final Dispatcher.GetDocsumsResponseReceiver handler;
+        private final RpcFillInvoker.GetDocsumsResponseReceiver handler;
 
-        public RpcResponseWaiter(RpcNodeConnection node, Dispatcher.GetDocsumsResponseReceiver handler) {
+        public RpcResponseWaiter(RpcNodeConnection node, RpcFillInvoker.GetDocsumsResponseReceiver handler) {
             this.node = node;
             this.handler = handler;
         }

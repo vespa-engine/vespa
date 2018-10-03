@@ -116,4 +116,5 @@ public class FeatureSet extends PredicateValue {
         }
         out.append("]");
     }
+
 }

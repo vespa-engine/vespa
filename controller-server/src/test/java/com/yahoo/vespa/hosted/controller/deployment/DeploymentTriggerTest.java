@@ -46,6 +46,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static java.time.temporal.ChronoUnit.MILLIS;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -340,7 +341,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(app, changedApplication, true, stagingTest);
 
         readyJobsTrigger.run();
-        assertEquals(0, tester.buildService().jobs().size());
+        assertEquals(emptyList(), tester.buildService().jobs());
 
         tester.clock().advance(Duration.ofHours(2)); // ---------------- Exit block window: 20:30
         tester.deploymentTrigger().triggerReadyJobs(); // Schedules staging test for the blocked production job(s)
@@ -375,32 +376,22 @@ public class DeploymentTriggerTest {
         // This component completion should remove the older outstanding change, to avoid a later downgrade.
         clock.advance(Duration.ofHours(1));
         tester.deployAndNotify(application, applicationPackage, true, productionUsWest1);
-        assertEquals((Long) BuildJob.defaultBuildNumber, tester.application(application.id()).deploymentJobs().jobStatus()
-                                                               .get(productionUsWest1).lastSuccess().get().application().buildNumber().get());
-        assertEquals((Long) (BuildJob.defaultBuildNumber + 1), tester.application(application.id()).outstandingChange().application().get().buildNumber().get());
+        assertEquals(BuildJob.defaultBuildNumber, tester.application(application.id()).deploymentJobs().jobStatus()
+                                                               .get(productionUsWest1).lastSuccess().get().application().buildNumber().getAsLong());
+        assertEquals((BuildJob.defaultBuildNumber + 1), tester.application(application.id()).outstandingChange().application().get().buildNumber().getAsLong());
 
         tester.readyJobTrigger().maintain();
-        assertTrue(tester.buildService().jobs().isEmpty());
+        // Platform upgrade keeps rolling, since it has already deployed in a production zone.
+        assertEquals(1, tester.buildService().jobs().size());
+        tester.deployAndNotify(application, applicationPackage, true, productionUsEast3);
+        assertEquals(emptyList(), tester.buildService().jobs());
 
-        // New component triggers a full deployment of new application version, leaving platform versions alone.
+
+        // New component triggers a full deployment of new application version, but only after the upgrade is done.
         tester.jobCompletion(component).application(application).nextBuildNumber().nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(application, applicationPackage, true, stagingTest);
         tester.deployAndNotify(application, applicationPackage, true, systemTest);
         tester.deployAndNotify(application, applicationPackage, true, productionUsWest1);
-        tester.deployAndNotify(application, applicationPackage, true, systemTest);
-        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
-        tester.deployAndNotify(application, applicationPackage, true, productionUsEast3);
-        tester.deployAndNotify(application, applicationPackage, true, systemTest);
-        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
-
-        // All tests are done for now, and only the platform change remains.
-        assertTrue(tester.buildService().jobs().isEmpty());
-        assertEquals(Change.of(v2), tester.application(application.id()).change());
-
-        // Exiting block window, staging test is re-run for the last prod zone, which has the old platform.
-        clock.advance(Duration.ofHours(1));
-        tester.readyJobTrigger().maintain();
-        tester.deployAndNotify(application, applicationPackage, true, stagingTest);
         tester.deployAndNotify(application, applicationPackage, true, productionUsEast3);
 
         assertFalse(tester.application(application.id()).change().isPresent());
@@ -488,7 +479,7 @@ public class DeploymentTriggerTest {
         tester.completeUpgradeWithError(application, v2, applicationPackage, productionUsCentral1);
         tester.deploy(productionUsCentral1, application, applicationPackage);
         tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
-        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
+        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main)).version());
         tester.deploymentTrigger().cancelChange(application.id(), false);
         tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
         Instant triggered = app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at();
@@ -512,15 +503,15 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, applicationPackage, true, stagingTest);
 
         tester.assertRunning(productionUsCentral1, application.id());
-        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
-        assertEquals(Long.valueOf(42L), app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
+        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main)).version());
+        assertEquals(42, app.get().deployments().get(productionUsCentral1.zone(main)).applicationVersion().buildNumber().getAsLong());
         assertNotEquals(triggered, app.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
 
         // Change has a higher application version than what is deployed -- deployment should trigger.
         tester.deployAndNotify(application, applicationPackage, false, productionUsCentral1);
         tester.deploy(productionUsCentral1, application, applicationPackage);
-        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main).get()).version());
-        assertEquals(Long.valueOf(43), app.get().deployments().get(productionUsCentral1.zone(main).get()).applicationVersion().buildNumber().get());
+        assertEquals(v2, app.get().deployments().get(productionUsCentral1.zone(main)).version());
+        assertEquals(43, app.get().deployments().get(productionUsCentral1.zone(main)).applicationVersion().buildNumber().getAsLong());
 
         // Change is again strictly dominated, and us-central-1 is skipped, even though it is still failing.
         tester.clock().advance(Duration.ofHours(2).plus(Duration.ofSeconds(1))); // Enough time for retry
@@ -556,8 +547,8 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, true, stagingTest);
         tester.deploymentTrigger().cancelChange(application.id(), true);
         tester.deploy(productionEuWest1, application, applicationPackage);
-        assertEquals(v2, app.get().deployments().get(productionEuWest1.zone(main).get()).version());
-        assertEquals(v1, app.get().deployments().get(productionUsEast3.zone(main).get()).version());
+        assertEquals(v2, app.get().deployments().get(productionEuWest1.zone(main)).version());
+        assertEquals(v1, app.get().deployments().get(productionUsEast3.zone(main)).version());
 
         // New application version should run system and staging tests against both 6.1 and 6.2, in no particular order.
         tester.jobCompletion(component).application(application).nextBuildNumber().uploadArtifact(applicationPackage).submit();
@@ -588,8 +579,8 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(application, true, productionUsEast3);
         tester.deployAndNotify(application, true, productionEuWest1);
         assertFalse(app.get().change().isPresent());
-        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionEuWest1).lastSuccess().get().application().buildNumber().get().longValue());
-        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsEast3).lastSuccess().get().application().buildNumber().get().longValue());
+        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionEuWest1).lastSuccess().get().application().buildNumber().getAsLong());
+        assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsEast3).lastSuccess().get().application().buildNumber().getAsLong());
     }
 
     @Test

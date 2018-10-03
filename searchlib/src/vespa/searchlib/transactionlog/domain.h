@@ -51,7 +51,7 @@ public:
     bool erase(SerialNum to);
 
     void commit(const Packet & packet);
-    int visit(const Domain::SP & self, SerialNum from, SerialNum to, FRT_Supervisor & supervisor, FNET_Connection *conn);
+    int visit(const Domain::SP & self, SerialNum from, SerialNum to, std::unique_ptr<Session::Destination> dest);
 
     SerialNum begin() const;
     SerialNum end() const;

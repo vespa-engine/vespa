@@ -97,7 +97,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.7.0</version>
+                    <version>3.8.0</version>
                     <configuration>
                         <source>1.8</source>
                         <target>1.8</target>
@@ -110,6 +110,7 @@
 	                    <arg>-Xlint:-try</arg>
 	                    <arg>-Xlint:-processing</arg>
 	                    <arg>-Xlint:-varargs</arg>
+                        <arg>-Xlint:-options</arg>
 	                    <arg>-Werror</arg>
 	                </compilerArgs>
                     </configuration>
@@ -150,6 +151,8 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <configuration>
                         <doclint>${doclint},-missing</doclint>
+                        <quiet>true</quiet>
+                        <show>protected</show>
                     </configuration>
                     <version>3.0.1</version>
                 </plugin>
@@ -270,6 +273,7 @@
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-javadoc-plugin</artifactId>
                             <configuration>
+                                <quiet>true</quiet>
                                 <!-- Avoid javadoc warning ".. not specified the version of HTML .." -->
                                 <additionalJOption>-html4</additionalJOption>
                             </configuration>
@@ -327,7 +331,8 @@
                             <doclint>${doclint},-missing</doclint>
                             <failOnError>${javadoc.failOnError}</failOnError>
                             <quiet>true</quiet>
-                            <show>private</show>
+                            <show>protected</show>
+                            <header>&lt;a href="https://docs.vespa.ai"&gt;&lt;img src="https://docs.vespa.ai/img/vespa-logo.png" width="100" height="28" style="padding-top:7px"/&gt;&lt;/a&gt;</header>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -456,14 +461,14 @@
                 <artifactId>commons-pool</artifactId>
                 <version>1.5.6</version>
             </dependency>
-            <!-- Explicitly included to get Zookeeper version 3.4.12,
+            <!-- Explicitly included to get Zookeeper version 3.4.13,
                  can be excluded if you want the Zookeeper version
                  used by curator by default
             -->
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
-                <version>3.4.12</version>
+                <version>3.4.13</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
@@ -668,6 +673,11 @@
                 <artifactId>language-detector</artifactId>
                 <version>0.6</version>
             </dependency>
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>${jna.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -675,6 +685,7 @@
         <antlr.version>3.5.2</antlr.version>
         <antlr4.version>4.5</antlr4.version>
         <asm.version>6.2</asm.version>
+        <jna.version>4.5.2</jna.version>
         <!-- Athenz dependencies. Make sure these dependencies matches those in Vespa's internal repositories -->
         <athenz.version>1.7.43</athenz.version>
         <commons-lang.version>2.6</commons-lang.version>

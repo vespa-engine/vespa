@@ -25,7 +25,7 @@ private:
     vespalib::string _name;
 
 public:
-    Operator(const vespalib::stringref & name);
+    Operator(vespalib::stringref name);
     virtual ~Operator() {}
 
     virtual ResultList compare(const Value&, const Value&) const = 0;
@@ -33,7 +33,7 @@ public:
                          std::ostream& trace) const = 0;
     const vespalib::string& getName() const { return _name; }
 
-    static const Operator& get(const vespalib::stringref & name);
+    static const Operator& get(vespalib::stringref name);
 
     bool operator==(const Operator& op) const
         { return (_name == op._name); }
@@ -48,7 +48,7 @@ private:
     ResultList (Value::*_comparator)(const Value&) const;
 
 public:
-    FunctionOperator(const vespalib::stringref & name,
+    FunctionOperator(vespalib::stringref name,
                 ResultList (Value::*comparator)(const Value&) const)
         : Operator(name), _comparator(comparator) {}
 
@@ -65,12 +65,12 @@ public:
 
 class RegexOperator : public Operator {
 public:
-    RegexOperator(const vespalib::stringref & name);
+    RegexOperator(vespalib::stringref name);
 
     // Delegates to Value::regexCompare
     ResultList compare(const Value& a, const Value& b) const override;
     ResultList trace(const Value&, const Value&, std::ostream& trace) const override;
-    ResultList match(const vespalib::string & val, const vespalib::stringref & expr) const;
+    ResultList match(const vespalib::string & val, vespalib::stringref expr) const;
 
     static const RegexOperator REGEX;
 
@@ -84,13 +84,13 @@ private:
 
 class GlobOperator : public RegexOperator {
 public:
-    GlobOperator(const vespalib::stringref & name);
+    GlobOperator(vespalib::stringref name);
 
     // Delegates to Value::globCompare
     ResultList compare(const Value& a, const Value& b) const override;
     ResultList trace(const Value&, const Value&, std::ostream& trace) const override;
-    vespalib::string convertToRegex(const vespalib::stringref & globpattern) const;
-    static bool containsVariables(const vespalib::stringref & expression);
+    vespalib::string convertToRegex(vespalib::stringref globpattern) const;
+    static bool containsVariables(vespalib::stringref expression);
 
     static const GlobOperator GLOB;
 private:

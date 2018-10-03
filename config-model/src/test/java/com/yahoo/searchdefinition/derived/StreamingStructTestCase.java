@@ -22,18 +22,7 @@ public class StreamingStructTestCase extends AbstractExportingTestCase {
 
     @Test
     public void testStreamingStructExplicitDefaultSummaryClass() throws IOException, ParseException {
-        // Tests an issue for mail in Vespa 4.1; specific overrides of default summary class
         assertCorrectDeriving("streamingstructdefault");
-    }
-
-    @Test
-    public void testStreamingStructDocumentsonlyDeriving() throws IOException {
-        String root = "src/test/derived/streamingstruct/";
-        String temp = "temp/documentderiver/";
-        new File(temp).mkdir();
-        Deriver.deriveDocuments(Arrays.asList(root + "streamingstruct.sd"), temp);
-        assertEqualFiles(root + "/onlydoc/documentmanager.cfg",
-                         temp + "/documentmanager.cfg");
     }
 
 }

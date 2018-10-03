@@ -32,7 +32,7 @@ createSpec(FRT_Supervisor &orb)
 
 
 void
-discard(std::vector<vespalib::string> &vec, const vespalib::stringref & val)
+discard(std::vector<vespalib::string> &vec, vespalib::stringref val)
 {
     uint32_t i = 0;
     uint32_t size = vec.size();
@@ -94,7 +94,7 @@ RegisterAPI::~RegisterAPI()
 
 
 void
-RegisterAPI::registerName(const vespalib::stringref & name)
+RegisterAPI::registerName(vespalib::stringref name)
 {
     std::lock_guard<std::mutex> guard(_lock);
     for (uint32_t i = 0; i < _names.size(); ++i) {
@@ -111,7 +111,7 @@ RegisterAPI::registerName(const vespalib::stringref & name)
 
 
 void
-RegisterAPI::unregisterName(const vespalib::stringref & name)
+RegisterAPI::unregisterName(vespalib::stringref name)
 {
     std::lock_guard<std::mutex> guard(_lock);
     _busy = true;
@@ -277,12 +277,12 @@ RegisterAPI::RPCHooks::RPCHooks(RegisterAPI &owner)
 {
     FRT_ReflectionBuilder rb(&_owner._orb);
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.callback.listNamesServed", "", "S", true,
+    rb.DefineMethod("slobrok.callback.listNamesServed", "", "S",
                     FRT_METHOD(RPCHooks::rpc_listNamesServed), this);
     rb.MethodDesc("List rpcserver names");
     rb.ReturnDesc("names", "The rpcserver names this server wants to serve");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.callback.notifyUnregistered", "s", "", true,
+    rb.DefineMethod("slobrok.callback.notifyUnregistered", "s", "",
                     FRT_METHOD(RPCHooks::rpc_notifyUnregistered), this);
     rb.MethodDesc("Notify a server about removed registration");
     rb.ParamDesc("name", "RpcServer name");

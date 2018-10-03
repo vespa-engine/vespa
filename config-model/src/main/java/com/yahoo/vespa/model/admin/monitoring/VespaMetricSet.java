@@ -68,6 +68,12 @@ public class VespaMetricSet {
         metrics.add(new Metric("configserver.delayedResponses.count", "configserver.delayedResponses"));
         metrics.add(new Metric("configserver.sessionChangeErrors.count", "configserver.sessionChangeErrors"));
 
+        metrics.add(new Metric("configserver.zkZNodes.last", "configserver.zkZNodes"));
+        metrics.add(new Metric("configserver.zkAvgLatency.last", "configserver.zkAvgLatency"));
+        metrics.add(new Metric("configserver.zkMaxLatency.last", "configserver.zkMaxLatency"));
+        metrics.add(new Metric("configserver.zkConnections.last", "configserver.zkConnections"));
+        metrics.add(new Metric("configserver.zkOutstandingRequests.last", "configserver.zkOutstandingRequests"));
+
         return metrics;
     }
 
@@ -129,6 +135,8 @@ public class VespaMetricSet {
         metrics.add(new Metric("http.status.3xx.rate"));
         metrics.add(new Metric("http.status.4xx.rate"));
         metrics.add(new Metric("http.status.5xx.rate"));
+        metrics.add(new Metric("http.status.401.rate"));
+        metrics.add(new Metric("http.status.403.rate"));
 
         metrics.add(new Metric("jdisc.http.request.uri_length.average"));
         metrics.add(new Metric("jdisc.http.request.uri_length.max"));
@@ -291,6 +299,16 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.removed.document_store.memory_usage.dead_bytes.average"));
         metrics.add(new Metric("content.proton.documentdb.removed.document_store.memory_usage.onhold_bytes.average"));
 
+        // document store cache
+        metrics.add(new Metric("content.proton.documentdb.ready.document_store.cache.memory_usage.average"));
+        metrics.add(new Metric("content.proton.documentdb.ready.document_store.cache.hit_rate.average"));
+        metrics.add(new Metric("content.proton.documentdb.ready.document_store.cache.lookups.rate"));
+        metrics.add(new Metric("content.proton.documentdb.ready.document_store.cache.invalidations.rate"));
+        metrics.add(new Metric("content.proton.documentdb.notready.document_store.cache.memory_usage.average"));
+        metrics.add(new Metric("content.proton.documentdb.notready.document_store.cache.hit_rate.average"));
+        metrics.add(new Metric("content.proton.documentdb.notready.document_store.cache.lookups.rate"));
+        metrics.add(new Metric("content.proton.documentdb.notready.document_store.cache.invalidations.rate"));
+
         // attribute
         metrics.add(new Metric("content.proton.documentdb.ready.attribute.memory_usage.allocated_bytes.average"));
         metrics.add(new Metric("content.proton.documentdb.ready.attribute.memory_usage.used_bytes.average"));
@@ -331,6 +349,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.get.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.update.sum.count.rate"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.createiterator.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.visit.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.queuesize.average","diskqueuesize"));
         metrics.add(new Metric("vds.filestor.alldisks.averagequeuewait.sum.average","diskqueuewait"));
@@ -338,11 +357,14 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.visitor.allthreads.queuesize.count.average"));
         metrics.add(new Metric("vds.visitor.allthreads.completed.sum.average"));
         metrics.add(new Metric("vds.visitor.allthreads.created.sum.rate","visit"));
+        metrics.add(new Metric("vds.visitor.allthreads.averagemessagesendtime.sum.average"));
+        metrics.add(new Metric("vds.visitor.allthreads.averageprocessingtime.sum.average"));
 
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.put.sum.latency.average"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove.sum.latency.average"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.get.sum.latency.average"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.update.sum.latency.average"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.createiterator.sum.latency.average"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.visit.sum.latency.average"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.splitbuckets.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.joinbuckets.count.rate"));

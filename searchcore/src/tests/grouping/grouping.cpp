@@ -10,6 +10,7 @@
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/searchcore/grouping/groupingsession.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
+#include <vespa/searchlib/test/mock_attribute_context.h>
 #include <iostream>
 
 #include <vespa/log/log.h>
@@ -20,7 +21,7 @@ using namespace search::aggregation;
 using namespace search::expression;
 using namespace search::grouping;
 using namespace search;
-
+using search::attribute::test::MockAttributeContext;
 using proton::matching::SessionManager;
 
 
@@ -30,55 +31,8 @@ const uint32_t NUM_DOCS = 1000;
 
 //-----------------------------------------------------------------------------
 
-class MyAttributeContext : public IAttributeContext
-{
-private:
-    typedef std::map<string, IAttributeVector *> Map;
-    Map _vectors;
-
-public:
-    const IAttributeVector *get(const string &name) const {
-        if (_vectors.find(name) == _vectors.end()) {
-            return 0;
-        }
-        return _vectors.find(name)->second;
-    }
-    virtual const IAttributeVector *
-    getAttribute(const string &name) const override {
-        return get(name);
-    }
-    virtual const IAttributeVector *
-    getAttributeStableEnum(const string &name) const override {
-        return get(name);
-    }
-    virtual void
-    getAttributeList(std::vector<const IAttributeVector *> & list) const override {
-        Map::const_iterator pos = _vectors.begin();
-        Map::const_iterator end = _vectors.end();
-        for (; pos != end; ++pos) {
-            list.push_back(pos->second);
-        }
-    }
-    ~MyAttributeContext() {
-        Map::iterator pos = _vectors.begin();
-        Map::iterator end = _vectors.end();
-        for (; pos != end; ++pos) {
-            delete pos->second;
-        }
-    }
-
-    //-------------------------------------------------------------------------
-
-    void add(IAttributeVector *attr) {
-        _vectors[attr->getName()] = attr;
-    }
-};
-
-
-//-----------------------------------------------------------------------------
-
 struct MyWorld {
-    MyAttributeContext attributeContext;
+    MockAttributeContext attributeContext;
 
     void basicSetup() {
         // attribute context

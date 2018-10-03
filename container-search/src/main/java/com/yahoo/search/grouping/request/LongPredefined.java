@@ -2,12 +2,14 @@
 package com.yahoo.search.grouping.request;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class represents a predefined bucket-function in a {@link GroupingExpression} for expressions that evaluate to a
  * long.
  *
  * @author Simon Thoresen Hult
+ * @author bratseth
  */
 public class LongPredefined extends PredefinedFunction {
 
@@ -19,11 +21,23 @@ public class LongPredefined extends PredefinedFunction {
      * @param argN The optional buckets.
      */
     public LongPredefined(GroupingExpression exp, LongBucket arg1, LongBucket... argN) {
-        this(exp, asList(arg1, argN));
+        this(null, null, exp, asList(arg1, argN));
     }
 
-    private LongPredefined(GroupingExpression exp, List<LongBucket> args) {
-        super(exp, args);
+    private LongPredefined(String label, Integer level, GroupingExpression exp, List<LongBucket> args) {
+        super(label, level, exp, args);
+    }
+
+    @Override
+    public LongPredefined copy() {
+        return new LongPredefined(getLabel(),
+                                  getLevelOrNull(),
+                                  getArg(0),
+                                  args().stream()
+                                        .skip(1)
+                                        .map(LongBucket.class::cast)
+                                        .map(arg -> arg.copy())
+                                        .collect(Collectors.toList()));
     }
 
     @Override
@@ -43,6 +57,6 @@ public class LongPredefined extends PredefinedFunction {
         if (args.isEmpty()) {
             throw new IllegalArgumentException("Expected at least one bucket, got none.");
         }
-        return new LongPredefined(exp, args);
+        return new LongPredefined(null, null, exp, args);
     }
 }

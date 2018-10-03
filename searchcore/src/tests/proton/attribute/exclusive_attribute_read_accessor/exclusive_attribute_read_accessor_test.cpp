@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/attribute/exclusive_attribute_read_accessor.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/common/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/gate.h>
 

@@ -20,8 +20,7 @@ public class NodeHostFilter extends NodeFilter {
     /** Creates a node filter which filters using the given host filter */
     private NodeHostFilter(HostFilter filter, NodeFilter next) {
         super(next);
-        Objects.requireNonNull(filter, "filter cannot be null, use HostFilter.all()");
-        this.filter = filter;
+        this.filter = Objects.requireNonNull(filter, "filter cannot be null, use HostFilter.all()");
     }
 
     @Override

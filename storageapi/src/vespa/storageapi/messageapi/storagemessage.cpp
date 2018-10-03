@@ -105,10 +105,6 @@ const MessageType MessageType::REMOVELOCATION("Removelocation", REMOVELOCATION_I
 const MessageType MessageType::REMOVELOCATION_REPLY("Removelocation Reply", REMOVELOCATION_REPLY_ID, &MessageType::REMOVELOCATION);
 const MessageType MessageType::QUERYRESULT("QueryResult", QUERYRESULT_ID);
 const MessageType MessageType::QUERYRESULT_REPLY("QueryResult reply", QUERYRESULT_REPLY_ID, &MessageType::QUERYRESULT);
-const MessageType MessageType::BATCHPUTREMOVE("BatchPutRemove", BATCHPUTREMOVE_ID);
-const MessageType MessageType::BATCHPUTREMOVE_REPLY("BatchPutRemove reply", BATCHPUTREMOVE_REPLY_ID, &MessageType::BATCHPUTREMOVE);
-const MessageType MessageType::BATCHDOCUMENTUPDATE("BatchDocumentUpdate", BATCHDOCUMENTUPDATE_ID);
-const MessageType MessageType::BATCHDOCUMENTUPDATE_REPLY("BatchDocumentUpdate reply", BATCHDOCUMENTUPDATE_REPLY_ID, &MessageType::BATCHDOCUMENTUPDATE);
 const MessageType MessageType::SETBUCKETSTATE("SetBucketState", SETBUCKETSTATE_ID);
 const MessageType MessageType::SETBUCKETSTATE_REPLY("SetBucketStateReply", SETBUCKETSTATE_REPLY_ID, &MessageType::SETBUCKETSTATE);
 
@@ -123,7 +119,7 @@ MessageType::MessageType::get(Id id)
     }
     return *it->second;
 }
-MessageType::MessageType(const vespalib::stringref & name, Id id,
+MessageType::MessageType(vespalib::stringref name, Id id,
             const MessageType* replyOf)
         : _name(name), _id(id), _reply(NULL), _replyOf(replyOf)
 {
@@ -163,14 +159,14 @@ std::ostream & operator << (std::ostream & os, const StorageMessageAddress & add
 }
 
 static vespalib::string
-createAddress(const vespalib::stringref & cluster, const lib::NodeType& type, uint16_t index)
+createAddress(vespalib::stringref cluster, const lib::NodeType& type, uint16_t index)
 {
     vespalib::asciistream os;
     os << STORAGEADDRESS_PREFIX << cluster << '/' << type.toString() << '/' << index << "/default";
     return os.str();
 }
 
-StorageMessageAddress::StorageMessageAddress(const vespalib::stringref & cluster, const lib::NodeType& type,
+StorageMessageAddress::StorageMessageAddress(vespalib::stringref cluster, const lib::NodeType& type,
                                              uint16_t index, Protocol protocol)
     : _route(),
       _retryEnabled(false),

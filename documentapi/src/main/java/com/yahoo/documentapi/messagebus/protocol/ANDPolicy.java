@@ -20,7 +20,7 @@ import java.util.List;
 public class ANDPolicy implements DocumentProtocolRoutingPolicy {
 
     // A list of hops that are to always be selected when select() is invoked.
-    private final List<Hop> hops = new ArrayList<Hop>();
+    private final List<Hop> hops = new ArrayList<>();
 
     /**
      * Constructs a new AND policy that requires all recipients to be ok for it to merge their replies to an ok reply.

@@ -97,7 +97,7 @@ ReaderBase::ReaderBase(AttributeVector &attr)
 }
 
 
-ReaderBase::~ReaderBase() { }
+ReaderBase::~ReaderBase() = default;
 
 bool
 ReaderBase::hasWeight() const {

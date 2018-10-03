@@ -5,24 +5,24 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.OutOfCapacityException;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
+import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
+import com.yahoo.vespa.config.server.provision.ProvisionerAdapter;
 import com.yahoo.vespa.config.server.provision.StaticProvisioner;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -51,11 +51,15 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
 
     private final Zone zone;
 
-    protected ModelsBuilder(ModelFactoryRegistry modelFactoryRegistry, ConfigserverConfig configserverConfig, Zone zone) {
+    private final HostProvisionerProvider hostProvisionerProvider;
+
+    ModelsBuilder(ModelFactoryRegistry modelFactoryRegistry, ConfigserverConfig configserverConfig,
+                  Zone zone, HostProvisionerProvider hostProvisionerProvider) {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configserverConfig = configserverConfig;
         this.hosted = configserverConfig.hostedVespa();
         this.zone = zone;
+        this.hostProvisionerProvider = hostProvisionerProvider;
     }
 
     /** Returns the zone this is running in */
@@ -166,17 +170,14 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     }
 
     private Set<Version> versionsToBuild(Set<Version> versions, com.yahoo.component.Version wantedVersion, AllocatedHosts allocatedHosts) {
-        // TODO: Enable for all zones
-        if (configserverConfig.buildMinimalSetOfConfigModels() &&
-                (SystemName.from(configserverConfig.system()) == SystemName.cd ||
-                        Arrays.asList(Environment.dev, Environment.test, Environment.staging).contains(zone().environment()) ||
-                        Arrays.asList("corp-us-east-1", "ap-southeast-1", "us-central-1").contains(zone().region().value())))
+        if (configserverConfig.buildMinimalSetOfConfigModels())
             versions = keepThoseUsedOn(allocatedHosts, versions);
 
         // Make sure we build wanted version if we are building models for this major version and we are on hosted vespa
         // If not on hosted vespa, we do not want to try to build this version, since we have only one version (the latest)
+        // Also handle the case where there are no allocated hosts in the zone, so versions is empty
         Version wanted = Version.fromIntValues(wantedVersion.getMajor(), wantedVersion.getMinor(), wantedVersion.getMicro());
-        if (hosted && wantedVersion.getMajor() == findLatest(versions).getMajor())
+        if (hosted && (versions.isEmpty() || wantedVersion.getMajor() == findLatest(versions).getMajor()))
             versions.add(wanted);
 
         return versions;
@@ -217,10 +218,15 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
      * returns empty otherwise, which may either mean that no hosts are allocated or that we are running
      * non-hosted and should default to use hosts defined in the application package, depending on context
      */
-    protected Optional<HostProvisioner> createStaticProvisioner(Optional<AllocatedHosts> allocatedHosts) {
+    Optional<HostProvisioner> createStaticProvisioner(Optional<AllocatedHosts> allocatedHosts, ModelContext.Properties properties) {
         if (hosted && allocatedHosts.isPresent())
-            return Optional.of(new StaticProvisioner(allocatedHosts.get()));
+            return Optional.of(new StaticProvisioner(allocatedHosts.get(), createNodeRepositoryProvisioner(properties).get()));
         return Optional.empty();
+    }
+
+    Optional<HostProvisioner> createNodeRepositoryProvisioner(ModelContext.Properties properties) {
+        return hostProvisionerProvider.getHostProvisioner().map(
+                provisioner -> new ProvisionerAdapter(provisioner, properties.applicationId()));
     }
 
 }

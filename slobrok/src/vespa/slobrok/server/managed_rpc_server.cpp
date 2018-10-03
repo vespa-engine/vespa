@@ -12,14 +12,14 @@ namespace slobrok {
 
 //-----------------------------------------------------------------------------
 
-ManagedRpcServer::ManagedRpcServer(const char *name,
-                                   const char *spec,
+ManagedRpcServer::ManagedRpcServer(const std::string & name,
+                                   const std::string & spec,
                                    IRpcServerManager &manager)
     : NamedService(name, spec),
       _mmanager(manager),
       _monitor(*this, *manager.getSupervisor()),
-      _monitoredServer(NULL),
-      _checkServerReq(NULL)
+      _monitoredServer(nullptr),
+      _checkServerReq(nullptr)
 {
 }
 
@@ -27,10 +27,10 @@ ManagedRpcServer::ManagedRpcServer(const char *name,
 void
 ManagedRpcServer::healthCheck()
 {
-    if (_monitoredServer == NULL) {
+    if (_monitoredServer == nullptr) {
         _monitoredServer = _mmanager.getSupervisor()->GetTarget(_spec.c_str());
     }
-    if (_checkServerReq == NULL) {
+    if (_checkServerReq == nullptr) {
         _checkServerReq = _mmanager.getSupervisor()->AllocRPCRequest();
         _checkServerReq->SetMethodName("slobrok.callback.listNamesServed");
         _monitoredServer->InvokeAsync(_checkServerReq, 25.0, this);
@@ -49,14 +49,14 @@ void
 ManagedRpcServer::cleanupMonitor()
 {
     _monitor.disable();
-    if (_monitoredServer != NULL) {
+    if (_monitoredServer != nullptr) {
         _monitoredServer->SubRef();
-        _monitoredServer = NULL;
+        _monitoredServer = nullptr;
     }
-    if (_checkServerReq != NULL) {
+    if (_checkServerReq != nullptr) {
         _checkServerReq->Abort();
         // _checkServerReq cleared by RequestDone Method
-        LOG_ASSERT(_checkServerReq == NULL);
+        LOG_ASSERT(_checkServerReq == nullptr);
     }
 }
 
@@ -90,9 +90,9 @@ ManagedRpcServer::RequestDone(FRT_RPCRequest *req)
     FRT_Values &answer = *(req->GetReturn());
 
     if (req->GetErrorCode() == FRTE_RPC_ABORT) {
-        LOG(debug, "rpcserver[%s].check aborted", getName());
+        LOG(debug, "rpcserver[%s].check aborted", getName().c_str());
         req->SubRef();
-        _checkServerReq = NULL;
+        _checkServerReq = nullptr;
         return;
     }
 
@@ -111,18 +111,18 @@ ManagedRpcServer::RequestDone(FRT_RPCRequest *req)
             errmsg = "checkServer failed validation";
         }
         req->SubRef();
-        _checkServerReq = NULL;
+        _checkServerReq = nullptr;
         cleanupMonitor();
         _mmanager.notifyFailedRpcSrv(this, errmsg);
         return;
     }
 
     // start monitoring connection to server
-    LOG_ASSERT(_monitoredServer != NULL);
+    LOG_ASSERT(_monitoredServer != nullptr);
     _monitor.enable(_monitoredServer);
 
     req->SubRef();
-    _checkServerReq = NULL;
+    _checkServerReq = nullptr;
     _mmanager.notifyOkRpcSrv(this);
 }
 

@@ -13,6 +13,7 @@ import java.io.IOException;
  * @author bjorncs
  */
 public class SerializationHelper {
+
     public static void writeIntArray(int[] array, DataOutputStream out) throws IOException {
         out.writeInt(array.length);
         for (int v : array) {
@@ -76,4 +77,5 @@ public class SerializationHelper {
         }
         return array;
     }
+
 }

@@ -14,7 +14,7 @@ class CatSerializer : public vespalib::NBOSerializer, public ResultSerializer
 public:
     CatSerializer(vespalib::nbostream & stream) : vespalib::NBOSerializer(stream) { }
     CatSerializer & put(const vespalib::IFieldBase & field, const vespalib::Identifiable & value) override;
-    CatSerializer & put(const vespalib::IFieldBase & field, const vespalib::stringref & value) override;
+    CatSerializer & put(const vespalib::IFieldBase & field, vespalib::stringref value) override;
     ResultSerializer & putResult(const vespalib::IFieldBase & field, const RawResultNode & value) override;
     ResultSerializer & putResult(const vespalib::IFieldBase & field, const ResultNodeVector & value) override;
     void proxyPut(const ResultNode & value) override;

@@ -4,9 +4,7 @@
 #include <memory>
 #include <vector>
 
-namespace proton {
-
-namespace initializer {
+namespace proton::initializer {
 
 /*
  * Class representign an initializer task, used to load a data
@@ -35,6 +33,4 @@ public:
     virtual void run() = 0;
 };
 
-} // namespace proton::initializer
-
-} // namespace proton
+}

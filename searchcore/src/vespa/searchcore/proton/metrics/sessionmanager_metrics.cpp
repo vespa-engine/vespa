@@ -1,16 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "sessionmanager_metrics.h"
+#include <vespa/vespalib/util/stringfmt.h>
 
-namespace search::grouping {
+namespace proton {
 
-SessionManagerMetrics::SessionManagerMetrics(metrics::MetricSet *parent)
-    : metrics::MetricSet("sessionmanager", "", "Grouping session manager metrics", parent),
-      numInsert("numinsert", "", "Number of inserted sessions", this),
-      numPick("numpick", "", "Number if picked sessions", this),
-      numDropped("numdropped", "", "Number of dropped cached sessions", this),
-      numCached("numcached", "", "Number of currently cached sessions", this),
-      numTimedout("numtimedout", "", "Number of timed out sessions", this)
+SessionManagerMetrics::SessionManagerMetrics(const vespalib::string &name, metrics::MetricSet *parent)
+    : metrics::MetricSet(name, "", vespalib::make_string("Session manager cache metrics for %s", name.c_str()), parent),
+      numInsert("num_insert", "", "Number of inserted sessions", this),
+      numPick("num_pick", "", "Number if picked sessions", this),
+      numDropped("num_dropped", "", "Number of dropped cached sessions", this),
+      numCached("num_cached", "", "Number of currently cached sessions", this),
+      numTimedout("num_timedout", "", "Number of timed out sessions", this)
 {
 }
 
@@ -25,6 +26,5 @@ SessionManagerMetrics::update(const proton::matching::SessionManager::Stats &sta
     numCached.set(stats.numCached);
     numTimedout.inc(stats.numTimedout);
 }
-
 
 }

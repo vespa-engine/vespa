@@ -4,15 +4,18 @@
 #include "documentstore.h"
 #include "visitcache.h"
 #include "ibucketizer.h"
+#include "value.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/stllike/cache.hpp>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
 
+#include <vespa/log/log.h>
+
+LOG_SETUP(".searchlib.docstore.documentstore");
+
 using document::DocumentTypeRepo;
 using vespalib::compression::CompressionConfig;
-using vespalib::compression::compress;
-using vespalib::compression::decompress;
 
 namespace search {
 
@@ -39,81 +42,17 @@ DocumentVisitorAdapter::visit(uint32_t lid, vespalib::ConstBufferRef buf) {
     }
 }
 
+document::Document::UP
+deserializeDocument(const vespalib::DataBuffer & uncompressed, const DocumentTypeRepo &repo) {
+    vespalib::nbostream is(uncompressed.getData(), uncompressed.getDataLen());
+    return std::make_unique<document::Document>(repo, is);
+}
+
 }
 
 using vespalib::nbostream;
 
 namespace docstore {
-
-class Value {
-public:
-    using Alloc = vespalib::alloc::Alloc;
-    typedef std::unique_ptr<Value> UP;
-
-    Value()
-        : _syncToken(0),
-          _compressedSize(0),
-          _uncompressedSize(0),
-          _compression(CompressionConfig::NONE)
-    {}
-
-    Value(uint64_t syncToken)
-        : _syncToken(syncToken),
-          _compressedSize(0),
-          _uncompressedSize(0),
-          _compression(CompressionConfig::NONE)
-    {}
-
-    Value(Value &&rhs) = default;
-    Value &operator=(Value &&rhs) = default;
-
-    Value(const Value &rhs)
-        : _syncToken(rhs._syncToken),
-          _compressedSize(rhs._compressedSize),
-          _uncompressedSize(rhs._uncompressedSize),
-          _compression(rhs._compression),
-          _buf(Alloc::alloc(rhs.size()))
-    {
-        memcpy(get(), rhs.get(), size());
-    }
-
-    void setCompression(CompressionConfig::Type comp, size_t uncompressedSize) {
-        _compression = comp;
-        _uncompressedSize = uncompressedSize;
-    }
-    uint64_t getSyncToken() const { return _syncToken; }
-
-    CompressionConfig::Type getCompression() const { return _compression; }
-
-    size_t getUncompressedSize() const { return _uncompressedSize; }
-
-    /**
-     * Compress buffer into temporary buffer and copy temporary buffer to
-     * value along with compression config.
-     */
-    void set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &compression);
-    // Keep buffer uncompressed
-    void set(vespalib::DataBuffer &&buf, ssize_t len);
-
-    /**
-     * Decompress value into temporary buffer and deserialize document from
-     * the temporary buffer.
-     */
-    document::Document::UP deserializeDocument(const DocumentTypeRepo &repo) const;
-    vespalib::DataBuffer decompressed() const;
-
-    size_t size() const { return _compressedSize; }
-    bool empty() const { return size() == 0; }
-    operator const void *() const { return _buf.get(); }
-    const void *get() const { return _buf.get(); }
-    void *get() { return _buf.get(); }
-private:
-    uint64_t _syncToken;
-    size_t _compressedSize;
-    size_t _uncompressedSize;
-    CompressionConfig::Type _compression;
-    Alloc _buf;
-};
 
 class BackingStore {
 public:
@@ -132,45 +71,6 @@ private:
     IDataStore &_backingStore;
     CompressionConfig _compression;
 };
-
-
-void
-Value::set(vespalib::DataBuffer &&buf, ssize_t len) {
-    set(std::move(buf), len, CompressionConfig());
-}
-
-void
-Value::set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &compression) {
-    //Underlying buffer must be identical to allow swap.
-    vespalib::DataBuffer compressed(buf.getData(), 0u);
-    CompressionConfig::Type type = compress(compression, vespalib::ConstBufferRef(buf.getData(), len), compressed, true);
-    _compressedSize = compressed.getDataLen();
-    if (buf.getData() == compressed.getData()) {
-        // Uncompressed so we can just steal the underlying buffer.
-        buf.stealBuffer().swap(_buf);
-    } else {
-        compressed.stealBuffer().swap(_buf);
-    }
-    assert(((type == CompressionConfig::NONE) &&
-            (len == ssize_t(_compressedSize))) ||
-           ((type != CompressionConfig::NONE) &&
-            (len > ssize_t(_compressedSize))));
-    setCompression(type, len);
-}
-
-vespalib::DataBuffer
-Value::decompressed() const {
-    vespalib::DataBuffer uncompressed(_buf.get(), (size_t) 0);
-    decompress(getCompression(), getUncompressedSize(), vespalib::ConstBufferRef(*this, size()), uncompressed, true);
-    return uncompressed;
-}
-
-document::Document::UP
-Value::deserializeDocument(const DocumentTypeRepo &repo) const {
-    vespalib::DataBuffer uncompressed(decompressed());
-    vespalib::nbostream is(uncompressed.getData(), uncompressed.getDataLen());
-    return std::make_unique<document::Document>(repo, is);
-}
 
 void
 BackingStore::visit(const IDocumentStore::LidVector &lids, const DocumentTypeRepo &repo,
@@ -194,15 +94,14 @@ BackingStore::read(DocumentIdT key, Value &value) const {
 void
 BackingStore::write(DocumentIdT lid, const Value & value)
 {
-    vespalib::DataBuffer buf = value.decompressed();
-    _backingStore.write(value.getSyncToken(), lid, buf.getData(), buf.getDataLen());
+    Value::Result buf = value.decompressed();
+    assert(buf.second);
+    _backingStore.write(value.getSyncToken(), lid, buf.first.getData(), buf.first.getDataLen());
 }
 
 void
 BackingStore::reconfigure(const CompressionConfig &compression) {
     _compression = compression;
-}
-
 }
 
 using CacheParams = vespalib::CacheParam<
@@ -216,12 +115,14 @@ public:
     Cache(BackingStore & b, size_t maxBytes) : vespalib::cache<CacheParams>(b, maxBytes) { }
 };
 
+}
+
 using VisitCache = docstore::VisitCache;
 using docstore::Value;
 
 bool
 DocumentStore::Config::operator == (const Config &rhs) const {
-    return (_maxCacheBytes == rhs._maxCacheBytes) &&
+    return  (_maxCacheBytes == rhs._maxCacheBytes) &&
             (_allowVisitCaching == rhs._allowVisitCaching) &&
             (_initialCacheEntries == rhs._initialCacheEntries) &&
             (_updateStrategy == rhs._updateStrategy) &&
@@ -233,9 +134,9 @@ DocumentStore::DocumentStore(const Config & config, IDataStore & store)
     : IDocumentStore(),
       _config(config),
       _backingStore(store),
-      _store(new docstore::BackingStore(_backingStore, config.getCompression())),
-      _cache(new Cache(*_store, config.getMaxCacheBytes())),
-      _visitCache(new VisitCache(store, config.getMaxCacheBytes(), config.getCompression())),
+      _store(std::make_unique<docstore::BackingStore>(_backingStore, config.getCompression())),
+      _cache(std::make_unique<docstore::Cache>(*_store, config.getMaxCacheBytes())),
+      _visitCache(std::make_unique<docstore::VisitCache>(store, config.getMaxCacheBytes(), config.getCompression())),
       _uncached_lookups(0)
 {
     _cache->reserveElements(config.getInitialCacheEntries());
@@ -271,21 +172,32 @@ DocumentStore::visit(const LidVector & lids, const DocumentTypeRepo &repo, IDocu
     }
 }
 
-document::Document::UP
+std::unique_ptr<document::Document>
 DocumentStore::read(DocumentIdT lid, const DocumentTypeRepo &repo) const
 {
-    document::Document::UP retval;
     Value value;
     if (useCache()) {
         value = _cache->read(lid);
-    } else {
-        _uncached_lookups.fetch_add(1);
-        _store->read(lid, value);
+        if (value.empty()) {
+            return std::unique_ptr<document::Document>();
+        }
+        Value::Result result = value.decompressed();
+        if ( result.second ) {
+            return deserializeDocument(result.first, repo);
+        } else {
+            LOG(warning, "Summary cache for lid %u is corrupt. Invalidating and reading directly from backing store", lid);
+            _cache->invalidate(lid);
+        }
     }
+
+    _uncached_lookups.fetch_add(1);
+    _store->read(lid, value);
     if ( ! value.empty() ) {
-        retval = value.deserializeDocument(repo);
+        Value::Result result = value.decompressed();
+        assert(result.second);
+        return deserializeDocument(result.first, repo);
     }
-    return retval;
+    return std::unique_ptr<document::Document>();
 }
 
 void
@@ -380,15 +292,12 @@ class DocumentStore::WrapVisitor : public IDataStoreVisitor
 public:
     void visit(uint32_t lid, const void *buffer, size_t sz) override;
 
-    WrapVisitor(Visitor &visitor,
-                const DocumentTypeRepo &repo,
-                const CompressionConfig &compresion,
-                IDocumentStore &ds,
-                uint64_t syncToken);
+    WrapVisitor(Visitor &visitor, const DocumentTypeRepo &repo, const CompressionConfig &compresion,
+                IDocumentStore &ds, uint64_t syncToken);
     
-    inline void rewrite(uint32_t lid, const document::Document &doc);
-    inline void rewrite(uint32_t lid);
-    inline void visitRemove(uint32_t lid);
+    void rewrite(uint32_t lid, const document::Document &doc);
+    void rewrite(uint32_t lid);
+    void visitRemove(uint32_t lid);
 };
 
 
@@ -406,33 +315,25 @@ public:
     }
 };
 
-
 template <>
 void
 DocumentStore::WrapVisitor<IDocumentStoreReadVisitor>::
-rewrite(uint32_t lid, const document::Document &doc)
+rewrite(uint32_t , const document::Document &)
 {
-    (void) lid;
-    (void) doc;
 }
 
 template <>
 void
-DocumentStore::WrapVisitor<IDocumentStoreReadVisitor>::
-rewrite(uint32_t lid)
+DocumentStore::WrapVisitor<IDocumentStoreReadVisitor>::rewrite(uint32_t )
 {
-    (void) lid;
 }
-
 
 template <>
 void
-DocumentStore::WrapVisitor<IDocumentStoreReadVisitor>::
-visitRemove(uint32_t lid)
+DocumentStore::WrapVisitor<IDocumentStoreReadVisitor>::visitRemove(uint32_t lid)
 {
     _visitor.visit(lid);
 }
-
 
 template <>
 void
@@ -444,33 +345,21 @@ rewrite(uint32_t lid, const document::Document &doc)
 
 template <>
 void
-DocumentStore::WrapVisitor<IDocumentStoreRewriteVisitor>::
-rewrite(uint32_t lid)
+DocumentStore::WrapVisitor<IDocumentStoreRewriteVisitor>::rewrite(uint32_t lid)
 {
     _ds.remove(_syncToken, lid);
 }
 
-
 template <>
 void
-DocumentStore::WrapVisitor<IDocumentStoreRewriteVisitor>::
-visitRemove(uint32_t lid)
+DocumentStore::WrapVisitor<IDocumentStoreRewriteVisitor>::visitRemove(uint32_t )
 {
-    (void) lid;
 }
-
-
 
 template <class Visitor>
 void
-DocumentStore::WrapVisitor<Visitor>::visit(uint32_t lid,
-                                           const void *buffer,
-                                           size_t sz)
+DocumentStore::WrapVisitor<Visitor>::visit(uint32_t lid, const void *buffer, size_t sz)
 {
-    (void) lid;
-    (void) buffer;
-    (void) sz;
-    
     Value value;
     vespalib::DataBuffer buf(4096);
     buf.clear();
@@ -480,7 +369,7 @@ DocumentStore::WrapVisitor<Visitor>::visit(uint32_t lid,
         value.set(std::move(buf), len);
     }
     if (! value.empty()) {
-        std::shared_ptr<document::Document> doc(value.deserializeDocument(_repo));
+        std::shared_ptr<document::Document> doc(deserializeDocument(value.decompressed().first, _repo));
         _visitor.visit(lid, doc);
         rewrite(lid, *doc);
     } else {
@@ -489,14 +378,10 @@ DocumentStore::WrapVisitor<Visitor>::visit(uint32_t lid,
     }
 }
 
-
 template <class Visitor>
 DocumentStore::WrapVisitor<Visitor>::
-WrapVisitor(Visitor &visitor,
-            const DocumentTypeRepo &repo,
-            const CompressionConfig &compression,
-            IDocumentStore &ds,
-            uint64_t syncToken)
+WrapVisitor(Visitor &visitor, const DocumentTypeRepo &repo, const CompressionConfig &compression,
+            IDocumentStore &ds, uint64_t syncToken)
     : _visitor(visitor),
       _repo(repo),
       _compression(compression),
@@ -504,7 +389,6 @@ WrapVisitor(Visitor &visitor,
       _syncToken(syncToken)
 {
 }
-
 
 void
 DocumentStore::accept(IDocumentStoreReadVisitor &visitor, IDocumentStoreVisitorProgress &visitorProgress,
@@ -516,7 +400,6 @@ DocumentStore::accept(IDocumentStoreReadVisitor &visitor, IDocumentStoreVisitorP
     _backingStore.accept(wrap, wrapVisitorProgress, false);
 }
 
-
 void
 DocumentStore::accept(IDocumentStoreRewriteVisitor &visitor, IDocumentStoreVisitorProgress &visitorProgress,
                       const DocumentTypeRepo &repo)
@@ -526,7 +409,6 @@ DocumentStore::accept(IDocumentStoreRewriteVisitor &visitor, IDocumentStoreVisit
     WrapVisitorProgress wrapVisitorProgress(visitorProgress);
     _backingStore.accept(wrap, wrapVisitorProgress, true);
 }
-
 
 double
 DocumentStore::getVisitCost() const
@@ -555,7 +437,7 @@ DocumentStore::getFileChunkStats() const
 CacheStats DocumentStore::getCacheStats() const {
     CacheStats visitStats = _visitCache->getCacheStats();
     CacheStats singleStats(_cache->getHit(), _cache->getMiss() + _uncached_lookups,
-                           _cache->size(), _cache->sizeBytes());
+                           _cache->size(), _cache->sizeBytes(), _cache->getInvalidate());
     singleStats += visitStats;
     return singleStats;
 }
@@ -584,5 +466,4 @@ DocumentStore::shrinkLidSpace()
     _backingStore.shrinkLidSpace();
 }
 
-} // namespace search
-
+}

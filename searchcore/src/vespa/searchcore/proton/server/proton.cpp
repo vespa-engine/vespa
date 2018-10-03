@@ -14,7 +14,6 @@
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
 
-#include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/flushengine/flushengine.h>
 #include <vespa/searchcore/proton/flushengine/flush_engine_explorer.h>
 #include <vespa/searchcore/proton/flushengine/prepare_restart_flush_strategy.h>
@@ -48,9 +47,6 @@ using vespalib::Slime;
 using vespalib::slime::ArrayInserter;
 using vespalib::slime::Cursor;
 
-using search::TuneFileDocumentDB;
-using search::index::Schema;
-using search::index::SchemaBuilder;
 using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::search::core::internal::InternalProtonType;
@@ -198,7 +194,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       _protonConfigurer(_executor, *this, _protonDiskLayout),
       _protonConfigFetcher(configUri, _protonConfigurer, subscribeTimeout),
       _warmupExecutor(),
-      _summaryExecutor(),
+      _sharedExecutor(),
       _queryLimiter(),
       _clock(0.010),
       _threadPool(128 * 1024),
@@ -292,8 +288,8 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     vespalib::string fileConfigId;
     _warmupExecutor = std::make_unique<vespalib::ThreadStackExecutor>(4, 128*1024);
 
-    const size_t summaryThreads = deriveCompactionCompressionThreads(protonConfig, hwInfo.cpu());
-    _summaryExecutor = std::make_unique<vespalib::BlockingThreadStackExecutor>(summaryThreads, 128*1024, summaryThreads*16);
+    const size_t sharedThreads = deriveCompactionCompressionThreads(protonConfig, hwInfo.cpu());
+    _sharedExecutor = std::make_unique<vespalib::BlockingThreadStackExecutor>(sharedThreads, 128*1024, sharedThreads*16);
     InitializeThreads initializeThreads;
     if (protonConfig.initialize.threads > 0) {
         initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(protonConfig.initialize.threads, 128 * 1024);
@@ -426,8 +422,8 @@ Proton::~Proton()
     if (_warmupExecutor) {
         _warmupExecutor->sync();
     }
-    if (_summaryExecutor) {
-        _summaryExecutor->sync();
+    if (_sharedExecutor) {
+        _sharedExecutor->sync();
     }
     LOG(debug, "Shutting down fs4 interface");
     if (_metricsEngine && _fs4Server) {
@@ -444,7 +440,7 @@ Proton::~Proton()
     _persistenceEngine.reset();
     _tls.reset();
     _warmupExecutor.reset();
-    _summaryExecutor.reset();
+    _sharedExecutor.reset();
     _clock.stop();
     LOG(debug, "Explicit destructor done");
 }
@@ -530,7 +526,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
     }
     auto ret = std::make_shared<DocumentDB>(config.basedir + "/documents", documentDBConfig, config.tlsspec,
                                             _queryLimiter, _clock, docTypeName, bucketSpace, config, *this,
-                                            *_warmupExecutor, *_summaryExecutor, *_tls->getTransLogServer(),
+                                            *_warmupExecutor, *_sharedExecutor, *_tls->getTransLogServer(),
                                             *_metricsEngine, _fileHeaderContext, std::move(config_store),
                                             initializeThreads, bootstrapConfig->getHwInfo());
     try {
@@ -662,7 +658,15 @@ int countOpenFiles()
     return count;
 }
 
-} // namespace <unnamed>
+void
+updateExecutorMetrics(ExecutorMetrics &metrics, ExecutorMetrics &legacyMetrics,
+                      const vespalib::ThreadStackExecutor::Stats &stats)
+{
+    metrics.update(stats);
+    legacyMetrics.update(stats);
+}
+
+}
 
 void
 Proton::updateMetrics(const vespalib::MonitorGuard &)
@@ -685,16 +689,23 @@ Proton::updateMetrics(const vespalib::MonitorGuard &)
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));
     }
     {
-        LegacyProtonMetrics &metrics = _metricsEngine->legacyRoot();
-        metrics.executor.update(_executor.getStats());
+        ContentProtonMetrics::ProtonExecutorMetrics &metrics = _metricsEngine->root().executor;
+        LegacyProtonMetrics &legacyMetrics = _metricsEngine->legacyRoot();
+        updateExecutorMetrics(metrics.proton, legacyMetrics.executor, _executor.getStats());
         if (_flushEngine) {
-            metrics.flushExecutor.update(_flushEngine->getExecutorStats());
+            updateExecutorMetrics(metrics.flush, legacyMetrics.flushExecutor, _flushEngine->getExecutorStats());
         }
         if (_matchEngine) {
-            metrics.matchExecutor.update(_matchEngine->getExecutorStats());
+            updateExecutorMetrics(metrics.match, legacyMetrics.matchExecutor, _matchEngine->getExecutorStats());
         }
         if (_summaryEngine) {
-            metrics.summaryExecutor.update(_summaryEngine->getExecutorStats());
+            updateExecutorMetrics(metrics.docsum, legacyMetrics.summaryExecutor, _summaryEngine->getExecutorStats());
+        }
+        if (_sharedExecutor) {
+            metrics.shared.update(_sharedExecutor->getStats());
+        }
+        if (_warmupExecutor) {
+            metrics.warmup.update(_warmupExecutor->getStats());
         }
     }
 }

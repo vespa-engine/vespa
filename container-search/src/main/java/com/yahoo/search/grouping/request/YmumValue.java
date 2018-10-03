@@ -6,6 +6,7 @@ package com.yahoo.search.grouping.request;
  * input {@link com.yahoo.search.result.Hit}.
  *
  * @author Simon Thoresen Hult
+ * @author bratseth
  */
 public class YmumValue extends DocumentValue {
 
@@ -13,7 +14,17 @@ public class YmumValue extends DocumentValue {
      * Constructs a new instance of this class.
      */
     public YmumValue() {
-        super("ymum()");
+        this(null, null);
     }
+
+    private YmumValue(String label, Integer level) {
+        super("ymum()", label, level);
+    }
+
+    @Override
+    public YmumValue copy() {
+        return new YmumValue(getLabel(), getLevelOrNull());
+    }
+
 }
 

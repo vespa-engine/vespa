@@ -10,7 +10,6 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.update.FieldUpdate;
-import com.yahoo.documentapi.messagebus.protocol.BatchDocumentUpdateMessage;
 import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
@@ -52,7 +51,6 @@ public class DocumentProcessingHandlerAllMessageTypesTestCase extends DocumentPr
         put();
         remove();
         update();
-        batchDocumentUpdate();
     }
 
     private void get() throws InterruptedException {
@@ -126,33 +124,6 @@ public class DocumentProcessingHandlerAllMessageTypesTestCase extends DocumentPr
         UpdateDocumentMessage outputMsg = (UpdateDocumentMessage) result;
         assertThat(outputMsg.getDocumentUpdate().getId().toString(), is("doc:baz:foo"));
 
-        assertFalse(reply.hasErrors());
-    }
-
-    private void batchDocumentUpdate() throws InterruptedException {
-        DocumentUpdate doc1 = new DocumentUpdate(getType(), new DocumentId("userdoc:test:12345:multi:1"));
-        DocumentUpdate doc2 = new DocumentUpdate(getType(), new DocumentId("userdoc:test:12345:multi:2"));
-
-        Field testField = getType().getField("blahblah");
-        doc1.addFieldUpdate(FieldUpdate.createAssign(testField, new StringFieldValue("1 not yet processed")));
-        doc2.addFieldUpdate(FieldUpdate.createAssign(testField, new StringFieldValue("2 not yet processed")));
-
-        BatchDocumentUpdateMessage message = new BatchDocumentUpdateMessage(12345);
-        message.addUpdate(doc1);
-        message.addUpdate(doc2);
-
-        assertTrue(sendMessage(FOOBAR, message));
-
-        Message remote1 = remoteServer.awaitMessage(60, TimeUnit.SECONDS);
-        assertTrue(remote1 instanceof UpdateDocumentMessage);
-        remoteServer.ackMessage(remote1);
-        assertNull(driver.client().awaitReply(100, TimeUnit.MILLISECONDS));
-
-        Message remote2 = remoteServer.awaitMessage(60, TimeUnit.SECONDS);
-        assertTrue(remote2 instanceof UpdateDocumentMessage);
-        remoteServer.ackMessage(remote2);
-        Reply reply = driver.client().awaitReply(60, TimeUnit.SECONDS);
-        assertNotNull(reply);
         assertFalse(reply.hasErrors());
     }
 

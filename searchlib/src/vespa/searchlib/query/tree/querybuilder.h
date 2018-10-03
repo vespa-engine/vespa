@@ -110,7 +110,7 @@ template <class NodeTypes>
 typename NodeTypes::Or *createOr() { return new typename NodeTypes::Or; }
 
 template <class NodeTypes>
-typename NodeTypes::WeakAnd *createWeakAnd(uint32_t minHits, const vespalib::stringref & view) {
+typename NodeTypes::WeakAnd *createWeakAnd(uint32_t minHits, vespalib::stringref view) {
     return new typename NodeTypes::WeakAnd(minHits, view);
 }
 template <class NodeTypes>
@@ -118,24 +118,24 @@ typename NodeTypes::Equiv *createEquiv(int32_t id, Weight weight) {
     return new typename NodeTypes::Equiv(id, weight);
 }
 template <class NodeTypes>
-typename NodeTypes::Phrase *createPhrase(const vespalib::stringref &view, int32_t id, Weight weight) {
+typename NodeTypes::Phrase *createPhrase(vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::Phrase(view, id, weight);
 }
 template <class NodeTypes>
-typename NodeTypes::SameElement *createSameElement(const vespalib::stringref &view) {
+typename NodeTypes::SameElement *createSameElement(vespalib::stringref view) {
     return new typename NodeTypes::SameElement(view);
 }
 template <class NodeTypes>
-typename NodeTypes::WeightedSetTerm *createWeightedSetTerm(const vespalib::stringref &view, int32_t id, Weight weight) {
+typename NodeTypes::WeightedSetTerm *createWeightedSetTerm(vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::WeightedSetTerm(view, id, weight);
 }
 template <class NodeTypes>
-typename NodeTypes::DotProduct *createDotProduct(const vespalib::stringref &view, int32_t id, Weight weight) {
+typename NodeTypes::DotProduct *createDotProduct(vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::DotProduct(view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::WandTerm *
-createWandTerm(const vespalib::stringref &view, int32_t id, Weight weight, uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor) {
+createWandTerm(vespalib::stringref view, int32_t id, Weight weight, uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor) {
     return new typename NodeTypes::WandTerm(view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
 }
 template <class NodeTypes>
@@ -155,50 +155,50 @@ typename NodeTypes::ONear *createONear(size_t distance) {
 // Term nodes
 template <class NodeTypes>
 typename NodeTypes::NumberTerm *
-createNumberTerm(const vespalib::stringref &term, const vespalib::stringref &view, int32_t id, Weight weight) {
+createNumberTerm(vespalib::stringref term, vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::NumberTerm(term, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::PrefixTerm *
-createPrefixTerm(const vespalib::stringref &term, const vespalib::stringref &view, int32_t id, Weight weight) {
+createPrefixTerm(vespalib::stringref term, vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::PrefixTerm(term, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::RangeTerm *
-createRangeTerm(const Range &term, const vespalib::stringref &view, int32_t id, Weight weight) {
+createRangeTerm(const Range &term, vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::RangeTerm(term, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::StringTerm *
-createStringTerm(const vespalib::stringref &term, const vespalib::stringref &view, int32_t id, Weight weight) {
+createStringTerm(vespalib::stringref term, vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::StringTerm(term, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::SubstringTerm *
-createSubstringTerm(const vespalib::stringref &term, const vespalib::stringref &view, int32_t id, Weight weight) {
+createSubstringTerm(vespalib::stringref term, vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::SubstringTerm(term, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::SuffixTerm *
-createSuffixTerm(const vespalib::stringref &term, const vespalib::stringref &view, int32_t id, Weight weight) {
+createSuffixTerm(vespalib::stringref term, vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::SuffixTerm(term, view, id, weight);
 }
 
 template <class NodeTypes>
 typename NodeTypes::LocationTerm *
-createLocationTerm(const Location &loc, const vespalib::stringref &view, int32_t id, Weight weight) {
+createLocationTerm(const Location &loc, vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::LocationTerm(loc, view, id, weight);
 }
 
 template <class NodeTypes>
 typename NodeTypes::PredicateQuery *
-createPredicateQuery(PredicateQueryTerm::UP term, const vespalib::stringref &view, int32_t id, Weight weight) {
+createPredicateQuery(PredicateQueryTerm::UP term, vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::PredicateQuery(std::move(term), view, id, weight);
 }
 
 template <class NodeTypes>
 typename NodeTypes::RegExpTerm *
-createRegExpTerm(const vespalib::stringref &term, const vespalib::stringref &view, int32_t id, Weight weight) {
+createRegExpTerm(vespalib::stringref term, vespalib::stringref view, int32_t id, Weight weight) {
     return new typename NodeTypes::RegExpTerm(term, view, id, weight);
 }
 
@@ -233,33 +233,33 @@ public:
     typename NodeTypes::Or &addOr(int child_count) {
         return addIntermediate(createOr<NodeTypes>(), child_count);
     }
-    typename NodeTypes::WeakAnd &addWeakAnd(int child_count, uint32_t minHits, const stringref & view) {
+    typename NodeTypes::WeakAnd &addWeakAnd(int child_count, uint32_t minHits, stringref view) {
         return addIntermediate(createWeakAnd<NodeTypes>(minHits, view), child_count);
     }
     typename NodeTypes::Equiv &addEquiv(int child_count, int32_t id, Weight weight) {
         return addIntermediate(createEquiv<NodeTypes>(id, weight), child_count);
     }
-    typename NodeTypes::Phrase &addPhrase(int child_count, const stringref &view, int32_t id, Weight weight) {
+    typename NodeTypes::Phrase &addPhrase(int child_count, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
         typename NodeTypes::Phrase &node = addIntermediate(createPhrase<NodeTypes>(view, id, weight), child_count);
         setWeightOverride(weight);
         return node;
     }
-    typename NodeTypes::SameElement &addSameElement(int child_count, const stringref &view) {
+    typename NodeTypes::SameElement &addSameElement(int child_count, stringref view) {
         return addIntermediate(createSameElement<NodeTypes>(view), child_count);
     }
-    typename NodeTypes::WeightedSetTerm &addWeightedSetTerm( int child_count, const stringref &view, int32_t id, Weight weight) {
+    typename NodeTypes::WeightedSetTerm &addWeightedSetTerm( int child_count, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
         typename NodeTypes::WeightedSetTerm &node = addIntermediate(createWeightedSetTerm<NodeTypes>(view, id, weight), child_count);
         return node;
     }
-    typename NodeTypes::DotProduct &addDotProduct( int child_count, const stringref &view, int32_t id, Weight weight) {
+    typename NodeTypes::DotProduct &addDotProduct( int child_count, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
         typename NodeTypes::DotProduct &node = addIntermediate( createDotProduct<NodeTypes>(view, id, weight), child_count);
         return node;
     }
     typename NodeTypes::WandTerm &addWandTerm(
-            int child_count, const stringref &view,
+            int child_count, stringref view,
             int32_t id, Weight weight, uint32_t targetNumHits,
             int64_t scoreThreshold, double thresholdBoostFactor)
     {
@@ -273,39 +273,39 @@ public:
         return addIntermediate(createRank<NodeTypes>(), child_count);
     }
 
-    typename NodeTypes::NumberTerm &addNumberTerm(const stringref &term, const stringref &view, int32_t id, Weight weight) {
+    typename NodeTypes::NumberTerm &addNumberTerm(stringref term, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createNumberTerm<NodeTypes>(term, view, id, weight));
     }
-    typename NodeTypes::PrefixTerm &addPrefixTerm(const stringref &term, const stringref &view, int32_t id, Weight weight) {
+    typename NodeTypes::PrefixTerm &addPrefixTerm(stringref term, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createPrefixTerm<NodeTypes>(term, view, id, weight));
     }
-    typename NodeTypes::RangeTerm &addRangeTerm(const Range &range, const stringref &view, int32_t id, Weight weight) {
+    typename NodeTypes::RangeTerm &addRangeTerm(const Range &range, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createRangeTerm<NodeTypes>(range, view, id, weight));
     }
-    typename NodeTypes::StringTerm &addStringTerm(const stringref &term, const stringref &view, int32_t id, Weight weight) {
+    typename NodeTypes::StringTerm &addStringTerm(stringref term, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createStringTerm<NodeTypes>(term, view, id, weight));
     }
-    typename NodeTypes::SubstringTerm &addSubstringTerm(const stringref &t, const stringref &view, int32_t id, Weight weight) {
+    typename NodeTypes::SubstringTerm &addSubstringTerm(stringref t, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createSubstringTerm<NodeTypes>(t, view, id, weight));
     }
-    typename NodeTypes::SuffixTerm &addSuffixTerm(const stringref &term, const stringref &view, int32_t id, Weight weight) {
+    typename NodeTypes::SuffixTerm &addSuffixTerm(stringref term, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createSuffixTerm<NodeTypes>(term, view, id, weight));
     }
-    typename NodeTypes::LocationTerm &addLocationTerm(const Location &loc, const stringref &view, int32_t id, Weight weight) {
+    typename NodeTypes::LocationTerm &addLocationTerm(const Location &loc, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createLocationTerm<NodeTypes>(loc, view, id, weight));
     }
-    typename NodeTypes::PredicateQuery &addPredicateQuery(PredicateQueryTerm::UP term, const stringref &view, int32_t id, Weight weight) {
+    typename NodeTypes::PredicateQuery &addPredicateQuery(PredicateQueryTerm::UP term, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createPredicateQuery<NodeTypes>(std::move(term), view, id, weight));
     }
-    typename NodeTypes::RegExpTerm &addRegExpTerm(const stringref &term, const stringref &view, int32_t id, Weight weight) {
+    typename NodeTypes::RegExpTerm &addRegExpTerm(stringref term, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createRegExpTerm<NodeTypes>(term, view, id, weight));
     }

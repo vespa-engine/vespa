@@ -2,15 +2,17 @@
 
 #include "match_thread.h"
 #include "document_scorer.h"
+#include <vespa/searchlib/attribute/attribute_operation.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
+#include <vespa/searchcore/grouping/groupingmanager.h>
+#include <vespa/searchcore/grouping/groupingcontext.h>
+#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/util/thread_bundle.h>
-#include <vespa/searchcore/grouping/groupingmanager.h>
-#include <vespa/searchcore/grouping/groupingcontext.h>
-#include <vespa/searchlib/common/bitvector.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_thread");
@@ -23,6 +25,9 @@ using search::fef::MatchData;
 using search::fef::RankProgram;
 using search::fef::FeatureResolver;
 using search::fef::LazyValue;
+using search::queryeval::HitCollector;
+using search::queryeval::SortedHitSequence;
+using search::attribute::AttributeOperation;
 
 namespace {
 
@@ -245,8 +250,6 @@ MatchThread::match_loop_helper(MatchTools &tools, HitCollector &hits)
     }
 }
 
-//-----------------------------------------------------------------------------
-
 search::ResultSet::UP
 MatchThread::findMatches(MatchTools &tools)
 {
@@ -258,22 +261,27 @@ MatchThread::findMatches(MatchTools &tools)
     if (isFirstThread()) {
         LOG(debug, "SearchIterator after MultiBitVectorIteratorBase::optimize(): %s", tools.search().asString().c_str());
     }
-    HitCollector hits(matchParams.numDocs, matchParams.arraySize, matchParams.heapSize);
+    HitCollector hits(matchParams.numDocs, matchParams.arraySize);
     match_loop_helper(tools, hits);
     if (tools.has_second_phase_rank()) {
         { // 2nd phase ranking
             tools.setup_second_phase();
             DocidRange docid_range = scheduler.total_span(thread_id);
             tools.search().initRange(docid_range.begin, docid_range.end);
-            auto sorted_hits = hits.getSortedHeapHits();
+            auto sorted_hit_seq = matchToolsFactory.should_diversify()
+                                  ? hits.getSortedHitSequence(matchParams.arraySize)
+                                  : hits.getSortedHitSequence(matchParams.heapSize);
             WaitTimer select_best_timer(wait_time_s);
-            auto kept_hits = communicator.selectBest(std::move(sorted_hits));
+            auto kept_hits = communicator.selectBest(sorted_hit_seq);
             select_best_timer.done();
             DocumentScorer scorer(tools.rank_program(), tools.search());
             if (tools.getHardDoom().doom()) {
                 kept_hits.clear();
             }
             uint32_t reRanked = hits.reRank(scorer, std::move(kept_hits));
+            if (auto onReRankTask = matchToolsFactory.createOnReRankTask()) {
+                onReRankTask->run(hits.getReRankedHits());
+            }
             thread_stats.docsReRanked(reRanked);
         }
         { // rank scaling
@@ -299,7 +307,7 @@ MatchThread::processResult(const Doom & hardDoom,
     }
     if (hardDoom.doom()) return;
     size_t             totalHits = result->getNumHits();
-    search::RankedHit *hits      = result->getArray();
+    const search::RankedHit *hits = result->getArray();
     size_t             numHits   = result->getArrayUsed();
     search::BitVector *bits  = result->getBitOverflow();
     if (bits != nullptr && hits != nullptr) {
@@ -312,7 +320,7 @@ MatchThread::processResult(const Doom & hardDoom,
     }
     if (hardDoom.doom()) return;
     size_t sortLimit = hasGrouping ? numHits : context.result->maxSize();
-    context.sort->sorter->sortResults(hits, numHits, sortLimit);
+    result->sort(*context.sort->sorter, sortLimit);
     if (hardDoom.doom()) return;
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
@@ -339,6 +347,9 @@ MatchThread::processResult(const Doom & hardDoom,
                 pr.add(search::RankedHit(bitId));
             }
         }
+    }
+    if (auto onMatchTask = matchToolsFactory.createOnMatchTask()) {
+        onMatchTask->run(search::ResultSet::stealResult(std::move(*result)));
     }
     if (hasGrouping) {
         context.grouping->setDistributionKey(_distributionKey);

@@ -3,14 +3,30 @@
 #include <vespa/fnet/fnet.h>
 #include "dummy.h"
 
+class SpinLock {
+private:
+    std::atomic_flag _lock;
+public:
+    SpinLock() : _lock(false) {}
+    void lock() {
+        while (_lock.test_and_set(std::memory_order_acquire)) {
+            // spin
+        }
+    }
+    void unlock() { _lock.clear(std::memory_order_release); }
+};
+
 TEST("lock speed") {
   FastOS_Time      start;
   FastOS_Time       stop;
   DummyLock        dummy;
   std::mutex        lock;
+  SpinLock          spin;
   double       dummyTime;
   double      actualTime;
   double        overhead;
+  double   spin_overhead;
+  double     spin_factor;
   uint32_t             i;
 
   start.SetNow();
@@ -77,9 +93,52 @@ TEST("lock speed") {
 
   overhead = (actualTime - dummyTime) / 10000.0;
 
+  start.SetNow();
+  for (i = 0; i < 1000000; i++) {
+    spin.lock();
+    spin.unlock();
+    spin.lock();
+    spin.unlock();
+    spin.lock();
+    spin.unlock();
+    spin.lock();
+    spin.unlock();
+    spin.lock();
+    spin.unlock();
+    spin.lock();
+    spin.unlock();
+    spin.lock();
+    spin.unlock();
+    spin.lock();
+    spin.unlock();
+    spin.lock();
+    spin.unlock();
+    spin.lock();
+    spin.unlock();
+  }
+  stop.SetNow();
+  stop -= start;
+  actualTime = stop.MilliSecs();
+
+  fprintf(stderr,
+          "10M actual (spin) lock/unlock: %f ms (%1.2f/ms)\n",
+          stop.MilliSecs(), 10000000.0 / stop.MilliSecs());
+
+  spin_overhead = (actualTime - dummyTime) / 10000.0;
+
+  spin_factor = overhead / spin_overhead;
+
   fprintf(stderr,
           "approx overhead per lock/unlock: %f microseconds\n",
           overhead);
+
+  fprintf(stderr,
+          "approx overhead per lock/unlock (spin): %f microseconds\n",
+          spin_overhead);
+
+  fprintf(stderr,
+          "spinlocks are %f times faster\n",
+          spin_factor);
 
   //---------------------------------------------------------------------------
 

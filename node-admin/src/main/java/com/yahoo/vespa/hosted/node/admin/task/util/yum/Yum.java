@@ -3,25 +3,43 @@ package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * @author hakonhall
  */
 public class Yum {
     // Note: "(?dm)" makes newline be \n (only), and enables multiline mode where ^$ match lines with find()
-    private static final Pattern INSTALL_NOOP_PATTERN = Pattern.compile("(?dm)^Nothing to do$");
+    private static final Pattern CHECKING_FOR_UPDATE_PATTERN =
+            Pattern.compile("(?dm)^Package matching [^ ]+ already installed\\. Checking for update\\.$");
+    private static final Pattern NOTHING_TO_DO_PATTERN = Pattern.compile("(?dm)^Nothing to do$");
+    private static final Pattern INSTALL_NOOP_PATTERN = NOTHING_TO_DO_PATTERN;
     private static final Pattern UPGRADE_NOOP_PATTERN = Pattern.compile("(?dm)^No packages marked for update$");
     private static final Pattern REMOVE_NOOP_PATTERN = Pattern.compile("(?dm)^No Packages marked for removal$");
-
     private static final Pattern UNKNOWN_PACKAGE_PATTERN = Pattern.compile(
             "(?dm)^No package ([^ ]+) available\\.$");
+
+
+    // WARNING: These must be in the same order as the supplier below
+    private static final String RPM_QUERYFORMAT = Stream.of("NAME", "EPOCH", "VERSION", "RELEASE", "ARCH")
+            .map(formatter -> "%{" + formatter + "}")
+            .collect(Collectors.joining("\\n"));
+    private static final Function<YumPackageName.Builder, List<Function<String, YumPackageName.Builder>>>
+            PACKAGE_NAME_BUILDERS_GENERATOR = builder -> Arrays.asList(
+                builder::setName, builder::setEpoch, builder::setVersion, builder::setRelease, builder::setArchitecture);
+
 
     private final Terminal terminal;
 
@@ -29,27 +47,138 @@ public class Yum {
         this.terminal = terminal;
     }
 
+    public Optional<YumPackageName> queryInstalled(TaskContext context, String packageName) {
+        CommandResult commandResult = terminal.newCommandLine(context)
+                .add("rpm", "-q", packageName, "--queryformat", RPM_QUERYFORMAT)
+                .ignoreExitCode()
+                .executeSilently();
+
+        if (commandResult.getExitCode() != 0) return Optional.empty();
+
+        YumPackageName.Builder builder = new YumPackageName.Builder();
+        List<Function<String, YumPackageName.Builder>> builders = PACKAGE_NAME_BUILDERS_GENERATOR.apply(builder);
+        List<Optional<String>> lines = commandResult.mapEachLine(line -> Optional.of(line).filter(s -> !"(none)".equals(s)));
+        if (lines.size() != builders.size()) throw new IllegalStateException(String.format(
+                "Unexpected response from rpm, expected %d lines, got %d" + builders.size(), commandResult.getOutput()));
+
+        IntStream.range(0, builders.size()).forEach(i -> lines.get(i).ifPresent(builders.get(i)::apply));
+        return Optional.of(builder.build());
+    }
+
     /**
-     * @param packages A list of packages, each package being of the form name-1.2.3-1.el7.noarch
+     * Lock and install, or if necessary downgrade, a package to a given version.
+     *
+     * @return false only if the package was already locked and installed at the given version (no-op)
      */
-    public GenericYumCommand install(String... packages) {
+    public boolean installFixedVersion(TaskContext context, YumPackageName yumPackage) {
+        String targetVersionLockName = yumPackage.toVersionLockName();
+
+        boolean alreadyLocked = terminal
+                .newCommandLine(context)
+                .add("yum", "--quiet", "versionlock", "list")
+                .executeSilently()
+                .getOutputLinesStream()
+                .map(YumPackageName::parseString)
+                .filter(Optional::isPresent) // removes garbage first lines, even with --quiet
+                .map(Optional::get)
+                .anyMatch(packageName -> {
+                    // Ignore lines for other packages
+                    if (packageName.getName().equals(yumPackage.getName())) {
+                        // If existing lock doesn't exactly match the full package name,
+                        // it means it's locked to another version and we must remove that lock.
+                        String versionLockName = packageName.toVersionLockName();
+                        if (versionLockName.equals(targetVersionLockName)) {
+                            return true;
+                        } else {
+                            terminal.newCommandLine(context)
+                                    .add("yum", "versionlock", "delete", versionLockName)
+                                    .execute();
+                        }
+                    }
+
+                    return false;
+                });
+
+        boolean modified = false;
+
+        if (!alreadyLocked) {
+            terminal.newCommandLine(context)
+                    .add("yum", "versionlock", "add", targetVersionLockName)
+                    .execute();
+            modified = true;
+        }
+
+        // The following 3 things may happen with yum install:
+        //  1. The package is installed or upgraded to the target version, in case we'd return
+        //     true from converge()
+        //  2. The package is already installed at target version, in case
+        //     "Nothing to do" is printed in the last line and we may return false from converge()
+        //  3. The package is already installed but at a later version than the target version,
+        //     in case the last 2 lines of the output is:
+        //       - "Package matching yakl-client-0.10-654.el7.x86_64 already installed. Checking for update."
+        //       - "Nothing to do"
+        //     And in case we need to downgrade and return true from converge()
+
+        CommandLine commandLine = terminal
+                .newCommandLine(context)
+                .add("yum", "install", "--assumeyes", yumPackage.toName());
+
+        String output = commandLine.executeSilently().getUntrimmedOutput();
+
+        if (NOTHING_TO_DO_PATTERN.matcher(output).find()) {
+            if (CHECKING_FOR_UPDATE_PATTERN.matcher(output).find()) {
+                // case 3.
+                terminal.newCommandLine(context)
+                        .add("yum", "downgrade", "--assumeyes", yumPackage.toName())
+                        .execute();
+                modified = true;
+            } else {
+                // case 2.
+            }
+        } else {
+            // case 1.
+            commandLine.recordSilentExecutionAsSystemModification();
+            modified = true;
+        }
+
+        return modified;
+    }
+
+    public GenericYumCommand install(YumPackageName... packages) {
         return newYumCommand("install", packages, INSTALL_NOOP_PATTERN);
     }
 
-    /**
-     * @param packages A list of packages, each package being of the form name-1.2.3-1.el7.noarch,
-     *                 if no packages are given, will upgrade all installed packages
-     */
-    public GenericYumCommand upgrade(String... packages) {
+    public GenericYumCommand install(String package1, String... packages) {
+        return install(toYumPackageNameArray(package1, packages));
+    }
+
+    public GenericYumCommand upgrade(YumPackageName... packages) {
         return newYumCommand("upgrade", packages, UPGRADE_NOOP_PATTERN);
     }
 
-    public GenericYumCommand remove(String... packages) {
+    public GenericYumCommand upgrade(String package1, String... packages) {
+        return upgrade(toYumPackageNameArray(package1, packages));
+    }
+
+    public GenericYumCommand remove(YumPackageName... packages) {
         return newYumCommand("remove", packages, REMOVE_NOOP_PATTERN);
     }
 
+    public GenericYumCommand remove(String package1, String... packages) {
+        return remove(toYumPackageNameArray(package1, packages));
+    }
+
+    static YumPackageName[] toYumPackageNameArray(String package1, String... packages) {
+        YumPackageName[] array = new YumPackageName[1 + packages.length];
+        array[0] = YumPackageName.fromString(package1);
+        for (int i = 0; i < packages.length; ++i) {
+            array[1 + i] = YumPackageName.fromString(packages[i]);
+        }
+        return array;
+    }
+
     private GenericYumCommand newYumCommand(String yumCommand,
-                                            String[] packages,
+                                            YumPackageName[] packages,
                                             Pattern noopPattern) {
         return new GenericYumCommand(
                 terminal,
@@ -61,13 +190,14 @@ public class Yum {
     public static class GenericYumCommand {
         private final Terminal terminal;
         private final String yumCommand;
-        private final List<String> packages;
+        private final List<YumPackageName> packages;
         private final Pattern commandOutputNoopPattern;
-        private Optional<String> enabledRepo = Optional.empty();
+
+        private final List<String> enabledRepo = new ArrayList<>();
 
         private GenericYumCommand(Terminal terminal,
                                   String yumCommand,
-                                  List<String> packages,
+                                  List<YumPackageName> packages,
                                   Pattern commandOutputNoopPattern) {
             this.terminal = terminal;
             this.yumCommand = yumCommand;
@@ -80,16 +210,16 @@ public class Yum {
         }
 
         @SuppressWarnings("unchecked")
-        public GenericYumCommand enableRepo(String repo) {
-            enabledRepo = Optional.of(repo);
+        public GenericYumCommand enableRepos(String... repos) {
+            enabledRepo.addAll(Arrays.asList(repos));
             return this;
         }
 
-        public boolean converge(TaskContext taskContext) {
-            CommandLine commandLine = terminal.newCommandLine(taskContext);
+        public boolean converge(TaskContext context) {
+            CommandLine commandLine = terminal.newCommandLine(context);
             commandLine.add("yum", yumCommand, "--assumeyes");
-            enabledRepo.ifPresent(repo -> commandLine.add("--enablerepo=" + repo));
-            commandLine.add(packages);
+            enabledRepo.forEach(repo -> commandLine.add("--enablerepo=" + repo));
+            commandLine.add(packages.stream().map(YumPackageName::toName).collect(Collectors.toList()));
 
             // There's no way to figure out whether a yum command would have been a no-op.
             // Therefore, run the command and parse the output to decide.
@@ -104,7 +234,7 @@ public class Yum {
             return modifiedSystem;
         }
 
-        public boolean mapOutput(String output) {
+        private boolean mapOutput(String output) {
             Matcher unknownPackageMatcher = UNKNOWN_PACKAGE_PATTERN.matcher(output);
             if (unknownPackageMatcher.find()) {
                 throw new IllegalArgumentException("Unknown package: " + unknownPackageMatcher.group(1));
@@ -113,4 +243,5 @@ public class Yum {
             return !commandOutputNoopPattern.matcher(output).find();
         }
     }
+
 }

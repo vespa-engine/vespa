@@ -1,15 +1,17 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
+
 #include "service.h"
-#include "metrics.h"
-#include <vespa/vespalib/util/hashmap.h>
 #include <map>
+#include <unordered_set>
 
 namespace logdemon {
 
-typedef vespalib::HashMap<bool> SeenMap;
+using SeenMap = std::unordered_set<std::string>;
 // Mapping saying if a level should be forwarded or not
-typedef std::map<ns_log::Logger::LogLevel, bool> ForwardMap;
+using ForwardMap = std::map<ns_log::Logger::LogLevel, bool>;
+
+class Metrics;
 
 class LevelParser
 {
@@ -17,7 +19,7 @@ private:
     SeenMap _seenLevelMap;
 public:
     ns_log::Logger::LogLevel parseLevel(const char *level);
-    LevelParser() : _seenLevelMap(false) {}
+    LevelParser() : _seenLevelMap() {}
 };
 
 class Forwarder
@@ -48,4 +50,4 @@ public:
     void sendMode();
 };
 
-} // namespace
+}

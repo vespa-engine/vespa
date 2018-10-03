@@ -176,7 +176,7 @@ TEST("testImplicitShared") {
     ServerSampler serverSampler(dataSet, req);
     {
         FRT_ReflectionBuilder rb(&orb);
-        rb.DefineMethod("test", "*", "*", true,
+        rb.DefineMethod("test", "*", "*",
                         FRT_METHOD(ServerSampler::RPC_test), &serverSampler);
     }
     orb.Listen(0);

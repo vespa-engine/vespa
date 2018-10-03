@@ -45,7 +45,6 @@ public class HealthMonitor implements AutoCloseable {
     }
 
     public void startMonitoring() {
-        healthClient.start();
         executor.scheduleWithFixedDelay(
                 this::updateSynchronously,
                 initialDelayInMillis(delay.toMillis()),

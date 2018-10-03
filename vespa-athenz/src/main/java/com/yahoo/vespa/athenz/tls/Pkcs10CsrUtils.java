@@ -13,7 +13,9 @@ import java.io.UncheckedIOException;
 
 /**
  * @author bjorncs
+ * @deprecated Use com.yahoo.security.*
  */
+@Deprecated
 public class Pkcs10CsrUtils {
 
     private Pkcs10CsrUtils() {}

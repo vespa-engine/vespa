@@ -37,18 +37,18 @@ using namespace search::fef::indexproperties;
 
 namespace {
 template <typename X, typename Y>
-bool equals(const X & lhs, const Y & rhs) {
+bool equals(X lhs, Y rhs) {
     return lhs == rhs;
 }
 
 template <>
-bool equals<ConstCharPtr, vespalib::stringref>(const ConstCharPtr & lhs, const vespalib::stringref & rhs) {
+bool equals<ConstCharPtr, vespalib::stringref>(ConstCharPtr lhs, vespalib::stringref rhs) {
     return strcmp(lhs, rhs.data()) == 0;
 }
 
 template <typename T>
 bool
-isUndefined(const T & value, const BasicType::Type & type)
+isUndefined(T value, BasicType::Type type)
 {
     switch (type) {
     case BasicType::INT8:
@@ -70,14 +70,14 @@ isUndefined(const T & value, const BasicType::Type & type)
 
 template <>
 bool
-isUndefined<vespalib::stringref>(const vespalib::stringref &, const BasicType::Type &)
+isUndefined<vespalib::stringref>(vespalib::stringref, BasicType::Type)
 {
     return false;
 }
 
 template <typename T>
 search::feature_t
-considerUndefined(const T & value, const BasicType::Type & type)
+considerUndefined(T value, BasicType::Type type)
 {
     if (isUndefined(value, type)) {
         return search::attribute::getUndefined<search::feature_t>();
@@ -87,7 +87,7 @@ considerUndefined(const T & value, const BasicType::Type & type)
 
 template <>
 search::feature_t
-considerUndefined<ConstCharPtr>(const ConstCharPtr & value, const BasicType::Type &)
+considerUndefined<ConstCharPtr>(ConstCharPtr value, BasicType::Type )
 {
     return search::features::util::getAsFeature(value);
 }
@@ -96,8 +96,7 @@ considerUndefined<ConstCharPtr>(const ConstCharPtr & value, const BasicType::Typ
 }
 
 
-namespace search {
-namespace features {
+namespace search::features {
 
 /**
  * Implements the executor for fetching values from a single or array attribute vector
@@ -275,9 +274,7 @@ AttributeBlueprint::AttributeBlueprint() :
 {
 }
 
-AttributeBlueprint::~AttributeBlueprint()
-{
-}
+AttributeBlueprint::~AttributeBlueprint() = default;
 
 void
 AttributeBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
@@ -433,5 +430,4 @@ AttributeBlueprint::getDescriptions() const
         desc().attribute(dataTypeSet, fef::ParameterCollection::ANY).string();
 }
 
-} // namespace features
-} // namespace search
+}

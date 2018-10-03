@@ -681,6 +681,24 @@ public class RequestBuilderTestCase {
         assertOutput(test);
     }
 
+    @Test
+    public void requireThatAttributeMapLookupNodeIsCreatedFromKey() {
+        RequestTest test = new RequestTest();
+        test.expectedOutput = AttributeMapLookupNode.fromKey("map{\"my_key\"}", "map.key", "map.value", "my_key").toString();
+        test.request = "all(group(map{\"my_key\"}) each(output(count())))";
+        test.outputWriter = (groupingList, transform) -> groupingList.get(0).getLevels().get(0).getExpression().toString();
+        assertOutput(test);
+    }
+
+    @Test
+    public void requireThatAttributeMapLookupNodeIsCreatedFromKeySourceAttribute() {
+        RequestTest test = new RequestTest();
+        test.expectedOutput = AttributeMapLookupNode.fromKeySourceAttribute("map{attribute(key_source)}", "map.key", "map.value", "key_source").toString();
+        test.request = "all(group(map{attribute(key_source)}) each(output(count())))";
+        test.outputWriter = (groupingList, transform) -> groupingList.get(0).getLevels().get(0).getExpression().toString();
+        assertOutput(test);
+    }
+
     private static CompositeContinuation newComposite(EncodableContinuation... conts) {
         CompositeContinuation ret = new CompositeContinuation();
         for (EncodableContinuation cont : conts) {

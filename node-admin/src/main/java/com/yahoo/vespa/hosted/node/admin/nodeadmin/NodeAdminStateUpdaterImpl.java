@@ -208,11 +208,12 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
                 // We have spent too much time trying to freeze and node admin is still not frozen.
                 // To avoid node agents stalling for too long, we'll force unfrozen ticks now.
                 log.info("Timed out trying to freeze, will force unfreezed ticks");
+                fetchContainersToRunFromNodeRepository();
                 nodeAdmin.setFrozen(false);
             }
+        } else if (currentState == RESUMED) {
+            fetchContainersToRunFromNodeRepository();
         }
-
-        fetchContainersToRunFromNodeRepository();
     }
 
     private void setLastConvergenceException(RuntimeException exception) {
@@ -236,12 +237,13 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             throw new ConvergenceException("NodeAdmin is not yet " + (wantFrozen ? "frozen" : "unfrozen"));
         }
 
+        boolean hostIsActiveInNR = nodeRepository.getNode(dockerHostHostName).getState() == Node.State.active;
         switch (wantedState) {
             case RESUMED:
-                orchestrator.resume(dockerHostHostName);
+                if (hostIsActiveInNR) orchestrator.resume(dockerHostHostName);
                 break;
             case SUSPENDED_NODE_ADMIN:
-                orchestrator.suspend(dockerHostHostName);
+                if (hostIsActiveInNR) orchestrator.suspend(dockerHostHostName);
                 break;
             case SUSPENDED:
                 // Fetch active nodes from node repo before suspending nodes.
@@ -252,11 +254,12 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
                 // We should also suspend host's hostname to suspend node-admin
                 List<String> nodesInActiveState = getNodesInActiveState();
 
-                List<String> nodesToSuspend = new ArrayList<>();
-                nodesToSuspend.addAll(nodesInActiveState);
-                nodesToSuspend.add(dockerHostHostName);
-                orchestrator.suspend(dockerHostHostName, nodesToSuspend);
-                log.info("Orchestrator allows suspension of " + nodesToSuspend);
+                List<String> nodesToSuspend = new ArrayList<>(nodesInActiveState);
+                if (hostIsActiveInNR) nodesToSuspend.add(dockerHostHostName);
+                if (!nodesToSuspend.isEmpty()) {
+                    orchestrator.suspend(dockerHostHostName, nodesToSuspend);
+                    log.info("Orchestrator allows suspension of " + nodesToSuspend);
+                }
 
                 // The node agent services are stopped by this thread, which is OK only
                 // because the node agents are frozen (see above).
@@ -275,20 +278,11 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     }
 
     private void fetchContainersToRunFromNodeRepository() {
-        synchronized (monitor) {
-            // Refresh containers to run even if we would like to suspend but have failed to do so yet,
-            // because it may take a long time to get permission to suspend.
-            if (currentState != RESUMED) {
-                log.info("Frozen, skipping fetching info from node repository");
-                return;
-            }
-
-            try {
-                final List<NodeSpec> containersToRun = nodeRepository.getNodes(dockerHostHostName);
-                nodeAdmin.refreshContainersToRun(containersToRun);
-            } catch (Exception e) {
-                log.log(LogLevel.WARNING, "Failed to update which containers should be running", e);
-            }
+        try {
+            final List<NodeSpec> containersToRun = nodeRepository.getNodes(dockerHostHostName);
+            nodeAdmin.refreshContainersToRun(containersToRun);
+        } catch (Exception e) {
+            log.log(LogLevel.WARNING, "Failed to update which containers should be running", e);
         }
     }
 

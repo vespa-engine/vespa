@@ -75,7 +75,7 @@ public:
      * @param buf A pointer to the buffer holding the stackdump
      * @param buflen The length of the buffer in bytes
      */
-    SimpleQueryStackDumpIterator(const vespalib::stringref &buf);
+    SimpleQueryStackDumpIterator(vespalib::stringref buf);
     ~SimpleQueryStackDumpIterator();
 
     vespalib::stringref getStack() const { return vespalib::stringref(_buf, _bufLen); }

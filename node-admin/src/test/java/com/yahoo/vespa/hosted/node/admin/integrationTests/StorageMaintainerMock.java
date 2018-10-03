@@ -30,7 +30,7 @@ public class StorageMaintainerMock extends StorageMaintainer {
     }
 
     @Override
-    public void handleCoreDumpsForContainer(ContainerName containerName, NodeSpec node, boolean force) {
+    public void handleCoreDumpsForContainer(ContainerName containerName, NodeSpec node) {
     }
 
     @Override

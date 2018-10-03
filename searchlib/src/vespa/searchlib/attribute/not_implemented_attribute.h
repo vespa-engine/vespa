@@ -33,7 +33,6 @@ struct NotImplementedAttribute : AttributeVector {
     uint32_t clearDoc(DocId) override;
     int64_t getDefaultValue() const override;
     uint32_t getEnum(DocId) const override;
-    void getEnumValue(const EnumHandle *, uint32_t *, uint32_t) const override;
     bool addDoc(DocId &) override;
     void onAddDocs(DocId lidLimit) override;
 

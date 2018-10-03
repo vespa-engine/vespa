@@ -31,7 +31,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class ControllerContainerTest {
 
-    public static final AthenzUser USER = AthenzUser.fromUserId("bob");
+    private static final AthenzUser defaultUser = AthenzUser.fromUserId("bob");
+
     protected JDisc container;
 
     @Before
@@ -42,6 +43,9 @@ public class ControllerContainerTest {
 
     private final String controllerServicesXml =
             "<jdisc version='1.0'>\n" +
+            "  <config name=\"container.handler.threadpool\">\n" +
+            "    <maxthreads>10</maxthreads>\n" +
+            "  </config> \n" +
             "  <config name='vespa.hosted.zone.config.zone'>\n" +
             "    <system>main</system>\n" +
             "  </config>\n" +
@@ -65,10 +69,9 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockLogStore'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.NodeRepositoryClientMock'/>\n" +
@@ -81,6 +84,7 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.maintenance.JobControl'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud'/>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
             "    <binding>http://*/application/v4/*</binding>\n" +
@@ -90,6 +94,9 @@ public class ControllerContainerTest {
             "  </handler>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.controller.ControllerApiHandler'>\n" +
             "    <binding>http://*/controller/v1/*</binding>\n" +
+            "  </handler>\n" +
+            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.os.OsApiHandler'>\n" +
+            "    <binding>http://*/os/v1/*</binding>\n" +
             "  </handler>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.screwdriver.ScrewdriverApiHandler'>\n" +
             "    <binding>http://*/screwdriver/v1/*</binding>\n" +
@@ -126,11 +133,11 @@ public class ControllerContainerTest {
     }
 
     protected static Request authenticatedRequest(String uri) {
-        return addIdentityToRequest(new Request(uri), USER);
+        return addIdentityToRequest(new Request(uri), defaultUser);
     }
 
     protected static Request authenticatedRequest(String uri, byte[] body, Request.Method method) {
-        return addIdentityToRequest(new Request(uri, body, method), USER);
+        return addIdentityToRequest(new Request(uri, body, method), defaultUser);
     }
 
     protected static Request addIdentityToRequest(Request request, AthenzIdentity identity) {

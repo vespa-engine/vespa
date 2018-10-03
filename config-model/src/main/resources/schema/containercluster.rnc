@@ -16,6 +16,7 @@ ContainerServices =
     SearchInContainer? &
     DocprocInContainer? &
     ProcessingInContainer? &
+    ModelEvaluation? &
     DocumentApi? &
     Components* &
     Component* &
@@ -62,8 +63,7 @@ Filtering = element filtering {
 HttpServer =  element server {
     attribute port { xsd:nonNegativeInteger } &
     ComponentId &
-    element ssl-keystore-configurator { BundleSpec }? & # FOR INTERNAL USE ONLY - SUBJECT TO CHANGE
-    element ssl-truststore-configurator { BundleSpec }? & # FOR INTERNAL USE ONLY - SUBJECT TO CHANGE
+    (Ssl | SslProvider)? &
     GenericConfig*
 }
 
@@ -83,6 +83,21 @@ SecretStore = element secret-store {
       attribute name { string } &
       attribute environment { string "alpha" | string "corp" | string "prod" | string "aws" | string "aws_stage" }
     } +
+}
+
+ModelEvaluation = element model-evaluation {
+    empty
+}
+
+Ssl = element ssl {
+    element private-key-file { string } &
+    element certificate-file { string } &
+    element ca-certificates-file { string }? &
+    element client-authentication { string "disabled" | string "want" | string "need" }?
+}
+
+SslProvider = element ssl-provider {
+    BundleSpec
 }
 
 # REST-API:

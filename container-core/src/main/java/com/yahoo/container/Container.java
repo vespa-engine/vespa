@@ -145,7 +145,7 @@ public class Container {
     /**
      * Only for internal use.
      */
-    public void setCustomFileAcquirer(final FileAcquirer fileAcquirer) {
+    public void setCustomFileAcquirer(FileAcquirer fileAcquirer) {
         if (this.fileAcquirer != null) {
             throw new RuntimeException("Can't change file acquirer. Is " +
                                        this.fileAcquirer + " attempted to set to " + fileAcquirer);
@@ -155,7 +155,7 @@ public class Container {
         setPathAcquirer(fileAcquirer);
     }
 
-    private static void setPathAcquirer(final FileAcquirer fileAcquirer) {
+    private static void setPathAcquirer(FileAcquirer fileAcquirer) {
         ConfigTransformer.setPathAcquirer(fileReference -> {
             try {
                 return fileAcquirer.waitFor(fileReference, 15, TimeUnit.MINUTES).toPath();

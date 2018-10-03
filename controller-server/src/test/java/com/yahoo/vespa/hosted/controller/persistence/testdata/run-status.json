@@ -4,6 +4,8 @@
     "type": "production-us-east-3",
     "number": 112358,
     "start": 1196676930000,
+    "status": "running",
+    "lastTestRecord": 3,
     "steps": {
       "deployInitialReal": "unfinished",
       "installInitialReal": "failed",
@@ -24,7 +26,7 @@
       "commit": "f00bad",
       "build": 123,
       "source": {
-        "platform": "1.2.3",
+        "platform": "1.2.2",
         "repository": "git@github.com:user/repo.git",
         "branch": "master",
         "commit": "badb17",

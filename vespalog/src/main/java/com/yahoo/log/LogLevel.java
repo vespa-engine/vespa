@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -34,10 +35,11 @@ import java.util.logging.Level;
 
 public class LogLevel extends Level {
     /** A map from the name of the log level to the instance */
-    private static LinkedHashMap<String, Level> nameToLevel;
+    private static final Map<String, Level> nameToLevel;
+    private static final Map<String, Level> uppercasedNameToLevel;
 
     /** A map from the java.util.logging loglevel to VESPA's loglevel */
-    private static Map<Level, Level> javaToVespa;
+    private static final Map<Level, Level> javaToVespa;
 
     public static final int IntValEVENT   = 1201;
     public static final int IntValFATAL   = 1161;
@@ -85,7 +87,7 @@ public class LogLevel extends Level {
     static {
         // define mapping from Java log levels to VESPA log
         // levels.
-        javaToVespa = new HashMap<Level, Level>();
+        javaToVespa = new HashMap<>();
         javaToVespa.put(Level.SEVERE, ERROR);
         javaToVespa.put(Level.WARNING, WARNING);
         javaToVespa.put(Level.INFO, INFO);
@@ -101,9 +103,9 @@ public class LogLevel extends Level {
         javaToVespa.put(DEBUG, DEBUG);
         javaToVespa.put(SPAM, SPAM);
 
-        // manually enter the valid log levels we shall recognize
-        // in VESPA
-        nameToLevel = new LinkedHashMap<String, Level>(15);
+        // manually enter the valid log levels we shall recognize in VESPA
+        nameToLevel = new LinkedHashMap<>(16);
+
         nameToLevel.put("fatal", FATAL);
         nameToLevel.put("error", ERROR);
         nameToLevel.put("warning", WARNING);
@@ -112,6 +114,9 @@ public class LogLevel extends Level {
         nameToLevel.put("event", EVENT);
         nameToLevel.put("debug", DEBUG);
         nameToLevel.put("spam", SPAM);
+
+        uppercasedNameToLevel = new LinkedHashMap<>(16);
+        nameToLevel.forEach((name, level) -> uppercasedNameToLevel.put(name.toUpperCase(), level));
     }
 
     private LogLevel(String name, int value) {
@@ -131,10 +136,14 @@ public class LogLevel extends Level {
      */
     public static Level parse(String name) {
         Level l = nameToLevel.get(name);
-        if (l == null) {
-            return UNKNOWN;
-        }
-        return l;
+        if (l != null)
+            return l;
+
+        l = uppercasedNameToLevel.get(name);
+        if (l != null)
+            return l;
+
+        return UNKNOWN;
     }
 
     /**
@@ -171,7 +180,7 @@ public class LogLevel extends Level {
      *
      * @return a map from Vespa level name to Level
      */
-    public static HashMap<String, Level> getLevels() {
+    public static Map<String, Level> getLevels() {
         return nameToLevel;
     }
 }

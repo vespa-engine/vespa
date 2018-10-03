@@ -3,12 +3,15 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.model.*;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.XML;
+import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.model.*;
 import com.yahoo.vespa.model.builder.UserConfigBuilder;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
@@ -214,21 +217,28 @@ public class VespaDomBuilder extends VespaModelBuilder {
 
     public static class DomRootBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ApplicationConfigProducerRoot> {
         private final String name;
-        private final DeployState deployState;
+        private final DeployProperties deployProperties;
+        private final DocumentModel documentModel;
+        private final HostProvisioner provisioner;
 
         /**
          * @param name The name of the Vespa to create. Usually 'root' when there is only one.
          */
         public DomRootBuilder(String name, DeployState deployState) {
             this.name = name;
-            this.deployState = deployState;
+            this.deployProperties = deployState.getProperties();
+            this.documentModel = deployState.getDocumentModel();
+            this.provisioner = deployState.getProvisioner();
         }
 
         @Override
         protected ApplicationConfigProducerRoot doBuild(AbstractConfigProducer parent, Element producerSpec) {
-            ApplicationConfigProducerRoot root = new ApplicationConfigProducerRoot(parent, name,
-                    deployState.getDocumentModel(), deployState.getProperties().vespaVersion(), deployState.getProperties().applicationId());
-            root.setHostSystem(new HostSystem(root, "hosts", deployState.getProvisioner()));
+            ApplicationConfigProducerRoot root = new ApplicationConfigProducerRoot(parent,
+                                                                                   name,
+                                                                                   documentModel,
+                                                                                   deployProperties.vespaVersion(),
+                                                                                   deployProperties.applicationId());
+            root.setHostSystem(new HostSystem(root, "hosts", provisioner));
             new Client(root);
             return root;
         }

@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/attribute/multivalueattribute.h>
-#include <vespa/searchlib/attribute/enumstorebase.h>
-#include <vespa/searchlib/attribute/loadedenumvalue.h>
+#include "multivalueattribute.h"
+#include "enumstorebase.h"
+#include "loadedenumvalue.h"
 
 namespace search {
 
@@ -58,7 +58,7 @@ protected:
         this->getEnumStore().freezeTree();
     }
 
-    virtual void fillValues(LoadedVector & loaded) override;
+    void fillValues(LoadedVector & loaded) override;
     void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, LoadedEnumAttributeVector &loaded) override;
     void fillEnumIdx(ReaderBase &attrReader, const EnumIndexVector &eidxs, EnumVector &enumHist) override;
     virtual void mergeMemoryStats(MemoryUsage & total) { (void) total; }
@@ -100,7 +100,7 @@ public:
         return valueCount;
     }
 
-    std::unique_ptr<AttributeSaver> onInitSave() override;
+    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
 };
 
 } // namespace search

@@ -8,9 +8,7 @@
 #include <vespa/searchlib/common/rcuvector.h>
 #include <vespa/eval/tensor/tensor_mapper.h>
 
-namespace search {
-
-namespace tensor {
+namespace search::tensor {
 
 /**
  * Attribute vector class used to store tensors for all documents in memory.
@@ -32,28 +30,24 @@ protected:
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(TensorAttribute);
     using RefCopyVector = vespalib::Array<RefType>;
-    TensorAttribute(const vespalib::stringref &baseFileName, const Config &cfg,
-                    TensorStore &tensorStore);
-    virtual ~TensorAttribute();
-    virtual const ITensorAttribute *asTensorAttribute() const override;
+    TensorAttribute(vespalib::stringref name, const Config &cfg, TensorStore &tensorStore);
+    ~TensorAttribute() override;
+    const ITensorAttribute *asTensorAttribute() const override;
 
-    virtual uint32_t clearDoc(DocId docId) override;
-    virtual void onCommit() override;
-    virtual void onUpdateStat() override;
-    virtual void removeOldGenerations(generation_t firstUsed) override;
-    virtual void onGenerationChange(generation_t generation) override;
-    virtual bool addDoc(DocId &docId) override;
-    virtual std::unique_ptr<Tensor> getEmptyTensor() const override;
-    virtual vespalib::eval::ValueType getTensorType() const override;
-    virtual void clearDocs(DocId lidLow, DocId lidLimit) override;
-    virtual void onShrinkLidSpace() override;
-    virtual uint32_t getVersion() const override;
+    uint32_t clearDoc(DocId docId) override;
+    void onCommit() override;
+    void onUpdateStat() override;
+    void removeOldGenerations(generation_t firstUsed) override;
+    void onGenerationChange(generation_t generation) override;
+    bool addDoc(DocId &docId) override;
+    std::unique_ptr<Tensor> getEmptyTensor() const override;
+    vespalib::eval::ValueType getTensorType() const override;
+    void clearDocs(DocId lidLow, DocId lidLimit) override;
+    void onShrinkLidSpace() override;
+    uint32_t getVersion() const override;
     RefCopyVector getRefCopy() const;
     virtual void setTensor(DocId docId, const Tensor &tensor) = 0;
     virtual void compactWorst() = 0;
 };
 
-
-}  // namespace search::tensor
-
-}  // namespace search
+}

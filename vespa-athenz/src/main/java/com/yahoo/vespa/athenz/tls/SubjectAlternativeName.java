@@ -15,7 +15,9 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * @author bjorncs
+ * @deprecated Use com.yahoo.security.*
  */
+@Deprecated
 public class SubjectAlternativeName {
 
     private final Type type;

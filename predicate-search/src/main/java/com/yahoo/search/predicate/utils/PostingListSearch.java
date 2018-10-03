@@ -3,6 +3,7 @@ package com.yahoo.search.predicate.utils;
 
 /**
  * Algorithms for searching in the docId arrays in posting lists.
+ *
  * @author bjorncs
  */
 public class PostingListSearch {
@@ -86,4 +87,5 @@ public class PostingListSearch {
         }
         return low;
     }
+
 }

@@ -2,6 +2,7 @@
 package com.yahoo.search.grouping.request;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class represents a mod-function in a {@link GroupingExpression}. It evaluates to a number that equals the result
@@ -20,11 +21,18 @@ public class ModFunction extends FunctionNode {
      * @param argN The optional arguments, must evaluate to a number.
      */
     public ModFunction(GroupingExpression arg1, GroupingExpression arg2, GroupingExpression... argN) {
-        this(asList(arg1, arg2, argN));
+        this(null, null, asList(arg1, arg2, argN));
     }
 
-    private ModFunction(List<GroupingExpression> args) {
-        super("mod", args);
+    private ModFunction(String label, Integer level, List<GroupingExpression> args) {
+        super("mod", label, level, args);
+    }
+
+    @Override
+    public ModFunction copy() {
+        return new ModFunction(getLabel(),
+                               getLevelOrNull(),
+                               args().stream().map(arg -> arg.copy()).collect(Collectors.toList()));
     }
 
     /**
@@ -38,6 +46,6 @@ public class ModFunction extends FunctionNode {
         if (args.size() < 2) {
             throw new IllegalArgumentException("Expected 2 or more arguments, got " + args.size() + ".");
         }
-        return new ModFunction(args);
+        return new ModFunction(null, null, args);
     }
 }

@@ -31,7 +31,7 @@ public class MultifieldIndexHarmonizer extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         populateIndexToFields(search);
         resolveAllConflicts(search);
     }

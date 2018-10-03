@@ -12,52 +12,6 @@ using vespalib::nbostream;
 
 namespace documentapi {
 
-bool
-RoutableFactories51::DocumentMessageFactory::encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const
-{
-    const DocumentMessage &msg = static_cast<const DocumentMessage&>(obj);
-    out.putByte(msg.getPriority());
-    out.putInt(msg.getLoadType().getId());
-    return doEncode(msg, out);
-}
-
-mbus::Routable::UP
-RoutableFactories51::DocumentMessageFactory::decode(document::ByteBuffer &in,
-                                                  const LoadTypeSet& loadTypes) const
-{
-    uint8_t pri;
-    in.getByte(pri);
-    uint32_t loadClass = decodeInt(in);
-
-    DocumentMessage::UP msg = doDecode(in);
-    if (msg.get() != NULL) {
-        msg->setPriority((Priority::Value)pri);
-        msg->setLoadType(loadTypes[loadClass]);
-    }
-
-    return mbus::Routable::UP(msg.release());
-}
-
-bool
-RoutableFactories51::DocumentReplyFactory::encode(const mbus::Routable &obj, vespalib::GrowableByteBuffer &out) const
-{
-    const DocumentReply &msg = static_cast<const DocumentReply&>(obj);
-    out.putByte(msg.getPriority());
-    return doEncode(msg, out);
-}
-
-mbus::Routable::UP
-RoutableFactories51::DocumentReplyFactory::decode(document::ByteBuffer &in, const LoadTypeSet&) const
-{
-    uint8_t pri;
-    in.getByte(pri);
-    DocumentReply::UP reply = doDecode(in);
-    if (reply.get() != NULL) {
-        reply->setPriority((Priority::Value)pri);
-    }
-    return mbus::Routable::UP(reply.release());
-}
-
 DocumentMessage::UP
 RoutableFactories51::CreateVisitorMessageFactory::doDecode(document::ByteBuffer &buf) const
 {

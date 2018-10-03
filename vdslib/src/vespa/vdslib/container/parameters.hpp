@@ -8,7 +8,7 @@ namespace vdslib {
 
 template<typename T>
 void
-Parameters::set(const KeyT & id, T t) {
+Parameters::set(KeyT id, T t) {
     vespalib::asciistream ost;
     ost << t;
     _parameters[id] = ost.str();
@@ -16,9 +16,9 @@ Parameters::set(const KeyT & id, T t) {
 
 template<typename T>
 T
-Parameters::get(const KeyT & id, T def) const {
+Parameters::get(KeyT id, T def) const {
     vespalib::stringref ref;
-    if (!get(id, ref)) return def;
+    if (!lookup(id, ref)) return def;
     vespalib::asciistream ist(ref);
     T t;
     ist >> t;

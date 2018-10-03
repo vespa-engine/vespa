@@ -49,14 +49,14 @@ public:
     JSONWriter & beginArray();
     JSONWriter & endArray();
     JSONWriter & appendNull();
-    JSONWriter & appendKey(const stringref & str);
+    JSONWriter & appendKey(stringref str);
     JSONWriter & appendBool(bool v);
     JSONWriter & appendDouble(double v);
     JSONWriter & appendFloat(float v);
     JSONWriter & appendInt64(int64_t v);
     JSONWriter & appendUInt64(uint64_t v);
-    JSONWriter & appendString(const stringref & str);
-    JSONWriter & appendJSON(const stringref & json);
+    JSONWriter & appendString(stringref str);
+    JSONWriter & appendJSON(stringref json);
 
     void setPretty() { _pretty = true; };
 };

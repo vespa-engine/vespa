@@ -41,8 +41,10 @@ public:
                            SerialNum current);
     static void flushComplete(const string &name,
                               int64_t elapsedTimeMs,
+                              SerialNum flushed,
                               const string &outputPath,
                               size_t outputPathElems);
+    static void flushPrune(const string &name, SerialNum oldestFlushed);
     static void loadAttributeStart(const vespalib::string &subDbName, const vespalib::string &attrName);
     static void loadAttributeComplete(const vespalib::string &subDbName,
                                       const vespalib::string &attrName, int64_t elapsedTimeMs);

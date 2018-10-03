@@ -43,8 +43,8 @@ public:
 
     class KeyComp {
     private:
-        const WordStore           &_wordStore;
-        const vespalib::stringref  _word;
+        const WordStore          &_wordStore;
+        const vespalib::stringref _word;
 
         const char *
         getWord(datastore::EntryRef wordRef) const

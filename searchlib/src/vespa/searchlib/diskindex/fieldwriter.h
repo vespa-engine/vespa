@@ -58,8 +58,8 @@ public:
     FieldWriter(uint32_t docIdLimit, uint64_t numWordIds);
     ~FieldWriter();
 
-    void newWord(uint64_t wordNum, const vespalib::stringref &word);
-    void newWord(const vespalib::stringref &word);
+    void newWord(uint64_t wordNum, vespalib::stringref word);
+    void newWord(vespalib::stringref word);
 
     void add(const DocIdAndFeatures &features) {
         assert(features._docId < _docIdLimit);

@@ -81,4 +81,5 @@ public interface ImmutableSDField {
      */
     Field asField();
 
+    boolean hasFullIndexingDocprocRights();
 }

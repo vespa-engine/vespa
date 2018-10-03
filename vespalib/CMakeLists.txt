@@ -12,6 +12,7 @@ vespa_define_module(
     src/apps/make_fixture_macros
     src/apps/vespa-detect-hostname
     src/apps/vespa-validate-hostname
+    src/apps/vespa-drop-file-from-cache
 
     TESTS
     src/tests/alignedmemory
@@ -33,8 +34,10 @@ vespa_define_module(
     src/tests/data/memory_input
     src/tests/data/output_writer
     src/tests/data/simple_buffer
+    src/tests/data/smart_buffer
     src/tests/delegatelist
     src/tests/dotproduct
+    src/tests/drop-file-from-cache
     src/tests/dual_merge_director
     src/tests/eventbarrier
     src/tests/exception_classes
@@ -44,7 +47,6 @@ vespa_define_module(
     src/tests/fiddle
     src/tests/gencnt
     src/tests/guard
-    src/tests/hashmap
     src/tests/host_name
     src/tests/io/fileutil
     src/tests/io/mapped_file_input
@@ -56,6 +58,10 @@ vespa_define_module(
     src/tests/net/send_fd
     src/tests/net/socket
     src/tests/net/socket_spec
+    src/tests/net/tls/direct_buffer_bio
+    src/tests/net/tls/openssl_impl
+    src/tests/net/tls/protocol_snooping
+    src/tests/net/tls/transport_options
     src/tests/objects/nbostream
     src/tests/optimized
     src/tests/printable
@@ -118,6 +124,8 @@ vespa_define_module(
     src/vespa/vespalib/io
     src/vespa/vespalib/locale
     src/vespa/vespalib/net
+    src/vespa/vespalib/net/tls
+    src/vespa/vespalib/net/tls/impl
     src/vespa/vespalib/objects
     src/vespa/vespalib/stllike
     src/vespa/vespalib/test

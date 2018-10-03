@@ -13,7 +13,7 @@ namespace document::select {
 
 Operator::OperatorMap Operator::_operators;
 
-Operator::Operator(const vespalib::stringref & name)
+Operator::Operator(vespalib::stringref name)
     : _name(name)
 {
     OperatorMap::iterator it = _operators.find(name);
@@ -24,7 +24,7 @@ Operator::Operator(const vespalib::stringref & name)
 }
 
 const Operator&
-Operator::get(const vespalib::stringref & name)
+Operator::get(vespalib::stringref name)
 {
     OperatorMap::iterator it = _operators.find(name);
     if (it == _operators.end()) {
@@ -75,7 +75,7 @@ FunctionOperator::LT("<", &Value::operator<);
 const FunctionOperator
 FunctionOperator::NE("!=", &Value::operator!=);
 
-RegexOperator::RegexOperator(const vespalib::stringref & name)
+RegexOperator::RegexOperator(vespalib::stringref name)
     : Operator(name)
 {
 }
@@ -123,7 +123,7 @@ RegexOperator::traceImpl(const Value& a, const Value& b, std::ostream& out) cons
 }
 
 ResultList
-RegexOperator::match(const vespalib::string& val, const vespalib::stringref & expr) const
+RegexOperator::match(const vespalib::string& val, vespalib::stringref expr) const
 {
         // Should we catch this in parsing?
     if (expr.size() == 0) return ResultList(Result::True);
@@ -133,7 +133,7 @@ RegexOperator::match(const vespalib::string& val, const vespalib::stringref & ex
 
 const RegexOperator RegexOperator::REGEX("=~");
 
-GlobOperator::GlobOperator(const vespalib::stringref & name)
+GlobOperator::GlobOperator(vespalib::stringref name)
     : RegexOperator(name)
 {
 }
@@ -187,7 +187,7 @@ GlobOperator::traceImpl(const Value& a, const Value& b, std::ostream& ost) const
 }
 
 vespalib::string
-GlobOperator::convertToRegex(const vespalib::stringref & globpattern) const
+GlobOperator::convertToRegex(vespalib::stringref globpattern) const
 {
     vespalib::asciistream ost;
     ost << '^';
@@ -219,7 +219,7 @@ GlobOperator::convertToRegex(const vespalib::stringref & globpattern) const
 }
 
 bool
-GlobOperator::containsVariables(const vespalib::stringref & expression)
+GlobOperator::containsVariables(vespalib::stringref expression)
 {
     for (size_t i=0, n=expression.size(); i<n; ++i) {
         if (expression[i] == '*' || expression[i] == '?') {

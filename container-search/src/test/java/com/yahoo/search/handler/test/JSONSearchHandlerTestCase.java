@@ -11,10 +11,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
 import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
-import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.ObjectTraverser;
-import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.SlimeUtils;
 import org.json.JSONObject;
 import org.junit.After;
@@ -22,12 +19,11 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -372,6 +368,8 @@ public class JSONSearchHandlerTestCase {
         JSONObject processedGrouping = new JSONObject(map.get("select.grouping"));
         assertEquals(grouping.toString(), processedGrouping.toString());
     }
+
+
 
     @Test
     public void testRequestMapping() throws Exception {

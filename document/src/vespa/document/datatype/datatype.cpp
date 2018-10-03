@@ -118,7 +118,7 @@ namespace {
 // ASCII characters. Probably screwed up otherwise, but generated ids
 // should only be used in testing anyways. In production this will be
 // set from the document manager config.
-uint32_t crappyJavaStringHash(const vespalib::stringref & value) {
+uint32_t crappyJavaStringHash(vespalib::stringref value) {
     uint32_t h = 0;
     for (uint32_t i = 0; i < value.size(); ++i) {
         h = 31 * h + value[i];
@@ -126,7 +126,7 @@ uint32_t crappyJavaStringHash(const vespalib::stringref & value) {
     return h;
 }
 
-int32_t createId(const vespalib::stringref & name)
+int32_t createId(vespalib::stringref name)
 {
     if (name == "Tag") {
         return DataType::T_TAG;
@@ -142,13 +142,13 @@ DataType::DataType()
 {
 }
 
-DataType::DataType(const vespalib::stringref & name, int dataTypeId)
+DataType::DataType(vespalib::stringref name, int dataTypeId)
     : _dataTypeId(dataTypeId),
       _name(name)
 {
 }
 
-DataType::DataType(const vespalib::stringref & name)
+DataType::DataType(vespalib::stringref name)
     : _dataTypeId(createId(name)),
       _name(name)
 {
@@ -159,7 +159,7 @@ DataType::~DataType() = default;
 bool
 DataType::operator==(const DataType& other) const
 {
-    return _dataTypeId == other._dataTypeId && _name == other._name;
+    return _dataTypeId == other._dataTypeId;
 }
 
 bool
@@ -170,7 +170,7 @@ DataType::operator<(const DataType& other) const
 }
 
 void
-DataType::buildFieldPath(FieldPath & path, const vespalib::stringref & remainFieldName) const
+DataType::buildFieldPath(FieldPath & path, vespalib::stringref remainFieldName) const
 {
     if ( !remainFieldName.empty() ) {
         path.reserve(4);  // Optimize for short paths

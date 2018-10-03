@@ -23,8 +23,8 @@ public:
     using CompressionConfig = vespalib::compression::CompressionConfig;
 
     StructDataType();
-    StructDataType(const vespalib::stringref &name);
-    StructDataType(const vespalib::stringref &name, int32_t id);
+    StructDataType(vespalib::stringref name);
+    StructDataType(vespalib::stringref name, int32_t id);
     ~StructDataType();
 
     /**
@@ -48,7 +48,7 @@ public:
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     uint32_t getFieldCount() const override { return _idFieldMap.size(); }
 
-    const Field& getField(const vespalib::stringref & name) const override;
+    const Field& getField(vespalib::stringref name) const override;
 
     /**
      * Retrieves a field based on its ID. To determine which ID to use, we also
@@ -56,7 +56,7 @@ public:
      */
     const Field& getField(int32_t fieldId) const override;
 
-    bool hasField(const vespalib::stringref &name) const override;
+    bool hasField(vespalib::stringref name) const override;
     bool hasField(int32_t fieldId) const override;
     bool hasField(const Field& f) const {
         return hasField(f.getId());
@@ -71,10 +71,10 @@ public:
     DECLARE_IDENTIFIABLE(StructDataType);
 
 private:
-    typedef vespalib::hash_map<vespalib::string, Field::SP> StringFieldMap;
-    typedef vespalib::hash_map<int32_t, Field::SP> IntFieldMap;
-    StringFieldMap _nameFieldMap;
-    IntFieldMap    _idFieldMap;
+    using StringFieldMap = vespalib::hash_map<vespalib::string, Field::SP>;
+    using IntFieldMap = vespalib::hash_map<int32_t, Field::SP>;
+    StringFieldMap    _nameFieldMap;
+    IntFieldMap       _idFieldMap;
     CompressionConfig _compressionConfig;
 
     /** @return "" if not conflicting. Error message otherwise. */

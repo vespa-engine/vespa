@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.ChefMock;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
@@ -22,29 +23,34 @@ import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockLogStore;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
+import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock;
 import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
+import com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.ApplicationSerializer;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
-import com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.logging.Handler;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertNotNull;
@@ -66,9 +72,12 @@ public final class ControllerTester {
     private final MemoryNameService nameService;
     private final RotationsConfig rotationsConfig;
     private final ArtifactRepositoryMock artifactRepository;
+    private final ApplicationStoreMock applicationStore;
     private final EntityService entityService;
     private final MockBuildService buildService;
     private final MetricsServiceMock metricsService;
+    private final RoutingGeneratorMock routingGenerator;
+    private final MockOrganization organization;
 
     private Controller controller;
 
@@ -76,8 +85,9 @@ public final class ControllerTester {
                             MetricsServiceMock metricsService) {
         this(new AthenzDbMock(), clock, new ConfigServerMock(new ZoneRegistryMock()),
              new ZoneRegistryMock(), new GitHubMock(), curatorDb, rotationsConfig,
-             new MemoryNameService(), new ArtifactRepositoryMock(), new MemoryEntityService(), new MockBuildService(),
-             metricsService);
+             new MemoryNameService(), new ArtifactRepositoryMock(), new ApplicationStoreMock(),
+             new MemoryEntityService(), new MockBuildService(),
+             metricsService, new RoutingGeneratorMock(), new MockOrganization(clock));
     }
 
     public ControllerTester(ManualClock clock) {
@@ -100,8 +110,10 @@ public final class ControllerTester {
                              ConfigServerMock configServer, ZoneRegistryMock zoneRegistry,
                              GitHubMock gitHub, CuratorDb curator, RotationsConfig rotationsConfig,
                              MemoryNameService nameService, ArtifactRepositoryMock artifactRepository,
+                             ApplicationStoreMock appStoreMock,
                              EntityService entityService, MockBuildService buildService,
-                             MetricsServiceMock metricsService) {
+                             MetricsServiceMock metricsService, RoutingGeneratorMock routingGenerator,
+                             MockOrganization organization) {
         this.athenzDb = athenzDb;
         this.clock = clock;
         this.configServer = configServer;
@@ -111,19 +123,30 @@ public final class ControllerTester {
         this.nameService = nameService;
         this.rotationsConfig = rotationsConfig;
         this.artifactRepository = artifactRepository;
+        this.applicationStore = appStoreMock;
         this.entityService = entityService;
         this.buildService = buildService;
         this.metricsService = metricsService;
+        this.routingGenerator = routingGenerator;
+        this.organization = organization;
         this.controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
-                                           athenzDb, nameService, artifactRepository, entityService, buildService,
-                                           metricsService);
+                                           athenzDb, nameService, artifactRepository, appStoreMock, entityService, buildService,
+                                           metricsService, routingGenerator);
 
         // Make root logger use time from manual clock
-        Logger.getLogger("").getHandlers()[0].setFilter(
+        configureDefaultLogHandler(handler -> handler.setFilter(
                 record -> {
                     record.setMillis(clock.millis());
                     return true;
-                });
+                }));
+    }
+
+    public void configureDefaultLogHandler(Consumer<Handler> configureFunc) {
+        Arrays.stream(Logger.getLogger("").getHandlers())
+              // Do not mess with log configuration if a custom one has been set
+              .filter(ignored -> System.getProperty("java.util.logging.config.file") == null)
+              .findFirst()
+              .ifPresent(configureFunc);
     }
 
     public static BuildService.BuildJob buildJob(Application application, JobType jobType) {
@@ -146,14 +169,23 @@ public final class ControllerTester {
 
     public ArtifactRepositoryMock artifactRepository() { return artifactRepository; }
 
+    public ApplicationStoreMock applicationStore() { return applicationStore; }
+
     public MockBuildService buildService() { return buildService; }
 
     public MetricsServiceMock metricsService() { return metricsService; }
 
+    public RoutingGeneratorMock routingGenerator() { return routingGenerator; }
+
+    public MockOrganization organization() {
+        return organization;
+    }
+
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
     public final void createNewController() {
         controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry, athenzDb,
-                                      nameService, artifactRepository, entityService, buildService, metricsService);
+                                      nameService, artifactRepository, applicationStore, entityService, buildService, metricsService,
+                                      routingGenerator);
     }
 
     /** Creates the given tenant and application and deploys it */
@@ -168,12 +200,6 @@ public final class ControllerTester {
         Application application = createApplication(tenant, applicationName, instanceName, projectId);
         deploy(application, zone);
         return application;
-    }
-
-    /** Creates the given tenant and application and deploys it */
-    public Application createAndDeploy(String tenantName, String domainName, String applicationName,
-                                       String instanceName, Environment environment, long projectId, Long propertyId) {
-        return createAndDeploy(tenantName, domainName, applicationName, instanceName, toZone(environment), projectId, propertyId);
     }
 
     /** Creates the given tenant and application and deploys it */
@@ -266,25 +292,27 @@ public final class ControllerTester {
                                                ConfigServerMock configServer, ManualClock clock,
                                                GitHubMock gitHub, ZoneRegistryMock zoneRegistryMock,
                                                AthenzDbMock athensDb, MemoryNameService nameService,
-                                               ArtifactRepository artifactRepository, EntityService entityService,
-                                               BuildService buildService, MetricsServiceMock metricsService) {
+                                               ArtifactRepository artifactRepository, ApplicationStore applicationStore,
+                                               EntityService entityService,
+                                               BuildService buildService, MetricsServiceMock metricsService,
+                                               RoutingGenerator routingGenerator) {
         Controller controller = new Controller(curator,
                                                rotationsConfig,
                                                gitHub,
                                                entityService,
-                                               new MockOrganization(clock),
-                                               new MemoryGlobalRoutingService(),
                                                zoneRegistryMock,
                                                configServer,
                                                metricsService,
                                                nameService,
-                                               new RoutingGeneratorMock(),
+                                               routingGenerator,
                                                new ChefMock(),
                                                clock,
                                                new AthenzClientFactoryMock(athensDb),
                                                artifactRepository,
+                                               applicationStore,
+                                               new MockTesterCloud(),
                                                buildService,
-                                               new MockLogStore(),
+                                               new MockRunDataStore(),
                                                () -> "test-controller");
         // Calculate initial versions
         controller.updateVersionStatus(VersionStatus.compute(controller));

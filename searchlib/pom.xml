@@ -51,12 +51,18 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <scope>test</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-core</artifactId>
+        </exclusion>
+      </exclusions>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>
@@ -78,18 +84,15 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>javacc-maven-plugin</artifactId>
+        <groupId>com.helger.maven</groupId>
+        <artifactId>ph-javacc-maven-plugin</artifactId>
+        <version>4.0.3</version>
         <executions>
           <execution>
-            <id>javacc</id>
+            <phase>generate-sources</phase>
             <goals>
               <goal>javacc</goal>
             </goals>
-            <configuration>
-              <lookAhead>1</lookAhead>
-              <isStatic>false</isStatic>
-            </configuration>
           </execution>
         </executions>
       </plugin>

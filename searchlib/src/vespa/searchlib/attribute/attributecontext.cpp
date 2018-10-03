@@ -5,7 +5,6 @@
 #include "attribute_read_guard.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-using namespace search;
 using namespace search::attribute;
 
 namespace search {
@@ -38,7 +37,7 @@ AttributeContext::AttributeContext(const IAttributeManager & manager) :
     _cacheLock()
 { }
 
-AttributeContext::~AttributeContext() { }
+AttributeContext::~AttributeContext() = default;
 
 const IAttributeVector *
 AttributeContext::getAttribute(const string & name) const
@@ -67,6 +66,11 @@ AttributeContext::getAttributeList(std::vector<const IAttributeVector *> & list)
     for (size_t i = 0; i < attributes.size(); ++i) {
         list.push_back(getAttribute(attributes[i]->getName()));
     }
+}
+
+void
+AttributeContext::asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const {
+    _manager.asyncForAttribute(name, std::move(func));
 }
 
 } // namespace search

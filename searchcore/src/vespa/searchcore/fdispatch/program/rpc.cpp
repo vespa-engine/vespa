@@ -9,13 +9,13 @@ FastS_fdispatch_RPC::RegisterMethods(FRT_ReflectionBuilder *rb)
 {
     FastS_RPC::RegisterMethods(rb);
     //------------------------------------------------------------------
-    rb->DefineMethod("fs.admin.enableEngine", "s", "i", true,
+    rb->DefineMethod("fs.admin.enableEngine", "s", "i",
                      FRT_METHOD(FastS_fdispatch_RPC::RPC_EnableEngine), this);
     rb->MethodDesc("Enable the given engine (clear badness).");
     rb->ParamDesc("name",  "engine name");
     rb->ReturnDesc("count", "number of engines affected");
     //------------------------------------------------------------------
-    rb->DefineMethod("fs.admin.disableEngine", "s", "i", true,
+    rb->DefineMethod("fs.admin.disableEngine", "s", "i",
                      FRT_METHOD(FastS_fdispatch_RPC::RPC_DisableEngine), this);
     rb->MethodDesc("Disable the given engine (mark as admin bad).");
     rb->ParamDesc("name",  "engine name");

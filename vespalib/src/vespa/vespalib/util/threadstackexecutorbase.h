@@ -23,10 +23,10 @@ namespace thread { class ThreadInit; }
 // init function when creating an executor to inject a frame with the
 // given name into the stack of all worker threads.
 
-#define VESPA_THREAD_STACK_TAG(name) \
-    int name(Runnable &worker) {     \
-        worker.run();                \
-        return 1;                    \
+#define VESPA_THREAD_STACK_TAG(name)         \
+    int name(::vespalib::Runnable &worker) { \
+        worker.run();                        \
+        return 1;                            \
     }
 
 /**

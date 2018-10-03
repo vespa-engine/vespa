@@ -193,19 +193,19 @@ GetOperation::sendReply(DistributorMessageSender& sender)
         repl->setResult(_returnCode);
 
         if (_returnCode.success()) {
-            ++_metric.ok;
+            _metric.ok.inc();
         } else if (_returnCode.getResult() == api::ReturnCode::TIMEOUT) {
-            ++_metric.failures.timeout;
+            _metric.failures.timeout.inc();
         } else if (_returnCode.isBusy()) {
-            ++_metric.failures.busy;
+            _metric.failures.busy.inc();
         } else if (_returnCode.isNodeDownOrNetwork()) {
-            ++_metric.failures.notconnected;
+            _metric.failures.notconnected.inc();
         } else {
-            ++_metric.failures.storagefailure;
+            _metric.failures.storagefailure.inc();
         }
 
         if (!_doc.get()) {
-            ++_metric.failures.notfound;
+            _metric.failures.notfound.inc();
         }
 
         _metric.latency.addValue(_operationTimer.getElapsedTimeAsDouble());

@@ -2,17 +2,15 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
@@ -61,7 +59,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "        constants {\n" +
                         "            p2: 2.0 \n" +
                         "        }\n" +
-                        "        macro foo() {\n" +
+                        "        function foo() {\n" +
                         "            expression: p2*p1\n" +
                         "        }\n" +
                         "    }\n" +
@@ -69,18 +67,19 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile parent = rankProfileRegistry.getRankProfile(s, "parent").compile(queryProfileRegistry);
+        RankProfile parent = rankProfileRegistry.get(s, "parent").compile(queryProfileRegistry, new ImportedModels());
         assertEquals("0.0", parent.getFirstPhaseRanking().getRoot().toString());
 
-        RankProfile child1 = rankProfileRegistry.getRankProfile(s, "child1").compile(queryProfileRegistry);
+        RankProfile child1 = rankProfileRegistry.get(s, "child1").compile(queryProfileRegistry, new ImportedModels());
         assertEquals("6.5", child1.getFirstPhaseRanking().getRoot().toString());
         assertEquals("11.5", child1.getSecondPhaseRanking().getRoot().toString());
 
-        RankProfile child2 = rankProfileRegistry.getRankProfile(s, "child2").compile(queryProfileRegistry);
+        RankProfile child2 = rankProfileRegistry.get(s, "child2").compile(queryProfileRegistry, new ImportedModels());
         assertEquals("16.6", child2.getFirstPhaseRanking().getRoot().toString());
-        assertEquals("foo: 14.0", child2.getMacros().get("foo").getRankingExpression().toString());
+        assertEquals("foo: 14.0", child2.getFunctions().get("foo").function().getBody().toString());
         List<Pair<String, String>> rankProperties = new RawRankProfile(child2,
                                                                        queryProfileRegistry,
+                                                                       new ImportedModels(),
                                                                        new AttributeFields(s)).configProperties();
         assertEquals("(rankingExpression(foo).rankingScript,14.0)", rankProperties.get(0).toString());
         assertEquals("(rankingExpression(firstphase).rankingScript,16.6)", rankProperties.get(2).toString());
@@ -102,7 +101,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "        constants {\n" +
                         "            c: 7 \n" +
                         "        }\n" +
-                        "        macro c() {\n" +
+                        "        function c() {\n" +
                         "            expression: p2*p1\n" +
                         "        }\n" +
                         "    }\n" +
@@ -111,11 +110,11 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
         builder.build();
         Search s = builder.getSearch();
         try {
-            rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry());
+            rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedModels());
             fail("Should have caused an exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Rank profile 'test' is invalid: Cannot have both a constant and macro named 'c'",
+            assertEquals("Rank profile 'test' is invalid: Cannot have both a constant and function named 'c'",
                          Exceptions.toMessageString(e));
         }
     }
@@ -133,7 +132,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
-                        "        macro POP_SLOW_SCORE() {\n" +
+                        "        function POP_SLOW_SCORE() {\n" +
                         "            expression:  safeLog(popShareSlowDecaySignal, -9.21034037)\n" +
                         "        }\n" +
                         "    }\n" +
@@ -141,9 +140,8 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile profile = rankProfileRegistry.getRankProfile(s, "test");
-        profile.parseExpressions(); // TODO: Do differently
-        assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)", profile.getMacros().get("POP_SLOW_SCORE").getRankingExpression().getRoot().toString());
+        RankProfile profile = rankProfileRegistry.get(s, "test");
+        assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)", profile.getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
     }
 
     @Test
@@ -162,7 +160,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "        constants {\n" +
                         "            myValue: -9.21034037\n" +
                         "        }\n" +
-                        "        macro POP_SLOW_SCORE() {\n" +
+                        "        function POP_SLOW_SCORE() {\n" +
                         "            expression:  safeLog(popShareSlowDecaySignal, myValue)\n" +
                         "        }\n" +
                         "    }\n" +
@@ -170,15 +168,14 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile profile = rankProfileRegistry.getRankProfile(s, "test");
-        profile.parseExpressions(); // TODO: Do differently
-        assertEquals("safeLog(popShareSlowDecaySignal,myValue)", profile.getMacros().get("POP_SLOW_SCORE").getRankingExpression().getRoot().toString());
+        RankProfile profile = rankProfileRegistry.get(s, "test");
+        assertEquals("safeLog(popShareSlowDecaySignal,myValue)", profile.getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
         assertEquals("safeLog(popShareSlowDecaySignal,-9.21034037)",
-                     profile.compile(new QueryProfileRegistry()).getMacros().get("POP_SLOW_SCORE").getRankingExpression().getRoot().toString());
+                     profile.compile(new QueryProfileRegistry(), new ImportedModels()).getFunctions().get("POP_SLOW_SCORE").function().getBody().getRoot().toString());
     }
 
     @Test
-    public void testConstantDivisorInMacro() throws ParseException {
+    public void testConstantDivisorInFunction() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(
@@ -187,7 +184,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
-                        "        macro rank_default(){\n" +
+                        "        function rank_default(){\n" +
                         "            expression: k1 + (k2 + k3) / 100000000.0\n\n" +
                         "        }\n" +
                         "    }\n" +
@@ -195,9 +192,9 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile profile = rankProfileRegistry.getRankProfile(s, "test");
+        RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("k1 + (k2 + k3) / 100000000.0",
-                     profile.compile(new QueryProfileRegistry()).getMacros().get("rank_default").getRankingExpression().getRoot().toString());
+                     profile.compile(new QueryProfileRegistry(), new ImportedModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());
     }
 
     @Test
@@ -213,7 +210,7 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
-                        "        macro rank_default(){\n" +
+                        "        function rank_default(){\n" +
                         "            expression: 0.5+50*(attribute(rating_yelp)-3)\n\n" +
                         "        }\n" +
                         "    }\n" +
@@ -221,9 +218,9 @@ public class RankingExpressionConstantsTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile profile = rankProfileRegistry.getRankProfile(s, "test");
+        RankProfile profile = rankProfileRegistry.get(s, "test");
         assertEquals("0.5 + 50 * (attribute(rating_yelp) - 3)",
-                     profile.compile(new QueryProfileRegistry()).getMacros().get("rank_default").getRankingExpression().getRoot().toString());
+                     profile.compile(new QueryProfileRegistry(), new ImportedModels()).getFunctions().get("rank_default").function().getBody().getRoot().toString());
     }
 
 }

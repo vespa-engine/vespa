@@ -35,8 +35,8 @@ public:
             _text(textBegin, textEnd - textBegin), _stem(), _type(type) {}
         Token(const char * textBegin, const char * textEnd, const char * stemBegin, const char * stemEnd, Type type) :
             _text(textBegin, textEnd - textBegin), _stem(stemBegin, stemEnd - stemBegin), _type(type) {}
-        const vespalib::stringref & getText() const { return _text; }
-        const vespalib::stringref & getStem() const { return _stem; }
+        vespalib::stringref getText() const { return _text; }
+        vespalib::stringref getStem() const { return _stem; }
         bool hasStem() const { return _stem.data() != NULL; }
         Type getType() const { return _type; }
     };

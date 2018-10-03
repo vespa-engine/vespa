@@ -72,11 +72,15 @@ public class InfrastructureVersionsTest {
         infrastructureVersions.setTargetVersion(NodeType.config, version, false);
         infrastructureVersions.setTargetVersion(NodeType.confighost, version2, false);
         infrastructureVersions.setTargetVersion(NodeType.proxyhost, version, false);
+        infrastructureVersions.setTargetVersion(NodeType.controller, version, false);
+        infrastructureVersions.setTargetVersion(NodeType.controllerhost, version2, false);
 
         Map<NodeType, Version> expected = new HashMap<>();
         expected.put(NodeType.config, version);
         expected.put(NodeType.confighost, version2);
         expected.put(NodeType.proxyhost, version);
+        expected.put(NodeType.controller, version);
+        expected.put(NodeType.controllerhost, version2);
 
         assertEquals(expected, infrastructureVersions.getTargetVersions());
     }

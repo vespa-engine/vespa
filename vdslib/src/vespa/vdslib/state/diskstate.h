@@ -22,10 +22,10 @@ public:
     typedef std::shared_ptr<DiskState> SP;
 
     DiskState();
-    DiskState(const State&, const vespalib::stringref & description = "", double capacity = 1.0);
-    explicit DiskState(const vespalib::stringref & serialized);
+    DiskState(const State&, vespalib::stringref description = "", double capacity = 1.0);
+    explicit DiskState(vespalib::stringref serialized);
 
-    void serialize(vespalib::asciistream & out, const vespalib::stringref & prefix = "",
+    void serialize(vespalib::asciistream & out, vespalib::stringref prefix = "",
                    bool includeReason = true, bool useOldFormat = false) const;
 
     const State& getState() const { return *_state; }
@@ -34,7 +34,7 @@ public:
 
     void setState(const State& state);
     void setCapacity(double capacity);
-    void setDescription(const vespalib::stringref & desc) { _description = desc; }
+    void setDescription(vespalib::stringref desc) { _description = desc; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     bool operator==(const DiskState& other) const;

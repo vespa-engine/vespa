@@ -11,8 +11,8 @@ import com.yahoo.vespa.hosted.node.verification.spec.retrievers.HardwareInfo;
  */
 public class NodeJsonConverter {
 
-    private static void addStandardSpecifications(HardwareInfo nodeRepoHardwareInfo) {
-        nodeRepoHardwareInfo.setInterfaceSpeedMbs(1000);
+    private static void setInterfaceSpeed(NodeSpec nodeSpec, HardwareInfo nodeRepoHardwareInfo) {
+        nodeRepoHardwareInfo.setInterfaceSpeedMbs(nodeSpec.getBandwidth());
     }
 
     private static void setIpv6Interface(NodeSpec nodeSpec, HardwareInfo nodeRepoHardwareInfo) {
@@ -29,7 +29,7 @@ public class NodeJsonConverter {
 
     public static HardwareInfo convertJsonModelToHardwareInfo(NodeSpec nodeSpec) {
         HardwareInfo nodeRepoHardwareInfo = nodeSpec.copyToHardwareInfo();
-        addStandardSpecifications(nodeRepoHardwareInfo);
+        setInterfaceSpeed(nodeSpec, nodeRepoHardwareInfo);
         setIpv4Interface(nodeSpec, nodeRepoHardwareInfo);
         setIpv6Interface(nodeSpec, nodeRepoHardwareInfo);
         return nodeRepoHardwareInfo;

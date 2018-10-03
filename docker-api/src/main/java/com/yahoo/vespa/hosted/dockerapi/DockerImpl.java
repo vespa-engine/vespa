@@ -3,16 +3,12 @@ package com.yahoo.vespa.hosted.dockerapi;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
-import com.github.dockerjava.api.command.ExecStartCmd;
-import com.github.dockerjava.api.command.InspectContainerCmd;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.InspectImageResponse;
-import com.github.dockerjava.api.command.PullImageCmd;
 import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
-import com.github.dockerjava.api.model.AuthConfig;
 import com.github.dockerjava.api.model.Image;
 import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.Statistics;
@@ -25,11 +21,13 @@ import com.github.dockerjava.core.command.PullImageResultCallback;
 import com.github.dockerjava.jaxrs.JerseyDockerCmdExecFactory;
 import com.google.inject.Inject;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
+import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
+import com.yahoo.vespa.hosted.dockerapi.exception.DockerExecTimeoutException;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 
-import javax.annotation.concurrent.GuardedBy;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.Inet6Address;
@@ -55,67 +53,38 @@ import static com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator.NetworkAddre
 public class DockerImpl implements Docker {
     private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
 
-    public static final String DOCKER_CUSTOM_MACVLAN_NETWORK_NAME = "vespa-macvlan";
     static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
+    private static final String DOCKER_CUSTOM_MACVLAN_NETWORK_NAME = "vespa-macvlan";
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
-
-    private final DockerConfig config;
-    private final Optional<DockerImageGarbageCollector> dockerImageGC;
-    private final int secondsToWaitBeforeKilling;
-    private CounterWrapper numberOfDockerDaemonFails;
-    private boolean started = false;
+    private static final int SECONDS_TO_WAIT_BEFORE_KILLING = 10;
 
     private final Object monitor = new Object();
-    @GuardedBy("monitor")
     private final Set<DockerImage> scheduledPulls = new HashSet<>();
 
-    private volatile Optional<DockerRegistryCredentialsSupplier> dockerRegistryCredentialsSupplier = Optional.empty();
-
-    private DockerClient dockerClient;
+    private final DockerClient dockerClient;
+    private final DockerImageGarbageCollector dockerImageGC;
+    private final CounterWrapper numberOfDockerDaemonFails;
 
     @Inject
     public DockerImpl(DockerConfig config, MetricReceiverWrapper metricReceiverWrapper) {
-        this.config = config;
-
-        secondsToWaitBeforeKilling = Optional.ofNullable(config)
-                .map(DockerConfig::secondsToWaitBeforeKillingContainer)
-                .orElse(10);
-
-        dockerImageGC = Optional.ofNullable(config)
-                .map(DockerConfig::imageGCMinTimeToLiveMinutes)
-                .map(Duration::ofMinutes)
-                .map(DockerImageGarbageCollector::new);
-
-        Optional.ofNullable(metricReceiverWrapper).ifPresent(this::setMetrics);
+        this(createDockerClient(config), metricReceiverWrapper);
     }
 
-    // For testing
-    DockerImpl(final DockerClient dockerClient) {
-        this(null, null);
+    DockerImpl(DockerClient dockerClient, MetricReceiverWrapper metricReceiver) {
         this.dockerClient = dockerClient;
+        this.dockerImageGC = new DockerImageGarbageCollector(this);
+
+        Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
+        numberOfDockerDaemonFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "daemon.api_fails");
     }
 
     @Override
     public void start() {
-        if (started) return;
-        started = true;
-
-        if (config != null) {
-            dockerClient = createDockerClient(config);
-
-            if (!config.networkNATed()) {
-                try {
-                    setupDockerNetworkIfNeeded();
-                } catch (Exception e) {
-                    throw new DockerException("Could not setup docker network", e);
-                }
-            }
+        try {
+            setupDockerNetworkIfNeeded();
+        } catch (Exception e) {
+            throw new DockerException("Could not setup docker network", e);
         }
-    }
-
-    @Override
-    public boolean networkNATed() {
-        return config.networkNATed();
     }
 
     private void setupDockerNetworkIfNeeded() throws IOException {
@@ -147,26 +116,17 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public boolean pullImageAsyncIfNeeded(final DockerImage image) {
+    public boolean pullImageAsyncIfNeeded(DockerImage image) {
         try {
             synchronized (monitor) {
                 if (scheduledPulls.contains(image)) return true;
                 if (imageIsDownloaded(image)) return false;
 
                 scheduledPulls.add(image);
-                PullImageCmd pullImageCmd = dockerClient.pullImageCmd(image.asString());
-
-                dockerRegistryCredentialsSupplier
-                        .flatMap(credentialsSupplier -> credentialsSupplier.getCredentials(image))
-                        .map(credentials -> new AuthConfig()
-                                .withRegistryAddress(credentials.registry.toString())
-                                .withUsername(credentials.username)
-                                .withPassword(credentials.password))
-                        .ifPresent(pullImageCmd::withAuthConfig);
 
                 logger.log(LogLevel.INFO, "Starting download of " + image.asString());
 
-                pullImageCmd.exec(new ImagePullCallback(image));
+                dockerClient.pullImageCmd(image.asString()).exec(new ImagePullCallback(image));
                 return true;
             }
         } catch (RuntimeException e) {
@@ -175,7 +135,7 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private void removeScheduledPoll(final DockerImage image) {
+    private void removeScheduledPoll(DockerImage image) {
         synchronized (monitor) {
             scheduledPulls.remove(image);
         }
@@ -184,7 +144,7 @@ public class DockerImpl implements Docker {
     /**
      * Check if a given image is already in the local registry
      */
-    boolean imageIsDownloaded(final DockerImage dockerImage) {
+    boolean imageIsDownloaded(DockerImage dockerImage) {
         return inspectImage(dockerImage).isPresent();
     }
 
@@ -202,8 +162,7 @@ public class DockerImpl implements Docker {
     @Override
     public CreateContainerCommand createContainerCommand(DockerImage image, ContainerResources containerResources,
                                                          ContainerName name, String hostName) {
-        return new CreateContainerCommandImpl(dockerClient, image, containerResources, name, hostName)
-                .withPrivileged(config.runContainersInPrivileged());
+        return new CreateContainerCommandImpl(dockerClient, image, containerResources, name, hostName);
     }
 
     @Override
@@ -212,6 +171,8 @@ public class DockerImpl implements Docker {
             dockerClient.connectToNetworkCmd()
                     .withContainerId(containerName.asString())
                     .withNetworkId(networkName).exec();
+        } catch (NotFoundException e) {
+            throw new ContainerNotFoundException(containerName);
         } catch (RuntimeException e) {
             numberOfDockerDaemonFails.add();
             throw new DockerException("Failed to connect container '" + containerName.asString() +
@@ -239,37 +200,44 @@ public class DockerImpl implements Docker {
      */
     private ProcessResult executeInContainerAsUser(ContainerName containerName, String user, Optional<Long> timeoutSeconds, String... command) {
         try {
-            final ExecCreateCmdResponse response = dockerClient.execCreateCmd(containerName.asString())
-                    .withCmd(command)
-                    .withAttachStdout(true)
-                    .withAttachStderr(true)
-                    .withUser(user)
-                    .exec();
+            ExecCreateCmdResponse response = execCreateCmd(containerName, user, command);
 
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             ByteArrayOutputStream errors = new ByteArrayOutputStream();
-            ExecStartCmd execStartCmd = dockerClient.execStartCmd(response.getId());
-            ExecStartResultCallback callback = execStartCmd.exec(new ExecStartResultCallback(output, errors));
+            ExecStartResultCallback callback = dockerClient.execStartCmd(response.getId())
+                    .exec(new ExecStartResultCallback(output, errors));
 
             if (timeoutSeconds.isPresent()) {
-                if (!callback.awaitCompletion(timeoutSeconds.get(), TimeUnit.SECONDS)) {
-                    throw new DockerExecTimeoutException(String.format("Command '%s' did not finish within %s seconds.", command[0], timeoutSeconds));
-                }
+                if (!callback.awaitCompletion(timeoutSeconds.get(), TimeUnit.SECONDS))
+                    throw new DockerExecTimeoutException(String.format(
+                            "Command '%s' did not finish within %s seconds.", command[0], timeoutSeconds));
             } else {
                 // Wait for completion no timeout
                 callback.awaitCompletion();
             }
 
-            final InspectExecResponse state = dockerClient.inspectExecCmd(execStartCmd.getExecId()).exec();
-            assert !state.isRunning();
-            Integer exitCode = state.getExitCode();
-            assert exitCode != null;
+            InspectExecResponse state = dockerClient.inspectExecCmd(response.getId()).exec();
+            if (state.isRunning())
+                throw new DockerException("Command '%s' did not finish within %s seconds.");
 
-            return new ProcessResult(exitCode, new String(output.toByteArray()), new String(errors.toByteArray()));
+            return new ProcessResult(state.getExitCode(), new String(output.toByteArray()), new String(errors.toByteArray()));
         } catch (RuntimeException | InterruptedException e) {
             numberOfDockerDaemonFails.add();
             throw new DockerException("Container '" + containerName.asString()
                     + "' failed to execute " + Arrays.toString(command), e);
+        }
+    }
+
+    private ExecCreateCmdResponse execCreateCmd(ContainerName containerName, String user, String... command) {
+        try {
+            return dockerClient.execCreateCmd(containerName.asString())
+                    .withCmd(command)
+                    .withAttachStdout(true)
+                    .withAttachStderr(true)
+                    .withUser(user)
+                    .exec();
+        } catch (NotFoundException e) {
+            throw new ContainerNotFoundException(containerName);
         }
     }
 
@@ -290,7 +258,7 @@ public class DockerImpl implements Docker {
             DockerStatsCallback statsCallback = dockerClient.statsCmd(containerName.asString()).exec(new DockerStatsCallback());
             statsCallback.awaitCompletion(5, TimeUnit.SECONDS);
 
-            return statsCallback.stats.map(stats -> new ContainerStatsImpl(
+            return statsCallback.stats.map(stats -> new ContainerStats(
                     stats.getNetworks(), stats.getCpuStats(), stats.getMemoryStats(), stats.getBlkioStats()));
         } catch (NotFoundException ignored) {
             return Optional.empty();
@@ -301,21 +269,11 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public void createContainer(CreateContainerCommand createContainerCommand) {
-        try {
-            dockerClient.execCreateCmd(createContainerCommand.toString());
-        } catch (NotModifiedException ignored) {
-            // If is already created, ignore
-        } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
-            throw new DockerException("Failed to create container '" + createContainerCommand.toString() + "'", e);
-        }
-    }
-
-    @Override
     public void startContainer(ContainerName containerName) {
         try {
             dockerClient.startContainerCmd(containerName.asString()).exec();
+        } catch (NotFoundException e) {
+            throw new ContainerNotFoundException(containerName);
         } catch (NotModifiedException ignored) {
             // If is already started, ignore
         } catch (RuntimeException e) {
@@ -325,9 +283,11 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public void stopContainer(final ContainerName containerName) {
+    public void stopContainer(ContainerName containerName) {
         try {
-            dockerClient.stopContainerCmd(containerName.asString()).withTimeout(secondsToWaitBeforeKilling).exec();
+            dockerClient.stopContainerCmd(containerName.asString()).withTimeout(SECONDS_TO_WAIT_BEFORE_KILLING).exec();
+        } catch (NotFoundException e) {
+            throw new ContainerNotFoundException(containerName);
         } catch (NotModifiedException ignored) {
             // If is already stopped, ignore
         } catch (RuntimeException e) {
@@ -339,26 +299,13 @@ public class DockerImpl implements Docker {
     @Override
     public void deleteContainer(ContainerName containerName) {
         try {
-            dockerImageGC.ifPresent(imageGC -> {
-                Optional<InspectContainerResponse> inspectResponse = inspectContainerCmd(containerName.asString());
-                inspectResponse.ifPresent(response -> imageGC.updateLastUsedTimeFor(response.getImageId()));
-            });
-
             dockerClient.removeContainerCmd(containerName.asString()).exec();
-        } catch (NotFoundException ignored) {
-            // If container doesn't exist ignore
+        } catch (NotFoundException e) {
+            throw new ContainerNotFoundException(containerName);
         } catch (RuntimeException e) {
             numberOfDockerDaemonFails.add();
             throw new DockerException("Failed to delete container '" + containerName.asString() + "'", e);
         }
-    }
-
-    @Override
-    public List<ContainerName> listAllContainersManagedBy(String manager) {
-        return listAllContainers().stream()
-                .filter(container -> isManagedBy(container, manager))
-                .map(container -> new ContainerName(decode(container.getNames()[0])))
-                .collect(Collectors.toList());
     }
 
     @Override
@@ -373,17 +320,6 @@ public class DockerImpl implements Docker {
     @Override
     public Optional<Container> getContainer(ContainerName containerName) {
         return asContainer(containerName.asString()).findFirst();
-    }
-
-    @Override
-    public String getGlobalIPv6Address(ContainerName name) {
-        InspectContainerCmd cmd = dockerClient.inspectContainerCmd(name.asString());
-        return cmd.exec().getNetworkSettings().getGlobalIPv6Address();
-    }
-
-    @Override
-    public void setDockerRegistryCredentialsSupplier(DockerRegistryCredentialsSupplier dockerRegistryCredentialsSupplier) {
-        this.dockerRegistryCredentialsSupplier = Optional.of(dockerRegistryCredentialsSupplier);
     }
 
     private Stream<Container> asContainer(String container) {
@@ -402,7 +338,7 @@ public class DockerImpl implements Docker {
                 .orElse(Stream.empty());
     }
 
-    private boolean isManagedBy(final com.github.dockerjava.api.model.Container container, String manager) {
+    private boolean isManagedBy(com.github.dockerjava.api.model.Container container, String manager) {
         final Map<String, String> labels = container.getLabels();
         return labels != null && manager.equals(labels.get(LABEL_NAME_MANAGEDBY));
     }
@@ -411,7 +347,7 @@ public class DockerImpl implements Docker {
         return encodedContainerName.substring(FRAMEWORK_CONTAINER_PREFIX.length());
     }
 
-    private List<com.github.dockerjava.api.model.Container> listAllContainers() {
+    List<com.github.dockerjava.api.model.Container> listAllContainers() {
         try {
             return dockerClient.listContainersCmd().withShowAll(true).exec();
         } catch (RuntimeException e) {
@@ -420,7 +356,7 @@ public class DockerImpl implements Docker {
         }
     }
 
-    private List<Image> listAllImages() {
+    List<Image> listAllImages() {
         try {
             return dockerClient.listImagesCmd().withShowAll(true).exec();
         } catch (RuntimeException e) {
@@ -429,8 +365,7 @@ public class DockerImpl implements Docker {
         }
     }
 
-    @Override
-    public void deleteImage(final DockerImage dockerImage) {
+    void deleteImage(DockerImage dockerImage) {
         try {
             dockerClient.removeImageCmd(dockerImage.asString()).exec();
         } catch (NotFoundException ignored) {
@@ -442,13 +377,8 @@ public class DockerImpl implements Docker {
     }
 
     @Override
-    public void deleteUnusedDockerImages() {
-        if (!dockerImageGC.isPresent()) return;
-
-        List<Image> images = listAllImages();
-        List<com.github.dockerjava.api.model.Container> containers = listAllContainers();
-
-        dockerImageGC.get().getUnusedDockerImages(images, containers).forEach(this::deleteImage);
+    public boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
+        return dockerImageGC.deleteUnusedDockerImages(excludes, minImageAgeToDelete);
     }
 
     private class ImagePullCallback extends PullImageResultCallback {
@@ -467,10 +397,8 @@ public class DockerImpl implements Docker {
 
         @Override
         public void onComplete() {
-            Optional<InspectImageResponse> image = inspectImage(dockerImage);
-            if (image.isPresent()) { // Download successful, update image GC with the newly downloaded image
+            if (imageIsDownloaded(dockerImage)) {
                 logger.log(LogLevel.INFO, "Download completed: " + dockerImage.asString());
-                dockerImageGC.ifPresent(imageGC -> imageGC.updateLastUsedTimeFor(image.get().getId()));
                 removeScheduledPoll(dockerImage);
             } else {
                 throw new DockerClientException("Could not download image: " + dockerImage);
@@ -514,10 +442,5 @@ public class DockerImpl implements Docker {
 
         return DockerClientImpl.getInstance(dockerClientConfig)
                 .withDockerCmdExecFactory(dockerFactory);
-    }
-
-    void setMetrics(MetricReceiverWrapper metricReceiver) {
-        Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
-        numberOfDockerDaemonFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "daemon.api_fails");
     }
 }

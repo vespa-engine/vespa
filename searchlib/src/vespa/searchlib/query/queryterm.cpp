@@ -348,7 +348,7 @@ QueryTermSimple::~QueryTermSimple() = default;
 
 namespace {
 
-bool isFullRange(const vespalib::stringref & s) {
+bool isFullRange(vespalib::stringref s) {
     const size_t sz(s.size());
     return (sz >= 3u) &&
            (s[0] == '<' || s[0] == '[') &&

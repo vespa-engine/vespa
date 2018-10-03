@@ -2,13 +2,14 @@
 package com.yahoo.document.datatypes;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.MapDataType;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -19,6 +20,76 @@ import static org.junit.Assert.fail;
  * @author Einar M R Rosenvinge
  */
 public class WeightedSetTestCase {
+
+    @Test
+    public void testEquals() {
+        WeightedSet<StringFieldValue> a = new WeightedSet<>(DataType.TAG);
+        a.put(new StringFieldValue("this is a test"), 5);
+        a.put(new StringFieldValue("this is a second test"), 7);
+
+        WeightedSet<StringFieldValue> b = new WeightedSet<>(DataType.TAG);
+        b.put(new StringFieldValue("this is a second test"), 7);
+        b.put(new StringFieldValue("this is a test"), 5);
+
+        assertEquals(a, b);
+        assertEquals(0, a.compareTo(b));
+        assertEquals(0, b.compareTo(a));
+    }
+
+    @Test
+    public void testEqualsOnMixedPrimitiveAndFieldValues() {
+        WeightedSet<StringFieldValue> a = new WeightedSet<>(DataType.TAG);
+        a.put(new StringFieldValue("this is a test"), 5);
+        a.put(new StringFieldValue("this is a second test"), 7);
+
+        WeightedSet<StringFieldValue> b = new WeightedSet<>(DataType.TAG);
+        Map<String, Integer> m = new HashMap<String, Integer>();
+        m.put("this is a second test", 7);
+        m.put("this is a test", 5);
+        b.assign(m);
+
+        assertEquals(a, b);
+        assertEquals(0, a.compareTo(b));
+        assertEquals(0, b.compareTo(a));
+    }
+
+    @Test
+    public void testCompareTo() {
+        WeightedSet<StringFieldValue> a = new WeightedSet<>(DataType.TAG);
+        a.put(new StringFieldValue("this is a test"), 5);
+        a.put(new StringFieldValue("this is a second test"), 7);
+
+        WeightedSet<StringFieldValue> b = new WeightedSet<>(DataType.TAG);
+        b.put(new StringFieldValue("this is a test"), 5);
+
+        assertNotEquals(a, b);
+        assertEquals(1, a.compareTo(b));
+        assertEquals(-1, b.compareTo(a));
+
+        b.clear();
+        b.put(new StringFieldValue("this is a test"), 5);
+        b.put(new StringFieldValue("this is a third test"), 7);
+
+        assertNotEquals(a, b);
+        assertEquals(-1, a.compareTo(b));
+        assertEquals(1, b.compareTo(a));
+
+        b.clear();
+        b.put(new StringFieldValue("this is a test"), 5);
+        b.put(new StringFieldValue("this is a second test"), 7);
+
+        assertEquals(a, b);
+        assertEquals(0, a.compareTo(b));
+        assertEquals(0, b.compareTo(a));
+
+        b.clear();
+        b.put(new StringFieldValue("this is a test"), 5);
+        b.put(new StringFieldValue("this is a second test"), 6);
+
+        assertNotEquals(a, b);
+        assertEquals(1, a.compareTo(b));
+        assertEquals(-1, b.compareTo(a));
+    }
 
     @Test
     public void testSet() {

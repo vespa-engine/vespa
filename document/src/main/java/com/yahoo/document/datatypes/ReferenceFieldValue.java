@@ -162,4 +162,9 @@ public class ReferenceFieldValue extends FieldValue {
     public DocumentId getWrappedValue() {
         return documentId.orElse(null);
     }
+
+    @Override
+    public String toString() {
+        return documentId.toString();
+    }
 }

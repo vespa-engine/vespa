@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError.outOfCapacity;
 
@@ -135,8 +137,9 @@ public class VersionStatus {
                 if (!configConverged) {
                     log.log(LogLevel.WARNING, "Config for " + application.id() + " in " + zone + " has not converged");
                 }
-                for (Node node : controller.configServer().nodeRepository().list(zone, application.id(),
-                                                                                 SystemApplication.activeStates())) {
+                for (Node node : controller.configServer().nodeRepository().list(zone, application.id()).stream()
+                                           .filter(SystemUpgrader::eligibleForUpgrade)
+                                           .collect(Collectors.toList())) {
                     // Only use current node version if config has converged
                     Version nodeVersion = configConverged ? node.currentVersion() : controller.systemVersion();
                     versions.put(nodeVersion, node.hostname());

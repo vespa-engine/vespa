@@ -52,6 +52,7 @@ public final class Attribute implements Cloneable, Serializable {
     private boolean fastSearch = false;
     private boolean fastAccess = false;
     private boolean huge = false;
+    private boolean mutable = false;
     private int arity = BooleanIndexDefinition.DEFAULT_ARITY;
     private long lowerBound = BooleanIndexDefinition.DEFAULT_LOWER_BOUND;
     private long upperBound = BooleanIndexDefinition.DEFAULT_UPPER_BOUND;
@@ -181,6 +182,7 @@ public final class Attribute implements Cloneable, Serializable {
     public boolean isFastAccess()         { return fastAccess; }
     public boolean isHuge()               { return huge; }
     public boolean isPosition()           { return isPosition; }
+    public boolean isMutable()            { return mutable; }
 
     public int arity() { return arity; }
     public long lowerBound() { return lowerBound; }
@@ -205,6 +207,7 @@ public final class Attribute implements Cloneable, Serializable {
     public void setHuge(boolean huge)                            { this.huge = huge; }
     public void setFastAccess(boolean fastAccess)                { this.fastAccess = fastAccess; }
     public void setPosition(boolean position)                    { this.isPosition = position; }
+    public void setMutable(boolean mutable)                      { this.mutable = mutable; }
     public void setArity(int arity)                              { this.arity = arity; }
     public void setLowerBound(long lowerBound)                   { this.lowerBound = lowerBound; }
     public void setUpperBound(long upperBound)                   { this.upperBound = upperBound; }

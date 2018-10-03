@@ -15,7 +15,6 @@
 #include <vespa/document/util/stringutil.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
-#include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/stat.h>
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
@@ -79,11 +78,11 @@ ExternalOperationHandler::checkTimestampMutationPreconditions(api::StorageComman
         LOG(debug, "Distributor manager received %s, bucket %s with wrong distribution",
             cmd.toString().c_str(), bucket.toString().c_str());
 
-        persistenceMetrics.failures.wrongdistributor++;
+        persistenceMetrics.failures.wrongdistributor.inc();
         return false;
     }
     if (!checkSafeTimeReached(cmd)) {
-        persistenceMetrics.failures.safe_time_not_reached++;
+        persistenceMetrics.failures.safe_time_not_reached.inc();
         return false;
     }
     return true;
@@ -97,7 +96,7 @@ ExternalOperationHandler::makeConcurrentMutationRejectionReply(api::StorageComma
     auto err_msg = vespalib::make_string("A mutating operation for document '%s' is already in progress",
                                          docId.toString().c_str());
     LOG(debug, "Aborting incoming %s operation: %s", cmd.getType().toString().c_str(), err_msg.c_str());
-    persistenceMetrics.failures.concurrent_mutations++;
+    persistenceMetrics.failures.concurrent_mutations.inc();
     api::StorageReply::UP reply(cmd.makeReply());
     reply->setResult(api::ReturnCode(api::ReturnCode::BUSY, err_msg));
     return std::shared_ptr<api::StorageMessage>(reply.release());
@@ -190,7 +189,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
     if (!checkDistribution(*cmd, bucket)) {
         LOG(debug, "Distributor manager received %s with wrong distribution", cmd->toString().c_str());
 
-        getMetrics().removelocations[cmd->getLoadType()].failures.wrongdistributor++;
+        getMetrics().removelocations[cmd->getLoadType()].failures.wrongdistributor.inc();
         return true;
     }
 
@@ -206,7 +205,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
         LOG(debug, "Distributor manager received get for %s, bucket %s with wrong distribution",
             cmd->getDocumentId().toString().c_str(), bucket.toString().c_str());
 
-        getMetrics().gets[cmd->getLoadType()].failures.wrongdistributor++;
+        getMetrics().gets[cmd->getLoadType()].failures.wrongdistributor.inc();
         return true;
     }
 

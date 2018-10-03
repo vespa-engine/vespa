@@ -100,8 +100,7 @@ public class DockerAdminComponent implements AdminComponent {
         DockerOperations dockerOperations = new DockerOperationsImpl(
                 docker,
                 environment.get(),
-                processExecuter,
-                new IPAddressesImpl());
+                processExecuter);
 
         StorageMaintainer storageMaintainer = new StorageMaintainer(
                 dockerOperations,
@@ -117,17 +116,24 @@ public class DockerAdminComponent implements AdminComponent {
                 new IPAddressesImpl(),
                 environment.get());
 
-        Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(
-                hostName,
-                configServerClients.nodeRepository(),
-                configServerClients.orchestrator(),
-                dockerOperations,
-                storageMaintainer,
-                aclMaintainer,
-                environment.get(),
-                clock,
-                NODE_AGENT_SCAN_INTERVAL,
-                new AthenzCredentialsMaintainer(hostName, environment.get(), identityProvider));
+        Function<String, NodeAgent> nodeAgentFactory = (hostName) -> {
+            // Sleep between starting NodeAgents to reduce simultaneous load against docker daemon when node-admin starts
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ignored) { }
+
+            return new NodeAgentImpl(
+                    hostName,
+                    configServerClients.nodeRepository(),
+                    configServerClients.orchestrator(),
+                    dockerOperations,
+                    storageMaintainer,
+                    aclMaintainer,
+                    environment.get(),
+                    clock,
+                    NODE_AGENT_SCAN_INTERVAL,
+                    new AthenzCredentialsMaintainer(hostName, environment.get(), identityProvider));
+        };
 
         NodeAdmin nodeAdmin = new NodeAdminImpl(
                 dockerOperations,

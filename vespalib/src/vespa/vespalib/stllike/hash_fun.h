@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <stdint.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <cstdint>
 
 namespace vespalib {
 
@@ -59,15 +59,15 @@ template<typename T> struct hash<const T *> {
 };
 
 // reuse old string hash function
-extern size_t hashValue(const char *str);
-extern size_t hashValue(const void *str, size_t sz);
+size_t hashValue(const char *str);
+size_t hashValue(const void *str, size_t sz);
 
 template<> struct hash<const char *> {
     size_t operator() (const char * arg) const { return hashValue(arg); }
 };
 
 template<> struct hash<vespalib::stringref> {
-    size_t operator() (const vespalib::stringref & arg) const { return hashValue(arg.data(), arg.size()); }
+    size_t operator() (vespalib::stringref arg) const { return hashValue(arg.data(), arg.size()); }
 };
 
 template<> struct hash<vespalib::string> {

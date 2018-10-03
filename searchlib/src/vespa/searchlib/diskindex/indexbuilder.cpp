@@ -46,7 +46,7 @@ public:
     ~FileHandle();
 
     void
-    open(const vespalib::stringref &dir,
+    open(vespalib::stringref dir,
          const SchemaUtil::IndexIterator &index,
          uint32_t docIdLimit, uint64_t numWordIds,
          const TuneFileSeqWrite &tuneFileWrite,
@@ -172,7 +172,7 @@ public:
     FileHandle _files;
 
     void
-    startWord(const vespalib::stringref &word);
+    startWord(vespalib::stringref word);
 
     void
     endWord();
@@ -282,7 +282,7 @@ FileHandle::~FileHandle()
 
 
 void
-FileHandle::open(const vespalib::stringref &dir,
+FileHandle::open(vespalib::stringref dir,
                  const SchemaUtil::IndexIterator &index,
                  uint32_t docIdLimit, uint64_t numWordIds,
                  const TuneFileSeqWrite &tuneFileWrite,
@@ -346,7 +346,7 @@ IndexBuilder::FieldHandle::~FieldHandle()
 
 
 void
-IndexBuilder::FieldHandle::startWord(const vespalib::stringref &word)
+IndexBuilder::FieldHandle::startWord(vespalib::stringref word)
 {
     assert(_valid);
     _files._fieldWriter->newWord(word);
@@ -553,7 +553,7 @@ IndexBuilder::~IndexBuilder()
 
 
 void
-IndexBuilder::startWord(const vespalib::stringref &word)
+IndexBuilder::startWord(vespalib::stringref word)
 {
     assert(_currentField != nullptr);
     assert(!_inWord);
@@ -649,14 +649,14 @@ IndexBuilder::addOcc(const WordDocElementWordPosFeatures &features)
 
 
 void
-IndexBuilder::setPrefix(const vespalib::stringref &prefix)
+IndexBuilder::setPrefix(vespalib::stringref prefix)
 {
     _prefix = prefix;
 }
 
 
 vespalib::string
-IndexBuilder::appendToPrefix(const vespalib::stringref &name)
+IndexBuilder::appendToPrefix(vespalib::stringref name)
 {
     if (_prefix.empty())
         return name;

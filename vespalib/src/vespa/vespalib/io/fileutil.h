@@ -218,7 +218,7 @@ class LazyFile : public File {
 public:
     typedef std::unique_ptr<LazyFile> UP;
 
-    LazyFile(const vespalib::stringref & filename, int flags,
+    LazyFile(vespalib::stringref filename, int flags,
              bool autoCreateDirs = false)
         : File(filename),
           _flags(flags),

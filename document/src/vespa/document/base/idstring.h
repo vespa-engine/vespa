@@ -24,7 +24,7 @@ public:
     static const vespalib::string & getTypeName(Type t);
 
     /** @throws document::IdParseException If parsing of id scheme failed. */
-    static IdString::UP createIdString(const vespalib::stringref & id) { return createIdString(id.data(), id.size()); }
+    static IdString::UP createIdString(vespalib::stringref id) { return createIdString(id.data(), id.size()); }
     static IdString::UP createIdString(const char *id, size_t sz);
 
     ~IdString() {}
@@ -48,7 +48,7 @@ public:
     const vespalib::string & toString() const;
 
 protected:
-    IdString(uint32_t maxComponents, uint32_t namespaceOffset, const vespalib::stringref & rawId);
+    IdString(uint32_t maxComponents, uint32_t namespaceOffset, vespalib::stringref rawId);
     virtual vespalib::string getSchemeName() const;
     size_t offset(size_t index) const { return _offsets[index]; }
     size_t size(size_t index) const { return _offsets[index+1] - _offsets[index] - 1; }
@@ -60,7 +60,7 @@ protected:
 private:
     class Offsets {
     public:
-        Offsets(uint32_t maxComponents, uint32_t first, const vespalib::stringref & id);
+        Offsets(uint32_t maxComponents, uint32_t first, vespalib::stringref id);
         uint16_t first() const { return _offsets[0]; }
         uint16_t operator [] (size_t i) const { return _offsets[i]; }
         size_t numComponents() const { return _numComponents; }
@@ -100,7 +100,7 @@ class IdIdString final : public IdString {
     bool         _has_number;
 
 public:
-    IdIdString(const vespalib::stringref &ns);
+    IdIdString(vespalib::stringref ns);
 
     bool hasDocType() const override { return true; }
     vespalib::stringref getDocType() const override { return getComponent(1); }
@@ -129,8 +129,8 @@ private:
  */
 class DocIdString final : public IdString {
 public:
-    DocIdString(const vespalib::stringref & ns, const vespalib::stringref & id);
-    DocIdString(const vespalib::stringref & rawId);
+    DocIdString(vespalib::stringref ns, vespalib::stringref id);
+    DocIdString(vespalib::stringref rawId);
 private:
     DocIdString* clone() const override { return new DocIdString(*this); }
     Type getType() const override { return DOC; }
@@ -150,7 +150,7 @@ private:
  */
 class UserDocIdString final : public IdString {
 public:
-    UserDocIdString(const vespalib::stringref & rawId);
+    UserDocIdString(vespalib::stringref rawId);
 
     virtual int64_t getUserId() const { return _userId; }
     bool hasNumber() const override { return true; }
@@ -172,7 +172,7 @@ private:
  */
 class OrderDocIdString final : public IdString {
 public:
-    OrderDocIdString(const vespalib::stringref& rawId);
+    OrderDocIdString(vespalib::stringref rawId);
 
     int64_t  getUserId() const { return _location; }
     uint16_t getWidthBits() const { return _widthBits; }
@@ -207,7 +207,7 @@ private:
  */
 class GroupDocIdString : public IdString {
 public:
-    GroupDocIdString(const vespalib::stringref & rawId);
+    GroupDocIdString(vespalib::stringref rawId);
     bool hasGroup() const override { return true; }
     vespalib::stringref getGroup() const override { return getComponent(1); }
     LocationType getLocation() const override;

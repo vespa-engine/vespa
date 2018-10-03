@@ -59,9 +59,7 @@ SourceSelector::SaveInfo::SaveInfo(const vespalib::string & baseFileName,
     : _header(baseFileName, defaultSource, baseId, docIdLimit),
       _memSaver()
 {
-    vespalib::string attrName = sourceStore.getBaseFileName();
-    sourceStore.saveAs(_header._baseFileName, _memSaver);
-    sourceStore.setBaseFileName(attrName);
+    sourceStore.save(_memSaver, _header._baseFileName);
 }
 
 bool

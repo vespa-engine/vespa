@@ -92,8 +92,7 @@ TaskRunner::runTask(InitializerTask::SP task)
     vespalib::ThreadStackExecutor executor(1, 128 * 1024);
     std::promise<void> promise;
     auto future = promise.get_future();
-    runTask(task, executor,
-            makeLambdaTask([&]() { promise.set_value(); }));
+    runTask(task, executor, makeLambdaTask([&]() { promise.set_value(); }));
     future.wait();
 }
 
@@ -119,8 +118,7 @@ TaskRunner::runTask(InitializerTask::SP rootTask,
                     vespalib::Executor &contextExecutor,
                     vespalib::Executor::Task::UP doneTask)
 {
-    Context::SP context(std::make_shared<Context>(rootTask, contextExecutor,
-                                                  std::move(doneTask)));
+    auto context(std::make_shared<Context>(rootTask, contextExecutor, std::move(doneTask)));
     context->execute(makeLambdaTask([=]() { pollTask(context); } ));
 }
 

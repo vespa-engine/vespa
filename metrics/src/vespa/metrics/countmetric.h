@@ -78,11 +78,6 @@ public:
     void set(T value);
     void inc(T value = 1);
     void dec(T value = 1);
-    CountMetric & operator++() { inc(); return *this; }
-    CountMetric & operator--() { dec(); return *this; }
-
-    CountMetric operator++(int);
-    CountMetric operator--(int);
 
     CountMetric & operator+=(const CountMetric &);
     CountMetric & operator-=(const CountMetric &);
@@ -111,11 +106,11 @@ public:
                const std::string& indent, uint64_t secondsPassed) const override;
 
     // Only one metric in valuemetric, so return it on any id.
-    int64_t getLongValue(const stringref & id) const override {
+    int64_t getLongValue(stringref id) const override {
         (void) id;
         return static_cast<int64_t>(getValue());
     }
-    double getDoubleValue(const stringref & id) const override {
+    double getDoubleValue(stringref id) const override {
         (void) id;
         return static_cast<double>(getValue());
     }

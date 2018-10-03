@@ -13,8 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.yahoo.config.model.builder.xml.XmlHelper.getOptionalAttribute;
-
 /**
  * @author gjoranv
  * @since 5.6
@@ -24,8 +22,7 @@ public class RestApiBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Res
     @Override
     protected RestApi doBuild(AbstractConfigProducer ancestor, Element spec) {
         String bindingPath = spec.getAttribute("path");
-        boolean jersey2 = Boolean.parseBoolean(getOptionalAttribute(spec, "jersey2").orElse("false"));
-        RestApi restApi = new RestApi(bindingPath, jersey2);
+        RestApi restApi = new RestApi(bindingPath);
 
         restApi.setRestApiContext(
                 createRestApiContext(ancestor, spec, bindingPath));

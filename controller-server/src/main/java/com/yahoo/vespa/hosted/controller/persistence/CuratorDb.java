@@ -16,11 +16,13 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
+import com.yahoo.vespa.hosted.controller.versions.OsVersion;
+import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
@@ -43,6 +45,9 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+
+import static java.util.stream.Collectors.collectingAndThen;
 
 /**
  * Curator backed database for storing the persistence state of controllers. This maps controller specific operations
@@ -50,11 +55,13 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  * @author mpolden
+ * @author jonmv
  */
 public class CuratorDb {
 
     private static final Logger log = Logger.getLogger(CuratorDb.class.getName());
     private static final Duration defaultLockTimeout = Duration.ofMinutes(5);
+    private static final Duration defaultTryLockTimeout = Duration.ofSeconds(1);
 
     private static final Path root = Path.fromString("/controller/v1");
     private static final Path lockRoot = root.append("locks");
@@ -70,8 +77,11 @@ public class CuratorDb {
     private final TenantSerializer tenantSerializer = new TenantSerializer();
     private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
+    private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
+    private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
 
     private final Curator curator;
+    private final Duration tryLockTimeout;
 
     /**
      * All keys, to allow reentrancy.
@@ -81,7 +91,12 @@ public class CuratorDb {
 
     @Inject
     public CuratorDb(Curator curator) {
+        this(curator, defaultTryLockTimeout);
+    }
+
+    CuratorDb(Curator curator, Duration tryLockTimeout) {
         this.curator = curator;
+        this.tryLockTimeout = tryLockTimeout;
     }
 
     /** Returns all hosts configured to be part of this ZooKeeper cluster */
@@ -149,6 +164,14 @@ public class CuratorDb {
         return lock(lockRoot.append("openStackServerPoolLock"), Duration.ofSeconds(1));
     }
 
+    public Lock lockOsVersions() {
+        return lock(lockRoot.append("osTargetVersion"), defaultLockTimeout);
+    }
+
+    public Lock lockOsVersionStatus() {
+        return lock(lockRoot.append("osVersionStatus"), defaultLockTimeout);
+    }
+
     // -------------- Helpers ------------------------------------------
 
     /** Try locking with a low timeout, meaning it is OK to fail lock acquisition.
@@ -157,7 +180,7 @@ public class CuratorDb {
      */
     private Lock tryLock(Path path) throws TimeoutException {
         try {
-            return lock(path, Duration.ofSeconds(1));
+            return lock(path, tryLockTimeout);
         }
         catch (UncheckedTimeoutException e) {
             throw new TimeoutException(e.getMessage());
@@ -235,6 +258,24 @@ public class CuratorDb {
                 .orElse(Vtag.currentVersion);
     }
 
+    // Infrastructure upgrades
+
+    public void writeOsVersions(Set<OsVersion> versions) {
+        curator.set(osTargetVersionPath(), asJson(osVersionSerializer.toSlime(versions)));
+    }
+
+    public Set<OsVersion> readOsVersions() {
+        return readSlime(osTargetVersionPath()).map(osVersionSerializer::fromSlime).orElseGet(Collections::emptySet);
+    }
+
+    public void writeOsVersionStatus(OsVersionStatus status) {
+        curator.set(osVersionStatusPath(), asJson(osVersionStatusSerializer.toSlime(status)));
+    }
+
+    public OsVersionStatus readOsVersionStatus() {
+        return readSlime(osVersionStatusPath()).map(osVersionStatusSerializer::fromSlime).orElse(OsVersionStatus.empty);
+    }
+
     // -------------- Tenant --------------------------------------------------
 
     public void writeTenant(UserTenant tenant) {
@@ -261,12 +302,17 @@ public class CuratorDb {
     }
 
     public List<Tenant> readTenants() {
+        return readTenantNames().stream()
+                                .map(this::readTenant)
+                                .filter(Optional::isPresent)
+                                .map(Optional::get)
+                                .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+    }
+
+    public List<TenantName> readTenantNames() {
         return curator.getChildren(tenantRoot).stream()
                       .map(TenantName::from)
-                      .map(this::readTenant)
-                      .filter(Optional::isPresent)
-                      .map(Optional::get)
-                      .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                      .collect(Collectors.toList());
     }
 
     public void removeTenant(TenantName name) {
@@ -298,7 +344,7 @@ public class CuratorDb {
                       .map(this::readApplication)
                       .filter(Optional::isPresent)
                       .map(Optional::get)
-                      .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                      .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
     public void removeApplication(ApplicationId application) {
@@ -307,29 +353,29 @@ public class CuratorDb {
 
     // -------------- Job Runs ------------------------------------------------
 
-    public void writeLastRun(RunStatus run) {
+    public void writeLastRun(Run run) {
         curator.set(lastRunPath(run.id().application(), run.id().type()), asJson(runSerializer.toSlime(run)));
     }
 
-    public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<RunStatus> runs) {
-        curator.set(jobPath(id, type), asJson(runSerializer.toSlime(runs)));
+    public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<Run> runs) {
+        curator.set(runsPath(id, type), asJson(runSerializer.toSlime(runs)));
     }
 
-    public Optional<RunStatus> readLastRun(ApplicationId id, JobType type) {
+    public Optional<Run> readLastRun(ApplicationId id, JobType type) {
         return readSlime(lastRunPath(id, type)).map(runSerializer::runFromSlime);
     }
 
-    public Map<RunId, RunStatus> readHistoricRuns(ApplicationId id, JobType type) {
+    public Map<RunId, Run> readHistoricRuns(ApplicationId id, JobType type) {
         // TODO jvenstad: Add, somewhere, a retention filter based on age or count.
-        return readSlime(jobPath(id, type)).map(runSerializer::runsFromSlime).orElse(new LinkedHashMap<>());
+        return readSlime(runsPath(id, type)).map(runSerializer::runsFromSlime).orElse(new LinkedHashMap<>());
     }
 
-    public void deleteJobData(ApplicationId id, JobType type) {
-        curator.delete(jobPath(id, type));
+    public void deleteRunData(ApplicationId id, JobType type) {
+        curator.delete(runsPath(id, type));
         curator.delete(lastRunPath(id, type));
     }
 
-    public void deleteJobData(ApplicationId id) {
+    public void deleteRunData(ApplicationId id) {
         curator.delete(jobRoot.append(id.serializedForm()));
     }
 
@@ -337,6 +383,33 @@ public class CuratorDb {
         return curator.getChildren(jobRoot).stream()
                       .map(ApplicationId::fromSerializedForm)
                       .collect(Collectors.toList());
+    }
+
+
+    public Optional<byte[]> readLog(ApplicationId id, JobType type, long chunkId) {
+        return curator.getData(logPath(id, type, chunkId));
+    }
+
+    public void writeLog(ApplicationId id, JobType type, long chunkId, byte[] log) {
+        curator.set(logPath(id, type, chunkId), log);
+    }
+
+    public void deleteLog(ApplicationId id, JobType type) {
+        curator.delete(runsPath(id, type).append("logs"));
+    }
+
+    public Optional<Long> readLastLogEntryId(ApplicationId id, JobType type) {
+        return curator.getData(lastLogPath(id, type))
+                      .map(String::new).map(Long::parseLong);
+    }
+
+    public void writeLastLogEntryId(ApplicationId id, JobType type, long lastId) {
+        curator.set(lastLogPath(id, type), Long.toString(lastId).getBytes());
+    }
+
+    public LongStream getLogChunkIds(ApplicationId id, JobType type) {
+        return curator.getChildren(runsPath(id, type).append("logs")).stream()
+                      .mapToLong(Long::parseLong);
     }
 
     // -------------- Provisioning (called by internal code) ------------------
@@ -435,6 +508,14 @@ public class CuratorDb {
         return root.append("upgrader").append("confidenceOverrides");
     }
 
+    private static Path osTargetVersionPath() {
+        return root.append("osUpgrader").append("targetVersion");
+    }
+
+    private static Path osVersionStatusPath() {
+        return root.append("osVersionStatus");
+    }
+
     private static Path versionStatusPath() {
         return root.append("versionStatus");
     }
@@ -463,12 +544,20 @@ public class CuratorDb {
         return applicationRoot.append(application.serializedForm());
     }
 
-    private static Path jobPath(ApplicationId id, JobType type) {
+    private static Path runsPath(ApplicationId id, JobType type) {
         return jobRoot.append(id.serializedForm()).append(type.jobName());
     }
 
     private static Path lastRunPath(ApplicationId id, JobType type) {
-        return jobPath(id, type).append("last");
+        return runsPath(id, type).append("last");
+    }
+
+    private static Path logPath(ApplicationId id, JobType type, long first) {
+        return runsPath(id, type).append("logs").append(Long.toString(first));
+    }
+
+    private static Path lastLogPath(ApplicationId id, JobType type) {
+        return runsPath(id, type).append("logs");
     }
 
     private static Path controllerPath(String hostname) {

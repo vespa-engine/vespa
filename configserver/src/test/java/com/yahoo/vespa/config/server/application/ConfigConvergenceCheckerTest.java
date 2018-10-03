@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.application;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -47,16 +46,20 @@ public class ConfigConvergenceCheckerTest {
     private Application application;
     private ConfigConvergenceChecker checker;
     private URI service;
+    private URI service2;
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
     @Rule
     public final WireMockRule wireMock = new WireMockRule(options().dynamicPort(), true);
+    @Rule
+    public final WireMockRule wireMock2 = new WireMockRule(options().dynamicPort(), true);
 
     @Before
     public void setup() {
         service = testServer();
+        service2 = testServer(wireMock2);
         Model mockModel = MockModel.createContainer(service.getHost(), service.getPort());
         application = new Application(mockModel,
                                       new ServerCache(),
@@ -115,7 +118,8 @@ public class ConfigConvergenceCheckerTest {
                            "      \"host\": \"" + serviceUrl.getHost() + "\",\n" +
                            "      \"port\": " + serviceUrl.getPort() + ",\n" +
                            "      \"type\": \"container\",\n" +
-                           "      \"url\": \"" + serviceUrl.toString() + "\"\n" +
+                           "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
+                           "      \"currentGeneration\":" + 3 + "\n" +
                            "    }\n" +
                            "  ],\n" +
                            "  \"url\": \"" + requestUrl.toString() + "\",\n" +
@@ -130,49 +134,45 @@ public class ConfigConvergenceCheckerTest {
 
         { // Model with two hosts on different generations
             MockModel model = new MockModel(Arrays.asList(
-                    // Reuse hostname and port to avoid the need for two WireMock servers
                     MockModel.createContainerHost(service.getHost(), service.getPort()),
-                    MockModel.createContainerHost(service.getHost(), service.getPort()))
+                    MockModel.createContainerHost(service2.getHost(), service2.getPort()))
             );
             Application application = new Application(model, new ServerCache(), 4,
                                                       false,
                                                       Version.fromIntValues(0, 0, 0),
                                                       MetricUpdater.createTestUpdater(), appId);
 
-            String host2 = "host2";
-            wireMock.stubFor(get(urlEqualTo("/state/v1/config")).inScenario("config request")
-                                                                .whenScenarioStateIs(Scenario.STARTED)
-                                                                .willReturn(okJson("{\"config\":{\"generation\":4}}"))
-                                                                .willSetStateTo(host2));
-            wireMock.stubFor(get(urlEqualTo("/state/v1/config")).inScenario("config request")
-                                                                .whenScenarioStateIs(host2)
-                                                                .willReturn(okJson("{\"config\":{\"generation\":3}}")));
+            wireMock.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":4}}")));
+            wireMock2.stubFor(get(urlEqualTo("/state/v1/config")).willReturn(okJson("{\"config\":{\"generation\":3}}")));
 
             URI requestUrl = testServer().resolve("/serviceconverge");
             URI serviceUrl = testServer().resolve("/serviceconverge/" + hostAndPort(service));
+            URI serviceUrl2 = testServer().resolve("/serviceconverge/" + hostAndPort(service2));
             HttpResponse response = checker.servicesToCheck(application, requestUrl, Duration.ofSeconds(5));
             assertResponse("{\n" +
-                             "  \"services\": [\n" +
-                             "    {\n" +
-                             "      \"host\": \"" + service.getHost() + "\",\n" +
-                             "      \"port\": " + service.getPort() + ",\n" +
-                             "      \"type\": \"container\",\n" +
-                             "      \"url\": \"" + serviceUrl.toString() + "\"\n" +
-                             "    },\n" +
-                             "    {\n" +
-                             "      \"host\": \"" + service.getHost() + "\",\n" +
-                             "      \"port\": " + service.getPort() + ",\n" +
-                             "      \"type\": \"container\",\n" +
-                             "      \"url\": \"" + serviceUrl.toString() + "\"\n" +
-                             "    }\n" +
-                             "  ],\n" +
-                             "  \"url\": \"" + requestUrl.toString() + "\",\n" +
-                             "  \"currentGeneration\": 3,\n" +
-                             "  \"wantedGeneration\": 4,\n" +
-                             "  \"converged\": false\n" +
-                             "}",
-                             200,
-                             response);
+                           "  \"services\": [\n" +
+                           "    {\n" +
+                           "      \"host\": \"" + service.getHost() + "\",\n" +
+                           "      \"port\": " + service.getPort() + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl.toString() + "\",\n" +
+                           "      \"currentGeneration\":" + 4 + "\n" +
+                           "    },\n" +
+                           "    {\n" +
+                           "      \"host\": \"" + service2.getHost() + "\",\n" +
+                           "      \"port\": " + service2.getPort() + ",\n" +
+                           "      \"type\": \"container\",\n" +
+                           "      \"url\": \"" + serviceUrl2.toString() + "\",\n" +
+                           "      \"currentGeneration\":" + 3 + "\n" +
+                           "    }\n" +
+                           "  ],\n" +
+                           "  \"url\": \"" + requestUrl.toString() + "\",\n" +
+                           "  \"currentGeneration\": 3,\n" +
+                           "  \"wantedGeneration\": 4,\n" +
+                           "  \"converged\": false\n" +
+                           "}",
+                           200,
+                           response);
         }
     }
 
@@ -193,6 +193,10 @@ public class ConfigConvergenceCheckerTest {
     }
 
     private URI testServer() {
+        return testServer(wireMock);
+    }
+
+    private URI testServer(WireMockRule wireMock) {
         return URI.create("http://127.0.0.1:" + wireMock.port());
     }
 

@@ -35,7 +35,7 @@ public:
      * Unescape a string, replacing \\\\ \\n \\t \\f \\r or \\x## with their
      * ascii value counterparts.
      */
-    static vespalib::string unescape(const vespalib::stringref & source);
+    static vespalib::string unescape(vespalib::stringref source);
 
     /**
      * Print whatever source points to in a readable format.

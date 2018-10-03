@@ -45,6 +45,7 @@ import java.security.MessageDigest;
 import java.util.*;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
 
@@ -164,7 +165,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         return metaData;
     }
 
-    private List<NamedReader> getFiles(Path relativePath,String namePrefix,String suffix,boolean recurse) {
+    private List<NamedReader> getFiles(Path relativePath, String namePrefix, String suffix, boolean recurse) {
         try {
             List<NamedReader> readers=new ArrayList<>();
             File dir = new File(appDir, relativePath.getRelative());
@@ -272,7 +273,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         String dir = include.getAttribute(IncludeDirs.DIR);
         validateIncludeDir(dir);
         IncludeDirs.validateFilesInIncludedDir(dir, include.getParentNode(), this);
-        log.log(LogLevel.INFO, "Adding user include dir '" + dir + "'");
+        log.log(LogLevel.DEBUG, "Adding user include dir '" + dir + "'");
         userIncludeDirs.add(dir);
     }
 
@@ -304,6 +305,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
 
     /**
      * Verify that two sets of search definitions are disjoint (TODO: everything except error message is very generic).
+     *
      * @param  fileSds Set of search definitions from file
      * @param  bundleSds Set of search definitions from bundles
      */

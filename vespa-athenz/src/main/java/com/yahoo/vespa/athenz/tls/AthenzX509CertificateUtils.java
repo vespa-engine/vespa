@@ -8,7 +8,7 @@ import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import java.security.cert.X509Certificate;
 import java.util.List;
 
-import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.RFC822_NAME;
+import static com.yahoo.security.SubjectAlternativeName.Type.RFC822_NAME;
 
 /**
  * Utility methods for Athenz issued x509 certificates
@@ -23,26 +23,26 @@ public class AthenzX509CertificateUtils {
 
     public static boolean isAthenzRoleCertificate(X509Certificate certificate) {
         return isAthenzIssuedCertificate(certificate) &&
-                X509CertificateUtils.getSubjectCommonNames(certificate).get(0).contains(COMMON_NAME_ROLE_DELIMITER);
+                com.yahoo.security.X509CertificateUtils.getSubjectCommonNames(certificate).get(0).contains(COMMON_NAME_ROLE_DELIMITER);
     }
 
     public static boolean isAthenzIssuedCertificate(X509Certificate certificate) {
-        return X509CertificateUtils.getIssuerCommonNames(certificate).stream()
+        return com.yahoo.security.X509CertificateUtils.getIssuerCommonNames(certificate).stream()
                 .anyMatch(cn -> cn.equalsIgnoreCase("Yahoo Athenz CA") || cn.equalsIgnoreCase("Athenz AWS CA"));
     }
 
     public static AthenzIdentity getIdentityFromRoleCertificate(X509Certificate certificate) {
-        List<SubjectAlternativeName> sans = X509CertificateUtils.getSubjectAlternativeNames(certificate);
+        List<com.yahoo.security.SubjectAlternativeName> sans = com.yahoo.security.X509CertificateUtils.getSubjectAlternativeNames(certificate);
         return sans.stream()
                 .filter(san -> san.getType() == RFC822_NAME)
-                .map(SubjectAlternativeName::getValue)
+                .map(com.yahoo.security.SubjectAlternativeName::getValue)
                 .map(AthenzX509CertificateUtils::getIdentityFromSanEmail)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Could not find identity in SAN: " + sans));
     }
 
     public static AthenzRole getRolesFromRoleCertificate(X509Certificate certificate) {
-        String commonName = X509CertificateUtils.getSubjectCommonNames(certificate).get(0);
+        String commonName = com.yahoo.security.X509CertificateUtils.getSubjectCommonNames(certificate).get(0);
         int delimiterIndex = commonName.indexOf(COMMON_NAME_ROLE_DELIMITER);
         String domain = commonName.substring(0, delimiterIndex);
         String roleName = commonName.substring(delimiterIndex + COMMON_NAME_ROLE_DELIMITER.length());

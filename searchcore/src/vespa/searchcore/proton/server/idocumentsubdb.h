@@ -84,6 +84,7 @@ public:
     virtual const std::shared_ptr<ISummaryAdapter> &getSummaryAdapter() const = 0;
     virtual const std::shared_ptr<IIndexWriter> &getIndexWriter() const = 0;
     virtual IDocumentMetaStoreContext &getDocumentMetaStoreContext() = 0;
+    virtual const IDocumentMetaStoreContext &getDocumentMetaStoreContext() const = 0;
     virtual IFlushTargetList getFlushTargets() = 0;
     virtual size_t getNumDocs() const = 0;
     virtual size_t getNumActiveDocs() const = 0;

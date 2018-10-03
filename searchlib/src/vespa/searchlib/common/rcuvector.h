@@ -8,8 +8,7 @@
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/array.h>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 template <typename T>
 class RcuVectorHeld : public vespalib::GenerationHeldBase
@@ -122,6 +121,7 @@ public:
 
     void reset();
     void shrink(size_t newSize) __attribute__((noinline));
+    void replaceVector(std::unique_ptr<Array> replacement);
 };
 
 template <typename T>
@@ -160,5 +160,4 @@ public:
     MemoryUsage getMemoryUsage() const override;
 };
 
-}
 }

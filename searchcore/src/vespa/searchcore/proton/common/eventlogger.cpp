@@ -109,19 +109,37 @@ EventLogger::flushStart(const string &name, int64_t beforeMemory, int64_t afterM
 }
 
 void
-EventLogger::flushComplete(const string &name, int64_t elapsedTimeMs,
+EventLogger::flushComplete(const string &name, int64_t elapsedTimeMs, SerialNum flushed,
                            const string &outputPath, size_t outputPathElems)
 {
     JSONStringer jstr;
     jstr.beginObject();
     jstr.appendKey("name").appendString(name);
     jstr.appendKey("time.elapsed.ms").appendInt64(elapsedTimeMs);
+    jstr.appendKey("serialnum")
+            .beginObject()
+            .appendKey("flushed").appendInt64(flushed)
+            .endObject();
     if (!outputPath.empty()) {
         jstr.appendKey("output");
         LogUtil::logDir(jstr, outputPath, outputPathElems);
     }
     jstr.endObject();
     EV_STATE("flush.complete", jstr.toString().data());
+}
+
+void
+EventLogger::flushPrune(const string &name, SerialNum oldestFlushed)
+{
+    JSONStringer jstr;
+    jstr.beginObject();
+    jstr.appendKey("name").appendString(name);
+    jstr.appendKey("serialnum")
+            .beginObject()
+            .appendKey("oldestflushed").appendInt64(oldestFlushed)
+            .endObject();
+    jstr.endObject();
+    EV_STATE("flush.prune", jstr.toString().data());
 }
 
 namespace {

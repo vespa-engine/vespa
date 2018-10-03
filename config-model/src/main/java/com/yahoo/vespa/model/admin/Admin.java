@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * This is the admin pseudo-plugin of the Vespa model, responsible for
@@ -61,6 +62,11 @@ public class Admin extends AbstractConfigProducer implements Serializable {
      * If multitenant, this is null.
      */
     private ContainerCluster clusterControllers;
+
+    /**
+     * Cluster for container that might be running on logserver hosts
+     */
+    private Optional<ContainerCluster> logServerContainerCluster = Optional.empty();
 
     private ZooKeepersConfigProvider zooKeepersConfigProvider;
     private FileDistributionConfigProducer fileDistribution;
@@ -136,6 +142,12 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         this.clusterControllers = clusterControllers;
     }
 
+    public Optional<ContainerCluster> getLogServerContainerCluster() { return logServerContainerCluster; }
+
+    public void setLogserverContainerCluster(ContainerCluster logServerContainerCluster) {
+        this.logServerContainerCluster = Optional.of(logServerContainerCluster);
+    }
+
     public ZooKeepersConfigProvider getZooKeepersConfigProvider() {
         return zooKeepersConfigProvider;
     }
@@ -143,7 +155,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     public void getConfig(LogdConfig.Builder builder) {
         builder.
             logserver(new LogdConfig.Logserver.Builder().
-                    use(!isHostedVespa).
+                    use(logServerContainerCluster.isPresent() || !isHostedVespa).
                     host(logserver.getHostName()).
                     port(logserver.getRelativePort(1)));
     }

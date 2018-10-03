@@ -30,27 +30,33 @@ public:
     const std::string      spec;
     FRT_RPCRequest * const registerRequest;
 
-    RegRpcSrvData(SBEnv &e, const char *n, const char *s, FRT_RPCRequest *r)
+    RegRpcSrvData(SBEnv &e, const std::string &n, const std::string &s, FRT_RPCRequest *r)
         : _state(RDC_INIT), env(e), name(n), spec(s), registerRequest(r)
     {}
 };
 
+RegRpcSrvCommand::RegRpcSrvCommand(std::unique_ptr<RegRpcSrvData> data)
+    : _data(std::move(data))
+{}
+
+RegRpcSrvCommand::RegRpcSrvCommand(RegRpcSrvCommand &&) = default;
+RegRpcSrvCommand & RegRpcSrvCommand::operator =(RegRpcSrvCommand &&) = default;
+RegRpcSrvCommand::~RegRpcSrvCommand() = default;
+
 RegRpcSrvCommand
 RegRpcSrvCommand::makeRegRpcSrvCmd(SBEnv &env,
-                                   const char *name, const char *spec,
+                                   const std::string &name, const std::string &spec,
                                    FRT_RPCRequest *req)
 {
-    RegRpcSrvData *data = new RegRpcSrvData(env, name, spec, req);
-    return RegRpcSrvCommand(data);
+    return RegRpcSrvCommand(std::make_unique<RegRpcSrvData>(env, name, spec, req));
 }
 
 RegRpcSrvCommand
-RegRpcSrvCommand::makeRemRemCmd(SBEnv &env,
-                                const char *name, const char *spec)
+RegRpcSrvCommand::makeRemRemCmd(SBEnv &env, const std::string & name, const std::string &spec)
 {
-    RegRpcSrvData *data = new RegRpcSrvData(env, name, spec, NULL);
+    auto data = std::make_unique<RegRpcSrvData>(env, name, spec, nullptr);
     data->_state = RegRpcSrvData::XCH_IGNORE;
-    return RegRpcSrvCommand(data);
+    return RegRpcSrvCommand(std::move(data));
 }
 
 
@@ -62,66 +68,61 @@ RegRpcSrvCommand::doRequest()
 }
 
 void
-RegRpcSrvCommand::cleanupReservation()
+RegRpcSrvCommand::cleanupReservation(RegRpcSrvData & data)
 {
-    RpcServerMap &map = _data->env._rpcsrvmap;
-    ReservedName *rsvp = map.getReservation(_data->name.c_str());
-    if (rsvp != NULL && rsvp->isLocal) {
-        map.removeReservation(_data->name.c_str());
+    RpcServerMap &map = data.env._rpcsrvmap;
+    const ReservedName *rsvp = map.getReservation(data.name.c_str());
+    if (rsvp != nullptr && rsvp->isLocal) {
+        map.removeReservation(data.name.c_str());
     }
 }
 
 void
 RegRpcSrvCommand::doneHandler(OkState result)
 {
-    LOG_ASSERT(_data != NULL);
-
+    LOG_ASSERT(_data != nullptr);
+    std::unique_ptr<RegRpcSrvData> dataUP = std::move(_data);
+    RegRpcSrvData & data = *dataUP;
     if (result.failed()) {
-        LOG(warning, "failed in state %d: %s",
-            _data->_state, result.errorMsg.c_str());
-        cleanupReservation();
+        LOG(warning, "failed in state %d: %s", data._state, result.errorMsg.c_str());
+        cleanupReservation(data);
         // XXX should handle different state errors differently?
-        if (_data->registerRequest != NULL) {
-            _data->registerRequest->SetError(FRTE_RPC_METHOD_FAILED,
-                                             result.errorMsg.c_str());
-            _data->registerRequest->Return();
+        if (data.registerRequest != nullptr) {
+            data.registerRequest->SetError(FRTE_RPC_METHOD_FAILED, result.errorMsg.c_str());
+            data.registerRequest->Return();
         } else {
             LOG(warning, "ignored: %s", result.errorMsg.c_str());
         }
         goto alldone;
     }
-    if (_data->_state == RegRpcSrvData::RDC_INIT) {
-        LOG(spam, "phase wantAdd(%s,%s)",
-            _data->name.c_str(), _data->spec.c_str());
-        _data->_state = RegRpcSrvData::XCH_WANTADD;
-        _data->env._exchanger.wantAdd(_data->name.c_str(), _data->spec.c_str(), *this);
+    if (data._state == RegRpcSrvData::RDC_INIT) {
+        LOG(spam, "phase wantAdd(%s,%s)", data.name.c_str(), data.spec.c_str());
+        data._state = RegRpcSrvData::XCH_WANTADD;
+        data.env._exchanger.wantAdd(data.name.c_str(), data.spec.c_str(), std::move(dataUP));
         return;
-    } else if (_data->_state == RegRpcSrvData::XCH_WANTADD) {
-        LOG(spam, "phase addManaged(%s,%s)",
-            _data->name.c_str(), _data->spec.c_str());
-        _data->_state = RegRpcSrvData::CHK_RPCSRV;
-        _data->env._rpcsrvmanager.addManaged(_data->name.c_str(), _data->spec.c_str(), *this);
+    } else if (data._state == RegRpcSrvData::XCH_WANTADD) {
+        LOG(spam, "phase addManaged(%s,%s)", data.name.c_str(), data.spec.c_str());
+        data._state = RegRpcSrvData::CHK_RPCSRV;
+        data.env._rpcsrvmanager.addManaged(data.name, data.spec.c_str(), std::move(dataUP));
         return;
-    } else if (_data->_state == RegRpcSrvData::CHK_RPCSRV) {
-        LOG(spam, "phase doAdd(%s,%s)", _data->name.c_str(), _data->spec.c_str());
-        _data->_state = RegRpcSrvData::XCH_DOADD;
-        _data->env._exchanger.doAdd(_data->name.c_str(), _data->spec.c_str(), *this);
+    } else if (data._state == RegRpcSrvData::CHK_RPCSRV) {
+        LOG(spam, "phase doAdd(%s,%s)", data.name.c_str(), data.spec.c_str());
+        data._state = RegRpcSrvData::XCH_DOADD;
+        data.env._exchanger.doAdd(data.name.c_str(), data.spec.c_str(), std::move(dataUP));
         return;
-    } else if (_data->_state == RegRpcSrvData::XCH_DOADD) {
-        LOG(debug, "done doAdd(%s,%s)", _data->name.c_str(), _data->spec.c_str());
-        _data->_state = RegRpcSrvData::RDC_INVAL;
+    } else if (data._state == RegRpcSrvData::XCH_DOADD) {
+        LOG(debug, "done doAdd(%s,%s)", data.name.c_str(), data.spec.c_str());
+        data._state = RegRpcSrvData::RDC_INVAL;
         // all OK
-        _data->registerRequest->Return();
+        data.registerRequest->Return();
         goto alldone;
-    } else if (_data->_state == RegRpcSrvData::XCH_IGNORE) {
+    } else if (data._state == RegRpcSrvData::XCH_IGNORE) {
         goto alldone;
     }
     // no other state should be possible
     LOG_ABORT("should not be reached");
  alldone:
-    cleanupReservation();
-    delete _data;
-    _data = NULL;
+    cleanupReservation(data);
 }
 
 //-----------------------------------------------------------------------------

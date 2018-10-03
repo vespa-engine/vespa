@@ -60,13 +60,13 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & comm
     }
     _sessionExecutor.sync();
     if (_parts.empty() || _parts.crbegin()->second->isClosed()) {
-        _parts[lastPart].reset(new DomainPart(_name, dir(), lastPart, _defaultCrcType, _fileHeaderContext, false));
+        _parts[lastPart] = std::make_shared<DomainPart>(_name, dir(), lastPart, _defaultCrcType, _fileHeaderContext, false);
         vespalib::File::sync(dir());
     }
 }
 
 void Domain::addPart(int64_t partId, bool isLastPart) {
-    DomainPart::SP dp(new DomainPart(_name, dir(), partId, _defaultCrcType, _fileHeaderContext, isLastPart));
+    auto dp = std::make_shared<DomainPart>(_name, dir(), partId, _defaultCrcType, _fileHeaderContext, isLastPart);
     if (dp->size() == 0) {
         // Only last domain part is allowed to be truncated down to
         // empty size.
@@ -199,7 +199,7 @@ Domain::triggerSyncNow()
     if (!_pendingSync) {
         _pendingSync = true;
         DomainPart::SP dp(_parts.rbegin()->second);
-        _commitExecutor.execute(Sync::UP(new Sync(_syncMonitor, dp, _pendingSync)));
+        _commitExecutor.execute(std::make_unique<Sync>(_syncMonitor, dp, _pendingSync));
     }
 }
 
@@ -290,7 +290,7 @@ void Domain::commit(const Packet & packet)
         triggerSyncNow();
         waitPendingSync(_syncMonitor, _pendingSync);
         dp->close();
-        dp.reset(new DomainPart(_name, dir(), entry.serial(), _defaultCrcType, _fileHeaderContext, false));
+        dp = std::make_shared<DomainPart>(_name, dir(), entry.serial(), _defaultCrcType, _fileHeaderContext, false);
         {
             LockGuard guard(_lock);
             _parts[entry.serial()] = dp;
@@ -322,15 +322,16 @@ bool Domain::erase(SerialNum to)
 }
 
 int Domain::visit(const Domain::SP & domain, SerialNum from, SerialNum to,
-                  FRT_Supervisor & supervisor, FNET_Connection *conn)
+                  std::unique_ptr<Session::Destination> dest)
 {
     assert(this == domain.get());
     cleanSessions();
     SerialNumRange range(from, to);
-    Session * session = new Session(_sessionId++, range, domain, supervisor, conn);
+    auto session = std::make_shared<Session>(_sessionId++, range, domain, std::move(dest));
+    int id = session->id();
     LockGuard guard(_sessionLock);
-    _sessions[session->id()] = Session::SP(session);
-    return session->id();
+    _sessions[id] = std::move(session);
+    return id;
 }
 
 int Domain::startSession(int sessionId)

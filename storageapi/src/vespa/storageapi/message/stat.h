@@ -22,7 +22,7 @@ private:
     vespalib::string _docSelection;
 public:
     StatBucketCommand(const document::Bucket &bucket,
-                      const vespalib::stringref & documentSelection);
+                      vespalib::stringref documentSelection);
     ~StatBucketCommand();
 
     const vespalib::string& getDocumentSelection() const { return _docSelection; }
@@ -33,7 +33,7 @@ public:
 class StatBucketReply : public BucketReply {
     vespalib::string _results;
 public:
-    StatBucketReply(const StatBucketCommand&, const vespalib::stringref & results = "");
+    StatBucketReply(const StatBucketCommand&, vespalib::stringref results = "");
     const vespalib::string& getResults() { return _results; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(StatBucketReply, onStatBucketReply)
@@ -63,7 +63,7 @@ public:
         vespalib::string _bucketInformation;
 
         BucketInfo(const document::BucketId& id,
-                   const vespalib::stringref & bucketInformation)
+                   vespalib::stringref bucketInformation)
             : _bucket(id),
               _bucketInformation(bucketInformation)
         {}

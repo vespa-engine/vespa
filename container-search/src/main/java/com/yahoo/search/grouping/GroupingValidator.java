@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.component.chain.dependencies.Provides;
+import com.yahoo.search.grouping.request.AttributeMapLookupValue;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.processing.request.CompoundName;
@@ -18,8 +19,7 @@ import com.yahoo.search.grouping.request.GroupingExpression;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
 
 import static com.yahoo.search.grouping.GroupingQueryParser.SELECT_PARAMETER_PARSING;
 
@@ -37,7 +37,7 @@ public class GroupingValidator extends Searcher {
 
     public static final String GROUPING_VALIDATED = "GroupingValidated";
     public static final CompoundName PARAM_ENABLED = new CompoundName("validate_" + GroupingQueryParser.PARAM_REQUEST);
-    private final Set<String> attributeNames = new HashSet<>();
+    private final HashMap<String, AttributesConfig.Attribute> attributes = new HashMap<>();
     private final String clusterName;
     private final boolean enabled;
 
@@ -55,7 +55,7 @@ public class GroupingValidator extends Searcher {
         enabled = (indexingMode != QrSearchersConfig.Searchcluster.Indexingmode.STREAMING);
         clusterName = enabled ? qrsConfig.searchcluster(clusterId).name() : null;
         for (AttributesConfig.Attribute attr : attributesConfig.attribute()) {
-            attributeNames.add(attr.name());
+            attributes.put(attr.name(), attr);
         }
     }
 
@@ -63,22 +63,48 @@ public class GroupingValidator extends Searcher {
     public Result search(Query query, Execution execution) {
         if (enabled && query.properties().getBoolean(PARAM_ENABLED, true)) {
             ExpressionVisitor visitor = new MyVisitor();
-            for (GroupingRequest req : GroupingRequest.getRequests(query)) {
+            for (GroupingRequest req : query.getSelect().getGrouping())
                 req.getRootOperation().visitExpressions(visitor);
-            }
         }
         return execution.search(query);
+    }
+
+    private void verifyHasAttribute(String attributeName) {
+        if (!attributes.containsKey(attributeName)) {
+            throw new UnavailableAttributeException(clusterName, attributeName);
+        }
+    }
+
+    private void verifyCompatibleAttributeTypes(String keyAttributeName,
+                                                String keySourceAttributeName) {
+        AttributesConfig.Attribute keyAttribute = attributes.get(keyAttributeName);
+        AttributesConfig.Attribute keySourceAttribute = attributes.get(keySourceAttributeName);
+        if (!keySourceAttribute.datatype().equals(keyAttribute.datatype())) {
+            throw new IllegalArgumentException("Grouping request references key source attribute '" +
+                    keySourceAttributeName + "' with data type '" + keySourceAttribute.datatype() +
+                    "' that is different than data type '" + keyAttribute.datatype() + "' of key attribute '" +
+                    keyAttributeName + "'");
+        }
+        if (!keySourceAttribute.collectiontype().equals(AttributesConfig.Attribute.Collectiontype.Enum.SINGLE)) {
+            throw new IllegalArgumentException("Grouping request references key source attribute '" +
+                    keySourceAttributeName + "' which is not of single value type");
+        }
     }
 
     private class MyVisitor implements ExpressionVisitor {
 
         @Override
         public void visitExpression(GroupingExpression exp) {
-            if (exp instanceof AttributeValue) {
-                String name = ((AttributeValue)exp).getAttributeName();
-                if (!attributeNames.contains(name)) {
-                    throw new UnavailableAttributeException(clusterName, name);
+            if (exp instanceof AttributeMapLookupValue) {
+                AttributeMapLookupValue mapLookup = (AttributeMapLookupValue) exp;
+                verifyHasAttribute(mapLookup.getKeyAttribute());
+                verifyHasAttribute(mapLookup.getValueAttribute());
+                if (mapLookup.hasKeySourceAttribute()) {
+                    verifyHasAttribute(mapLookup.getKeySourceAttribute());
+                    verifyCompatibleAttributeTypes(mapLookup.getKeyAttribute(), mapLookup.getKeySourceAttribute());
                 }
+            } else if (exp instanceof AttributeValue) {
+                verifyHasAttribute(((AttributeValue) exp).getAttributeName());
             }
         }
     }

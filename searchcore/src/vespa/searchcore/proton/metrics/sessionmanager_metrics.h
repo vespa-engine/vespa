@@ -2,13 +2,16 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/matching/sessionmanager.h>
-#include <vespa/metrics/metricset.h>
 #include <vespa/metrics/countmetric.h>
+#include <vespa/metrics/metricset.h>
 #include <vespa/metrics/valuemetric.h>
+#include <vespa/searchcore/proton/matching/sessionmanager.h>
 
-namespace search::grouping {
+namespace proton {
 
+/**
+ * Metrics for session manager cache (search or grouping requests).
+ */
 struct SessionManagerMetrics : metrics::MetricSet
 {
     metrics::LongCountMetric numInsert;
@@ -18,7 +21,7 @@ struct SessionManagerMetrics : metrics::MetricSet
     metrics::LongCountMetric numTimedout;
 
     void update(const proton::matching::SessionManager::Stats &stats);
-    SessionManagerMetrics(metrics::MetricSet *parent);
+    SessionManagerMetrics(const vespalib::string &name, metrics::MetricSet *parent);
     ~SessionManagerMetrics();
 };
 

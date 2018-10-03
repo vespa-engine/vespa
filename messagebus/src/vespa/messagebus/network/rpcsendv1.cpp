@@ -35,7 +35,7 @@ RPCSendV1::getReturnSpec() const {
 void
 RPCSendV1::build(FRT_ReflectionBuilder & builder)
 {
-    builder.DefineMethod(METHOD_NAME, METHOD_PARAMS, METHOD_RETURN, true, FRT_METHOD(RPCSendV1::invoke), this);
+    builder.DefineMethod(METHOD_NAME, METHOD_PARAMS, METHOD_RETURN, FRT_METHOD(RPCSendV1::invoke), this);
     builder.MethodDesc("Send a message bus request and get a reply back.");
     builder.ParamDesc("version", "The version of the message.");
     builder.ParamDesc("route", "Names of additional hops to visit.");

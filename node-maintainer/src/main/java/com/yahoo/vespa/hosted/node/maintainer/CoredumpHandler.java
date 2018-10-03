@@ -3,10 +3,10 @@ package com.yahoo.vespa.hosted.node.maintainer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 
 import java.io.BufferedReader;
@@ -37,7 +37,7 @@ class CoredumpHandler {
     private final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final HttpClient httpClient;
+    private final CloseableHttpClient httpClient;
     private final CoreCollector coreCollector;
     private final Path coredumpsPath;
     private final Path doneCoredumpsPath;
@@ -45,7 +45,7 @@ class CoredumpHandler {
     private final Optional<Path> installStatePath;
     private final String feedEndpoint;
 
-    public CoredumpHandler(HttpClient httpClient, CoreCollector coreCollector, Path coredumpsPath, Path doneCoredumpsPath,
+    public CoredumpHandler(CloseableHttpClient httpClient, CoreCollector coreCollector, Path coredumpsPath, Path doneCoredumpsPath,
                            Map<String, Object> nodeAttributes, Optional<Path> installStatePath, String feedEndpoint) {
         this.httpClient = httpClient;
         this.coreCollector = coreCollector;
@@ -154,14 +154,15 @@ class CoredumpHandler {
         post.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
         post.setEntity(new StringEntity(metadata));
 
-        HttpResponse response = httpClient.execute(post);
-        if (response.getStatusLine().getStatusCode() / 100 != 2) {
-            String result = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))
-                    .lines().collect(Collectors.joining("\n"));
-            throw new RuntimeException("POST to " + post.getURI() + " failed with HTTP: " +
-                    response.getStatusLine().getStatusCode() + " [" + result + "]");
+        try (CloseableHttpResponse response = httpClient.execute(post)) {
+            if (response.getStatusLine().getStatusCode() / 100 != 2) {
+                String result = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))
+                        .lines().collect(Collectors.joining("\n"));
+                throw new RuntimeException("POST to " + post.getURI() + " failed with HTTP: " +
+                        response.getStatusLine().getStatusCode() + " [" + result + "]");
+            }
+            EntityUtils.consume(response.getEntity());
         }
-        EntityUtils.consume(response.getEntity());
         logger.info("Successfully reported coredump " + documentId);
     }
 

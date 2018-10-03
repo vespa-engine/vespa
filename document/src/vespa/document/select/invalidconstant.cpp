@@ -6,7 +6,7 @@
 
 namespace document::select {
 
-InvalidConstant::InvalidConstant(const vespalib::stringref & value)
+InvalidConstant::InvalidConstant(vespalib::stringref value)
     : Node(value)
 { }
 

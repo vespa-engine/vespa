@@ -2,20 +2,20 @@
 
 #include "attributedisklayout.h"
 #include "flushableattribute.h"
+#include "attribute_directory.h"
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <fstream>
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <future>
-#include "attribute_directory.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <fstream>
+#include <future>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.flushableattribute");
@@ -39,7 +39,7 @@ private:
     search::AttributeMemorySaveTarget      _saveTarget;
     std::unique_ptr<search::AttributeSaver> _saver;
     uint64_t                          _syncToken;
-    search::AttributeVector::BaseName _flushFile;
+    vespalib::string                  _flushFile;
 
     bool saveAttribute(); // not updating snap info.
 public:
@@ -71,11 +71,10 @@ FlushableAttribute::Flusher::Flusher(FlushableAttribute & fattr, SerialNum syncT
     AttributeVector &attr = *_fattr._attr;
     // Called by attribute field writer executor
     _flushFile = writer.getSnapshotDir(_syncToken) + "/" + attr.getName();
-    attr.setBaseFileName(_flushFile);
-    _saver = attr.initSave();
+    _saver = attr.initSave(_flushFile);
     if (!_saver) {
         // New style background save not available, use old style save.
-        attr.save(_saveTarget);
+        attr.save(_saveTarget, _flushFile);
     }
 }
 
@@ -87,7 +86,7 @@ FlushableAttribute::Flusher::~Flusher()
 bool
 FlushableAttribute::Flusher::saveAttribute()
 {
-    vespalib::mkdir(_flushFile.getDirName(), false);
+    vespalib::mkdir(vespalib::dirname(_flushFile), false);
     SerialNumFileHeaderContext fileHeaderContext(_fattr._fileHeaderContext,
                                                  _syncToken);
     bool saveSuccess = true;
@@ -120,14 +119,14 @@ FlushableAttribute::Flusher::flush(AttributeDirectory::Writer &writer)
         return false;
     }
     writer.markValidSnapshot(_syncToken);
-    writer.setLastFlushTime(search::FileKit::getModificationTime(_flushFile.getDirName()));
+    writer.setLastFlushTime(search::FileKit::getModificationTime(vespalib::dirname(_flushFile)));
     return true;
 }
 
 void
 FlushableAttribute::Flusher::updateStats()
 {
-    _fattr._lastStats.setPath(_flushFile.getDirName());
+    _fattr._lastStats.setPath(vespalib::dirname(_flushFile));
 }
 
 bool
@@ -167,10 +166,7 @@ FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
                                        search::ISequencedTaskExecutor &
                                        attributeFieldWriter,
                                        const HwInfo &hwInfo)
-    : IFlushTarget(vespalib::make_string(
-                           "attribute.flush.%s",
-                           attr->getName().c_str()),
-            Type::SYNC, Component::ATTRIBUTE),
+    : IFlushTarget(make_string("attribute.flush.%s", attr->getName().c_str()), Type::SYNC, Component::ATTRIBUTE),
       _attr(attr),
       _cleanUpAfterFlush(true),
       _lastStats(),
@@ -184,10 +180,7 @@ FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
 }
 
 
-FlushableAttribute::~FlushableAttribute()
-{
-}
-
+FlushableAttribute::~FlushableAttribute() = default;
 
 IFlushTarget::SerialNum
 FlushableAttribute::getFlushedSerialNum() const

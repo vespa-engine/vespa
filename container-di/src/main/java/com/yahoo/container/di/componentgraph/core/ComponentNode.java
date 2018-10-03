@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import static com.yahoo.container.di.componentgraph.core.Exceptions.cutStackTraceAtConstructor;
 import static com.yahoo.container.di.componentgraph.core.Exceptions.removeStackTrace;
 import static com.yahoo.container.di.componentgraph.core.Keys.createKey;
+import static com.yahoo.log.LogLevel.DEBUG;
 
 /**
  * @author Tony Vaagenes
@@ -36,6 +37,7 @@ import static com.yahoo.container.di.componentgraph.core.Keys.createKey;
  * @author ollivir
  */
 public class ComponentNode extends Node {
+
     private static final Logger log = Logger.getLogger(ComponentNode.class.getName());
 
     private final Class<?> clazz;
@@ -146,7 +148,9 @@ public class ComponentNode extends Node {
 
         Object instance;
         try {
+            log.log(DEBUG, "Constructing " + idAndType());
             instance = constructor.newInstance(actualArguments.toArray());
+            log.log(DEBUG, "Finished constructing " + idAndType());
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
             StackTraceElement dependencyInjectorMarker = new StackTraceElement("============= Dependency Injection =============", "newInstance", null, -1);
 

@@ -618,7 +618,7 @@ TEST("requireThatGidsCanBeSavedAndLoaded")
     TuneFileAttributes tuneFileAttributes;
     DummyFileHeaderContext fileHeaderContext;
     AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
-    EXPECT_TRUE(dms1.saveAs("documentmetastore2", saveTarget));
+    EXPECT_TRUE(dms1.save(saveTarget, "documentmetastore2"));
 
     DocumentMetaStore dms2(createBucketDB(), "documentmetastore2");
     EXPECT_TRUE(dms2.load());
@@ -667,7 +667,7 @@ TEST("requireThatStatsAreUpdated")
     EXPECT_GREATER(lastAllocated, perGidUsed);
     EXPECT_GREATER(lastUsed, perGidUsed);
 
-    std::this_thread::sleep_for(2200ms);
+    std::this_thread::sleep_for(6000ms);
     addGid(dms, gid1, bucketId1, time1);
     EXPECT_EQUAL(2u, dms.getStatus().getNumDocs());
     EXPECT_EQUAL(2u, dms.getStatus().getNumValues());
@@ -2037,9 +2037,9 @@ TEST("require that document sizes are saved")
     TuneFileAttributes tuneFileAttributes;
     DummyFileHeaderContext fileHeaderContext;
     AttributeFileSaveTarget saveTarget(tuneFileAttributes, fileHeaderContext);
-    EXPECT_TRUE(dms1.saveAs("documentmetastore3", saveTarget));
+    EXPECT_TRUE(dms1.save(saveTarget, "documentmetastore3"));
     dms1.setTrackDocumentSizes(false);
-    EXPECT_TRUE(dms1.saveAs("documentmetastore4", saveTarget));
+    EXPECT_TRUE(dms1.save(saveTarget, "documentmetastore4"));
 
     DocumentMetaStore dms3(createBucketDB(), "documentmetastore3");
     EXPECT_TRUE(dms3.load());

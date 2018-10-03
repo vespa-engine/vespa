@@ -15,19 +15,15 @@ struct StartMetrics {
     vespalib::metrics::Producer producer;
     unsigned long currentlyRunningServices;
     unsigned long totalRestartsCounter;
-    unsigned long totalRestartsLastPeriod;
     long startedTime;
-    long lastLoggedTime;
     Counter sentinel_restarts;
     Gauge   sentinel_totalRestarts;
     Gauge   sentinel_running;
     Gauge   sentinel_uptime;
 
     StartMetrics();
-    ~StartMetrics() {}
+    ~StartMetrics();
 
-    void output();
-    void reset(unsigned long curTime);
     void maybeLog();
 };
 

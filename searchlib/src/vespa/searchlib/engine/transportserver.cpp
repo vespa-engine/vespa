@@ -7,6 +7,7 @@
 #include <vespa/fnet/connection.h>
 #include <vespa/fnet/connector.h>
 #include <vespa/fnet/iexecutable.h>
+#include <vespa/vespalib/net/crypto_engine.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".engine.transportserver");
@@ -305,7 +306,7 @@ TransportServer::discardRequests()
 }
 
 void
-TransportServer::logPacket(const vespalib::stringref &msg, FNET_Packet *p, FNET_Channel *ch, FNET_Connection *conn)
+TransportServer::logPacket(vespalib::stringref msg, FNET_Packet *p, FNET_Channel *ch, FNET_Connection *conn)
 {
     uint32_t chid = -1;
     uint32_t conntag = -1;

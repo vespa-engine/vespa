@@ -429,7 +429,7 @@ SearchContextTest::getSearch(const V & vec, const T & term, QueryTermSimple::Sea
 ResultSetPtr
 SearchContextTest::performSearch(SearchIterator & sb, uint32_t numDocs)
 {
-    HitCollector hc(numDocs, numDocs, 0);
+    HitCollector hc(numDocs, numDocs);
     sb.initRange(1, numDocs);
     // assume strict toplevel search object located at start
     for (sb.seek(1u); ! sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
@@ -569,7 +569,7 @@ SearchContextTest::testMultiValueSearch(V & first, V & second, const std::vector
 
     testMultiValueSearchHelper(first, values);
 
-    ASSERT_TRUE(first.saveAs(second.getBaseFileName()));
+    ASSERT_TRUE(first.save(second.getBaseFileName()));
     ASSERT_TRUE(second.load());
 
     testMultiValueSearchHelper(second, values);
@@ -591,7 +591,7 @@ SearchContextTest::testMultiValueSearch(V & first, V & second, const std::vector
 
     testMultiValueSearchHelper(first, values);
 
-    ASSERT_TRUE(first.saveAs(second.getBaseFileName()));
+    ASSERT_TRUE(first.save(second.getBaseFileName()));
     ASSERT_TRUE(second.load());
 
     testMultiValueSearchHelper(second, values);
@@ -1558,7 +1558,7 @@ SearchContextTest::requireThatSearchIsWorkingAfterLoadAndClearDoc(const vespalib
     VectorType & va = dynamic_cast<VectorType &>(*a);
     resetAttribute(va, startValue); // triggers vector vector in posting list (count 15)
     AttributePtr b = AttributeFactory::createAttribute(name + "-save", cfg);
-    EXPECT_TRUE(a->saveAs(b->getBaseFileName()));
+    EXPECT_TRUE(a->save(b->getBaseFileName()));
     EXPECT_TRUE(b->load());
     b->clearDoc(6); // goes from vector vector to single vector with count 14
     b->commit(true);

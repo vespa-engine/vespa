@@ -9,4 +9,5 @@ import java.util.List;
 abstract public class PredicateOperator extends Predicate {
 
     public abstract List<Predicate> getOperands();
+
 }

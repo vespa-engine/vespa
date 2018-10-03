@@ -231,13 +231,13 @@ StringAttribute::StringSearchContext::StringSearchContext(QueryTermSimple::UP qT
     _buffer()
 {
     if (isRegex()) {
-        _regex.reset(new Regexp(_queryTerm->getTerm(), Regexp::Flags().enableICASE()));
+        _regex = std::make_unique<Regexp>(_queryTerm->getTerm(), Regexp::Flags().enableICASE());
     }
 }
 
 StringAttribute::StringSearchContext::~StringSearchContext()
 {
-    if (_buffer != NULL) {
+    if (_buffer != nullptr) {
         delete [] _buffer;
     }
 }
@@ -386,13 +386,9 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
     timer.SetNow();
     LOG(debug, "start fillEnumIdx");
     if(hasPostings()) {
-        fillEnumIdx(attrReader,
-                    eidxs,
-                    loaded);
+        fillEnumIdx(attrReader, eidxs, loaded);
     } else {
-        fillEnumIdx(attrReader,
-                    eidxs,
-                    enumHist);
+        fillEnumIdx(attrReader, eidxs, enumHist);
     }
     LOG(debug, "done fillEnumIdx, %8.3f s elapsed",
         timer.MilliSecsToNow() / 1000);
@@ -405,8 +401,7 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
         
         attribute::sortLoadedByEnum(loaded);
         
-        LOG(debug, "done sort loaded, %8.3f s elapsed",
-            timer.MilliSecsToNow() / 1000);
+        LOG(debug, "done sort loaded, %8.3f s elapsed", timer.MilliSecsToNow() / 1000);
 
         LOG(debug, "start fillPostingsFixupEnum");
         timer.SetNow();
@@ -473,74 +468,53 @@ bool StringAttribute::onLoad()
 }
 
 bool
-StringAttribute::onAddDoc(DocId doc)
+StringAttribute::onAddDoc(DocId )
 {
-    (void) doc;
     return false;
 }
 
-void StringAttribute::fillPostings(LoadedVector & loaded)
+void StringAttribute::fillPostings(LoadedVector &)
 {
-    (void) loaded;
 }
 
-void StringAttribute::fillEnum(LoadedVector & loaded)
+void StringAttribute::fillEnum(LoadedVector &)
 {
-    (void) loaded;
 }
 
-void StringAttribute::fillValues(LoadedVector & loaded)
+void StringAttribute::fillValues(LoadedVector & )
 {
-    (void) loaded;
 }
 
 void
-StringAttribute::fillEnum0(const void *src,
-                           size_t srcLen,
-                           EnumIndexVector &eidxs)
+StringAttribute::fillEnum0(const void *, size_t , EnumIndexVector &)
 {
-    (void) src;
-    (void) srcLen;
-    (void) eidxs;
     fprintf(stderr, "StringAttribute::fillEnum0\n");
 }
 
 
 void
-StringAttribute::fillEnumIdx(ReaderBase &attrReader,
-                             const EnumIndexVector &eidxs,
-                             LoadedEnumAttributeVector &loaded)
+StringAttribute::fillEnumIdx(ReaderBase &, const EnumIndexVector &, LoadedEnumAttributeVector &)
 {
-    (void) attrReader;
-    (void) eidxs;
-    (void) loaded;
     fprintf(stderr, "StringAttribute::fillEnumIdx (loaded)\n");
 }
 
 
 void
-StringAttribute::fillEnumIdx(ReaderBase &attrReader,
-                             const EnumIndexVector &eidxs,
-                             EnumVector &enumHist)
+StringAttribute::fillEnumIdx(ReaderBase &, const EnumIndexVector &, EnumVector &)
 {
-    (void) attrReader;
-    (void) eidxs;
-    (void) enumHist;
     fprintf(stderr, "StringAttribute::fillEnumIdx (enumHist)\n");
 }
 
 
 void
-StringAttribute::fillPostingsFixupEnum(const LoadedEnumAttributeVector &loaded)
+StringAttribute::fillPostingsFixupEnum(const LoadedEnumAttributeVector &)
 {
-    (void) loaded;
     fprintf(stderr, "StringAttribute::fillPostingsFixupEnum\n");
 }
 
 void
-StringAttribute::fixupEnumRefCounts(const EnumVector &enumHist)
+StringAttribute::fixupEnumRefCounts(const EnumVector &)
 {
-    (void) enumHist;
     fprintf(stderr, "StringAttribute::fixupEnumRefCounts\n");
 }
 

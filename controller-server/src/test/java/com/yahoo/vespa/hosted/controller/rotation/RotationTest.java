@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.rotation;
 
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.application.ApplicationRotation;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -64,9 +64,9 @@ public class RotationTest {
         Rotation expected = new Rotation(new RotationId("foo-1"), "foo-1.com");
 
         application = tester.applications().require(application.id());
-        assertEquals(expected.id(), application.rotation().get().id());
+        assertEquals(expected.id(), application.rotation().get());
         assertEquals(URI.create("http://app1.tenant1.global.vespa.yahooapis.com:4080/"),
-                     application.rotation().get().url());
+                     application.globalDnsName(SystemName.main).get().url());
         try (RotationLock lock = repository.lock()) {
             Rotation rotation = repository.getOrAssignRotation(tester.applications().require(application.id()), lock);
             assertEquals(expected, rotation);
@@ -80,7 +80,7 @@ public class RotationTest {
                 .searchDefinition("search foo { }") // Update application package so there is something to deploy
                 .build();
         tester.deployCompletely(application, applicationPackage, 43);
-        assertEquals(expected.id(), tester.applications().require(application.id()).rotation().get().id());
+        assertEquals(expected.id(), tester.applications().require(application.id()).rotation().get());
     }
     
     @Test
@@ -139,7 +139,7 @@ public class RotationTest {
                 .build();
         tester.deployCompletely(application, applicationPackage);
         Application app = tester.applications().require(application.id());
-        Optional<ApplicationRotation> rotation = app.rotation();
+        Optional<RotationId> rotation = app.rotation();
         assertFalse(rotation.isPresent());
     }
 
@@ -169,7 +169,23 @@ public class RotationTest {
                                                            2L);
         tester.deployCompletely(application, applicationPackage);
         assertEquals(new RotationId("foo-1"), tester.applications().require(application.id())
-                                                    .rotation().get().id());
+                                                    .rotation().get());
     }
 
+    @Test
+    public void prefixes_system_when_not_main() {
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .globalServiceId("foo")
+                .region("us-east-3")
+                .region("corp-us-east-1")
+                .region("us-west-1")
+                .build();
+        Application application = tester.createApplication("app2", "tenant2", 22L,
+                                                           2L);
+        tester.deployCompletely(application, applicationPackage);
+        assertEquals(new RotationId("foo-1"), tester.applications().require(application.id())
+                .rotation().get());
+        assertEquals("https://cd--app2--tenant2.global.vespa.yahooapis.com:4443/", tester.applications().require(application.id())
+                .globalDnsName(SystemName.cd).get().secureUrl().toString());
+    }
 }

@@ -162,7 +162,10 @@ public class GroupingTransformTestCase {
         GroupingTransform transform = newTransform();
         try {
             transform.addContinuation(new Continuation() {
-
+                @Override
+                public Continuation copy() {
+                    return null;
+                }
             });
             fail();
         } catch (UnsupportedOperationException e) {

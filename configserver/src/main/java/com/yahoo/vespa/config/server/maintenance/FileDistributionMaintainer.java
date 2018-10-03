@@ -32,6 +32,6 @@ public class FileDistributionMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, true /* delete files */);
+        applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir);
     }
 }

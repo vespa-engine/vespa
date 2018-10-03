@@ -22,7 +22,6 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     gencnt.cpp
     generationhandler.cpp
     generationholder.cpp
-    hashmap.cpp
     hdr_abort.cpp
     host_name.cpp
     joinable.cpp

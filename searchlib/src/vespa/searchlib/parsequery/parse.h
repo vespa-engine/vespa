@@ -166,7 +166,7 @@ public:
  * @param idx The name of the index of the ParseItem.
  * @param term The actual term string of the ParseItem.
  */
-    ParseItem(ItemType type, const vespalib::stringref & index, const char *term);
+    ParseItem(ItemType type, vespalib::stringref index, const char *term);
 
 /**
  * Overloaded constructor for ParseItem. Used for TERMs without index.

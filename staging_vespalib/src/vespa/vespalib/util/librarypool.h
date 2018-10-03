@@ -20,14 +20,14 @@ public:
      * @param name The name of the library to load. That is without the 'lib' prefix and the '.so' extension.
      * @throws IllegalArgumentException if there are any errors.
      */
-    void loadLibrary(const vespalib::stringref & name);
+    void loadLibrary(stringref name);
     /**
      * Will return the library requested. NULL if not found.
      * @param name The name of the library as given in the @ref loadLibrary call.
      * @return The library that has already been loaded. NULL if not found.
      */
-    FastOS_DynamicLibrary *get(const vespalib::stringref & name);
-    const FastOS_DynamicLibrary *get(const vespalib::stringref & name) const;
+    FastOS_DynamicLibrary *get(stringref name);
+    const FastOS_DynamicLibrary *get(stringref name) const;
 private:
     typedef std::shared_ptr<FastOS_DynamicLibrary>      DynamicLibrarySP;
     typedef std::map<vespalib::string, DynamicLibrarySP>  LibraryMap;

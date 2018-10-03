@@ -119,7 +119,7 @@ private:
 
 public:
     JuniperQueryAdapter(KeywordExtractor *kwExtractor,
-                        const vespalib::stringref &buf,
+                        vespalib::stringref buf,
                         const search::fef::Properties *highlightTerms = NULL)
         : _kwExtractor(kwExtractor), _buf(buf), _highlightTerms(highlightTerms), _visitor(NULL) {}
 

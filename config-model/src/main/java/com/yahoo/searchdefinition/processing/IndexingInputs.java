@@ -27,7 +27,7 @@ public class IndexingInputs extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : search.allConcreteFields()) {
             ScriptExpression script = field.getIndexingScript();
             if (script == null) continue;
@@ -97,13 +97,11 @@ public class IndexingInputs extends Processor {
         @Override
         protected void doVisit(Expression exp) {
             if ( ! (exp instanceof InputExpression)) return;
-
-            SDDocumentType docType = search.getDocument();
             String inputField = ((InputExpression)exp).getFieldName();
-            if (docType.getField(inputField) != null) return;
+            if (search.getField(inputField).hasFullIndexingDocprocRights()) return;
 
             fail(search, field, "Indexing script refers to field '" + inputField + "' which does not exist " +
-                                "in document type '" + docType.getName() + "'.");
+                                "in document type '" + search.getDocument().getName() + "', and is not a mutable attribute.");
         }
     }
 }

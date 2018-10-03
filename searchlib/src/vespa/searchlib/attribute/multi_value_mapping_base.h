@@ -7,11 +7,9 @@
 #include <vespa/searchlib/common/address_space.h>
 #include <functional>
 
-namespace search {
+namespace search { class CompactionStrategy; }
 
-class CompactionStrategy;
-
-namespace attribute {
+namespace search::attribute {
 
 /**
  * Base class for mapping from from document id to an array of values.
@@ -57,5 +55,4 @@ public:
     bool considerCompact(const CompactionStrategy &compactionStrategy);
 };
 
-} // namespace search::attribute
-} // namespace search
+}

@@ -125,11 +125,11 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
     }
 
     // TODO: Do this as another config model depending on the other models
-    public void setupRouting(ConfigModelRepo configModels) {
+    public void setupRouting(VespaModel vespaModel, ConfigModelRepo configModels) {
         if (admin != null) {
             Routing routing = configModels.getRouting();
             if (routing == null) {
-                routing = new Routing(ConfigModelContext.create(configModels, this, "routing"));
+                routing = new Routing(ConfigModelContext.create(vespaModel, configModels, this, "routing"));
                 configModels.add(routing);
             }
             this.routing = routing;

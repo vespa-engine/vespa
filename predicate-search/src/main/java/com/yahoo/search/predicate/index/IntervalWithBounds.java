@@ -6,7 +6,7 @@ import java.util.stream.Stream;
 /**
  * Represents a collapsed leaf node in the fixed tree range representation.
  *
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public class IntervalWithBounds {
@@ -82,4 +82,5 @@ public class IntervalWithBounds {
                 ", bounds=" + getBounds() +
                 '}';
     }
+
 }

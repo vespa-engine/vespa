@@ -34,7 +34,7 @@ public class IdentityBuilderTest extends ContainerModelBuilderTestBase {
                 .withDeploymentSpec(deploymentXml)
                 .build();
 
-        createModel(root, DeployState.createTestState(applicationPackage), clusterElem);
+        createModel(root, DeployState.createTestState(applicationPackage), null, clusterElem);
 
         IdentityConfig identityConfig = root.getConfig(IdentityConfig.class, "default/component/" + IdentityProvider.CLASS);
         assertEquals("domain", identityConfig.domain());

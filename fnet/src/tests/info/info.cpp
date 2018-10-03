@@ -24,7 +24,7 @@ struct RPC : public FRT_Invokable
   {
     FRT_ReflectionBuilder rb(s);
     //-------------------------------------------------------------------
-    rb.DefineMethod("getInfo", "", "sssii", true,
+    rb.DefineMethod("getInfo", "", "sssii",
                     FRT_METHOD(RPC::GetInfo), this);
     // FastOS version
     // FNET version
@@ -70,10 +70,10 @@ TEST("info") {
 
 TEST("size of important objects")
 {
-    EXPECT_EQUAL(184u, sizeof(FNET_IOComponent));
+    EXPECT_EQUAL(168u, sizeof(FNET_IOComponent));
     EXPECT_EQUAL(32u, sizeof(FNET_Channel));
     EXPECT_EQUAL(40u, sizeof(FNET_PacketQueue_NoLock));
-    EXPECT_EQUAL(488u, sizeof(FNET_Connection));
+    EXPECT_EQUAL(472u, sizeof(FNET_Connection));
     EXPECT_EQUAL(48u, sizeof(std::condition_variable));
     EXPECT_EQUAL(56u, sizeof(FNET_DataBuffer));
     EXPECT_EQUAL(24u, sizeof(FastOS_Time));

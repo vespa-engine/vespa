@@ -59,6 +59,13 @@ public class ApplicationOwnershipConfirmerTest {
         confirmer.maintain();
         confirmer.maintain();
 
+        assertFalse("No issue is stored for an application newer than 3 months.", propertyApp.get().ownershipIssueId().isPresent());
+        assertFalse("No issue is stored for an application newer than 3 months.", userApp.get().ownershipIssueId().isPresent());
+
+        tester.clock().advance(Duration.ofDays(91));
+        confirmer.maintain();
+        confirmer.maintain();
+
         assertEquals("Confirmation issue has been filed for property owned application.", issueId, propertyApp.get().ownershipIssueId());
         assertEquals("Confirmation issue has been filed for user owned application.", issueId, userApp.get().ownershipIssueId());
         assertTrue("Both applications have had their responses ensured.", issues.escalatedForProperty && issues.escalatedForUser);
@@ -73,8 +80,8 @@ public class ApplicationOwnershipConfirmerTest {
 
         // The user deletes all production deployments — see that the issue is forgotten.
         assertEquals("Confirmation issue for user is sitll open.", issueId, userApp.get().ownershipIssueId());
-        tester.controller().applications().deactivate(userApp.get(), userApp.get().productionDeployments().keySet().stream().findAny().get());
-        tester.controller().applications().deactivate(userApp.get(), userApp.get().productionDeployments().keySet().stream().findAny().get());
+        tester.controller().applications().deactivate(userApp.get().id(), userApp.get().productionDeployments().keySet().stream().findAny().get());
+        tester.controller().applications().deactivate(userApp.get().id(), userApp.get().productionDeployments().keySet().stream().findAny().get());
         assertTrue("No production deployments are listed for user.", userApp.get().productionDeployments().isEmpty());
         confirmer.maintain();
         confirmer.maintain();

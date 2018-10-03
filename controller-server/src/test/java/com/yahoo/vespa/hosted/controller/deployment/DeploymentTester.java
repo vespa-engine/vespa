@@ -8,8 +8,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
-import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
-import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -20,9 +18,11 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock;
+import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
+import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
-import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 
@@ -30,7 +30,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,7 +48,6 @@ public class DeploymentTester {
 
     private final ControllerTester tester;
     private final Upgrader upgrader;
-    private final SystemUpgrader systemUpgrader;
     private final ReadyJobsTrigger readyJobTrigger;
 
     public DeploymentTester() {
@@ -62,12 +60,7 @@ public class DeploymentTester {
 
         JobControl jobControl = new JobControl(tester.curator());
         this.upgrader = new Upgrader(tester.controller(), maintenanceInterval, jobControl, tester.curator());
-        this.systemUpgrader = new SystemUpgrader(tester.controller(), maintenanceInterval, jobControl);
         this.readyJobTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval, jobControl);
-    }
-
-    public SystemUpgrader systemUpgrader() {
-        return systemUpgrader;
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -89,6 +82,8 @@ public class DeploymentTester {
     public ConfigServerMock configServer() { return tester.configServer(); }
 
     public ArtifactRepositoryMock artifactRepository() { return tester.artifactRepository(); }
+
+    public ApplicationStoreMock applicationStore() { return tester.applicationStore(); }
 
     public Application application(String name) {
         return application(ApplicationId.from("tenant1", name, "default"));
@@ -181,25 +176,17 @@ public class DeploymentTester {
                                         .buildNumber(buildNumber)
                                         .uploadArtifact(applicationPackage)
                                         .submit();
-        completeDeployment(application, applicationPackage, Optional.of(failOnJob), true);
-        assertTrue(applications().require(application.id()).change().isPresent());
+        completeDeployment(application, applicationPackage, Optional.ofNullable(failOnJob));
     }
 
     public void deployCompletely(Application application, ApplicationPackage applicationPackage, long buildNumber) {
-        jobCompletion(JobType.component).application(application)
-                                        .buildNumber(buildNumber)
-                                        .uploadArtifact(applicationPackage)
-                                        .submit();
-        assertTrue(applications().require(application.id()).change().isPresent());
-        completeDeployment(application, applicationPackage, Optional.empty(), true);
+        completeDeploymentWithError(application, applicationPackage, buildNumber, null);
     }
 
-    private void completeDeployment(Application application, ApplicationPackage applicationPackage,
-                                    Optional<JobType> failOnJob, boolean includingProductionZones) {
+    private void completeDeployment(Application application, ApplicationPackage applicationPackage, Optional<JobType> failOnJob) {
+        assertTrue(applications().require(application.id()).change().isPresent());
         DeploymentSteps steps = controller().applications().deploymentTrigger().steps(applicationPackage.deploymentSpec());
         List<JobType> jobs = steps.jobs();
-        if ( ! includingProductionZones)
-            jobs = jobs.stream().filter(job -> ! job.isProduction()).collect(Collectors.toList());
         for (JobType job : jobs) {
             boolean failJob = failOnJob.map(j -> j.equals(job)).orElse(false);
             deployAndNotify(application, applicationPackage, ! failJob, job);
@@ -210,11 +197,8 @@ public class DeploymentTester {
         if (failOnJob.isPresent()) {
             assertTrue(applications().require(application.id()).change().isPresent());
             assertTrue(applications().require(application.id()).deploymentJobs().hasFailures());
-        } else if (includingProductionZones) {
+        } else {
             assertFalse(applications().require(application.id()).change().isPresent());
-        }
-        else {
-            assertTrue(applications().require(application.id()).change().isPresent());
         }
     }
 
@@ -225,7 +209,7 @@ public class DeploymentTester {
     public void completeUpgrade(Application application, Version version, ApplicationPackage applicationPackage) {
         assertTrue(application + " has a change", applications().require(application.id()).change().isPresent());
         assertEquals(Change.of(version), applications().require(application.id()).change());
-        completeDeployment(application, applicationPackage, Optional.empty(), true);
+        completeDeployment(application, applicationPackage, Optional.empty());
     }
 
     public void completeUpgradeWithError(Application application, Version version, String upgradePolicy, JobType failOnJob) {
@@ -239,7 +223,7 @@ public class DeploymentTester {
     private void completeUpgradeWithError(Application application, Version version, ApplicationPackage applicationPackage, Optional<JobType> failOnJob) {
         assertTrue(applications().require(application.id()).change().isPresent());
         assertEquals(Change.of(version), applications().require(application.id()).change());
-        completeDeployment(application, applicationPackage, failOnJob, true);
+        completeDeployment(application, applicationPackage, failOnJob);
     }
 
     public void deploy(JobType job, Application application, ApplicationPackage applicationPackage) {
@@ -253,8 +237,7 @@ public class DeploymentTester {
 
     public void deploy(JobType job, Application application, Optional<ApplicationPackage> applicationPackage,
                        boolean deployCurrentVersion) {
-        job.zone(controller().system()).ifPresent(zone -> tester.deploy(application, zone, applicationPackage,
-                                                                        deployCurrentVersion));
+        tester.deploy(application, job.zone(controller().system()), applicationPackage, deployCurrentVersion);
     }
 
     public void deployAndNotify(Application application, String upgradePolicy, boolean success, JobType job) {
@@ -279,13 +262,13 @@ public class DeploymentTester {
         }
         // Deactivate test deployments after deploy. This replicates the behaviour of the tenant pipeline
         if (job.isTest()) {
-            controller().applications().deactivate(application, job.zone(controller().system()).get());
+            controller().applications().deactivate(application.id(), job.zone(controller().system()));
         }
         jobCompletion(job).application(application).success(success).submit();
     }
 
     public Optional<JobStatus.JobRun> firstFailing(Application application, JobType job) {
-        return tester.controller().applications().get(application.id()).get()
+        return tester.controller().applications().require(application.id())
                      .deploymentJobs().jobStatus().get(job).firstFailing();
     }
 

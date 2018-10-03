@@ -29,17 +29,19 @@ public class FelixParamsTestCase {
 
     @Test
     public void requireThatSystemPackagesAreNotReplaced() {
+        String systemPackages = ExportPackages.getSystemPackages();
+
         FelixParams params = new FelixParams();
         Map<String, String> config = params.toConfig();
         assertNotNull(config);
         String str = config.get(Constants.FRAMEWORK_SYSTEMPACKAGES);
         assertNotNull(str);
-        assertTrue(str.contains(ExportPackages.getSystemPackages()));
+        assertTrue(str.contains(systemPackages));
 
         params.exportPackage("foo");
         assertNotNull(config = params.toConfig());
         assertNotNull(str = config.get(Constants.FRAMEWORK_SYSTEMPACKAGES));
-        assertTrue(str.contains(ExportPackages.getSystemPackages()));
+        assertTrue(str.contains(systemPackages));
         assertTrue(str.contains("foo"));
     }
 

@@ -154,7 +154,7 @@ public final class Node {
         return with(allocation.get().unretire());
     }
 
-    /** Returns a copy of this with the current restart generation set to generation */
+    /** Returns a copy of this with the restart generation set to generation */
     public Node withRestart(Generation generation) {
         final Optional<Allocation> allocation = this.allocation;
         if ( ! allocation.isPresent())
@@ -178,13 +178,13 @@ public final class Node {
         return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
-    /** Returns a copy of this with the current reboot generation set to generation */
+    /** Returns a copy of this with the reboot generation set to generation */
     public Node withReboot(Generation generation) {
         return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status.withReboot(generation), state,
                         allocation, history, type);
     }
 
-    /** Returns a c opy of this with the openStackId set */
+    /** Returns a copy of this with the openStackId set */
     public Node withOpenStackId(String openStackId) {
         return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status, state, allocation, history, type);
     }

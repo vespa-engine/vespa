@@ -4,6 +4,7 @@
 #include "docid_range_scheduler.h"
 #include "match_loop_communicator.h"
 #include "match_thread.h"
+#include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
@@ -15,6 +16,7 @@ namespace proton::matching {
 using namespace search::fef;
 using search::queryeval::SearchIterator;
 using search::FeatureSet;
+using search::attribute::AttributeOperation;
 
 namespace {
 
@@ -25,8 +27,8 @@ struct TimedMatchLoopCommunicator : IMatchLoopCommunicator {
     double estimate_match_frequency(const Matches &matches) override {
         return communicator.estimate_match_frequency(matches);
     }
-    Hits selectBest(Hits sortedHits) override {
-        Hits result = communicator.selectBest(std::move(sortedHits));
+    Hits selectBest(SortedHitSequence sortedHits) override {
+        auto result = communicator.selectBest(sortedHits);
         rerank_time.start();
         return result;
     }
@@ -54,7 +56,7 @@ createScheduler(uint32_t numThreads, uint32_t numSearchPartitions, uint32_t numD
 ResultProcessor::Result::UP
 MatchMaster::match(const MatchParams &params,
                    vespalib::ThreadBundle &threadBundle,
-                   const MatchToolsFactory &matchToolsFactory,
+                   const MatchToolsFactory &mtf,
                    ResultProcessor &resultProcessor,
                    uint32_t distributionKey,
                    uint32_t numSearchPartitions)
@@ -62,20 +64,18 @@ MatchMaster::match(const MatchParams &params,
     fastos::StopWatch query_latency_time;
     query_latency_time.start();
     vespalib::DualMergeDirector mergeDirector(threadBundle.size());
-    MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize);
+    MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize, mtf.createDiversifier(params.heapSize));
     TimedMatchLoopCommunicator timedCommunicator(communicator);
     DocidRangeScheduler::UP scheduler = createScheduler(threadBundle.size(), numSearchPartitions, params.numDocs);
 
     std::vector<MatchThread::UP> threadState;
     std::vector<vespalib::Runnable*> targets;
     for (size_t i = 0; i < threadBundle.size(); ++i) {
-        IMatchLoopCommunicator &com =
-            (i == 0)?
-            static_cast<IMatchLoopCommunicator&>(timedCommunicator) :
-            static_cast<IMatchLoopCommunicator&>(communicator);
-        threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(),
-                        params, matchToolsFactory, com, *scheduler,
-                        resultProcessor, mergeDirector, distributionKey));
+        IMatchLoopCommunicator &com = (i == 0)
+                ? static_cast<IMatchLoopCommunicator&>(timedCommunicator)
+                : static_cast<IMatchLoopCommunicator&>(communicator);
+        threadState.emplace_back(std::make_unique<MatchThread>(i, threadBundle.size(), params, mtf, com, *scheduler,
+                                                               resultProcessor, mergeDirector, distributionKey));
         targets.push_back(threadState.back().get());
     }
     resultProcessor.prepareThreadContextCreation(threadBundle.size());
@@ -94,17 +94,17 @@ MatchMaster::match(const MatchParams &params,
     _stats.rerankTime(rerank_time_s);
     _stats.groupingTime(query_time_s - match_time_s);
     _stats.queries(1);
-    if (matchToolsFactory.match_limiter().was_limited()) {
+    if (mtf.match_limiter().was_limited()) {
         _stats.limited_queries(1);        
     }
     return reply;
 }
 
 FeatureSet::SP
-MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
+MatchMaster::getFeatureSet(const MatchToolsFactory &mtf,
                            const std::vector<uint32_t> &docs, bool summaryFeatures)
 {
-    MatchTools::UP matchTools = matchToolsFactory.createMatchTools();
+    MatchTools::UP matchTools = mtf.createMatchTools();
     if (summaryFeatures) {
         matchTools->setup_summary();
     } else {
@@ -118,11 +118,11 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
     for (size_t i = 0; i < resolver.num_features(); ++i) {
         featureNames.emplace_back(resolver.name_of(i));
     }
-    FeatureSet::SP retval(new FeatureSet(featureNames, docs.size()));
+    auto retval = std::make_shared<FeatureSet>(featureNames, docs.size());
     if (docs.empty()) {
         return retval;
     }
-    FeatureSet &fs = *retval.get();
+    FeatureSet &fs = *retval;
 
     SearchIterator &search = matchTools->search();
     search.initRange(docs.front(), docs.back()+1);
@@ -137,6 +137,9 @@ MatchMaster::getFeatureSet(const MatchToolsFactory &matchToolsFactory,
         } else {
             LOG(debug, "getFeatureSet: Did not find hit for docid '%u'. Skipping hit", docs[i]);
         }
+    }
+    if (auto onSummaryTask = mtf.createOnSummaryTask()) {
+        onSummaryTask->run(docs);
     }
     return retval;
 }

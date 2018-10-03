@@ -104,7 +104,8 @@ public class StreamingSearchCluster extends SearchCluster implements
         }
         this.sdConfig = new DerivedConfiguration(localSearch, globalSearches, deployLogger(),
                                                  getRoot().getDeployState().rankProfileRegistry(),
-                                                 getRoot().getDeployState().getQueryProfiles().getRegistry());
+                                                 getRoot().getDeployState().getQueryProfiles().getRegistry(),
+                                                 getRoot().getDeployState().getImportedModels());
     }
     @Override
     public DerivedConfiguration getSdConfig() {

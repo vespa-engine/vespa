@@ -14,7 +14,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
 
     Node node;
 
-    /** The free capacity excluding headroom, including retired allocations */
+    /** The free capacity, including retired allocations */
     ResourceCapacity freeParentCapacity = new ResourceCapacity();
 
     /** The parent host (docker or hypervisor) */
@@ -22,9 +22,6 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
 
     /** True if the node is allocated to a host that should be dedicated as a spare */
     boolean violatesSpares;
-
-    /** True if the node is (or would be) allocated on slots that should be dedicated to headroom */
-    boolean violatesHeadroom;
 
     /** True if this is a node that has been retired earlier in the allocation process */
     boolean isSurplusNode;
@@ -45,8 +42,6 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         // First always pick nodes without violation above nodes with violations
         if (!this.violatesSpares && other.violatesSpares) return -1;
         if (!other.violatesSpares && this.violatesSpares) return 1;
-        if (!this.violatesHeadroom && other.violatesHeadroom) return -1;
-        if (!other.violatesHeadroom && this.violatesHeadroom) return 1;
 
         // Choose active nodes
         if (this.node.state().equals(Node.State.active) && !other.node.state().equals(Node.State.active)) return -1;

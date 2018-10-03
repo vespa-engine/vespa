@@ -114,6 +114,8 @@ public class NodePatcher {
             case "vespaVersion" :
             case "currentVespaVersion" :
                 return node.with(node.status().withVespaVersion(Version.fromString(asString(value))));
+            case "currentOsVersion" :
+                return node.with(node.status().withOsVersion(Version.fromString(asString(value))));
             case "failCount" :
                 return node.with(node.status().setFailCount(asLong(value).intValue()));
             case "flavor" :

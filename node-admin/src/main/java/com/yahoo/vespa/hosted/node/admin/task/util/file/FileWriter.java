@@ -2,10 +2,11 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
-import org.glassfish.jersey.internal.util.Producer;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.Supplier;
 
 /**
  * Write a file
@@ -16,11 +17,15 @@ public class FileWriter {
     private final Path path;
     private final FileSync fileSync;
     private final PartialFileData.Builder fileDataBuilder = PartialFileData.builder();
-    private final Producer<String> contentProducer;
+    private final Supplier<byte[]> contentProducer;
 
     private boolean overwriteExistingFile = true;
 
-    public FileWriter(Path path, Producer<String> contentProducer) {
+    public FileWriter(Path path, Supplier<String> contentProducer) {
+        this(path, () -> contentProducer.get().getBytes(StandardCharsets.UTF_8));
+    }
+
+    public FileWriter(Path path, ByteArraySupplier contentProducer) {
         this.path = path;
         this.fileSync = new FileSync(path);
         this.contentProducer = contentProducer;
@@ -51,8 +56,11 @@ public class FileWriter {
             return false;
         }
 
-        fileDataBuilder.withContent(contentProducer.call());
+        fileDataBuilder.withContent(contentProducer.get());
         PartialFileData fileData = fileDataBuilder.create();
         return fileSync.convergeTo(context, fileData);
     }
+
+    @FunctionalInterface
+    public interface ByteArraySupplier extends Supplier<byte[]> { }
 }

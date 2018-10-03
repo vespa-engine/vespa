@@ -227,7 +227,6 @@ Proxy::Main()
     if (listener != nullptr)
         listener->SubRef();
 
-    _transport.SetLogStats(true);
     FNET_SignalShutDown ssd(_transport);
     _transport.Main();
     return 0;

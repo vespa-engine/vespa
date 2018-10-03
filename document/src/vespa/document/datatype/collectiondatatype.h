@@ -20,9 +20,9 @@ protected:
     CollectionDataType() : _nestedType(0) {}
     CollectionDataType(const CollectionDataType&);
     CollectionDataType& operator=(const CollectionDataType&);
-    CollectionDataType(const vespalib::stringref & name,
+    CollectionDataType(vespalib::stringref name,
                        const DataType &nestedType);
-    CollectionDataType(const vespalib::stringref & name,
+    CollectionDataType(vespalib::stringref name,
                        const DataType &nestedType, int32_t id);
 
 public:

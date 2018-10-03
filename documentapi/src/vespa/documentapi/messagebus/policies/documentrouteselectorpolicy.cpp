@@ -4,7 +4,6 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/documentapi/messagebus/messages/batchdocumentupdatemessage.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/updatedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/documentignoredreply.h>
@@ -137,17 +136,6 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context, const vespali
         } else {
             return true;
         }
-    }
-
-    case DocumentProtocol::MESSAGE_BATCHDOCUMENTUPDATE:
-    {
-        const BatchDocumentUpdateMessage& mom = static_cast<const BatchDocumentUpdateMessage&>(msg);
-        for (uint32_t i = 0; i < mom.getUpdates().size(); i++) {
-            if (it->second->contains(*mom.getUpdates()[i]) == Result::False) {
-                return false;
-            }
-        }
-        return true;
     }
     default:
         return true;

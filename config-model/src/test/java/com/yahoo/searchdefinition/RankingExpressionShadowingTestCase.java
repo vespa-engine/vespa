@@ -9,19 +9,17 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.parser.ParseException;
-import org.junit.Ignore;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
 public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase {
 
     @Test
-    public void testBasicMacroShadowing() throws ParseException {
+    public void testBasicFunctionShadowing() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(
@@ -33,7 +31,7 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
-                        "        macro sin(x) {\n" +
+                        "        function sin(x) {\n" +
                         "            expression: x * x\n" +
                         "        }\n" +
                         "        first-phase {\n" +
@@ -44,9 +42,10 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry());
+        RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedModels());
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
                                                                            new QueryProfileRegistry(),
+                                                                           new ImportedModels(),
                                                                            new AttributeFields(s)).configProperties();
         assertEquals("(rankingExpression(sin).rankingScript,x * x)",
                      testRankProperties.get(0).toString());
@@ -58,7 +57,7 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
 
 
     @Test
-    public void testMultiLevelMacroShadowing() throws ParseException {
+    public void testMultiLevelFunctionShadowing() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(
@@ -70,13 +69,13 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
-                        "        macro tan(x) {\n" +
+                        "        function tan(x) {\n" +
                         "            expression: x * x\n" +
                         "        }\n" +
-                        "        macro cos(x) {\n" +
+                        "        function cos(x) {\n" +
                         "            expression: tan(x)\n" +
                         "        }\n" +
-                        "        macro sin(x) {\n" +
+                        "        function sin(x) {\n" +
                         "            expression: cos(x)\n" +
                         "        }\n" +
                         "        first-phase {\n" +
@@ -87,9 +86,10 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry());
+        RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedModels());
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
                                                                            new QueryProfileRegistry(),
+                                                                           new ImportedModels(),
                                                                            new AttributeFields(s)).configProperties();
         assertEquals("(rankingExpression(tan).rankingScript,x * x)",
                      testRankProperties.get(0).toString());
@@ -113,7 +113,7 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
 
 
     @Test
-    public void testMacroShadowingArguments() throws ParseException {
+    public void testFunctionShadowingArguments() throws ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
         builder.importString(
@@ -125,7 +125,7 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
-                        "        macro sin(x) {\n" +
+                        "        function sin(x) {\n" +
                         "            expression: x * x\n" +
                         "        }\n" +
                         "        first-phase {\n" +
@@ -136,9 +136,10 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(new QueryProfileRegistry());
+        RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedModels());
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
                                                                            new QueryProfileRegistry(),
+                                                                           new ImportedModels(),
                                                                            new AttributeFields(s)).configProperties();
         assertEquals("(rankingExpression(sin).rankingScript,x * x)",
                      testRankProperties.get(0).toString());
@@ -167,13 +168,13 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "    }\n" +
                         "    \n" +
                         "    rank-profile test {\n" +
-                        "        macro relu(x) {\n" + // relu is a built in function, redefined here
+                        "        function relu(x) {\n" + // relu is a built in function, redefined here
                         "            expression: max(1.0, x)\n" +
                         "        }\n" +
-                        "        macro hidden_layer() {\n" +
+                        "        function hidden_layer() {\n" +
                         "            expression: relu(sum(query(q) * constant(W_hidden), input) + constant(b_input))\n" +
                         "        }\n" +
-                        "        macro final_layer() {\n" +
+                        "        function final_layer() {\n" +
                         "            expression: sigmoid(sum(hidden_layer * constant(W_final), hidden) + constant(b_final))\n" +
                         "        }\n" +
                         "        second-phase {\n" +
@@ -199,9 +200,10 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                         "}\n");
         builder.build();
         Search s = builder.getSearch();
-        RankProfile test = rankProfileRegistry.getRankProfile(s, "test").compile(queryProfiles);
+        RankProfile test = rankProfileRegistry.get(s, "test").compile(queryProfiles, new ImportedModels());
         List<Pair<String, String>> testRankProperties = new RawRankProfile(test,
                                                                            queryProfiles,
+                                                                           new ImportedModels(),
                                                                            new AttributeFields(s)).configProperties();
         assertEquals("(rankingExpression(relu).rankingScript,max(1.0,x))",
                      testRankProperties.get(0).toString());
@@ -209,12 +211,16 @@ public class RankingExpressionShadowingTestCase extends SearchDefinitionTestCase
                      censorBindingHash(testRankProperties.get(1).toString()));
         assertEquals("(rankingExpression(hidden_layer).rankingScript,rankingExpression(relu@))",
                      censorBindingHash(testRankProperties.get(2).toString()));
+        assertEquals("(rankingExpression(hidden_layer).type,tensor(x[]))",
+                     censorBindingHash(testRankProperties.get(3).toString()));
         assertEquals("(rankingExpression(final_layer).rankingScript,sigmoid(reduce(rankingExpression(hidden_layer) * constant(W_final), sum, hidden) + constant(b_final)))",
-                     testRankProperties.get(3).toString());
-        assertEquals("(vespa.rank.secondphase,rankingExpression(secondphase))",
                      testRankProperties.get(4).toString());
-        assertEquals("(rankingExpression(secondphase).rankingScript,reduce(rankingExpression(final_layer), sum))",
+        assertEquals("(rankingExpression(final_layer).type,tensor(x[]))",
                      testRankProperties.get(5).toString());
+        assertEquals("(vespa.rank.secondphase,rankingExpression(secondphase))",
+                     testRankProperties.get(6).toString());
+        assertEquals("(rankingExpression(secondphase).rankingScript,reduce(rankingExpression(final_layer), sum))",
+                     testRankProperties.get(7).toString());
     }
 
     private QueryProfileRegistry queryProfileWith(String field, String type) {

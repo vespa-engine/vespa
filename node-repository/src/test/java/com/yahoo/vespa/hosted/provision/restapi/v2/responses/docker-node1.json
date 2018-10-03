@@ -12,6 +12,7 @@
   "description": "Flavor-name-is-large",
   "minCpuCores": 4.0,
   "fastDisk": true,
+  "bandwidth":0.0,
   "environment": "BARE_METAL",
   "owner": {
     "tenant": "zoneapp",

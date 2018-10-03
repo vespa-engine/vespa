@@ -1,3 +1,4 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -15,7 +16,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.*;
  */
 public enum JobProfile {
 
-    // TODO jvenstad: runTests is not a run-always step, as it really means: check if tests are done, and store whatever is ready.
     systemTest(EnumSet.of(deployReal,
                           installReal,
                           deployTester,

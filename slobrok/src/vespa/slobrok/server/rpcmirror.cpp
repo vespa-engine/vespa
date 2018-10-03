@@ -38,8 +38,8 @@ MirrorFetch::completeReq()
         FRT_StringValue *names  = dst.AddStringArray(sz);
         FRT_StringValue *specs  = dst.AddStringArray(sz);
         for (uint32_t i = 0; i < rpcsrvlist.size(); ++i) {
-            dst.SetString(&names[i],  rpcsrvlist[i]->getName());
-            dst.SetString(&specs[i],  rpcsrvlist[i]->getSpec());
+            dst.SetString(&names[i],  rpcsrvlist[i]->getName().c_str());
+            dst.SetString(&specs[i],  rpcsrvlist[i]->getSpec().c_str());
         }
         if (sz > 0) {
             LOG(debug, "mirrorFetch %p -> %u, last [%s,%s]",
@@ -145,8 +145,8 @@ IncrementalFetch::completeReq()
     FRT_StringValue *names  = dst.AddStringArray(sz);
     FRT_StringValue *specs  = dst.AddStringArray(sz);
     for (uint32_t i = 0; i < sz; ++i) {
-        dst.SetString(&names[i],  diff.updated[i]->getName());
-        dst.SetString(&specs[i],  diff.updated[i]->getSpec());
+        dst.SetString(&names[i],  diff.updated[i]->getName().c_str());
+        dst.SetString(&specs[i],  diff.updated[i]->getSpec().c_str());
     }
 
     dst.AddInt32(newgen.getAsInt());

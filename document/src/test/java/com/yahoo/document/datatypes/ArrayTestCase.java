@@ -5,9 +5,14 @@ import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
@@ -267,6 +272,50 @@ public class ArrayTestCase {
         final StringFieldValue[] expected = new StringFieldValue[] { new StringFieldValue("a"), new StringFieldValue("b"),
                 new StringFieldValue("c") };
         assertTrue(Arrays.equals(expected, array.toArray(new StringFieldValue[0])));
+    }
+
+    @Test
+    public void testEquals() {
+        Array<StringFieldValue> a = new Array<>(new ArrayDataType(DataType.STRING));
+        a.add(new StringFieldValue("mumbo jumbo 1"));
+        a.add(new StringFieldValue("mumbo jumbo 2"));
+        Array<StringFieldValue> b = new Array<>(new ArrayDataType(DataType.STRING));
+        b.add(new StringFieldValue("mumbo jumbo 1"));
+        b.add(new StringFieldValue("mumbo jumbo 2"));
+        assertEquals(a, b);
+        assertEquals(0, a.compareTo(b));
+        assertEquals(0, b.compareTo(a));
+
+        b.clear();
+        List<String> l = new ArrayList<>();
+        l.add("mumbo jumbo 1");
+        l.add("mumbo jumbo 2");
+        b.assign(l);
+        assertEquals(a, b);
+        assertEquals(0, a.compareTo(b));
+        assertEquals(0, b.compareTo(a));
+    }
+
+    @Test
+    public void testLess() {
+        Array<StringFieldValue> a = new Array<>(new ArrayDataType(DataType.STRING));
+        a.add(new StringFieldValue("mumbo jumbo 1"));
+        a.add(new StringFieldValue("mumbo jumbo 3"));
+        Array<StringFieldValue> b = new Array<>(new ArrayDataType(DataType.STRING));
+        b.add(new StringFieldValue("mumbo jumbo 1"));
+        b.add(new StringFieldValue("mumbo jumbo 2"));
+        assertNotEquals(a, b);
+        assertEquals(1, a.compareTo(b));
+        assertEquals(-1, b.compareTo(a));
+
+        b.clear();
+        List<String> l = new ArrayList<>();
+        l.add("mumbo jumbo 1");
+        l.add("mumbo jumbo 2");
+        b.assign(l);
+        assertNotEquals(a, b);
+        assertEquals(1, a.compareTo(b));
+        assertEquals(-1, b.compareTo(a));
     }
 
 }

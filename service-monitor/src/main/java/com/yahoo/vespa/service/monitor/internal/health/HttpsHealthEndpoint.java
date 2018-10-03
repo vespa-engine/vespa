@@ -2,11 +2,11 @@
 package com.yahoo.vespa.service.monitor.internal.health;
 
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
+import com.yahoo.vespa.athenz.identity.ServiceIdentitySslSocketFactory;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
 import java.net.URL;
 
 /**
@@ -32,18 +32,7 @@ public class HttpsHealthEndpoint implements HealthEndpoint {
 
     @Override
     public ConnectionSocketFactory getConnectionSocketFactory() {
-        SSLContext sslContext = serviceIdentityProvider.getIdentitySslContext();
-        return new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
-    }
-
-    @Override
-    public void registerListener(ServiceIdentityProvider.Listener listener) {
-        serviceIdentityProvider.addIdentityListener(listener);
-    }
-
-    @Override
-    public void removeListener(ServiceIdentityProvider.Listener listener) {
-        serviceIdentityProvider.removeIdentityListener(listener);
+        return new SSLConnectionSocketFactory(new ServiceIdentitySslSocketFactory(serviceIdentityProvider), hostnameVerifier);
     }
 
     @Override

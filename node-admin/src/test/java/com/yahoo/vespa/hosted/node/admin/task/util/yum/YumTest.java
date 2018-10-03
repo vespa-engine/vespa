@@ -4,9 +4,12 @@ package com.yahoo.vespa.hosted.node.admin.task.util.yum;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.ChildProcessFailureException;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
-import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 
+import java.util.Optional;
+
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -19,21 +22,86 @@ public class YumTest {
     private final TestTerminal terminal = new TestTerminal();
     private final Yum yum = new Yum(terminal);
 
-    @Before
+    @After
     public void tearDown() {
         terminal.verifyAllCommandsExecuted();
     }
 
     @Test
+    public void testQueryInstalledNevra() {
+        terminal.expectCommand(
+                "rpm -q docker --queryformat \"%{NAME}\\\\n%{EPOCH}\\\\n%{VERSION}\\\\n%{RELEASE}\\\\n%{ARCH}\" 2>&1",
+                0,
+                "docker\n2\n1.13.1\n74.git6e3bb8e.el7.centos\nx86_64");
+
+        Optional<YumPackageName> installed = yum.queryInstalled(taskContext, "docker");
+
+        assertTrue(installed.isPresent());
+        assertEquals("docker", installed.get().getName());
+        assertEquals("2", installed.get().getEpoch().get());
+        assertEquals("1.13.1", installed.get().getVersion().get());
+        assertEquals("74.git6e3bb8e.el7.centos", installed.get().getRelease().get());
+        assertEquals("x86_64", installed.get().getArchitecture().get());
+    }
+
+    @Test
+    public void testQueryInstalledPartial() {
+        terminal.expectCommand(
+                "rpm -q vespa-node-admin --queryformat \"%{NAME}\\\\n%{EPOCH}\\\\n%{VERSION}\\\\n%{RELEASE}\\\\n%{ARCH}\" 2>&1",
+                0,
+                "vespa-node-admin\n(none)\n6.283.62\n1.el7\nnoarch");
+
+        Optional<YumPackageName> installed = yum.queryInstalled(taskContext, "vespa-node-admin");
+
+        assertTrue(installed.isPresent());
+        assertEquals("vespa-node-admin", installed.get().getName());
+        assertFalse(installed.get().getEpoch().isPresent());
+        assertEquals("6.283.62", installed.get().getVersion().get());
+        assertEquals("1.el7", installed.get().getRelease().get());
+        assertEquals("noarch", installed.get().getArchitecture().get());
+    }
+
+    @Test
+    public void testQueryNotInstalled() {
+        terminal.expectCommand(
+                "rpm -q fake-package --queryformat \"%{NAME}\\\\n%{EPOCH}\\\\n%{VERSION}\\\\n%{RELEASE}\\\\n%{ARCH}\" 2>&1",
+                1,
+                "package fake-package is not installed");
+
+        Optional<YumPackageName> installed = yum.queryInstalled(taskContext, "fake-package");
+
+        assertFalse(installed.isPresent());
+    }
+
+    @Test
+    public void testArrayConversion() {
+        YumPackageName[] expected = new YumPackageName[] { new YumPackageName.Builder("1").build() };
+        assertArrayEquals(expected, Yum.toYumPackageNameArray("1"));
+
+        YumPackageName[] expected2 = new YumPackageName[] {
+                new YumPackageName.Builder("1").build(),
+                new YumPackageName.Builder("2").build()
+        };
+        assertArrayEquals(expected2, Yum.toYumPackageNameArray("1", "2"));
+
+        YumPackageName[] expected3 = new YumPackageName[] {
+                new YumPackageName.Builder("1").build(),
+                new YumPackageName.Builder("2").build(),
+                new YumPackageName.Builder("3").build()
+        };
+        assertArrayEquals(expected3, Yum.toYumPackageNameArray("1", "2", "3"));
+    }
+
+    @Test
     public void testAlreadyInstalled() {
         terminal.expectCommand(
-                "yum install --assumeyes --enablerepo=repo-name package-1 package-2 2>&1",
+                "yum install --assumeyes --enablerepo=repo1 --enablerepo=repo2 package-1 package-2 2>&1",
                 0,
                 "foobar\nNothing to do\n");
 
         assertFalse(yum
                 .install("package-1", "package-2")
-                .enableRepo("repo-name")
+                .enableRepos("repo1", "repo2")
                 .converge(taskContext));
     }
 
@@ -82,8 +150,79 @@ public class YumTest {
 
         assertTrue(yum
                 .install("package-1", "package-2")
-                .enableRepo("repo-name")
+                .enableRepos("repo-name")
                 .converge(taskContext));
+    }
+
+    @Test
+    public void testWithVersionLock() {
+        terminal.expectCommand("yum --quiet versionlock list 2>&1",
+                0,
+                "Repository chef_rpms-release is listed more than once in the configuration\n" +
+                        "0:chef-12.21.1-1.el7.*\n");
+        terminal.expectCommand("yum versionlock add \"0:package-1-0.10-654.el7.*\" 2>&1");
+        terminal.expectCommand(
+                "yum install --assumeyes 0:package-1-0.10-654.el7.x86_64 2>&1",
+                0,
+                "installing");
+
+        assertTrue(yum.installFixedVersion(taskContext,
+                YumPackageName.fromString("0:package-1-0.10-654.el7.x86_64")));
+    }
+
+    @Test
+    public void testWithDifferentVersionLock() {
+        terminal.expectCommand("yum --quiet versionlock list 2>&1",
+                0,
+                "Repository chef_rpms-release is listed more than once in the configuration\n" +
+                        "0:chef-12.21.1-1.el7.*\n" +
+                        "0:package-1-0.1-8.el7.*\n");
+
+        terminal.expectCommand("yum versionlock delete \"0:package-1-0.1-8.el7.*\" 2>&1");
+
+        terminal.expectCommand("yum versionlock add \"0:package-1-0.10-654.el7.*\" 2>&1");
+
+        terminal.expectCommand(
+                "yum install --assumeyes 0:package-1-0.10-654.el7 2>&1",
+                0,
+                "Nothing to do\n");
+
+
+        assertTrue(yum.installFixedVersion(taskContext, YumPackageName.fromString("0:package-1-0.10-654.el7")));
+    }
+
+    @Test
+    public void testWithExistingVersionLock() {
+        terminal.expectCommand("yum --quiet versionlock list 2>&1",
+                0,
+                "Repository chef_rpms-release is listed more than once in the configuration\n" +
+                        "0:chef-12.21.1-1.el7.*\n" +
+                        "0:package-1-0.10-654.el7.*\n");
+        terminal.expectCommand(
+                "yum install --assumeyes 0:package-1-0.10-654.el7 2>&1",
+                0,
+                "Nothing to do\n");
+
+        assertFalse(yum.installFixedVersion(taskContext, YumPackageName.fromString("0:package-1-0.10-654.el7")));
+    }
+
+    @Test
+    public void testWithDowngrade() {
+        terminal.expectCommand("yum --quiet versionlock list 2>&1",
+                0,
+                "Repository chef_rpms-release is listed more than once in the configuration\n" +
+                        "0:chef-12.21.1-1.el7.*\n" +
+                        "0:package-1-0.10-654.el7.*\n");
+
+        terminal.expectCommand(
+                "yum install --assumeyes 0:package-1-0.10-654.el7 2>&1",
+                0,
+                "Package matching package-1-0.10-654.el7 already installed. Checking for update.\n" +
+                        "Nothing to do\n");
+
+        terminal.expectCommand("yum downgrade --assumeyes 0:package-1-0.10-654.el7 2>&1");
+
+        assertTrue(yum.installFixedVersion(taskContext, YumPackageName.fromString("0:package-1-0.10-654.el7")));
     }
 
     @Test(expected = ChildProcessFailureException.class)
@@ -94,7 +233,7 @@ public class YumTest {
                 "error");
 
         yum.install("package-1", "package-2")
-                .enableRepo("repo-name")
+                .enableRepos("repo-name")
                 .converge(taskContext);
         fail();
     }

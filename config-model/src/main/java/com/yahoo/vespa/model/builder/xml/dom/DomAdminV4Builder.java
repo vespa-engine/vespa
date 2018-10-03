@@ -1,21 +1,27 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.container.Container;
+import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
+import com.yahoo.vespa.model.container.component.Handler;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +34,7 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public class DomAdminV4Builder extends DomAdminBuilderBase {
+
     private ApplicationId ZONE_APPLICATION_ID = ApplicationId.from("hosted-vespa", "routing", "default");
 
     private final Collection<ContainerModel> containerModels;
@@ -54,7 +61,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
                 NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("logservers"), context);
 
         assignSlobroks(requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
-        assignLogserver(requestedLogservers.orElse(NodesSpecification.nonDedicated(1, context)), admin);
+        assignLogserver(requestedLogservers.orElse(createNodesSpecificationForLogserver()), admin);
 
         addLogForwarders(adminElement.getChild("logforwarding"), admin);
     }
@@ -72,12 +79,62 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         if (nodesSpecification.count() > 1) throw new IllegalArgumentException("You can only request a single log server");
 
         if (nodesSpecification.isDedicated()) {
-            createLogserver(admin, allocateHosts(admin.getHostSystem(), "logserver", nodesSpecification));
+            Collection<HostResource> hosts = allocateHosts(admin.getHostSystem(), "logserver", nodesSpecification);
+            if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
+
+            Logserver logserver = createLogserver(admin, hosts);
+            createAdditionalContainerOnLogserverHost(admin, logserver.getHostResource());
+        } else if (containerModels.iterator().hasNext()) {
+            List<HostResource> hosts = sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.count(), false);
+            if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
+
+            createLogserver(admin, hosts);
+        } else {
+            context.getDeployLogger().log(LogLevel.INFO, "No container host available to use for running logserver");
         }
-        else {
-            if (containerModels.iterator().hasNext())
-                createLogserver(admin, sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.count(), false));
-        }
+    }
+
+    private NodesSpecification createNodesSpecificationForLogserver() {
+        // TODO: Enable for all zones
+        DeployState deployState = context.getDeployState();
+        if (deployState.getProperties().useDedicatedNodeForLogserver() &&
+                context.getApplicationType() == ConfigModelContext.ApplicationType.DEFAULT &&
+                deployState.isHosted() &&
+                (Arrays.asList(Environment.dev, Environment.perf).contains(deployState.zone().environment()) ||
+                        deployState.zone().region().equals(RegionName.from("eu-west-1"))))
+            return NodesSpecification.dedicated(1, context);
+        else
+            return NodesSpecification.nonDedicated(1, context);
+    }
+
+    // Creates a container cluster 'logserver-cluster' with 1 container on logserver host
+    // for setting up a handler for getting logs from logserver
+    private void createAdditionalContainerOnLogserverHost(Admin admin, HostResource hostResource) {
+        ContainerCluster logServerCluster = new ContainerCluster(admin, "logserver-cluster", "logserver-cluster");
+        ContainerModel logserverClusterModel = new ContainerModel(context.withParent(admin).withId(logServerCluster.getSubId()));
+
+        // Add base handlers and the log handler
+        logServerCluster.addMetricStateHandler();
+        logServerCluster.addApplicationStatusHandler();
+        logServerCluster.addStatisticsHandler();
+        logServerCluster.addDefaultRootHandler();
+        logServerCluster.addVipHandler();
+        addLogHandler(logServerCluster);
+
+        logserverClusterModel.setCluster(logServerCluster);
+
+        Container container = new Container(logServerCluster, "" + 0, 0);
+        container.setHostResource(hostResource);
+        container.initService();
+        logServerCluster.addContainer(container);
+        admin.addAndInitializeService(hostResource, container);
+        admin.setLogserverContainerCluster(logServerCluster);
+    }
+
+    private void addLogHandler(ContainerCluster cluster) {
+        Handler<?> logHandler = Handler.fromClassName("com.yahoo.container.handler.LogHandler");
+        logHandler.addServerBindings("http://*/logs", "https://*/logs");
+        cluster.addComponent(logHandler);
     }
 
     private Collection<HostResource> allocateHosts(HostSystem hostSystem, String clusterId, NodesSpecification nodesSpecification) {
@@ -147,12 +204,12 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         return HostResource.pickHosts(hosts, count, 1);
     }
 
-    private void createLogserver(Admin admin, Collection<HostResource> hosts) {
-        if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
+    private Logserver createLogserver(Admin admin, Collection<HostResource> hosts) {
         Logserver logserver = new Logserver(admin);
         logserver.setHostResource(hosts.iterator().next());
         admin.setLogserver(logserver);
         logserver.initService();
+        return logserver;
     }
 
     private void createSlobroks(Admin admin, Collection<HostResource> hosts) {

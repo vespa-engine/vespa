@@ -1,16 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
-import com.yahoo.config.FileReference;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-import com.yahoo.vespa.model.utils.FileSender;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -36,14 +33,8 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
     protected List<SearchDefinitionSpec> localSDS = new LinkedList<>();
 
     public void prepareToDistributeFiles(List<SearchNode> backends) {
-        for (SearchDefinitionSpec sds : localSDS) {
-            for (RankingConstant constant : sds.getSearchDefinition().getSearch().getRankingConstants().values()) {
-                FileReference reference = (constant.getPathType() == RankingConstant.PathType.FILE)
-                        ? FileSender.sendFileToServices(constant.getFileName(), backends)
-                        : FileSender.sendUriToServices(constant.getUri(), backends);
-                constant.setFileReference(reference.value());
-            }
-        }
+        for (SearchDefinitionSpec sds : localSDS)
+            sds.getSearchDefinition().getSearch().rankingConstants().sendTo(backends);
     }
 
     public static final class IndexingMode {

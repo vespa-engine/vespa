@@ -103,8 +103,8 @@ public class DeploymentTrigger {
             JobRun triggering;
             if (report.jobType() == component) {
                 ApplicationVersion applicationVersion = ApplicationVersion.from(report.sourceRevision().get(), report.buildNumber());
-                triggering = JobRun.triggering(controller.systemVersion(), applicationVersion, Optional.empty(),
-                                               Optional.empty(), "Application commit", clock.instant());
+                triggering = JobRun.triggering(application.get().oldestDeployedPlatform().orElse(controller.systemVersion()), applicationVersion,
+                                               Optional.empty(), Optional.empty(), "Application commit", clock.instant());
                 if (report.success()) {
                     if (acceptNewApplicationVersion(application.get()))
                         application = application.withChange(application.get().change().with(applicationVersion))
@@ -114,9 +114,14 @@ public class DeploymentTrigger {
                 }
             }
             else {
-                triggering = application.get().deploymentJobs().statusOf(report.jobType()).flatMap(JobStatus::lastTriggered)
+                triggering = application.get().deploymentJobs().statusOf(report.jobType())
+                                        .filter(job ->    job.lastTriggered().isPresent()
+                                                       && job.lastCompleted()
+                                                             .map(completion -> ! completion.at().isAfter(job.lastTriggered().get().at()))
+                                                             .orElse(true))
                                         .orElseThrow(() -> new IllegalStateException("Notified of completion of " + report.jobType().jobName() + " for " +
-                                                                                     report.applicationId() + ", but that has neither been triggered nor deployed"));
+                                                                                     report.applicationId() + ", but that has neither been triggered nor deployed"))
+                                        .lastTriggered().get();
             }
             application = application.withJobCompletion(report.projectId(),
                                                         report.jobType(),
@@ -251,7 +256,7 @@ public class DeploymentTrigger {
     }
 
     private Optional<Deployment> deploymentFor(Application application, JobType jobType) {
-        return Optional.ofNullable(application.deployments().get(jobType.zone(controller.system()).get()));
+        return Optional.ofNullable(application.deployments().get(jobType.zone(controller.system())));
     }
 
     private static <T extends Comparable<T>> Optional<T> max(Optional<T> o1, Optional<T> o2) {
@@ -345,7 +350,7 @@ public class DeploymentTrigger {
     }
 
     /** Returns whether job can trigger at given instant */
-    private boolean triggerAt(Instant instant, JobType job, Versions versions, Application application) {
+    public boolean triggerAt(Instant instant, JobType job, Versions versions, Application application) {
         Optional<JobStatus> jobStatus = application.deploymentJobs().statusOf(job);
         if (!jobStatus.isPresent()) return true;
         if (jobStatus.get().isSuccess()) return true; // Success
@@ -391,7 +396,7 @@ public class DeploymentTrigger {
 
     private JobState jobStateOf(Application application, JobType jobType) {
         if (application.deploymentJobs().builtInternally()) {
-            Optional<RunStatus> run = controller.jobController().last(application.id(), jobType);
+            Optional<Run> run = controller.jobController().last(application.id(), jobType);
             return run.isPresent() && ! run.get().hasEnded() ? JobState.running : JobState.idle;
         }
         return buildService.stateOf(BuildJob.of(application.id(),
@@ -410,12 +415,15 @@ public class DeploymentTrigger {
      * change for the application downgrades the deployment, which is an acknowledgement that the deployed
      * version is broken somehow, such that the job may be locked in failure until a new version is released.
      */
-    private boolean isComplete(Change change, Application application, JobType jobType) {
+    public boolean isComplete(Change change, Application application, JobType jobType) {
         Optional<Deployment> existingDeployment = deploymentFor(application, jobType);
-        return    successOn(application, jobType, Versions.from(change, application, existingDeployment, controller.systemVersion())).isPresent()
+        return       application.deploymentJobs().statusOf(jobType).flatMap(JobStatus::lastSuccess)
+                                .map(job ->    change.platform().map(job.platform()::equals).orElse(true)
+                                            && change.application().map(job.application()::equals).orElse(true))
+                                .orElse(false)
                ||    jobType.isProduction()
                   && existingDeployment.map(deployment -> ! isUpgrade(change, deployment) && isDowngrade(application.change(), deployment))
-                                       .orElse(false);
+                                          .orElse(false);
     }
 
     private static boolean isUpgrade(Change change, Deployment deployment) {
@@ -427,18 +435,20 @@ public class DeploymentTrigger {
     }
 
     private boolean isTested(Application application, Versions versions) {
-        return testedAt(application, versions).isPresent() || alreadyTriggered(application, versions);
+        return       testedIn(application, systemTest, versions)
+                  && testedIn(application, stagingTest, versions)
+               || alreadyTriggered(application, versions);
     }
 
-    private Optional<Instant> testedAt(Application application, Versions versions) {
-        Optional<JobRun> testRun = successOn(application, systemTest, versions);
-        Optional<JobRun> stagingRun = successOn(application, stagingTest, versions)
-                .filter(versions::sourcesMatchIfPresent);
-        return max(testRun.map(JobRun::at), stagingRun.map(JobRun::at))
-                .filter(__ -> testRun.isPresent() && stagingRun.isPresent());
+    public boolean testedIn(Application application, JobType testType, Versions versions) {
+        if (testType == systemTest)
+            return successOn(application, systemTest, versions).isPresent();
+        if (testType == stagingTest)
+            return successOn(application, stagingTest, versions).filter(versions::sourcesMatchIfPresent).isPresent();
+        throw new IllegalArgumentException(testType + " is not a test job!");
     }
 
-    private boolean alreadyTriggered(Application application, Versions versions) {
+    public boolean alreadyTriggered(Application application, Versions versions) {
         return application.deploymentJobs().jobStatus().values().stream()
                           .filter(job -> job.type().isProduction())
                           .anyMatch(job -> job.lastTriggered()
@@ -450,6 +460,9 @@ public class DeploymentTrigger {
     // ---------- Change management o_O ----------
 
     private boolean acceptNewApplicationVersion(Application application) {
+        if (    ! application.deploymentSpec().canChangeRevisionAt(clock.instant()) // If rolling out revision
+             &&   application.changeAt(clock.instant()).application().isPresent()   // which isn't complete, but in prod
+             && ! application.deploymentJobs().hasFailures()) return false;         // and isn't failing, delay the new submission.
         if (application.change().application().isPresent()) return true; // More application changes are ok.
         if (application.deploymentJobs().hasFailures()) return true; // Allow changes to fix upgrade problems.
         return ! application.changeAt(clock.instant()).platform().isPresent();

@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import com.yahoo.searchdefinition.expressiontransforms.ExpressionTransforms;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -16,7 +14,7 @@ import java.util.Set;
  * Having both of these mappings consolidated here make it easier to remove dependencies on these mappings at
  * run time, since it is essentially only used when building rank profile config at deployment time.
  *
- * TODO: Rank profiles should be stored under its owning Search instance.
+ * Global rank profiles are represented by the Search key null.
  *
  * @author Ulf Lilleengen
  */
@@ -25,15 +23,13 @@ public class RankProfileRegistry {
     private final Map<RankProfile, Search> rankProfileToSearch = new LinkedHashMap<>();
     private final Map<Search, Map<String, RankProfile>> rankProfiles = new LinkedHashMap<>();
 
-    private final ExpressionTransforms expressionTransforms = new ExpressionTransforms();
-
     /* These rank profiles can be overridden: 'default' rank profile, as that is documented to work. And 'unranked'. */
     static final Set<String> overridableRankProfileNames = new HashSet<>(Arrays.asList("default", "unranked"));
 
     public static RankProfileRegistry createRankProfileRegistryWithBuiltinRankProfiles(Search search) {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        rankProfileRegistry.addRankProfile(new DefaultRankProfile(search, rankProfileRegistry));
-        rankProfileRegistry.addRankProfile(new UnrankedRankProfile(search, rankProfileRegistry));
+        rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry));
+        rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry));
         return rankProfileRegistry;
     }
 
@@ -42,63 +38,59 @@ public class RankProfileRegistry {
      *
      * @param rankProfile the rank profile to add
      */
-    public void addRankProfile(RankProfile rankProfile) {
+    public void add(RankProfile rankProfile) {
         if ( ! rankProfiles.containsKey(rankProfile.getSearch())) {
             rankProfiles.put(rankProfile.getSearch(), new LinkedHashMap<>());
         }
-        checkForDuplicateRankProfile(rankProfile);
+        checkForDuplicate(rankProfile);
         rankProfiles.get(rankProfile.getSearch()).put(rankProfile.getName(), rankProfile);
         rankProfileToSearch.put(rankProfile, rankProfile.getSearch());
     }
 
-    private void checkForDuplicateRankProfile(RankProfile rankProfile) {
-        final String rankProfileName = rankProfile.getName();
+    private void checkForDuplicate(RankProfile rankProfile) {
+        String rankProfileName = rankProfile.getName();
         RankProfile existingRangProfileWithSameName = rankProfiles.get(rankProfile.getSearch()).get(rankProfileName);
         if (existingRangProfileWithSameName == null) return;
 
-        if (!overridableRankProfileNames.contains(rankProfileName)) {
+        if ( ! overridableRankProfileNames.contains(rankProfileName)) {
             throw new IllegalArgumentException("Cannot add rank profile '" + rankProfileName + "' in search definition '"
-                    + rankProfile.getSearch().getName() + "', since it already exists");
+                                               + rankProfile.getSearch().getName() + "', since it already exists");
         }
     }
 
     /**
      * Returns a named rank profile, null if the search definition doesn't have one with the given name
      *
-     * @param search The {@link Search} that owns the rank profile.
-     * @param name The name of the rank profile
-     * @return The RankProfile to return.
+     * @param search the {@link Search} that owns the rank profile.
+     * @param name the name of the rank profile
+     * @return the RankProfile to return.
      */
-    public RankProfile getRankProfile(Search search, String name) {
-        return rankProfiles.get(search).get(name);
+    public RankProfile get(Search search, String name) {
+        Map<String, RankProfile> profiles = rankProfiles.get(search);
+        if (profiles == null) return null;
+        return profiles.get(name);
     }
 
     /**
      * Rank profiles that are collected across clusters.
      * @return A set of global {@link RankProfile} instances.
      */
-    public Set<RankProfile> allRankProfiles() {
+    public Set<RankProfile> all() {
         return rankProfileToSearch.keySet();
     }
 
     /**
-     * Rank profiles that are collected for a given search definition
-     * @param search {@link Search} to get rank profiles for.
-     * @return A collection of local {@link RankProfile} instances.
+     * Returns the rank profiles of a given search definition.
+     *
+     * @param search {@link Search} to get rank profiles for
+     * @return a collection of {@link RankProfile} instances
      */
-    public Collection<RankProfile> localRankProfiles(Search search) {
+    public Collection<RankProfile> rankProfilesOf(Search search) {
         Map<String, RankProfile> mapping = rankProfiles.get(search);
         if (mapping == null) {
             return Collections.emptyList();
         }
         return mapping.values();
     }
-
-    /**
-     * Returns the ranking expression transforms that should be performed on all expressions in this.
-     * This instance (and hence the instances of individual transformers) has the lifetime of a single
-     * application package deployment.
-     */
-    public ExpressionTransforms expressionTransforms() { return expressionTransforms; }
 
 }

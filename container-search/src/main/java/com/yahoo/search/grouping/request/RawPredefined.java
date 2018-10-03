@@ -2,12 +2,13 @@
 package com.yahoo.search.grouping.request;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class represents a predefined bucket-function in a {@link GroupingExpression} for expressions that evaluate to a
  * raw.
  *
- * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
+ * @author Ulf Lilleengen
  */
 public class RawPredefined extends PredefinedFunction {
 
@@ -19,11 +20,23 @@ public class RawPredefined extends PredefinedFunction {
      * @param argN The optional buckets.
      */
     public RawPredefined(GroupingExpression exp, RawBucket arg1, RawBucket... argN) {
-        this(exp, asList(arg1, argN));
+        this(null, null, exp, asList(arg1, argN));
     }
 
-    private RawPredefined(GroupingExpression exp, List<RawBucket> args) {
-        super(exp, args);
+    private RawPredefined(String label, Integer level, GroupingExpression exp, List<RawBucket> args) {
+        super(label, level, exp, args);
+    }
+
+    @Override
+    public RawPredefined copy() {
+        return new RawPredefined(getLabel(),
+                                 getLevelOrNull(),
+                                 getArg(0),
+                                 args().stream()
+                                       .skip(1)
+                                       .map(RawBucket.class::cast)
+                                       .map(arg -> arg.copy())
+                                       .collect(Collectors.toList()));
     }
 
     @Override
@@ -43,6 +56,6 @@ public class RawPredefined extends PredefinedFunction {
         if (args.isEmpty()) {
             throw new IllegalArgumentException("Expected at least one bucket, got none.");
         }
-        return new RawPredefined(exp, args);
+        return new RawPredefined(null, null, exp, args);
     }
 }

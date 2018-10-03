@@ -699,7 +699,7 @@ rename(const string & frompath, const string & topath,
 namespace {
 
     uint32_t bufferSize = 1024 * 1024;
-    uint32_t diskAlignmentSize = 512;
+    uint32_t diskAlignmentSize = 4096;
 
 }
 

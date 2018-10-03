@@ -14,7 +14,7 @@ public:
     {
         FRT_ReflectionBuilder rb(s);
         //-------------------------------------------------------------------
-        rb.DefineMethod("concat", "ss", "s", true,
+        rb.DefineMethod("concat", "ss", "s",
                         FRT_METHOD(MockupServer::RPC_concat), this);
         rb.MethodDesc("Concatenate two strings");
         rb.ParamDesc("string1", "a string");

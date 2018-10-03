@@ -22,7 +22,7 @@ struct Memory
         : data(str.data()), size(str.size()) {}
     Memory(const vespalib::string &str)
         : data(str.data()), size(str.size()) {}
-    Memory(const vespalib::stringref &str_ref)
+    Memory(vespalib::stringref str_ref)
         : data(str_ref.data()), size(str_ref.size()) {}
     vespalib::string make_string() const;
     vespalib::stringref make_stringref() const { return stringref(data, size); }

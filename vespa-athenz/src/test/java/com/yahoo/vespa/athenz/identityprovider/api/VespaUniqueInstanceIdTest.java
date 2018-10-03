@@ -1,3 +1,4 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.api;
 
 import org.junit.Test;
@@ -16,18 +17,6 @@ public class VespaUniqueInstanceIdTest {
                 new VespaUniqueInstanceId(1, "cluster-id", "instance", "application", "tenant", "region", "environment", TENANT);
         String stringRepresentation = id.asDottedString();
         String expectedStringRepresentation = "1.cluster-id.instance.application.tenant.region.environment.tenant";
-        assertEquals(expectedStringRepresentation, stringRepresentation);
-        VespaUniqueInstanceId deserializedId = VespaUniqueInstanceId.fromDottedString(stringRepresentation);
-        assertEquals(id, deserializedId);
-    }
-
-    // TODO Remove support for legacy representation without type
-    @Test
-    public void supports_legacy_representation_without_type() {
-        VespaUniqueInstanceId id =
-                new VespaUniqueInstanceId(1, "cluster-id", "instance", "application", "tenant", "region", "environment");
-        String stringRepresentation = id.asDottedString();
-        String expectedStringRepresentation = "1.cluster-id.instance.application.tenant.region.environment";
         assertEquals(expectedStringRepresentation, stringRepresentation);
         VespaUniqueInstanceId deserializedId = VespaUniqueInstanceId.fromDottedString(stringRepresentation);
         assertEquals(id, deserializedId);

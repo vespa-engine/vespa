@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.google.common.base.Strings;
-import com.google.common.net.InetAddresses;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
@@ -11,7 +10,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.*;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.net.InetAddress;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -41,9 +39,8 @@ public class RealNodeRepository implements NodeRepository {
                 .collect(Collectors.toList());
 
         NodeMessageResponse response = configServerApi.post("/nodes/v2/node", nodesToPost, NodeMessageResponse.class);
-        if (!Strings.isNullOrEmpty(response.errorCode)) {
-            throw new NodeRepositoryException("Failed to add nodes to node-repo: " + response.message + " " + response.errorCode);
-        }
+        if (Strings.isNullOrEmpty(response.errorCode)) return;
+        throw new NodeRepositoryException("Failed to add nodes to node-repo: " + response.message + " " + response.errorCode);
     }
 
     @Override
@@ -61,10 +58,8 @@ public class RealNodeRepository implements NodeRepository {
         try {
             NodeRepositoryNode nodeResponse = configServerApi.get("/nodes/v2/node/" + hostName,
                     NodeRepositoryNode.class);
-            if (nodeResponse == null) {
-                return Optional.empty();
-            }
-            return Optional.of(createNodeSpec(nodeResponse));
+
+            return Optional.ofNullable(nodeResponse).map(RealNodeRepository::createNodeSpec);
         } catch (HttpException.NotFoundException | HttpException.ForbiddenException e) {
             // Return empty on 403 in addition to 404 as it likely means we're trying to access a node that
             // has been deleted. When a node is deleted, the parent-child relationship no longer exists and
@@ -84,16 +79,18 @@ public class RealNodeRepository implements NodeRepository {
             final GetAclResponse response = configServerApi.get(path, GetAclResponse.class);
 
             // Group ports by container hostname that trusts them
-            Map<String, List<Integer>> trustedPorts = response.trustedPorts.stream()
+            Map<String, Set<Integer>> trustedPorts = response.trustedPorts.stream()
                     .collect(Collectors.groupingBy(
                             GetAclResponse.Port::getTrustedBy,
-                            Collectors.mapping(port -> port.port, Collectors.toList())));
+                            Collectors.mapping(port -> port.port, Collectors.toSet())));
 
             // Group node ip-addresses by container hostname that trusts them
-            Map<String, List<InetAddress>> trustedNodes = response.trustedNodes.stream()
+            Map<String, Set<Acl.Node>> trustedNodes = response.trustedNodes.stream()
                     .collect(Collectors.groupingBy(
                             GetAclResponse.Node::getTrustedBy,
-                            Collectors.mapping(node -> InetAddresses.forString(node.ipAddress), Collectors.toList())));
+                            Collectors.mapping(
+                                    node -> new Acl.Node(node.hostname, node.ipAddress),
+                                    Collectors.toSet())));
 
 
             // For each hostname create an ACL
@@ -117,9 +114,8 @@ public class RealNodeRepository implements NodeRepository {
                 nodeRepositoryNodeFromNodeAttributes(nodeAttributes),
                 NodeMessageResponse.class);
 
-        if (!Strings.isNullOrEmpty(response.errorCode)) {
-            throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
-        }
+        if (Strings.isNullOrEmpty(response.errorCode)) return;
+        throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
     }
 
     @Override
@@ -131,9 +127,19 @@ public class RealNodeRepository implements NodeRepository {
                 NodeMessageResponse.class);
         NODE_ADMIN_LOGGER.info(response.message);
 
-        if (response.errorCode == null || response.errorCode.isEmpty()) {
-            return;
-        }
+        if (Strings.isNullOrEmpty(response.errorCode)) return;
+        throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
+    }
+
+    @Override
+    public void scheduleReboot(String hostName) {
+        NodeMessageResponse response = configServerApi.post(
+                "/nodes/v2/command/reboot?hostname=" + hostName,
+                Optional.empty(), /* body */
+                NodeMessageResponse.class);
+        NODE_ADMIN_LOGGER.info(response.message);
+
+        if (Strings.isNullOrEmpty(response.errorCode)) return;
         throw new NodeRepositoryException("Unexpected message " + response.message + " " + response.errorCode);
     }
 
@@ -174,7 +180,10 @@ public class RealNodeRepository implements NodeRepository {
                 node.canonicalFlavor,
                 Optional.ofNullable(node.wantedVespaVersion),
                 Optional.ofNullable(node.vespaVersion),
+                Optional.ofNullable(node.wantedOsVersion),
+                Optional.ofNullable(node.currentOsVersion),
                 Optional.ofNullable(node.allowedToBeDown),
+                Optional.ofNullable(node.wantToDeprovision),
                 Optional.ofNullable(owner),
                 Optional.ofNullable(membership),
                 Optional.ofNullable(node.restartGeneration),
@@ -185,8 +194,10 @@ public class RealNodeRepository implements NodeRepository {
                 node.minMainMemoryAvailableGb,
                 node.minDiskAvailableGb,
                 node.fastDisk,
+                node.bandwidth,
                 node.ipAddresses,
                 Optional.ofNullable(node.hardwareDivergence),
+                Optional.ofNullable(node.hardwareFailureDescription),
                 Optional.ofNullable(node.parentHostname));
     }
 
@@ -208,7 +219,10 @@ public class RealNodeRepository implements NodeRepository {
         node.currentRestartGeneration = nodeAttributes.getRestartGeneration().orElse(null);
         node.currentRebootGeneration = nodeAttributes.getRebootGeneration().orElse(null);
         node.vespaVersion = nodeAttributes.getVespaVersion().orElse(null);
+        node.currentOsVersion = nodeAttributes.getCurrentOsVersion().orElse(null);
         node.hardwareDivergence = nodeAttributes.getHardwareDivergence().orElse(null);
+        node.hardwareFailureDescription = nodeAttributes.getHardwareFailureDescription().orElse(null);
+        node.wantToDeprovision = nodeAttributes.getWantToDeprovision().orElse(null);
         return node;
     }
 }

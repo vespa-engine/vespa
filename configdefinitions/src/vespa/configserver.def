@@ -52,7 +52,7 @@ athenzDnsSuffix string default=""
 ztsUrl string default=""
 
 # Node admin
-nodeAdminInContainer bool default=true
+nodeAdminInContainer bool default=false
 
 # Maintainers
 maintainerIntervalMinutes int default=60
@@ -68,3 +68,4 @@ sleepTimeWhenRedeployingFails long default=30
 # Feature Flags (poor man's feature flags, to be overridden in configserver-config.xml if needed)
 deleteApplicationLegacy bool default=false
 buildMinimalSetOfConfigModels bool default=true
+useDedicatedNodeForLogserver bool default=true

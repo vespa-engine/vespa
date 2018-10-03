@@ -40,7 +40,7 @@ StringBucketResultNode::StringBucketResultNode()
     : _from(new StringResultNode()),
       _to(new StringResultNode())
 {}
-StringBucketResultNode::StringBucketResultNode(const vespalib::stringref & from, const vespalib::stringref & to)
+StringBucketResultNode::StringBucketResultNode(vespalib::stringref from, vespalib::stringref to)
     : _from(new StringResultNode(from)),
       _to(new StringResultNode(to))
 {}

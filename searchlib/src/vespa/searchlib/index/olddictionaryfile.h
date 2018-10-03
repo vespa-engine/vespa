@@ -177,7 +177,7 @@ public:
      * Write word and counts.  Only nonzero counts should be supplied.
      */
     virtual void
-    writeWord(const vespalib::stringref &word,
+    writeWord(vespalib::stringref word,
               const std::vector<uint32_t> &indexes,
               const std::vector<PostingListCounts> &counts) = 0;
 

@@ -10,6 +10,12 @@
       "name": "ClusterUtilizationMaintainer"
     },
     {
+      "name": "ContactInformationMaintainer"
+    },
+    {
+      "name": "DefaultOsUpgrader"
+    },
+    {
       "name": "DeploymentExpirer"
     },
     {
@@ -26,6 +32,9 @@
     },
     {
       "name": "MetricsReporter"
+    },
+    {
+      "name": "OsVersionStatusUpdater"
     },
     {
       "name": "OutstandingChangeDeployer"

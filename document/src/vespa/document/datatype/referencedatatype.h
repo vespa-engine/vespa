@@ -14,7 +14,7 @@ class ReferenceDataType : public DataType {
     const DocumentType& _targetDocType;
 public:
     ReferenceDataType(const DocumentType& targetDocType, int id);
-    ~ReferenceDataType();
+    ~ReferenceDataType() override;
 
     const DocumentType& getTargetType() const noexcept {
         return _targetDocType;
@@ -23,7 +23,9 @@ public:
     std::unique_ptr<FieldValue> createFieldValue() const override;
     void print(std::ostream&, bool verbose, const std::string& indent) const override;
     ReferenceDataType* clone() const override;
-    void onBuildFieldPath(FieldPath & path, const vespalib::stringref& remainingFieldName) const override;
+    void onBuildFieldPath(FieldPath & path, vespalib::stringref remainingFieldName) const override;
+
+    bool operator==(const DataType &type) const override;
 };
 
 } // document

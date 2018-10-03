@@ -39,7 +39,7 @@ public:
     void SetResultClassName(uint32_t len, const char *name) {
         _resultClassName.assign(name, len);
     }
-    void setResultClassName(const vespalib::stringref & name) { _resultClassName = name; }
+    void setResultClassName(vespalib::stringref name) { _resultClassName = name; }
     void SetStackDump(uint32_t stackItems,
                       uint32_t stackDumpLen, const char *stackDump);
     void SetLocation(uint32_t locationLen, const char *location) {

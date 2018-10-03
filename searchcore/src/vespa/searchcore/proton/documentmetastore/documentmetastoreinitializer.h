@@ -8,11 +8,7 @@
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace proton
-{
-
-namespace documentmetastore
-{
+namespace proton::documentmetastore {
 
 /*
  * Class representing an Initializer task for loading document meta store
@@ -33,10 +29,8 @@ public:
                                  const vespalib::string &subDbName,
                                  const vespalib::string &docTypeName,
                                  DocumentMetaStore::SP dms);
-    virtual void run() override;
+    void run() override;
 };
 
 
-} // namespace proton::documentmetastore
-
-} // namespace proton
+}

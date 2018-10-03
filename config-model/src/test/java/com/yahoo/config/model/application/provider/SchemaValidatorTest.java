@@ -2,6 +2,7 @@
 package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
+import com.yahoo.vespa.config.VespaVersion;
 import org.junit.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -65,6 +66,6 @@ public class SchemaValidatorTest {
     }
 
     private SchemaValidator createValidator() throws IOException {
-        return new SchemaValidators(new Version(6)).servicesXmlValidator();
+        return new SchemaValidators(new Version(VespaVersion.major)).servicesXmlValidator();
     }
 }

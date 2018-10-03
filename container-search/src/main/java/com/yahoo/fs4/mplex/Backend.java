@@ -61,7 +61,6 @@ public class Backend implements ConnectionFactory {
     private final ConnectionPool connectionPool;
     private final PacketDumper packetDumper;
     private final AtomicInteger connectionCount = new AtomicInteger(0);
-    private final Optional<Integer> distributionKey;
 
     /**
      * For unit testing.  do not use
@@ -74,15 +73,13 @@ public class Backend implements ConnectionFactory {
         packetDumper = null;
         address = null;
         connectionPool = new ConnectionPool();
-        distributionKey = Optional.empty();
     }
 
     public Backend(String host,
                    int port,
                    String serverDiscriminator,
                    ListenerPool listenerPool,
-                   ConnectionPool connectionPool,
-                   Optional<Integer> distributionKey) {
+                   ConnectionPool connectionPool) {
         String fileNamePattern = "qrs." + serverDiscriminator + '.' + host + ":" + port + ".%s" + ".dump";
         packetDumper = new PacketDumper(new File(Defaults.getDefaults().underVespaHome("logs/vespa/qrs/")),
                                         fileNamePattern);
@@ -92,7 +89,6 @@ public class Backend implements ConnectionFactory {
         this.port = port;
         address = new InetSocketAddress(host, port);
         this.connectionPool = connectionPool;
-        this.distributionKey = distributionKey;
     }
 
     private void logWarning(String attemptDescription, Exception e) {
@@ -102,9 +98,6 @@ public class Backend implements ConnectionFactory {
     private void logInfo(String attemptDescription, Exception e) {
         log.log(Level.INFO, "Exception on " + attemptDescription + " '" + host + ":" + port + "': " + Exceptions.toMessageString(e));
     }
-
-    /** Returns the distribution key of the content node this represents, or empty if it is a dispatch node */
-    public Optional<Integer> distributionKey() { return distributionKey; }
 
     // ============================================================
     // ==== connection pool stuff
@@ -197,7 +190,7 @@ public class Backend implements ConnectionFactory {
     //============================================================
 
     /** Opens a new channel to fdispatch.  Analogous to the "Channel" concept as used in FS4. */
-    public FS4Channel openChannel () {
+    public FS4Channel openChannel() {
         int cachedChannelId;
         synchronized (this) {
             if (channelId >= ((1 << 31) - 2)) {
@@ -214,7 +207,7 @@ public class Backend implements ConnectionFactory {
         return chan;
     }
 
-    public FS4Channel openPingChannel () {
+    public FS4Channel openPingChannel() {
         FS4Channel chan = FS4Channel.createPingChannel(this);
         synchronized (pingChannels) {
             pingChannels.add(chan);
@@ -251,7 +244,7 @@ public class Backend implements ConnectionFactory {
      * Return the first channel in the queue waiting for pings or
      * <code>null</code> if none.
      */
-    public FS4Channel getPingChannel () {
+    public FS4Channel getPingChannel() {
         synchronized (pingChannels) {
             return (pingChannels.isEmpty()) ? null : pingChannels.getFirst();
         }
@@ -266,7 +259,7 @@ public class Backend implements ConnectionFactory {
      *         or <code>null</code> if the channel is not in the
      *         set of active channels.
      */
-    public FS4Channel getChannel (int id) {
+    public FS4Channel getChannel(int id) {
         return getChannel(Integer.valueOf(id));
     }
 
@@ -280,7 +273,7 @@ public class Backend implements ConnectionFactory {
      *         with this id or <code>null</code> if the channel is
      *         not in the set of active channels.
      */
-    protected FS4Channel removeChannel (Integer id) {
+    protected FS4Channel removeChannel(Integer id) {
         synchronized (activeChannels) {
             return activeChannels.remove(id);
         }
@@ -295,7 +288,7 @@ public class Backend implements ConnectionFactory {
      *         the queue of ping channels or <code>null</code>
      *         if there are no active ping channels.
      */
-    protected FS4Channel removePingChannel () {
+    protected FS4Channel removePingChannel() {
         synchronized (pingChannels) {
             if (pingChannels.isEmpty())
                 return null;

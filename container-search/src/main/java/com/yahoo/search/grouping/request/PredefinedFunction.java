@@ -4,6 +4,7 @@ package com.yahoo.search.grouping.request;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * This class represents a predefined bucket-function in a {@link GroupingExpression}. It maps the input into one of the
@@ -13,8 +14,8 @@ import java.util.List;
  */
 public abstract class PredefinedFunction extends FunctionNode {
 
-    protected PredefinedFunction(GroupingExpression exp, List<? extends BucketValue> args) {
-        super("predefined", asList(exp, args));
+    protected PredefinedFunction(String label, Integer level, GroupingExpression exp, List<? extends BucketValue> args) {
+        super("predefined", label, level, asList(exp, args));
         Iterator<? extends BucketValue> it = args.iterator();
         BucketValue prev = it.next();
         while (it.hasNext()) {
@@ -47,12 +48,12 @@ public abstract class PredefinedFunction extends FunctionNode {
         return (BucketValue)getArg(i + 1);
     }
 
-    private static
-    List<GroupingExpression> asList(GroupingExpression exp, List<? extends BucketValue> args) {
+    private static List<GroupingExpression> asList(GroupingExpression exp, List<? extends BucketValue> args) {
         List<GroupingExpression> ret = new LinkedList<>();
         ret.add(exp);
         ret.addAll(args);
         return ret;
     }
+
 }
 

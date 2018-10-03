@@ -6,6 +6,7 @@ import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Capability;
 import com.github.dockerjava.api.model.Ulimit;
+import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -24,6 +25,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
+
     private final DockerClient docker;
     private final DockerImage dockerImage;
     private final ContainerResources containerResources;
@@ -107,7 +109,14 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     @Override
     public Docker.CreateContainerCommand withVolume(String path, String volumePath) {
         assert path.indexOf(':') == -1;
-        volumeBindSpecs.add(path + ":" + volumePath);
+        volumeBindSpecs.add(path + ":" + volumePath + ":Z");
+        return this;
+    }
+
+    @Override
+    public Docker.CreateContainerCommand withSharedVolume(String path, String volumePath) {
+        assert path.indexOf(':') == -1;
+        volumeBindSpecs.add(path + ":" + volumePath + ":z");
         return this;
     }
 
@@ -141,8 +150,8 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
 
         final CreateContainerCmd containerCmd = docker
                 .createContainerCmd(dockerImage.asString())
-                .withCpuShares(containerResources.cpuShares)
-                .withMemory(containerResources.memoryBytes)
+                .withCpuShares(containerResources.cpuShares())
+                .withMemory(containerResources.memoryBytes())
                 .withName(containerName.asString())
                 .withHostName(hostName)
                 .withLabels(labels)
@@ -195,11 +204,11 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .skip(1)
                 .collect(Collectors.joining(" "));
 
-        return String.join(" ",
+        return Stream.of(
                 "--name " + containerName.asString(),
                 "--hostname " + hostName,
-                "--cpu-shares " + containerResources.cpuShares,
-                "--memory " + containerResources.memoryBytes,
+                "--cpu-shares " + containerResources.cpuShares(),
+                "--memory " + containerResources.memoryBytes(),
                 toRepeatedOption("--label", labelList),
                 toRepeatedOption("--ulimit", ulimitList),
                 toRepeatedOption("--env", environmentAssignments),
@@ -212,7 +221,9 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 toOptionalOption("--entrypoint", entrypointExecuteable),
                 toFlagOption("--privileged", privileged),
                 dockerImage.asString(),
-                entrypointArgs);
+                entrypointArgs)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.joining(" "));
     }
 
     /**

@@ -5,7 +5,11 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.searchdefinition.document.*;
+import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.RankType;
+import com.yahoo.searchdefinition.document.SDDocumentType;
+import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchdefinition.processing.MakeAliases;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -27,27 +31,26 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
     @Test
     public void testSimpleImporting() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        SearchBuilder sb = new UnprocessingSearchBuilder(rankProfileRegistry, new QueryProfileRegistry());
+        SearchBuilder sb = new SearchBuilder(rankProfileRegistry, new QueryProfileRegistry());
         sb.importFile("src/test/examples/simple.sd");
         sb.build();
         Search search = sb.getSearch();
         assertEquals("simple",search.getName());
         assertTrue(search.hasDocument());
 
-        SDDocumentType document=search.getDocument();
-        assertEquals("simple",document.getName());
-        assertEquals(12,document.getFieldCount());
+        SDDocumentType document = search.getDocument();
+        assertEquals("simple", document.getName());
+        assertEquals(25, document.getFieldCount());
 
         SDField field;
         Attribute attribute;
 
-        new MakeAliases(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles()).process(true);
+        new MakeAliases(search, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles()).process(true, false);
 
         // First field
         field=(SDField) document.getField("title");
         assertEquals(DataType.STRING,field.getDataType());
-        assertEquals("{ summary | index; }",
-                     field.getIndexingScript().toString());
+        assertEquals("{ input title | tokenize normalize stem:\"SHORTEST\" | summary title | index title; }", field.getIndexingScript().toString());
         assertTrue(!search.getIndex("default").isPrefix());
         assertTrue(search.getIndex("title").isPrefix());
         Iterator<String> titleAliases=search.getIndex("title").aliasIterator();
@@ -86,7 +89,7 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
 
         // Fifth field
         field=(SDField) document.getField("popularity");
-        assertEquals("{ attribute; }",
+        assertEquals("{ input popularity | attribute popularity; }",
                      field.getIndexingScript().toString());
 
         // Sixth field
@@ -97,19 +100,19 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
 
         // Seventh field
         field= search.getConcreteField("categories");
-        assertEquals("{ input categories_src | lowercase | normalize | index; }",
+        assertEquals("{ input categories_src | lowercase | normalize | tokenize normalize stem:\"SHORTEST\" | index categories; }",
                      field.getIndexingScript().toString());
         assertTrue(!field.isHeader());
 
         // Eight field
         field= search.getConcreteField("categoriesagain");
-        assertEquals("{ input categoriesagain_src | lowercase | normalize | index; }",
+        assertEquals("{ input categoriesagain_src | lowercase | normalize | tokenize normalize stem:\"SHORTEST\" | index categoriesagain; }",
                      field.getIndexingScript().toString());
         assertTrue(field.isHeader());
 
         // Ninth field
         field= search.getConcreteField("exactemento");
-        assertEquals("{ input exactemento_src | lowercase | index | summary; }",
+        assertEquals("{ input exactemento_src | lowercase | tokenize normalize stem:\"SHORTEST\" | index exactemento | summary exactemento; }",
                      field.getIndexingScript().toString());
 
         // Tenth field
@@ -131,20 +134,20 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
         assertEquals(Attribute.CollectionType.ARRAY, attribute.getCollectionType());
 
         // Rank Profiles
-        RankProfile profile=rankProfileRegistry.getRankProfile(search, "default");
+        RankProfile profile=rankProfileRegistry.get(search, "default");
         assertNotNull(profile);
         assertNull(profile.getInheritedName());
         assertEquals(null,profile.getDeclaredRankSetting("measurement",
                           RankProfile.RankSetting.Type.RANKTYPE));
         assertEquals(RankType.EMPTY,
                      profile.getRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE).getValue());
-        profile=rankProfileRegistry.getRankProfile(search, "experimental");
+        profile=rankProfileRegistry.get(search, "experimental");
         assertNotNull(profile);
         assertEquals("default",profile.getInheritedName());
         assertEquals(RankType.IDENTITY,
                      profile.getDeclaredRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE).getValue());
 
-        profile=rankProfileRegistry.getRankProfile(search, "other");
+        profile=rankProfileRegistry.get(search, "other");
         assertNotNull(profile);
         assertEquals("experimental",profile.getInheritedName());
 
@@ -154,7 +157,7 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
         assertEquals("exact",exact.getName());
         assertEquals(Stemming.NONE,exact.getStemming());
         assertTrue(!exact.getNormalizing().doRemoveAccents());
-        assertEquals("{ input title . \" \" . input category | summary | index; }",
+        assertEquals("{ input title . \" \" . input category | tokenize | summary exact | index exact; }",
                      exact.getIndexingScript().toString());
         assertEquals(RankType.IDENTITY, exact.getRankType());
     }

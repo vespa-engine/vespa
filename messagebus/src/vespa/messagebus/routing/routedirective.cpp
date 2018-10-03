@@ -6,7 +6,7 @@ using vespalib::make_string;
 
 namespace mbus {
 
-RouteDirective::RouteDirective(const vespalib::stringref & name) :
+RouteDirective::RouteDirective(vespalib::stringref name) :
     _name(name)
 {
     // empty

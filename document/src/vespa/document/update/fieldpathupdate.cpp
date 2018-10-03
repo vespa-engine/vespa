@@ -74,7 +74,7 @@ FieldPathUpdate::applyTo(Document& doc) const
     } else {
         std::unique_ptr<select::Node> whereClause = parseDocumentSelection(_originalWhereClause, *doc.getRepo());
         select::ResultList results = whereClause->contains(doc);
-        for (select::ResultList::const_iterator i = results.begin(); i != results.end(); ++i) {
+        for (select::ResultList::const_reverse_iterator i = results.rbegin(); i != results.rend(); ++i) {
             LOG(spam, "vars = %s", handler->getVariables().toString().c_str());
             if (*i->second == select::Result::True) {
                 handler->setVariables(i->first);

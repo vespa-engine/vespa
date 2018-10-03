@@ -1,10 +1,15 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.application.SourceRevision;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import org.junit.Test;
@@ -16,6 +21,8 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
 
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -24,12 +31,13 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -49,41 +57,59 @@ public class RunSerializerTest {
             assertEquals(step, RunSerializer.stepOf(RunSerializer.valueOf(step)));
 
         for (Step.Status status : Step.Status.values())
-            assertEquals(status, RunSerializer.statusOf(RunSerializer.valueOf(status)));
+            assertEquals(status, RunSerializer.stepStatusOf(RunSerializer.valueOf(status)));
+
+        for (RunStatus status : RunStatus.values())
+            assertEquals(status, RunSerializer.runStatusOf(RunSerializer.valueOf(status)));
 
         // The purpose of this serialised data is to ensure a new format does not break everything, so keep it up to date!
-        RunStatus run = serializer.runsFromSlime(SlimeUtils.jsonToSlime(Files.readAllBytes(runFile))).get(id);
+        Run run = serializer.runsFromSlime(SlimeUtils.jsonToSlime(Files.readAllBytes(runFile))).get(id);
         for (Step step : Step.values())
             assertTrue(run.steps().containsKey(step));
 
         assertEquals(id, run.id());
         assertEquals(start, run.start());
         assertFalse(run.hasEnded());
-        assertFalse(run.isAborted());
+        assertEquals(running, run.status());
+        assertEquals(3, run.lastTestLogEntry());
+        assertEquals(new Version(1, 2, 3), run.versions().targetPlatform());
+        assertEquals(ApplicationVersion.from(new SourceRevision("git@github.com:user/repo.git",
+                                                                "master",
+                                                                "f00bad"),
+                                             123),
+                     run.versions().targetApplication());
+        assertEquals(new Version(1, 2, 2), run.versions().sourcePlatform().get());
+        assertEquals(ApplicationVersion.from(new SourceRevision("git@github.com:user/repo.git",
+                                                                "master",
+                                                                "badb17"),
+                                             122),
+                     run.versions().sourceApplication().get());
         assertEquals(ImmutableMap.<Step, Step.Status>builder()
-                    .put(deployInitialReal, unfinished)
-                    .put(installInitialReal, failed)
-                    .put(deployReal, succeeded)
-                    .put(installReal, unfinished)
-                    .put(deactivateReal, failed)
-                    .put(deployTester, succeeded)
-                    .put(installTester, unfinished)
-                    .put(deactivateTester, failed)
-                    .put(startTests, succeeded)
-                    .put(endTests, unfinished)
-                    .put(report, failed)
-                    .build(),
+                             .put(deployInitialReal, unfinished)
+                             .put(installInitialReal, failed)
+                             .put(deployReal, succeeded)
+                             .put(installReal, unfinished)
+                             .put(deactivateReal, failed)
+                             .put(deployTester, succeeded)
+                             .put(installTester, unfinished)
+                             .put(deactivateTester, failed)
+                             .put(startTests, succeeded)
+                             .put(endTests, unfinished)
+                             .put(report, failed)
+                             .build(),
                      run.steps());
 
-        run = run.aborted().finished(Instant.now());
-        assertTrue(run.isAborted());
+        run = run.aborted().finished(Instant.now().truncatedTo(MILLIS));
+        assertEquals(aborted, run.status());
         assertTrue(run.hasEnded());
 
-        RunStatus phoenix = serializer.runsFromSlime(serializer.toSlime(Collections.singleton(run))).get(id);
+        Run phoenix = serializer.runsFromSlime(serializer.toSlime(Collections.singleton(run))).get(id);
         assertEquals(run.id(), phoenix.id());
         assertEquals(run.start(), phoenix.start());
         assertEquals(run.end(), phoenix.end());
-        assertEquals(run.isAborted(), phoenix.isAborted());
+        assertEquals(run.status(), phoenix.status());
+        assertEquals(run.lastTestLogEntry(), phoenix.lastTestLogEntry());
+        assertEquals(run.versions(), phoenix.versions());
         assertEquals(run.steps(), phoenix.steps());
     }
 

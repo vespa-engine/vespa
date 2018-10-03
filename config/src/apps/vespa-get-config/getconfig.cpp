@@ -119,7 +119,7 @@ GetConfig::Main()
 
     const char *optArg = NULL;
     int optInd = 0;
-    while ((c = GetOpt("a:n:v:i:jm:c:t:V:w:r:s:p:dh", optArg, optInd)) != -1) {
+    while ((c = GetOpt("a:n:v:i:jlm:c:t:V:w:r:s:p:dh", optArg, optInd)) != -1) {
         int retval = 1;
         switch (c) {
         case 'a':

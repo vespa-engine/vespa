@@ -4,8 +4,7 @@
 
 #include <vespa/vespalib/data/databuffer.h>
 
-namespace search
-{
+namespace search {
 
 class BufferWriter;
 

@@ -96,6 +96,12 @@ public class ApplicationHandler extends HttpHandler {
             return applicationRepository.filedistributionStatus(applicationId, timeout);
         }
 
+        if (isLogRequest(request)) {
+            String apiParams = request.getUri().getQuery();
+            apiParams = apiParams == null ? "" : "?" + apiParams;
+            return applicationRepository.getLogs(applicationId, apiParams);
+        }
+
         return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(applicationId));
     }
 
@@ -140,7 +146,13 @@ public class ApplicationHandler extends HttpHandler {
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*",
+                "http://*/application/v2/tenant/*/application/*/logs",
                 "http://*/application/v2/tenant/*/application/*");
+    }
+
+    private static boolean isLogRequest(HttpRequest request) {
+        return getBindingMatch(request).groupCount() == 4 &&
+                request.getUri().getPath().endsWith("/logs");
     }
 
     private static boolean isServiceConvergeListRequest(HttpRequest request) {

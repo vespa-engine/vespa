@@ -34,7 +34,5 @@ public interface HealthEndpoint {
 
     URL getStateV1HealthUrl();
     ConnectionSocketFactory getConnectionSocketFactory();
-    void registerListener(ServiceIdentityProvider.Listener listener);
-    void removeListener(ServiceIdentityProvider.Listener listener);
     String description();
 }

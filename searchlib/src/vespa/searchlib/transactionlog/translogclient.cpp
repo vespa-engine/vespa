@@ -11,15 +11,40 @@ LOG_SETUP(".translogclient");
 
 using namespace std::chrono_literals;
 
+VESPA_THREAD_STACK_TAG(translogclient_rpc_callback)
+
 namespace search::transactionlog {
 
 namespace {
     const double NEVER(-1.0);
 }
 
+namespace {
+
+struct RpcTask : public vespalib::Executor::Task {
+    FRT_RPCRequest *req;
+    std::function<void(FRT_RPCRequest *req)> fun;
+    RpcTask(FRT_RPCRequest *req_in, std::function<void(FRT_RPCRequest *req)> &&fun_in)
+        : req(req_in), fun(std::move(fun_in)) {}
+    void run() override {
+        fun(req);
+        req->Return();
+        req = nullptr;
+    }
+    ~RpcTask() {
+        if (req != nullptr) {
+            req->SetError(FRTE_RPC_METHOD_FAILED, "client has been shut down");
+            req->Return();
+        }
+    }
+};
+
+}
+
 using vespalib::LockGuard;
 
 TransLogClient::TransLogClient(const vespalib::string & rpcTarget) :
+    _executor(1, 128 * 1024, translogclient_rpc_callback),
     _rpcTarget(rpcTarget),
     _sessions(),
     _supervisor(std::make_unique<FRT_Supervisor>()),
@@ -33,6 +58,7 @@ TransLogClient::TransLogClient(const vespalib::string & rpcTarget) :
 TransLogClient::~TransLogClient()
 {
     disconnect();
+    _executor.shutdown().sync();
     _supervisor->ShutDown(true);
 }
 
@@ -139,7 +165,7 @@ void TransLogClient::exportRPC(FRT_Supervisor & supervisor)
     FRT_ReflectionBuilder rb( & supervisor);
 
     //-- Visit Callbacks -----------------------------------------------------------
-    rb.DefineMethod("visitCallback", "six", "i", false, FRT_METHOD(TransLogClient::visitCallbackRPC), this);
+    rb.DefineMethod("visitCallback", "six", "i", FRT_METHOD(TransLogClient::visitCallbackRPC_hook), this);
     rb.MethodDesc("Will return data asked from a subscriber/visitor.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("session", "Session handle.");
@@ -147,14 +173,15 @@ void TransLogClient::exportRPC(FRT_Supervisor & supervisor)
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Non zero number indicates error.");
 
     //-- Visit Callbacks -----------------------------------------------------------
-    rb.DefineMethod("eofCallback", "si", "i", false, FRT_METHOD(TransLogClient::eofCallbackRPC), this);
+    rb.DefineMethod("eofCallback", "si", "i", FRT_METHOD(TransLogClient::eofCallbackRPC_hook), this);
     rb.MethodDesc("Will tell you that you are done with the visitor.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("session", "Session handle.");
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Non zero number indicates error.");
 }
 
-void TransLogClient::visitCallbackRPC(FRT_RPCRequest *req)
+
+void TransLogClient::do_visitCallbackRPC(FRT_RPCRequest *req)
 {
     uint32_t retval(uint32_t(-1));
     FRT_Values & params = *req->GetParams();
@@ -171,7 +198,7 @@ void TransLogClient::visitCallbackRPC(FRT_RPCRequest *req)
     LOG(debug, "visitCallback(%s, %d)=%d done", domainName, sessionId, retval);
 }
 
-void TransLogClient::eofCallbackRPC(FRT_RPCRequest *req)
+void TransLogClient::do_eofCallbackRPC(FRT_RPCRequest *req)
 {
     uint32_t retval(uint32_t(-1));
     FRT_Values & params = *req->GetParams();
@@ -186,6 +213,16 @@ void TransLogClient::eofCallbackRPC(FRT_RPCRequest *req)
     }
     ret.AddInt32(retval);
     LOG(debug, "eofCallback(%s, %d)=%d done", domainName, sessionId, retval);
+}
+
+void TransLogClient::visitCallbackRPC_hook(FRT_RPCRequest *req)
+{
+    _executor.execute(std::make_unique<RpcTask>(req->Detach(), [this](FRT_RPCRequest *x){ do_visitCallbackRPC(x); }));
+}
+
+void TransLogClient::eofCallbackRPC_hook(FRT_RPCRequest *req)
+{
+    _executor.execute(std::make_unique<RpcTask>(req->Detach(), [this](FRT_RPCRequest *x){ do_eofCallbackRPC(x); }));
 }
 
 

@@ -6,24 +6,30 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeType;
+import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
+import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
 
-import java.net.URI;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,43 +44,67 @@ import java.util.stream.IntStream;
 
 /**
  * @author mortent
+ * @author jonmv
  */
 public class ConfigServerMock extends AbstractComponent implements ConfigServer {
 
     private final Map<ApplicationId, Application> applications = new LinkedHashMap<>();
     private final Map<String, EndpointStatus> endpoints = new HashMap<>();
-    private final Map<URI, Version> versions = new HashMap<>();
     private final NodeRepositoryMock nodeRepository = new NodeRepositoryMock();
     private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
     private final Version initialVersion = new Version(6, 1, 0);
 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
+    private ConfigChangeActions configChangeActions = null;
 
     @Inject
     public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
-        bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.all());
+        bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.all(), Optional.empty());
+    }
+
+    /** Sets the ConfigChangeActions that will be returned on next deployment. */
+    public void setConfigChangeActions(ConfigChangeActions configChangeActions) {
+        this.configChangeActions = configChangeActions;
+    }
+
+    /** Assigns a reserved tenant node to the given deployment, with initial versions. */
+    public void provision(ZoneId zone, ApplicationId application) {
+        nodeRepository().putByHostname(zone, new Node(hostFor(application, zone),
+                                                      Node.State.reserved,
+                                                      NodeType.tenant,
+                                                      Optional.of(application),
+                                                      initialVersion,
+                                                      initialVersion));
+    }
+
+    public HostName hostFor(ApplicationId application, ZoneId zone) {
+        return HostName.from("host-" + application.serializedForm() + "-" + zone.value());
     }
 
     public void bootstrap(List<ZoneId> zones, SystemApplication... applications) {
-        bootstrap(zones, Arrays.asList(applications));
+        bootstrap(zones, Arrays.asList(applications), Optional.empty());
     }
 
-    public void bootstrap(List<ZoneId> zones, List<SystemApplication> applications) {
+    public void bootstrap(List<ZoneId> zones, List<SystemApplication> applications, Optional<NodeType> type) {
         nodeRepository().clear();
+        addNodes(zones, applications, type);
+    }
+
+    public void addNodes(List<ZoneId> zones, List<SystemApplication> applications, Optional<NodeType> type) {
         for (ZoneId zone : zones) {
             for (SystemApplication application : applications) {
                 List<Node> nodes = IntStream.rangeClosed(1, 3)
                                             .mapToObj(i -> new Node(
                                                     HostName.from("node-" + i + "-" + application.id().application()
                                                                                                  .value()),
-                                                    Node.State.active, application.nodeType(),
+                                                    Node.State.active, type.orElseGet(() -> application.nodeTypes().iterator().next()),
                                                     Optional.of(application.id()),
                                                     initialVersion,
                                                     initialVersion
                                             ))
                                             .collect(Collectors.toList());
-                nodeRepository().add(zone, nodes);
+                nodeRepository().putByHostname(zone, nodes);
                 convergeServices(application.id(), zone);
             }
         }
@@ -82,7 +112,17 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     /** Converge all services belonging to the given application */
     public void convergeServices(ApplicationId application, ZoneId zone) {
-        serviceStatus.put(new DeploymentId(application, zone), new ServiceConvergence(application, zone, true));
+        List<Node> nodes = nodeRepository.list(zone, application);
+        serviceStatus.put(new DeploymentId(application, zone), new ServiceConvergence(application,
+                                                                                      zone,
+                                                                                      true,
+                                                                                      2,
+                                                                                      nodes.stream()
+                                                                                           .map(node -> new ServiceConvergence.Status(node.hostname(),
+                                                                                                                                      43,
+                                                                                                                                      "container",
+                                                                                                                                      2))
+                                                                                           .collect(Collectors.toList())));
     }
 
     /** The version given in the previous prepare call, or empty if no call has been made */
@@ -95,11 +135,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         this.prepareException = prepareException;
     }
 
-    /** Set version for system applications in given zone */
+    /** Set version for an application in a given zone */
     public void setVersion(ApplicationId application, ZoneId zone, Version version) {
         for (Node node : nodeRepository().list(zone, application)) {
-            nodeRepository().add(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
-                                                version, version));
+            nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
+                                                          version, version));
         }
     }
 
@@ -132,7 +172,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             this.prepareException = null;
             throw prepareException;
         }
-        applications.put(deployment.applicationId(), new Application(deployment.applicationId(), lastPrepareVersion));
+        applications.put(deployment.applicationId(), new Application(deployment.applicationId(), lastPrepareVersion, new ApplicationPackage(content)));
+
+        if (nodeRepository().list(deployment.zoneId(), deployment.applicationId()).isEmpty())
+            provision(deployment.zoneId(), deployment.applicationId());
 
         return new PreparedApplication() {
 
@@ -158,20 +201,34 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             public PrepareResponse prepareResponse() {
                 Application application = applications.get(deployment.applicationId());
                 application.activate();
-                for (Node node : nodeRepository.list(deployment.zoneId(), deployment.applicationId())) {
-                    nodeRepository.add(deployment.zoneId(), new Node(node.hostname(),
-                                                                     node.state(), node.type(),
-                                                                     node.owner(),
-                                                                     node.currentVersion(),
-                                                                     application.version().get()));
+                List<Node> nodes = nodeRepository.list(deployment.zoneId(), deployment.applicationId());
+                for (Node node : nodes) {
+                    nodeRepository.putByHostname(deployment.zoneId(), new Node(node.hostname(),
+                                                                               node.state(), node.type(),
+                                                                               node.owner(),
+                                                                               node.currentVersion(),
+                                                                               application.version().get()));
                 }
-                serviceStatus.remove(deployment); // Deployment is no longer converging after new deployment
+                serviceStatus.put(deployment, new ServiceConvergence(deployment.applicationId(),
+                                                                     deployment.zoneId(),
+                                                                     false,
+                                                                     2,
+                                                                     nodes.stream()
+                                                                          .map(node -> new ServiceConvergence.Status(node.hostname(),
+                                                                                                                     43,
+                                                                                                                     "container",
+                                                                                                                     1))
+                                                                          .collect(Collectors.toList())));
 
                 PrepareResponse prepareResponse = new PrepareResponse();
                 prepareResponse.message = "foo";
-                prepareResponse.configChangeActions = new ConfigChangeActions(Collections.emptyList(),
-                                                                              Collections.emptyList());
+                prepareResponse.configChangeActions = configChangeActions != null
+                        ? configChangeActions
+                        : new ConfigChangeActions(Collections.emptyList(),
+                                                  Collections.emptyList());
+                setConfigChangeActions(null);
                 prepareResponse.tenant = new TenantId("tenant");
+                prepareResponse.log = Collections.emptyList();
                 return prepareResponse;
             }
 
@@ -180,11 +237,15 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public void restart(DeploymentId deployment, Optional<Hostname> hostname) {
+        nodeRepository().requestRestart(deployment, hostname.map(Identifier::id).map(HostName::from));
     }
 
     @Override
     public void deactivate(DeploymentId deployment) {
         applications.remove(deployment.applicationId());
+        nodeRepository().removeByHostname(deployment.zoneId(),
+                                          nodeRepository().list(deployment.zoneId(), deployment.applicationId()));
+        serviceStatus.remove(deployment);
     }
 
     // Returns a canned example response
@@ -233,15 +294,25 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return endpoints.getOrDefault(endpoint, result);
     }
 
+    @Override
+    public Optional<Logs> getLogs(DeploymentId deployment, HashMap<String, String> queryParameters) {
+        HashMap<String, String> logs = new HashMap<>();
+        logs.put("subfolder-log2.log", "VGhpcyBpcyBhbm90aGVyIGxvZyBmaWxl");
+        logs.put("log1.log", "VGhpcyBpcyBvbmUgbG9nIGZpbGU=");
+        return Optional.of(new Logs(logs));
+    }
+
     public static class Application {
 
         private final ApplicationId id;
         private final Version version;
         private boolean activated;
+        private final ApplicationPackage applicationPackage;
 
-        private Application(ApplicationId id, Version version) {
+        private Application(ApplicationId id, Version version, ApplicationPackage applicationPackage) {
             this.id = id;
             this.version = version;
+            this.applicationPackage = applicationPackage;
         }
 
         public ApplicationId id() {
@@ -254,6 +325,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
         public boolean activated() {
             return activated;
+        }
+
+        public ApplicationPackage applicationPackage() {
+            return applicationPackage;
         }
 
         private void activate() {

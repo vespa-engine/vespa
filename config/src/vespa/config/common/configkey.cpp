@@ -4,10 +4,10 @@
 
 namespace config {
 
-ConfigKey::ConfigKey(const vespalib::stringref & configId,
-                     const vespalib::stringref & defName,
-                     const vespalib::stringref & defNamespace,
-                     const vespalib::stringref & defMd5)
+ConfigKey::ConfigKey(vespalib::stringref configId,
+                     vespalib::stringref defName,
+                     vespalib::stringref defNamespace,
+                     vespalib::stringref defMd5)
     : _configId(configId),
       _defName(defName),
       _defNamespace(defNamespace),
@@ -16,10 +16,10 @@ ConfigKey::ConfigKey(const vespalib::stringref & configId,
       _key(_configId + _defName + _defNamespace)
 {}
 
-ConfigKey::ConfigKey(const vespalib::stringref & configId,
-                     const vespalib::stringref & defName,
-                     const vespalib::stringref & defNamespace,
-                     const vespalib::stringref & defMd5,
+ConfigKey::ConfigKey(vespalib::stringref configId,
+                     vespalib::stringref defName,
+                     vespalib::stringref defNamespace,
+                     vespalib::stringref defMd5,
                      const std::vector<vespalib::string> & defSchema)
     : _configId(configId),
       _defName(defName),

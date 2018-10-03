@@ -21,6 +21,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.SearchBuilder;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
@@ -65,6 +66,7 @@ public class DeployState implements ConfigDefinitionStore {
     private final Zone zone;
     private final QueryProfiles queryProfiles;
     private final SemanticRules semanticRules;
+    private final ImportedModels importedModels;
     private final ValidationOverrides validationOverrides;
     private final Version wantedNodeVespaVersion;
     private final Instant now;
@@ -98,6 +100,8 @@ public class DeployState implements ConfigDefinitionStore {
         this.zone = zone;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
         this.semanticRules = semanticRules; // TODO: Remove this by seeing how pagetemplates are propagated
+        this.importedModels = new ImportedModels(applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR));
+
         this.validationOverrides = applicationPackage.getValidationOverrides().map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
         this.wantedNodeVespaVersion = wantedNodeVespaVersion;
         this.now = now;
@@ -209,6 +213,9 @@ public class DeployState implements ConfigDefinitionStore {
     public QueryProfiles getQueryProfiles() { return queryProfiles; }
 
     public SemanticRules getSemanticRules() { return semanticRules; }
+
+    /** The (machine learned) models imported from the models/ directory, as an unmodifiable map indexed by model name */
+    public ImportedModels getImportedModels() { return importedModels; }
 
     public Version getWantedNodeVespaVersion() { return wantedNodeVespaVersion; }
 

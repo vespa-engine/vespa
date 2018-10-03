@@ -51,7 +51,7 @@ public class MessageTypePolicy implements DocumentProtocolRoutingPolicy, ConfigS
 
     @Override
     public void configure(MessagetyperouteselectorpolicyConfig cfg) {
-        Map<Integer, Route> h = new HashMap<Integer, Route>();
+        Map<Integer, Route> h = new HashMap<>();
         for (MessagetyperouteselectorpolicyConfig.Route selector : cfg.route()) {
             h.put(selector.messagetype(), Route.parse(selector.name()));
         }

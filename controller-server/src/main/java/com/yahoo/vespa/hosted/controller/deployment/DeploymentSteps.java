@@ -44,7 +44,7 @@ public class DeploymentSteps {
     }
 
     /** Returns job status sorted according to deployment spec */
-    public List<JobStatus> sortBy(Collection<JobStatus> jobStatus) {
+    public List<JobStatus> sortedJobs(Collection<JobStatus> jobStatus) {
         List<JobType> sortedJobs = jobs();
         return jobStatus.stream()
                         .sorted(comparingInt(job -> sortedJobs.indexOf(job.type())))
@@ -52,7 +52,7 @@ public class DeploymentSteps {
     }
 
     /** Returns deployments sorted according to declared zones */
-    public List<Deployment> sortBy2(Collection<Deployment> deployments) {
+    public List<Deployment> sortedDeployments(Collection<Deployment> deployments) {
         List<ZoneId> productionZones = spec.zones().stream()
                                            .filter(z -> z.region().isPresent())
                                            .map(z -> ZoneId.from(z.environment(), z.region().get()))
@@ -98,8 +98,7 @@ public class DeploymentSteps {
 
     /** Resolve job from deployment zone */
     private JobType toJob(DeploymentSpec.DeclaredZone zone) {
-        return JobType.from(system.get(), zone.environment(), zone.region().orElse(null))
-                      .orElseThrow(() -> new IllegalArgumentException("Invalid zone " + zone));
+        return JobType.from(system.get(), zone.environment(), zone.region().orElse(null));
     }
 
     /** Resolve jobs from steps */

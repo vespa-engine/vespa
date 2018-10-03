@@ -41,6 +41,7 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
      * values returned in the config.
      */
     public void setImplicitGroups(int implicitGroups) { this.implicitGroups = implicitGroups; }
+
     public void setExplicitGroups(int explicitGroups) { this.explicitGroups = explicitGroups; }
 
     public int initialRedundancy() { return initialRedundancy; }
@@ -72,4 +73,5 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
         distBuilder.searchablecopies(searchableCopies());
         builder.distribution(distBuilder);
     }
+
 }

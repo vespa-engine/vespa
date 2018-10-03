@@ -11,10 +11,13 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -38,7 +41,7 @@ public class SystemUpgraderTest {
 
     @Test
     public void upgrade_system() {
-        tester.controllerTester().zoneRegistry().setUpgradePolicy(
+        SystemUpgrader systemUpgrader = systemUpgrader(
                 UpgradePolicy.create()
                              .upgrade(zone1)
                              .upgradeInParallel(zone2, zone3)
@@ -53,7 +56,7 @@ public class SystemUpgraderTest {
         failNodeIn(zone1, SystemApplication.configServer);
         failNodeIn(zone3, SystemApplication.zone);
         tester.upgradeSystem(version1);
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         assertCurrentVersion(SystemApplication.configServer, version1, zone1, zone2, zone3, zone4);
         assertCurrentVersion(SystemApplication.zone, version1, zone1, zone2, zone3, zone4);
 
@@ -63,7 +66,7 @@ public class SystemUpgraderTest {
         assertControllerVersion(version2);
 
         // System upgrade starts
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.configServer, version2, zone1);
         // Other zones remain on previous version
         assertWantedVersion(SystemApplication.configServer, version1, zone2, zone3, zone4);
@@ -74,7 +77,7 @@ public class SystemUpgraderTest {
         completeUpgrade(SystemApplication.configServer, version2, zone1);
 
         // zone 1: zone-application upgrades
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.zone, version2, zone1);
         completeUpgrade(SystemApplication.zone, version2, zone1);
         assertTrue("Deployed zone application",
@@ -85,31 +88,34 @@ public class SystemUpgraderTest {
         assertWantedVersion(SystemApplication.zone, version1, zone2, zone3, zone4);
 
         // zone 2 and 3: upgrade does not start until zone 1 zone-application config converges
-        tester.systemUpgrader().maintain();
+        // TODO: Commented out for now, see comment in SystemApplication.configConvergedIn()
+        /*
+        systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.configServer, version1, zone2, zone3);
         convergeServices(SystemApplication.zone, zone1);
+        */
 
         // zone 2 and 3: zone-config-server upgrades, first in zone 2, then in zone 3
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.configServer, version2, zone2, zone3);
         assertWantedVersion(SystemApplication.configServer, version1, zone4);
         assertWantedVersion(SystemApplication.zone, version1, zone2, zone3, zone4);
         completeUpgrade(SystemApplication.configServer, version2, zone2);
 
         // zone-application starts upgrading in zone 2, while zone-config-server completes upgrade in zone 3
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.zone, version2, zone2);
         assertWantedVersion(SystemApplication.zone, version1, zone3);
         completeUpgrade(SystemApplication.configServer, version2, zone3);
 
         // zone 2 and 3: zone-application upgrades in parallel
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.zone, version2, zone2, zone3);
         completeUpgrade(SystemApplication.zone, version2, zone2, zone3);
         convergeServices(SystemApplication.zone, zone2, zone3);
 
         // zone 4: zone-config-server upgrades
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.configServer, version2, zone4);
         assertWantedVersion(SystemApplication.zone, version1, zone4);
         completeUpgrade(SystemApplication.configServer, version2, zone4);
@@ -119,26 +125,29 @@ public class SystemUpgraderTest {
         assertSystemVersion(version1);
 
         // zone 4: zone-application upgrades
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.zone, version2, zone4);
         completeUpgrade(SystemApplication.zone, version2, zone4);
 
         // zone 4: System version remains unchanged until config converges
+        // TODO: Commented out for now, see comment in SystemApplication.configConvergedIn()
+        /*
         tester.computeVersionStatus();
         assertSystemVersion(version1);
         convergeServices(SystemApplication.zone, zone4);
         tester.computeVersionStatus();
         assertSystemVersion(version2);
+        */
 
         // Next run does nothing as system is now upgraded
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.configServer, version2, zone1, zone2, zone3, zone4);
         assertWantedVersion(SystemApplication.zone, version2, zone1, zone2, zone3, zone4);
     }
 
     @Test
     public void upgrade_controller_with_non_converging_application() {
-        tester.controllerTester().zoneRegistry().setUpgradePolicy(UpgradePolicy.create().upgrade(zone1));
+        SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
 
         // Bootstrap system
         tester.configServer().bootstrap(Collections.singletonList(zone1), SystemApplication.configServer,
@@ -151,17 +160,21 @@ public class SystemUpgraderTest {
         tester.upgradeController(version2);
 
         // zone 1: System applications upgrade
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         completeUpgrade(SystemApplication.configServer, version2, zone1);
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         completeUpgrade(SystemApplication.zone, version2, zone1);
         tester.computeVersionStatus();
-        assertSystemVersion(version1); // Unchanged until zone-application converges
+        // TODO: Changed for now, see comment in SystemApplication.configConvergedIn()
+        //assertSystemVersion(version1); // Unchanged until zone-application converges
+        assertSystemVersion(version2);
 
         // Controller upgrades again
         Version version3 = Version.fromString("6.7");
         tester.upgradeController(version3);
-        assertSystemVersion(version1);
+        // TODO: Changed for now, see todo above
+        //assertSystemVersion(version1);
+        assertSystemVersion(version2);
         assertControllerVersion(version3);
 
         // zone 1: zone-application converges and system version changes
@@ -173,7 +186,7 @@ public class SystemUpgraderTest {
 
     @Test
     public void upgrade_system_containing_host_applications() {
-        tester.controllerTester().zoneRegistry().setUpgradePolicy(
+        SystemUpgrader systemUpgrader = systemUpgrader(
                 UpgradePolicy.create()
                              .upgrade(zone1)
                              .upgradeInParallel(zone2, zone3)
@@ -181,9 +194,9 @@ public class SystemUpgraderTest {
         );
 
         Version version1 = Version.fromString("6.5");
-        tester.configServer().bootstrap(Arrays.asList(zone1, zone2, zone3, zone4), SystemApplication.all());
+        tester.configServer().bootstrap(Arrays.asList(zone1, zone2, zone3, zone4), SystemApplication.all(), Optional.empty());
         tester.upgradeSystem(version1);
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         assertCurrentVersion(SystemApplication.all(), version1, zone1, zone2, zone3, zone4);
 
         // Controller upgrades
@@ -192,42 +205,42 @@ public class SystemUpgraderTest {
         assertControllerVersion(version2);
 
         // System upgrades in zone 1:
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         List<SystemApplication> allExceptZone = Arrays.asList(SystemApplication.configServerHost,
                                                               SystemApplication.proxyHost,
                                                               SystemApplication.configServer);
         completeUpgrade(allExceptZone, version2, zone1);
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         completeUpgrade(SystemApplication.zone, version2, zone1);
         convergeServices(SystemApplication.zone, zone1);
         assertWantedVersion(SystemApplication.all(), version1, zone2, zone3, zone4);
 
         // zone 2 and 3:
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         completeUpgrade(allExceptZone, version2, zone2, zone3);
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         completeUpgrade(SystemApplication.zone, version2, zone2, zone3);
         convergeServices(SystemApplication.zone, zone2, zone3);
         assertWantedVersion(SystemApplication.all(), version1, zone4);
 
         // zone 4:
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         completeUpgrade(allExceptZone, version2, zone4);
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         completeUpgrade(SystemApplication.zone, version2, zone4);
 
         // All done
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.all(), version2, zone1, zone2, zone3, zone4);
     }
 
     @Test
     public void never_downgrades_system() {
-        tester.controllerTester().zoneRegistry().setUpgradePolicy(UpgradePolicy.create().upgrade(zone1));
+        SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
 
         Version version = Version.fromString("6.5");
         tester.upgradeSystem(version);
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.configServer, version, zone1);
         assertWantedVersion(SystemApplication.zone, version, zone1);
 
@@ -235,7 +248,7 @@ public class SystemUpgraderTest {
         tester.upgradeController(Version.fromString("6.4"));
 
         // Wanted version for zone remains unchanged
-        tester.systemUpgrader().maintain();
+        systemUpgrader.maintain();
         assertWantedVersion(SystemApplication.configServer, version, zone1);
         assertWantedVersion(SystemApplication.zone, version, zone1);
     }
@@ -244,9 +257,9 @@ public class SystemUpgraderTest {
     private void completeUpgrade(SystemApplication application, Version version, ZoneId... zones) {
         assertWantedVersion(application, version, zones);
         for (ZoneId zone : zones) {
-            for (Node node : nodeRepository().list(zone, application.id(), SystemApplication.activeStates())) {
-                nodeRepository().add(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
-                                                    node.wantedVersion(), node.wantedVersion()));
+            for (Node node : listNodes(zone, application)) {
+                nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
+                                                              node.wantedVersion(), node.wantedVersion()));
             }
 
             assertCurrentVersion(application, version, zone);
@@ -269,8 +282,8 @@ public class SystemUpgraderTest {
             throw new IllegalArgumentException("No nodes allocated to " + application.id());
         }
         Node node = nodes.get(0);
-        nodeRepository().add(zone, new Node(node.hostname(), Node.State.failed, node.type(), node.owner(),
-                                            node.currentVersion(), node.wantedVersion()));
+        nodeRepository().putByHostname(zone, new Node(node.hostname(), Node.State.failed, node.type(), node.owner(),
+                                                      node.currentVersion(), node.wantedVersion()));
     }
 
     private void assertSystemVersion(Version version) {
@@ -300,14 +313,26 @@ public class SystemUpgraderTest {
     private void assertVersion(SystemApplication application, Version version, Function<Node, Version> versionField,
                                ZoneId... zones) {
         for (ZoneId zone : zones) {
-            for (Node node : nodeRepository().list(zone, application.id(), SystemApplication.activeStates())) {
+            for (Node node : listNodes(zone, application)) {
                 assertEquals(application + " version", version, versionField.apply(node));
             }
         }
     }
 
+    private List<Node> listNodes(ZoneId zone, SystemApplication application) {
+        return nodeRepository().list(zone, application.id()).stream()
+                               .filter(SystemUpgrader::eligibleForUpgrade)
+                               .collect(Collectors.toList());
+    }
+
     private NodeRepositoryMock nodeRepository() {
         return tester.controllerTester().configServer().nodeRepository();
+    }
+
+    private SystemUpgrader systemUpgrader(UpgradePolicy upgradePolicy) {
+        tester.controllerTester().zoneRegistry().setUpgradePolicy(upgradePolicy);
+        return new SystemUpgrader(tester.controller(), Duration.ofDays(1),
+                                  new JobControl(tester.controllerTester().curator()));
     }
 
 }

@@ -69,7 +69,7 @@ public:
     {}
 
     virtual void
-    startWord(const vespalib::stringref &word) override
+    startWord(vespalib::stringref word) override
     {
         assert(_insideField);
         assert(!_insideWord);
@@ -250,6 +250,7 @@ class MockDictionary
     uint32_t _fieldId;
 
 public:
+    ~MockDictionary();
     void
     setNextWord(const vespalib::string &word)
     {
@@ -295,6 +296,7 @@ public:
     }
 };
 
+MockDictionary::~MockDictionary() = default;
 
 /**
  * MockWordStoreScan is a helper class to ensure that previous word is
@@ -314,8 +316,8 @@ public:
           _word1(),
           _prevWord(&_word0),
           _word(&_word1)
-    {
-    }
+    { }
+    ~MockWordStoreScan();
 
     const vespalib::string &
     getWord() const
@@ -332,6 +334,7 @@ public:
     }
 };
 
+MockWordStoreScan::~MockWordStoreScan() = default;
 /**
  * MyInserter performs insertions on both a mockup version of memory index
  * and a real memory index.  Mockup version is used to calculate expected
@@ -355,6 +358,7 @@ public:
     {
         _features.addNextOcc(0, 0, 1, 1);
     }
+    ~MyInserter();
 
     void
     setNextWord(const vespalib::string &word)
@@ -433,6 +437,7 @@ public:
     Dictionary &getDict() { return _d; }
 };
 
+MyInserter::~MyInserter() = default;
 void
 myremove(uint32_t docId, DocumentInverter &inv, Dictionary &d,
          ISequencedTaskExecutor &invertThreads)
@@ -452,7 +457,7 @@ public:
     {
     }
 
-    WrapInserter &word(const vespalib::stringref &word_)
+    WrapInserter &word(vespalib::stringref word_)
     {
         _inserter.setNextWord(word_);
         return *this;

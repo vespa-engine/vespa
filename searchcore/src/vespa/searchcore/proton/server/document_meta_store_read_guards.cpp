@@ -6,7 +6,7 @@
 
 namespace proton {
 
-DocumentMetaStoreReadGuards::DocumentMetaStoreReadGuards(DocumentSubDBCollection &subDBs)
+DocumentMetaStoreReadGuards::DocumentMetaStoreReadGuards(const DocumentSubDBCollection &subDBs)
     : readydms(subDBs.getReadySubDB()->getDocumentMetaStoreContext().getReadGuard()),
       notreadydms(subDBs.getNotReadySubDB()->getDocumentMetaStoreContext().getReadGuard()),
       remdms(subDBs.getRemSubDB()->getDocumentMetaStoreContext().getReadGuard())

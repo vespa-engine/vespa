@@ -24,9 +24,10 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 /**
  * A transposed view for cloud.config.model.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class ServiceModel {
+
     private static final String CLUSTERCONTROLLER_TYPENAME = "container-clustercontroller";
 
     private static final String CONTENT_CLUSTER_TYPENAME = "content";
@@ -61,9 +62,8 @@ public final class ServiceModel {
                 List<String> identifiers = s.getIdentifiers();
                 for (String identifier : identifiers) {
                     if (seenIdentifiers.containsKey(identifier)) {
-                        throw new RuntimeException(
-                                "Congrats, you have a publishable result. We have a very unexpected hash collision" + " between "
-                                        + seenIdentifiers.get(identifier) + " and " + s + ".");
+                        throw new RuntimeException("Hash collision" + " between " +
+                                                   seenIdentifiers.get(identifier) + " and " + s + ".");
                     }
                     seenIdentifiers.put(identifier, s);
                 }
@@ -74,9 +74,8 @@ public final class ServiceModel {
         servicesMap = servicesBuilder.build();
     }
 
-    private static void addService(Table<String, String, List<Service>> services,
-            String hostName,
-            com.yahoo.vespa.serviceview.bindings.Service s) {
+    private static void addService(Table<String, String, List<Service>> services, String hostName,
+                                   com.yahoo.vespa.serviceview.bindings.Service s) {
         boolean hasStateApi = false;
         int statePort = 0;
         List<Integer> ports = new ArrayList<>(s.ports.size());

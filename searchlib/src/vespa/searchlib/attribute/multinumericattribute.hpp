@@ -184,12 +184,12 @@ MultiValueNumericAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
 
 template <typename B, typename M>
 std::unique_ptr<AttributeSaver>
-MultiValueNumericAttribute<B, M>::onInitSave()
+MultiValueNumericAttribute<B, M>::onInitSave(vespalib::stringref fileName)
 {
     vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().
                                              takeGuard());
     return std::make_unique<MultiValueNumericAttributeSaver<MultiValueType>>
-        (std::move(guard), this->createAttributeHeader(), this->_mvMapping);
+        (std::move(guard), this->createAttributeHeader(fileName), this->_mvMapping);
 }
 
 template <typename B, typename M>

@@ -209,7 +209,9 @@ TEST("require that no limiter has no behavior") {
 TEST("require that the match phase limiter may chose not to limit the query") {
     FakeRequestContext requestContext;
     MockSearchable searchable;
-    MatchPhaseLimiter yes_limiter(10000, searchable, requestContext, "limiter_attribute", 1000, true, 1.0, 0.2, 1.0, "", 1, 10.0, AttributeLimiter::LOOSE);
+    MatchPhaseLimiter yes_limiter(10000, searchable, requestContext,
+                                  DegradationParams("limiter_attribute", 1000, true, 1.0, 0.2, 1.0),
+                                  DiversityParams("", 1, 10.0, AttributeLimiter::LOOSE));
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
     EXPECT_TRUE(limiter.is_enabled());
     EXPECT_EQUAL(20u, limiter.sample_hits_per_thread(10));
@@ -229,7 +231,9 @@ struct MaxFilterCoverageLimiterFixture {
     MockSearchable searchable;
 
     MatchPhaseLimiter::UP getMaxFilterCoverageLimiter() {
-        MatchPhaseLimiter::UP yes_limiter(new MatchPhaseLimiter(10000, searchable, requestContext, "limiter_attribute", 10000, true, 0.05, 1.0, 1.0, "", 1, 10.0, AttributeLimiter::LOOSE));
+        auto yes_limiter = std::make_unique<MatchPhaseLimiter>(10000, searchable, requestContext,
+                                                               DegradationParams("limiter_attribute", 10000, true, 0.05, 1.0, 1.0),
+                                                               DiversityParams("", 1, 10.0, AttributeLimiter::LOOSE));
         MaybeMatchPhaseLimiter &limiter = *yes_limiter;
         EXPECT_TRUE(limiter.is_enabled());
         EXPECT_EQUAL(1000u, limiter.sample_hits_per_thread(10));
@@ -271,7 +275,9 @@ TEST_F("require that the match phase limiter may chose to limit the query even w
 TEST("require that the match phase limiter is able to pre-limit the query") {
     FakeRequestContext requestContext;
     MockSearchable searchable;
-    MatchPhaseLimiter yes_limiter(10000, searchable, requestContext, "limiter_attribute", 500, true, 1.0, 0.2, 1.0, "", 1, 10.0, AttributeLimiter::LOOSE);
+    MatchPhaseLimiter yes_limiter(10000, searchable, requestContext,
+                                  DegradationParams("limiter_attribute", 500, true, 1.0, 0.2, 1.0),
+                                  DiversityParams("", 1, 10.0, AttributeLimiter::LOOSE));
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
     EXPECT_TRUE(limiter.is_enabled());
     EXPECT_EQUAL(12u, limiter.sample_hits_per_thread(10));
@@ -301,7 +307,9 @@ TEST("require that the match phase limiter is able to pre-limit the query") {
 TEST("require that the match phase limiter is able to post-limit the query") {
     MockSearchable searchable;
     FakeRequestContext requestContext;
-    MatchPhaseLimiter yes_limiter(10000, searchable, requestContext,"limiter_attribute", 1500, true, 1.0, 0.2, 1.0, "", 1, 10.0, AttributeLimiter::LOOSE);
+    MatchPhaseLimiter yes_limiter(10000, searchable, requestContext,
+                                  DegradationParams("limiter_attribute", 1500, true, 1.0, 0.2, 1.0),
+                                  DiversityParams("", 1, 10.0, AttributeLimiter::LOOSE));
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
     EXPECT_TRUE(limiter.is_enabled());
     EXPECT_EQUAL(30u, limiter.sample_hits_per_thread(10));
@@ -331,7 +339,9 @@ void verifyDiversity(AttributeLimiter::DiversityCutoffStrategy strategy)
 {
     MockSearchable searchable;
     FakeRequestContext requestContext;
-    MatchPhaseLimiter yes_limiter(10000, searchable, requestContext,"limiter_attribute", 500, true, 1.0, 0.2, 1.0, "category", 10, 13.1, strategy);
+    MatchPhaseLimiter yes_limiter(10000, searchable, requestContext,
+                                  DegradationParams("limiter_attribute", 500, true, 1.0, 0.2, 1.0),
+                                  DiversityParams("category", 10, 13.1, strategy));
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
     SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.1, 100000);
     limiter.updateDocIdSpaceEstimate(1000, 9000);

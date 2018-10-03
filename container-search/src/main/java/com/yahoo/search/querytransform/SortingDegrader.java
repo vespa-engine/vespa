@@ -37,7 +37,6 @@ import java.util.Set;
 // We are checking if there is a grouping expression, not if there is a raw grouping instruction property,
 // so we must run after the property is transferred to a grouping expression
 @After(GroupingQueryParser.SELECT_PARAMETER_PARSING)
-
 public class SortingDegrader extends Searcher {
 
     /** Set this to false in query.properties to turn off degrading. Default: on */
@@ -56,7 +55,7 @@ public class SortingDegrader extends Searcher {
     private boolean shouldBeDegraded(Query query, IndexFacts.Session indexFacts) {
         if (query.getRanking().getSorting() == null) return false;
         if (query.getRanking().getSorting().fieldOrders().isEmpty()) return false;
-        if ( ! GroupingRequest.getRequests(query).isEmpty()) return false;
+        if ( ! query.getSelect().getGrouping().isEmpty()) return false;
         if ( ! query.properties().getBoolean(DEGRADING, true)) return false;
 
         Index index = indexFacts.getIndex(query.getRanking().getSorting().fieldOrders().get(0).getFieldName());

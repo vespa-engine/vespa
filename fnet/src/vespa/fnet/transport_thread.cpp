@@ -31,15 +31,6 @@ struct Sync : public FNET_IExecutable
 
 } // namespace<unnamed>
 
-#ifndef IAM_DOXYGEN
-void
-FNET_TransportThread::StatsTask::PerformTask()
-{
-    _transport->UpdateStats();
-    Schedule(5.0);
-}
-#endif
-
 void
 FNET_TransportThread::AddComponent(FNET_IOComponent *comp)
 {
@@ -161,26 +152,30 @@ FNET_TransportThread::DiscardEvent(FNET_ControlPacket *cpacket,
 
 
 void
-FNET_TransportThread::UpdateStats()
+FNET_TransportThread::handle_add_cmd(FNET_IOComponent *ioc)
 {
-    _now.SetNow(); // trade some overhead for better stats
-    double ms = _now.MilliSecs() - _statTime.MilliSecs();
-    _statTime = _now;
-    for (FNET_IOComponent *comp = _componentsHead;
-         comp != nullptr; comp = comp->_ioc_next)
-    {
-        auto guard(comp->getGuard());
-        comp->FlushDirectWriteStats();
+    if (ioc->handle_add_event()) {
+        AddComponent(ioc);
+        ioc->_flags._ioc_added = true;
+        ioc->attach_selector(_selector);
+    } else {
+        ioc->Close();
+        AddDeleteComponent(ioc);
     }
-    {
-        std::lock_guard<std::mutex> guard(_lock);
-        _stats.Update(&_counters, ms / 1000.0);
-    }
-    _counters.Clear();
-
-    if (_config._logStats)
-        _stats.Log();
 }
+
+
+void
+FNET_TransportThread::handle_close_cmd(FNET_IOComponent *ioc)
+{
+    if (ioc->_flags._ioc_added) {
+        RemoveComponent(ioc);
+        ioc->SubRef();
+    }
+    ioc->Close();
+    AddDeleteComponent(ioc);
+}
+
 
 extern "C" {
 
@@ -209,10 +204,6 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
       _startTime(),
       _now(),
       _scheduler(&_now),
-      _counters(),
-      _stats(),
-      _statsTask(&_scheduler, this),
-      _statTime(),
       _config(),
       _componentsHead(nullptr),
       _timeOutHead(nullptr),
@@ -430,8 +421,6 @@ FNET_TransportThread::InitEventLoop()
     }
     _now.SetNow();
     _startTime = _now;
-    _statTime  = _now;
-    _statsTask.Schedule(5.0);
     return true;
 }
 
@@ -441,7 +430,7 @@ FNET_TransportThread::handle_wakeup()
 {
     {
         std::lock_guard<std::mutex> guard(_lock);
-        CountEvent(_queue.FlushPackets_NoLock(&_myQueue));
+        _queue.FlushPackets_NoLock(&_myQueue);
     }
 
     FNET_Context context;
@@ -460,14 +449,7 @@ FNET_TransportThread::handle_wakeup()
 
         switch (packet->GetCommand()) {
         case FNET_ControlPacket::FNET_CMD_IOC_ADD:
-            if (context._value.IOC->handle_add_event()) {
-                AddComponent(context._value.IOC);
-                context._value.IOC->_flags._ioc_added = true;
-                context._value.IOC->attach_selector(_selector);
-            } else {
-                context._value.IOC->Close();
-                AddDeleteComponent(context._value.IOC);
-            }
+            handle_add_cmd(context._value.IOC);
             break;
         case FNET_ControlPacket::FNET_CMD_IOC_ENABLE_READ:
             context._value.IOC->EnableReadEvent(true);
@@ -479,19 +461,18 @@ FNET_TransportThread::handle_wakeup()
             break;
         case FNET_ControlPacket::FNET_CMD_IOC_ENABLE_WRITE:
             context._value.IOC->EnableWriteEvent(true);
-            context._value.IOC->SubRef();
+            if (context._value.IOC->HandleWriteEvent()) {
+                context._value.IOC->SubRef();
+            } else {
+                handle_close_cmd(context._value.IOC);
+            }
             break;
         case FNET_ControlPacket::FNET_CMD_IOC_DISABLE_WRITE:
             context._value.IOC->EnableWriteEvent(false);
             context._value.IOC->SubRef();
             break;
         case FNET_ControlPacket::FNET_CMD_IOC_CLOSE:
-            if (context._value.IOC->_flags._ioc_added) {
-                RemoveComponent(context._value.IOC);
-                context._value.IOC->SubRef();
-            }
-            context._value.IOC->Close();
-            AddDeleteComponent(context._value.IOC);
+            handle_close_cmd(context._value.IOC);
             break;
         }
     }
@@ -540,7 +521,6 @@ FNET_TransportThread::EventLoopIteration()
 
         // obtain I/O events
         _selector.poll(msTimeout);
-        CountEventLoop();
 
         // sample current time (performed once per event loop iteration)
         _now.SetNow();
@@ -554,7 +534,6 @@ FNET_TransportThread::EventLoopIteration()
 #endif
 
         // handle wakeup and io-events
-        CountIOEvent(_selector.num_events());
         _selector.dispatch(*this);
 
         // handle IOC time-outs
@@ -584,9 +563,6 @@ FNET_TransportThread::EventLoopIteration()
         return true;
     if (_finished)
         return false;
-
-    // unschedule statistics task
-    _statsTask.Kill();
 
     // flush event queue
     {

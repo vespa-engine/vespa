@@ -111,14 +111,14 @@ Parameters* Parameters::clone() const
     return new Parameters(*this);
 }
 
-vespalib::stringref Parameters::get(const vespalib::stringref& id, const vespalib::stringref& def) const
+vespalib::stringref Parameters::get(vespalib::stringref id, vespalib::stringref def) const
 {
     ParametersMap::const_iterator it = _parameters.find(id);
     if (it == _parameters.end()) return def;
     return it->second;
 }
 
-bool Parameters::get(const KeyT & id, ValueRef & v ) const
+bool Parameters::lookup(KeyT id, ValueRef & v ) const
 {
     ParametersMap::const_iterator it = _parameters.find(id);
     if (it == _parameters.end()) return false;
@@ -160,17 +160,17 @@ std::string Parameters::toString() const
     return ret;
 }
 
-template void vdslib::Parameters::set(const vespalib::stringref &, int32_t);
-template void vdslib::Parameters::set(const vespalib::stringref &, int64_t);
-template void vdslib::Parameters::set(const vespalib::stringref &, uint64_t);
-template void vdslib::Parameters::set(const vespalib::stringref &, double);
-template void vdslib::Parameters::set(const vespalib::stringref &, const char *);
-template void vdslib::Parameters::set(const vespalib::stringref &, vespalib::string);
-template void vdslib::Parameters::set(const vespalib::stringref &, std::string);
-template int32_t vdslib::Parameters::get(const vespalib::stringref &, int32_t) const;
-template int64_t vdslib::Parameters::get(const vespalib::stringref &, int64_t) const;
-template uint64_t vdslib::Parameters::get(const vespalib::stringref &, uint64_t) const;
-template double vdslib::Parameters::get(const vespalib::stringref &, double) const;
-template std::string vdslib::Parameters::get(const vespalib::stringref &, std::string) const;
+template void vdslib::Parameters::set(vespalib::stringref , int32_t);
+template void vdslib::Parameters::set(vespalib::stringref , int64_t);
+template void vdslib::Parameters::set(vespalib::stringref , uint64_t);
+template void vdslib::Parameters::set(vespalib::stringref , double);
+template void vdslib::Parameters::set(vespalib::stringref , const char *);
+template void vdslib::Parameters::set(vespalib::stringref , vespalib::string);
+template void vdslib::Parameters::set(vespalib::stringref , std::string);
+template int32_t vdslib::Parameters::get(vespalib::stringref , int32_t) const;
+template int64_t vdslib::Parameters::get(vespalib::stringref , int64_t) const;
+template uint64_t vdslib::Parameters::get(vespalib::stringref , uint64_t) const;
+template double vdslib::Parameters::get(vespalib::stringref , double) const;
+template std::string vdslib::Parameters::get(vespalib::stringref , std::string) const;
 
 VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, vdslib::Parameters::Value);

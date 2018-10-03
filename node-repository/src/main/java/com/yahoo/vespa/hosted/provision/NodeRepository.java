@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
+import com.yahoo.vespa.hosted.provision.provisioning.OsVersions;
 import com.yahoo.vespa.hosted.provision.restapi.v2.NotFoundException;
 
 import java.time.Clock;
@@ -73,12 +74,12 @@ import java.util.stream.Stream;
 public class NodeRepository extends AbstractComponent {
 
     private final CuratorDatabaseClient db;
-    private final Curator curator;
     private final Clock clock;
     private final Zone zone;
     private final NodeFlavors flavors;
     private final NameResolver nameResolver;
     private final DockerImage dockerImage;
+    private final OsVersions osVersions;
 
     /**
      * Creates a node repository from a zookeeper provider.
@@ -96,12 +97,12 @@ public class NodeRepository extends AbstractComponent {
     public NodeRepository(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, NameResolver nameResolver,
                           DockerImage dockerImage, boolean useCuratorClientCache) {
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache);
-        this.curator = curator;
         this.zone = zone;
         this.clock = clock;
         this.flavors = flavors;
         this.nameResolver = nameResolver;
         this.dockerImage = dockerImage;
+        this.osVersions = new OsVersions(this.db);
 
         // read and write all nodes to make sure they are stored in the latest version of the serialized format
         for (Node.State state : Node.State.values())
@@ -116,6 +117,9 @@ public class NodeRepository extends AbstractComponent {
 
     /** @return The name resolver used to resolve hostname and ip addresses */
     public NameResolver nameResolver() { return nameResolver; }
+
+    /** Returns the OS versions to use for nodes in this */
+    public OsVersions osVersions() { return osVersions; }
 
     // ---------------- Query API ----------------------------------------------------------------
 
@@ -179,8 +183,10 @@ public class NodeRepository extends AbstractComponent {
         // For all cases below, trust:
         // - nodes in same application
         // - config servers
+        // - ssh
         node.allocation().ifPresent(allocation -> trustedNodes.addAll(candidates.owner(allocation.owner()).asList()));
         trustedNodes.addAll(candidates.nodeType(NodeType.config).asList());
+        trustedPorts.add(22);
 
         switch (node.type()) {
             case tenant:

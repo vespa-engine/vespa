@@ -205,26 +205,26 @@ void SearchVisitor::init(const Parameters & params)
     _attrMan.add(_documentIdAttributeBacking);
     _attrMan.add(_rankAttributeBacking);
     Parameters::ValueRef valueRef;
-    if ( params.get("summaryclass", valueRef) ) {
+    if ( params.lookup("summaryclass", valueRef) ) {
         _summaryClass = vespalib::string(valueRef.data(), valueRef.size());
         LOG(debug, "Received summary class: %s", _summaryClass.c_str());
     }
 
     size_t wantedSummaryCount(10);
-    if (params.get("summarycount", valueRef) ) {
+    if (params.lookup("summarycount", valueRef) ) {
         vespalib::string tmp(valueRef.data(), valueRef.size());
         wantedSummaryCount = strtoul(tmp.c_str(), nullptr, 0);
         LOG(debug, "Received summary count: %ld", wantedSummaryCount);
     }
     _queryResult->getSearchResult().setWantedHitCount(wantedSummaryCount);
 
-    if (params.get("rankprofile", valueRef) ) {
+    if (params.lookup("rankprofile", valueRef) ) {
         vespalib::string tmp(valueRef.data(), valueRef.size());
         _rankController.setRankProfile(tmp);
         LOG(debug, "Received rank profile: %s", _rankController.getRankProfile().c_str());
     }
 
-    if (params.get("queryflags", valueRef) ) {
+    if (params.lookup("queryflags", valueRef) ) {
         vespalib::string tmp(valueRef.data(), valueRef.size());
         LOG(debug, "Received query flags: 0x%lx", strtoul(tmp.c_str(), nullptr, 0));
         uint32_t queryFlags = strtoul(tmp.c_str(), nullptr, 0);
@@ -232,7 +232,7 @@ void SearchVisitor::init(const Parameters & params)
         LOG(debug, "QFLAG_DUMP_FEATURES: %s", _rankController.getDumpFeatures() ? "true" : "false");
     }
 
-    if (params.get("rankproperties", valueRef) && valueRef.size() > 0) {
+    if (params.lookup("rankproperties", valueRef) && valueRef.size() > 0) {
         LOG(spam, "Received rank properties of %zd bytes", valueRef.size());
         uint32_t len = static_cast<uint32_t>(valueRef.size());
         char * data = const_cast<char *>(valueRef.data());
@@ -259,7 +259,7 @@ void SearchVisitor::init(const Parameters & params)
         LOG(debug, "No rank properties received");
     }
 
-    if (params.get("rankprofile", valueRef)) {
+    if (params.lookup("rankprofile", valueRef)) {
         vespalib::string tmp(valueRef.data(), valueRef.size());
         _summaryGenerator.getDocsumState()._args.SetRankProfile(tmp);
     }
@@ -270,26 +270,26 @@ void SearchVisitor::init(const Parameters & params)
     }
 
     vespalib::string location;
-    if (params.get("location", valueRef)) {
+    if (params.lookup("location", valueRef)) {
         location = vespalib::string(valueRef.data(), valueRef.size());
         LOG(debug, "Location = '%s'", location.c_str());
         _summaryGenerator.getDocsumState()._args.SetLocation(valueRef.size(), (const char*)valueRef.data());
     }
 
     Parameters::ValueRef searchClusterBlob;
-    if (params.get("searchcluster", searchClusterBlob)) {
+    if (params.lookup("searchcluster", searchClusterBlob)) {
         LOG(spam, "Received searchcluster blob of %zd bytes", searchClusterBlob.size());
         vespalib::string searchCluster(searchClusterBlob.data(), searchClusterBlob.size());
         _vsmAdapter = _env.getVSMAdapter(searchCluster);
 
-        if ( params.get("sort", valueRef) ) {
+        if ( params.lookup("sort", valueRef) ) {
             search::uca::UcaConverterFactory ucaFactory;
             _sortSpec = search::common::SortSpec(vespalib::string(valueRef.data(), valueRef.size()), ucaFactory);
             LOG(debug, "Received sort specification: '%s'", _sortSpec.getSpec().c_str());
         }
 
         Parameters::ValueRef queryBlob;
-        if ( params.get("query", queryBlob) ) {
+        if ( params.lookup("query", queryBlob) ) {
             LOG(spam, "Received query blob of %zu bytes", queryBlob.size());
             VISITOR_TRACE(9, vespalib::make_string("Setting up for query blob of %zu bytes", queryBlob.size()));
             QueryTermDataFactory addOnFactory;
@@ -329,7 +329,7 @@ void SearchVisitor::init(const Parameters & params)
             LOG(warning, "No query received");
         }
 
-        if (params.get("aggregation", valueRef) ) {
+        if (params.lookup("aggregation", valueRef) ) {
             std::vector<char> newAggrBlob;
             newAggrBlob.resize(valueRef.size());
             memcpy(&newAggrBlob[0], valueRef.data(), newAggrBlob.size());
@@ -341,7 +341,7 @@ void SearchVisitor::init(const Parameters & params)
         LOG(warning, "No searchcluster specified");
     }
 
-    if ( params.get("unique", valueRef) ) {
+    if ( params.lookup("unique", valueRef) ) {
         LOG(spam, "Received unique specification of %zd bytes", valueRef.size());
     } else {
         LOG(debug, "No unique specification received");

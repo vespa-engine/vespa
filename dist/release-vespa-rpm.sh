@@ -19,6 +19,16 @@ readonly CURRENT_BRANCH=$(git branch | grep "^\*" | cut -d' ' -f2)
 git checkout master
 git pull --rebase
 
+# Update the VERSION file on master to be the next releasable version
+echo "$VERSION" | awk -F. '{print $1"."($2+1)".0"}' > VERSION
+git commit -am "Updating VERSION file to next releasable minor version."
+for i in 1 2 3; do
+  if git push; then
+    break;
+  fi
+  git pull --rebase
+done
+
 # Delete existing branch if exists and create new one
 git push --delete origin $RPM_BRANCH &> /dev/null || true
 git branch -D $RPM_BRANCH &> /dev/null || true 

@@ -70,7 +70,7 @@ public:
     /**
        Adds a string to the buffer.
     */
-    void putString(const vespalib::stringref & v);
+    void putString(vespalib::stringref v);
 
     /**
        Adds a single byte to the buffer.

@@ -5,7 +5,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParser;
-import com.yahoo.searchlib.rankingexpression.parser.TokenMgrError;
+import com.yahoo.searchlib.rankingexpression.parser.TokenMgrException;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.SerializationContext;
 import com.yahoo.tensor.TensorType;
@@ -177,8 +177,18 @@ public class RankingExpression implements Serializable {
         try {
             return new RankingExpressionParser(reader).rankingExpression();
         }
-        catch (TokenMgrError e) {
+        catch (TokenMgrException e) {
             throw new ParseException(e.getMessage());
+        }
+    }
+
+    /** Returns a deep copy of this expression */
+    public RankingExpression copy() {
+        try {
+            return new RankingExpression(name, root.toString());
+        }
+        catch (ParseException e) {
+            throw new RuntimeException("Programming error: Could not parse serialized expression", e);
         }
     }
 
@@ -240,12 +250,12 @@ public class RankingExpression implements Serializable {
     /**
      * Creates the necessary rank properties required to implement this expression.
      *
-     * @param macros the expression macros to expand.
-     * @return a list of named rank properties required to implement this expression.
+     * @param functions the expression functions to expand
+     * @return a list of named rank properties required to implement this expression
      */
-    public Map<String, String> getRankProperties(List<ExpressionFunction> macros) {
+    public Map<String, String> getRankProperties(List<ExpressionFunction> functions) {
         Deque<String> path = new LinkedList<>();
-        SerializationContext context = new SerializationContext(macros);
+        SerializationContext context = new SerializationContext(functions);
         String serializedRoot = root.toString(new StringBuilder(), context, path, null).toString();
         Map<String, String> serializedExpressions = context.serializedFunctions();
         serializedExpressions.put(propertyName(name), serializedRoot);

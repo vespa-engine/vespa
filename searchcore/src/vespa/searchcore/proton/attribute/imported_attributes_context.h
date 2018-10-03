@@ -7,13 +7,12 @@
 #include <mutex>
 #include <unordered_map>
 
-namespace search {
-class AttributeGuard;
-namespace attribute {
-class AttributeReadGuard;
-class IAttributeVector;
-class ImportedAttributeVector;
-}}
+namespace search { class AttributeGuard; }
+namespace search::attribute {
+    class AttributeReadGuard;
+    class IAttributeVector;
+    class ImportedAttributeVector;
+}
 
 namespace proton {
 
@@ -30,6 +29,7 @@ private:
     using AttributeReadGuard = search::attribute::AttributeReadGuard;
     using IAttributeVector = search::attribute::IAttributeVector;
     using ImportedAttributeVector = search::attribute::ImportedAttributeVector;
+    using IAttributeFunctor = search::attribute::IAttributeFunctor;
 
     using AttributeCache = std::unordered_map<vespalib::string, std::unique_ptr<AttributeReadGuard>, vespalib::hash<vespalib::string>>;
     using LockGuard = std::lock_guard<std::mutex>;
@@ -39,20 +39,20 @@ private:
     mutable AttributeCache _enumGuardedAttributes;
     mutable std::mutex _cacheMutex;
 
-    const IAttributeVector *getOrCacheAttribute(const vespalib::string &name,
-                                                AttributeCache &attributes,
-                                                bool stableEnumGuard,
-                                                const LockGuard &) const;
+    const IAttributeVector *getOrCacheAttribute(const vespalib::string &name, AttributeCache &attributes,
+                                                bool stableEnumGuard, const LockGuard &) const;
 
 public:
     ImportedAttributesContext(const ImportedAttributesRepo &repo);
-    ~ImportedAttributesContext();
+    ~ImportedAttributesContext() override;
 
     // Implements search::attribute::IAttributeContext
-    virtual const IAttributeVector *getAttribute(const vespalib::string &name) const override;
-    virtual const IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const override;
-    virtual void getAttributeList(std::vector<const IAttributeVector *> &list) const override;
-    virtual void releaseEnumGuards() override;
+    const IAttributeVector *getAttribute(const vespalib::string &name) const override;
+    const IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const override;
+    void getAttributeList(std::vector<const IAttributeVector *> &list) const override;
+    void releaseEnumGuards() override;
+
+    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
 };
 
 }

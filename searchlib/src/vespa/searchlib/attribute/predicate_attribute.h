@@ -55,8 +55,7 @@ public:
     uint32_t clearDoc(DocId doc_id) override;
     uint32_t getValueCount(DocId doc) const override;
 
-    void updateValue(uint32_t doc_id,
-                     const document::PredicateFieldValue &value);
+    void updateValue(uint32_t doc_id, const document::PredicateFieldValue &value);
 
     /**
      * Will return a handle with a pointer to the min_features and how many there are.
@@ -97,8 +96,7 @@ public:
     static constexpr uint8_t MIN_FEATURE_FILL = 255;
     static constexpr uint32_t PREDICATE_ATTRIBUTE_VERSION = 2;
 
-    virtual uint32_t getVersion() const override;
-
+    uint32_t getVersion() const override;
 };
 
 }  // namespace search

@@ -72,11 +72,6 @@ public class ClusterMembership {
         return new ClusterMembership(cluster, index, false);
     }
 
-    // TODO: Remove after April 2018
-    public ClusterMembership changeCluster(ClusterSpec newCluster) {
-        return with(newCluster);
-    }
-
     public ClusterMembership with(ClusterSpec newCluster) {
         return new ClusterMembership(newCluster, index, retired);
     }

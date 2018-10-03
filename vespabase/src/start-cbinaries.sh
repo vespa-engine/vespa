@@ -92,7 +92,7 @@ check_bname_in_value () {
 
 configure_valgrind () {
     no_valgrind=true
-    if which valgrind >/dev/null; then
+    if which valgrind >/dev/null 2>&1; then
         if check_bname_in_value $VESPA_USE_VALGRIND; then
             no_valgrind=false
             valgrind_log=$VESPA_HOME/tmp/valgrind.$bname.log.$$

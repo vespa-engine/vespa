@@ -31,18 +31,21 @@ public:
      * Overwrites any label already bound to that dimension.
      **/
     PointBuilder &&bind(Dimension dimension, Label label) &&;
+    PointBuilder &bind(Dimension dimension, Label label) &;
 
     /**
      * Bind a dimension to a label.
      * Convenience method that converts the label value.
      **/
     PointBuilder &&bind(Dimension dimension, LabelValue label) &&;
+    PointBuilder &bind(Dimension dimension, LabelValue label) &;
 
     /**
      * Bind a dimension to a label.
      * Convenience method that converts both the dimension name and the label value.
      **/
     PointBuilder &&bind(DimensionName dimension, LabelValue label) &&;
+    PointBuilder &bind(DimensionName dimension, LabelValue label) &;
 
     /** make a Point from the builder */
     Point build();

@@ -9,20 +9,21 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * A Zones.List implementation which assumes all zones are controllerManaged.
+ * A ZoneList implementation which assumes all zones are controllerManaged.
  *
  * @author jonmv
  */
 public class ZoneFilterMock implements ZoneList {
 
-    private final java.util.List<ZoneId> zones;
+    private final List<ZoneId> zones;
     private final boolean negate;
 
-    private ZoneFilterMock(java.util.List<ZoneId> zones, boolean negate) {
+    private ZoneFilterMock(List<ZoneId> zones, boolean negate) {
         this.negate = negate;
         this.zones = zones;
     }
@@ -67,7 +68,7 @@ public class ZoneFilterMock implements ZoneList {
     }
 
     @Override
-    public java.util.List<ZoneId> ids() {
+    public List<ZoneId> ids() {
         return Collections.unmodifiableList(zones);
     }
 

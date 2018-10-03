@@ -15,7 +15,6 @@
 #include "removedocumentsoperation.h"
 #include "removeoperation.h"
 #include "splitbucketoperation.h"
-#include "spoolerreplayoperation.h"
 #include "updateoperation.h"
 #include "wipehistoryoperation.h"
 

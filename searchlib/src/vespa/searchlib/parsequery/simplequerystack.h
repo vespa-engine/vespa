@@ -93,7 +93,7 @@ public:
      * @param theBuf The querystack encoded buffer.
      * @return a fresh string
      */
-    static vespalib::string StackbufToString(const vespalib::stringref &theBuf);
+    static vespalib::string StackbufToString(vespalib::stringref theBuf);
 };
 
 } // namespace search

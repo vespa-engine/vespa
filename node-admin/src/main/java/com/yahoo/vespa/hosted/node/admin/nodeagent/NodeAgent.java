@@ -18,7 +18,16 @@ public interface NodeAgent {
      */
     boolean setFrozen(boolean frozen);
 
+    /**
+     * Stop services running on node. Depending on the state of the node, {@link #suspend()} might need to be
+     * called before calling this method.
+     */
     void stopServices();
+
+    /**
+     * Suspend node. Take node offline (e.g. take node out of VIP, drain traffic, prepare for restart etc.)
+     */
+    void suspend();
 
     /**
      * Returns a map containing all relevant NodeAgent variables and their current values.

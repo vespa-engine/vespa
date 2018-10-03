@@ -9,6 +9,7 @@ import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.searchdefinition.derived.Deriver;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import org.junit.Ignore;
 import org.junit.Test;
 import java.io.File;
@@ -99,7 +100,7 @@ public class ImplicitSearchFieldsTestCase extends SearchDefinitionTestCase {
         sb.importFile("src/test/examples/nextgen/simple.sd");
         sb.build();
         assertNotNull(sb.getSearch());
-        new DerivedConfiguration(sb.getSearch(), sb.getRankProfileRegistry(), new QueryProfileRegistry());
+        new DerivedConfiguration(sb.getSearch(), sb.getRankProfileRegistry(), new QueryProfileRegistry(), new ImportedModels());
     }
 
 }

@@ -61,7 +61,7 @@ public class VisitorSearcherTestCase {
         return new VisitSearcher(new FeedContext(
                 new MessagePropertyProcessor(new FeederConfig(new FeederConfig.Builder().timeout(458).route("riksveg18").retryenabled(true)),
                         new LoadTypeConfig(new LoadTypeConfig.Builder())),
-                factory, docMan, clusterList, new NullFeedMetric()));
+                factory, docMan, clusterList, new NullFeedMetric(true)));
     }
 
     @Test
@@ -139,7 +139,7 @@ public class VisitorSearcherTestCase {
         VisitSearcher searcher = new VisitSearcher(new FeedContext(
                 new MessagePropertyProcessor(new FeederConfig(new FeederConfig.Builder().timeout(100).route("whatever").retryenabled(true)),
                         new LoadTypeConfig(new LoadTypeConfig.Builder())),
-                factory, docMan, clusterList, new NullFeedMetric()));
+                factory, docMan, clusterList, new NullFeedMetric(true)));
 
             searcher.getVisitorParameters(newQuery("visit?visit.selection=id.user=1234"), null);
     }

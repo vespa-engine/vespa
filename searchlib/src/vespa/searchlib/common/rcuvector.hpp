@@ -5,8 +5,7 @@
 #include "rcuvector.h"
 #include <vespa/vespalib/util/array.hpp>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 template <typename T>
 RcuVectorHeld<T>::RcuVectorHeld(size_t size, std::unique_ptr<T> data)
@@ -15,7 +14,7 @@ RcuVectorHeld<T>::RcuVectorHeld(size_t size, std::unique_ptr<T> data)
 { }
 
 template <typename T>
-RcuVectorHeld<T>::~RcuVectorHeld() { }
+RcuVectorHeld<T>::~RcuVectorHeld() = default;
 
 template <typename T>
 void
@@ -47,7 +46,7 @@ RcuVectorBase<T>::reset() {
 }
 
 template <typename T>
-RcuVectorBase<T>::~RcuVectorBase() { }
+RcuVectorBase<T>::~RcuVectorBase() = default;
 
 template <typename T>
 void
@@ -57,9 +56,15 @@ RcuVectorBase<T>::expand(size_t newCapacity) {
     for (const T & v : _data) {
         tmpData->push_back_fast(v);
     }
-    tmpData->swap(_data); // atomic switch of underlying data
-    size_t holdSize = tmpData->capacity() * sizeof(T);
-    vespalib::GenerationHeldBase::UP hold(new RcuVectorHeld<Array>(holdSize, std::move(tmpData)));
+    replaceVector(std::move(tmpData));
+}
+
+template <typename T>
+void
+RcuVectorBase<T>::replaceVector(std::unique_ptr<Array> replacement) {
+    replacement->swap(_data); // atomic switch of underlying data
+    size_t holdSize = replacement->capacity() * sizeof(T);
+    vespalib::GenerationHeldBase::UP hold(new RcuVectorHeld<Array>(holdSize, std::move(replacement)));
     _genHolder.hold(std::move(hold));
     onReallocation();
 }
@@ -197,5 +202,4 @@ RcuVector<T>::getMemoryUsage() const
     return retval;
 }
 
-}
 }

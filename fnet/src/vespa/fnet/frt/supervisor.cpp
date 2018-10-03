@@ -26,7 +26,8 @@ FRT_Supervisor::FRT_Supervisor(FNET_Transport *transport,
 }
 
 
-FRT_Supervisor::FRT_Supervisor(uint32_t threadStackSize,
+FRT_Supervisor::FRT_Supervisor(vespalib::CryptoEngine::SP crypto,
+                               uint32_t threadStackSize,
                                uint32_t maxThreads)
     : _transport(nullptr),
       _threadPool(nullptr),
@@ -39,7 +40,7 @@ FRT_Supervisor::FRT_Supervisor(uint32_t threadStackSize,
       _connHooks(*this),
       _methodMismatchHook(nullptr)
 {
-    _transport = new FNET_Transport();
+    _transport = new FNET_Transport(std::move(crypto), 1);
     assert(_transport != nullptr);
     if (threadStackSize > 0) {
         _threadPool = new FastOS_ThreadPool(threadStackSize, maxThreads);
@@ -87,22 +88,6 @@ uint32_t
 FRT_Supervisor::GetListenPort() const
 {
     return (_connector != nullptr) ? _connector->GetPortNumber() : 0;
-}
-
-
-bool
-FRT_Supervisor::RunInvocation(FRT_RPCInvoker *invoker)
-{
-    // XXX: implement queue with max length + max # threads
-
-    if (_threadPool == nullptr ||
-        _threadPool->NewThread(invoker) == nullptr)
-    {
-        invoker->GetRequest()->SetError(FRTE_RPC_OVERLOAD,
-                                        "Could not start thread");
-        return false;
-    }
-    return true;
 }
 
 
@@ -178,7 +163,7 @@ FRT_Supervisor::SetMethodMismatchHook(FRT_METHOD_PT  method,
 {
     delete _methodMismatchHook;
     _methodMismatchHook = new FRT_Method("frt.hook.methodMismatch", "*", "*",
-                                         true, method, handler);
+                                         method, handler);
     assert(_methodMismatchHook != nullptr);
 }
 
@@ -283,25 +268,17 @@ FRT_Supervisor::HandlePacket(FNET_Packet *packet, FNET_Context context)
             && _methodMismatchHook != nullptr)
         {
             invoker->ForceMethod(_methodMismatchHook);
-            return (invoker->Invoke(false)) ?
+            return (invoker->Invoke()) ?
                 FNET_FREE_CHANNEL : FNET_CLOSE_CHANNEL;
         }
 
         invoker->HandleDone(false);
         return FNET_FREE_CHANNEL;
 
-    } else if (invoker->IsInstant()) {
-
-        return (invoker->Invoke(false)) ?
-            FNET_FREE_CHANNEL : FNET_CLOSE_CHANNEL;
-
     } else {
 
-        if (!RunInvocation(invoker)) {
-            invoker->HandleDone(false);
-            return FNET_FREE_CHANNEL;
-        }
-        return FNET_CLOSE_CHANNEL;
+        return (invoker->Invoke()) ?
+            FNET_FREE_CHANNEL : FNET_CLOSE_CHANNEL;
     }
 }
 
@@ -348,17 +325,17 @@ FRT_Supervisor::RPCHooks::InitRPC(FRT_Supervisor *supervisor)
 {
     FRT_ReflectionBuilder rb(supervisor);
     //---------------------------------------------------------------------------
-    rb.DefineMethod("frt.rpc.ping", "", "", true,
+    rb.DefineMethod("frt.rpc.ping", "", "",
                     FRT_METHOD(FRT_Supervisor::RPCHooks::RPC_Ping), this);
     rb.MethodDesc("Method that may be used to check if the server is online");
     //---------------------------------------------------------------------------
-    rb.DefineMethod("frt.rpc.echo", "*", "*", true,
+    rb.DefineMethod("frt.rpc.echo", "*", "*",
                     FRT_METHOD(FRT_Supervisor::RPCHooks::RPC_Echo), this);
     rb.MethodDesc("Echo the parameters as return values");
     rb.ParamDesc("params", "Any set of parameters");
     rb.ReturnDesc("return", "The parameter values");
     //---------------------------------------------------------------------------
-    rb.DefineMethod("frt.rpc.getMethodList", "", "SSS", true,
+    rb.DefineMethod("frt.rpc.getMethodList", "", "SSS",
                     FRT_METHOD(FRT_Supervisor::RPCHooks::RPC_GetMethodList),
                     this);
     rb.MethodDesc("Obtain a list of all available methods");
@@ -366,7 +343,7 @@ FRT_Supervisor::RPCHooks::InitRPC(FRT_Supervisor *supervisor)
     rb.ReturnDesc("params", "Method parameter types");
     rb.ReturnDesc("return", "Method return types");
     //---------------------------------------------------------------------------
-    rb.DefineMethod("frt.rpc.getMethodInfo", "s", "sssSSSS", true,
+    rb.DefineMethod("frt.rpc.getMethodInfo", "s", "sssSSSS",
                     FRT_METHOD(FRT_Supervisor::RPCHooks::RPC_GetMethodInfo),
                     this);
     rb.MethodDesc("Obtain detailed information about a single method");
@@ -447,7 +424,7 @@ FRT_Supervisor::ConnHooks::SetSessionInitHook(FRT_METHOD_PT  method,
 {
     delete _sessionInitHook;
     _sessionInitHook = new FRT_Method("frt.hook.sessionInit", "", "",
-                                      true, method, handler);
+                                      method, handler);
     assert(_sessionInitHook != nullptr);
 }
 
@@ -458,7 +435,7 @@ FRT_Supervisor::ConnHooks::SetSessionDownHook(FRT_METHOD_PT  method,
 {
     delete _sessionDownHook;
     _sessionDownHook = new FRT_Method("frt.hook.sessionDown", "", "",
-                                      true, method, handler);
+                                      method, handler);
     assert(_sessionDownHook != nullptr);
 }
 
@@ -469,7 +446,7 @@ FRT_Supervisor::ConnHooks::SetSessionFiniHook(FRT_METHOD_PT  method,
 {
     delete _sessionFiniHook;
     _sessionFiniHook = new FRT_Method("frt.hook.sessionFini", "", "",
-                                      true, method, handler);
+                                      method, handler);
     assert(_sessionFiniHook != nullptr);
 }
 

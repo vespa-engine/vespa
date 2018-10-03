@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("attribute_test");
+
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -10,13 +9,16 @@ LOG_SETUP("attribute_test");
 #include <vespa/searchlib/attribute/multinumericattribute.hpp>
 #include <vespa/searchlib/attribute/stringattribute.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <algorithm>
+
+#include <vespa/log/log.h>
+LOG_SETUP("attribute_test");
 
 using namespace config;
 using namespace vespa::config::search;
 using namespace search;
 using namespace search::attribute;
 using std::shared_ptr;
+using vespalib::stringref;
 
 typedef BasicType      BT;
 typedef CollectionType CT;
@@ -59,40 +61,14 @@ class TestAttribute : public TestAttributeBase
 {
 public:
     TestAttribute(const std::string &name)
-        :
-        TestAttributeBase(name)
-    {
-    }
+        : TestAttributeBase(name)
+    {}
 
-    generation_t
-    getGen() const
-    {
-        return getCurrentGeneration();
-    }
-
-    uint32_t
-    getRefCount(generation_t gen) const
-    {
-        return getGenerationRefCount(gen);
-    }
-
-    void
-    incGen()
-    {
-        incGeneration();
-    }
-
-    void
-    updateFirstUsedGen()
-    {
-        updateFirstUsedGeneration();
-    }
-
-    generation_t
-    getFirstUsedGen() const
-    {
-        return getFirstUsedGeneration();
-    }
+    generation_t getGen() const { return getCurrentGeneration(); }
+    uint32_t getRefCount(generation_t gen) const { return getGenerationRefCount(gen); }
+    void incGen() { incGeneration(); }
+    void updateFirstUsedGen() { updateFirstUsedGeneration(); }
+    generation_t getFirstUsedGen() const { return getFirstUsedGeneration(); }
 };
 
 
@@ -216,8 +192,7 @@ AttributeManagerTest::testLoad()
 
 
 bool
-AttributeManagerTest::assertDataType(BT::Type exp,
-                                     AttributesConfig::Attribute::Datatype in)
+AttributeManagerTest::assertDataType(BT::Type exp, AttributesConfig::Attribute::Datatype in)
 {
     AttributesConfig::Attribute a;
     a.datatype = in;
@@ -227,10 +202,8 @@ AttributeManagerTest::assertDataType(BT::Type exp,
 
 bool
 AttributeManagerTest::
-assertCollectionType(CollectionType exp,
-                     AttributesConfig::Attribute::Collectiontype in,
-                     bool removeIfZ,
-                     bool createIfNe)
+assertCollectionType(CollectionType exp, AttributesConfig::Attribute::Collectiontype in,
+                     bool removeIfZ, bool createIfNe)
 {
     AttributesConfig::Attribute a;
     a.collectiontype = in;
@@ -239,8 +212,7 @@ assertCollectionType(CollectionType exp,
     AttributeVector::Config out = ConfigConverter::convert(a);
     return EXPECT_EQUAL(exp.type(), out.collectionType().type()) &&
         EXPECT_EQUAL(exp.removeIfZero(), out.collectionType().removeIfZero()) &&
-        EXPECT_EQUAL(exp.createIfNonExistant(),
-                   out.collectionType().createIfNonExistant());
+        EXPECT_EQUAL(exp.createIfNonExistant(), out.collectionType().createIfNonExistant());
 }
 
 
@@ -290,6 +262,12 @@ AttributeManagerTest::testConfigConvert()
         a.fastaccess = true;
         EXPECT_TRUE(CC::convert(a).fastAccess());
     }
+    {
+        CACA a;
+        EXPECT_TRUE(!CC::convert(a).isMutable());
+        a.ismutable = true;
+        EXPECT_TRUE(CC::convert(a).isMutable());
+    }
     { // tensor
         CACA a;
         a.datatype = CACA::TENSOR;
@@ -308,14 +286,10 @@ AttributeManagerTest::testContext()
 {
     std::vector<AVSP> attrs;
     // create various attributes vectors
-    attrs.push_back(AttributeFactory::createAttribute("sint32",
-                            Config(BT::INT32, CT::SINGLE)));
-    attrs.push_back(AttributeFactory::createAttribute("aint32",
-                            Config(BT::INT32, CT::ARRAY)));
-    attrs.push_back(AttributeFactory::createAttribute("wsint32",
-                            Config(BT::INT32, CT::WSET)));
-    attrs.push_back(AttributeFactory::createAttribute("dontcare",
-                            Config(BT::INT32, CT::SINGLE)));
+    attrs.push_back(AttributeFactory::createAttribute("sint32", Config(BT::INT32, CT::SINGLE)));
+    attrs.push_back(AttributeFactory::createAttribute("aint32", Config(BT::INT32, CT::ARRAY)));
+    attrs.push_back(AttributeFactory::createAttribute("wsint32", Config(BT::INT32, CT::WSET)));
+    attrs.push_back(AttributeFactory::createAttribute("dontcare", Config(BT::INT32, CT::SINGLE)));
 
     // add docs
     for (uint32_t i = 0; i < attrs.size(); ++i) {

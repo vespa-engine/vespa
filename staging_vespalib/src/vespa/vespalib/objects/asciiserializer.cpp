@@ -39,7 +39,7 @@ AsciiSerializer &AsciiSerializer::put(const IFieldBase &, double value) {
     return *this;
 }
 
-AsciiSerializer &AsciiSerializer::put(const IFieldBase &, const stringref & value) {
+AsciiSerializer &AsciiSerializer::put(const IFieldBase &, stringref value) {
     _stream << value;
     return *this;
 }

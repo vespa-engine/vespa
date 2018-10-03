@@ -40,13 +40,13 @@ public:
      * @brief Register a service with the slobrok cluster.
      * @param name service name to register
      **/
-    void registerName(const vespalib::stringref & name);
+    void registerName(vespalib::stringref name);
 
     /**
      * @brief Unregister a service with the slobrok cluster
      * @param name service name to unregister
      **/
-    void unregisterName(const vespalib::stringref & name);
+    void unregisterName(vespalib::stringref name);
 
     /**
      * @brief Check progress

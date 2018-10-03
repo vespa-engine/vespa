@@ -17,4 +17,5 @@ vespa_add_library(searchcore_fdispatch_search STATIC
     search_path.cpp
     DEPENDS
     searchcore_fconfig
+    searchcore_util
 )

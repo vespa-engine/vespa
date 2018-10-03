@@ -6,20 +6,9 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 
-namespace search
-{
+namespace search::common { class FileHeaderContext; }
 
-namespace common
-{
-
-class FileHeaderContext;
-
-}
-
-}
-
-namespace proton
-{
+namespace proton {
 
 class ITlsSyncer;
 class AttributeDiskLayout;
@@ -57,30 +46,23 @@ public:
      * Creates a new instance using the given attribute vector and the
      * given base dir where all attribute vectors are located.
      **/
-    DocumentMetaStoreFlushTarget(const DocumentMetaStoreSP dms,
-                                 ITlsSyncer &tlsSyncer,
-                                 const vespalib::string &baseDir,
-                                 const search::TuneFileAttributes &
-                                 tuneFileAttributes,
-                                 const search::common::FileHeaderContext &
-                                 fileHeaderContext,
-                                 const HwInfo &hwInfo);
+    DocumentMetaStoreFlushTarget(const DocumentMetaStoreSP dms, ITlsSyncer &tlsSyncer,
+                                 const vespalib::string &baseDir, const search::TuneFileAttributes &tuneFileAttributes,
+                                 const search::common::FileHeaderContext &fileHeaderContext, const HwInfo &hwInfo);
 
-    virtual
-    ~DocumentMetaStoreFlushTarget();
+    ~DocumentMetaStoreFlushTarget() override;
 
     void setCleanUpAfterFlush(bool cleanUp) { _cleanUpAfterFlush = cleanUp; }
 
-    // Implements IFlushTarget
-    virtual MemoryGain getApproxMemoryGain() const override;
-    virtual DiskGain getApproxDiskGain() const override;
-    virtual Time getLastFlushTime() const override;
-    virtual SerialNum getFlushedSerialNum() const override;
-    virtual Task::UP initFlush(SerialNum currentSerial) override;
-    virtual FlushStats getLastFlushStats() const override { return _lastStats; }
+    MemoryGain getApproxMemoryGain() const override;
+    DiskGain getApproxDiskGain() const override;
+    Time getLastFlushTime() const override;
+    SerialNum getFlushedSerialNum() const override;
+    Task::UP initFlush(SerialNum currentSerial) override;
+    FlushStats getLastFlushStats() const override { return _lastStats; }
 
     static void initCleanup(const vespalib::string &baseDir);
-    virtual uint64_t getApproxBytesToWriteToDisk() const override;
+    uint64_t getApproxBytesToWriteToDisk() const override;
 };
 
 } // namespace proton

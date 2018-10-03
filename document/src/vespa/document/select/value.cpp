@@ -96,7 +96,7 @@ NullValue::print(std::ostream& out, bool verbose,
     out << "nil";
 }
 
-StringValue::StringValue(const vespalib::stringref & val)
+StringValue::StringValue(vespalib::stringref val)
     : Value(String),
       _value(val)
 {

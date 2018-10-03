@@ -34,11 +34,11 @@ enum class CollectionType { SINGLE = 0,
     WEIGHTEDSET = 2
 };
 
-DataType dataTypeFromName(const vespalib::stringref &name);
+DataType dataTypeFromName(vespalib::stringref name);
 vespalib::string getTypeName(DataType type);
 std::ostream &operator<<(std::ostream &os, const DataType &type);
 
-CollectionType collectionTypeFromName(const vespalib::stringref &n);
+CollectionType collectionTypeFromName(vespalib::stringref n);
 vespalib::string getTypeName(CollectionType type);
 std::ostream &operator<<(std::ostream &os, const CollectionType &type);
 

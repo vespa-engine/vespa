@@ -1,3 +1,4 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import com.google.common.collect.ImmutableMap;
@@ -25,6 +26,7 @@ public enum JobType {
     productionEuWest1      ("production-eu-west-1"        , ZoneId.from("prod"   , "eu-west-1")      , null                                                          ),
     productionAwsUsEast1a  ("production-aws-us-east-1a"   , ZoneId.from("prod"   , "aws-us-east-1a") , null                                                          ),
     productionAwsUsWest1b  ("production-aws-us-west-1b"   , ZoneId.from("prod"   , "aws-us-west-1b") , null                                                          ),
+    productionAwsUsEast1b  ("production-aws-us-east-1b"   , ZoneId.from("prod"   , "aws-us-east-1b") , null                                                          ),
     productionCdAwsUsEast1a("production-cd-aws-us-east-1a", null                                                       , ZoneId.from("prod"    , "cd-aws-us-east-1a")),
     productionCdUsCentral1 ("production-cd-us-central-1"  , null                                                       , ZoneId.from("prod"    , "cd-us-central-1")  ),
     productionCdUsCentral2 ("production-cd-us-central-2"  , null                                                       , ZoneId.from("prod"    , "cd-us-central-2")  );
@@ -42,9 +44,12 @@ public enum JobType {
 
     public String jobName() { return jobName; }
 
-    /** Returns the zone for this job in the given system, or empty if this job does not have a zone */
-    public Optional<ZoneId> zone(SystemName system) {
-        return Optional.ofNullable(zones.get(system));
+    /** Returns the zone for this job in the given system, or throws if this job does not have a zone */
+    public ZoneId zone(SystemName system) {
+        if ( ! zones.containsKey(system))
+            throw new AssertionError(this + " does not have any zones in " + system + ".");
+
+        return zones.get(system);
     }
 
     /** Returns whether this is a production job */
@@ -63,11 +68,6 @@ public enum JobType {
         }
     }
 
-    /** Returns the region of this job type, or null if it does not have a region */
-    public Optional<RegionName> region(SystemName system) {
-        return zone(system).map(ZoneId::region);
-    }
-
     public static Optional<JobType> fromOptionalJobName(String jobName) {
         return Stream.of(values())
                      .filter(jobType -> jobType.jobName.equals(jobName))
@@ -80,17 +80,18 @@ public enum JobType {
     }
 
     /** Returns the job type for the given zone */
-    public static Optional<JobType> from(SystemName system, ZoneId zone) {
-        return Stream.of(values())
-                .filter(job -> job.zone(system).filter(zone::equals).isPresent())
-                .findAny();
+    public static JobType from(SystemName system, ZoneId zone) {
+        for (JobType job : values())
+            if (zone.equals(job.zones.get(system)))
+                return job;
+        throw new IllegalArgumentException("No job is known for " + zone + ".");
     }
 
     /** Returns the job job type for the given environment and region or null if none */
-    public static Optional<JobType> from(SystemName system, Environment environment, RegionName region) {
+    public static JobType from(SystemName system, Environment environment, RegionName region) {
         switch (environment) {
-            case test: return Optional.of(systemTest);
-            case staging: return Optional.of(stagingTest);
+            case test: return systemTest;
+            case staging: return stagingTest;
         }
         return from(system, ZoneId.from(environment, region));
     }

@@ -12,7 +12,7 @@ public class LongBucket extends BucketValue {
      * Gives the next distinct long value.
      *
      * @param value the base value.
-     * @return the nextt value.
+     * @return the next value.
      */
     public static LongValue nextValue(LongValue value) {
         long v = value.getValue();
@@ -26,7 +26,7 @@ public class LongBucket extends BucketValue {
      * @param to            The to-value to assign to this.
      */
     public LongBucket(long from, long to) {
-        super(new LongValue(from), new LongValue(to));
+        super(null, null, new LongValue(from), new LongValue(to));
     }
 
     /**
@@ -37,6 +37,16 @@ public class LongBucket extends BucketValue {
      */
     @SuppressWarnings("rawtypes")
     public LongBucket(ConstantValue from, ConstantValue to) {
-        super(from, to);
+        super(null, null, from, to);
     }
+
+    private LongBucket(String label, Integer level, ConstantValue<?> from, ConstantValue<?> to) {
+        super(label, level, from, to);
+    }
+
+    @Override
+    public LongBucket copy() {
+        return new LongBucket(getLabel(), getLevelOrNull(), getFrom().copy(), getTo().copy());
+    }
+
 }

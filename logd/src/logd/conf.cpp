@@ -1,22 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+
+#include "conf.h"
+#include "forward.h"
+#include "conn.h"
 #include <fcntl.h>
-#include <errno.h>
 #include <unistd.h>
-#include <time.h>
-#include <sys/stat.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("");
-LOG_RCSID("$Id$");
-
-#include "conn.h"
-#include "service.h"
-#include "forward.h"
-#include "conf.h"
-#include <vespa/config/common/exceptions.h>
 
 using cloud::config::log::LogdConfig;
 using ns_log::Logger;
@@ -27,18 +18,11 @@ void
 ConfSub::configure(std::unique_ptr<LogdConfig> cfg)
 {
     const LogdConfig &newconf(*cfg);
-    if (newconf.logserver.host != _logServer)
-    {
-        if (newconf.logserver.host.size() > 255) {
-            LOG(warning, "too long logserver hostname: %s",
-            newconf.logserver.host.c_str());
-            return;
-        }
-        strcpy(_logServer, newconf.logserver.host.c_str());
+    if (newconf.logserver.host != _logServer) {
+        _logServer = newconf.logserver.host;
         _needToConnect = true;
     }
-    if (newconf.logserver.use != _use_logserver)
-    {
+    if (newconf.logserver.use != _use_logserver) {
         _use_logserver = newconf.logserver.use;
         _needToConnect = true;
     }
@@ -62,26 +46,22 @@ ConfSub::configure(std::unique_ptr<LogdConfig> cfg)
     if (newconf.rotate.size > 0) {
         _rotate_size = newconf.rotate.size;
     } else {
-        LOG(config, "bad rotate.size=%d must be positive",
-            newconf.rotate.size);
+        LOG(config, "bad rotate.size=%d must be positive", newconf.rotate.size);
     }
     if (newconf.rotate.age > 0) {
         _rotate_age = newconf.rotate.age;
     } else {
-        LOG(config, "bad rotate.age=%d must be positive",
-            newconf.rotate.age);
+        LOG(config, "bad rotate.age=%d must be positive", newconf.rotate.age);
     }
     if (newconf.remove.totalmegabytes > 0) {
         _remove_meg = newconf.remove.totalmegabytes;
     } else {
-        LOG(config, "bad remove.totalmegabytes=%d must be positive",
-            newconf.remove.totalmegabytes);
+        LOG(config, "bad remove.totalmegabytes=%d must be positive", newconf.remove.totalmegabytes);
     }
     if (newconf.remove.age > 0) {
         _remove_age = newconf.remove.age;
     } else {
-        LOG(config, "bad remove.age=%d must be positive",
-            newconf.remove.age);
+        LOG(config, "bad remove.age=%d must be positive", newconf.remove.age);
     }
 }
 
@@ -113,14 +93,12 @@ ConfSub::latch()
 void
 ConfSub::connectToLogserver()
 {
-    int newfd = makeconn(_logServer, _logPort);
+    int newfd = makeconn(_logServer.c_str(), _logPort);
     if (newfd >= 0) {
         resetFileDescriptor(newfd);
-        LOG(debug, "connected to logserver at %s:%d",
-            _logServer, _logPort);
+        LOG(debug, "connected to logserver at %s:%d", _logServer.c_str(), _logPort);
     } else {
-        LOG(debug, "could not connect to %s:%d",
-            _logServer, _logPort);
+        LOG(debug, "could not connect to %s:%d", _logServer.c_str(), _logPort);
     }
 }
 
@@ -156,7 +134,8 @@ ConfSub::closeConn()
 }
 
 ConfSub::ConfSub(Forwarder &fw, const config::ConfigUri & configUri)
-    : _logPort(0),
+    : _logServer(),
+      _logPort(0),
       _logserverfd(-1),
       _statePort(0),
       _rotate_size(INT_MAX),
@@ -170,18 +149,17 @@ ConfSub::ConfSub(Forwarder &fw, const config::ConfigUri & configUri)
       _hasAvailable(false),
       _needToConnect(true)
 {
-    _logServer[0] = '\0';
     _handle = _subscriber.subscribe<LogdConfig>(configUri.getConfigId());
     _subscriber.nextConfig(0);
     configure(_handle->getConfig());
 
-    LOG(debug, "got logServer %s", _logServer);
+    LOG(debug, "got logServer %s", _logServer.c_str());
     LOG(debug, "got handle %p", _handle.get());
 }
 
 ConfSub::~ConfSub()
 {
-    LOG(debug, "forget logServer %s", _logServer);
+    LOG(debug, "forget logServer %s", _logServer.c_str());
     LOG(debug, "done ~ConfSub()");
 }
 

@@ -32,7 +32,7 @@ public:
      * Note that the data may not be zero terminated, and a default
      * constructed stringref will give a NULL pointer back.  If you
      * need to make sure data() gives a valid zero-terminated string
-     * you should make a vespalib::string from the stringref.
+     * you should make a string from the stringref.
      **/
     const char * data() const { return _s; }
 
@@ -71,7 +71,7 @@ public:
      * @return index from the start of the string at which the character
      *     was found, or npos if the character could not be located
      */
-    size_type find(const stringref & s, size_type start=0) const;
+    size_type find(stringref s, size_type start=0) const;
     /**
      * Find the first occurrence of a character, searching from @c start
      *
@@ -116,7 +116,7 @@ public:
      *     was found, or npos if the substring could not be located
      */
     size_type rfind(const char * s, size_type e=npos) const;
-    int compare(const stringref & s) const { return compare(s.data(), s.size()); }
+    int compare(stringref s) const { return compare(s.data(), s.size()); }
     int compare(const char *s, size_type sz) const {
         int diff(memcmp(_s, s, std::min(sz, size())));
         return (diff != 0) ? diff : (size() - sz);
@@ -125,28 +125,28 @@ public:
     operator std::string () const { return std::string(_s, _sz); }
     bool operator  <        (const char * s) const { return compare(s, strlen(s)) < 0; }
     bool operator  < (const std::string & s) const { return compare(s.data(), s.size()) < 0; }
-    bool operator  <   (const stringref & s) const { return compare(s.data(), s.size()) < 0; }
+    bool operator  <           (stringref s) const { return compare(s.data(), s.size()) < 0; }
     bool operator <=        (const char * s) const { return compare(s, strlen(s)) <= 0; }
     bool operator <= (const std::string & s) const { return compare(s.data(), s.size()) <= 0; }
-    bool operator <=   (const stringref & s) const { return compare(s.data(), s.size()) <= 0; }
+    bool operator <=           (stringref s) const { return compare(s.data(), s.size()) <= 0; }
     bool operator !=        (const char * s) const { return compare(s, strlen(s)) != 0; }
     bool operator != (const std::string & s) const { return compare(s.data(), s.size()) != 0; }
-    bool operator !=   (const stringref & s) const { return compare(s.data(), s.size()) != 0; }
+    bool operator !=           (stringref s) const { return compare(s.data(), s.size()) != 0; }
     bool operator ==        (const char * s) const { return compare(s, strlen(s)) == 0; }
     bool operator == (const std::string & s) const { return compare(s.data(), s.size()) == 0; }
-    bool operator ==   (const stringref & s) const { return compare(s.data(), s.size()) == 0; }
+    bool operator ==           (stringref s) const { return compare(s.data(), s.size()) == 0; }
     bool operator >=        (const char * s) const { return compare(s, strlen(s)) >= 0; }
     bool operator >= (const std::string & s) const { return compare(s.data(), s.size()) >= 0; }
-    bool operator >=   (const stringref & s) const { return compare(s.data(), s.size()) >= 0; }
+    bool operator >=           (stringref s) const { return compare(s.data(), s.size()) >= 0; }
     bool operator  >        (const char * s) const { return compare(s, strlen(s)) > 0; }
     bool operator  > (const std::string & s) const { return compare(s.data(), s.size()) > 0; }
-    bool operator  >   (const stringref & s) const { return compare(s.data(), s.size()) > 0; }
+    bool operator  >           (stringref s) const { return compare(s.data(), s.size()) > 0; }
 private:
     const char *_s;
     size_type   _sz;
-    friend bool operator == (const std::string & a, const stringref & b) { return b == a; }
-    friend bool operator != (const std::string & a, const stringref & b) { return b != a; }
-    friend std::ostream & operator << (std::ostream & os, const stringref & v);
+    friend bool operator == (const std::string & a, stringref b) { return b == a; }
+    friend bool operator != (const std::string & a, stringref b) { return b != a; }
+    friend std::ostream & operator << (std::ostream & os, stringref v);
 };
 
 
@@ -175,7 +175,7 @@ public:
     small_string() : _buf(_stack), _sz(0), _bufferSize(StackSize) { _stack[0] = '\0'; }
     small_string(const char * s) : _buf(_stack), _sz(s ? strlen(s) : 0) { init(s); }
     small_string(const void * s, size_type sz) : _buf(_stack), _sz(sz) { init(s); }
-    small_string(const stringref & s) : _buf(_stack), _sz(s.size()) { init(s.data()); }
+    small_string(stringref s) : _buf(_stack), _sz(s.size()) { init(s.data()); }
     small_string(const std::string & s) : _buf(_stack), _sz(s.size()) { init(s.data()); }
     small_string(const small_string & rhs) noexcept : _buf(_stack), _sz(rhs.size()) { init(rhs.data()); }
     small_string(const small_string & rhs, size_type pos, size_type sz=npos) noexcept
@@ -203,7 +203,7 @@ public:
     small_string& operator= (const small_string &rhs) {
         return assign(rhs.data(), rhs.size());
     }
-    small_string & operator= (const stringref &rhs) {
+    small_string & operator= (stringref rhs) {
         return assign(rhs.data(), rhs.size());
     }
     small_string& operator= (const char *s) {
@@ -317,23 +317,23 @@ public:
     }
     small_string & assign(const char * s) { return assign(s, strlen(s)); }
     small_string & assign(const void * s, size_type sz);
-    small_string & assign(const stringref &s, size_type pos, size_type sz) {
+    small_string & assign(stringref s, size_type pos, size_type sz) {
         return assign(s.data() + pos, sz);
     }
-    small_string & assign(const stringref &rhs) {
+    small_string & assign(stringref rhs) {
         if (data() != rhs.data()) assign(rhs.data(), rhs.size());
         return *this;
     }
     small_string & push_back(char c)              { return append(&c, 1); }
     small_string & append(char c)                 { return append(&c, 1); }
     small_string & append(const char * s)         { return append(s, strlen(s)); }
-    small_string & append(const stringref & s)    { return append(s.data(), s.size()); }
+    small_string & append(stringref s)           { return append(s.data(), s.size()); }
     small_string & append(const std::string & s)  { return append(s.data(), s.size()); }
     small_string & append(const small_string & s) { return append(s.data(), s.size()); }
     small_string & append(const void * s, size_type sz);
     small_string & operator += (char c)                 { return append(c); }
     small_string & operator += (const char * s)         { return append(s); }
-    small_string & operator += (const stringref & s)    { return append(s); }
+    small_string & operator += (stringref s)           { return append(s); }
     small_string & operator += (const std::string & s)  { return append(s); }
     small_string & operator += (const small_string & s) { return append(s); }
 
@@ -355,7 +355,7 @@ public:
     }
 
     small_string & insert(iterator p, const_iterator f, const_iterator l) { return insert(p-c_str(), f, l-f); }
-    small_string & insert(size_type start, const stringref & v) { return insert(start, v.data(), v.size()); }
+    small_string & insert(size_type start, stringref v) { return insert(start, v.data(), v.size()); }
     small_string & insert(size_type start, const void * v, size_type sz);
 
     /**
@@ -446,27 +446,27 @@ public:
     bool operator  <         (const char * s) const { return compare(s, strlen(s)) < 0; }
     bool operator  <  (const std::string & s) const { return compare(s.data(), s.size()) < 0; }
     bool operator  < (const small_string & s) const { return compare(s.data(), s.size()) < 0; }
-    bool operator  <    (const stringref & s) const { return compare(s.data(), s.size()) < 0; }
+    bool operator  <    (stringref s) const { return compare(s.data(), s.size()) < 0; }
     bool operator <=         (const char * s) const { return compare(s, strlen(s)) <= 0; }
     bool operator <=  (const std::string & s) const { return compare(s.data(), s.size()) <= 0; }
     bool operator <= (const small_string & s) const { return compare(s.data(), s.size()) <= 0; }
-    bool operator <=    (const stringref & s) const { return compare(s.data(), s.size()) <= 0; }
+    bool operator <=    (stringref s) const { return compare(s.data(), s.size()) <= 0; }
     bool operator ==         (const char * s) const { return compare(s, strlen(s)) == 0; }
     bool operator ==  (const std::string & s) const { return compare(s.data(), s.size()) == 0; }
     bool operator == (const small_string & s) const { return compare(s.data(), s.size()) == 0; }
-    bool operator ==    (const stringref & s) const { return compare(s.data(), s.size()) == 0; }
+    bool operator ==    (stringref s) const { return compare(s.data(), s.size()) == 0; }
     bool operator !=         (const char * s) const { return compare(s, strlen(s)) != 0; }
     bool operator !=  (const std::string & s) const { return compare(s.data(), s.size()) != 0; }
     bool operator != (const small_string & s) const { return compare(s.data(), s.size()) != 0; }
-    bool operator !=    (const stringref & s) const { return compare(s.data(), s.size()) != 0; }
+    bool operator !=    (stringref s) const { return compare(s.data(), s.size()) != 0; }
     bool operator >=         (const char * s) const { return compare(s, strlen(s)) >= 0; }
     bool operator >=  (const std::string & s) const { return compare(s.data(), s.size()) >= 0; }
     bool operator >= (const small_string & s) const { return compare(s.data(), s.size()) >= 0; }
-    bool operator >=    (const stringref & s) const { return compare(s.data(), s.size()) >= 0; }
+    bool operator >=    (stringref s) const { return compare(s.data(), s.size()) >= 0; }
     bool operator  >         (const char * s) const { return compare(s, strlen(s)) > 0; }
     bool operator  >  (const std::string & s) const { return compare(s.data(), s.size()) > 0; }
     bool operator  > (const small_string & s) const { return compare(s.data(), s.size()) > 0; }
-    bool operator  >    (const stringref & s) const { return compare(s.data(), s.size()) > 0; }
+    bool operator  >    (stringref s) const { return compare(s.data(), s.size()) > 0; }
 
     template<typename T> bool operator != (const T& s) const { return ! operator == (s); }
 
@@ -572,62 +572,62 @@ const size_t small_string<StackSize>::npos;
 typedef small_string<48> string;
 
 template<uint32_t StackSize>
-vespalib::small_string<StackSize>
-operator + (const vespalib::small_string<StackSize> & a, const vespalib::small_string<StackSize> & b);
+small_string<StackSize>
+operator + (const small_string<StackSize> & a, const small_string<StackSize> & b);
 
 template<uint32_t StackSize>
-vespalib::small_string<StackSize>
-operator + (const vespalib::small_string<StackSize> & a, const vespalib::stringref & b);
+small_string<StackSize>
+operator + (const small_string<StackSize> & a, stringref b);
 
 template<uint32_t StackSize>
-vespalib::small_string<StackSize>
-operator + (const vespalib::stringref & a, const vespalib::small_string<StackSize> & b);
+small_string<StackSize>
+operator + (stringref a, const small_string<StackSize> & b);
 
 template<uint32_t StackSize>
-vespalib::small_string<StackSize>
-operator + (const vespalib::small_string<StackSize> & a, const char * b);
+small_string<StackSize>
+operator + (const small_string<StackSize> & a, const char * b);
 
 template<uint32_t StackSize>
-vespalib::small_string<StackSize>
-operator + (const char * a, const vespalib::small_string<StackSize> & b);
+small_string<StackSize>
+operator + (const char * a, const small_string<StackSize> & b);
 
 template<typename T, uint32_t StackSize>
 bool
-operator == (const T& a, const vespalib::small_string<StackSize>& b)
+operator == (const T& a, const small_string<StackSize>& b)
 {
     return b == a;
 }
 
 template<typename T, uint32_t StackSize>
 bool
-operator != (const T& a, const vespalib::small_string<StackSize>& b)
+operator != (const T& a, const small_string<StackSize>& b)
 {
     return b != a;
 }
 
 template<typename T, uint32_t StackSize>
 bool
-operator < (const T& a, const vespalib::small_string<StackSize>& b)
+operator < (const T& a, const small_string<StackSize>& b)
 {
     return b > a;
 }
 
-vespalib::string operator + (const vespalib::stringref & a, const vespalib::stringref & b);
-vespalib::string operator + (const char * a, const vespalib::stringref & b);
-vespalib::string operator + (const vespalib::stringref & a, const char * b);
+string operator + (stringref a, stringref b);
+string operator + (const char * a, stringref b);
+string operator + (stringref a, const char * b);
 
-inline bool contains(const stringref & text, const stringref & key) {
+inline bool contains(stringref text, stringref key) {
     return text.find(key) != stringref::npos;
 }
 
-inline bool starts_with(const stringref & text, const stringref & key) {
+inline bool starts_with(stringref text, stringref key) {
     if (text.size() >= key.size()) {
         return memcmp(text.begin(), key.begin(), key.size()) == 0;
     }
     return false;
 }
 
-inline bool ends_with(const stringref & text, const stringref & key) {
+inline bool ends_with(stringref text, stringref key) {
     if (text.size() >= key.size()) {
         return memcmp(text.end()-key.size(), key.begin(), key.size()) == 0;
     }
@@ -636,9 +636,9 @@ inline bool ends_with(const stringref & text, const stringref & key) {
 
 /**
  * Utility function to format an unsigned integer into a new
- * vespalib::string instance.
+ * string instance.
  **/
-static inline vespalib::string stringify(uint64_t number)
+static inline string stringify(uint64_t number)
 {
     char digits[64];
     int numdigits = 0;
@@ -646,7 +646,7 @@ static inline vespalib::string stringify(uint64_t number)
         digits[numdigits++] = '0' + (number % 10);
         number /= 10;
     } while (number > 0);
-    vespalib::string retval;
+    string retval;
     while (numdigits > 0) {
         retval.append(digits[--numdigits]);
     }

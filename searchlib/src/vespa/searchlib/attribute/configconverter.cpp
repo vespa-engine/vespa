@@ -51,8 +51,7 @@ static CollectionTypeMap _collectionTypeMap = getCollectionTypeMap();
 
 }
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 Config
 ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
@@ -69,6 +68,7 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     retval.setEnableOnlyBitVector(cfg.enableonlybitvector);
     retval.setIsFilter(cfg.enableonlybitvector);
     retval.setFastAccess(cfg.fastaccess);
+    retval.setMutable(cfg.ismutable);
     predicateParams.setArity(cfg.arity);
     predicateParams.setBounds(cfg.lowerbound, cfg.upperbound);
     predicateParams.setDensePostingListThreshold(cfg.densepostinglistthreshold);
@@ -83,6 +83,4 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     return retval;
 }
 
-
-} // namespace attribute
-} // namespace search
+}

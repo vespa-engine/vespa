@@ -14,7 +14,10 @@ public class NodeAttributes {
     private Optional<Long> rebootGeneration = Optional.empty();
     private Optional<DockerImage> dockerImage = Optional.empty();
     private Optional<String> vespaVersion = Optional.empty();
+    private Optional<String> currentOsVersion = Optional.empty();
     private Optional<String> hardwareDivergence = Optional.empty();
+    private Optional<String> hardwareFailureDescription = Optional.empty();
+    private Optional<Boolean> wantToDeprovision = Optional.empty();
 
     public NodeAttributes() { }
 
@@ -38,8 +41,23 @@ public class NodeAttributes {
         return this;
     }
 
+    public NodeAttributes withCurrentOsVersion(String currentOsVersion) {
+        this.currentOsVersion = Optional.of(currentOsVersion);
+        return this;
+    }
+
     public NodeAttributes withHardwareDivergence(String hardwareDivergence) {
         this.hardwareDivergence = Optional.of(hardwareDivergence);
+        return this;
+    }
+
+    public NodeAttributes withHardwareFailureDescription(String hardwareFailureDescription) {
+        this.hardwareFailureDescription = Optional.of(hardwareFailureDescription);
+        return this;
+    }
+
+    public NodeAttributes withWantToDeprovision(boolean wantToDeprovision) {
+        this.wantToDeprovision = Optional.of(wantToDeprovision);
         return this;
     }
 
@@ -60,13 +78,26 @@ public class NodeAttributes {
         return vespaVersion;
     }
 
+    public Optional<String> getCurrentOsVersion() {
+        return currentOsVersion;
+    }
+
     public Optional<String> getHardwareDivergence() {
         return hardwareDivergence;
     }
 
+    public Optional<String> getHardwareFailureDescription() {
+        return hardwareFailureDescription;
+    }
+
+    public Optional<Boolean> getWantToDeprovision() {
+        return wantToDeprovision;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hash(restartGeneration, rebootGeneration, dockerImage, vespaVersion, hardwareDivergence);
+        return Objects.hash(restartGeneration, rebootGeneration, dockerImage, vespaVersion, currentOsVersion,
+                hardwareDivergence, hardwareFailureDescription, wantToDeprovision);
     }
 
     @Override
@@ -80,7 +111,10 @@ public class NodeAttributes {
                 && Objects.equals(rebootGeneration, other.rebootGeneration)
                 && Objects.equals(dockerImage, other.dockerImage)
                 && Objects.equals(vespaVersion, other.vespaVersion)
-                && Objects.equals(hardwareDivergence, other.hardwareDivergence);
+                && Objects.equals(currentOsVersion, other.currentOsVersion)
+                && Objects.equals(hardwareDivergence, other.hardwareDivergence)
+                && Objects.equals(hardwareFailureDescription, other.hardwareFailureDescription)
+                && Objects.equals(wantToDeprovision, other.wantToDeprovision);
     }
 
     @Override
@@ -90,7 +124,10 @@ public class NodeAttributes {
                         rebootGeneration.map(gen -> "rebootGeneration=" + gen),
                         dockerImage.map(img -> "dockerImage=" + img.asString()),
                         vespaVersion.map(ver -> "vespaVersion=" + ver),
-                        hardwareDivergence.map(hwDivg -> "hardwareDivergence=" + hwDivg))
+                        currentOsVersion.map(ver -> "currentOsVersion=" + ver),
+                        hardwareDivergence.map(hwDivg -> "hardwareDivergence=" + hwDivg),
+                        hardwareFailureDescription.map(hwDesc -> "hardwareFailureDescription=" + hwDesc),
+                        wantToDeprovision.map(depr -> "wantToDeprovision=" + depr))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.joining(", ", "NodeAttributes{", "}"));

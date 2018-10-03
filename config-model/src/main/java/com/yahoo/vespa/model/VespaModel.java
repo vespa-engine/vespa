@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.FileReference;
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.ValidationId;
@@ -18,13 +20,25 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
-import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.log.LogLevel;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchdefinition.RankProfileRegistry;
+import com.yahoo.searchdefinition.RankingConstants;
+import com.yahoo.searchdefinition.derived.AttributeFields;
+import com.yahoo.searchdefinition.derived.RankProfileList;
+import com.yahoo.searchdefinition.processing.Processing;
+import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
+import com.yahoo.vespa.model.container.search.QueryProfiles;
+import com.yahoo.vespa.model.ml.ConvertedModel;
+import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -42,6 +56,7 @@ import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileDistributor;
 import com.yahoo.vespa.model.generic.service.ServiceCluster;
+import com.yahoo.vespa.model.ml.ModelName;
 import com.yahoo.vespa.model.routing.Routing;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
@@ -92,12 +107,18 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      */
     public static final String ROOT_CONFIGID = "";
 
-    private ApplicationConfigProducerRoot root = null;
+    private ApplicationConfigProducerRoot root;
 
-    /**
-     * Generic service instances - service clusters which have no specific model
-     */
+    private final ApplicationPackage applicationPackage;
+
+    /** Generic service instances - service clusters which have no specific model */
     private List<ServiceCluster> serviceClusters = new ArrayList<>();
+
+    /** The global rank profiles of this model */
+    private final RankProfileList rankProfileList;
+
+    /** The global ranking constants of this model */
+    private final RankingConstants rankingConstants = new RankingConstants();
 
     private DeployState deployState;
 
@@ -144,11 +165,24 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         this.validationOverrides = deployState.validationOverrides();
         configModelRegistry = new VespaConfigModelRegistry(configModelRegistry);
         VespaModelBuilder builder = new VespaDomBuilder();
+        this.applicationPackage = deployState.getApplicationPackage();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
+
+        createGlobalRankProfiles(deployState.getImportedModels(),
+                                 deployState.rankProfileRegistry(),
+                                 deployState.getQueryProfiles());
+        this.rankProfileList = new RankProfileList(null, // null search -> global
+                                                   rankingConstants,
+                                                   AttributeFields.empty,
+                                                   deployState.rankProfileRegistry(),
+                                                   deployState.getQueryProfiles().getRegistry(),
+                                                   deployState.getImportedModels());
+
         if (complete) { // create a a completed, frozen model
-            configModelRepo.readConfigModels(deployState, builder, root, configModelRegistry);
+            configModelRepo.readConfigModels(deployState, this, builder, root, configModelRegistry);
             addServiceClusters(deployState.getApplicationPackage(), builder);
             this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs()); // must happen after the two lines above
+
             setupRouting();
             this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
             getAdmin().addPerHostServices(getHostSystem().getHosts(), deployState);
@@ -163,6 +197,12 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             this.fileDistributor = fileDistributor;
         }
     }
+
+    /** Returns the application package owning this */
+    public ApplicationPackage applicationPackage() { return applicationPackage; }
+
+    /** Returns the global ranking constants of this */
+    public RankingConstants rankingConstants() { return rankingConstants; }
 
     /** Creates a mutable model with no services instantiated */
     public static VespaModel createIncomplete(DeployState deployState) throws IOException, SAXException {
@@ -181,12 +221,46 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     /** Adds generic application specific clusters of services */
     private void addServiceClusters(ApplicationPackage app, VespaModelBuilder builder) {
-        for (ServiceCluster sc : builder.getClusters(app, this))
-            serviceClusters.add(sc);
+        serviceClusters.addAll(builder.getClusters(app, this));
     }
 
+    /**
+     * Creates a rank profile not attached to any search definition, for each imported model in the application package,
+     * and adds it to the given rank profile registry.
+     */
+    private void createGlobalRankProfiles(ImportedModels importedModels,
+                                          RankProfileRegistry rankProfileRegistry,
+                                          QueryProfiles queryProfiles) {
+        if ( ! importedModels.all().isEmpty()) { // models/ directory is available
+            for (ImportedModel model : importedModels.all()) {
+                RankProfile profile = new RankProfile(model.name(), this, rankProfileRegistry);
+                rankProfileRegistry.add(profile);
+                ConvertedModel convertedModel = ConvertedModel.fromSource(new ModelName(model.name()),
+                                                                          model.name(), profile, queryProfiles.getRegistry(), model);
+                convertedModel.expressions().values().forEach(f -> profile.addFunction(f, false));
+            }
+        }
+        else { // generated and stored model information may be available instead
+            ApplicationFile generatedModelsDir = applicationPackage.getFile(ApplicationPackage.MODELS_GENERATED_REPLICATED_DIR);
+            for (ApplicationFile generatedModelDir : generatedModelsDir.listFiles()) {
+                String modelName = generatedModelDir.getPath().last();
+                if (modelName.contains(".")) continue; // Name space: Not a global profile
+                RankProfile profile = new RankProfile(modelName, this, rankProfileRegistry);
+                rankProfileRegistry.add(profile);
+                ConvertedModel convertedModel = ConvertedModel.fromStore(new ModelName(modelName), modelName, profile);
+                convertedModel.expressions().values().forEach(f -> profile.addFunction(f, false));
+            }
+        }
+        new Processing().processRankProfiles(deployState.getDeployLogger(),
+                                             rankProfileRegistry,
+                                             queryProfiles, true, false);
+    }
+
+    /** Returns the global rank profiles as a rank profile list */
+    public RankProfileList rankProfileList() { return rankProfileList; }
+
     private void setupRouting() {
-        root.setupRouting(configModelRepo);
+        root.setupRouting(this, configModelRepo);
     }
 
     /** Returns the one and only HostSystem of this VespaModel */

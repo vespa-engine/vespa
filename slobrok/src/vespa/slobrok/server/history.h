@@ -18,12 +18,11 @@ private:
 
     std::vector<HistoryEntry> _entries;
 
-    typedef std::vector<HistoryEntry>::iterator        iter_t;
     typedef std::vector<HistoryEntry>::const_iterator citer_t;
 
     void verify() const;
 public:
-    void add(const char *name, vespalib::GenCnt gen);
+    void add(const std::string &name, vespalib::GenCnt gen);
 
     bool has(vespalib::GenCnt gen) const;
 

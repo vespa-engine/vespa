@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.yahoo.vespa</groupId>
@@ -94,7 +94,7 @@
         <module>messagebus-disc</module>
         <module>messagebus</module>
         <module>metrics</module>
-        <module>model-inference</module>
+        <module>model-evaluation</module>
         <module>node-repository</module>
         <module>node-admin</module>
         <module>node-maintainer</module>
@@ -115,6 +115,8 @@
         <module>standalone-container</module>
         <module>statistics</module>
         <module>storage</module>
+        <module>tenant-base</module>
+        <module>tenant-cd</module>
         <module>testutil</module>
         <module>vdslib</module>
         <module>vespaclient-core</module>

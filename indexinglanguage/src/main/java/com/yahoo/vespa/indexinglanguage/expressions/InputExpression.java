@@ -28,8 +28,7 @@ public class InputExpression extends Expression {
     }
 
     @Override
-    protected void doExecute(ExecutionContext ctx)
-    {
+    protected void doExecute(ExecutionContext ctx) {
         if (fieldPath != null) {
             ctx.setValue(ctx.getInputValue(fieldPath));
         } else {
@@ -79,6 +78,7 @@ public class InputExpression extends Expression {
     }
 
     public static class FieldPathOptimizer implements ObjectOperation, ObjectPredicate {
+
         private final DocumentType documentType;
 
         public FieldPathOptimizer(DocumentType documentType) {
@@ -95,9 +95,11 @@ public class InputExpression extends Expression {
         public boolean check(Object obj) {
             return obj instanceof InputExpression;
         }
+
     }
 
     public static class InputFieldNameExtractor implements ObjectOperation, ObjectPredicate {
+
         private List<String> inputFieldNames = new ArrayList<>(1);
 
         public List<String> getInputFieldNames() { return inputFieldNames; }
@@ -111,5 +113,7 @@ public class InputExpression extends Expression {
         public boolean check(Object obj) {
             return obj instanceof InputExpression;
         }
+
     }
+
 }

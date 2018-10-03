@@ -6,8 +6,8 @@
 #include "updateoperation.h"
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/storageapi/message/batch.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 

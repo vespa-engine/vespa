@@ -176,7 +176,7 @@ UpdateReply::print(std::ostream& out, bool verbose, const std::string& indent) c
 }
 
 GetCommand::GetCommand(const document::Bucket &bucket, const document::DocumentId& docId,
-                       const vespalib::stringref & fieldSet, Timestamp before)
+                       vespalib::stringref fieldSet, Timestamp before)
     : BucketInfoCommand(MessageType::GET, bucket),
       _docId(docId),
       _beforeTimestamp(before),

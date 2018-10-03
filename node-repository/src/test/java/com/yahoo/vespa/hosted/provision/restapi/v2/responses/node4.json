@@ -13,6 +13,7 @@
   "description": "Flavor-name-is-docker",
   "minCpuCores": 0.2,
   "fastDisk": true,
+  "bandwidth":0.0,
   "environment": "DOCKER_CONTAINER",
   "owner": {
     "tenant": "tenant3",
@@ -35,8 +36,6 @@
   "currentRebootGeneration": 0,
   "vespaVersion": "6.41.0",
   "currentDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.41.0",
-  "hostedVersion": "6.41.0",
-  "convergedStateVersion": "6.41.0",
   "failCount": 0,
   "hardwareFailure": false,
   "wantToRetire": false,

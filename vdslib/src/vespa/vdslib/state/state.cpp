@@ -23,7 +23,7 @@ const State State::UP("Up", "u", 6,
         true,  true,  true,  true,  true,  true);
 
 const State&
-State::get(const vespalib::stringref & serialized)
+State::get(vespalib::stringref serialized)
 {
     if (serialized.size() == 1) switch(serialized[0]) {
         case '-': return UNKNOWN;
@@ -39,7 +39,7 @@ State::get(const vespalib::stringref & serialized)
             "Unknown state " + serialized + " given.", VESPA_STRLOC);
 }
 
-State::State(const vespalib::stringref & name, const vespalib::stringref & serialized,
+State::State(vespalib::stringref name, vespalib::stringref serialized,
              uint8_t rank, bool validDisk,
              bool validDistributorReported, bool validStorageReported,
              bool validDistributorWanted, bool validStorageWanted,

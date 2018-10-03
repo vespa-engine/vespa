@@ -153,10 +153,11 @@ TEST("use simple_metrics_collector")
             .bind("chain", "default")
             .bind("documenttype", "music")
             .bind("thread", "0").build();
-    Point two = manager->pointBuilder()
-            .bind("chain", "vespa")
-            .bind("documenttype", "blogpost")
-            .bind("thread", "1");
+    PointBuilder b2 = manager->pointBuilder();
+    b2.bind("chain", "vespa")
+      .bind("documenttype", "blogpost");
+    b2.bind("thread", "1");
+    Point two = b2.build();
     EXPECT_EQUAL(one.id(), 1u);
     EXPECT_EQUAL(two.id(), 2u);
 

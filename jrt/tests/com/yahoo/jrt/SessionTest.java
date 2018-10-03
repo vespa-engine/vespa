@@ -4,12 +4,23 @@ package com.yahoo.jrt;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
+import static com.yahoo.jrt.CryptoUtils.createTestSslContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(Parameterized.class)
 public class SessionTest implements SessionHandler {
+
+    @Parameter public CryptoEngine crypto;
+    @Parameters(name = "{0}") public static Object[] engines() {
+        return new Object[] { new NullCryptoEngine(), new XorCryptoEngine(), new TlsCryptoEngine(createTestSslContext()) };
+    }
 
     private static class Session {
         private static int     cnt   = 0;
@@ -111,9 +122,9 @@ public class SessionTest implements SessionHandler {
     @Before
     public void setUp() throws ListenFailedException {
         Session.reset();
-        server   = new Test.Orb(new Transport());
+        server   = new Test.Orb(new Transport(crypto));
         server.setSessionHandler(this);
-        client   = new Test.Orb(new Transport());
+        client   = new Test.Orb(new Transport(crypto));
         client.setSessionHandler(this);
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()),

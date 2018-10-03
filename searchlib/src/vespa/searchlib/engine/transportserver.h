@@ -169,7 +169,7 @@ private:
     void discardRequests();
 
     // convenience method used to log packets
-    static void logPacket(const vespalib::stringref &msg, FNET_Packet *p, FNET_Channel *ch, FNET_Connection *conn);
+    static void logPacket(vespalib::stringref msg, FNET_Packet *p, FNET_Channel *ch, FNET_Connection *conn);
 
     void updateQueryMetrics(double latency_s);
     void updateDocsumMetrics(double latency_s, uint32_t numDocs);
@@ -299,13 +299,6 @@ public:
      * @param noDelay set to true to disable nagles algorithm
      **/
     void setTCPNoDelay(bool noDelay) { _transport.SetTCPNoDelay(noDelay); }
-
-    /**
-     * Enable or disable the use of a Q for throughput between search thread and network thread.
-     *
-     * @param directWrite bypasses Q
-     **/
-    void setDirectWrite(bool directWrite) { _transport.SetDirectWrite(directWrite); }
 
     /**
      * Set a limit on how long a connection may be idle before closing it.

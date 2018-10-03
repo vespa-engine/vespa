@@ -20,6 +20,7 @@
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/searchlib/util/logutil.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attributevector");
@@ -57,17 +58,11 @@ namespace search {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(AttributeVector, vespalib::Identifiable);
 
-AttributeVector::BaseName::BaseName(const vespalib::stringref &base,
-                                    const vespalib::stringref &snap,
-                                    const vespalib::stringref &name)
+AttributeVector::BaseName::BaseName(vespalib::stringref base, vespalib::stringref name)
     : string(base),
       _name(name)
 {
     if (!empty()) {
-        push_back('/');
-    }
-    if ( ! snap.empty() ) {
-        append(snap);
         push_back('/');
     }
     append(name);
@@ -77,47 +72,7 @@ AttributeVector::BaseName::~BaseName() = default;
 
 
 AttributeVector::BaseName::string
-AttributeVector::BaseName::getIndexName() const
-{
-    // "$VESPA_HOME/var/db/vespa/search/cluster.search/r0/c0/typetest_search/1.ready/attribute/stringfield/snapshot-0/stringfield"
-    string index;
-    size_t snapshotPos(rfind("/snapshot-"));
-    if (snapshotPos == string::npos)
-        return index;
-    size_t attrNamePos(rfind('/', snapshotPos  - 1));
-    if (attrNamePos == string::npos || attrNamePos == 0)
-        return index;
-    size_t attrStrPos(rfind('/', attrNamePos - 1));
-    if (attrStrPos == string::npos || attrStrPos == 0)
-        return index;
-    size_t subDBPos(rfind('/', attrStrPos - 1));
-    if (subDBPos == string::npos || subDBPos == 0)
-        return index;
-    size_t indexNamePos(rfind('/', subDBPos - 1));
-    if (indexNamePos == string::npos)
-        return substr(0, subDBPos);
-    return substr(indexNamePos + 1, subDBPos - indexNamePos - 1);
-}
-
-
-AttributeVector::BaseName::string
-AttributeVector::BaseName::getSnapshotName() const
-{
-    string snapShot;
-    size_t p(rfind("snapshot-"));
-    if (p != string::npos) {
-        string fullSnapshot(substr(p));
-        p = fullSnapshot.find('/');
-        if (p != string::npos) {
-            snapShot = fullSnapshot.substr(0, p);
-        }
-    }
-    return snapShot;
-}
-
-
-AttributeVector::BaseName::string
-AttributeVector::BaseName::createAttributeName(const vespalib::stringref & s)
+AttributeVector::BaseName::createAttributeName(vespalib::stringref s)
 {
     size_t p(s.rfind('/'));
     if (p == string::npos) {
@@ -157,17 +112,14 @@ AttributeVector::ValueModifier::~ValueModifier() {
 }
 
 
-AttributeVector::AttributeVector(const vespalib::stringref &baseFileName, const Config &c)
+AttributeVector::AttributeVector(vespalib::stringref baseFileName, const Config &c)
     : _baseFileName(baseFileName),
       _config(c),
       _interlock(std::make_shared<attribute::Interlock>()),
       _enumLock(),
       _genHandler(),
       _genHolder(),
-      _status(Status::createName((_baseFileName.getIndexName() +
-                                  (_baseFileName.getSnapshotName().empty() ? "" : ".") +
-                                  _baseFileName.getSnapshotName()),
-                                 _baseFileName.getAttributeName())),
+      _status(),
       _highestValueCount(1),
       _enumMax(0),
       _committedDocIdLimit(0u),
@@ -186,12 +138,11 @@ void AttributeVector::updateStat(bool force) {
         onUpdateStat();
     } else if (_nextStatUpdateTime < fastos::ClockSystem::now()) {
         onUpdateStat();
-        _nextStatUpdateTime = fastos::ClockSystem::now() + fastos::TimeStamp::SEC;
+        _nextStatUpdateTime = fastos::ClockSystem::now() + 5ul * fastos::TimeStamp::SEC;
     }
 }
 
 bool AttributeVector::hasEnum() const { return _hasEnum; }
-bool AttributeVector::hasEnum2Value() const { return false; }
 uint32_t AttributeVector::getMaxValueCount() const { return _highestValueCount; }
 
 bool
@@ -382,44 +333,34 @@ AttributeVector::loadFile(const char *suffix)
 
 
 bool
-AttributeVector::saveAs(const vespalib::stringref &baseFileName)
-{
-    _baseFileName = baseFileName;
-    return save();
-}
-
-bool
-AttributeVector::saveAs(const vespalib::stringref &baseFileName,
-                        IAttributeSaveTarget & saveTarget)
-{
-    _baseFileName = baseFileName;
-    return save(saveTarget);
-}
-
-
-bool
-AttributeVector::save()
+AttributeVector::save(vespalib::stringref fileName)
 {
     TuneFileAttributes tune;
     DummyFileHeaderContext fileHeaderContext;
     AttributeFileSaveTarget saveTarget(tune, fileHeaderContext);
-    return save(saveTarget);
+    return save(saveTarget, fileName);
+}
+
+bool
+AttributeVector::save()
+{
+    return save(getBaseFileName());
 }
 
 
 bool
-AttributeVector::save(IAttributeSaveTarget &saveTarget)
+AttributeVector::save(IAttributeSaveTarget &saveTarget, vespalib::stringref fileName)
 {
     commit();
     // First check if new style save is available.
-    std::unique_ptr<AttributeSaver> saver(onInitSave());
+    std::unique_ptr<AttributeSaver> saver(onInitSave(fileName));
     if (saver) {
         // Normally, new style save happens in background, but here it
         // will occur in the foreground.
         return saver->save(saveTarget);
     }
     // New style save not available, use old style save
-    saveTarget.setHeader(createAttributeHeader());
+    saveTarget.setHeader(createAttributeHeader(fileName));
     if (!saveTarget.setup()) {
         return false;
     }
@@ -429,8 +370,8 @@ AttributeVector::save(IAttributeSaveTarget &saveTarget)
 }
 
 attribute::AttributeHeader
-AttributeVector::createAttributeHeader() const {
-    return attribute::AttributeHeader(getBaseFileName(),
+AttributeVector::createAttributeHeader(vespalib::stringref fileName) const {
+    return attribute::AttributeHeader(fileName,
                                    getConfig().basicType(),
                                    getConfig().collectionType(),
                                    getConfig().basicType().type() == BasicType::Type::TENSOR
@@ -518,7 +459,7 @@ const char * AttributeVector::getStringFromEnum(EnumHandle) const { return nullp
 
 AttributeVector::SearchContext::SearchContext(const AttributeVector &attr) :
     _attr(attr),
-    _plsc(NULL)
+    _plsc(nullptr)
 { }
 
 AttributeVector::SearchContext::UP
@@ -528,8 +469,7 @@ AttributeVector::getSearch(QueryPacketT searchSpec, const SearchContextParams &p
 }
 
 attribute::ISearchContext::UP
-AttributeVector::createSearchContext(QueryTermSimpleUP term,
-                                     const attribute::SearchContextParams &params) const
+AttributeVector::createSearchContext(QueryTermSimpleUP term, const attribute::SearchContextParams &params) const
 {
     return getSearch(std::move(term), params);
 }
@@ -539,7 +479,7 @@ AttributeVector::SearchContext::~SearchContext() = default;
 unsigned int
 AttributeVector::SearchContext::approximateHits() const
 {
-    if (_plsc != NULL) {
+    if (_plsc != nullptr) {
         return _plsc->approximateHits();
     }
     return std::max(uint64_t(_attr.getNumDocs()),
@@ -550,7 +490,7 @@ SearchIterator::UP
 AttributeVector::SearchContext::
 createIterator(fef::TermFieldMatchData *matchData, bool strict)
 {
-    if (_plsc != NULL) {
+    if (_plsc != nullptr) {
         SearchIterator::UP res = _plsc->createPostingIterator(matchData, strict);
         if (res) {
             return res;
@@ -565,25 +505,21 @@ AttributeVector::SearchContext::
 createFilterIterator(fef::TermFieldMatchData *matchData, bool strict)
 {
     if (!valid())
-        return SearchIterator::UP(new queryeval::EmptySearch());
+        return std::make_unique<queryeval::EmptySearch>();
     if (getIsFilter()) {
         return SearchIterator::UP(strict ?
-            new FilterAttributeIteratorStrict<AttributeVector::SearchContext>
-            (*this, matchData) :
-            new FilterAttributeIteratorT<AttributeVector::SearchContext>
-            (*this, matchData));
+            new FilterAttributeIteratorStrict<AttributeVector::SearchContext>(*this, matchData) :
+            new FilterAttributeIteratorT<AttributeVector::SearchContext>(*this, matchData));
     }
     return SearchIterator::UP(strict ?
-            new AttributeIteratorStrict<AttributeVector::SearchContext>
-            (*this, matchData) :
-            new AttributeIteratorT<AttributeVector::SearchContext>
-            (*this, matchData));
+            new AttributeIteratorStrict<AttributeVector::SearchContext>(*this, matchData) :
+            new AttributeIteratorT<AttributeVector::SearchContext>(*this, matchData));
 }
 
 
 void
 AttributeVector::SearchContext::fetchPostings(bool strict) {
-    if (_plsc != NULL)
+    if (_plsc != nullptr)
         _plsc->fetchPostings(strict);
 }
 
@@ -594,8 +530,7 @@ AttributeVector::apply(DocId doc, const MapValueUpdate &map) {
     if (retval) {
         const ValueUpdate & vu(map.getUpdate());
         if (vu.inherits(ArithmeticValueUpdate::classId)) {
-            const ArithmeticValueUpdate &
-                au(static_cast<const ArithmeticValueUpdate &>(vu));
+            const ArithmeticValueUpdate &au(static_cast<const ArithmeticValueUpdate &>(vu));
             retval = applyWeight(doc, map.getKey(), au);
         } else {
             retval = false;
@@ -746,14 +681,14 @@ void AttributeVector::setInterlock(const std::shared_ptr<attribute::Interlock> &
 
 
 std::unique_ptr<AttributeSaver>
-AttributeVector::initSave()
+AttributeVector::initSave(vespalib::stringref fileName)
 {
     commit();
-    return onInitSave();
+    return onInitSave(fileName);
 }
 
 std::unique_ptr<AttributeSaver>
-AttributeVector::onInitSave()
+AttributeVector::onInitSave(vespalib::stringref)
 {
     return std::unique_ptr<AttributeSaver>();
 }
@@ -887,6 +822,17 @@ MemoryUsage
 AttributeVector::getChangeVectorMemoryUsage() const
 {
     return MemoryUsage(0, 0, 0, 0);
+}
+
+void
+AttributeVector::logEnumStoreEvent(const char *reason, const char *stage)
+{
+    vespalib::JSONStringer jstr;
+    jstr.beginObject();
+    jstr.appendKey("path").appendString(getBaseFileName());
+    jstr.endObject();
+    vespalib::string eventName(make_string("%s.attribute.enumstore.%s", reason, stage));
+    EV_STATE(eventName.c_str(), jstr.toString().data());
 }
 
 template bool AttributeVector::append<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &, int32_t, bool);

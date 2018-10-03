@@ -7,7 +7,7 @@
 %define _prefix /opt/vespa
 
 Name:           vespa
-Version:        VESPA_VERSION
+Version:        _VESPA_VERSION_
 Release:        1%{?dist}
 Summary:        Vespa - The open big data serving engine
 Group:          Applications/Databases
@@ -32,31 +32,32 @@ BuildRequires: libatomic
 BuildRequires: Judy-devel
 %if 0%{?centos}
 BuildRequires: cmake3
-BuildRequires: llvm3.9-devel
+BuildRequires: llvm5.0-devel
 BuildRequires: vespa-boost-devel >= 1.59.0-6
 BuildRequires: vespa-gtest >= 1.8.0-1
 %endif
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
 BuildRequires: maven
-%if 0%{?fc26}
-BuildRequires: llvm-devel >= 4.0
-BuildRequires: boost-devel >= 1.63
-BuildRequires: vespa-gtest >= 1.8.0-2
-%endif
 %if 0%{?fc27}
-BuildRequires: llvm4.0-devel >= 4.0
+BuildRequires: llvm-devel >= 5.0.2
 BuildRequires: boost-devel >= 1.64
 BuildRequires: vespa-gtest >= 1.8.0-2
 %endif
 %if 0%{?fc28}
-BuildRequires: llvm4.0-devel >= 4.0
+BuildRequires: llvm-devel >= 6.0.1
 BuildRequires: boost-devel >= 1.66
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %if 0%{?fc29}
-BuildRequires: llvm3.9-devel >= 3.9.1
+BuildRequires: llvm-devel >= 7.0.0
+BuildRequires: boost-devel >= 1.66
+BuildRequires: gtest-devel
+BuildRequires: gmock-devel
+%endif
+%if 0%{?fc30}
+BuildRequires: llvm-devel >= 7.0.0
 BuildRequires: boost-devel >= 1.66
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -104,36 +105,29 @@ Requires: perf
 Requires: gdb
 Requires: net-tools
 %if 0%{?centos}
-Requires: llvm3.9
-%define _extra_link_directory /usr/lib64/llvm3.9/lib;/opt/vespa-gtest/lib;/opt/vespa-cppunit/lib
-%define _extra_include_directory /usr/include/llvm3.9;/opt/vespa-boost/include;/opt/vespa-gtest/include;/opt/vespa-cppunit/include
+Requires: llvm5.0
+%define _vespa_llvm_version 5.0
+%define _extra_link_directory /usr/lib64/llvm5.0/lib;/opt/vespa-gtest/lib;/opt/vespa-cppunit/lib
+%define _extra_include_directory /usr/include/llvm5.0;/opt/vespa-boost/include;/opt/vespa-gtest/include;/opt/vespa-cppunit/include
 %endif
 %if 0%{?fedora}
-%if 0%{?fc26}
-Requires: llvm-libs >= 4.0
-%define _vespa_llvm_version 4.0
-%define _vespa_gtest_link_directory /opt/vespa-gtest/lib
-%define _vespa_gtest_include_directory /opt/vespa-gtest/include
-%endif
 %if 0%{?fc27}
-Requires: llvm4.0-libs >= 4.0
-%define _vespa_llvm_version 4.0
-%define _vespa_llvm_link_directory /usr/lib64/llvm4.0/lib
-%define _vespa_llvm_include_directory /usr/include/llvm4.0
+Requires: llvm-libs >= 5.0.2
+%define _vespa_llvm_version 5.0
 %define _vespa_gtest_link_directory /opt/vespa-gtest/lib
 %define _vespa_gtest_include_directory /opt/vespa-gtest/include
 %endif
 %if 0%{?fc28}
-Requires: llvm4.0-libs >= 4.0
-%define _vespa_llvm_version 4.0
-%define _vespa_llvm_link_directory /usr/lib64/llvm4.0/lib
-%define _vespa_llvm_include_directory /usr/include/llvm4.0
+Requires: llvm-libs >= 6.0.1
+%define _vespa_llvm_version 6.0
 %endif
 %if 0%{?fc29}
-Requires: llvm3.9-libs >= 3.9.1
-%define _vespa_llvm_version 3.9
-%define _vespa_llvm_link_directory /usr/lib64/llvm3.9/lib
-%define _vespa_llvm_include_directory /usr/include/llvm3.9
+Requires: llvm-libs >= 7.0.0
+%define _vespa_llvm_version 7
+%endif
+%if 0%{?fc30}
+Requires: llvm-libs >= 7.0.0
+%define _vespa_llvm_version 7
 %endif
 %define _extra_link_directory /opt/vespa-cppunit/lib%{?_vespa_llvm_link_directory:;%{_vespa_llvm_link_directory}}%{?_vespa_gtest_link_directory:;%{_vespa_gtest_link_directory}}
 %define _extra_include_directory /opt/vespa-cppunit/include%{?_vespa_llvm_include_directory:;%{_vespa_llvm_include_directory}}%{?_vespa_gtest_include_directory:;%{_vespa_gtest_include_directory}}
@@ -161,6 +155,7 @@ source %{_devtoolset_enable} || true
 %if 0%{?_rhmaven35_enable:1}
 source %{_rhmaven35_enable} || true
 %endif
+export FACTORY_VESPA_VERSION=%{version}
 sh bootstrap.sh java
 mvn --batch-mode -nsu -T 1  install -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
 cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \

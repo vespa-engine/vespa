@@ -3,6 +3,9 @@ package com.yahoo.document.datatypes;
 
 import org.junit.Test;
 
+import static java.lang.Character.MAX_SURROGATE;
+import static java.lang.Character.MIN_SURROGATE;
+
 /**
  * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @since 5.1.14
@@ -15,6 +18,12 @@ public class StringFieldValueTestCase {
         new StringFieldValue("\r");
         new StringFieldValue("\n");
         for (int c = 0x20; c < 0xFDD0; c++) {
+            new StringFieldValue("" + Character.toChars(c));
+        }
+        for (int c = 0x20; c < MIN_SURROGATE; c++) {
+            new StringFieldValue("" + Character.toChars(c)[0]);
+        }
+        for (int c = MAX_SURROGATE; c < 0xFDD0; c++) {
             new StringFieldValue("" + Character.toChars(c)[0]);
         }
         for (int c = 0xFDE0; c < 0xFFFF; c++) {

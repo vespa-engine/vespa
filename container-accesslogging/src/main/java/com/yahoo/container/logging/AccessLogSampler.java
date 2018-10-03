@@ -24,7 +24,7 @@ public class AccessLogSampler implements AccessLogInterface {
         if (accessLogEntry.getStatusCode() != 200) {
             return;
         }
-	String uriString = accessLogEntry.getURI().toString();
+	String uriString = accessLogEntry.getRawPath();
 	if (! uriString.startsWith("/search")) {
             return;
 	}

@@ -8,10 +8,11 @@ import com.google.common.annotations.Beta;
  * Each hit is associated with a subquery bitmap,
  * indicating which subqueries the hit represents.
  *
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ * @author Magnar Nedland
  */
 @Beta
 public class Hit implements Comparable<Hit> {
+
     private final int docId;
     private final long subquery;
 
@@ -65,4 +66,5 @@ public class Hit implements Comparable<Hit> {
     public int compareTo(Hit o) {
         return Integer.compare(docId, o.docId);
     }
+
 }

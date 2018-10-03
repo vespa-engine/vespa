@@ -4,10 +4,12 @@ package com.yahoo.search.predicate.index;
 /**
  * Implementation of PostingList for regular features that store
  * their intervals and nothing else.
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
+ *
+ * @author Magnar Nedland
  * @author bjorncs
  */
 public class IntervalPostingList extends MultiIntervalPostingList {
+
     private final PredicateIntervalStore store;
     private int[] currentIntervals;
     private int currentIntervalIndex;
@@ -39,4 +41,5 @@ public class IntervalPostingList extends MultiIntervalPostingList {
     public int getInterval() {
         return currentInterval;
     }
+
 }

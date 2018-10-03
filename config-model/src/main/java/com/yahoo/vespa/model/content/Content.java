@@ -14,6 +14,7 @@ import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.log.LogLevel;
+import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.model.*;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.container.Container;

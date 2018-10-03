@@ -4,6 +4,8 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/fnet/task.h>
 #include <fstream>
 
 #include <vespa/log/log.h>
@@ -26,21 +28,16 @@ class SyncHandler : public FNET_Task
     SerialNum                   _syncTo;
     
 public:
-    SyncHandler(FRT_Supervisor *supervisor,
-                FRT_RPCRequest *req,const Domain::SP &domain,
-                const TransLogServer::Session::SP &session,
-                SerialNum syncTo);
+    SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req,const Domain::SP &domain,
+                const TransLogServer::Session::SP &session, SerialNum syncTo);
 
     ~SyncHandler();
     void PerformTask() override;
 };
 
 
-SyncHandler::SyncHandler(FRT_Supervisor *supervisor,
-                         FRT_RPCRequest *req,
-                         const Domain::SP &domain,
-                         const TransLogServer::Session::SP &session,
-                         SerialNum syncTo)
+SyncHandler::SyncHandler(FRT_Supervisor *supervisor, FRT_RPCRequest *req, const Domain::SP &domain,
+                         const TransLogServer::Session::SP &session, SerialNum syncTo)
     : FNET_Task(supervisor->GetScheduler()),
       _req(*req),
       _domain(domain),
@@ -50,9 +47,7 @@ SyncHandler::SyncHandler(FRT_Supervisor *supervisor,
 }
 
 
-SyncHandler::~SyncHandler()
-{
-}
+SyncHandler::~SyncHandler() = default;
 
 
 void
@@ -154,18 +149,19 @@ TransLogServer::~TransLogServer()
     _supervisor->ShutDown(true);
 }
 
-bool TransLogServer::onStop()
+bool
+TransLogServer::onStop()
 {
     LOG(info, "Stopping TLS");
     _reqQ.push(NULL);
     return true;
 }
 
-void TransLogServer::run()
+void
+TransLogServer::run()
 {
     FRT_RPCRequest *req(NULL);
     bool hasPacket(false);
-    logMetric();
     do {
         for (req = NULL; (hasPacket = _reqQ.pop(req, 60000)) && (req != NULL); req = NULL) {
             bool immediate = true;
@@ -199,20 +195,8 @@ void TransLogServer::run()
                 req->Return();
             }
         }
-        logMetric();
     } while (running() && !(hasPacket && (req == NULL)));
     LOG(info, "TLS Stopped");
-}
-
-void TransLogServer::logMetric() const
-{
-    Guard domainGuard(_lock);
-    for (DomainList::const_iterator it(_domains.begin()), mt(_domains.end()); it != mt; it++) {
-        vespalib::string prefix("translogserver." + it->first + ".serialnum.");
-        EV_COUNT((prefix + "last").c_str(),  it->second->end());
-        EV_COUNT((prefix + "first").c_str(), it->second->begin());
-        EV_VALUE((prefix + "numused").c_str(), it->second->size());
-    }
 }
 
 DomainStats
@@ -238,7 +222,7 @@ TransLogServer::getDomainNames()
 }
 
 Domain::SP
-TransLogServer::findDomain(const stringref &domainName)
+TransLogServer::findDomain(stringref domainName)
 {
     Guard domainGuard(_lock);
     Domain::SP domain;
@@ -249,7 +233,8 @@ TransLogServer::findDomain(const stringref &domainName)
     return domain;
 }
 
-void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
+void
+TransLogServer::exportRPC(FRT_Supervisor & supervisor)
 {
     _supervisor->SetSessionInitHook(FRT_METHOD(TransLogServer::initSession), this);
     _supervisor->SetSessionFiniHook(FRT_METHOD(TransLogServer::finiSession), this);
@@ -257,32 +242,32 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     FRT_ReflectionBuilder rb( & supervisor);
 
     //-- Create Domain -----------------------------------------------------------
-    rb.DefineMethod("createDomain", "s", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("createDomain", "s", "i", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Create a new domain.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ReturnDesc("handle", "A handle(int) to the domain. Negative number indicates error.");
 
     //-- Delete Domain -----------------------------------------------------------
-    rb.DefineMethod("deleteDomain", "s", "is", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("deleteDomain", "s", "is", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Create a new domain.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ReturnDesc("retval", "0 on success. Negative number indicates error.");
     rb.ReturnDesc("errormsg", "Message describing the error, if any.");
 
     //-- Open Domain -----------------------------------------------------------
-    rb.DefineMethod("openDomain", "s", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("openDomain", "s", "i", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Open an existing domain.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ReturnDesc("handle", "A handle(int) to the domain. Negative number indicates error.");
 
     //-- List Domains -----------------------------------------------------------
-    rb.DefineMethod("listDomains", "", "is", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("listDomains", "", "is", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Will return a list of all the domains.");
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error.");
     rb.ReturnDesc("domains", "List of all the domains in a newline separated string");
 
     //-- Domain Status -----------------------------------------------------------
-    rb.DefineMethod("domainStatus", "s", "illl", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainStatus", "s", "illl", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("This will return key status information about the domain.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error.");
@@ -291,7 +276,7 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     rb.ReturnDesc("size", "Number of elements in the log.");
 
     //-- Domain Commit -----------------------------------------------------------
-    rb.DefineMethod("domainCommit", "sx", "is", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainCommit", "sx", "is", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Will commit the data to the log.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("packet", "The data to commit to the domain.");
@@ -299,14 +284,14 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     rb.ReturnDesc("message", "A textual description of the result code.");
 
     //-- Domain Prune -----------------------------------------------------------
-    rb.DefineMethod("domainPrune", "sl", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainPrune", "sl", "i", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Will erase all operations prior to the serial number.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("to", "Will erase all up and including.");
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error.");
 
     //-- Domain Visit -----------------------------------------------------------
-    rb.DefineMethod("domainVisit", "sll", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainVisit", "sll", "i", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("This will create a visitor that return all operations in the range.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("from", "Will return all entries following(not including) <from>.");
@@ -314,21 +299,21 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error. Positive number is the sessionid");
 
     //-- Domain Session Run -----------------------------------------------------------
-    rb.DefineMethod("domainSessionRun", "si", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainSessionRun", "si", "i", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("This will start the session thread.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("sessionid", "The session identifier.");
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error.");
 
     //-- Domain Session Close -----------------------------------------------------------
-    rb.DefineMethod("domainSessionClose", "si", "i", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainSessionClose", "si", "i", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("This will close the session.");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("sessionid", "The session identifier.");
     rb.ReturnDesc("result", "A resultcode(int) of the operation. Negative number indicates error. 1 means busy -> retry. 0 is OK.");
 
     //-- Domain Sync --
-    rb.DefineMethod("domainSync", "sl", "il", true, FRT_METHOD(TransLogServer::relayToThreadRPC), this);
+    rb.DefineMethod("domainSync", "sl", "il", FRT_METHOD(TransLogServer::relayToThreadRPC), this);
     rb.MethodDesc("Sync domain to given entry");
     rb.ParamDesc("name", "The name of the domain.");
     rb.ParamDesc("syncto", "Entry to sync to");
@@ -337,6 +322,8 @@ void TransLogServer::exportRPC(FRT_Supervisor & supervisor)
 }
 
 namespace {
+
+constexpr double NEVER(-1.0);
 
 void
 writeDomainDir(std::lock_guard<std::mutex> &guard,
@@ -357,9 +344,77 @@ writeDomainDir(std::lock_guard<std::mutex> &guard,
     vespalib::File::sync(dir);
 }
 
+class RPCDestination : public Session::Destination {
+public:
+    RPCDestination(FRT_Supervisor & supervisor, FNET_Connection * connection)
+        : _supervisor(supervisor), _connection(connection), _ok(true)
+    {
+        _connection->AddRef();
+    }
+    ~RPCDestination() override { _connection->SubRef(); }
+
+    bool ok() const override {
+        return _ok;
+    }
+
+    bool send(int32_t id, const vespalib::string & domain, const Packet & packet) override {
+        FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
+        req->SetMethodName("visitCallback");
+        req->GetParams()->AddString(domain.c_str());
+        req->GetParams()->AddInt32(id);
+        req->GetParams()->AddData(packet.getHandle().c_str(), packet.getHandle().size());
+        return send(req);
+    }
+
+    bool sendDone(int32_t id, const vespalib::string & domain) override {
+        FRT_RPCRequest *req = _supervisor.AllocRPCRequest();
+        req->SetMethodName("eofCallback");
+        req->GetParams()->AddString(domain.c_str());
+        req->GetParams()->AddInt32(id);
+        bool retval(send(req));
+        return retval;
+    }
+    bool connected() const override {
+        return (_connection->GetState() <= FNET_Connection::FNET_CONNECTED);
+    }
+private:
+    bool send(FRT_RPCRequest * req) {
+        int32_t retval = rpc(req);
+        if ( ! ((retval == RPC::OK) || (retval == FRTE_RPC_CONNECTION)) ) {
+            LOG(error, "Return value != OK(%d) in send for method 'visitCallback'.", retval);
+        }
+        req->SubRef();
+
+        return (retval == RPC::OK);
+    }
+    int32_t rpc(FRT_RPCRequest * req) {
+        int32_t retval(-7);
+        LOG(debug, "rpc %s starting.", req->GetMethodName());
+        FRT_Supervisor::InvokeSync(_supervisor.GetTransport(), _connection, req, NEVER);
+        if (req->GetErrorCode() == FRTE_NO_ERROR) {
+            retval = (req->GetReturn()->GetValue(0)._intval32);
+            LOG(debug, "rpc %s = %d\n", req->GetMethodName(), retval);
+        } else if (req->GetErrorCode() == FRTE_RPC_TIMEOUT) {
+            LOG(warning, "rpc %s timed out. Will allow to continue: error(%d): %s\n", req->GetMethodName(), req->GetErrorCode(), req->GetErrorMessage());
+            retval = -req->GetErrorCode();
+        } else {
+            if (req->GetErrorCode() != FRTE_RPC_CONNECTION) {
+                LOG(warning, "rpc %s: error(%d): %s\n", req->GetMethodName(), req->GetErrorCode(), req->GetErrorMessage());
+            }
+            retval = -req->GetErrorCode();
+            _ok = false;
+        }
+        return retval;
+    }
+    FRT_Supervisor   & _supervisor;
+    FNET_Connection  * _connection;
+    bool               _ok;
+};
+
 }
 
-void TransLogServer::createDomain(FRT_RPCRequest *req)
+void
+TransLogServer::createDomain(FRT_RPCRequest *req)
 {
     uint32_t retval(0);
     FRT_Values & params = *req->GetParams();
@@ -386,7 +441,8 @@ void TransLogServer::createDomain(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void TransLogServer::deleteDomain(FRT_RPCRequest *req)
+void
+TransLogServer::deleteDomain(FRT_RPCRequest *req)
 {
     uint32_t retval(0);
     vespalib::string msg("ok");
@@ -423,7 +479,8 @@ void TransLogServer::deleteDomain(FRT_RPCRequest *req)
     ret.AddString(msg.c_str());
 }
 
-void TransLogServer::openDomain(FRT_RPCRequest *req)
+void
+TransLogServer::openDomain(FRT_RPCRequest *req)
 {
     uint32_t retval(0);
     FRT_Values & params = *req->GetParams();
@@ -440,7 +497,8 @@ void TransLogServer::openDomain(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void TransLogServer::listDomains(FRT_RPCRequest *req)
+void
+TransLogServer::listDomains(FRT_RPCRequest *req)
 {
     FRT_Values & ret    = *req->GetReturn();
     LOG(debug, "listDomains()");
@@ -455,7 +513,8 @@ void TransLogServer::listDomains(FRT_RPCRequest *req)
     ret.AddString(domains.c_str());
 }
 
-void TransLogServer::domainStatus(FRT_RPCRequest *req)
+void
+TransLogServer::domainStatus(FRT_RPCRequest *req)
 {
     FRT_Values & params = *req->GetParams();
     FRT_Values & ret    = *req->GetReturn();
@@ -475,7 +534,8 @@ void TransLogServer::domainStatus(FRT_RPCRequest *req)
     }
 }
 
-void TransLogServer::commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done)
+void
+TransLogServer::commit(const vespalib::string & domainName, const Packet & packet, DoneCallback done)
 {
     (void) done;
     Domain::SP domain(findDomain(domainName));
@@ -486,7 +546,8 @@ void TransLogServer::commit(const vespalib::string & domainName, const Packet & 
     }
 }
 
-void TransLogServer::domainCommit(FRT_RPCRequest *req)
+void
+TransLogServer::domainCommit(FRT_RPCRequest *req)
 {
     FRT_Values & params = *req->GetParams();
     FRT_Values & ret    = *req->GetReturn();
@@ -509,7 +570,8 @@ void TransLogServer::domainCommit(FRT_RPCRequest *req)
     }
 }
 
-void TransLogServer::domainVisit(FRT_RPCRequest *req)
+void
+TransLogServer::domainVisit(FRT_RPCRequest *req)
 {
     uint32_t retval(uint32_t(-1));
     FRT_Values & params = *req->GetParams();
@@ -521,12 +583,13 @@ void TransLogServer::domainVisit(FRT_RPCRequest *req)
         SerialNum from(params[1]._intval64);
         SerialNum to(params[2]._intval64);
         LOG(debug, "domainVisit(%s, %" PRIu64 ", %" PRIu64 ")", domainName, from, to);
-        retval = domain->visit(domain, from, to, *_supervisor, req->GetConnection());
+        retval = domain->visit(domain, from, to, std::make_unique<RPCDestination>(*_supervisor, req->GetConnection()));
     }
     ret.AddInt32(retval);
 }
 
-void TransLogServer::domainSessionRun(FRT_RPCRequest *req)
+void
+TransLogServer::domainSessionRun(FRT_RPCRequest *req)
 {
     uint32_t retval(uint32_t(-1));
     FRT_Values & params = *req->GetParams();
@@ -542,13 +605,15 @@ void TransLogServer::domainSessionRun(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void TransLogServer::relayToThreadRPC(FRT_RPCRequest *req)
+void
+TransLogServer::relayToThreadRPC(FRT_RPCRequest *req)
 {
     req->Detach();
     _reqQ.push(req);
 }
 
-void TransLogServer::domainSessionClose(FRT_RPCRequest *req)
+void
+TransLogServer::domainSessionClose(FRT_RPCRequest *req)
 {
     uint32_t retval(uint32_t(-1));
     FRT_Values & params = *req->GetParams();
@@ -565,7 +630,8 @@ void TransLogServer::domainSessionClose(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-void TransLogServer::domainPrune(FRT_RPCRequest *req)
+void
+TransLogServer::domainPrune(FRT_RPCRequest *req)
 {
     uint32_t retval(uint32_t(-1));
     FRT_Values & params = *req->GetParams();
@@ -585,7 +651,6 @@ void TransLogServer::domainPrune(FRT_RPCRequest *req)
     ret.AddInt32(retval);
 }
 
-
 const TransLogServer::Session::SP &
 TransLogServer::getSession(FRT_RPCRequest *req)
 {
@@ -595,13 +660,11 @@ TransLogServer::getSession(FRT_RPCRequest *req)
     return *sessionspp;
 }
 
-
 void
 TransLogServer::initSession(FRT_RPCRequest *req)
 {
     req->GetConnection()->SetContext(new Session::SP(new Session()));
 }
-
 
 void
 TransLogServer::finiSession(FRT_RPCRequest *req)
@@ -613,13 +676,11 @@ TransLogServer::finiSession(FRT_RPCRequest *req)
     delete sessionspp;
 }
 
-
 void
 TransLogServer::downSession(FRT_RPCRequest *req)
 {
     getSession(req)->setDown();
 }
-
 
 void
 TransLogServer::domainSync(FRT_RPCRequest *req)

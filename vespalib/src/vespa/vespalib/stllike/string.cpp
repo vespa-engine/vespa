@@ -30,7 +30,7 @@ stringref::rfind(const char * s, size_type e) const {
 }
 
 stringref::size_type
-stringref::find(const stringref & s, size_type start) const {
+stringref::find(stringref s, size_type start) const {
     const char *buf = begin()+start;
     const char *e = end() - s.size();
     while (buf <= e) {
@@ -45,7 +45,7 @@ stringref::find(const stringref & s, size_type start) const {
     return npos;
 }
 
-std::ostream & operator << (std::ostream & os, const stringref & v)
+std::ostream & operator << (std::ostream & os, stringref v)
 {
     return os.write(v.data(), v.size());
 }
@@ -65,29 +65,29 @@ std::istream & operator >> (std::istream & is, small_string<SS> & v)
     return is;
 }
 
-template std::ostream & operator << (std::ostream & os, const vespalib::string & v);
-template std::istream & operator >> (std::istream & is, vespalib::string & v);
+template std::ostream & operator << (std::ostream & os, const string & v);
+template std::istream & operator >> (std::istream & is, string & v);
 
-vespalib::string
-operator + (const vespalib::stringref & a, const char * b)
+string
+operator + (stringref a, const char * b)
 {
-    vespalib::string t(a);
+    string t(a);
     t += b;
     return t;
 }
 
-vespalib::string
-operator + (const char * a, const vespalib::stringref & b)
+string
+operator + (const char * a, stringref b)
 {
-    vespalib::string t(a);
+    string t(a);
     t += b;
     return t;
 }
 
-vespalib::string
-operator + (const vespalib::stringref & a, const vespalib::stringref & b)
+string
+operator + (stringref a, stringref b)
 {
-    vespalib::string t(a);
+    string t(a);
     t += b;
     return t;
 }
@@ -95,8 +95,8 @@ operator + (const vespalib::stringref & a, const vespalib::stringref & b)
 template class small_string<48>;
 
 template string operator + (const string & a, const string & b);
-template string operator + (const string & a, const stringref & b);
-template string operator + (const stringref & a, const string & b);
+template string operator + (const string & a, stringref b);
+template string operator + (stringref a, const string & b);
 template string operator + (const string & a, const char * b);
 template string operator + (const  char * a, const string & b);
 

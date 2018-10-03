@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  * The file formats supported out of the box is text, see {@link com.yahoo.container.handler.test.MockService.TextFileHandler}.
  * for descriptions of the format.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 @Beta
 public class MockService extends LoggingRequestHandler {

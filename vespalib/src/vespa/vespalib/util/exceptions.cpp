@@ -70,27 +70,27 @@ SilenceUncaughtException::~SilenceUncaughtException()
 }
 
 vespalib::string
-PortListenException::make_message(int port, const vespalib::stringref &protocol,
-                                  const vespalib::stringref &msg)
+PortListenException::make_message(int port, vespalib::stringref protocol,
+                                  vespalib::stringref msg)
 {
     return make_string("failed to listen on port %d with protocol %s%s%s",
                        port, vespalib::string(protocol).c_str(), msg.empty() ? "" : ": ",
                        vespalib::string(msg).c_str());
 }
 
-PortListenException::PortListenException(int port, const vespalib::stringref &protocol,
-                                         const vespalib::stringref &msg,
-                                         const vespalib::stringref &location, int skipStack)
+PortListenException::PortListenException(int port, vespalib::stringref protocol,
+                                         vespalib::stringref msg,
+                                         vespalib::stringref location, int skipStack)
     : Exception(make_message(port, protocol, msg), location, skipStack + 1),
       _port(port),
       _protocol(protocol)
 {
 }
 
-PortListenException::PortListenException(int port, const vespalib::stringref &protocol,
+PortListenException::PortListenException(int port, vespalib::stringref protocol,
                                          const Exception &cause,
-                                         const vespalib::stringref &msg,
-                                         const vespalib::stringref &location, int skipStack)
+                                         vespalib::stringref msg,
+                                         vespalib::stringref location, int skipStack)
     : Exception(make_message(port, protocol, msg), cause, location, skipStack + 1),
       _port(port),
       _protocol(protocol)
@@ -104,15 +104,15 @@ PortListenException::~PortListenException() {}
 
 //-----------------------------------------------------------------------------
 
-IoException::IoException(const stringref & msg, Type type,
-                         const stringref & location, int skipStack)
+IoException::IoException(stringref msg, Type type,
+                         stringref location, int skipStack)
     : Exception(createMessage(msg, type), location, skipStack+1),
       _type(type)
 {
 }
 
-IoException::IoException(const stringref & msg, Type type,
-                         const Exception& cause, const stringref & location,
+IoException::IoException(stringref msg, Type type,
+                         const Exception& cause, stringref location,
                          int skipStack)
     : Exception(createMessage(msg, type), cause, location, skipStack+1),
       _type(type)
@@ -120,7 +120,7 @@ IoException::IoException(const stringref & msg, Type type,
 }
 
 string
-IoException::createMessage(const stringref & msg, Type type)
+IoException::createMessage(stringref msg, Type type)
 {
     vespalib::asciistream ost;
     switch (type) {

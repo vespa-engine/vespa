@@ -16,6 +16,7 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
     private Boolean huge;
     private Boolean fastSearch;
     private Boolean fastAccess;
+    private Boolean mutable;
     private Boolean prefetch;
     private Boolean enableBitVectors;
     private Boolean enableOnlyBitVector;
@@ -67,6 +68,9 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
 
     public void setFastAccess(Boolean fastAccess) {
         this.fastAccess = fastAccess;
+    }
+    public void setMutable(Boolean mutable) {
+        this.mutable = mutable;
     }
 
     public Boolean getPrefetch() {
@@ -142,6 +146,9 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
         }
         if (fastAccess != null) {
             attribute.setFastAccess(fastAccess);
+        }
+        if (mutable != null) {
+            attribute.setMutable(mutable);
         }
         if (prefetch != null) {
             attribute.setPrefetch(prefetch);

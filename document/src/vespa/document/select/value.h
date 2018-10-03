@@ -91,7 +91,7 @@ class StringValue : public Value
     vespalib::string _value;
 
 public:
-    StringValue(const vespalib::stringref & val);
+    StringValue(vespalib::stringref val);
 
     const vespalib::string& getValue() const { return _value; }
     ResultList operator<(const Value& value) const override;

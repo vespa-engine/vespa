@@ -1,0 +1,581 @@
+{
+  "lastVersions": {
+    "platform": {
+      "platform": "7.1",
+      "at": 0,
+      "pending": "Waiting for current deployment to complete"
+    },
+    "application": {
+      "application": {
+        "hash": "1.0.3-commit1",
+        "build": 3,
+        "source": {
+          "gitRepository": "repository1",
+          "gitBranch": "master",
+          "gitCommit": "commit1"
+        }
+      },
+      "at": 2000,
+      "deploying": "0 of 3 complete"
+    }
+  },
+  "deploying": {
+    "application": {
+      "hash": "1.0.3-commit1",
+      "build": 3,
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      }
+    }
+  },
+  "deployments": [
+    {
+      "us-central-1": {
+        "at": 2000,
+        "platform": "6.1",
+        "application": {
+          "hash": "1.0.3-commit1",
+          "build": 3,
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "verified": false,
+        "status": "verifying"
+      }
+    },
+    {
+      "us-west-1": {
+        "at": 1000,
+        "platform": "6.1",
+        "application": {
+          "hash": "1.0.2-commit1",
+          "build": 2,
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "verified": false,
+        "status": "pending"
+      },
+      "us-east-3": {
+        "at": 0,
+        "platform": "6.1",
+        "application": {
+          "hash": "1.0.1-commit1",
+          "build": 1,
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        },
+        "verified": true,
+        "status": "pending"
+      }
+    }
+  ],
+  "jobs": {
+    "system-test": {
+      "runs": [
+        {
+          "id": 3,
+          "status": "success",
+          "start": 2000,
+          "end": 2000,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.3-commit1",
+            "build": 3,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.2-commit1",
+            "build": 2,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded",
+            "test": "succeeded"
+          },
+          "log": "https://some.url:43/root/system-test/run/3"
+        },
+        {
+          "id": 2,
+          "status": "success",
+          "start": 1000,
+          "end": 1000,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.2-commit1",
+            "build": 2,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded",
+            "test": "succeeded"
+          },
+          "log": "https://some.url:43/root/system-test/run/2"
+        },
+        {
+          "id": 1,
+          "status": "success",
+          "start": 0,
+          "end": 0,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded",
+            "test": "succeeded"
+          },
+          "log": "https://some.url:43/root/system-test/run/1"
+        }
+      ],
+      "url": "https://some.url:43/root/system-test"
+    },
+    "staging-test": {
+      "runs": [
+        {
+          "status": "pending",
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.3-commit1",
+            "build": 3,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "cooldown": "failed"
+          },
+          "reason": "Testing for productionUsEast3"
+        },
+        {
+          "id": 4,
+          "status": "installationFailed",
+          "start": 2000,
+          "end": 2000,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.3-commit1",
+            "build": 3,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {},
+          "log": "https://some.url:43/root/staging-test/run/4"
+        },
+        {
+          "id": 3,
+          "status": "success",
+          "start": 2000,
+          "end": 2000,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.3-commit1",
+            "build": 3,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.2-commit1",
+            "build": 2,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded",
+            "test": "succeeded"
+          },
+          "log": "https://some.url:43/root/staging-test/run/3"
+        },
+        {
+          "id": 2,
+          "status": "success",
+          "start": 1000,
+          "end": 1000,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.2-commit1",
+            "build": 2,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded",
+            "test": "succeeded"
+          },
+          "log": "https://some.url:43/root/staging-test/run/2"
+        },
+        {
+          "id": 1,
+          "status": "success",
+          "start": 0,
+          "end": 0,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded",
+            "test": "succeeded"
+          },
+          "log": "https://some.url:43/root/staging-test/run/1"
+        }
+      ],
+      "url": "https://some.url:43/root/staging-test"
+    },
+    "us-central-1": {
+      "runs": [
+        {
+          "id": 3,
+          "status": "running",
+          "start": 2000,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.3-commit1",
+            "build": 3,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.2-commit1",
+            "build": 2,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "running"
+          },
+          "log": "https://some.url:43/root/production-us-central-1/run/3"
+        },
+        {
+          "id": 2,
+          "status": "success",
+          "start": 1000,
+          "end": 1000,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.2-commit1",
+            "build": 2,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded",
+            "test": "succeeded"
+          },
+          "log": "https://some.url:43/root/production-us-central-1/run/2"
+        },
+        {
+          "id": 1,
+          "status": "success",
+          "start": 0,
+          "end": 0,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded",
+            "test": "succeeded"
+          },
+          "log": "https://some.url:43/root/production-us-central-1/run/1"
+        }
+      ],
+      "url": "https://some.url:43/root/production-us-central-1"
+    },
+    "us-west-1": {
+      "runs": [
+        {
+          "status": "pending",
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.3-commit1",
+            "build": 3,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.2-commit1",
+            "build": 2,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "us-central-1": "running"
+          }
+        },
+        {
+          "id": 2,
+          "status": "testFailure",
+          "start": 1000,
+          "end": 1000,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.2-commit1",
+            "build": 2,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded",
+            "test": "failed"
+          },
+          "log": "https://some.url:43/root/production-us-west-1/run/2"
+        },
+        {
+          "id": 1,
+          "status": "success",
+          "start": 0,
+          "end": 0,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded",
+            "test": "succeeded"
+          },
+          "log": "https://some.url:43/root/production-us-west-1/run/1"
+        }
+      ],
+      "url": "https://some.url:43/root/production-us-west-1"
+    },
+    "us-east-3": {
+      "runs": [
+        {
+          "status": "pending",
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.3-commit1",
+            "build": 3,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "staging-test": "failed",
+            "us-central-1": "running"
+          }
+        },
+        {
+          "id": 2,
+          "status": "deploymentFailed",
+          "start": 1000,
+          "end": 1000,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.2-commit1",
+            "build": 2,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "deploy": "failed"
+          },
+          "log": "https://some.url:43/root/production-us-east-3/run/2"
+        },
+        {
+          "id": 1,
+          "status": "success",
+          "start": 0,
+          "end": 0,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded",
+            "test": "succeeded"
+          },
+          "log": "https://some.url:43/root/production-us-east-3/run/1"
+        }
+      ],
+      "url": "https://some.url:43/root/production-us-east-3"
+    }
+  }
+}

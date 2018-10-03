@@ -199,14 +199,14 @@ void worker(DocidRangeScheduler &scheduler, const Work &work, size_t thread_id, 
 
 //-----------------------------------------------------------------------------
 
-struct RangeChecker : vespalib::Rendezvous<WorkTracker,bool> {
+struct RangeChecker : vespalib::Rendezvous<std::reference_wrapper<const WorkTracker>,bool> {
     size_t docid_limit;
     RangeChecker(size_t num_threads, size_t docid_limit_in)
-        : vespalib::Rendezvous<WorkTracker,bool>(num_threads), docid_limit(docid_limit_in) {}
+        : vespalib::Rendezvous<std::reference_wrapper<const WorkTracker>,bool>(num_threads), docid_limit(docid_limit_in) {}
     virtual void mingle() override {
         std::vector<DocidRange> ranges;
         for (size_t i = 0; i < size(); ++i) {
-            ranges.insert(ranges.end(), in(i).ranges.begin(), in(i).ranges.end());
+            ranges.insert(ranges.end(), in(i).get().ranges.begin(), in(i).get().ranges.end());
         }
         std::sort(ranges.begin(), ranges.end(), [](const auto &a, const auto &b)
                   { return (a.begin < b.begin); });

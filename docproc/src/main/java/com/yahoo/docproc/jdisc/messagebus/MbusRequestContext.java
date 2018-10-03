@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class MbusRequestContext implements RequestContext, ResponseHandler {
 
@@ -168,7 +168,6 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
         case DocumentProtocol.MESSAGE_PUTDOCUMENT:
         case DocumentProtocol.MESSAGE_UPDATEDOCUMENT:
         case DocumentProtocol.MESSAGE_REMOVEDOCUMENT:
-        case DocumentProtocol.MESSAGE_BATCHDOCUMENTUPDATE:
             return true;
         }
         return false;

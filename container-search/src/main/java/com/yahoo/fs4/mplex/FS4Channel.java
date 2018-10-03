@@ -4,7 +4,6 @@ package com.yahoo.fs4.mplex;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -66,9 +65,6 @@ public class FS4Channel {
     public Integer getChannelId () {
         return channelId;
     }
-
-    /** Returns the distribution key of the content node this represents, or empty if it is a dispatch node */
-    public Optional<Integer> distributionKey() { return backend == null ? Optional.empty() : backend.distributionKey(); }
 
     /**
      * Closes the channel

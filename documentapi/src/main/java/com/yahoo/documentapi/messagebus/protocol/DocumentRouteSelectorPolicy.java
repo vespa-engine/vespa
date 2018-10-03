@@ -154,15 +154,6 @@ public class DocumentRouteSelectorPolicy
             }
         }
 
-        case DocumentProtocol.MESSAGE_BATCHDOCUMENTUPDATE:
-            BatchDocumentUpdateMessage bdu = (BatchDocumentUpdateMessage)msg;
-            for (int i = 0; i < bdu.getUpdates().size(); i++) {
-                if (selector.accepts(bdu.getUpdates().get(i)) == Result.FALSE) {
-                    return false;
-                }
-            }
-            return true;
-
         default:
             return true;
         }

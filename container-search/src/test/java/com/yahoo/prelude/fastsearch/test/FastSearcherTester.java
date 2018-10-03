@@ -2,6 +2,7 @@
 package com.yahoo.prelude.fastsearch.test;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.net.HostName;
 import com.yahoo.prelude.fastsearch.CacheParams;
@@ -20,6 +21,7 @@ import com.yahoo.search.searchchain.Execution;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -34,7 +36,7 @@ class FastSearcherTester {
     private final MockFS4ResourcePool mockFS4ResourcePool;
     private final FastSearcher fastSearcher;
     private final MockDispatcher mockDispatcher;
-    private final VipStatus vipStatus = new VipStatus();
+    private final VipStatus vipStatus;
 
     public FastSearcherTester(int containerClusterSize, SearchCluster.Node searchNode) {
         this(containerClusterSize, Collections.singletonList(searchNode));
@@ -45,9 +47,12 @@ class FastSearcherTester {
     }
 
     public FastSearcherTester(int containerClusterSize, List<SearchCluster.Node> searchNodes) {
+        ClustersStatus clustersStatus = new ClustersStatus();
+        clustersStatus.setContainerHasClusters(true);
+        vipStatus = new VipStatus(clustersStatus);
         mockFS4ResourcePool = new MockFS4ResourcePool();
         mockDispatcher = new MockDispatcher(searchNodes, mockFS4ResourcePool, containerClusterSize, vipStatus);
-        fastSearcher = new FastSearcher(new MockBackend(selfHostname, MockFSChannel::new),
+        fastSearcher = new FastSearcher(new MockBackend(selfHostname, 0L, true),
                                         mockFS4ResourcePool,
                                         mockDispatcher,
                                         new SummaryParameters(null),
@@ -76,6 +81,8 @@ class FastSearcherTester {
     public int requestCount(String hostname, int port) {
         return mockFS4ResourcePool.requestCount(hostname, port);
     }
+
+    public MockDispatcher dispatcher() { return mockDispatcher; }
 
     /** Sets the response status of a node and ping it to update the monitor status */
     public void setResponding(String hostname, boolean responding) {

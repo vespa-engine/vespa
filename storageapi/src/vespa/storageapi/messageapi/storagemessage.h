@@ -147,10 +147,6 @@ public:
         REMOVELOCATION_REPLY_ID = 87,
         QUERYRESULT_ID = 88,
         QUERYRESULT_REPLY_ID = 89,
-        BATCHPUTREMOVE_ID = 90,
-        BATCHPUTREMOVE_REPLY_ID = 91,
-        BATCHDOCUMENTUPDATE_ID = 92,
-        BATCHDOCUMENTUPDATE_REPLY_ID = 93,
         SETBUCKETSTATE_ID = 94,
         SETBUCKETSTATE_REPLY_ID = 95,
         MESSAGETYPE_MAX_ID
@@ -163,7 +159,7 @@ private:
     MessageType *_reply;
     const MessageType *_replyOf;
 
-    MessageType(const vespalib::stringref & name, Id id, const MessageType* replyOf = 0);
+    MessageType(vespalib::stringref name, Id id, const MessageType* replyOf = 0);
 public:
     static const MessageType DOCBLOCK;
     static const MessageType DOCBLOCK_REPLY;
@@ -233,10 +229,6 @@ public:
     static const MessageType REMOVELOCATION_REPLY;
     static const MessageType QUERYRESULT;
     static const MessageType QUERYRESULT_REPLY;
-    static const MessageType BATCHPUTREMOVE;
-    static const MessageType BATCHPUTREMOVE_REPLY;
-    static const MessageType BATCHDOCUMENTUPDATE;
-    static const MessageType BATCHDOCUMENTUPDATE_REPLY;
     static const MessageType SETBUCKETSTATE;
     static const MessageType SETBUCKETSTATE_REPLY;
 
@@ -280,7 +272,7 @@ private:
 
 public:
     StorageMessageAddress(const mbus::Route& route);
-    StorageMessageAddress(const vespalib::stringref & clusterName,
+    StorageMessageAddress(vespalib::stringref clusterName,
                           const lib::NodeType& type, uint16_t index,
                           Protocol protocol = STORAGE);
     ~StorageMessageAddress();

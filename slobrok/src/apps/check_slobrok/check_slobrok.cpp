@@ -13,14 +13,14 @@ LOG_SETUP("check_slobrok");
 class Slobrok_Checker : public FastOS_Application
 {
 private:
-    FRT_Supervisor *_supervisor;
-    FRT_Target     *_target;
+    std::unique_ptr<FRT_Supervisor>  _supervisor;
+    FRT_Target                      *_target;
 
     Slobrok_Checker(const Slobrok_Checker &);
     Slobrok_Checker &operator=(const Slobrok_Checker &);
 
 public:
-    Slobrok_Checker() : _supervisor(NULL), _target(NULL) {}
+    Slobrok_Checker() : _supervisor(), _target(nullptr) {}
     virtual ~Slobrok_Checker();
     int usage();
     void initRPC(const char *spec);
@@ -30,8 +30,8 @@ public:
 
 Slobrok_Checker::~Slobrok_Checker()
 {
-    LOG_ASSERT(_supervisor == NULL);
-    LOG_ASSERT(_target == NULL);
+    LOG_ASSERT( !_supervisor);
+    LOG_ASSERT(_target == nullptr);
 }
 
 
@@ -46,7 +46,7 @@ Slobrok_Checker::usage()
 void
 Slobrok_Checker::initRPC(const char *spec)
 {
-    _supervisor = new FRT_Supervisor();
+    _supervisor = std::make_unique<FRT_Supervisor>();
     _target     = _supervisor->GetTarget(spec);
     _supervisor->Start();
 }
@@ -55,14 +55,13 @@ Slobrok_Checker::initRPC(const char *spec)
 void
 Slobrok_Checker::finiRPC()
 {
-    if (_target != NULL) {
+    if (_target != nullptr) {
         _target->SubRef();
-        _target = NULL;
+        _target = nullptr;
     }
-    if (_supervisor != NULL) {
+    if (_supervisor) {
         _supervisor->ShutDown(true);
-        delete _supervisor;
-        _supervisor = NULL;
+        _supervisor.reset();
     }
 }
 

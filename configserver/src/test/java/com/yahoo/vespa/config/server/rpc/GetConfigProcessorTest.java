@@ -35,8 +35,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author lulf
- * @since 5.1
+ * @author Ulf Lilleengen
  */
 public class GetConfigProcessorTest {
 
@@ -49,9 +48,9 @@ public class GetConfigProcessorTest {
         rpc.response = new MockConfigResponse("foo"); // should be a sentinel config, but it does not matter for this test
 
         // one tenant, which has host1 assigned
-        boolean pretentToHaveLoadedApplications = true;
+        boolean pretendToHaveLoadedApplications = true;
         TenantName testTenant = TenantName.from("test");
-        rpc.onTenantCreate(testTenant, new MockTenantProvider(pretentToHaveLoadedApplications));
+        rpc.onTenantCreate(testTenant, new MockTenantProvider(pretendToHaveLoadedApplications));
         rpc.hostsUpdated(testTenant, Collections.singleton("host1"));
 
         {   // a config is returned normally

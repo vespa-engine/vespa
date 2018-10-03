@@ -16,8 +16,7 @@ using fileutil::LoadedBuffer;
 
 template <typename B, typename M>
 MultiValueNumericEnumAttribute<B, M>::
-MultiValueNumericEnumAttribute(const vespalib::string & baseFileName,
-                               const AttributeVector::Config & cfg)
+MultiValueNumericEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg)
     : MultiValueEnumAttribute<B, M>(baseFileName, cfg)
 { }
 
@@ -70,14 +69,10 @@ MultiValueNumericEnumAttribute<B, M>::onLoadEnumerated(ReaderBase &attrReader)
     EnumVector enumHist;
     if (this->hasPostings()) {
         loaded.reserve(numValues);
-        this->fillEnumIdx(attrReader,
-                          eidxs,
-                          loaded);
+        this->fillEnumIdx(attrReader, eidxs, loaded);
     } else {
         EnumVector(eidxs.size(), 0).swap(enumHist);
-        this->fillEnumIdx(attrReader,
-                          eidxs,
-                          enumHist);
+        this->fillEnumIdx(attrReader, eidxs, enumHist);
     }
     EnumIndexVector().swap(eidxs);
     if (this->hasPostings()) {
@@ -131,15 +126,15 @@ MultiValueNumericEnumAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
     QueryTermSimple::RangeResult<T> res = qTerm->getRange<T>();
     if (this->hasArrayType()) {
         if (res.isEqual()) {
-            return AttributeVector::SearchContext::UP(new ArraySearchContext(std::move(qTerm), *this));
+            return std::make_unique<ArraySearchContext>(std::move(qTerm), *this);
         } else {
-            return AttributeVector::SearchContext::UP(new ArraySearchContext(std::move(qTerm), *this));
+            return std::make_unique<ArraySearchContext>(std::move(qTerm), *this);
         }
     } else {
         if (res.isEqual()) {
-            return AttributeVector::SearchContext::UP(new SetSearchContext(std::move(qTerm), *this));
+            return std::make_unique<SetSearchContext>(std::move(qTerm), *this);
         } else {
-            return AttributeVector::SearchContext::UP(new SetSearchContext(std::move(qTerm), *this));
+            return std::make_unique<SetSearchContext>(std::move(qTerm), *this);
         }
     }
 }
@@ -162,7 +157,7 @@ std::unique_ptr<queryeval::SearchIterator>
 MultiValueNumericEnumAttribute<B, M>::SetSearchContext::createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
 {
     if (!valid()) {
-        return queryeval::SearchIterator::UP(new queryeval::EmptySearch());
+        return std::make_unique<queryeval::EmptySearch>();
     }
     if (getIsFilter()) {
         return queryeval::SearchIterator::UP
@@ -181,7 +176,7 @@ std::unique_ptr<queryeval::SearchIterator>
 MultiValueNumericEnumAttribute<B, M>::ArraySearchContext::createFilterIterator(fef::TermFieldMatchData * matchData, bool strict)
 {
     if (!valid()) {
-        return queryeval::SearchIterator::UP(new queryeval::EmptySearch());
+        return std::make_unique<queryeval::EmptySearch>();
     }
     if (getIsFilter()) {
         return queryeval::SearchIterator::UP

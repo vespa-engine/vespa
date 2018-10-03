@@ -12,23 +12,25 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
-import com.yahoo.vespa.hosted.controller.api.integration.LogStore;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
+import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Organization;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.rotation.Rotation;
+import com.yahoo.vespa.hosted.controller.versions.OsVersion;
+import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
@@ -40,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -67,12 +71,10 @@ public class Controller extends AbstractComponent {
     private final Clock clock;
     private final GitHub gitHub;
     private final EntityService entityService;
-    private final GlobalRoutingService globalRoutingService;
     private final ZoneRegistry zoneRegistry;
     private final ConfigServer configServer;
     private final MetricsService metricsService;
     private final Chef chef;
-    private final Organization organization;
     private final AthenzClientFactory athenzClientFactory;
 
     /**
@@ -83,33 +85,31 @@ public class Controller extends AbstractComponent {
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       GitHub gitHub, EntityService entityService, Organization organization,
-                      GlobalRoutingService globalRoutingService,
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, AthenzClientFactory athenzClientFactory,
-                      ArtifactRepository artifactRepository, BuildService buildService, LogStore logStore) {
+                      ArtifactRepository artifactRepository, ApplicationStore applicationStore, TesterCloud testerCloud,
+                      BuildService buildService, RunDataStore runDataStore) {
         this(curator, rotationsConfig,
-             gitHub, entityService, organization, globalRoutingService, zoneRegistry,
+             gitHub, entityService, zoneRegistry,
              configServer, metricsService, nameService, routingGenerator, chef,
-             Clock.systemUTC(), athenzClientFactory, artifactRepository, buildService,
-             logStore, com.yahoo.net.HostName::getLocalhost);
+             Clock.systemUTC(), athenzClientFactory, artifactRepository, applicationStore, testerCloud,
+             buildService, runDataStore, com.yahoo.net.HostName::getLocalhost);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
-                      GitHub gitHub, EntityService entityService, Organization organization,
-                      GlobalRoutingService globalRoutingService,
+                      GitHub gitHub, EntityService entityService,
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, Clock clock,
                       AthenzClientFactory athenzClientFactory, ArtifactRepository artifactRepository,
-                      BuildService buildService, LogStore logStore, Supplier<String> hostnameSupplier) {
+                      ApplicationStore applicationStore, TesterCloud testerCloud,
+                      BuildService buildService, RunDataStore runDataStore, Supplier<String> hostnameSupplier) {
 
         this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
         this.gitHub = Objects.requireNonNull(gitHub, "GitHub cannot be null");
         this.entityService = Objects.requireNonNull(entityService, "EntityService cannot be null");
-        this.organization = Objects.requireNonNull(organization, "Organization cannot be null");
-        this.globalRoutingService = Objects.requireNonNull(globalRoutingService, "GlobalRoutingService cannot be null");
         this.zoneRegistry = Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
         this.configServer = Objects.requireNonNull(configServer, "ConfigServer cannot be null");
         this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
@@ -117,12 +117,13 @@ public class Controller extends AbstractComponent {
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
         this.athenzClientFactory = Objects.requireNonNull(athenzClientFactory, "AthenzClientFactory cannot be null");
 
-        jobController = new JobController(this, logStore);
+        jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
         applicationController = new ApplicationController(this, curator, athenzClientFactory,
                                                           Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"),
                                                           Objects.requireNonNull(nameService, "NameService cannot be null"),
                                                           configServer,
                                                           Objects.requireNonNull(artifactRepository, "ArtifactRepository cannot be null"),
+                                                          Objects.requireNonNull(applicationStore, "ApplicationStore cannot be null"),
                                                           Objects.requireNonNull(routingGenerator, "RoutingGenerator cannot be null"),
                                                           Objects.requireNonNull(buildService, "BuildService cannot be null"),
                                                           clock);
@@ -159,10 +160,6 @@ public class Controller extends AbstractComponent {
     public Clock clock() { return clock; }
 
     public ZoneRegistry zoneRegistry() { return zoneRegistry; }
-
-    public Map<String, RotationStatus> rotationStatus(Rotation rotation) {
-        return globalRoutingService.getHealthStatus(rotation.name());
-    }
 
     public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
                                               String environment, String region) {
@@ -210,6 +207,50 @@ public class Controller extends AbstractComponent {
                 .orElse(Vtag.currentVersion);
     }
 
+    /** Returns the target OS version for infrastructure in this system. The controller will drive infrastructure OS
+     * upgrades to this version */
+    public Optional<OsVersion> osVersion(CloudName cloud) {
+        return osVersions().stream().filter(osVersion -> osVersion.cloud().equals(cloud)).findFirst();
+    }
+
+    /** Returns all target OS versions in this system */
+    public Set<OsVersion> osVersions() {
+        return curator.readOsVersions();
+    }
+
+    /** Set the target OS version for infrastructure on cloud in this system */
+    public void upgradeOsIn(CloudName cloud, Version version) {
+        if (version.isEmpty()) {
+            throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
+        }
+        if (zoneRegistry.zones().all().ids().stream().noneMatch(zone -> cloud.equals(zone.cloud()))) {
+            throw new IllegalArgumentException("Cloud '" + cloud.value() + "' does not exist in this system");
+        }
+        try (Lock lock = curator.lockOsVersions()) {
+            Set<OsVersion> versions = new TreeSet<>(curator.readOsVersions());
+            if (versions.stream().anyMatch(osVersion -> osVersion.cloud().equals(cloud) &&
+                                                        osVersion.version().isAfter(version))) {
+                throw new IllegalArgumentException("Cannot downgrade cloud '" + cloud.value() + "' to version " +
+                                                   version.toFullString());
+            }
+            versions.removeIf(osVersion -> osVersion.cloud().equals(cloud)); // Only allow a single target per cloud
+            versions.add(new OsVersion(version, cloud));
+            curator.writeOsVersions(versions);
+        }
+    }
+
+    /** Returns the current OS version status */
+    public OsVersionStatus osVersionStatus() {
+        return curator.readOsVersionStatus();
+    }
+
+    /** Replace the current OS version status with a new one */
+    public void updateOsVersionStatus(OsVersionStatus newStatus) {
+        try (Lock lock = curator.lockOsVersionStatus()) {
+            curator.writeOsVersionStatus(newStatus);
+        }
+    }
+
     /** Returns the hostname of this controller */
     public HostName hostname() {
         return HostName.from(hostnameSupplier.get());
@@ -233,10 +274,6 @@ public class Controller extends AbstractComponent {
 
     public Chef chefClient() {
         return chef;
-    }
-
-    public Organization organization() {
-        return organization;
     }
 
     public CuratorDb curator() {

@@ -6,7 +6,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author valerijf
+ * @author freva
  */
 public class ContainerNameTest {
     @Test
@@ -21,6 +21,11 @@ public class ContainerNameTest {
         String name = "container-123";
         ContainerName containerName = new ContainerName(name);
         assertEquals(containerName.asString(), name);
+    }
+
+    @Test
+    public void testContainerNameFromHostname() {
+        assertEquals(new ContainerName("container-123"), ContainerName.fromHostname("container-123.sub.domain.tld"));
     }
 
     @Test(expected=IllegalArgumentException.class)

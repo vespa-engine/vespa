@@ -108,6 +108,63 @@ SecondPhase::lookup(const Properties &props)
 
 } // namespace rank
 
+namespace execute::onmatch {
+    
+const vespalib::string Attribute::NAME("vespa.execute.onmatch.attribute");
+const vespalib::string Attribute::DEFAULT_VALUE("");
+const vespalib::string Operation::NAME("vespa.execute.onmatch.operation");
+const vespalib::string Operation::DEFAULT_VALUE("");
+
+vespalib::string
+Attribute::lookup(const Properties &props, const vespalib::string & defaultValue) {
+    return lookupString(props, NAME, defaultValue);
+}
+
+vespalib::string
+Operation::lookup(const Properties &props, const vespalib::string & defaultValue) {
+    return lookupString(props, NAME, defaultValue);
+}
+
+}
+
+namespace execute::onrerank {
+
+const vespalib::string Attribute::NAME("vespa.execute.onrerank.attribute");
+const vespalib::string Attribute::DEFAULT_VALUE("");
+const vespalib::string Operation::NAME("vespa.execute.onrerank.operation");
+const vespalib::string Operation::DEFAULT_VALUE("");
+
+vespalib::string
+Attribute::lookup(const Properties &props, const vespalib::string & defaultValue) {
+    return lookupString(props, NAME, defaultValue);
+}
+
+vespalib::string
+Operation::lookup(const Properties &props, const vespalib::string & defaultValue) {
+    return lookupString(props, NAME, defaultValue);
+}
+
+}
+
+namespace execute::onsummary {
+
+const vespalib::string Attribute::NAME("vespa.execute.onsummary.attribute");
+const vespalib::string Attribute::DEFAULT_VALUE("");
+const vespalib::string Operation::NAME("vespa.execute.onsummary.operation");
+const vespalib::string Operation::DEFAULT_VALUE("");
+
+vespalib::string
+Attribute::lookup(const Properties &props, const vespalib::string & defaultValue) {
+    return lookupString(props, NAME, defaultValue);
+}
+
+vespalib::string
+Operation::lookup(const Properties &props, const vespalib::string & defaultValue) {
+    return lookupString(props, NAME, defaultValue);
+}
+
+}
+
 namespace summary {
 
 const vespalib::string Feature::NAME("vespa.summary.feature");
@@ -272,63 +329,63 @@ const vespalib::string DiversityCutoffStrategy::NAME("vespa.matchphase.diversity
 const vespalib::string DiversityCutoffStrategy::DEFAULT_VALUE("loose");
 
 vespalib::string
-DegradationAttribute::lookup(const Properties &props)
+DegradationAttribute::lookup(const Properties &props, const vespalib::string & defaultValue)
 {
-    return lookupString(props, NAME, DEFAULT_VALUE);
+    return lookupString(props, NAME, defaultValue);
 }
 
 bool
-DegradationAscendingOrder::lookup(const Properties &props)
+DegradationAscendingOrder::lookup(const Properties &props, bool defaultValue)
 {
-    return lookupBool(props, NAME, DEFAULT_VALUE);
+    return lookupBool(props, NAME, defaultValue);
 }
 
 uint32_t
-DegradationMaxHits::lookup(const Properties &props)
+DegradationMaxHits::lookup(const Properties &props, uint32_t defaultValue)
 {
-    return lookupUint32(props, NAME, DEFAULT_VALUE);
+    return lookupUint32(props, NAME, defaultValue);
 }
 
 double
-DegradationSamplePercentage::lookup(const Properties &props)
+DegradationSamplePercentage::lookup(const Properties &props, double defaultValue)
 {
-    return lookupDouble(props, NAME, DEFAULT_VALUE);
+    return lookupDouble(props, NAME, defaultValue);
 }
 
 double
-DegradationMaxFilterCoverage::lookup(const Properties &props)
+DegradationMaxFilterCoverage::lookup(const Properties &props, double defaultValue)
 {
-    return lookupDouble(props, NAME, DEFAULT_VALUE);
+    return lookupDouble(props, NAME, defaultValue);
 }
 
 double
-DegradationPostFilterMultiplier::lookup(const Properties &props)
+DegradationPostFilterMultiplier::lookup(const Properties &props, double defaultValue)
 {
-    return lookupDouble(props, NAME, DEFAULT_VALUE);
+    return lookupDouble(props, NAME, defaultValue);
 }
 
 vespalib::string
-DiversityAttribute::lookup(const Properties &props)
+DiversityAttribute::lookup(const Properties &props, const vespalib::string & defaultValue)
 {
-    return lookupString(props, NAME, DEFAULT_VALUE);
+    return lookupString(props, NAME, defaultValue);
 }
 
 uint32_t
-DiversityMinGroups::lookup(const Properties &props)
+DiversityMinGroups::lookup(const Properties &props, uint32_t defaultValue)
 {
-    return lookupUint32(props, NAME, DEFAULT_VALUE);
+    return lookupUint32(props, NAME, defaultValue);
 }
 
 double
-DiversityCutoffFactor::lookup(const Properties &props)
+DiversityCutoffFactor::lookup(const Properties &props, double defaultValue)
 {
-    return lookupDouble(props, NAME, DEFAULT_VALUE);
+    return lookupDouble(props, NAME, defaultValue);
 }
 
 vespalib::string
-DiversityCutoffStrategy::lookup(const Properties &props)
+DiversityCutoffStrategy::lookup(const Properties &props, const vespalib::string & defaultValue)
 {
-    return lookupString(props, NAME, DEFAULT_VALUE);
+    return lookupString(props, NAME, defaultValue);
 }
 
 
@@ -342,7 +399,13 @@ const uint32_t HeapSize::DEFAULT_VALUE(100);
 uint32_t
 HeapSize::lookup(const Properties &props)
 {
-    return lookupUint32(props, NAME, DEFAULT_VALUE);
+    return lookup(props, DEFAULT_VALUE);
+}
+
+uint32_t
+HeapSize::lookup(const Properties &props, uint32_t defaultValue)
+{
+    return lookupUint32(props, NAME, defaultValue);
 }
 
 const vespalib::string ArraySize::NAME("vespa.hitcollector.arraysize");

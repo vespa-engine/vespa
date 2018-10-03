@@ -2,8 +2,8 @@
 package com.yahoo.vespa.hosted.dockerapi;
 
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -12,14 +12,38 @@ import java.util.Optional;
  */
 public interface Docker {
     /**
-     * Must be called before any other method. May be called more than once.
+     * Should only be called by non-host-admin. May be called more than once.
+     * TODO: Remove when migration to host-admin is done
      */
     void start();
 
     interface CreateContainerCommand {
         CreateContainerCommand withLabel(String name, String value);
         CreateContainerCommand withEnvironment(String name, String value);
+
+        /**
+         * Mounts a directory on host inside the docker container.
+         *
+         * <p>Bind mount content will be <b>private</b> to this container (and host) only.
+         *
+         * <p>When using this method and selinux is enabled (/usr/sbin/sestatus), starting
+         * multiple containers which mount host's /foo directory into the container, will make
+         * /foo's content visible/readable/writable only inside the container which was last
+         * started and on the host. All the other containers will get "Permission denied".
+         *
+         * <p>Use {@link #withSharedVolume(String, String)} to mount a given host directory
+         * into multiple containers.
+         */
         CreateContainerCommand withVolume(String path, String volumePath);
+
+        /**
+         * Mounts a directory on host inside the docker container.
+         *
+         * <p>The bind mount content will be <b>shared</b> among multiple containers.
+         *
+         * @see #withVolume(String, String)
+         */
+        CreateContainerCommand withSharedVolume(String path, String volumePath);
         CreateContainerCommand withNetworkMode(String mode);
         CreateContainerCommand withIpAddress(InetAddress address);
         CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit);
@@ -38,20 +62,7 @@ public interface Docker {
             ContainerName containerName,
             String hostName);
 
-    interface ContainerStats {
-        Map<String, Object> getNetworks();
-        Map<String, Object> getCpuStats();
-        Map<String, Object> getMemoryStats();
-        Map<String, Object> getBlkioStats();
-    }
-
-    default boolean networkNATed() {
-        return false;
-    }
-
     Optional<ContainerStats> getContainerStats(ContainerName containerName);
-
-    void createContainer(CreateContainerCommand createContainerCommand);
 
     void startContainer(ContainerName containerName);
 
@@ -62,8 +73,6 @@ public interface Docker {
     void connectContainerToNetwork(ContainerName containerName, String networkName);
 
     List<Container> getAllContainersManagedBy(String manager);
-
-    List<ContainerName> listAllContainersManagedBy(String manager);
 
     Optional<Container> getContainer(ContainerName containerName);
 
@@ -76,12 +85,10 @@ public interface Docker {
      */
     boolean pullImageAsyncIfNeeded(DockerImage image);
 
-    void deleteImage(DockerImage dockerImage);
-
     /**
      * Deletes the local images that are currently not in use by any container and not recently used.
      */
-    void deleteUnusedDockerImages();
+    boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete);
 
     /**
      * Execute a command in docker container as $VESPA_USER. Will block until the command is finished.
@@ -114,12 +121,4 @@ public interface Docker {
      * @return exitcodes, stdout and stderr in the ProcessResult
      */
     ProcessResult executeInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... command);
-
-    String getGlobalIPv6Address(ContainerName name);
-
-    /**
-     * If set, the supplier will we called every time before a pull/push request is made to get the credentials
-     */
-    void setDockerRegistryCredentialsSupplier(DockerRegistryCredentialsSupplier dockerRegistryCredentialsSupplier);
-
 }

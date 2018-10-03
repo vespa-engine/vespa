@@ -19,6 +19,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
+import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
@@ -190,8 +191,15 @@ public class NodeFailTester {
     public void suspend(ApplicationId app) {
         try {
             orchestrator.suspend(app);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        catch (Exception e) {
+    }
+
+    public void suspend(String hostName) {
+        try {
+            orchestrator.suspend(new HostName(hostName));
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

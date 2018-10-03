@@ -25,7 +25,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
@@ -37,10 +39,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.concurrent.Once;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.Rotation;
@@ -55,6 +59,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -85,6 +91,7 @@ public class ApplicationController {
     private final CuratorDb curator;
 
     private final ArtifactRepository artifactRepository;
+    private final ApplicationStore applicationStore;
     private final RotationRepository rotationRepository;
     private final AthenzClientFactory zmsClientFactory;
     private final NameService nameService;
@@ -97,7 +104,7 @@ public class ApplicationController {
     ApplicationController(Controller controller, CuratorDb curator,
                           AthenzClientFactory zmsClientFactory, RotationsConfig rotationsConfig,
                           NameService nameService, ConfigServer configServer,
-                          ArtifactRepository artifactRepository,
+                          ArtifactRepository artifactRepository, ApplicationStore applicationStore,
                           RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
         this.controller = controller;
         this.curator = curator;
@@ -108,12 +115,21 @@ public class ApplicationController {
         this.clock = clock;
 
         this.artifactRepository = artifactRepository;
+        this.applicationStore = applicationStore;
         this.rotationRepository = new RotationRepository(rotationsConfig, this, curator);
         this.deploymentTrigger = new DeploymentTrigger(controller, buildService, clock);
 
-        for (Application application : curator.readApplications()) {
-            lockIfPresent(application.id(), this::store);
-        }
+        // Update serialization format of all applications
+        Once.after(Duration.ofMinutes(1), () -> {
+            Instant start = clock.instant();
+            int count = 0;
+            for (Application application : curator.readApplications()) {
+                lockIfPresent(application.id(), this::store);
+                count++;
+            }
+            log.log(Level.INFO, String.format("Wrote %d applications in %s", count,
+                                              Duration.between(start, clock.instant())));
+        });
     }
 
     /** Returns the application with the given id, or null if it is not present */
@@ -141,6 +157,8 @@ public class ApplicationController {
     }
 
     public ArtifactRepository artifacts() { return artifactRepository; }
+
+    public ApplicationStore applicationStore() {  return applicationStore; }
 
     /**
      * Set the rotations marked as 'global' either 'in' or 'out of' service.
@@ -234,7 +252,9 @@ public class ApplicationController {
      */
     public Application createApplication(ApplicationId id, Optional<NToken> token) {
         if ( ! (id.instance().isDefault())) // TODO: Support instances properly
-            throw new UnsupportedOperationException("Only the instance name 'default' is supported at the moment");
+            throw new IllegalArgumentException("Only the instance name 'default' is supported at the moment");
+        if (id.instance().isTester())
+            throw new IllegalArgumentException("'" + id + "' is a tester application!");
         try (Lock lock = lock(id)) {
             // Validate only application names which do not already exist.
             if (asList(id.tenant()).stream().noneMatch(application -> application.id().application().equals(id.application())))
@@ -255,7 +275,7 @@ public class ApplicationController {
                 zmsClient.addApplication(((AthenzTenant) tenant.get()).domain(),
                                          new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
             }
-            LockedApplication application = new LockedApplication(new Application(id), lock);
+            LockedApplication application = new LockedApplication(new Application(id, clock.instant()), lock);
             store(application);
             log.info("Created " + application);
             return application.get();
@@ -264,9 +284,13 @@ public class ApplicationController {
 
     /** Deploys an application. If the application does not exist it is created. */
     // TODO: Get rid of the options arg
+    // TODO jvenstad: Split this, and choose between deployDirectly and deploy in handler, excluding internally built from the latter.
     public ActivateResult deploy(ApplicationId applicationId, ZoneId zone,
                                  Optional<ApplicationPackage> applicationPackageFromDeployer,
                                  DeployOptions options) {
+        if (applicationId.instance().isTester())
+            throw new IllegalArgumentException("'" + applicationId + "' is a tester application!");
+
         try (Lock lock = lock(applicationId)) {
             LockedApplication application = get(applicationId)
                     .map(app -> new LockedApplication(app, lock))
@@ -285,8 +309,7 @@ public class ApplicationController {
                 applicationPackage = applicationPackageFromDeployer.orElseThrow(
                         () -> new IllegalArgumentException("Application package must be given when deploying to " + zone));
             } else {
-                JobType jobType = JobType.from(controller.system(), zone)
-                                         .orElseThrow(() -> new IllegalArgumentException("No job found for zone " + zone));
+                JobType jobType = JobType.from(controller.system(), zone);
                 Optional<JobStatus> job = Optional.ofNullable(application.get().deploymentJobs().jobStatus().get(jobType));
                 if (    ! job.isPresent()
                      || ! job.get().lastTriggered().isPresent()
@@ -299,34 +322,26 @@ public class ApplicationController {
                 applicationVersion = preferOldestVersion
                         ? triggered.sourceApplication().orElse(triggered.application())
                         : triggered.application();
-                applicationPackage = new ApplicationPackage(artifactRepository.getApplicationPackage(application.get().id(), applicationVersion.id()));
+
+                if (application.get().deploymentJobs().builtInternally()) {
+                    applicationPackage = new ApplicationPackage(applicationStore.getApplicationPackage(application.get().id(), applicationVersion.id()));
+                } else {
+                    applicationPackage = new ApplicationPackage(artifactRepository.getApplicationPackage(application.get().id(), applicationVersion.id()));
+                }
                 validateRun(application.get(), zone, platformVersion, applicationVersion);
             }
 
-            validate(applicationPackage.deploymentSpec());
-
             // Update application with information from application package
-            if ( ! preferOldestVersion) {
-                // Store information about application package
-                application = application.with(applicationPackage.deploymentSpec());
-                application = application.with(applicationPackage.validationOverrides());
-
-                // Delete zones not listed in DeploymentSpec, if allowed
-                // We do this at deployment time to be able to return a validation failure message when necessary
-                application = deleteRemovedDeployments(application);
-
-                // Clean up deployment jobs that are no longer referenced by deployment spec
-                application = deleteUnreferencedDeploymentJobs(application);
-
-                store(application); // store missing information even if we fail deployment below
-            }
+            if ( ! preferOldestVersion && ! application.get().deploymentJobs().builtInternally())
+                application = storeWithUpdatedConfig(application, applicationPackage);
 
             // Assign global rotation
             application = withRotation(application, zone);
             Set<String> rotationNames = new HashSet<>();
             Set<String> cnames = new HashSet<>();
-            application.get().rotation().ifPresent(applicationRotation -> {
-                rotationNames.add(applicationRotation.id().asString());
+            Application app = application.get();
+            app.globalDnsName(controller.system()).ifPresent(applicationRotation -> {
+                rotationNames.add(app.rotation().orElseThrow(() -> new RuntimeException("Global Dns assigned, but no rotation id present")).asString());
                 cnames.add(applicationRotation.dnsName());
                 cnames.add(applicationRotation.secureDnsName());
                 cnames.add(applicationRotation.oathDnsName());
@@ -341,6 +356,25 @@ public class ApplicationController {
         }
     }
 
+    /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
+    public LockedApplication storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
+        validate(applicationPackage.deploymentSpec());
+
+        application = application.with(applicationPackage.deploymentSpec());
+        application = application.with(applicationPackage.validationOverrides());
+
+        // Delete zones not listed in DeploymentSpec, if allowed
+        // We do this at deployment time for externally built applications, and at submission time
+        // for internally built ones, to be able to return a validation failure message when necessary
+        application = withoutDeletedDeployments(application);
+
+        // Clean up deployment jobs that are no longer referenced by deployment spec
+        application = withoutUnreferencedDeploymentJobs(application);
+
+        store(application);
+        return(application);
+    }
+
     /** Deploy a system application to given zone */
     public void deploy(SystemApplication application, ZoneId zone, Version version) {
         if (application.hasApplicationPackage()) {
@@ -351,13 +385,13 @@ public class ApplicationController {
             deploy(application.id(), applicationPackage, zone, options, Collections.emptySet(), Collections.emptySet());
         } else {
             // Deploy by calling node repository directly
-            configServer().nodeRepository().upgrade(zone, application.nodeType(), version);
+            application.nodeTypes().forEach(nodeType -> configServer().nodeRepository().upgrade(zone, nodeType, version));
         }
     }
 
     /** Assembles and deploys a tester application to the given zone. */
     public ActivateResult deployTester(ApplicationId tester, ApplicationPackage applicationPackage, ZoneId zone, DeployOptions options) {
-        if ( ! tester.instance().value().endsWith("-t"))
+        if ( ! tester.instance().isTester())
             throw new IllegalArgumentException("'" + tester + "' is not a tester application!");
 
         return deploy(tester, applicationPackage, zone, options, Collections.emptySet(), Collections.emptySet());
@@ -382,9 +416,9 @@ public class ApplicationController {
                 application = application.with(rotation.id());
                 store(application); // store assigned rotation even if deployment fails
 
-                registerRotationInDns(rotation, application.get().rotation().get().dnsName());
-                registerRotationInDns(rotation, application.get().rotation().get().secureDnsName());
-                registerRotationInDns(rotation, application.get().rotation().get().oathDnsName());
+                registerRotationInDns(rotation, application.get().globalDnsName(controller.system()).get().dnsName());
+                registerRotationInDns(rotation, application.get().globalDnsName(controller.system()).get().secureDnsName());
+                registerRotationInDns(rotation, application.get().globalDnsName(controller.system()).get().oathDnsName());
             }
         }
         return application;
@@ -403,7 +437,7 @@ public class ApplicationController {
         return new ActivateResult(new RevisionId("0"), prepareResponse, 0);
     }
 
-    private LockedApplication deleteRemovedDeployments(LockedApplication application) {
+    private LockedApplication withoutDeletedDeployments(LockedApplication application) {
         List<Deployment> deploymentsToRemove = application.get().productionDeployments().values().stream()
                 .filter(deployment -> ! application.get().deploymentSpec().includes(deployment.zone().environment(),
                                                                                     Optional.of(deployment.zone().region())))
@@ -428,12 +462,10 @@ public class ApplicationController {
         return applicationWithRemoval;
     }
 
-    private LockedApplication deleteUnreferencedDeploymentJobs(LockedApplication application) {
-        for (JobType job : application.get().deploymentJobs().jobStatus().keySet()) {
-            Optional<ZoneId> zone = job.zone(controller.system());
-
-            if ( ! job.isProduction() || (zone.isPresent() && application.get().deploymentSpec().includes(
-                    zone.get().environment(), zone.map(ZoneId::region))))
+    private LockedApplication withoutUnreferencedDeploymentJobs(LockedApplication application) {
+        for (JobType job : JobList.from(application.get()).production().mapToList(JobStatus::type)) {
+            ZoneId zone = job.zone(controller.system());
+            if (application.get().deploymentSpec().includes(zone.environment(), Optional.of(zone.region())))
                 continue;
             application = application.withoutDeploymentJob(job);
         }
@@ -471,6 +503,11 @@ public class ApplicationController {
 
     /** Returns the endpoints of the deployment, or an empty list if the request fails */
     public Optional<List<URI>> getDeploymentEndpoints(DeploymentId deploymentId) {
+        if ( ! get(deploymentId.applicationId())
+                .map(application -> application.deployments().containsKey(deploymentId.zoneId()))
+                .orElse(deploymentId.applicationId().instance().isTester()))
+            throw new NotExistsException("Deployment", deploymentId.toString());
+
         try {
             return Optional.of(ImmutableList.copyOf(routingGenerator.endpoints(deploymentId).stream()
                                                                     .map(RoutingEndpoint::getEndpoint)
@@ -493,12 +530,10 @@ public class ApplicationController {
      */
     public void deleteApplication(ApplicationId applicationId, Optional<NToken> token) {
         // Find all instances of the application
-        List<ApplicationId> instances = controller.applications().asList(applicationId.tenant())
-                                                  .stream()
-                                                  .map(Application::id)
-                                                  .filter(id -> id.application().equals(applicationId.application()) &&
-                                                                id.tenant().equals(applicationId.tenant()))
-                                                  .collect(Collectors.toList());
+        List<ApplicationId> instances = asList(applicationId.tenant()).stream()
+                                                                      .map(Application::id)
+                                                                      .filter(id -> id.application().equals(applicationId.application()))
+                                                                      .collect(Collectors.toList());
         if (instances.isEmpty()) {
             throw new NotExistsException("Could not delete application '" + applicationId + "': Application not found");
         }
@@ -573,8 +608,8 @@ public class ApplicationController {
     }
 
     /** Deactivate application in the given zone */
-    public void deactivate(Application application, ZoneId zone) {
-        lockOrThrow(application.id(), lockedApplication -> store(deactivate(lockedApplication, zone)));
+    public void deactivate(ApplicationId application, ZoneId zone) {
+        lockOrThrow(application, lockedApplication -> store(deactivate(lockedApplication, zone)));
     }
 
     /**
@@ -613,6 +648,7 @@ public class ApplicationController {
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system. */
     private void validate(DeploymentSpec deploymentSpec) {
+        new DeploymentSteps(deploymentSpec, controller::system).jobs();
         deploymentSpec.zones().stream()
                 .filter(zone -> zone.environment() == Environment.prod)
                 .forEach(zone -> {

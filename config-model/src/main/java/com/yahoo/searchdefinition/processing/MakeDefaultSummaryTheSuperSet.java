@@ -34,7 +34,7 @@ public class MakeDefaultSummaryTheSuperSet extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         DocumentSummary defaultSummary=search.getSummary("default");
         for (SummaryField summaryField : search.getUniqueNamedSummaryFields().values() ) {
             if (defaultSummary.getSummaryField(summaryField.getName()) != null) continue;

@@ -1,5 +1,7 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.integration.ml;
 
+import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
@@ -7,9 +9,6 @@ import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
-import org.tensorflow.SavedModelBundle;
-
-import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -21,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 public class OnnxMnistSoftmaxImportTestCase {
 
     @Test
-    public void testMnistSoftmaxImport() throws IOException {
+    public void testMnistSoftmaxImport() {
         ImportedModel model = new OnnxImporter().importModel("test", "src/test/files/integration/onnx/mnist_softmax/mnist_softmax.onnx");
 
         // Check constants
@@ -30,27 +29,28 @@ public class OnnxMnistSoftmaxImportTestCase {
         Tensor constant0 = model.largeConstants().get("test_Variable");
         assertNotNull(constant0);
         assertEquals(new TensorType.Builder().indexed("d2", 784).indexed("d1", 10).build(),
-                constant0.type());
+                     constant0.type());
         assertEquals(7840, constant0.size());
 
         Tensor constant1 = model.largeConstants().get("test_Variable_1");
         assertNotNull(constant1);
-        assertEquals(new TensorType.Builder().indexed("d1", 10).build(),
-                constant1.type());
+        assertEquals(new TensorType.Builder().indexed("d1", 10).build(), constant1.type());
         assertEquals(10, constant1.size());
 
-        // Check required macros (inputs)
-        assertEquals(1, model.requiredMacros().size());
-        assertTrue(model.requiredMacros().containsKey("Placeholder"));
-        assertEquals(new TensorType.Builder().indexed("d0").indexed("d1", 784).build(),
-                model.requiredMacros().get("Placeholder"));
+        // Check inputs
+        assertEquals(1, model.inputs().size());
+        assertTrue(model.inputs().containsKey("Placeholder"));
+        assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"), model.inputs().get("Placeholder"));
 
-        // Check outputs
-        RankingExpression output = model.defaultSignature().outputExpression("add");
+        // Check signature
+        ExpressionFunction output = model.defaultSignature().outputExpression("add");
         assertNotNull(output);
-        assertEquals("add", output.getName());
+        assertEquals("add", output.getBody().getName());
         assertEquals("join(reduce(join(rename(Placeholder, (d0, d1), (d0, d2)), constant(test_Variable), f(a,b)(a * b)), sum, d2), constant(test_Variable_1), f(a,b)(a + b))",
-                output.getRoot().toString());
+                     output.getBody().getRoot().toString());
+        assertEquals(TensorType.fromSpec("tensor(d0[],d1[784])"),
+                     model.inputs().get(model.defaultSignature().inputs().get("Placeholder")));
+        assertEquals("{Placeholder=tensor(d0[],d1[784])}", output.argumentTypes().toString());
     }
 
     @Test

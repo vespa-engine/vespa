@@ -422,6 +422,54 @@ TEST("test stuff") {
             IsFilterField::set(p, "bar");
             EXPECT_TRUE(IsFilterField::check(p, "bar"));
         }
+        {
+            EXPECT_EQUAL(execute::onmatch::Attribute::NAME, vespalib::string("vespa.execute.onmatch.attribute"));
+            EXPECT_EQUAL(execute::onmatch::Attribute::DEFAULT_VALUE, "");
+            Properties p;
+            EXPECT_EQUAL(execute::onmatch::Attribute::lookup(p), "");
+            p.add("vespa.execute.onmatch.attribute", "foobar");
+            EXPECT_EQUAL(execute::onmatch::Attribute::lookup(p), "foobar");
+        }
+        {
+            EXPECT_EQUAL(execute::onmatch::Operation::NAME, vespalib::string("vespa.execute.onmatch.operation"));
+            EXPECT_EQUAL(execute::onmatch::Operation::DEFAULT_VALUE, "");
+            Properties p;
+            EXPECT_EQUAL(execute::onmatch::Operation::lookup(p), "");
+            p.add("vespa.execute.onmatch.operation", "++");
+            EXPECT_EQUAL(execute::onmatch::Operation::lookup(p), "++");
+        }
+        {
+            EXPECT_EQUAL(execute::onrerank::Attribute::NAME, vespalib::string("vespa.execute.onrerank.attribute"));
+            EXPECT_EQUAL(execute::onrerank::Attribute::DEFAULT_VALUE, "");
+            Properties p;
+            EXPECT_EQUAL(execute::onrerank::Attribute::lookup(p), "");
+            p.add("vespa.execute.onrerank.attribute", "foobar");
+            EXPECT_EQUAL(execute::onrerank::Attribute::lookup(p), "foobar");
+        }
+        {
+            EXPECT_EQUAL(execute::onrerank::Operation::NAME, vespalib::string("vespa.execute.onrerank.operation"));
+            EXPECT_EQUAL(execute::onrerank::Operation::DEFAULT_VALUE, "");
+            Properties p;
+            EXPECT_EQUAL(execute::onrerank::Operation::lookup(p), "");
+            p.add("vespa.execute.onrerank.operation", "++");
+            EXPECT_EQUAL(execute::onrerank::Operation::lookup(p), "++");
+        }
+        {
+            EXPECT_EQUAL(execute::onsummary::Attribute::NAME, vespalib::string("vespa.execute.onsummary.attribute"));
+            EXPECT_EQUAL(execute::onsummary::Attribute::DEFAULT_VALUE, "");
+            Properties p;
+            EXPECT_EQUAL(execute::onsummary::Attribute::lookup(p), "");
+            p.add("vespa.execute.onsummary.attribute", "foobar");
+            EXPECT_EQUAL(execute::onsummary::Attribute::lookup(p), "foobar");
+        }
+        {
+            EXPECT_EQUAL(execute::onsummary::Operation::NAME, vespalib::string("vespa.execute.onsummary.operation"));
+            EXPECT_EQUAL(execute::onsummary::Operation::DEFAULT_VALUE, "");
+            Properties p;
+            EXPECT_EQUAL(execute::onsummary::Operation::lookup(p), "");
+            p.add("vespa.execute.onsummary.operation", "++");
+            EXPECT_EQUAL(execute::onsummary::Operation::lookup(p), "++");
+        }
     }
 }
 

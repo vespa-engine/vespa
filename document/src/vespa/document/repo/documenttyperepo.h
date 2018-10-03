@@ -35,9 +35,9 @@ public:
     ~DocumentTypeRepo();
 
     const DocumentType *getDocumentType(int32_t doc_type_id) const;
-    const DocumentType *getDocumentType(const vespalib::stringref &name) const;
+    const DocumentType *getDocumentType(vespalib::stringref name) const;
     const DataType *getDataType(const DocumentType &doc_type, int32_t id) const;
-    const DataType *getDataType(const DocumentType &doc_type, const vespalib::stringref &name) const;
+    const DataType *getDataType(const DocumentType &doc_type, vespalib::stringref name) const;
     const AnnotationType *getAnnotationType(const DocumentType &doc_type, int32_t id) const;
     void forEachDocumentType(vespalib::Closure1<const DocumentType &> &c) const;
     const DocumentType *getDefaultDocType() const { return _default; }

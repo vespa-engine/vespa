@@ -17,7 +17,7 @@ public:
     ~MaintenanceCommand();
 
     const vespalib::string& getReason() const { return _reason; };
-    void setReason(const vespalib::stringref & reason) { _reason = reason; };
+    void setReason(vespalib::stringref reason) { _reason = reason; };
 protected:
     vespalib::string _reason;
 };

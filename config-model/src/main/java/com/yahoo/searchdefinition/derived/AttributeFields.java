@@ -8,7 +8,6 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Ranking;
-import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.Sorting;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.indexinglanguage.expressions.ToPositionExpression;
@@ -41,21 +40,24 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     /** Whether this has any position attribute */
     private boolean hasPosition = false;
 
+    public static final AttributeFields empty = new AttributeFields(null);
+
     public AttributeFields(Search search) {
-        derive(search);
+        if (search != null)
+            derive(search);
     }
 
     /** Derives everything from a field */
     @Override
     protected void derive(ImmutableSDField field, Search search) {
-        if (unsupportedFieldType(field, search.getDocument())) {
+        if (unsupportedFieldType(field)) {
             return; // Ignore complex struct and map fields for indexed search (only supported for streaming search)
         }
         if (field.isImportedField()) {
             deriveImportedAttributes(field);
-        } else if (isArrayOfSimpleStruct(field, search.getDocument())) {
+        } else if (isArrayOfSimpleStruct(field)) {
             deriveArrayOfSimpleStruct(field);
-        } else if (isMapOfSimpleStruct(field, search.getDocument())) {
+        } else if (isMapOfSimpleStruct(field)) {
             deriveMapOfSimpleStruct(field);
         } else if (isMapOfPrimitiveType(field)) {
             deriveMapOfPrimitiveType(field);
@@ -64,9 +66,9 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         }
     }
 
-    private static boolean unsupportedFieldType(ImmutableSDField field, SDDocumentType docType) {
+    private static boolean unsupportedFieldType(ImmutableSDField field) {
         return (field.usesStructOrMap() &&
-                !isSupportedComplexField(field, docType) &&
+                !isSupportedComplexField(field) &&
                 !field.getDataType().equals(PositionDataType.INSTANCE) &&
                 !field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE)));
     }
@@ -205,6 +207,9 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         }
         if (attribute.isFastAccess()) {
             aaB.fastaccess(true);
+        }
+        if (attribute.isMutable()) {
+            aaB.ismutable(true);
         }
         if (attribute.isHuge()) {
             aaB.huge(true);

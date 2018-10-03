@@ -12,7 +12,6 @@ FNET_IOComponent::FNET_IOComponent(FNET_TransportThread *owner,
     : _ioc_next(nullptr),
       _ioc_prev(nullptr),
       _ioc_owner(owner),
-      _ioc_counters(_ioc_owner->GetStatCounters()),
       _ioc_socket_fd(socket_fd),
       _ioc_selector(nullptr),
       _ioc_spec(nullptr),
@@ -20,9 +19,7 @@ FNET_IOComponent::FNET_IOComponent(FNET_TransportThread *owner,
       _ioc_timestamp(fastos::ClockSystem::now()),
       _ioc_lock(),
       _ioc_cond(),
-      _ioc_refcnt(1),
-      _ioc_directPacketWriteCnt(0),
-      _ioc_directDataWriteCnt(0)
+      _ioc_refcnt(1)
 {
     _ioc_spec = strdup(spec);
     assert(_ioc_spec != nullptr);

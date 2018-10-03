@@ -25,7 +25,7 @@ public class MakeAliases extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         List<String> usedAliases = new ArrayList<>();
         for (SDField field : search.allConcreteFields()) {
             for (Map.Entry<String, String> e : field.getAliasToName().entrySet()) {

@@ -16,11 +16,12 @@ import com.yahoo.fs4.mplex.InvalidChannelException;
 import com.yahoo.search.Query;
 
 /**
- * Ensure hex dumping of packets seems to work.
+ * Tests hex dumping of packets.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class PacketQueryTracerTestCase {
+
     FS4Channel channel;
     BasicPacket packet;
     PacketListener tracer;
@@ -47,26 +48,22 @@ public class PacketQueryTracerTestCase {
         }
 
         @Override
-        public boolean sendPacket(BasicPacket packet)
-                throws InvalidChannelException, IOException {
+        public boolean sendPacket(BasicPacket packet) {
             return true;
         }
 
         @Override
-        public BasicPacket[] receivePackets(long timeout, int packetCount)
-                throws InvalidChannelException, ChannelTimeoutException {
+        public BasicPacket[] receivePackets(long timeout, int packetCount) {
             return null;
         }
 
         @Override
-        public BasicPacket nextPacket(long timeout)
-                throws InterruptedException, InvalidChannelException {
+        public BasicPacket nextPacket(long timeout) {
             return null;
         }
 
         @Override
-        protected void addPacket(BasicPacket packet)
-                throws InterruptedException, InvalidChannelException {
+        protected void addPacket(BasicPacket packet) {
         }
 
         @Override

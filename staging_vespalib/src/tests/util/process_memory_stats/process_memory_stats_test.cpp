@@ -80,4 +80,12 @@ TEST("grow mapped memory")
     munmap(mapAddr, mapLen);
 }
 
+TEST("order samples")
+{
+    ProcessMemoryStats a(0,0,0,7,0);
+    ProcessMemoryStats b(0,0,0,8,0);
+    EXPECT_TRUE(a < b);
+    EXPECT_FALSE(b < a);
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

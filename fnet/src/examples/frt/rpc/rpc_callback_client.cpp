@@ -26,7 +26,7 @@ RPC::Init(FRT_Supervisor *s)
 {
     FRT_ReflectionBuilder rb(s);
     //-------------------------------------------------------------------
-    rb.DefineMethod("prod", "", "", true,
+    rb.DefineMethod("prod", "", "",
                     FRT_METHOD(RPC::Prod), this);
     //-------------------------------------------------------------------
 }
@@ -45,6 +45,7 @@ MyApp::Main()
         printf("usage  : rpc_server <connectspec>\n");
         return 1;
     }
+    bool ok = true;
     RPC rpc;
     FRT_Supervisor orb;
     rpc.Init(&orb);
@@ -63,6 +64,7 @@ MyApp::Main()
         printf("[error(%d): %s]\n",
                req->GetErrorCode(),
                req->GetErrorMessage());
+        ok = false;
     }
 
     printf("invokeCnt: %d\n", rpc.invokeCnt);
@@ -76,6 +78,7 @@ MyApp::Main()
         printf("[error(%d): %s]\n",
                req->GetErrorCode(),
                req->GetErrorMessage());
+        ok = false;
     }
 
     printf("invokeCnt: %d\n", rpc.invokeCnt);
@@ -89,14 +92,18 @@ MyApp::Main()
         printf("[error(%d): %s]\n",
                req->GetErrorCode(),
                req->GetErrorMessage());
+        ok = false;
     }
 
     printf("invokeCnt: %d\n", rpc.invokeCnt);
+    if (rpc.invokeCnt != 3) {
+        ok = false;
+    }
 
     req->SubRef();
     target->SubRef();
     orb.ShutDown(true);
-    return 0;
+    return ok ? 0 : 1;
 }
 
 

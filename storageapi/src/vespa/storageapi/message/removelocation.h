@@ -10,7 +10,7 @@ namespace storage::api {
 class RemoveLocationCommand : public BucketInfoCommand
 {
 public:
-    RemoveLocationCommand(const vespalib::stringref & documentSelection, const document::Bucket &bucket);
+    RemoveLocationCommand(vespalib::stringref documentSelection, const document::Bucket &bucket);
     ~RemoveLocationCommand();
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;

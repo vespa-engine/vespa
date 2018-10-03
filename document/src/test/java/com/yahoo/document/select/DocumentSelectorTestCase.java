@@ -5,7 +5,7 @@ import com.yahoo.document.*;
 import com.yahoo.document.datatypes.*;
 import com.yahoo.document.select.convert.SelectionExpressionConverter;
 import com.yahoo.document.select.parser.ParseException;
-import com.yahoo.document.select.parser.TokenMgrError;
+import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Before;
 import org.junit.Test;
@@ -817,7 +817,7 @@ public class DocumentSelectorTestCase {
         }
         catch (ParseException e) {
             Throwable t = e;
-            if (t.getCause() instanceof TokenMgrError) {
+            if (t.getCause() instanceof TokenMgrException) {
                 t = t.getCause();
             }
             assertEquals(expectedError, Exceptions.toMessageString(t).substring(0, expectedError.length()));

@@ -7,7 +7,6 @@
 #include "storagereply.h"
 
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -23,104 +22,6 @@ ProtocolSerialization4_2::ProtocolSerialization4_2(
         const std::shared_ptr<const document::DocumentTypeRepo>& repo)
     : ProtocolSerialization(repo)
 {
-}
-
-void
-ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::BatchPutRemoveCommand& msg) const
-{
-    // Serialization format - allow different types of serialization depending on source.
-    buf.putByte(0);
-    putBucket(msg.getBucket(), buf);
-    buf.putInt(msg.getOperationCount());
-
-    for (uint32_t i = 0; i < msg.getOperationCount(); i++) {
-        const api::BatchPutRemoveCommand::Operation& op = msg.getOperation(i);
-        buf.putByte((uint8_t)op.type);
-        buf.putLong(op.timestamp);
-
-        switch (op.type) {
-        case api::BatchPutRemoveCommand::Operation::REMOVE:
-            buf.putString(static_cast<const api::BatchPutRemoveCommand::RemoveOperation&>(op).documentId.toString());
-            break;
-        case api::BatchPutRemoveCommand::Operation::HEADERUPDATE:
-        {
-            buf.putLong(static_cast<const api::BatchPutRemoveCommand::HeaderUpdateOperation&>(op).timestampToUpdate);
-
-            vespalib::nbostream stream;
-            static_cast<const api::BatchPutRemoveCommand::HeaderUpdateOperation&>(op).document->serializeHeader(stream);
-            buf.putInt(stream.size());
-            buf.putBytes(stream.peek(), stream.size());
-            break;
-        }
-        case api::BatchPutRemoveCommand::Operation::PUT:
-            SH::putDocument(static_cast<const api::BatchPutRemoveCommand::PutOperation&>(op).document.get(), buf);
-            break;
-        }
-    }
-    onEncodeBucketInfoCommand(buf, msg);
-}
-
-api::StorageCommand::UP
-ProtocolSerialization4_2::onDecodeBatchPutRemoveCommand(BBuf& buf) const
-{
-    SH::getByte(buf);
-    document::Bucket bucket = getBucket(buf);
-    std::unique_ptr<api::BatchPutRemoveCommand> cmd(new api::BatchPutRemoveCommand(bucket));
-    int length = SH::getInt(buf);
-
-    for (int i = 0; i < length; i++) {
-        int type = SH::getByte(buf);
-        long timestamp = SH::getLong(buf);
-
-        switch (type) {
-        case api::BatchPutRemoveCommand::Operation::REMOVE:
-            cmd->addRemove(document::DocumentId(SH::getString(buf)), timestamp);
-            break;
-        case api::BatchPutRemoveCommand::Operation::HEADERUPDATE:
-        {
-            long newTimestamp = SH::getLong(buf);
-            cmd->addHeaderUpdate(document::Document::SP(
-                            SH::getDocument(buf, getTypeRepo())),
-                                 timestamp, newTimestamp);
-            break;
-        }
-        case api::BatchPutRemoveCommand::Operation::PUT:
-            cmd->addPut(document::Document::SP(SH::getDocument(
-                                    buf, getTypeRepo())), timestamp);
-            break;
-        }
-    }
-
-    onDecodeBucketInfoCommand(buf, *cmd);
-
-    return api::StorageCommand::UP(cmd.release());
-}
-
-void ProtocolSerialization4_2::onEncode(
-        GBBuf& buf, const api::BatchPutRemoveReply& msg) const
-{
-    buf.putInt(msg.getDocumentsNotFound().size());
-    for (uint32_t i = 0; i < msg.getDocumentsNotFound().size(); i++) {
-        buf.putString(msg.getDocumentsNotFound()[i].toString());
-    }
-
-    onEncodeBucketInfoReply(buf, msg);
-}
-
-api::StorageReply::UP
-ProtocolSerialization4_2::onDecodeBatchPutRemoveReply(const SCmd& cmd,
-                                                      BBuf& buf) const
-{
-    api::BatchPutRemoveReply::UP msg(new api::BatchPutRemoveReply(
-                static_cast<const api::BatchPutRemoveCommand&>(cmd)));
-    uint32_t count = SH::getInt(buf);
-    for (uint32_t i = 0; i < count; i++) {
-        msg->getDocumentsNotFound().push_back(document::DocumentId(SH::getString(buf)));
-    }
-
-    onDecodeBucketInfoReply(buf, *msg);
-    return api::StorageReply::UP(msg.release());
 }
 
 void ProtocolSerialization4_2::onEncode(

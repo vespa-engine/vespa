@@ -240,6 +240,14 @@ sub usage {
     print "Usage: vespa-deploy [-h] [-v] [-f] [-t] [-p] [-V] [<command>] [args]\n";
     print "Supported commands: 'upload', 'prepare', 'activate', 'fetch' and 'help'\n";
     print "Supported options: '-h' (help), '-v' (verbose), '-f' (force/ignore validation errors), '-t' (timeout in seconds), '-p' (config server http port)\n";
+    print "    '-h' (help)\n";
+    print "    '-v' (verbose)\n";
+    print "    '-n' (dry-run)\n";
+    print "    '-f' (force/ignore validation errors)\n";
+    print "    '-t <timeout>' (timeout in seconds)\n";
+    print "    '-c <server>' (config server hostname)\n";
+    print "    '-p <port>' (config server http port)\n\n";
+    
     print "Try 'vespa-deploy help <command>' to get more help\n";
   }
 }

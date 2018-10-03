@@ -212,20 +212,18 @@ SBEnv::setup(const std::vector<std::string> &cfg)
         std::string slobrok = cfg[i];
         discard(oldList, slobrok);
         if (slobrok != mySpec()) {
-            OkState res = _rpcsrvmanager.addPeer(slobrok.c_str(), slobrok.c_str());
+            OkState res = _rpcsrvmanager.addPeer(slobrok, slobrok.c_str());
             if (!res.ok()) {
-                LOG(warning, "could not add peer %s: %s", slobrok.c_str(),
-                    res.errorMsg.c_str());
+                LOG(warning, "could not add peer %s: %s", slobrok.c_str(), res.errorMsg.c_str());
             } else {
                 LOG(config, "added peer %s", slobrok.c_str());
             }
         }
     }
     for (uint32_t i = 0; i < oldList.size(); ++i) {
-        OkState res = _rpcsrvmanager.removePeer(oldList[i].c_str(), oldList[i].c_str());
+        OkState res = _rpcsrvmanager.removePeer(oldList[i], oldList[i].c_str());
         if (!res.ok()) {
-            LOG(warning, "could not remove peer %s: %s", oldList[i].c_str(),
-                res.errorMsg.c_str());
+            LOG(warning, "could not remove peer %s: %s", oldList[i].c_str(), res.errorMsg.c_str());
         } else {
             LOG(config, "removed peer %s", oldList[i].c_str());
         }
@@ -252,7 +250,7 @@ SBEnv::addPeer(const std::string &name, const std::string &spec)
                      spec.c_str(), peers.c_str());
         return OkState(FRTE_RPC_METHOD_FAILED, "configured partner list does not contain peer. configured peers = " + peers);
     }
-    return _rpcsrvmanager.addPeer(name.c_str(), spec.c_str());
+    return _rpcsrvmanager.addPeer(name, spec.c_str());
 }
 
 OkState
@@ -266,7 +264,7 @@ SBEnv::removePeer(const std::string &name, const std::string &spec)
             return OkState(FRTE_RPC_METHOD_FAILED, "configured partner list contains peer, cannot remove");
         }
     }
-    return _rpcsrvmanager.removePeer(name.c_str(), spec.c_str());
+    return _rpcsrvmanager.removePeer(name, spec.c_str());
 }
 
 } // namespace slobrok

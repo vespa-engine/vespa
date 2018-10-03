@@ -1,24 +1,24 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
-import com.google.common.net.InetAddresses;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class AclTest {
 
     private final Acl aclCommon = new Acl(
-            createPortList(1234, 453),
+            createPortSet(1234, 453),
             createTrustedNodes("192.1.2.2", "fb00::1", "fe80::2", "fe80::3"));
 
     private final Acl aclNoPorts = new Acl(
-            Collections.emptyList(),
+            Collections.emptySet(),
             createTrustedNodes("192.1.2.2", "fb00::1", "fe80::2"));
 
     @Test
@@ -72,7 +72,7 @@ public class AclTest {
     @Test
     public void ipv6_rules_stable() {
         Acl aclCommonDifferentOrder = new Acl(
-                createPortList(453, 1234),
+                createPortSet(453, 1234),
                 createTrustedNodes("fe80::2", "192.1.2.2", "fb00::1", "fe80::3"));
 
         for (IPVersion ipVersion: IPVersion.values()) {
@@ -80,13 +80,13 @@ public class AclTest {
         }
     }
 
-    private List<Integer> createPortList(Integer... ports) {
-        return Arrays.asList(ports);
+    private Set<Integer> createPortSet(Integer... ports) {
+        return Stream.of(ports).collect(Collectors.toSet());
     }
 
-    private List<InetAddress> createTrustedNodes(String... addresses) {
+    private Set<Acl.Node> createTrustedNodes(String... addresses) {
         return Arrays.stream(addresses)
-                .map(InetAddresses::forString)
-                .collect(Collectors.toList());
+                .map(ipAddress -> new Acl.Node("hostname", ipAddress))
+                .collect(Collectors.toSet());
     }
 }

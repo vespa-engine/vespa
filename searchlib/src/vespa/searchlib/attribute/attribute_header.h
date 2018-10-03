@@ -57,9 +57,6 @@ public:
     bool hasMultiValue() const;
     bool hasWeightedSetType() const;
     uint32_t getNumDocs() const { return _numDocs; }
-    size_t getFixedWidth() const { return _fixedWidth; }
-    uint64_t getUniqueValueCount() const { return _uniqueValueCount; }
-    uint64_t getTotalValueCount() const { return _totalValueCount; }
     bool getEnumerated() const { return _enumerated; }
     uint64_t getCreateSerialNum() const { return _createSerialNum; }
     uint32_t getVersion() const  { return _version; }

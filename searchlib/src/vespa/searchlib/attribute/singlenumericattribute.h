@@ -125,11 +125,6 @@ public:
     largeint_t getInt(DocId doc) const override {
         return static_cast<largeint_t>(getFast(doc));
     }
-    void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const override {
-        (void) v;
-        (void) e;
-        (void) sz;
-    }
     double getFloat(DocId doc) const override {
         return static_cast<double>(_data[doc]);
     }
@@ -178,7 +173,7 @@ public:
 
     void clearDocs(DocId lidLow, DocId lidLimit) override;
     void onShrinkLidSpace() override;
-    std::unique_ptr<AttributeSaver> onInitSave() override;
+    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
 };
 
 }

@@ -33,7 +33,7 @@ public abstract class AbstractDocumentApiTestCase {
 
     @Test
     public void requireThatSyncSessionWorks() {
-        SyncSession session = access().createSyncSession(new SyncParameters());
+        SyncSession session = access().createSyncSession(new SyncParameters.Builder().build());
 
         DocumentType type = access().getDocumentTypeManager().getDocumentType("music");
         Document doc1 = new Document(type, new DocumentId("doc:music:1"));

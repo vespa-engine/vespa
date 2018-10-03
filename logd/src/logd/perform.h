@@ -1,5 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
+
+#include "forward.h"
+
 namespace logdemon {
 
 class Performer
@@ -20,7 +23,7 @@ private:
     void listStates(const char *service, const char *component);
 public:
     void doCmd(char *line) override;
-    void doSetAllStates(char *levmods, char * line);
+    void doSetAllStates(char *levmods, const char * line);
     char *doSetState(char *levmods, Component *cmp, char *line);
     ExternalPerformer(Forwarder& fw, Services& s)
         : _forwarder(fw), _services(s) {}

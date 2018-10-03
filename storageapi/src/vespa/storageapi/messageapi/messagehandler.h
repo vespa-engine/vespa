@@ -25,8 +25,6 @@ class PutCommand; // Add document
 class UpdateCommand; // Update document
 class RemoveCommand; // Remove document
 class RevertCommand; // Revert put/remove operation
-class BatchPutRemoveCommand;
-class BatchDocumentUpdateCommand;
 
 class CreateVisitorCommand; // Create a new visitor
 class DestroyVisitorCommand; // Destroy a running visitor
@@ -64,8 +62,6 @@ class PutReply;
 class UpdateReply;
 class RemoveReply;
 class RevertReply;
-class BatchPutRemoveReply;
-class BatchDocumentUpdateReply;
 
 class CreateVisitorReply;
 class DestroyVisitorReply;
@@ -142,18 +138,6 @@ public:
     virtual bool onRevert(const std::shared_ptr<api::RevertCommand>&)
         { return false; }
     virtual bool onRevertReply(const std::shared_ptr<api::RevertReply>&)
-        { return false; }
-    virtual bool onBatchPutRemove(
-            const std::shared_ptr<api::BatchPutRemoveCommand>&)
-        { return false; }
-    virtual bool onBatchPutRemoveReply(
-            const std::shared_ptr<api::BatchPutRemoveReply>&)
-        { return false; }
-    virtual bool onBatchDocumentUpdate(
-            const std::shared_ptr<api::BatchDocumentUpdateCommand>&)
-        { return false; }
-    virtual bool onBatchDocumentUpdateReply(
-            const std::shared_ptr<api::BatchDocumentUpdateReply>&)
         { return false; }
 
         // Visiting

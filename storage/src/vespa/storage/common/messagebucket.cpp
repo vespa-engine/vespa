@@ -9,7 +9,6 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/stat.h>
-#include <vespa/storageapi/message/batch.h>
 
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -31,8 +30,6 @@ getStorageMessageBucket(const api::StorageMessage& msg)
         return static_cast<const api::RevertCommand&>(msg).getBucket();
     case api::MessageType::STATBUCKET_ID:
         return static_cast<const api::StatBucketCommand&>(msg).getBucket();
-    case api::MessageType::BATCHPUTREMOVE_ID:
-        return static_cast<const api::BatchPutRemoveCommand&>(msg).getBucket();
     case api::MessageType::REMOVELOCATION_ID:
         return static_cast<const api::RemoveLocationCommand&>(msg).getBucket();
     case api::MessageType::CREATEBUCKET_ID:

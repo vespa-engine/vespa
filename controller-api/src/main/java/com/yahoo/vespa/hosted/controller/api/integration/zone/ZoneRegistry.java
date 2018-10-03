@@ -49,7 +49,13 @@ public interface ZoneRegistry {
     /** Return the configserver's Athenz service identity */
     AthenzService getConfigServerAthenzService(ZoneId zoneId);
 
-    /** Returns the upgrade policy to use for zones in this registry */
+    /** Returns the Vespa upgrade policy to use for zones in this registry */
     UpgradePolicy upgradePolicy();
+
+    /** Returns the OS upgrade policy to use for zones belonging to given cloud, in this registry */
+    UpgradePolicy osUpgradePolicy(CloudName cloud);
+
+    /** Returns all OS upgrade policies */
+    List<UpgradePolicy> osUpgradePolicies();
 
 }

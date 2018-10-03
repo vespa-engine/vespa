@@ -61,8 +61,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
 
         // Deploy once so that job information is stored, then remove the deployment
         deployCompletely(applicationWithoutDeployment, applicationPackage, 3L, true);
-        tester.controller().applications().deactivate(applicationWithoutDeployment,
-                                                      ZoneId.from("prod", "corp-us-east-1"));
+        tester.controller().applications().deactivate(applicationWithoutDeployment.id(), ZoneId.from("prod", "corp-us-east-1"));
 
         // New version released
         version = Version.fromString("5.1");

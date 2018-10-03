@@ -26,13 +26,13 @@ public class PlaceholderWithDefault extends IntermediateOperation {
         if (!allInputFunctionsPresent(1)) {
             return null;
         }
-        // This should be a call to the macro we add below, but for now
+        // This should be a call to the function we add below, but for now
         // we treat this as as identity function and just pass the constant.
         return inputs.get(0).function().orElse(null);
     }
 
     @Override
-    public Optional<TensorFunction> macro() {
+    public Optional<TensorFunction> rankingExpressionFunction() {
         // For now, it is much more efficient to assume we always will return
         // the default value, as we can prune away large parts of the expression
         // tree by having it calculated as a constant. If a case arises where
@@ -42,7 +42,7 @@ public class PlaceholderWithDefault extends IntermediateOperation {
 
     @Override
     public boolean isConstant() {
-        return true;  // not true if we add to macro
+        return true;  // not true if we add to function
     }
 
 }

@@ -38,7 +38,7 @@ public:
      * @throw IllegalArgumentException if the RE is invalid.
      * @param re Regular expression.
      **/
-    Regexp(const vespalib::stringref & re, Flags=Flags());
+    Regexp(vespalib::stringref re, Flags=Flags());
 
     ~Regexp();
 
@@ -54,7 +54,7 @@ public:
      * @param s text to search for a match.
      * @return true if a match was found.
      **/
-    bool match(const vespalib::stringref & s) const;
+    bool match(vespalib::stringref s) const;
 
     /**
      * Will replace all occurrences of this pattern is string 's' with 'replacement'.
@@ -63,7 +63,7 @@ public:
      * @param replacement text to replace the pattern.
      * @return modified string.
      **/
-    vespalib::string replace(const vespalib::stringref & s, const vespalib::stringref & replacement) const;
+    vespalib::string replace(vespalib::stringref s, vespalib::stringref replacement) const;
 
     /**
      * Look at the given regular expression and identify the prefix
@@ -75,7 +75,7 @@ public:
      * @param re Regular expression.
      * @return prefix that must be present in matching strings
      **/
-    static vespalib::string get_prefix(const vespalib::stringref & re);
+    static vespalib::string get_prefix(vespalib::stringref re);
 
     /**
      * Make a regexp matching strings with the given prefix.
@@ -83,7 +83,7 @@ public:
      * @param prefix the prefix
      * @return the regexp
      **/
-    static vespalib::string make_from_prefix(const vespalib::stringref &prefix);
+    static vespalib::string make_from_prefix(vespalib::stringref prefix);
 
     /**
      * Make a regexp matching strings with the given suffix.
@@ -91,7 +91,7 @@ public:
      * @param suffix the suffix
      * @return the regexp
      **/
-    static vespalib::string make_from_suffix(const vespalib::stringref &suffix);
+    static vespalib::string make_from_suffix(vespalib::stringref suffix);
 
     /**
      * Make a regexp matching strings with the given substring.
@@ -99,12 +99,12 @@ public:
      * @param substring the substring
      * @return the regexp
      **/
-    static vespalib::string make_from_substring(const vespalib::stringref &substring);
+    static vespalib::string make_from_substring(vespalib::stringref substring);
 
 private:
     bool _valid;
     void *_data;
-    bool compile(const vespalib::stringref & re, Flags flags);
+    bool compile(vespalib::stringref re, Flags flags);
 };
 
 } // namespace vespalib

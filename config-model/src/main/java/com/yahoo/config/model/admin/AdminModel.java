@@ -13,6 +13,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.builder.xml.dom.DomAdminV2Builder;
 import com.yahoo.vespa.model.builder.xml.dom.DomAdminV4Builder;
+import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import org.w3c.dom.Element;
 
@@ -48,6 +49,7 @@ public class AdminModel extends ConfigModel {
         if (admin == null) return;
         if (admin.getClusterControllers() != null)
             admin.getClusterControllers().prepare();
+        admin.getLogServerContainerCluster().ifPresent(ContainerCluster::prepare);
     }
 
     private void verifyClusterControllersOnlyDefinedForContent(ConfigModelRepo configModelRepo) {

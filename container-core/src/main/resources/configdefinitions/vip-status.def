@@ -4,6 +4,7 @@ namespace=container.core
 ## If there is a Vespa search backend connected to this container, and that
 ## backend is out of service, automatically remove this container from VIP
 ## rotation, ignoring any status file.
+## TODO VESPA 7: This is always true and can be removed
 noSearchBackendsImpliesOutOfService bool default=true
 
 ## Whether to return hard-coded reply or serve "status.html" from disk
@@ -13,5 +14,5 @@ accessdisk bool default=false
 ## If the path is relative vespa home is prepended
 statusfile string default="share/qrsdocs/status.html"
 
-## The initial rotation state when no information is known about backend clusters
+## The default rotation state when there are no configured clusters to decide rotation state
 initiallyInRotation bool default=true

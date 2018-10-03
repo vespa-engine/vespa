@@ -32,7 +32,7 @@ public:
      *
      * @return success(true)/failure(false)
      **/
-    bool buildTree(const vespalib::stringref &stack,
+    bool buildTree(vespalib::stringref stack,
                    const vespalib::string &location,
                    const ViewResolver &resolver,
                    const search::fef::IIndexEnvironment &idxEnv);

@@ -1,19 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.google.inject.Key;
 import com.google.inject.Module;
 import com.yahoo.jdisc.application.ContainerBuilder;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.SslContextFactory;
-import com.yahoo.jdisc.http.JksKeyStore;
+import com.yahoo.security.SslContextBuilder;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.nio.file.Paths;
-
-import static com.google.inject.name.Names.named;
 
 /**
  * This class is based on the class by the same name in the jdisc_http_service module.
@@ -61,9 +57,7 @@ public class TestDriver {
 
     public SimpleHttpClient client() { return client; }
 
-    public SimpleHttpClient newClient() throws IOException { return newClient(false); }
-
-    public SimpleHttpClient newClient(final boolean useCompression) throws IOException {
+    public SimpleHttpClient newClient(final boolean useCompression) {
         return new SimpleHttpClient(newSslContext(), server.getListenPort(), useCompression);
     }
 
@@ -75,10 +69,10 @@ public class TestDriver {
         ConnectorConfig.Ssl sslConfig = builder.getInstance(ConnectorConfig.class).ssl();
         if (!sslConfig.enabled()) return null;
 
-        JksKeyStore keyStore = new JksKeyStore(
-                Paths.get(sslConfig.keyStorePath()),
-                builder.getInstance(Key.get(String.class, named("keyStorePassword"))));
-        return SslContextFactory.newInstanceFromTrustStore(keyStore).getServerSSLContext();
+        return new SslContextBuilder()
+                .withKeyStore(Paths.get(sslConfig.privateKeyFile()), Paths.get(sslConfig.certificateFile()))
+                .withTrustStore(Paths.get(sslConfig.caCertificateFile()))
+                .build();
     }
 
 }

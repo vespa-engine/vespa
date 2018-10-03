@@ -188,7 +188,7 @@ public class ImportedFieldsResolverTestCase {
         private static ImportedFields resolve(Search search) {
             assertNotNull(search.temporaryImportedFields().get());
             assertFalse(search.importedFields().isPresent());
-            new ImportedFieldsResolver(search, null, null, null).process(true);
+            new ImportedFieldsResolver(search, null, null, null).process(true, false);
             assertFalse(search.temporaryImportedFields().isPresent());
             assertNotNull(search.importedFields().get());
             return search.importedFields().get();

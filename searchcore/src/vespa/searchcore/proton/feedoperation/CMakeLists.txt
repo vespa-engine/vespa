@@ -16,7 +16,6 @@ vespa_add_library(searchcore_feedoperation STATIC
     removedocumentsoperation.cpp
     removeoperation.cpp
     splitbucketoperation.cpp
-    spoolerreplayoperation.cpp
     updateoperation.cpp
     wipehistoryoperation.cpp
     DEPENDS

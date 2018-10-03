@@ -1,13 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * NodeAdmin manages the life cycle of NodeAgents.
@@ -47,11 +45,6 @@ public interface NodeAdmin {
      * @param nodes List of hostnames to suspend
      */
     void stopNodeAgentServices(List<String> nodes);
-
-    /**
-     * Returns list of hosts.
-     */
-    Set<ContainerName> getListOfHosts();
 
     /**
      * Returns a map containing all relevant NodeAdmin variables and their current values.

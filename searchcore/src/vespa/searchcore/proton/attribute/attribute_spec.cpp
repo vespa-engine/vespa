@@ -21,7 +21,7 @@ AttributeSpec::AttributeSpec(AttributeSpec &&) = default;
 AttributeSpec &
 AttributeSpec::operator=(AttributeSpec &&) = default;
 
-AttributeSpec::~AttributeSpec() { }
+AttributeSpec::~AttributeSpec() = default;
 
 bool
 AttributeSpec::operator==(const AttributeSpec &rhs) const

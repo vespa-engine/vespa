@@ -17,7 +17,7 @@ class FieldSetRepo
 {
 public:
     static FieldSet::UP parse(const DocumentTypeRepo& repo,
-                       const vespalib::stringref & fieldSetString);
+                       vespalib::stringref fieldSetString);
 
     static vespalib::string serialize(const FieldSet& fs);
 };

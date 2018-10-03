@@ -24,6 +24,8 @@ public class Node {
     private final Optional<ApplicationId> owner;
     private final Version currentVersion;
     private final Version wantedVersion;
+    private final Version currentOsVersion;
+    private final Version wantedOsVersion;
     private final ServiceState serviceState;
     private final long restartGeneration;
     private final long wantedRestartGeneration;
@@ -31,7 +33,7 @@ public class Node {
     private final long wantedRebootGeneration;
 
     public Node(HostName hostname, State state, NodeType type, Optional<ApplicationId> owner,
-                Version currentVersion, Version wantedVersion, ServiceState serviceState,
+                Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion, ServiceState serviceState,
                 long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration) {
         this.hostname = hostname;
         this.state = state;
@@ -39,6 +41,8 @@ public class Node {
         this.owner = owner;
         this.currentVersion = currentVersion;
         this.wantedVersion = wantedVersion;
+        this.currentOsVersion = currentOsVersion;
+        this.wantedOsVersion = wantedOsVersion;
         this.serviceState = serviceState;
         this.restartGeneration = restartGeneration;
         this.wantedRestartGeneration = wantedRestartGeneration;
@@ -50,7 +54,7 @@ public class Node {
     public Node(HostName hostname, State state, NodeType type, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion) {
         this(hostname, state, type, owner, currentVersion, wantedVersion,
-             ServiceState.unorchestrated, 0, 0, 0, 0);
+             Version.emptyVersion, Version.emptyVersion, ServiceState.unorchestrated, 0, 0, 0, 0);
     }
 
     public HostName hostname() {
@@ -73,6 +77,14 @@ public class Node {
 
     public Version wantedVersion() {
         return wantedVersion;
+    }
+
+    public Version currentOsVersion() {
+        return currentOsVersion;
+    }
+
+    public Version wantedOsVersion() {
+        return wantedOsVersion;
     }
 
     public ServiceState serviceState() {

@@ -11,8 +11,6 @@
 #include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/persistence/bucketownershipnotifier.h>
 #include <vespa/storage/persistence/persistencethread.h>
-#include <vespa/storage/storageutil/log.h>
-#include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -317,16 +315,6 @@ FileStorManager::onRemove(const shared_ptr<api::RemoveCommand>& cmd)
 
 bool
 FileStorManager::onRevert(const shared_ptr<api::RevertCommand>& cmd)
-{
-    StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(*cmd, 0));
-    if (entry.exist()) {
-        handlePersistenceMessage(cmd, entry->disk);
-    }
-    return true;
-}
-
-bool
-FileStorManager::onBatchPutRemove(const std::shared_ptr<api::BatchPutRemoveCommand>& cmd)
 {
     StorBucketDatabase::WrappedEntry entry(mapOperationToBucketAndDisk(*cmd, 0));
     if (entry.exist()) {

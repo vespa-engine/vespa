@@ -67,7 +67,7 @@ class DocumentSelectParserTest : public CppUnit::TestFixture {
     parseFieldValue(const std::string& expression);
 
     template <typename ContainsType>
-    select::ResultList doParse(const vespalib::stringref& expr,
+    select::ResultList doParse(vespalib::stringref expr,
                                const ContainsType& t);
 
     std::string parse_to_tree(const std::string& str);
@@ -526,7 +526,7 @@ void DocumentSelectParserTest::testParseBranches()
 
 template <typename ContainsType>
 select::ResultList
-DocumentSelectParserTest::doParse(const vespalib::stringref& expr,
+DocumentSelectParserTest::doParse(vespalib::stringref expr,
                                   const ContainsType& t)
 {
     std::unique_ptr<select::Node> root(_parser->parse(expr));

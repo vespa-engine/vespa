@@ -76,9 +76,7 @@ AttributeManagerInitializerTask::AttributeManagerInitializerTask(std::promise<vo
 {
 }
 
-AttributeManagerInitializerTask::~AttributeManagerInitializerTask()
-{
-}
+AttributeManagerInitializerTask::~AttributeManagerInitializerTask() = default;
 
 void
 AttributeManagerInitializerTask::run()
@@ -116,7 +114,7 @@ AttributeInitializerTasksBuilder::AttributeInitializerTasksBuilder(InitializerTa
       _attributesResult(attributesResult)
 { }
 
-AttributeInitializerTasksBuilder::~AttributeInitializerTasksBuilder() {}
+AttributeInitializerTasksBuilder::~AttributeInitializerTasksBuilder() = default;
 
 void
 AttributeInitializerTasksBuilder::add(AttributeInitializer::UP initializer) {

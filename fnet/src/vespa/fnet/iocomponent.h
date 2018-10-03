@@ -2,14 +2,12 @@
 
 #pragma once
 
-#include "stats.h"
 #include <vespa/fastos/timestamp.h>
 #include <vespa/vespalib/net/selector.h>
 #include <mutex>
 #include <condition_variable>
 
 class FNET_TransportThread;
-class FNET_StatCounters;
 class FNET_Config;
 
 /**
@@ -45,7 +43,6 @@ protected:
     FNET_IOComponent        *_ioc_next;          // next in list
     FNET_IOComponent        *_ioc_prev;          // prev in list
     FNET_TransportThread    *_ioc_owner;         // owner(TransportThread) ref.
-    FNET_StatCounters       *_ioc_counters;      // stat counters
     int                      _ioc_socket_fd;     // source of events.
     Selector                *_ioc_selector;      // attached event selector
     char                    *_ioc_spec;          // connect/listen spec
@@ -54,10 +51,6 @@ protected:
     std::mutex               _ioc_lock;          // synchronization
     std::condition_variable  _ioc_cond;          // synchronization
     uint32_t                 _ioc_refcnt;        // reference counter
-
-    // direct write stats kept locally
-    uint32_t   _ioc_directPacketWriteCnt;
-    uint32_t   _ioc_directDataWriteCnt;
 
 public:
 
@@ -157,90 +150,6 @@ public:
      * FNET_TransportThread::UpdateTimeOut() with itself as parameter.
      **/
     void UpdateTimeOut();
-
-
-    /**
-     * Count packet read(s). This is a proxy method updating the stat
-     * counters associated with the owning transport object.
-     *
-     * @param cnt the number of packets read (default is 1).
-     **/
-    void CountPacketRead(uint32_t cnt = 1)
-    { _ioc_counters->CountPacketRead(cnt); }
-
-
-    /**
-     * Count packet write(s). This is a proxy method updating the stat
-     * counters associated with the owning transport object.
-     *
-     * @param cnt the number of packets written (default is 1).
-     **/
-    void CountPacketWrite(uint32_t cnt = 1)
-    { _ioc_counters->CountPacketWrite(cnt); }
-
-
-    /**
-     * Count direct packet write(s). This method will increase an
-     * internal counter. The shared stat counters may not be used
-     * because this method may be called by other threads than the
-     * transport thread. Note: The IO Component should be locked when
-     * this method is called.
-     *
-     * @param cnt the number of packets written (default is 1).
-     **/
-    void CountDirectPacketWrite(uint32_t cnt = 1)
-    { _ioc_directPacketWriteCnt += cnt; }
-
-
-    /**
-     * Count read data. This is a proxy method updating the stat
-     * counters associated with the owning transport object.
-     *
-     * @param bytes the number of bytes read.
-     **/
-    void CountDataRead(uint32_t bytes)
-    { _ioc_counters->CountDataRead(bytes); }
-
-
-    /**
-     * Count written data. This is a proxy method updating the stat
-     * counters associated with the owning transport object.
-     *
-     * @param bytes the number of bytes written.
-     **/
-    void CountDataWrite(uint32_t bytes)
-    { _ioc_counters->CountDataWrite(bytes); }
-
-
-    /**
-     * Count direct written data. This method will increase an
-     * internal counter. The shared stat counters may not be used
-     * because this method may be called by other threads than the
-     * transport thread. Note: The IO Component should be locked when
-     * this method is called.
-     *
-     * @param bytes the number of bytes written.
-     **/
-    void CountDirectDataWrite(uint32_t bytes)
-    { _ioc_directDataWriteCnt += bytes; }
-
-
-    /**
-     * Transfer the direct write stats held by this IO Component over to
-     * the stat counters associated with the owning transport object
-     * (and reset the local counters). Note: This method should only be
-     * called from the transport thread while having the lock on this IO
-     * Component. Note: This method is called from the transport loop
-     * and should generally not be called by application code.
-     **/
-    void FlushDirectWriteStats()
-    {
-        _ioc_counters->CountPacketWrite(_ioc_directPacketWriteCnt);
-        _ioc_counters->CountDataWrite(_ioc_directDataWriteCnt);
-        _ioc_directPacketWriteCnt = 0;
-        _ioc_directDataWriteCnt = 0;
-    }
-
 
     /**
      * Attach an event selector to this component. Before deleting an

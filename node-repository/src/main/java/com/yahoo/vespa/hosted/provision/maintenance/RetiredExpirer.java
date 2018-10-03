@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
-import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -14,7 +13,6 @@ import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -94,20 +92,25 @@ public class RetiredExpirer extends Maintainer {
      */
     private boolean canRemove(Node node) {
         if (node.type().isDockerHost()) {
-            return nodeRepository()
-                    .getChildNodes(node.hostname()).stream()
-                    .allMatch(child -> child.state() == Node.State.parked || child.state() == Node.State.failed);
+            if (nodeRepository()
+                        .getChildNodes(node.hostname()).stream()
+                        .allMatch(child -> child.state() == Node.State.parked ||
+                                child.state() == Node.State.failed)) {
+                log.info("Docker host " + node + " has no non-parked/failed children");
+                return true;
+            }
+
+            return false;
         }
 
-        Optional<Instant> timeOfRetiredEvent = node.history().event(History.Event.Type.retired).map(History.Event::at);
-        Optional<Instant> retireAfter = timeOfRetiredEvent.map(retiredEvent -> retiredEvent.plus(retiredExpiry));
-        boolean shouldRetireNowBecauseExpired = retireAfter.map(time -> time.isBefore(clock.instant())).orElse(false);
-        if (shouldRetireNowBecauseExpired) {
+        if (node.history().hasEventBefore(History.Event.Type.retired, clock.instant().minus(retiredExpiry))) {
+            log.info("Node " + node + " has been retired longer than " + retiredExpiry);
             return true;
         }
 
         try {
             orchestrator.acquirePermissionToRemove(new HostName(node.hostname()));
+            log.info("Node " + node + " has been granted permission to be removed");
             return true;
         } catch (OrchestrationException e) {
             log.info("Did not get permission to remove retired " + node + ": " + e.getMessage());

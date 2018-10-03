@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
-import com.yahoo.collections.CollectionComparator;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.FieldPath;
@@ -10,7 +9,17 @@ import com.yahoo.document.serialization.FieldReader;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.document.serialization.XmlSerializationHelper;
 import com.yahoo.document.serialization.XmlStream;
-import java.util.*;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+
 
 /**
  * Vespa map. Backed by and and parametrized by FieldValue
@@ -72,10 +81,7 @@ public class MapFieldValue<K extends FieldValue, V extends FieldValue> extends C
      */
     public boolean equals(Object o) {
         if (!(o instanceof MapFieldValue)) return false;
-        MapFieldValue otherSet = (MapFieldValue) o;
-        Map<K, V> map1 = values;
-        Map<K, V> map2 = otherSet.values;
-        return (super.equals(o) && map1.equals(map2));
+        return super.equals(o) && entrySet().equals(((MapFieldValue) o).entrySet());
     }
 
     @Override
@@ -276,14 +282,24 @@ public class MapFieldValue<K extends FieldValue, V extends FieldValue> extends C
             return comp;
         }
         //types are equal, this must be of this type
-        MapFieldValue otherValue = (MapFieldValue) fieldValue;
-        comp = CollectionComparator.compare(values.keySet(), otherValue.values.keySet());
-
-        if (comp != 0) {
-            return comp;
+        MapFieldValue<K,V> rhs = (MapFieldValue<K,V>) fieldValue;
+        if (size() < rhs.size()) {
+            return -1;
+        } else if (size() > rhs.size()) {
+            return 1;
+        }
+        Map.Entry<K,V> [] entries = entrySet().toArray(new Map.Entry[size()]);
+        Map.Entry<K,V> [] rhsEntries = rhs.entrySet().toArray(new Map.Entry[rhs.size()]);
+        Arrays.sort(entries, Comparator.comparing(Map.Entry<K,V>::getKey));
+        Arrays.sort(rhsEntries, Comparator.comparing(Map.Entry<K,V>::getKey));
+        for (int i = 0; i < entries.length; i++) {
+            comp = entries[i].getKey().compareTo(rhsEntries[i].getKey());
+            if (comp != 0) return comp;
+            comp = entries[i].getValue().compareTo(rhsEntries[i].getValue());
+            if (comp != 0) return comp;
         }
 
-        return CollectionComparator.compare(values.values(), otherValue.values.values());
+        return 0;
     }
 
     /**

@@ -24,13 +24,13 @@ CollectionDataType::operator=(const CollectionDataType& other)
     return *this;
 }
 
-CollectionDataType::CollectionDataType(const vespalib::stringref& name,
+CollectionDataType::CollectionDataType(vespalib::stringref name,
                                        const DataType& nestedType)
     : DataType(name),
       _nestedType(&nestedType) {
 }
 
-CollectionDataType::CollectionDataType(const vespalib::stringref& name,
+CollectionDataType::CollectionDataType(vespalib::stringref name,
                                        const DataType& nestedType,
                                        int32_t id)
     : DataType(name, id),

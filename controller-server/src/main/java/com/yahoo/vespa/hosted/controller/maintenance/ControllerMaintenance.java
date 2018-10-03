@@ -4,17 +4,20 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
-import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
-import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Organization;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Maintenance jobs of the controller.
@@ -40,13 +43,17 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ApplicationOwnershipConfirmer applicationOwnershipConfirmer;
     private final DnsMaintainer dnsMaintainer;
     private final SystemUpgrader systemUpgrader;
+    private final List<OsUpgrader> osUpgraders;
+    private final OsVersionStatusUpdater osVersionStatusUpdater;
     private final JobRunner jobRunner;
+    private final ContactInformationMaintainer contactInformationMaintainer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, Controller controller, CuratorDb curator,
-                                 JobControl jobControl, Metric metric, Chef chefClient, TesterCloud testerCloud,
+                                 JobControl jobControl, Metric metric, Chef chefClient,
                                  DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues,
-                                 NameService nameService, NodeRepositoryClientInterface nodeRepositoryClient) {
+                                 NameService nameService, NodeRepositoryClientInterface nodeRepositoryClient,
+                                 Organization organization) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
         deploymentExpirer = new DeploymentExpirer(controller, maintenanceInterval, jobControl);
@@ -62,7 +69,10 @@ public class ControllerMaintenance extends AbstractComponent {
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, ownershipIssues);
         dnsMaintainer = new DnsMaintainer(controller, Duration.ofHours(12), jobControl, nameService);
         systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1), jobControl);
-        jobRunner = new JobRunner(controller, Duration.ofSeconds(30), jobControl, new InternalStepRunner(controller, testerCloud));
+        jobRunner = new JobRunner(controller, Duration.ofSeconds(30), jobControl);
+        osUpgraders = osUpgraders(controller, jobControl);
+        osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
+        contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, organization);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -85,7 +95,20 @@ public class ControllerMaintenance extends AbstractComponent {
         applicationOwnershipConfirmer.deconstruct();
         dnsMaintainer.deconstruct();
         systemUpgrader.deconstruct();
+        osUpgraders.forEach(Maintainer::deconstruct);
+        osVersionStatusUpdater.deconstruct();
         jobRunner.deconstruct();
+        contactInformationMaintainer.deconstruct();
+    }
+
+    /** Create one OS upgrader per cloud found in the zone registry of controller */
+    private static List<OsUpgrader> osUpgraders(Controller controller, JobControl jobControl) {
+        return controller.zoneRegistry().zones().controllerUpgraded().ids().stream()
+                         .map(ZoneId::cloud)
+                         .distinct()
+                         .sorted()
+                         .map(cloud -> new OsUpgrader(controller, Duration.ofMinutes(1), jobControl, cloud))
+                         .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
 }

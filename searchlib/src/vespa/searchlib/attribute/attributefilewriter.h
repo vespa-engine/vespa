@@ -38,9 +38,9 @@ public:
                         const attribute::AttributeHeader &header,
                         const vespalib::string &desc);
     ~AttributeFileWriter();
-    virtual Buffer allocBuf(size_t size) override;
-    virtual void writeBuf(Buffer buf) override;
-    virtual std::unique_ptr<BufferWriter> allocBufferWriter() override;
+    Buffer allocBuf(size_t size) override;
+    void writeBuf(Buffer buf) override;
+    std::unique_ptr<BufferWriter> allocBufferWriter() override;
     bool open(const vespalib::string &fileName);
     void close();
 };

@@ -4,19 +4,19 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
+import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.dockerapi.DockerRegistryCredentialsSupplier;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 
 import java.net.InetAddress;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Mock with some simple logic
@@ -66,22 +66,8 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public List<ContainerName> listAllContainersManagedBy(String manager) {
-        synchronized (monitor) {
-            return getAllContainersManagedBy(manager).stream().map(container -> container.name).collect(Collectors.toList());
-        }
-    }
-
-    @Override
     public Optional<ContainerStats> getContainerStats(ContainerName containerName) {
         return Optional.empty();
-    }
-
-    @Override
-    public void createContainer(CreateContainerCommand createContainerCommand) {
-        synchronized (monitor) {
-            callOrderVerifier.add("createContainer with " + createContainerCommand.toString());
-        }
     }
 
     @Override
@@ -125,13 +111,8 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public void deleteImage(DockerImage dockerImage) {
-
-    }
-
-    @Override
-    public void deleteUnusedDockerImages() {
-
+    public boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete) {
+        return false;
     }
 
     @Override
@@ -159,16 +140,6 @@ public class DockerMock implements Docker {
     }
 
 
-    @Override
-    public String getGlobalIPv6Address(ContainerName name) {
-        return "2001:db8:1:2:0:242:ac13:2";
-    }
-
-    @Override
-    public void setDockerRegistryCredentialsSupplier(DockerRegistryCredentialsSupplier dockerRegistryCredentialsSupplier) {
-
-    }
-
     public static class StartContainerCommandMock implements CreateContainerCommand {
         @Override
         public CreateContainerCommand withLabel(String name, String value) {
@@ -182,6 +153,11 @@ public class DockerMock implements Docker {
 
         @Override
         public CreateContainerCommand withVolume(String path, String volumePath) {
+            return this;
+        }
+
+        @Override
+        public CreateContainerCommand withSharedVolume(String path, String volumePath) {
             return this;
         }
 

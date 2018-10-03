@@ -53,8 +53,10 @@ public abstract class Processor {
      * @param validate true to throw exceptions on validation errors, false to make the best possible effort
      *                 at completing processing without throwing an exception.
      *                 If we are not validating, emitting warnings have no effect and can (but must not) be skipped.
+     * @param documentsOnly true to skip processing (including validation, regardless of the validate setting)
+     *                      of aspects not relating to document definitions (e.g rank profiles)
      */
-    public abstract void process(boolean validate);
+    public abstract void process(boolean validate, boolean documentsOnly);
 
     /**
      * Convenience method for adding a no-strings-attached implementation field for a regular field
@@ -100,7 +102,7 @@ public abstract class Processor {
     {
         List<RankProfile.RankSetting> someRankSettings = new java.util.ArrayList<>();
 
-        for (RankProfile profile : rankProfileRegistry.localRankProfiles(search)) {
+        for (RankProfile profile : rankProfileRegistry.rankProfilesOf(search)) {
             for (Iterator j = profile.declaredRankSettingIterator(); j.hasNext(); ) {
                 RankProfile.RankSetting setting = (RankProfile.RankSetting)j.next();
                 if (setting.getType().equals(type)) {

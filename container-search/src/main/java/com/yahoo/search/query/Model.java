@@ -67,7 +67,7 @@ public class Model implements Cloneable {
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     /** The name of the query property used for generating hit count estimate queries. */
-    public static final CompoundName ESTIMATE = new CompoundName("hitcountestimate");
+    public static final CompoundName ESTIMATE = new CompoundName("hitcountestimate"); // TODO:Cleanup
 
     private String encoding = null;
     private String queryString = "";
@@ -237,11 +237,12 @@ public class Model implements Cloneable {
     public void setQueryString(String queryString) {
         if (queryString == null) queryString="";
         this.queryString = queryString;
-        queryTree = null; // Cause parsing of the new query string next time the tree is accessed
+        clearQueryTree();
     }
 
     /**
      * Returns the query string which caused the original query tree of this model to come about.
+     * Note that changes to the query tree are <b>not</b> reflected in this query string.
      * Note that changes to the query tree are <b>not</b> reflected in this query string.
      *
      * @return the original (or reassigned) query string - never null
@@ -262,6 +263,14 @@ public class Model implements Cloneable {
             }
         }
         return queryTree;
+    }
+
+    /**
+     * Clears the parsed query such that it will be created anew from the textual representation (a query string or
+     * select.where expression) on the next access.
+     */
+    public void clearQueryTree() {
+        queryTree = null;
     }
 
     /**
@@ -337,25 +346,25 @@ public class Model implements Cloneable {
                QueryHelper.combineHash(encoding,filter,language,getQueryTree(),sources,restrict,defaultIndex,type,searchPath);
     }
 
-
+    @Override
     public Object clone() {
         try {
-            Model clone = (Model) super.clone();
+            Model clone = (Model)super.clone();
             if (queryTree != null)
                 clone.queryTree = this.queryTree.clone();
-            if (sources !=null)
+            if (sources != null)
                 clone.sources = new LinkedHashSet<>(this.sources);
-            if (restrict !=null)
+            if (restrict != null)
                 clone.restrict = new LinkedHashSet<>(this.restrict);
             return clone;
         }
         catch (CloneNotSupportedException e) {
-            throw new RuntimeException("Someone inserted a noncloneable superclass",e);
+            throw new RuntimeException("Someone inserted a noncloneable superclass", e);
         }
     }
 
     public Model cloneFor(Query q)  {
-        Model model = (Model) this.clone();
+        Model model = (Model)this.clone();
         model.setParent(q);
         return model;
     }
@@ -365,7 +374,7 @@ public class Model implements Cloneable {
 
     /** Assigns the query owning this */
     public void setParent(Query parent) {
-        if (parent==null) throw new NullPointerException("A query models owner cannot be null");
+        if (parent == null) throw new NullPointerException("A query models owner cannot be null");
         this.parent = parent;
     }
 
@@ -403,7 +412,7 @@ public class Model implements Cloneable {
 
     /** Sets the execution working on this. For internal use. */
     public void setExecution(Execution execution) {
-        if (execution==this.execution) return;
+        if (execution == this.execution) return;
 
         // If not already coupled, bind the trace of the new execution into the existing execution trace
         if (execution.trace().traceNode().isRoot()
@@ -425,7 +434,7 @@ public class Model implements Cloneable {
     /** Returns the Execution working on this, or a null execution if none. For internal use. */
     public Execution getExecution() { return execution; }
 
-    private void setFromString(String string,Set<String> set) {
+    private void setFromString(String string, Set<String> set) {
         set.clear();
         for (String item : string.split(","))
             set.add(item.trim());
@@ -519,7 +528,6 @@ public class Model implements Cloneable {
             if (pin == needle) return true;
         return false;
     }
-
 
     /**
      * Set the YTrace header value to use when transmitting this model to a

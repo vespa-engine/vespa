@@ -42,8 +42,8 @@ class NodesResponse extends HttpResponse {
     private final boolean recursive;
     private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
-
     private final Slime slime;
+    private final NodeSerializer serializer = new NodeSerializer();
 
     public NodesResponse(ResponseType responseType, HttpRequest request,  
                          Orchestrator orchestrator, NodeRepository nodeRepository) {
@@ -60,7 +60,7 @@ class NodesResponse extends HttpResponse {
         switch (responseType) {
             case nodeList: nodesToSlime(root); break;
             case stateList : statesToSlime(root); break;
-            case nodesInStateList: nodesToSlime(stateFromString(lastElement(parentUrl)), root); break;
+            case nodesInStateList: nodesToSlime(serializer.stateFrom(lastElement(parentUrl)), root); break;
             case singleNode : nodeToSlime(lastElement(parentUrl), root); break;
             default: throw new IllegalArgumentException();
         }
@@ -96,11 +96,11 @@ class NodesResponse extends HttpResponse {
     private void statesToSlime(Cursor root) {
         Cursor states = root.setObject("states");
         for (Node.State state : Node.State.values())
-            toSlime(state, states.setObject(NodeStateSerializer.wireNameOf(state)));
+            toSlime(state, states.setObject(serializer.toString(state)));
     }
 
     private void toSlime(Node.State state, Cursor object) {
-        object.setString("url", parentUrl + NodeStateSerializer.wireNameOf(state));
+        object.setString("url", parentUrl + serializer.toString(state));
         if (recursive)
             nodesToSlime(state, object);
     }
@@ -135,10 +135,10 @@ class NodesResponse extends HttpResponse {
         object.setString("url", nodeParentUrl + node.hostname());
         if ( ! allFields) return;
         object.setString("id", node.id());
-        object.setString("state", NodeStateSerializer.wireNameOf(node.state()));
+        object.setString("state", serializer.toString(node.state()));
         object.setString("type", node.type().name());
         object.setString("hostname", node.hostname());
-        object.setString("type", toString(node.type()));
+        object.setString("type", serializer.toString(node.type()));
         if (node.parentHostname().isPresent()) {
             object.setString("parentHostname", node.parentHostname().get());
         }
@@ -153,6 +153,7 @@ class NodesResponse extends HttpResponse {
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
         object.setBool("fastDisk", node.flavor().hasFastDisk());
+        object.setDouble("bandwidth", node.flavor().getBandwidth());
         object.setString("environment", node.flavor().getType().name());
         if (node.allocation().isPresent()) {
             toSlime(node.allocation().get().owner(), object.setObject("owner"));
@@ -169,14 +170,13 @@ class NodesResponse extends HttpResponse {
         }
         object.setLong("rebootGeneration", node.status().reboot().wanted());
         object.setLong("currentRebootGeneration", node.status().reboot().current());
+        node.status().osVersion().ifPresent(version -> object.setString("currentOsVersion", version.toFullString()));
+        nodeRepository.osVersions().targetFor(node.type()).ifPresent(version -> object.setString("wantedOsVersion", version.toFullString()));
         node.status().vespaVersion()
                 .filter(version -> !version.isEmpty())
                 .ifPresent(version -> {
                     object.setString("vespaVersion", version.toFullString());
                     object.setString("currentDockerImage", nodeRepository.dockerImage().withTag(version).asString());
-                    // TODO: Remove these when they are no longer read
-                    object.setString("hostedVersion", version.toFullString());
-                    object.setString("convergedStateVersion", version.toFullString());
                 });
         object.setLong("failCount", node.status().failCount());
         object.setBool("hardwareFailure", node.status().hardwareFailureDescription().isPresent());
@@ -187,19 +187,6 @@ class NodesResponse extends HttpResponse {
         ipAddressesToSlime(node.ipAddresses(), object.setArray("ipAddresses"));
         ipAddressesToSlime(node.additionalIpAddresses(), object.setArray("additionalIpAddresses"));
         node.status().hardwareDivergence().ifPresent(hardwareDivergence -> object.setString("hardwareDivergence", hardwareDivergence));
-    }
-
-    private String toString(NodeType type) {
-        switch(type) {
-            case tenant: return "tenant";
-            case host: return "host";
-            case proxy: return "proxy";
-            case proxyhost: return "proxyhost";
-            case config: return "config";
-            case confighost: return "confighost";
-            default:
-                throw new RuntimeException("New type added to enum, not implemented in NodesResponse: " + type.name());
-        }
     }
 
     private void toSlime(ApplicationId id, Cursor object) {
@@ -234,12 +221,7 @@ class NodesResponse extends HttpResponse {
             path = path.substring(0, path.length()-1);
         int lastSlash = path.lastIndexOf("/");
         if (lastSlash < 0) return path;
-        return path.substring(lastSlash+1, path.length());
-    }
-
-    private static Node.State stateFromString(String stateString) {
-        return NodeStateSerializer.fromWireName(stateString)
-                .orElseThrow(() -> new RuntimeException("Node state '" + stateString + "' is not known"));
+        return path.substring(lastSlash+1);
     }
 
 }

@@ -1,7 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributenode.h"
-#include <vespa/searchlib/attribute/singleenumattribute.h>
+#include "enumattributeresult.h"
+#include <vespa/searchcommon/attribute/iattributecontext.h>
 
 namespace search::expression {
 
@@ -11,35 +12,71 @@ using search::attribute::IAttributeVector;
 using search::attribute::BasicType;
 
 IMPLEMENT_EXPRESSIONNODE(AttributeNode, FunctionNode);
-IMPLEMENT_RESULTNODE(AttributeResult, ResultNode);
+
+template <typename V>
+class AttributeNode::IntegerHandler : public AttributeNode::Handler
+{
+public:
+    IntegerHandler(ResultNode & result) :
+        Handler(),
+        _vector(((V &)result).getVector()),
+        _wVector()
+    { }
+    void handle(const AttributeResult & r) override;
+private:
+    typename V::Vector & _vector;
+    std::vector<search::attribute::IAttributeVector::WeightedInt> _wVector;
+};
+
+class AttributeNode::FloatHandler : public AttributeNode::Handler
+{
+public:
+    FloatHandler(ResultNode & result) :
+        Handler(),
+        _vector(((FloatResultNodeVector &)result).getVector()),
+        _wVector()
+    { }
+    void handle(const AttributeResult & r) override;
+private:
+    FloatResultNodeVector::Vector & _vector;
+    std::vector<search::attribute::IAttributeVector::WeightedFloat> _wVector;
+};
+
+class AttributeNode::StringHandler : public AttributeNode::Handler
+{
+public:
+    StringHandler(ResultNode & result) :
+        Handler(),
+        _vector(((StringResultNodeVector &)result).getVector()),
+        _wVector()
+    { }
+    void handle(const AttributeResult & r) override;
+private:
+    StringResultNodeVector::Vector & _vector;
+    std::vector<search::attribute::IAttributeVector::WeightedConstChar> _wVector;
+};
+
+class AttributeNode::EnumHandler : public AttributeNode::Handler
+{
+public:
+    EnumHandler(ResultNode & result) :
+        Handler(),
+        _vector(((EnumResultNodeVector &)result).getVector()),
+        _wVector()
+    { }
+    void handle(const AttributeResult & r) override;
+private:
+    EnumResultNodeVector::Vector &_vector;
+    std::vector<search::attribute::IAttributeVector::WeightedEnum> _wVector;
+};
 
 namespace {
 
-class EnumAttributeResult : public AttributeResult
-{
-public:
-    DECLARE_RESULTNODE(EnumAttributeResult);
-    EnumAttributeResult(const attribute::IAttributeVector * attribute, DocId docId) :
-        AttributeResult(attribute, docId),
-        _enumAttr(dynamic_cast<const SingleValueEnumAttributeBase *>(attribute))
-    {
-    }
-private:
-    EnumAttributeResult() :
-        AttributeResult(),
-        _enumAttr(NULL)
-    { }
-    int64_t onGetEnum(size_t index) const override { (void) index; return (static_cast<int64_t>(_enumAttr->getE(getDocId()))); }
-    const SingleValueEnumAttributeBase * _enumAttr;
-};
-
-IMPLEMENT_RESULTNODE(EnumAttributeResult, AttributeResult);
-
-AttributeResult::UP createResult(const IAttributeVector * attribute)
+std::unique_ptr<AttributeResult> createResult(const IAttributeVector * attribute)
 {
     return (dynamic_cast<const SingleValueEnumAttributeBase *>(attribute) != NULL)
-        ? AttributeResult::UP(new EnumAttributeResult(attribute, 0))
-        : AttributeResult::UP(new AttributeResult(attribute, 0));
+        ? std::make_unique<EnumAttributeResult>(attribute, 0)
+        : std::make_unique<AttributeResult>(attribute, 0);
 }
 
 }
@@ -55,7 +92,7 @@ AttributeNode::AttributeNode() :
 
 AttributeNode::~AttributeNode() {}
 
-AttributeNode::AttributeNode(const vespalib::stringref &name) :
+AttributeNode::AttributeNode(vespalib::stringref name) :
     FunctionNode(),
     _scratchResult(new AttributeResult()),
     _hasMultiValue(false),
@@ -106,69 +143,73 @@ void AttributeNode::onPrepare(bool preserveAccurateTypes)
                 if (preserveAccurateTypes) {
                     switch (basicType) {
                       case BasicType::INT8:
-                        setResultType(std::unique_ptr<ResultNode>(new Int8ResultNodeVector()));
+                        setResultType(std::make_unique<Int8ResultNodeVector>());
+                        _handler = std::make_unique<IntegerHandler<Int8ResultNodeVector>>(updateResult());
                         break;
                       case BasicType::INT16:
-                        setResultType(std::unique_ptr<ResultNode>(new Int16ResultNodeVector()));
+                        setResultType(std::make_unique<Int16ResultNodeVector>());
+                        _handler = std::make_unique<IntegerHandler<Int16ResultNodeVector>>(updateResult());
                         break;
                       case BasicType::INT32:
-                        setResultType(std::unique_ptr<ResultNode>(new Int32ResultNodeVector()));
+                        setResultType(std::make_unique<Int32ResultNodeVector>());
+                        _handler = std::make_unique<IntegerHandler<Int32ResultNodeVector>>(updateResult());
                         break;
                       case BasicType::INT64:
-                        setResultType(std::unique_ptr<ResultNode>(new Int64ResultNodeVector()));
+                        setResultType(std::make_unique<Int64ResultNodeVector>());
+                        _handler = std::make_unique<IntegerHandler<Int64ResultNodeVector>>(updateResult());
                         break;
                       default:
                         throw std::runtime_error("This is no valid integer attribute " + attribute->getName());
                         break;
                     }
                 } else {
-                    setResultType(std::unique_ptr<ResultNode>(new IntegerResultNodeVector()));
+                    setResultType(std::make_unique<IntegerResultNodeVector>());
+                    _handler = std::make_unique<IntegerHandler<IntegerResultNodeVector>>(updateResult());
                 }
-               _handler.reset(new IntegerHandler(updateResult()));
             } else {
                 if (preserveAccurateTypes) {
                     switch (basicType) {
                       case BasicType::INT8:
-                        setResultType(std::unique_ptr<ResultNode>(new Int8ResultNode()));
+                        setResultType(std::make_unique<Int8ResultNode>());
                         break;
                       case BasicType::INT16:
-                        setResultType(std::unique_ptr<ResultNode>(new Int16ResultNode()));
+                        setResultType(std::make_unique<Int16ResultNode>());
                         break;
                       case BasicType::INT32:
-                        setResultType(std::unique_ptr<ResultNode>(new Int32ResultNode()));
+                        setResultType(std::make_unique<Int32ResultNode>());
                         break;
                       case BasicType::INT64:
-                        setResultType(std::unique_ptr<ResultNode>(new Int64ResultNode()));
+                        setResultType(std::make_unique<Int64ResultNode>());
                         break;
                       default:
                         throw std::runtime_error("This is no valid integer attribute " + attribute->getName());
                         break;
                     }
                 } else {
-                    setResultType(std::unique_ptr<ResultNode>(new Int64ResultNode()));
+                    setResultType(std::make_unique<Int64ResultNode>());
                 }
             }
         } else if (attribute->isFloatingPointType()) {
             if (_hasMultiValue) {
-                setResultType(std::unique_ptr<ResultNode>(new FloatResultNodeVector()));
-               _handler.reset(new FloatHandler(updateResult()));
+                setResultType(std::make_unique<FloatResultNodeVector>());
+                _handler = std::make_unique<FloatHandler>(updateResult());
             } else {
-                setResultType(std::unique_ptr<ResultNode>(new FloatResultNode()));
+                setResultType(std::make_unique<FloatResultNode>());
             }
         } else if (attribute->isStringType()) {
             if (_hasMultiValue) {
                 if (_useEnumOptimization) {
-                    setResultType(std::unique_ptr<ResultNode>(new EnumResultNodeVector()));
-                    _handler.reset(new EnumHandler(updateResult()));
+                    setResultType(std::make_unique<EnumResultNodeVector>());
+                    _handler = std::make_unique<EnumHandler>(updateResult());
                 } else {
-                    setResultType(std::unique_ptr<ResultNode>(new StringResultNodeVector()));
-                   _handler.reset(new StringHandler(updateResult()));
+                    setResultType(std::make_unique<StringResultNodeVector>());
+                    _handler = std::make_unique<StringHandler>(updateResult());
                 }
             } else {
                 if (_useEnumOptimization) {
-                    setResultType(std::unique_ptr<ResultNode>(new EnumResultNode()));
+                    setResultType(std::make_unique<EnumResultNode>());
                 } else {
-                    setResultType(std::unique_ptr<ResultNode>(new StringResultNode()));
+                    setResultType(std::make_unique<StringResultNode>());
                 }
             }
         } else {
@@ -178,7 +219,8 @@ void AttributeNode::onPrepare(bool preserveAccurateTypes)
     }
 }
 
-void AttributeNode::IntegerHandler::handle(const AttributeResult & r)
+template <typename V>
+void AttributeNode::IntegerHandler<V>::handle(const AttributeResult & r)
 {
     size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
     _vector.resize(numValues);
@@ -224,7 +266,7 @@ void AttributeNode::EnumHandler::handle(const AttributeResult & r)
 
 bool AttributeNode::onExecute() const
 {
-    if (_hasMultiValue) {
+    if (_handler) {
         _handler->handle(*_scratchResult);
     } else {
         updateResult().set(*_scratchResult);

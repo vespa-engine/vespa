@@ -48,7 +48,7 @@ public class RotationRepository {
 
     /** Get rotation for given application */
     public Optional<Rotation> getRotation(Application application) {
-        return application.rotation().map(r -> allRotations.get(r.id()));
+        return application.rotation().map(allRotations::get);
     }
 
     /**
@@ -62,7 +62,7 @@ public class RotationRepository {
      */
     public Rotation getOrAssignRotation(Application application, RotationLock lock) {
         if (application.rotation().isPresent()) {
-            return allRotations.get(application.rotation().get().id());
+            return allRotations.get(application.rotation().get());
         }
         if (!application.deploymentSpec().globalServiceId().isPresent()) {
             throw new IllegalArgumentException("global-service-id is not set in deployment spec");
@@ -85,7 +85,7 @@ public class RotationRepository {
     public Map<RotationId, Rotation> availableRotations(@SuppressWarnings("unused") RotationLock lock) {
         List<RotationId> assignedRotations = applications.asList().stream()
                                                          .filter(application -> application.rotation().isPresent())
-                                                         .map(application -> application.rotation().get().id())
+                                                         .map(application -> application.rotation().get())
                                                          .collect(Collectors.toList());
         Map<RotationId, Rotation> unassignedRotations = new LinkedHashMap<>(this.allRotations);
         assignedRotations.forEach(unassignedRotations::remove);

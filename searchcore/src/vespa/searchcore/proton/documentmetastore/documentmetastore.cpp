@@ -233,11 +233,11 @@ DocumentMetaStore::removeOldGenerations(generation_t firstUsed)
 }
 
 std::unique_ptr<search::AttributeSaver>
-DocumentMetaStore::onInitSave()
+DocumentMetaStore::onInitSave(vespalib::stringref fileName)
 {
     GenerationHandler::Guard guard(getGuard());
     return std::make_unique<DocumentMetaStoreSaver>
-        (std::move(guard), createAttributeHeader(),
+        (std::move(guard), createAttributeHeader(fileName),
          _gidToLidMap.getFrozenView().begin(), _metaDataStore);
 }
 
@@ -301,10 +301,8 @@ DocumentMetaStore::onLoad()
 }
 
 bool
-DocumentMetaStore::checkBuckets(const GlobalId &gid,
-                                const BucketId &bucketId,
-                                const TreeType::Iterator &itr,
-                                bool found)
+DocumentMetaStore::checkBuckets(const GlobalId &gid, const BucketId &bucketId,
+                                const TreeType::Iterator &itr, bool found)
 {
     bool success = true;
 #if 0
@@ -394,8 +392,7 @@ DocumentMetaStore::updateMetaDataAndBucketDB(const GlobalId &gid,
 }
 
 
-namespace
-{
+namespace {
 
 void
 unloadBucket(BucketDBOwner &db, const BucketId &id, const BucketState &delta)

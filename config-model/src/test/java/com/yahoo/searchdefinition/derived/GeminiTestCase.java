@@ -62,7 +62,6 @@ public class GeminiTestCase extends AbstractExportingTestCase {
     private String lookup(String expressionName, Map<String, String> ranking) {
         String value = ranking.get("rankingExpression(" + expressionName + ").rankingScript");
         if (value == null) {
-            System.out.println("Warning: No expression found for " + expressionName);
             return expressionName;
         }
         return value;

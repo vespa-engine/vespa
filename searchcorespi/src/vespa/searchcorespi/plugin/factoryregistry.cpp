@@ -9,15 +9,11 @@ using vespalib::string;
 
 namespace searchcorespi {
 
-FactoryRegistry::FactoryRegistry()
-{
-}
+FactoryRegistry::FactoryRegistry() = default;
 
-FactoryRegistry::~FactoryRegistry()
-{
-}
+FactoryRegistry::~FactoryRegistry() = default;
 
-void FactoryRegistry::add(const stringref & uniqueName, const IIndexManagerFactory::SP & factory)
+void FactoryRegistry::add(stringref uniqueName, const IIndexManagerFactory::SP & factory)
 {
     LockGuard guard(_lock);
     if (_registry.find(uniqueName) == _registry.end()) {
@@ -27,7 +23,7 @@ void FactoryRegistry::add(const stringref & uniqueName, const IIndexManagerFacto
     }
 }
 
-void FactoryRegistry::remove(const stringref & uniqueName)
+void FactoryRegistry::remove(stringref uniqueName)
 {
     LockGuard guard(_lock);
     if (_registry.find(uniqueName) == _registry.end()) {
@@ -37,7 +33,7 @@ void FactoryRegistry::remove(const stringref & uniqueName)
 }
 
 const IIndexManagerFactory::SP &
-FactoryRegistry::get(const stringref & uniqueName) const
+FactoryRegistry::get(stringref uniqueName) const
 {
     LockGuard guard(_lock);
     Registry::const_iterator found = _registry.find(uniqueName);
@@ -48,7 +44,7 @@ FactoryRegistry::get(const stringref & uniqueName) const
 }
 
 bool
-FactoryRegistry::isRegistered(const vespalib::stringref & uniqueName) const
+FactoryRegistry::isRegistered(vespalib::stringref uniqueName) const
 {
     LockGuard guard(_lock);
     Registry::const_iterator found = _registry.find(uniqueName);

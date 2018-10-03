@@ -308,9 +308,7 @@ constexpr std::array<uint32_t, 7> WRITE_FEED_MESSAGE_TYPES {{
     api::MessageType::PUT_ID,
     api::MessageType::REMOVE_ID,
     api::MessageType::UPDATE_ID,
-    api::MessageType::REMOVELOCATION_ID,
-    api::MessageType::BATCHPUTREMOVE_ID,
-    api::MessageType::BATCHDOCUMENTUPDATE_ID
+    api::MessageType::REMOVELOCATION_ID
 }};
 
 }

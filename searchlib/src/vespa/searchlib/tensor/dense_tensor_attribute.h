@@ -19,13 +19,13 @@ class DenseTensorAttribute : public TensorAttribute
 {
     DenseTensorStore _denseTensorStore;
 public:
-    DenseTensorAttribute(const vespalib::stringref &baseFileName, const Config &cfg);
+    DenseTensorAttribute(vespalib::stringref baseFileName, const Config &cfg);
     virtual ~DenseTensorAttribute();
     virtual void setTensor(DocId docId, const Tensor &tensor) override;
     virtual std::unique_ptr<Tensor> getTensor(DocId docId) const override;
     virtual void getTensor(DocId docId, vespalib::tensor::MutableDenseTensorView &tensor) const override;
     virtual bool onLoad() override;
-    virtual std::unique_ptr<AttributeSaver> onInitSave() override;
+    virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     virtual void compactWorst() override;
     virtual uint32_t getVersion() const override;
 };

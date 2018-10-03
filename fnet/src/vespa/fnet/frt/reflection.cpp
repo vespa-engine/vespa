@@ -6,13 +6,12 @@
 #include "supervisor.h"
 
 FRT_Method::FRT_Method(const char * name, const char * paramSpec, const char * returnSpec,
-                       bool instant, FRT_METHOD_PT method, FRT_Invokable * handler)
+                       FRT_METHOD_PT method, FRT_Invokable * handler)
     : _hashNext(nullptr),
       _listNext(nullptr),
       _name(strdup(name)),
       _paramSpec(strdup(paramSpec)),
       _returnSpec(strdup(returnSpec)),
-      _instant(instant),
       _method(method),
       _handler(handler),
       _docLen(0),
@@ -171,7 +170,6 @@ void
 FRT_ReflectionBuilder::DefineMethod(const char    *name,
                                     const char    *paramSpec,
                                     const char    *returnSpec,
-                                    bool           instant,
                                     FRT_METHOD_PT  method,
                                     FRT_Invokable *handler)
 {
@@ -182,7 +180,6 @@ FRT_ReflectionBuilder::DefineMethod(const char    *name,
     _method = new FRT_Method(name,
                              paramSpec,
                              returnSpec,
-                             instant,
                              method,
                              handler);
     _lookup->AddMethod(_method);

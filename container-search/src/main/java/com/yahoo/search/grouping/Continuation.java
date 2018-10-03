@@ -21,4 +21,8 @@ public abstract class Continuation {
     public static Continuation fromString(String str) {
         return ContinuationDecoder.decode(str);
     }
+
+    /** Returns a deep copy of this */
+    public abstract Continuation copy();
+
 }

@@ -2,6 +2,8 @@
 vespa_add_library(vespalib_vespalib_net OBJECT
     SOURCES
     async_resolver.cpp
+    crypto_engine.cpp
+    crypto_socket.cpp
     selector.cpp
     server_socket.cpp
     socket.cpp

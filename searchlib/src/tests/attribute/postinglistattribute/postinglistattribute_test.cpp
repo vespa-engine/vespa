@@ -541,7 +541,7 @@ PostingListAttributeTest::testPostingList(const AttributePtr & ptr1, const Attri
     checkPostingList(vec1, values, RangeAlpha(part));
 
     // load and save vector
-    ptr1->saveAs(ptr2->getBaseFileName());
+    ptr1->save(ptr2->getBaseFileName());
     ptr2->load();
 #if 0
     std::cout << "***** vec2.printPostingListContent *****" << std::endl;
@@ -560,7 +560,7 @@ PostingListAttributeTest::testPostingList(const AttributePtr & ptr1, const Attri
     checkPostingList(vec1, values, RangeBeta(part, values.size()));
 
     // load and save vector
-    ptr1->saveAs(ptr2->getBaseFileName());
+    ptr1->save(ptr2->getBaseFileName());
     ptr2->load();
     checkPostingList(vec2, values, RangeBeta(part, values.size()));
 }
@@ -841,7 +841,7 @@ PostingListAttributeTest::testReload(const AttributePtr & ptr1, const AttributeP
     }
     ptr1->commit();
 
-    ASSERT_TRUE(ptr1->saveAs(ptr2->getBaseFileName()));
+    ASSERT_TRUE(ptr1->save(ptr2->getBaseFileName()));
     ASSERT_TRUE(ptr2->load());
 
     EXPECT_TRUE(ptr2->getNumDocs() == 5);
@@ -975,7 +975,7 @@ PostingListAttributeTest::testMinMax(AttributePtr &ptr1, AttributePtr &ptr2)
     populate(as<VectorType>(ptr1));
     
     TEST_DO(testMinMax<VectorType>(ptr1, 0u));
-    ASSERT_TRUE(ptr1->saveAs(ptr2->getBaseFileName()));
+    ASSERT_TRUE(ptr1->save(ptr2->getBaseFileName()));
     ASSERT_TRUE(ptr2->load());
     testMinMax<VectorType>(ptr2, 0u);
 
@@ -1003,10 +1003,8 @@ PostingListAttributeTest::testMinMax()
     {
         Config cfg(Config(BasicType::INT32, CollectionType::WSET));
         cfg.setFastSearch(true);
-        AttributePtr ptr1 =
-            AttributeFactory::createAttribute("wsint32_1", cfg);
-        AttributePtr ptr2 =
-            AttributeFactory::createAttribute("wsint32_2", cfg);
+        AttributePtr ptr1 = AttributeFactory::createAttribute("wsint32_1", cfg);
+        AttributePtr ptr2 = AttributeFactory::createAttribute("wsint32_2", cfg);
         testMinMax<IntegerAttribute>(ptr1, ptr2);
     }
     {

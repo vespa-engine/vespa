@@ -1,3 +1,4 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
@@ -18,10 +19,9 @@ import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
-import com.yahoo.vespa.athenz.identity.ServiceIdentityProviderListenerHelper;
 import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
-import com.yahoo.vespa.athenz.tls.KeyStoreType;
-import com.yahoo.vespa.athenz.tls.SslContextBuilder;
+import com.yahoo.security.KeyStoreType;
+import com.yahoo.security.SslContextBuilder;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.defaults.Defaults;
 
@@ -63,7 +63,6 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final ScheduledExecutorService scheduler;
     private final Clock clock;
     private final AthenzService identity;
-    private final ServiceIdentityProviderListenerHelper listenerHelper;
     private final String dnsSuffix;
     private final URI ztsEndpoint;
 
@@ -96,7 +95,6 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.scheduler = scheduler;
         this.clock = clock;
         this.identity = new AthenzService(config.domain(), config.service());
-        this.listenerHelper = new ServiceIdentityProviderListenerHelper(this.identity);
         this.dnsSuffix = config.athenzDnsSuffix();
         this.ztsEndpoint = URI.create(config.ztsUrl());
         roleSslContextCache = createCache(ROLE_SSL_CONTEXT_EXPIRY, this::createRoleSslContext);
@@ -148,16 +146,6 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     @Override
-    public void addIdentityListener(Listener listener) {
-        listenerHelper.addIdentityListener(listener);
-    }
-
-    @Override
-    public void removeIdentityListener(Listener listener) {
-        listenerHelper.removeIdentityListener(listener);
-    }
-
-    @Override
     public SSLContext getRoleSslContext(String domain, String role) {
         // This ssl context should ideally be cached as it is quite expensive to create.
         try {
@@ -190,7 +178,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
             X509Certificate roleCertificate = client.getRoleCertificate(role, credentials.getKeyPair(), dnsSuffix);
             return new SslContextBuilder()
                     .withKeyStore(credentials.getKeyPair().getPrivate(), roleCertificate)
-                    .withTrustStore(getDefaultTrustStoreLocation(), KeyStoreType.JKS)
+                    .withTrustStore(getDefaultTrustStoreLocation().toPath(), KeyStoreType.JKS)
                     .build();
         }
     }
@@ -216,7 +204,6 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         try {
             scheduler.shutdownNow();
             scheduler.awaitTermination(AWAIT_TERMINTATION_TIMEOUT.getSeconds(), TimeUnit.SECONDS);
-            listenerHelper.clearListeners();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -244,7 +231,6 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
             credentials = isExpired(credentials)
                     ? athenzCredentialsService.registerInstance()
                     : athenzCredentialsService.updateCredentials(credentials.getIdentityDocument(), credentials.getIdentitySslContext());
-            listenerHelper.onCredentialsUpdate(credentials.getIdentitySslContext());
         } catch (Throwable t) {
             log.log(LogLevel.WARNING, "Failed to update credentials: " + t.getMessage(), t);
         }

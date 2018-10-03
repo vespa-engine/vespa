@@ -31,31 +31,27 @@ public class DefaultRankProfile extends RankProfile {
     public void setInherited(String inheritedName) {
     }
 
-    /**
-     * Returns null, the default rank profile can not inherit anything
-     */
+    /** Returns null, the default rank profile can not inherit anything */
     public String getInheritedName() {
         return null;
     }
 
-    /**
-     * Returns the rank boost value of the given field
-     */
+    /** Returns the rank boost value of the given field */
     public RankSetting getRankSetting(String fieldOrIndex,RankSetting.Type type) {
-        RankSetting setting=super.getRankSetting(fieldOrIndex,type);
-        if (setting!=null) return setting;
+        RankSetting setting = super.getRankSetting(fieldOrIndex,type);
+        if (setting != null) return setting;
 
-        SDField field=getSearch().getConcreteField(fieldOrIndex);
-        if (field!=null) {
-            setting=toRankSetting(field,type);
-            if (setting!=null)
+        SDField field = getSearch().getConcreteField(fieldOrIndex);
+        if (field != null) {
+            setting = toRankSetting(field,type);
+            if (setting != null)
                 return setting;
         }
 
-        Index index=getSearch().getIndex(fieldOrIndex);
-        if (index!=null) {
-            setting=toRankSetting(index,type);
-            if (setting!=null)
+        Index index = getSearch().getIndex(fieldOrIndex);
+        if (index != null) {
+            setting = toRankSetting(index,type);
+            if (setting != null)
                 return setting;
         }
 
@@ -92,37 +88,36 @@ public class DefaultRankProfile extends RankProfile {
      * explicitly in this profile or in fields
      */
     public Set<RankSetting> rankSettings() {
-        Set<RankSetting> settings=new LinkedHashSet<>(20);
+        Set<RankSetting> settings = new LinkedHashSet<>(20);
         settings.addAll(this.rankSettings);
         for (SDField field : getSearch().allConcreteFields() ) {
-            addSetting(field,RankSetting.Type.WEIGHT,settings);
-            addSetting(field,RankSetting.Type.RANKTYPE,settings);
-            addSetting(field,RankSetting.Type.LITERALBOOST,settings);
-            addSetting(field,RankSetting.Type.PREFERBITVECTOR,settings);
+            addSetting(field, RankSetting.Type.WEIGHT, settings);
+            addSetting(field, RankSetting.Type.RANKTYPE, settings);
+            addSetting(field, RankSetting.Type.LITERALBOOST, settings);
+            addSetting(field, RankSetting.Type.PREFERBITVECTOR, settings);
         }
 
         // Foer settings that really pertains to indexes do the explicit indexes too
         for (Index index : getSearch().getExplicitIndices()) {
-            addSetting(index,RankSetting.Type.PREFERBITVECTOR,settings);
+            addSetting(index, RankSetting.Type.PREFERBITVECTOR, settings);
         }
         return settings;
     }
 
-    private void addSetting(SDField field,RankSetting.Type type,Set<RankSetting> settings) {
+    private void addSetting(SDField field, RankSetting.Type type, Set<RankSetting> settings) {
         if (type.isIndexLevel()) {
-            addIndexSettings(field,type,settings);
+            addIndexSettings(field, type, settings);
         }
         else {
-            RankSetting setting=toRankSetting(field,type);
-            if (setting==null) return;
+            RankSetting setting = toRankSetting(field, type);
+            if (setting == null) return;
             settings.add(setting);
         }
     }
 
-    private void addIndexSettings(SDField field,RankSetting.Type type,Set<RankSetting> settings) {
+    private void addIndexSettings(SDField field, RankSetting.Type type, Set<RankSetting> settings) {
         for (Iterator i = field.getFieldNameAsIterator(); i.hasNext(); ) {
-            String indexName=(String)i.next();
-            Index explicitIndex=field.getIndex(indexName);
+            String indexName = (String)i.next();
 
             // TODO: Make a ranking object in the index override the field level ranking object
             if (type.equals(RankSetting.Type.PREFERBITVECTOR) && field.getRanking().isFilter()) {
@@ -131,9 +126,9 @@ public class DefaultRankProfile extends RankProfile {
         }
     }
 
-    private void addSetting(Index index,RankSetting.Type type,Set<RankSetting> settings) {
-        RankSetting setting=toRankSetting(index,type);
-        if (setting==null) return;
+    private void addSetting(Index index, RankSetting.Type type, Set<RankSetting> settings) {
+        RankSetting setting = toRankSetting(index, type);
+        if (setting == null) return;
         settings.add(setting);
     }
 

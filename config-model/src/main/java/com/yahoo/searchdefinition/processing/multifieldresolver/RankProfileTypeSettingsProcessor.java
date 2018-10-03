@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Class that processes a search instance and sets type settings on all rank profiles.
+ * This processes a search instance and sets type settings on all rank profiles.
  *
  * Currently, type settings are limited to the type of tensor attribute fields and tensor query features.
  *
@@ -35,13 +35,16 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
+        if (documentsOnly) return;
+
         processAttributeFields();
         processImportedFields();
         processQueryProfileTypes();
     }
 
     private void processAttributeFields() {
+        if (search == null) return; // we're processing global profiles
         for (SDField field : search.allConcreteFields()) {
             Attribute attribute = field.getAttributes().get(field.getName());
             if (attribute != null && attribute.tensorType().isPresent()) {
@@ -51,6 +54,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void processImportedFields() {
+        if (search == null) return; // we're processing global profiles
         Optional<ImportedFields> importedFields = search.importedFields();
         if (importedFields.isPresent()) {
             importedFields.get().fields().forEach((fieldName, field) -> processImportedField(field));
@@ -66,7 +70,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void addAttributeTypeToRankProfiles(String attributeName, String attributeType) {
-        for (RankProfile profile : rankProfileRegistry.allRankProfiles()) {
+        for (RankProfile profile : rankProfileRegistry.all()) {
             profile.addAttributeType(attributeName, attributeType);
         }
     }
@@ -90,7 +94,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     }
 
     private void addQueryFeatureTypeToRankProfiles(String queryFeature, String queryFeatureType) {
-        for (RankProfile profile : rankProfileRegistry.allRankProfiles()) {
+        for (RankProfile profile : rankProfileRegistry.all()) {
             profile.addQueryFeatureType(queryFeature, queryFeatureType);
         }
     }

@@ -24,7 +24,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class ModelContextImplTest {
     @Test
@@ -52,6 +52,7 @@ public class ModelContextImplTest {
                         Zone.defaultZone(),
                         rotations,
                         false,
+                        false,
                         false),
                 Optional.empty(),
                 new Version(6), 
@@ -69,5 +70,6 @@ public class ModelContextImplTest {
         assertFalse(context.properties().hostedVespa());
         assertThat(context.properties().rotations(), equalTo(rotations));
         assertThat(context.properties().isFirstTimeDeployment(), equalTo(false));
+        assertThat(context.properties().useDedicatedNodeForLogserver(), equalTo(false));
     }
 }

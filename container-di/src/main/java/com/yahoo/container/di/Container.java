@@ -94,18 +94,17 @@ public class Container {
         return getNewComponentGraph(new ComponentGraph(), Guice.createInjector(), false);
     }
 
-    private static String newGraphErrorMessage(long generation, Throwable cause, Duration maxWaitToExit) {
+    private static String newGraphErrorMessage(long generation, Throwable cause) {
         String failedFirstMessage = "Failed to set up first component graph";
         String failedNewMessage = "Failed to set up new component graph";
         String constructMessage = " due to error when constructing one of the components";
-        String exitMessage = ". Exiting within " + maxWaitToExit.toString();
         String retainMessage = ". Retaining previous component generation.";
 
         if (generation == 0) {
             if (cause instanceof ComponentNode.ComponentConstructorException) {
-                return failedFirstMessage + constructMessage + exitMessage;
+                return failedFirstMessage + constructMessage;
             } else {
-                return failedFirstMessage + exitMessage;
+                return failedFirstMessage;
             }
         } else {
             if (cause instanceof ComponentNode.ComponentConstructorException) {
@@ -117,10 +116,9 @@ public class Container {
     }
 
     private void invalidateGeneration(long generation, Throwable cause) {
-        Duration maxWaitToExit = Duration.ofSeconds(60);
         leastGeneration = Math.max(configurer.getComponentsGeneration(), configurer.getBootstrapGeneration()) + 1;
         if (!(cause instanceof InterruptedException) && !(cause instanceof ConfigInterruptedException)) {
-            log.log(Level.WARNING, newGraphErrorMessage(generation, cause, maxWaitToExit), cause);
+            log.log(Level.WARNING, newGraphErrorMessage(generation, cause), cause);
         }
     }
 

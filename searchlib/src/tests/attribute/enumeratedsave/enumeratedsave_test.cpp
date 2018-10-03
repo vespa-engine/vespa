@@ -103,32 +103,24 @@ public:
     typedef std::shared_ptr<MemAttr> SP;
 
     MemAttr();
-    ~MemAttr();
+    ~MemAttr() override;
 
-    // Implements IAttributeSaveTarget
-    virtual bool setup() override { return true; }
-    virtual void close() override {}
-    virtual IAttributeFileWriter &datWriter() override { return _datWriter; }
-    virtual IAttributeFileWriter &idxWriter() override { return _idxWriter; }
-    virtual IAttributeFileWriter &weightWriter() override {
+    bool setup() override { return true; }
+    void close() override {}
+    IAttributeFileWriter &datWriter() override { return _datWriter; }
+    IAttributeFileWriter &idxWriter() override { return _idxWriter; }
+    IAttributeFileWriter &weightWriter() override {
         return _weightWriter;
     }
-    virtual IAttributeFileWriter &udatWriter() override { return _udatWriter; }
+    IAttributeFileWriter &udatWriter() override { return _udatWriter; }
 
-    bool
-    bufEqual(const Buffer &lhs, const Buffer &rhs) const;
+    bool bufEqual(const Buffer &lhs, const Buffer &rhs) const;
  
-    bool
-    operator==(const MemAttr &rhs) const;
+    bool operator==(const MemAttr &rhs) const;
 };
 
-MemAttr::MemAttr()
-        : _datWriter(),
-          _idxWriter(),
-          _weightWriter(),
-          _udatWriter()
-{ }
-MemAttr::~MemAttr() {}
+MemAttr::MemAttr() = default;
+MemAttr::~MemAttr() = default;
 
 class EnumeratedSaveTest
 {
@@ -136,20 +128,11 @@ private:
     typedef AttributeVector::SP AttributePtr;
 
     template <typename VectorType>
-    VectorType &
-    as(AttributePtr &v);
-
-    IntegerAttribute &
-    asInt(AttributePtr &v);
-
-    StringAttribute &
-    asString(AttributePtr &v);
-
-    FloatingPointAttribute &
-    asFloat(AttributePtr &v);
-
-    void
-    addDocs(const AttributePtr &v, size_t sz);
+    VectorType & as(AttributePtr &v);
+    IntegerAttribute & asInt(AttributePtr &v);
+    StringAttribute & asString(AttributePtr &v);
+    FloatingPointAttribute & asFloat(AttributePtr &v);
+    void addDocs(const AttributePtr &v, size_t sz);
 
     template <typename VectorType>
     void populate(VectorType &v, unsigned seed, BasicType bt);
@@ -157,65 +140,34 @@ private:
     template <typename VectorType, typename BufferType>
     void compare(VectorType &a, VectorType &b);
 
-    void
-    buildTermQuery(std::vector<char> & buffer,
-                   const vespalib::string & index,
-                   const vespalib::string & term, bool prefix);
+    void buildTermQuery(std::vector<char> & buffer, const vespalib::string & index,
+                        const vespalib::string & term, bool prefix);
 
     template <typename V, typename T>
-    SearchContextPtr
-    getSearch(const V & vec, const T & term, bool prefix);
+    SearchContextPtr getSearch(const V & vec, const T & term, bool prefix);
 
     template <typename V>
-    SearchContextPtr
-    getSearch(const V & vec);
+    SearchContextPtr getSearch(const V & vec);
 
-    MemAttr::SP
-    saveMem(AttributeVector &v);
-
-    void
-    checkMem(AttributeVector &v, const MemAttr &e, bool enumerated);
-
-    MemAttr::SP
-    saveBoth(AttributePtr v);
-
-    AttributePtr
-    make(Config cfg,
-         const vespalib::string &pref,
-         bool fastSearch = false);
-
-    void
-    load(AttributePtr v, const vespalib::string &name);
+    MemAttr::SP saveMem(AttributeVector &v);
+    void checkMem(AttributeVector &v, const MemAttr &e, bool enumerated);
+    MemAttr::SP saveBoth(AttributePtr v);
+    AttributePtr make(Config cfg, const vespalib::string &pref, bool fastSearch = false);
+    void load(AttributePtr v, const vespalib::string &name);
 
     template <typename VectorType, typename BufferType>
-    void
-    checkLoad(AttributePtr v,
-              const vespalib::string &name,
-              AttributePtr ev);
+    void checkLoad(AttributePtr v, const vespalib::string &name, AttributePtr ev);
 
     template <typename VectorType, typename BufferType>
-    void
-    testReload(AttributePtr v0,
-               AttributePtr v1,
-               AttributePtr v2,
-               MemAttr::SP mv0,
-               MemAttr::SP mv1,
-               MemAttr::SP mv2,
-               MemAttr::SP emv0,
-               MemAttr::SP emv1,
-               MemAttr::SP emv2,
-               Config cfg,
-               const vespalib::string &pref,
-               bool fastSearch);
+    void testReload(AttributePtr v0, AttributePtr v1, AttributePtr v2,
+                    MemAttr::SP mv0, MemAttr::SP mv1, MemAttr::SP mv2,
+                    MemAttr::SP emv0, MemAttr::SP emv1, MemAttr::SP emv2,
+                    Config cfg, const vespalib::string &pref, bool fastSearch);
 
 public:
     template <typename VectorType, typename BufferType>
-    void
-    test(BasicType bt, CollectionType ct, const vespalib::string &pref);
+    void test(BasicType bt, CollectionType ct, const vespalib::string &pref);
 
-    EnumeratedSaveTest()
-    {
-    }
 };
 
 
@@ -566,7 +518,7 @@ MemAttr::SP
 EnumeratedSaveTest::saveMem(AttributeVector &v)
 {
     MemAttr::SP res(new MemAttr);
-    EXPECT_TRUE(v.save(*res));
+    EXPECT_TRUE(v.save(*res, v.getBaseFileName()));
     return res;
 }
 
@@ -577,7 +529,7 @@ EnumeratedSaveTest::checkMem(AttributeVector &v, const MemAttr &e,
 {
     MemAttr m;
     v.enableEnumeratedSave(enumerated);
-    EXPECT_TRUE(v.save(m));
+    EXPECT_TRUE(v.save(m, v.getBaseFileName()));
     v.enableEnumeratedSave(false);
     ASSERT_TRUE(m == e);
 }
@@ -591,13 +543,13 @@ EnumeratedSaveTest::saveBoth(AttributePtr v)
     AttributePtr v2 = make(v->getConfig(), basename, true);
     EXPECT_TRUE(v2->load());
     v2->enableEnumeratedSave(true);
-    EXPECT_TRUE(v2->saveAs(basename + "_e"));
+    EXPECT_TRUE(v2->save(basename + "_e"));
     if ((v->getConfig().basicType() == BasicType::INT32 &&
          v->getConfig().collectionType() == CollectionType::WSET) || true) {
         search::AttributeMemorySaveTarget ms;
         search::TuneFileAttributes tune;
         search::index::DummyFileHeaderContext fileHeaderContext;
-        EXPECT_TRUE(v2->saveAs(basename + "_ee", ms));
+        EXPECT_TRUE(v2->save(ms, basename + "_ee"));
         EXPECT_TRUE(ms.writeToFile(tune, fileHeaderContext));
     }
     return saveMem(*v2);
@@ -605,9 +557,7 @@ EnumeratedSaveTest::saveBoth(AttributePtr v)
 
 
 EnumeratedSaveTest::AttributePtr
-EnumeratedSaveTest::make(Config cfg,
-                         const vespalib::string &pref,
-                         bool fastSearch)
+EnumeratedSaveTest::make(Config cfg, const vespalib::string &pref, bool fastSearch)
 {
     cfg.setFastSearch(fastSearch);
     AttributePtr v = AttributeFactory::createAttribute(pref, cfg);
@@ -751,13 +701,11 @@ EnumeratedSaveTest::test(BasicType bt, CollectionType ct,
     TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
                                                 mv0, mv1, mv2,
                                                 emv0, emv1, emv2,
-                                                cfg, pref,
-                                                false)));
+                                                cfg, pref, false)));
     TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
                                                 mv0, mv1, mv2,
                                                 emv0, emv1, emv2,
-                                                cfg, pref,
-                                                true)));
+                                                cfg, pref, true)));
 }
 
 TEST_F("Test enumerated save with single value int8", EnumeratedSaveTest)

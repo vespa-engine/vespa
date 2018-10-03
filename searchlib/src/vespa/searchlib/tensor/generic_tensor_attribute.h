@@ -16,13 +16,13 @@ class GenericTensorAttribute : public TensorAttribute
 {
     GenericTensorStore _genericTensorStore; // data store for serialized tensors
 public:
-    GenericTensorAttribute(const vespalib::stringref &baseFileName, const Config &cfg);
+    GenericTensorAttribute(vespalib::stringref baseFileName, const Config &cfg);
     virtual ~GenericTensorAttribute();
     virtual void setTensor(DocId docId, const Tensor &tensor) override;
     virtual std::unique_ptr<Tensor> getTensor(DocId docId) const override;
     virtual void getTensor(DocId docId, vespalib::tensor::MutableDenseTensorView &tensor) const override;
     virtual bool onLoad() override;
-    virtual std::unique_ptr<AttributeSaver> onInitSave() override;
+    virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     virtual void compactWorst() override;
 };
 

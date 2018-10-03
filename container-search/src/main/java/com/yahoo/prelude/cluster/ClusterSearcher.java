@@ -152,11 +152,11 @@ public class ClusterSearcher extends Searcher {
         } else {
             for (int dispatcherIndex = 0; dispatcherIndex < searchClusterConfig.dispatcher().size(); dispatcherIndex++) {
                 try {
-                    if (! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host())) {
-                        Backend b = createBackend(searchClusterConfig.dispatcher(dispatcherIndex));
+                    if ( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host())) {
+                        Backend dispatchBackend = createBackend(searchClusterConfig.dispatcher(dispatcherIndex));
                         FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool,
                                                                cacheParams, emulationConfig, docSumParams,
-                                                               documentDbConfig, b, dispatcher, dispatcherIndex);
+                                                               documentDbConfig, dispatchBackend, dispatcher, dispatcherIndex);
                         addBackendSearcher(searcher);
                     }
                 } catch (UnknownHostException e) {

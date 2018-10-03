@@ -1,6 +1,10 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchlib_expression OBJECT
     SOURCES
+    attribute_map_lookup_node.cpp
+    attributenode.cpp
+    attributeresult.cpp
+    enumattributeresult.cpp
     perdocexpression.cpp
     expressiontree.cpp
     timestamp.cpp
@@ -15,7 +19,6 @@ vespa_add_library(searchlib_expression OBJECT
     catserializer.cpp
     strcatserializer.cpp
     documentfieldnode.cpp
-    attributenode.cpp
     zcurve.cpp
     debugwaitfunctionnode.cpp
     mathfunctionnode.cpp

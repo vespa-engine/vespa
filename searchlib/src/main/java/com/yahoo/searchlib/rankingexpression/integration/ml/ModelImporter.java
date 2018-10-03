@@ -1,3 +1,4 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.integration.ml;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
@@ -24,7 +25,7 @@ import java.util.logging.Logger;
  * ranking expressions. The general mechanism for import is for the
  * specific ML platform import implementations to create an
  * IntermediateGraph. This class offers common code to convert the
- * IntermediateGraph to Vespa ranking expressions and macros.
+ * IntermediateGraph to Vespa ranking expressions and functions.
  *
  * @author lesters
  */
@@ -32,21 +33,22 @@ public abstract class ModelImporter {
 
     private static final Logger log = Logger.getLogger(ModelImporter.class.getName());
 
-    /**
-     * The main import function.
-     */
+    /** Returns whether the file or directory at the given path is of the type which can be imported by this */
+    public abstract boolean canImport(String modelPath);
+
+    /** Imports the given model */
     public abstract ImportedModel importModel(String modelName, String modelPath);
 
-    public ImportedModel importModel(String modelName, File modelDir) {
-        return importModel(modelName, modelDir.toString());
+    public final ImportedModel importModel(String modelName, File modelPath) {
+        return importModel(modelName, modelPath.toString());
     }
 
     /**
      * Takes an IntermediateGraph and converts it to a ImportedModel containing
      * the actual Vespa ranking expressions.
      */
-    static ImportedModel convertIntermediateGraphToModel(IntermediateGraph graph) {
-        ImportedModel model = new ImportedModel(graph.name());
+    static ImportedModel convertIntermediateGraphToModel(IntermediateGraph graph, String modelSource) {
+        ImportedModel model = new ImportedModel(graph.name(), modelSource);
 
         graph.optimize();
 
@@ -121,7 +123,7 @@ public abstract class ModelImporter {
         importExpressionInputs(operation, model);
         importRankingExpression(operation, model);
         importArgumentExpression(operation, model);
-        importMacroExpression(operation, model);
+        importFunctionExpression(operation, model);
 
         return operation.function();
     }
@@ -138,7 +140,7 @@ public abstract class ModelImporter {
 
         Value value = operation.getConstantValue().orElseThrow(() ->
                 new IllegalArgumentException("Operation '" + operation.vespaName() + "' " +
-                        "is constant but does not have a value."));
+                                             "is constant but does not have a value."));
         if ( ! (value instanceof TensorValue)) {
             return operation.function(); // scalar values are inserted directly into the expression
         }
@@ -155,7 +157,7 @@ public abstract class ModelImporter {
     private static void importRankingExpression(IntermediateOperation operation, ImportedModel model) {
         if (operation.function().isPresent()) {
             String name = operation.name();
-            if (!model.expressions().containsKey(name)) {
+            if ( ! model.expressions().containsKey(name)) {
                 TensorFunction function = operation.function().get();
 
                 if (isSignatureOutput(model, operation)) {
@@ -186,16 +188,17 @@ public abstract class ModelImporter {
         if (operation.isInput()) {
             // All inputs must have dimensions with standard naming convention: d0, d1, ...
             OrderedTensorType standardNamingConvention = OrderedTensorType.standardType(operation.type().get());
-            model.argument(operation.vespaName(), standardNamingConvention.type());
-            model.requiredMacro(operation.vespaName(), standardNamingConvention.type());
+            model.input(operation.vespaName(), standardNamingConvention.type());
         }
     }
 
-    private static void importMacroExpression(IntermediateOperation operation, ImportedModel model) {
-        if (operation.macro().isPresent()) {
-            TensorFunction function = operation.macro().get();
+    private static void importFunctionExpression(IntermediateOperation operation, ImportedModel model) {
+        if (operation.rankingExpressionFunction().isPresent()) {
+            TensorFunction function = operation.rankingExpressionFunction().get();
             try {
-                model.macro(operation.macroName(), new RankingExpression(operation.macroName(), function.toString()));
+                model.function(operation.rankingExpressionFunctionName(),
+                               new RankingExpression(operation.rankingExpressionFunctionName(),
+                                                     function.toString()));
             }
             catch (ParseException e) {
                 throw new RuntimeException("Tensorflow function " + function +

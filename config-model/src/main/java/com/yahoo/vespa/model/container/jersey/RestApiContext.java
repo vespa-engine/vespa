@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 
 /**
  * @author gjoranv
- * @since 5.16
  */
 public class RestApiContext extends SimpleComponent implements
         JerseyBundlesConfig.Producer,
@@ -87,10 +86,6 @@ public class RestApiContext extends SimpleComponent implements
         }
     }
 
-    public void addInjections(Map<String, String> injections) {
-        injectComponentForClass.putAll(injections);
-    }
-
     @Override
     public void validate() throws Exception {
         super.validate();
@@ -117,7 +112,6 @@ public class RestApiContext extends SimpleComponent implements
     private Predicate<Component> isCycleGeneratingComponent = component -> {
         switch (component.getClassId().getName()) {
             case CONTAINER_CLASS:
-            case JerseyHandler.CLASS:
             case Jersey2Servlet.CLASS:
             case "com.yahoo.jdisc.http.server.jetty.JettyHttpServer":
             case "com.yahoo.container.handler.observability.ApplicationStatusHandler":

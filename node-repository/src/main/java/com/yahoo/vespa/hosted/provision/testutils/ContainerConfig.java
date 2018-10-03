@@ -10,26 +10,28 @@ package com.yahoo.vespa.hosted.provision.testutils;
 public class ContainerConfig {
 
         public static String servicesXmlV2(int port) {
-                return
-                        "<jdisc version='1.0'>" +
-                        "  <component id='com.yahoo.test.ManualClock'/>" +
-                        "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>" +
-                        "  <component id='com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock'/>" +
-                        "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockDeployer'/>" +
-                        "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockProvisioner'/>" +
-                        "  <component id='com.yahoo.vespa.hosted.provision.testutils.TestHostLivenessTracker'/>" +
-                        "  <component id='com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub'/>" +
-                        "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors'/>" +
-                        "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository'/>" +
-                        "  <component id='com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance'/>" +
-                        "  <component id='com.yahoo.config.provision.Zone'/>" +
-                        "  <handler id='com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler'>" +
-                        "    <binding>http://*/nodes/v2/*</binding>" +
-                        "  </handler>" +
-                        "  <http>" +
-                        "    <server id='myServer' port='" + port + "' />" +
-                        "  </http>" +
-                        "</jdisc>";
+                return "<jdisc version='1.0'>\n" +
+                       "  <config name=\"container.handler.threadpool\">\n" +
+                       "    <maxthreads>10</maxthreads>\n" +
+                       "  </config>  \n" +
+                       "  <component id='com.yahoo.test.ManualClock'/>\n" +
+                       "  <component id='com.yahoo.vespa.curator.mock.MockCurator'/>\n" +
+                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock'/>\n" +
+                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockDeployer'/>\n" +
+                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockProvisioner'/>\n" +
+                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.TestHostLivenessTracker'/>\n" +
+                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub'/>\n" +
+                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors'/>\n" +
+                       "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository'/>\n" +
+                       "  <component id='com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance'/>\n" +
+                       "  <component id='com.yahoo.config.provision.Zone'/>\n" +
+                       "  <handler id='com.yahoo.vespa.hosted.provision.restapi.v2.NodesApiHandler'>\n" +
+                       "    <binding>http://*/nodes/v2/*</binding>\n" +
+                       "  </handler>\n" +
+                       "  <http>\n" +
+                       "    <server id='myServer' port='" + port + "'/>\n" +
+                       "  </http>\n" +
+                       "</jdisc>";
         }
 
 }

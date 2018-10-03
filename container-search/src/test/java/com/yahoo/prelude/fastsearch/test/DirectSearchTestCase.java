@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch.test;
 
+import com.yahoo.prelude.fastsearch.FastHit;
+import com.yahoo.search.Result;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -47,6 +49,17 @@ public class DirectSearchTestCase {
         FastSearcherTester tester = new FastSearcherTester(2, FastSearcherTester.selfHostname + ":9999:0", "otherhost:9999:1");
         tester.search("?query=test&dispatch.direct=true");
         assertEquals(1, tester.requestCount(FastSearcherTester.selfHostname, 9999));
+    }
+
+    @Test
+    public void testDirectSearchSummaryFetchGoToLocalNode() {
+        FastSearcherTester tester = new FastSearcherTester(2, "otherhost:9999:1", FastSearcherTester.selfHostname + ":9999:0");
+        int localDistributionKey = tester.dispatcher().searchCluster().nodesByHost().get(FastSearcherTester.selfHostname).asList().get(0).key();
+        assertEquals(1, localDistributionKey);
+        Result result = tester.search("?query=test&dispatch.direct=true");
+        assertEquals(1, tester.requestCount(FastSearcherTester.selfHostname, 9999));
+        FastHit hit = (FastHit)result.hits().get(0);
+        assertEquals(localDistributionKey, hit.getDistributionKey());
     }
 
     @Test

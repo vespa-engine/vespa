@@ -8,11 +8,11 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/document/update/documentupdate.h>
 #include <vespa/documentapi/documentapi.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/storage/common/bucket_resolver.h>
 #include <vespa/storage/storageserver/documentapiconverter.h>
-#include <vespa/storageapi/message/batch.h>
 #include <vespa/storageapi/message/datagram.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
@@ -115,7 +115,6 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     void testCreateVisitorReplyLastBucket();
     void testDestroyVisitor();
     void testVisitorInfo();
-    void testBatchDocumentUpdate();
     void testStatBucket();
     void testGetBucketList();
     void testRemoveLocation();
@@ -133,7 +132,6 @@ struct DocumentApiConverterTest : public CppUnit::TestFixture
     CPPUNIT_TEST(testCreateVisitorReplyLastBucket);
     CPPUNIT_TEST(testDestroyVisitor);
     CPPUNIT_TEST(testVisitorInfo);
-    CPPUNIT_TEST(testBatchDocumentUpdate);
     CPPUNIT_TEST(testStatBucket);
     CPPUNIT_TEST(testGetBucketList);
     CPPUNIT_TEST(testRemoveLocation);
@@ -318,58 +316,6 @@ DocumentApiConverterTest::testVisitorInfo()
     CPPUNIT_ASSERT(reply.get());
 
     toStorageAPI<api::VisitorInfoReply>(*reply, vicmd);
-}
-
-void
-DocumentApiConverterTest::testBatchDocumentUpdate()
-{
-    std::vector<document::DocumentUpdate::SP > updates;
-
-    {
-        document::DocumentId docId(document::UserDocIdString("userdoc:test:1234:test1"));
-        auto update = std::make_shared<document::DocumentUpdate>(*_repo, _html_type, docId);
-        updates.push_back(update);
-    }
-
-    {
-        document::DocumentId docId(document::UserDocIdString("userdoc:test:1234:test2"));
-        auto update = std::make_shared<document::DocumentUpdate>(*_repo, _html_type, docId);
-        updates.push_back(update);
-    }
-
-    {
-        document::DocumentId docId(document::UserDocIdString("userdoc:test:1234:test3"));
-        auto update = std::make_shared<document::DocumentUpdate>(*_repo, _html_type, docId);
-        updates.push_back(update);
-    }
-
-    auto msg = std::make_shared<documentapi::BatchDocumentUpdateMessage>(1234);
-    for (std::size_t i = 0; i < updates.size(); ++i) {
-        msg->addUpdate(updates[i]);
-    }
-
-    auto batchCmd = toStorageAPI<api::BatchDocumentUpdateCommand>(*msg);
-    CPPUNIT_ASSERT_EQUAL(updates.size(), batchCmd->getUpdates().size());
-    for (std::size_t i = 0; i < updates.size(); ++i) {
-        CPPUNIT_ASSERT_EQUAL(*updates[i], *batchCmd->getUpdates()[i]);
-    }
-
-    api::BatchDocumentUpdateReply batchReply(*batchCmd);
-    batchReply.getDocumentsNotFound().resize(3);
-    batchReply.getDocumentsNotFound()[0] = true;
-    batchReply.getDocumentsNotFound()[2] = true;
-
-    std::unique_ptr<mbus::Reply> mbusReply = msg->createReply();
-    documentapi::BatchDocumentUpdateReply* mbusBatchReply(
-            dynamic_cast<documentapi::BatchDocumentUpdateReply*>(mbusReply.get()));
-    CPPUNIT_ASSERT(mbusBatchReply != 0);
-
-    _converter->transferReplyState(batchReply, *mbusReply);
-
-    CPPUNIT_ASSERT_EQUAL(std::size_t(3), mbusBatchReply->getDocumentsNotFound().size());
-    CPPUNIT_ASSERT(mbusBatchReply->getDocumentsNotFound()[0] == true);
-    CPPUNIT_ASSERT(mbusBatchReply->getDocumentsNotFound()[1] == false);
-    CPPUNIT_ASSERT(mbusBatchReply->getDocumentsNotFound()[2] == true);
 }
 
 void

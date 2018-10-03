@@ -9,6 +9,7 @@
 #include "packetqueue.h"
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/async_resolver.h>
+#include <vespa/vespalib/net/crypto_socket.h>
 
 class FNET_IPacketStreamer;
 class FNET_IServerAdapter;
@@ -67,16 +68,16 @@ private:
     struct Flags {
         Flags() :
             _gotheader(false),
-            _writeLock(false),
             _inCallback(false),
             _callbackWait(false),
-            _discarding(false)
+            _discarding(false),
+            _framed(false)
         { }
         bool _gotheader;
-        bool _writeLock;
         bool _inCallback;
         bool _callbackWait;
         bool _discarding;
+        bool _framed;
     };
     struct ResolveHandler : public vespalib::AsyncResolver::ResultHandler {
         FNET_Connection *connection;
@@ -89,7 +90,7 @@ private:
     FNET_IPacketStreamer    *_streamer;        // custom packet streamer
     FNET_IServerAdapter     *_serverAdapter;   // only on server side
     FNET_Channel            *_adminChannel;    // only on client side
-    vespalib::SocketHandle   _socket;          // socket for this conn
+    vespalib::CryptoSocket::UP _socket;          // socket for this conn
     ResolveHandlerSP         _resolve_handler; // async resolve callback
     FNET_Context             _context;         // connection context
     State                    _state;           // connection state
@@ -200,6 +201,21 @@ private:
     void HandlePacket(uint32_t plen, uint32_t pcode, uint32_t chid);
 
     /**
+     * Handle crypto handshaking
+     *
+     * @return false if socket is broken.
+     **/
+    bool handshake();
+
+    /**
+     * Handle all packets in the input buffer, calling HandlePacket
+     * for each one.
+     *
+     * @return false if socket is broken.
+     **/
+    bool handle_packets();
+
+    /**
      * Read incoming data from socket.
      *
      * @return false if socket is broken.
@@ -210,10 +226,8 @@ private:
      * Write outgoing data to socket.
      *
      * @return false if socket is broken.
-     * @param direct is this a direct write (called directly from
-     *        postpacket, without waiting for a write event)
      **/
-    bool Write(bool direct);
+    bool Write();
 
     bool writePendingAfterConnect();
 public:
@@ -432,19 +446,6 @@ public:
      * @param chid the channel id for the packet
      **/
     bool PostPacket(FNET_Packet *packet, uint32_t chid);
-
-
-    /**
-     * Obtain the number of packets located in the output queue for this
-     * connection. Note that this number is volatile and should only be
-     * used as an estimate. Also note that since a queue latching
-     * strategy is used, this method requires a mutex lock/unlock and is
-     * therefore not as cheap as may be expected.
-     *
-     * @return number of packets currently located in the output queue
-     *         for this connection.
-     **/
-    uint32_t GetQueueLen();
 
 
     /**

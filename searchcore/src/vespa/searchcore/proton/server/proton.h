@@ -116,7 +116,7 @@ private:
     ProtonConfigurer                _protonConfigurer;
     ProtonConfigFetcher             _protonConfigFetcher;
     std::unique_ptr<vespalib::ThreadStackExecutorBase> _warmupExecutor;
-    std::unique_ptr<vespalib::ThreadStackExecutorBase> _summaryExecutor;
+    std::unique_ptr<vespalib::ThreadStackExecutorBase> _sharedExecutor;
     matching::QueryLimiter          _queryLimiter;
     vespalib::Clock                 _clock;
     FastOS_ThreadPool               _threadPool;

@@ -15,7 +15,7 @@ import java.util.Deque;
 import java.util.List;
 
 /**
- * A node referring either to a value in the context or to a named ranking expression (function aka macro).
+ * A node referring either to a value in the context or to a named ranking expression function.
  *
  * @author bratseth
  */
@@ -64,7 +64,7 @@ public final class ReferenceNode extends CompositeNode {
 
     @Override
     public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
-        // A reference to a macro argument?
+        // A reference to a function argument?
         if (reference.isIdentifier() && context.getBinding(getName()) != null) {
             // a bound identifier: replace by the value it is bound to
             return string.append(context.getBinding(getName()));

@@ -13,6 +13,7 @@
 #include <vespa/searchlib/queryeval/fake_result.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
 
 #include <vespa/log/log.h>
@@ -23,93 +24,43 @@ using namespace search::query;
 using namespace search::fef;
 using namespace search::queryeval;
 using namespace search::attribute;
+using namespace search::attribute::test;
 
 namespace {
 
-class FakeAttributeManager : public IAttributeManager
-{
-private:
-    typedef std::map<std::string, AttributeVector::SP> Map;
-    Map _map;
-
-    AttributeVector::SP lookup(const std::string &name) const {
-        Map::const_iterator pos = _map.find(name);
-        if (pos == _map.end()) {
-            return AttributeVector::SP();
-        }
-        return pos->second;
-    }
-
-public:
-    FakeAttributeManager() : _map() {}
-
-    void addAttribute(AttributeVector::SP attr) {
-        _map[attr->getName()] = attr;
-    }
-
-    virtual AttributeGuard::UP getAttribute(const vespalib::string &name) const override {
-        return AttributeGuard::UP(new AttributeGuard(lookup(name)));
-    }
-
-    virtual std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const override {
-        auto vector = lookup(name);
-        if (vector) {
-            return vector->makeReadGuard(stableEnumGuard);
-        } else {
-            return std::unique_ptr<attribute::AttributeReadGuard>();
-        }
-    }
-
-    virtual void getAttributeList(std::vector<AttributeGuard> &list) const override {
-        Map::const_iterator pos = _map.begin();
-        for (; pos != _map.end(); ++pos) {
-            list.push_back(pos->second);
-        }
-    }
-
-    virtual IAttributeContext::UP createContext() const override {
-        return IAttributeContext::UP(new AttributeContext(*this));
-    }
-};
-
 void
-setupAttributeManager(FakeAttributeManager &manager)
+setupAttributeManager(MockAttributeManager &manager)
 {
     AttributeVector::DocId docId;
     {
-        AttributeVector::SP attr_sp = AttributeFactory::createAttribute(
-                "integer", Config(BasicType("int64")));
+        AttributeVector::SP attr_sp = AttributeFactory::createAttribute("integer", Config(BasicType("int64")));
+        manager.addAttribute(attr_sp);
+
         IntegerAttribute *attr = (IntegerAttribute*)(attr_sp.get());
-        attr->addDoc(docId);
-        assert(0u == docId);
         for (size_t i = 1; i < 10; ++i) {
             attr->addDoc(docId);
             assert(i == docId);
             attr->update(docId, i);
             attr->commit();
         }
-        manager.addAttribute(attr_sp);
     }
     {
-        AttributeVector::SP attr_sp = AttributeFactory::createAttribute(
-                "string", Config(BasicType("string")));
+        AttributeVector::SP attr_sp = AttributeFactory::createAttribute("string", Config(BasicType("string")));
+        manager.addAttribute(attr_sp);
+
         StringAttribute *attr = (StringAttribute*)(attr_sp.get());
-        attr->addDoc(docId);
-        assert(0u == docId);
         for (size_t i = 1; i < 10; ++i) {
             attr->addDoc(docId);
             assert(i == docId);
             attr->update(i, std::string(1, '1' + i - 1).c_str());
             attr->commit();
         }
-        manager.addAttribute(attr_sp);
     }
     {
         AttributeVector::SP attr_sp = AttributeFactory::createAttribute(
                 "multi", Config(BasicType("int64"), search::attribute::CollectionType("array")));
+        manager.addAttribute(attr_sp);
         IntegerAttribute *attr = (IntegerAttribute*)(attr_sp.get());
-        attr->addDoc(docId);
-        assert(0u == docId);
         for (size_t i = 1; i < 10; ++i) {
             attr->addDoc(docId);
             assert(i == docId);
@@ -117,7 +68,6 @@ setupAttributeManager(FakeAttributeManager &manager)
             attr->append(docId, i + 10, 1);
             attr->commit();
         }
-        manager.addAttribute(attr_sp);
     }
 }
 
@@ -199,7 +149,7 @@ Test::Main()
 {
     TEST_INIT("attribute_weighted_set_test");
     {
-        FakeAttributeManager manager;
+        MockAttributeManager manager;
         setupAttributeManager(manager);
         AttributeBlueprintFactory adapter;
 

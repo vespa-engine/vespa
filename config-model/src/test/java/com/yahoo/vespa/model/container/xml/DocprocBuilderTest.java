@@ -49,7 +49,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
 
     @Before
     public void setupCluster() {
-        ContainerModel model = new ContainerModelBuilder(false, Networking.disable).build(DeployState.createTestState(), null, root, servicesXml());
+        ContainerModel model = new ContainerModelBuilder(false, Networking.disable).build(DeployState.createTestState(), null, null, root, servicesXml());
         cluster = model.getCluster();
         cluster.getDocproc().getChains().addServersAndClientsForChains();
         root.freezeModelTopology();

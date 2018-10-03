@@ -23,7 +23,7 @@ public class DisallowComplexMapAndWsetKeyTypes extends Processor {
     }
 
     @Override
-    public void process(boolean validate) {
+    public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
     	// TODO also traverse struct types to search for bad map or wset types there. Do this after document manager is fixed, do

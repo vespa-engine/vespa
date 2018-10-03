@@ -14,8 +14,8 @@
  */
 #pragma once
 
+#include "fieldvalue.h"
 #include <vespa/document/datatype/primitivedatatype.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
 
 namespace document {
@@ -44,12 +44,12 @@ public:
 
     LiteralFieldValueB & operator=(const LiteralFieldValueB &);
 
-    void setValueRef(const stringref & value) {
+    void setValueRef(stringref value) {
         _value = value;
         _altered = true;
     }
 
-    void setValue(const stringref & value) {
+    void setValue(stringref value) {
         _backing = value;
         _value = _backing;
         _altered = true;
@@ -68,7 +68,7 @@ public:
     FieldValue& assign(const FieldValue&) override;
     bool hasChanged() const  override{ return _altered; }
 
-    FieldValue& operator=(const vespalib::stringref &) override;
+    FieldValue& operator=(vespalib::stringref) override;
     FieldValue& operator=(int32_t) override;
     FieldValue& operator=(int64_t) override;
     FieldValue& operator=(float) override;

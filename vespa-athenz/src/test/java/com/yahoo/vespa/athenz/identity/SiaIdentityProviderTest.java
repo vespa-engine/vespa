@@ -1,15 +1,15 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identity;
 
-import com.google.common.io.Files;
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyStoreBuilder;
+import com.yahoo.security.KeyStoreType;
+import com.yahoo.security.KeyStoreUtils;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SignatureAlgorithm;
+import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.tls.KeyAlgorithm;
-import com.yahoo.vespa.athenz.tls.KeyStoreBuilder;
-import com.yahoo.vespa.athenz.tls.KeyStoreType;
-import com.yahoo.vespa.athenz.tls.KeyStoreUtils;
-import com.yahoo.vespa.athenz.tls.KeyUtils;
-import com.yahoo.vespa.athenz.tls.SignatureAlgorithm;
-import com.yahoo.vespa.athenz.tls.X509CertificateBuilder;
-import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -17,7 +17,8 @@ import org.junit.rules.TemporaryFolder;
 import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.math.BigInteger;
+import java.nio.file.Files;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
@@ -62,12 +63,12 @@ public class SiaIdentityProviderTest {
 
     private void createPrivateKeyFile(File keyFile, KeyPair keypair) throws IOException {
         String privateKeyPem = KeyUtils.toPem(keypair.getPrivate());
-        Files.write(privateKeyPem, keyFile, StandardCharsets.UTF_8);
+        Files.write(keyFile.toPath(), privateKeyPem.getBytes());
     }
 
     private void createCertificateFile(X509Certificate certificate, File certificateFile) throws IOException {
         String certificatePem = X509CertificateUtils.toPem(certificate);
-        Files.write(certificatePem, certificateFile, StandardCharsets.UTF_8);
+        Files.write(certificateFile.toPath(), certificatePem.getBytes());
     }
 
     private X509Certificate createCertificate(KeyPair keypair) {
@@ -79,7 +80,7 @@ public class SiaIdentityProviderTest {
                         now,
                         now.plus(Duration.ofDays(1)),
                         SignatureAlgorithm.SHA256_WITH_RSA,
-                        1)
+                        BigInteger.ONE)
                 .build();
     }
 
@@ -87,7 +88,7 @@ public class SiaIdentityProviderTest {
         KeyStore keystore = KeyStoreBuilder.withType(KeyStoreType.JKS)
                 .withCertificateEntry("dummy-cert", certificate)
                 .build();
-        KeyStoreUtils.writeKeyStoreToFile(keystore, trustStoreFile);
+        KeyStoreUtils.writeKeyStoreToFile(keystore, trustStoreFile.toPath());
     }
 
 }

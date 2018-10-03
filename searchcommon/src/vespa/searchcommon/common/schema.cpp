@@ -17,7 +17,7 @@ namespace {
 template <typename T>
 void
 writeFields(vespalib::asciistream & os,
-            const vespalib::stringref &prefix,
+            vespalib::stringref prefix,
             const std::vector<T> & fields)
 {
     os << prefix << "[" << fields.size() << "]\n";
@@ -55,7 +55,7 @@ struct FieldName {
 
 template <typename T>
 uint32_t
-getFieldId(const vespalib::stringref & name, const T &map)
+getFieldId(vespalib::stringref name, const T &map)
 {
     typename T::const_iterator it = map.find(name);
     return (it != map.end()) ? it->second : Schema::UNKNOWN_FIELD_ID;
@@ -68,7 +68,7 @@ namespace index {
 
 const uint32_t Schema::UNKNOWN_FIELD_ID(std::numeric_limits<uint32_t>::max());
 
-Schema::Field::Field(const vespalib::stringref &n, DataType dt)
+Schema::Field::Field(vespalib::stringref n, DataType dt)
     : _name(n),
       _dataType(dt),
       _collectionType(schema::CollectionType::SINGLE),
@@ -76,7 +76,7 @@ Schema::Field::Field(const vespalib::stringref &n, DataType dt)
 {
 }
 
-Schema::Field::Field(const vespalib::stringref &n,
+Schema::Field::Field(vespalib::stringref n,
                      DataType dt, CollectionType ct)
     : _name(n),
       _dataType(dt),
@@ -100,7 +100,7 @@ Schema::Field::Field(const std::vector<vespalib::string> & lines)
 Schema::Field::~Field() { }
 
 void
-Schema::Field::write(vespalib::asciistream & os, const vespalib::stringref & prefix) const
+Schema::Field::write(vespalib::asciistream & os, vespalib::stringref prefix) const
 {
     os << prefix << "name " << _name << "\n";
     os << prefix << "datatype " << getTypeName(_dataType) << "\n";
@@ -128,7 +128,7 @@ Schema::Field::operator!=(const Field &rhs) const
       _timestamp != rhs._timestamp;
 }
 
-Schema::IndexField::IndexField(const vespalib::stringref &name, DataType dt)
+Schema::IndexField::IndexField(vespalib::stringref name, DataType dt)
     : Field(name, dt),
       _prefix(false),
       _phrases(false),
@@ -137,7 +137,7 @@ Schema::IndexField::IndexField(const vespalib::stringref &name, DataType dt)
 {
 }
 
-Schema::IndexField::IndexField(const vespalib::stringref &name, DataType dt,
+Schema::IndexField::IndexField(vespalib::stringref name, DataType dt,
                                CollectionType ct)
     : Field(name, dt, ct),
       _prefix(false),
@@ -157,7 +157,7 @@ Schema::IndexField::IndexField(const std::vector<vespalib::string> &lines)
 }
 
 void
-Schema::IndexField::write(vespalib::asciistream & os, const vespalib::stringref & prefix) const
+Schema::IndexField::write(vespalib::asciistream & os, vespalib::stringref prefix) const
 {
     Field::write(os, prefix);
     os << prefix << "prefix " << (_prefix ? "true" : "false") << "\n";
@@ -398,25 +398,25 @@ Schema::addFieldSet(const FieldSet &fieldSet)
 }
 
 uint32_t
-Schema::getIndexFieldId(const vespalib::stringref & name) const
+Schema::getIndexFieldId(vespalib::stringref name) const
 {
     return getFieldId(name, _indexIds);
 }
 
 uint32_t
-Schema::getAttributeFieldId(const vespalib::stringref & name) const
+Schema::getAttributeFieldId(vespalib::stringref name) const
 {
     return getFieldId(name, _attributeIds);
 }
 
 uint32_t
-Schema::getSummaryFieldId(const vespalib::stringref & name) const
+Schema::getSummaryFieldId(vespalib::stringref name) const
 {
     return getFieldId(name, _summaryIds);
 }
 
 uint32_t
-Schema::getFieldSetId(const vespalib::stringref &name) const
+Schema::getFieldSetId(vespalib::stringref name) const
 {
     return getFieldId(name, _fieldSetIds);
 }

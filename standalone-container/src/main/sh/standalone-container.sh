@@ -151,13 +151,19 @@ StartCommand() {
     printenv > "$cfpfile"
     FixDataDirectory "$bundlecachedir"
 
+    # TODO: Change
+    #   -XX:OnOutOfMemoryError='kill -9 %p'
+    # to
+    #   -XX:+ExitOutOfMemoryError
+    # below once java version is guaranteed to be >= 8 u92
+
     java \
 	"${jvm_arguments[@]}" \
         -Xms128m -Xmx2048m \
         -XX:+PreserveFramePointer \
         -XX:+HeapDumpOnOutOfMemoryError \
         -XX:HeapDumpPath="$VESPA_HOME/var/crash" \
-        -XX:+ExitOnOutOfMemoryError \
+        -XX:OnOutOfMemoryError='kill -9 %p' \
         -Djava.library.path="$VESPA_HOME/lib64" \
         -Djava.awt.headless=true \
 	-Dsun.rmi.dgc.client.gcInterval=3600000 \

@@ -87,6 +87,51 @@ namespace dump {
 
 } // namespace dump
 
+namespace execute::onmatch {
+    struct Attribute {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+    struct Operation {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+}
+
+namespace execute::onrerank {
+    struct Attribute {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+    struct Operation {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+}
+
+namespace execute::onsummary {
+    struct Attribute {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+    struct Operation {
+        static const vespalib::string NAME;
+        static const vespalib::string DEFAULT_VALUE;
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
+    };
+}
+
 namespace matching {
 
     /**
@@ -174,7 +219,8 @@ namespace matchphase {
     struct DegradationAttribute {
         static const vespalib::string NAME;
         static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props);
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
     };
 
     /**
@@ -183,7 +229,8 @@ namespace matchphase {
     struct DegradationAscendingOrder {
         static const vespalib::string NAME;
         static const bool DEFAULT_VALUE;
-        static bool lookup(const Properties &props);
+        static bool lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static bool lookup(const Properties &props, bool defaultValue);
     };
 
     /**
@@ -192,7 +239,8 @@ namespace matchphase {
     struct DegradationMaxHits {
         static const vespalib::string NAME;
         static const uint32_t DEFAULT_VALUE;
-        static uint32_t lookup(const Properties &props);
+        static uint32_t lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static uint32_t lookup(const Properties &props, uint32_t defaultValue);
     };
 
     /**
@@ -201,13 +249,15 @@ namespace matchphase {
     struct DegradationSamplePercentage {
         static const vespalib::string NAME;
         static const double DEFAULT_VALUE;
-        static double lookup(const Properties &props);
+        static double lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static double lookup(const Properties &props, double defaultValue);
     };
 
     struct DegradationMaxFilterCoverage {
         static const vespalib::string NAME;
         static const double DEFAULT_VALUE;
-        static double lookup(const Properties &props);
+        static double lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static double lookup(const Properties &props, double defaultValue);
     };
 
     /**
@@ -217,7 +267,8 @@ namespace matchphase {
     struct DegradationPostFilterMultiplier {
         static const vespalib::string NAME;
         static const double DEFAULT_VALUE;
-        static double lookup(const Properties &props);
+        static double lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static double lookup(const Properties &props, double defaultValue);
     };
 
     /**
@@ -228,7 +279,8 @@ namespace matchphase {
     struct DiversityAttribute {
         static const vespalib::string NAME;
         static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props);
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
     };
 
     /**
@@ -239,18 +291,21 @@ namespace matchphase {
     struct DiversityMinGroups {
         static const vespalib::string NAME;
         static const uint32_t DEFAULT_VALUE;
-        static uint32_t lookup(const Properties &props);
+        static uint32_t lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static uint32_t lookup(const Properties &props, uint32_t defaultValue);
     };
 
     struct DiversityCutoffFactor {
         static const vespalib::string NAME;
         static const double DEFAULT_VALUE;
-        static double lookup(const Properties &props);
+        static double lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static double lookup(const Properties &props, double defaultValue);
     };
     struct DiversityCutoffStrategy {
         static const vespalib::string NAME;
         static const vespalib::string DEFAULT_VALUE;
-        static vespalib::string lookup(const Properties &props);
+        static vespalib::string lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+        static vespalib::string lookup(const Properties &props, const vespalib::string & defaultValue);
     };
 
 } // namespace matchphase
@@ -265,6 +320,7 @@ namespace hitcollector {
         static const vespalib::string NAME;
         static const uint32_t DEFAULT_VALUE;
         static uint32_t lookup(const Properties &props);
+        static uint32_t lookup(const Properties &props, uint32_t defaultValue);
     };
 
     /**

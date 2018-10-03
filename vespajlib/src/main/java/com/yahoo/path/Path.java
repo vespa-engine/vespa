@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
  * Represents a path represented by a list of elements. Immutable
  *
  * @author Ulf Lilleengen
+ * @author bratseth
  */
 @Beta
 public final class Path {
@@ -22,23 +23,23 @@ public final class Path {
     private final String delimiter;
     private final ImmutableList<String> elements;
 
-    /**
-     * Create an empty path.
-     */
+    /** Creates an empty path */
     private Path(String delimiter) {
         this(new ArrayList<>(), delimiter);
     }
 
     /**
-     * Create a new path as a copy of the provided path.
-     * @param rhs the path to copy.
+     * Create a new path as a copy of the provided path
+     *
+     * @param path the path to copy
      */
-    private Path(Path rhs) {
-        this(rhs.elements, rhs.delimiter);
+    private Path(Path path) {
+        this(path.elements, path.delimiter);
     }
 
     /**
-     * Create path with given elements.
+     * Create path with given elements
+     *
      * @param elements a list of path elements
      */
     private Path(List<String> elements, String delimiter) {
@@ -73,8 +74,9 @@ public final class Path {
     /**
      * Appends a path to another path, thereby creating a new path with the provided path
      * appended to this.
-     * @param path The path to append.
-     * @return a new path with argument appended to it.
+     *
+     * @param path the path to append
+     * @return a new path with argument appended to it
      */
     public Path append(Path path) {
         List<String> newElements = new ArrayList<>(this.elements);
@@ -82,19 +84,13 @@ public final class Path {
         return new Path(newElements, delimiter);
     }
 
-    /**
-     * Get the name of this path element, typically the last element in the path string.
-     * @return the name
-     */
+    /** Returns the name of this path element, typically the last element in the path string */
     public String getName() {
         if (elements.isEmpty()) return "";
         return elements.get(elements.size() - 1);
     }
 
-    /**
-     * Get a string representation of the path represented by this.
-     * @return a path string.
-     */
+    /** Returns a string representation of the path represented by this */
     public String getRelative() {
         if (elements.isEmpty()) {
             return "";
@@ -108,10 +104,7 @@ public final class Path {
         return sb.toString();
     }
 
-    /**
-     * Get the parent path (all elements except last).
-     * @return the parent path.
-     */
+    /** Returns the parent path: A path containing all elements of this except the last */
     public Path getParentPath() {
         ArrayList<String> parentElements = new ArrayList<>();
         if (elements.size() > 1) {
@@ -122,10 +115,36 @@ public final class Path {
         return new Path(parentElements, delimiter);
     }
 
+    /** Returns the child path: A path containing all elements of this except the first */
+    public Path getChildPath() {
+        ArrayList<String> childElements = new ArrayList<>();
+        if (elements.size() > 1) {
+            for (int i = 1; i < elements.size(); i++) {
+                childElements.add(elements.get(i));
+            }
+        }
+        return new Path(childElements, delimiter);
+    }
+
+    /** Returns the last element in this, or the empty string if this path is empty */
+    public String last() {
+        if (elements.isEmpty()) return "";
+        return elements.get(elements.size() - 1);
+    }
+
     /**
-     * Get string representation of path represented from the root node.
-     * @return string representation of path
+     * Returns a new path with the last element replaced by the given element.
+     *
+     * @throws IllegalStateException if this path is empty
      */
+    public Path withLast(String element) {
+        if (element.isEmpty()) throw new IllegalStateException("Cannot set the last element of an empty path");
+        List<String> newElements = new ArrayList<>(elements);
+        newElements.set(newElements.size() -1, element);
+        return new Path(newElements, delimiter);
+    }
+
+    /** Returns a string representation of this path where the delimiter is prepended */
     public String getAbsolute() {
         return delimiter + getRelative();
     }
@@ -139,24 +158,18 @@ public final class Path {
     /** Returns an immutable list of the elements of this path in order */
     public List<String> elements() { return elements; }
 
-    /**
-     * Convert to string.
-     *
-     * @return string representation of relative path
-     */
+    /** Returns this as a string */
     @Override
     public String toString() {
-        // TODO: This and the relative/absolute thing is wrong. The Path either *is* relative or absolute
-        //       and should return accordingly here. getAbsolute/relative should be replaced by an asRelative/absolute
-        //       returning another Path
         return getRelative();
     }
 
     /**
-     * Create a path from a string. The string is treated as a relative path, and all redundant '/'-characters are
+     * Creates a path from a string. The string is treated as a relative path, and all redundant '/'-characters are
      * stripped.
-     * @param path the relative path that this path should represent.
-     * @return a path object that may be used with the application package.
+     *
+     * @param path the relative path that this path should represent
+     * @return a path object that may be used with the application package
      */
     public static Path fromString(String path) {
         return fromString(path, "/");
@@ -165,8 +178,9 @@ public final class Path {
     /**
      * Create a path from a string. The string is treated as a relative path, and all redundant delimiter-characters are
      * stripped.
-     * @param path the relative path that this path should represent.
-     * @return a path object that may be used with the application package.
+     *
+     * @param path the relative path that this path should represent
+     * @return a path object that may be used with the application package
      */
     public static Path fromString(String path, String delimiter) {
         return new Path(elementsOf(path, delimiter), delimiter);
@@ -204,4 +218,5 @@ public final class Path {
         }
         return false;
     }
+
 }

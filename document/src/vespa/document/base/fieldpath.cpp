@@ -100,7 +100,7 @@ FieldPathEntry::FieldPathEntry(const DataType&, const DataType& keyType,
     setFillValue(*_dataType);
 }
 
-FieldPathEntry::FieldPathEntry(const DataType & dataType, const vespalib::stringref & variableName) :
+FieldPathEntry::FieldPathEntry(const DataType & dataType, vespalib::stringref variableName) :
     _type(VARIABLE),
     _name(""),
     _field(),

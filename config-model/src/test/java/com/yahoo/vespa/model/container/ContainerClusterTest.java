@@ -16,6 +16,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerClusterVerifier;

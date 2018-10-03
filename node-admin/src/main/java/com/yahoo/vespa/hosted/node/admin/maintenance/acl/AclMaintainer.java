@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
+import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
@@ -51,6 +52,8 @@ public class AclMaintainer implements Runnable {
 
     private void applyRedirect(Container container, InetAddress address) {
         IPVersion ipVersion = IPVersion.get(address);
+        // Necessary to avoid the routing packets destined for the node's own public IP address
+        // via the bridge, which is illegal.
         String redirectRule = "-A OUTPUT -d " + InetAddresses.toAddrString(address) + ipVersion.singleHostCidr() + " -j REDIRECT";
         IPTablesEditor.editLogOnError(dockerOperations, container.name, ipVersion, "nat", NatTableLineEditor.from(redirectRule));
     }
@@ -61,13 +64,17 @@ public class AclMaintainer implements Runnable {
         IPTablesEditor.editFlushOnError(dockerOperations, container.name, IPVersion.IPv4, "filter", FilterTableLineEditor.from(acl, IPVersion.IPv4));
 
         // Apply redirect to the nat table
-        if (this.environment.getCloud().equals("AWS")) {
+        if (environment.getDockerNetworking() == DockerNetworking.NPT) {
             ipAddresses.getAddress(container.hostname, IPVersion.IPv4).ifPresent(addr -> applyRedirect(container, addr));
             ipAddresses.getAddress(container.hostname, IPVersion.IPv6).ifPresent(addr -> applyRedirect(container, addr));
         }
     }
 
     private synchronized void configureAcls() {
+        if (environment.getDockerNetworking() == DockerNetworking.HOST_NETWORK) {
+            return;
+        }
+
         log.info("Configuring ACLs"); // Needed to potentially nail down when ACL maintainer stopped working
         Map<String, Container> runningContainers = dockerOperations
                 .getAllManagedContainers().stream()

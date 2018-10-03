@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcore/fdispatch/program/fdispatch.h>
-#include <vespa/searchcore/fdispatch/common/perftask.h>
 #include <vespa/vespalib/net/state_server.h>
 #include <vespa/vespalib/net/simple_health_producer.h>
 #include <vespa/vespalib/net/simple_metrics_producer.h>
@@ -96,7 +95,6 @@ FastS_FDispatchApp::Main()
             vespalib::SimpleHealthProducer health;
             vespalib::SimpleMetricsProducer metrics;
             vespalib::StateServer stateServer(myfdispatch->getHealthPort(), health, metrics, myfdispatch->getComponentConfig());
-            FastS_PerfTask perfTask(*myfdispatch, 300.0);
             while (!CheckShutdownFlags()) {
                 if (myfdispatch->Failed()) {
                     throw std::runtime_error("myfdispatch->Failed()");

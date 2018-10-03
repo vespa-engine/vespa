@@ -4,8 +4,8 @@
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/messagebus/routing/verbatimdirective.h>
 #include <vespa/messagebus/messagebus.h>
-#include <vespa/vespalib/util/hashmap.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/log/log.h>
 LOG_SETUP(".subsetservicepolicy");
 
@@ -37,10 +37,7 @@ SubsetServicePolicy::SubsetServicePolicy(const string &param) :
     }
 }
 
-SubsetServicePolicy::~SubsetServicePolicy()
-{
-    // empty
-}
+SubsetServicePolicy::~SubsetServicePolicy() = default;
 
 void
 SubsetServicePolicy::select(mbus::RoutingContext &context)

@@ -70,7 +70,7 @@ public class RoutingBuilderTest extends ContainerModelBuilderTestBase {
                 .build();
 
         root = new MockRoot("root", deployState);
-        createModel(root, deployState, clusterElem);
+        createModel(root, deployState, null, clusterElem);
         ContainerCluster cluster = getContainerCluster("default");
         return cluster.getContainers().get(0);
 

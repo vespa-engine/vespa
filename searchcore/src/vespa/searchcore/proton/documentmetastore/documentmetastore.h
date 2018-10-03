@@ -17,17 +17,15 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/docstore/ibucketizer.h>
 
-namespace proton {
-
-namespace bucketdb {
-
-class SplitBucketSession;
-class JoinBucketsSession;
-
+namespace proton::bucketdb {
+    class SplitBucketSession;
+    class JoinBucketsSession;
 }
 
-namespace documentmetastore { class Reader; }
+namespace proton::documentmetastore { class Reader; }
 
+namespace proton {
+    
 /**
  * This class provides a storage of <lid, meta data> pairs (local
  * document id, meta data (including global document id)) and mapping
@@ -63,10 +61,8 @@ private:
     // Lids are stored as keys in the tree, sorted by their gid
     // counterpart.  The LidGidKeyComparator class maps from lids -> metadata by
     // using the metadata store.
-    typedef search::btree::BTree<DocId,
-                                 search::btree::BTreeNoLeafData,
-                                 search::btree::NoAggregated,
-                                 const KeyComp &> TreeType;
+    typedef search::btree::BTree<DocId, search::btree::BTreeNoLeafData,
+                                 search::btree::NoAggregated, const KeyComp &> TreeType;
 
     MetaDataStore       _metaDataStore;
     TreeType            _gidToLidMap;
@@ -89,7 +85,7 @@ private:
     // Implements AttributeVector
     void onGenerationChange(generation_t generation) override;
     void removeOldGenerations(generation_t firstUsed) override;
-    std::unique_ptr<search::AttributeSaver> onInitSave() override;
+    std::unique_ptr<search::AttributeSaver> onInitSave(vespalib::stringref fileName) override;
     bool onLoad() override;
 
     bool
@@ -164,14 +160,9 @@ public:
      * map is then re-built the same way it was originally where add()
      * was used to create the <lid, gid> pairs.
      **/
-    Result put(const GlobalId &gid,
-               const BucketId &bucketId,
-               const Timestamp &timestamp,
-               uint32_t docSize,
-               DocId lid) override;
-    bool updateMetaData(DocId lid,
-                        const BucketId &bucketId,
-                        const Timestamp &timestamp) override;
+    Result put(const GlobalId &gid, const BucketId &bucketId,
+               const Timestamp &timestamp, uint32_t docSize, DocId lid) override;
+    bool updateMetaData(DocId lid, const BucketId &bucketId, const Timestamp &timestamp) override;
     bool remove(DocId lid) override;
 
     BucketId getBucketOf(const vespalib::GenerationHandler::Guard & guard, uint32_t lid) const override;
@@ -213,8 +204,7 @@ public:
      */
     SearchContext::UP
     getSearch(std::unique_ptr<search::QueryTermSimple> qTerm,
-              const search::attribute::SearchContextParams &params)
-        const override;
+              const search::attribute::SearchContextParams &params) const override;
 
     /**
      * Implements proton::IDocumentMetaStore
@@ -270,11 +260,11 @@ public:
      */
     void unblockShrinkLidSpace();
     void onShrinkLidSpace() override;
-    virtual size_t getEstimatedShrinkLidSpaceGain() const override;
+    size_t getEstimatedShrinkLidSpaceGain() const override;
     uint64_t getEstimatedSaveByteSize() const override;
-    virtual uint32_t getVersion() const override;
+    uint32_t getVersion() const override;
     void setTrackDocumentSizes(bool trackDocumentSizes) { _trackDocumentSizes = trackDocumentSizes; }
-    virtual void foreach(const search::IGidToLidMapperVisitor &visitor) const override;
+    void foreach(const search::IGidToLidMapperVisitor &visitor) const override;
 };
 
 }

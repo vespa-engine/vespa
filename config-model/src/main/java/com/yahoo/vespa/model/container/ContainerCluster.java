@@ -40,6 +40,8 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
+import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
@@ -61,7 +63,6 @@ import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.container.http.Http;
 import com.yahoo.vespa.model.container.jersey.Jersey2Servlet;
-import com.yahoo.vespa.model.container.jersey.JerseyHandler;
 import com.yahoo.vespa.model.container.jersey.RestApi;
 import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
@@ -72,7 +73,6 @@ import com.yahoo.vespa.model.utils.FileSender;
 import com.yahoo.vespaclient.config.FeederConfig;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -85,7 +85,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -122,7 +121,10 @@ public final class ContainerCluster
         ServletPathsConfig.Producer,
         RoutingProviderConfig.Producer,
         ConfigserverConfig.Producer,
-        ThreadpoolConfig.Producer
+        ThreadpoolConfig.Producer,
+        RankProfilesConfig.Producer,
+        RankingConstantsConfig.Producer
+
 {
 
     /**
@@ -153,6 +155,7 @@ public final class ContainerCluster
     private ContainerDocproc containerDocproc;
     private ContainerDocumentApi containerDocumentApi;
     private SecretStore secretStore;
+    private ContainerModelEvaluation modelEvaluation;
 
     private MbusParams mbusParams;
     private boolean rpcServerEnabled = true;
@@ -193,11 +196,16 @@ public final class ContainerCluster
         }
     }
 
+    /** Creates a container cluster */
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name) {
         this(parent, subId, name, new AcceptAllVerifier());
     }
 
-    public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, ContainerClusterVerifier verifier) {
+    /** Creates a container cluster */
+    public ContainerCluster(AbstractConfigProducer<?> parent,
+                            String subId,
+                            String name,
+                            ContainerClusterVerifier verifier) {
         super(parent, subId);
         this.clusterVerifier = verifier;
         this.name = name;
@@ -228,6 +236,7 @@ public final class ContainerCluster
         addSimpleComponent("com.yahoo.container.protect.FreezeDetector");
         addSimpleComponent("com.yahoo.container.core.slobrok.SlobrokConfigurator");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
+        addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
         addJaxProviders();
     }
 
@@ -331,6 +340,8 @@ public final class ContainerCluster
 
     public void prepare() {
         addAndSendApplicationBundles();
+        if (modelEvaluation != null)
+            modelEvaluation.prepare(containers);
         sendUserConfiguredFiles();
         setApplicationMetaData();
         for (RestApi restApi : restApiGroup.getComponents())
@@ -427,6 +438,10 @@ public final class ContainerCluster
         this.containerSearch = containerSearch;
     }
 
+    public void setModelEvaluation(ContainerModelEvaluation modelEvaluation) {
+        this.modelEvaluation = modelEvaluation;
+    }
+
     public void setHttp(Http http) {
         this.http = http;
         addChild(http);
@@ -521,27 +536,19 @@ public final class ContainerCluster
     }
 
     @Override
-    public final void getConfig(ComponentsConfig.Builder builder) {
+    public void getConfig(ComponentsConfig.Builder builder) {
         builder.components.addAll(ComponentsConfigGenerator.generate(getAllComponents()));
         builder.components(new ComponentsConfig.Components.Builder().id("com.yahoo.container.core.config.HandlersConfigurerDi$RegistriesHack"));
     }
 
     @Override
-    public final void getConfig(JdiscBindingsConfig.Builder builder) {
+    public void getConfig(JdiscBindingsConfig.Builder builder) {
         builder.handlers.putAll(DiscBindingsConfigGenerator.generate(getHandlers()));
-
-        allJersey1Handlers().forEach(handler ->
-                        builder.handlers.putAll(DiscBindingsConfigGenerator.generate(handler))
-        );
     }
 
     @Override
     public void getConfig(ThreadpoolConfig.Builder builder) {
         clusterVerifier.getConfig(builder);
-    }
-
-    private Stream<JerseyHandler> allJersey1Handlers() {
-        return restApiGroup.getComponents().stream().flatMap(streamOf(RestApi::getJersey1Handler));
     }
 
     @Override
@@ -558,14 +565,7 @@ public final class ContainerCluster
     }
 
     private Stream<Jersey2Servlet> allJersey2Servlets() {
-        return restApiGroup.getComponents().stream().flatMap(streamOf(RestApi::getJersey2Servlet));
-    }
-
-    private <T, R> Function<T, Stream<R>> streamOf(Function<T, Optional<R>> f) {
-        return t ->
-                f.apply(t).
-                <Stream<R>>map(Stream::of).
-                orElse(Stream.empty());
+        return restApiGroup.getComponents().stream().map(RestApi::getJersey2Servlet);
     }
 
     @Override
@@ -637,47 +637,37 @@ public final class ContainerCluster
 
     @Override
     public void getConfig(DocprocConfig.Builder builder) {
-        if (containerDocproc != null) {
-            containerDocproc.getConfig(builder);
-        }
+        if (containerDocproc != null) containerDocproc.getConfig(builder);
     }
 
     @Override
     public void getConfig(PageTemplatesConfig.Builder builder) {
-        if (containerSearch != null) {
-            containerSearch.getConfig(builder);
-        }
+        if (containerSearch != null) containerSearch.getConfig(builder);
     }
 
     @Override
     public void getConfig(SemanticRulesConfig.Builder builder) {
-        if (containerSearch != null) {
-            containerSearch.getConfig(builder);
-        }
+        if (containerSearch != null) containerSearch.getConfig(builder);
     }
 
     @Override
     public void getConfig(QueryProfilesConfig.Builder builder) {
-        if (containerSearch != null) {
-            containerSearch.getConfig(builder);
-        }
+        if (containerSearch != null) containerSearch.getConfig(builder);
     }
 
     @Override
     public void getConfig(SchemamappingConfig.Builder builder) {
-        if (containerDocproc!=null) containerDocproc.getConfig(builder);
+        if (containerDocproc != null) containerDocproc.getConfig(builder);
     }
 
     @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
-        if (containerSearch!=null) containerSearch.getConfig(builder);
+        if (containerSearch != null) containerSearch.getConfig(builder);
     }
 
     @Override
     public void getConfig(FeederConfig.Builder builder) {
-        if (containerDocumentApi != null) {
-            containerDocumentApi.getConfig(builder);
-        }
+        if (containerDocumentApi != null) containerDocumentApi.getConfig(builder);
     }
 
     @Override
@@ -694,13 +684,22 @@ public final class ContainerCluster
             containerDocproc.getConfig(builder);
     }
 
+    @Override
+    public void getConfig(RankProfilesConfig.Builder builder) {
+        if (modelEvaluation != null) modelEvaluation.getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(RankingConstantsConfig.Builder builder) {
+        if (modelEvaluation != null) modelEvaluation.getConfig(builder);
+    }
+
     public void setMbusParams(MbusParams mbusParams) {
         this.mbusParams = mbusParams;
     }
 
     public void initialize(Map<String, AbstractSearchCluster> clusterMap) {
-        if (containerSearch != null)
-            containerSearch.connectSearchClusters(clusterMap);
+        if (containerSearch != null) containerSearch.connectSearchClusters(clusterMap);
     }
 
     public void addDefaultSearchAccessLog() {
@@ -718,9 +717,7 @@ public final class ContainerCluster
 
     @Override
     public void getConfig(MetricDefaultsConfig.Builder builder) {
-        if (defaultMetricConsumerFactory != null) {
-            builder.factory(defaultMetricConsumerFactory);
-        }
+        if (defaultMetricConsumerFactory != null) builder.factory(defaultMetricConsumerFactory);
     }
 
     @Override
@@ -830,4 +827,5 @@ public final class ContainerCluster
             this.containerCoreMemory = containerCoreMemory;
         }
     }
+
 }

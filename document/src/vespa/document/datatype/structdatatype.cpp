@@ -26,21 +26,21 @@ StructDataType::StructDataType() :
     _compressionConfig()
 { }
 
-StructDataType::StructDataType(const vespalib::stringref &name)
+StructDataType::StructDataType(vespalib::stringref name)
     : StructuredDataType(name),
       _nameFieldMap(),
       _idFieldMap(),
       _compressionConfig()
 { }
 
-StructDataType::StructDataType(const vespalib::stringref & name, int32_t dataTypeId)
+StructDataType::StructDataType(vespalib::stringref name, int32_t dataTypeId)
     : StructuredDataType(name, dataTypeId),
       _nameFieldMap(),
       _idFieldMap(),
       _compressionConfig()
 { }
 
-StructDataType::~StructDataType() { }
+StructDataType::~StructDataType() = default;
 
 StructDataType*
 StructDataType::clone() const {
@@ -122,7 +122,7 @@ StructDataType::createFieldValue() const
 }
 
 const Field&
-StructDataType::getField(const vespalib::stringref & name) const
+StructDataType::getField(vespalib::stringref name) const
 {
     StringFieldMap::const_iterator it(_nameFieldMap.find(name));
     if (it == _nameFieldMap.end()) {
@@ -153,7 +153,7 @@ StructDataType::getField(int32_t fieldId) const
     return *it->second;
 }
 
-bool StructDataType::hasField(const vespalib::stringref &name) const {
+bool StructDataType::hasField(vespalib::stringref name) const {
     return _nameFieldMap.find(name) != _nameFieldMap.end();
 }
 

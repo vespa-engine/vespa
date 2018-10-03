@@ -20,7 +20,7 @@ GetDocumentMessage::GetDocumentMessage(const document::DocumentId &documentId, i
 }
 
 GetDocumentMessage::GetDocumentMessage(const document::DocumentId &documentId,
-                                       const vespalib::stringref & fieldSet) :
+                                       vespalib::stringref fieldSet) :
     DocumentMessage(),
     _documentId(documentId),
     _fieldSet(fieldSet)

@@ -137,16 +137,23 @@ template <typename B>
 void
 SingleValueEnumAttribute<B>::reEnumerate()
 {
-    EnumModifier enumGuard(this->getEnumModifier());
+    auto newIndexes = std::make_unique<vespalib::Array<EnumIndex>>();
+    newIndexes->reserve(_enumIndices.capacity());
     for (uint32_t i = 0; i < _enumIndices.size(); ++i) {
         EnumIndex oldIdx = _enumIndices[i];
+        EnumIndex newIdx;
         if (oldIdx.valid()) {
-            EnumIndex newIdx;
             this->_enumStore.getCurrentIndex(oldIdx, newIdx);
-            std::atomic_thread_fence(std::memory_order_release);
-            _enumIndices[i] = newIdx;
         }
+        newIndexes->push_back_fast(newIdx);
     }
+    this->logEnumStoreEvent("compactfixup", "drain");
+    {
+        EnumModifier enumGuard(this->getEnumModifier());
+        this->logEnumStoreEvent("compactfixup", "start");
+        _enumIndices.replaceVector(std::move(newIndexes));
+    }
+    this->logEnumStoreEvent("compactfixup", "complete");
 }
 
 template <typename B>
@@ -300,17 +307,13 @@ SingleValueEnumAttribute<B>::onShrinkLidSpace()
 
 template <typename B>
 std::unique_ptr<AttributeSaver>
-SingleValueEnumAttribute<B>::onInitSave()
+SingleValueEnumAttribute<B>::onInitSave(vespalib::stringref fileName)
 {
-    {
-        EnumModifier enumGuard(this->getEnumModifier());
-        this->_enumStore.reEnumerate();
-    }
-    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().
-                                             takeGuard());
+    this->_enumStore.reEnumerate();
+    vespalib::GenerationHandler::Guard guard(this->getGenerationHandler().takeGuard());
     return std::make_unique<SingleValueEnumAttributeSaver>
         (std::move(guard),
-         this->createAttributeHeader(),
+         this->createAttributeHeader(fileName),
          getIndicesCopy(this->getCommittedDocIdLimit()),
          this->_enumStore);
 }

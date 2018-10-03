@@ -41,7 +41,7 @@ Server::Server(std::string name, int port, std::string slobrokSpec)
     {
         FRT_ReflectionBuilder rb(&_orb);
         //---------------------------------------------------------------------
-        rb.DefineMethod("slobrok.callback.listNamesServed", "", "S", true,
+        rb.DefineMethod("slobrok.callback.listNamesServed", "", "S",
                         FRT_METHOD(Server::rpc_listNamesServed), this);
         rb.MethodDesc("Look up a rpcserver");
         rb.ReturnDesc("names", "The rpcserver names on this server");

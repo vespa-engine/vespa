@@ -17,18 +17,16 @@ import java.util.List;
 public class ApplicationPackageUtils {
 
     public static String generateSearchDefinition(String name, String field1, String field2) {
-        String sd = "" +
+        return "" +
                 "search " + name + "{" +
                 "  document " + name + "{" +
                 "    field " + field1 + " type string {\n" +
                 "      indexing: index | summary\n" +
                 "      summary: dynamic\n" +
-                "      header\n" +
                 "    }\n" +
                 "    field " + field2 + " type int {\n" +
                 "      indexing: attribute | summary\n" +
                 "      attribute: fast-access\n" +
-                "      header\n" +
                 "    }\n" +
                 "    field " + field2 + "_nfa type int {\n" +
                 "      indexing: attribute \n" +
@@ -48,7 +46,6 @@ public class ApplicationPackageUtils {
                 "    rank-features: attribute(" + field2 + ")" +
                 "  }" +
                 "}";
-        return sd;
     }
 
     public static Search createSearch(String name, String field1, String field2) throws ParseException {

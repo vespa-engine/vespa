@@ -148,7 +148,6 @@ public class HandlersConfigurerDi {
             protected void configure() {
                 bind(com.yahoo.container.Container.class).toInstance(vespaContainer);
                 bind(com.yahoo.statistics.Statistics.class).toInstance(Statistics.nullImplementation);
-                bind(Linguistics.class).toInstance(new SimpleLinguistics());
                 bind(com.yahoo.container.protect.FreezeDetector.class).toInstance(
                         new com.yahoo.container.protect.FreezeDetector(
                                 new DiagnosticsConfig(new DiagnosticsConfig.Builder().disabled(true))));

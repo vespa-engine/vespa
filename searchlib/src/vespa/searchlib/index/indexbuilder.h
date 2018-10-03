@@ -24,7 +24,7 @@ public:
     ~IndexBuilder();
 
     virtual void
-    startWord(const vespalib::stringref & word) = 0;
+    startWord(vespalib::stringref word) = 0;
 
     virtual void
     endWord() = 0;

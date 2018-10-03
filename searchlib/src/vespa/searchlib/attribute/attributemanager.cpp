@@ -75,9 +75,7 @@ AttributeManager::AttributeManager()
       _snapShot(),
       _interlock(std::make_shared<attribute::Interlock>())
 {
-    LOG(debug,
-        "New attributeManager %p",
-        static_cast<const void *>(this));
+    LOG(debug, "New attributeManager %p", static_cast<const void *>(this));
 }
 
 
@@ -88,10 +86,7 @@ AttributeManager::AttributeManager(const string & baseDir)
        _snapShot(),
        _interlock(std::make_shared<attribute::Interlock>())
 {
-    LOG(debug,
-        "New attributeManager %p, baseDir %s",
-        static_cast<const void *>(this),
-        baseDir.c_str());
+    LOG(debug, "New attributeManager %p, baseDir %s", static_cast<const void *>(this), baseDir.c_str());
     waitBaseDir(baseDir);
 }
 
@@ -101,10 +96,7 @@ AttributeManager::setBaseDir(const string & base)
 {
     dropBaseDir(_baseDir);
     _baseDir = base;
-    LOG(debug,
-        "attributeManager %p new baseDir %s",
-        static_cast<const void *>(this),
-        _baseDir.c_str());
+    LOG(debug, "attributeManager %p new baseDir %s", static_cast<const void *>(this), _baseDir.c_str());
     waitBaseDir(base);
 }
 
@@ -112,10 +104,7 @@ AttributeManager::setBaseDir(const string & base)
 AttributeManager::~AttributeManager()
 {
     _attributes.clear();
-    LOG(debug,
-        "delete attributeManager %p baseDir %s",
-        static_cast<const void *>(this),
-        _baseDir.c_str());
+    LOG(debug, "delete attributeManager %p baseDir %s", static_cast<const void *>(this), _baseDir.c_str());
     dropBaseDir(_baseDir);
 }
 
@@ -172,7 +161,7 @@ AttributeManager::getAttribute(const string & name) const
 {
     AttributeGuard::UP attrGuard(new AttributeGuard(VectorHolder()));
     const VectorHolder * vh = findAndLoadAttribute(name);
-    if ( vh != NULL ) {
+    if ( vh != nullptr ) {
         attrGuard.reset(new AttributeGuard(*vh));
     }
     return attrGuard;
@@ -214,13 +203,18 @@ AttributeManager::getAttributeList(AttributeList & list) const
 IAttributeContext::UP
 AttributeManager::createContext() const
 {
-    return IAttributeContext::UP(new AttributeContext(*this));
+    return std::make_unique<AttributeContext>(*this);
 }
 
 string
-AttributeManager::createBaseFileName(const string & name, bool useSnapshot) const
+AttributeManager::createBaseFileName(const string & name) const
 {
-    return AttributeVector::BaseName(getBaseDir(), useSnapshot ? getSnapshot().dirName : "", name);
+    vespalib::string dir = getBaseDir();
+    if ( ! getSnapshot().dirName.empty()) {
+        dir += "/";
+        dir += getSnapshot().dirName;
+    }
+    return AttributeVector::BaseName(dir, name);
 }
 
 bool
@@ -250,7 +244,7 @@ AttributeManager::addVector(const string & name, const Config & config)
             }
         }
         if (! retval ) {
-            string baseFileName = createBaseFileName(name, true);
+            string baseFileName = createBaseFileName(name);
             VectorHolder vh(AttributeFactory::createAttribute(baseFileName, config));
             assert(vh.get());
             if (vh->load()) {
@@ -263,6 +257,11 @@ AttributeManager::addVector(const string & name, const Config & config)
         }
     }
     return retval;
+}
+
+void
+AttributeManager::asyncForAttribute(const vespalib::string &, std::unique_ptr<attribute::IAttributeFunctor>) const {
+    throw std::runtime_error("search::AttributeManager::asyncForAttribute should never be called.");
 }
 
 

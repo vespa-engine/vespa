@@ -8,7 +8,7 @@ import com.yahoo.searchdefinition.processing.multifieldresolver.RankProfileTypeS
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Executor of processors. This defines the right order of processor execution.
@@ -18,9 +18,7 @@ import java.util.List;
  */
 public class Processing {
 
-    private static final List<ProcessorFactory> factories = createProcessorFactories();
-
-    private static List<ProcessorFactory> createProcessorFactories() {
+    private Collection<ProcessorFactory> processors() {
         return Arrays.asList(
                 SearchMustHaveDocument::new,
                 UrlFieldValidator::new,
@@ -33,10 +31,12 @@ public class Processing {
                 UriHack::new,
                 LiteralBoost::new,
                 TagType::new,
+                ValidateFieldTypesDocumentsOnly::new,
                 IndexingInputs::new,
                 OptimizeIlscript::new,
                 ValidateFieldWithIndexSettingsCreatesIndex::new,
                 AttributesImplicitWord::new,
+                MutableAttributes::new,
                 CreatePositionZCurve::new,
                 WordMatch::new,
                 DeprecateAttributePrefetch::new,
@@ -73,12 +73,19 @@ public class Processing {
                 RankProfileTypeSettingsProcessor::new,
                 ReferenceFieldsProcessor::new,
                 FastAccessValidator::new,
-                ReservedMacroNames::new,
-                RankingExpressionTypeValidator::new,
-
-                // These should be last.
+                ReservedFunctionNames::new,
+                RankingExpressionTypeResolver::new,
+                // These should be last:
                 IndexingValidation::new,
                 IndexingValues::new);
+    }
+
+    /** Processors of rank profiles only (those who tolerate and so something useful when the search field is null) */
+    private Collection<ProcessorFactory> rankProfileProcessors() {
+        return Arrays.asList(
+                RankProfileTypeSettingsProcessor::new,
+                ReservedFunctionNames::new,
+                RankingExpressionTypeResolver::new);
     }
 
     /**
@@ -90,19 +97,32 @@ public class Processing {
      * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
      * @param queryProfiles The query profiles contained in the application this search is part of.
      */
-    public static void process(Search search,
-                               DeployLogger deployLogger,
-                               RankProfileRegistry rankProfileRegistry,
-                               QueryProfiles queryProfiles,
-                               boolean validate) {
-        search.process();
+    public void process(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry,
+                        QueryProfiles queryProfiles, boolean validate, boolean documentsOnly) {
+        Collection<ProcessorFactory> factories = processors();
         factories.stream()
                 .map(factory -> factory.create(search, deployLogger, rankProfileRegistry, queryProfiles))
-                .forEach(processor -> processor.process(validate));
+                .forEach(processor -> processor.process(validate, documentsOnly));
+    }
+
+    /**
+     * Runs rank profiles processors only.
+     *
+     * @param deployLogger The log to log messages and warnings for application deployment to
+     * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
+     * @param queryProfiles The query profiles contained in the application this search is part of.
+     */
+    public void processRankProfiles(DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry,
+                        QueryProfiles queryProfiles, boolean validate, boolean documentsOnly) {
+        Collection<ProcessorFactory> factories = rankProfileProcessors();
+        factories.stream()
+                 .map(factory -> factory.create(null, deployLogger, rankProfileRegistry, queryProfiles))
+                 .forEach(processor -> processor.process(validate, documentsOnly));
     }
 
     @FunctionalInterface
     public interface ProcessorFactory {
         Processor create(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles);
     }
+
 }

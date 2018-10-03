@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.predicate;
 
-
 import com.yahoo.text.Utf8;
 
 /**
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
  * This hash function must match the corresponding C++ hash function in 'ConvertClass',
  * currently located at 'rise_platform/src/interface/cpp/api/ConvertClass.h'
+ *
+ * @author Magnar Nedland
  */
 public class PredicateHash {
     @SuppressWarnings("fallthrough")
@@ -108,4 +108,5 @@ public class PredicateHash {
 
         return c;
     }
+
 }

@@ -2,8 +2,8 @@
 
 #include "configbuilder.h"
 
-namespace document {
-namespace config_builder {
+namespace document::config_builder {
+
 int32_t createFieldId(const vespalib::string &name, int32_t type) {
     StructDataType dummy("dummy", type);
     Field f(name, dummy, true);
@@ -63,5 +63,4 @@ DocumenttypesConfigBuilderHelper::document(int32_t id, const vespalib::string &n
     return DocTypeRep(_config.documenttype.back());
 }
 
-}  // namespace config_builder
-}  // namespace document
+}

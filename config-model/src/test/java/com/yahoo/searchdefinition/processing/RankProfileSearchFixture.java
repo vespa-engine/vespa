@@ -3,14 +3,18 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -25,6 +29,7 @@ class RankProfileSearchFixture {
     private RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
     private final QueryProfileRegistry queryProfileRegistry;
     private Search search;
+    private Map<String, RankProfile> compiledRankProfiles = new HashMap<>();
 
     RankProfileSearchFixture(String rankProfiles) throws ParseException {
         this(MockApplicationPackage.createEmpty(), new QueryProfileRegistry(), rankProfiles);
@@ -54,25 +59,43 @@ class RankProfileSearchFixture {
     }
 
     public void assertFirstPhaseExpression(String expExpression, String rankProfile) {
-        assertEquals(expExpression, rankProfile(rankProfile).getFirstPhaseRanking().getRoot().toString());
+        assertEquals(expExpression, compiledRankProfile(rankProfile).getFirstPhaseRanking().getRoot().toString());
     }
 
     public void assertSecondPhaseExpression(String expExpression, String rankProfile) {
-        assertEquals(expExpression, rankProfile(rankProfile).getSecondPhaseRanking().getRoot().toString());
+        assertEquals(expExpression, compiledRankProfile(rankProfile).getSecondPhaseRanking().getRoot().toString());
     }
 
     public void assertRankProperty(String expValue, String name, String rankProfile) {
-        List<RankProfile.RankProperty> rankPropertyList = rankProfile(rankProfile).getRankPropertyMap().get(name);
+        List<RankProfile.RankProperty> rankPropertyList = compiledRankProfile(rankProfile).getRankPropertyMap().get(name);
         assertEquals(1, rankPropertyList.size());
         assertEquals(expValue, rankPropertyList.get(0).getValue());
     }
 
-    public void assertMacro(String expExpression, String macroName, String rankProfile) {
-        assertEquals(expExpression, rankProfile(rankProfile).getMacros().get(macroName).getRankingExpression().getRoot().toString());
+    public void assertFunction(String expexctedExpression, String functionName, String rankProfile) {
+        assertEquals(expexctedExpression,
+                     compiledRankProfile(rankProfile).getFunctions().get(functionName).function().getBody().getRoot().toString());
     }
 
+    public RankProfile compileRankProfile(String rankProfile) {
+        return compileRankProfile(rankProfile, Path.fromString("nonexistinng"));
+    }
+
+    public RankProfile compileRankProfile(String rankProfile, Path applicationDir) {
+        RankProfile compiled = rankProfileRegistry.get(search, rankProfile)
+                                                  .compile(queryProfileRegistry, new ImportedModels(applicationDir.toFile()));
+        compiledRankProfiles.put(rankProfile, compiled);
+        return compiled;
+    }
+
+    /** Returns the given uncompiled profile */
     public RankProfile rankProfile(String rankProfile) {
-        return rankProfileRegistry.getRankProfile(search, rankProfile).compile(queryProfileRegistry);
+        return rankProfileRegistry.get(search, rankProfile);
+    }
+
+    /** Returns the given compiled profile, or null if not compiled yet or not present at all */
+    public RankProfile compiledRankProfile(String rankProfile) {
+        return compiledRankProfiles.get(rankProfile);
     }
 
     public Search search() { return search; }

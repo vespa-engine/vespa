@@ -6,8 +6,8 @@ import com.google.common.base.Suppliers;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
-import com.yahoo.vespa.athenz.tls.SubjectAlternativeName;
-import com.yahoo.vespa.athenz.tls.X509CertificateUtils;
+import com.yahoo.security.SubjectAlternativeName;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
+import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
 
 /**
  * Resolve node from various types of x509 identity certificates.
@@ -65,9 +65,10 @@ class NodeIdentifier {
         } else if (subjectCommonName.equals(ZTS_ON_PREM_IDENTITY) || subjectCommonName.equals(ZTS_AWS_IDENTITY)) {
             // ZTS treated as a node principal even though its not a Vespa node
             return NodePrincipal.withLegacyIdentity(subjectCommonName, certificateChain);
-        } else { // self-signed where common name is hostname
-            // TODO Remove this branch once self-signed certificates are gone
-            return NodePrincipal.withLegacyIdentity(subjectCommonName, certificateChain);
+        } else {
+            throw new NodeIdentifierException(String.format("Unknown certificate (subject=%s, issuer=%s)",
+                                                            subjectCommonName,
+                                                            X509CertificateUtils.getIssuerCommonNames(clientCertificate)));
         }
     }
 

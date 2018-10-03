@@ -6,9 +6,7 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <cassert>
 
-namespace proton {
-
-namespace initializer {
+namespace proton::initializer {
 
 /*
  * Class to run multiple init tasks with dependent tasks.
@@ -46,20 +44,15 @@ class TaskRunner {
         void schedulePoll();
     };
     void getReadyTasks(const InitializerTask::SP task, TaskList &readyTasks, TaskSet &checked);
-
     void setTaskRunning(InitializerTask &task);
-
     void setTaskDone(InitializerTask &task, Context::SP context);
-
     void internalRunTask(InitializerTask::SP task, Context::SP context);
-
     void internalRunTasks(const TaskList &taskList, Context::SP context);
-
     void pollTask(Context::SP context);
 public:
     TaskRunner(vespalib::Executor &executor);
 
-    virtual ~TaskRunner();
+    ~TaskRunner();
 
     // Depecreated blocking API
     void runTask(InitializerTask::SP task);
@@ -70,6 +63,4 @@ public:
                  vespalib::Executor::Task::UP doneTask);
 };
 
-} // namespace proton::initializer
-
-} // namespace proton
+}

@@ -6,6 +6,7 @@ import com.yahoo.search.grouping.request.AggregatorNode;
 import com.yahoo.search.grouping.request.AndFunction;
 import com.yahoo.search.grouping.request.ArrayAtLookup;
 import com.yahoo.search.grouping.request.AttributeFunction;
+import com.yahoo.search.grouping.request.AttributeMapLookupValue;
 import com.yahoo.search.grouping.request.AttributeValue;
 import com.yahoo.search.grouping.request.AvgAggregator;
 import com.yahoo.search.grouping.request.BucketValue;
@@ -101,6 +102,7 @@ import com.yahoo.searchlib.expression.AddFunctionNode;
 import com.yahoo.searchlib.expression.AggregationRefNode;
 import com.yahoo.searchlib.expression.AndFunctionNode;
 import com.yahoo.searchlib.expression.ArrayAtLookupNode;
+import com.yahoo.searchlib.expression.AttributeMapLookupNode;
 import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.BucketResultNode;
 import com.yahoo.searchlib.expression.CatFunctionNode;
@@ -262,6 +264,16 @@ class ExpressionConverter {
         }
         if (exp instanceof AndFunction) {
             return addArguments(new AndFunctionNode(), (AndFunction)exp);
+        }
+        if (exp instanceof AttributeMapLookupValue) {
+            AttributeMapLookupValue mapLookup = (AttributeMapLookupValue) exp;
+            if (mapLookup.hasKeySourceAttribute()) {
+                return AttributeMapLookupNode.fromKeySourceAttribute(mapLookup.getAttributeName(),
+                        mapLookup.getKeyAttribute(), mapLookup.getValueAttribute(), mapLookup.getKeySourceAttribute());
+            } else {
+                return AttributeMapLookupNode.fromKey(mapLookup.getAttributeName(),
+                        mapLookup.getKeyAttribute(), mapLookup.getValueAttribute(), mapLookup.getKey());
+            }
         }
         if (exp instanceof AttributeValue) {
             return new AttributeNode(((AttributeValue)exp).getAttributeName());

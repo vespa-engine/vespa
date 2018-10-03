@@ -18,8 +18,6 @@ namespace slobrok {
 
 namespace {
 
-
-
 class MetricsReport : public FNET_Task
 {
     RPCHooks &_owner;
@@ -29,35 +27,29 @@ class MetricsReport : public FNET_Task
         Schedule(300.0);
     }
 public:
-    MetricsReport(FRT_Supervisor *orb,
-                  RPCHooks &owner)
+    MetricsReport(FRT_Supervisor *orb, RPCHooks &owner)
         :  FNET_Task(orb->GetScheduler()),
            _owner(owner)
     {
         Schedule(0.0);
     }
 
-    virtual ~MetricsReport() { Kill(); }
+    ~MetricsReport() override { Kill(); }
 };
 
 } // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
 
-RPCHooks::RPCHooks(SBEnv &env,
-                   RpcServerMap& rpcsrvmap,
-                   RpcServerManager& rpcsrvman)
+RPCHooks::RPCHooks(SBEnv &env, RpcServerMap& rpcsrvmap, RpcServerManager& rpcsrvman)
     : _env(env), _rpcsrvmap(rpcsrvmap), _rpcsrvmanager(rpcsrvman),
       _cnts(Metrics::zero()),
-      _m_reporter(nullptr)
+      _m_reporter()
 {
 }
 
 
-RPCHooks::~RPCHooks()
-{
-    delete _m_reporter;
-}
+RPCHooks::~RPCHooks() = default;
 
 void
 RPCHooks::reportMetrics()
@@ -76,44 +68,44 @@ RPCHooks::reportMetrics()
 void
 RPCHooks::initRPC(FRT_Supervisor *supervisor)
 {
-    _m_reporter = new MetricsReport(supervisor, *this);
+    _m_reporter = std::make_unique<MetricsReport>(supervisor, *this);
 
     FRT_ReflectionBuilder rb(supervisor);
 
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.system.resume", "", "", true,
+    rb.DefineMethod("slobrok.system.resume", "", "",
                     FRT_METHOD(RPCHooks::rpc_resume), this);
     rb.MethodDesc("Enable something - currently NOP");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.system.suspend", "", "", true,
+    rb.DefineMethod("slobrok.system.suspend", "", "",
                     FRT_METHOD(RPCHooks::rpc_suspend), this);
     rb.MethodDesc("Disable something - currently NOP");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.system.version", "", "s", true,
+    rb.DefineMethod("slobrok.system.version", "", "s",
                     FRT_METHOD(RPCHooks::rpc_version), this);
     rb.MethodDesc("Get location broker version");
     rb.ReturnDesc("version", "version string");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.system.stop", "", "", true,
+    rb.DefineMethod("slobrok.system.stop", "", "",
                     FRT_METHOD(RPCHooks::rpc_stop), this);
     rb.MethodDesc("Shut down the location broker application");
     //-------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.internal.listManagedRpcServers", "", "SS", true,
+    rb.DefineMethod("slobrok.internal.listManagedRpcServers", "", "SS",
                     FRT_METHOD(RPCHooks::rpc_listManagedRpcServers), this);
     rb.MethodDesc("List all rpcservers managed by this location broker");
     rb.ReturnDesc("names", "Managed rpcserver names");
     rb.ReturnDesc("specs", "The connection specifications (in same order)");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.internal.lookupManaged", "s", "ss", true,
+    rb.DefineMethod("slobrok.internal.lookupManaged", "s", "ss",
                     FRT_METHOD(RPCHooks::rpc_lookupManaged), this);
     rb.MethodDesc("Lookup a specific rpcserver managed by this location broker");
     rb.ParamDesc("name", "Name of rpc server");
     rb.ReturnDesc("name", "Name of rpc server");
     rb.ReturnDesc("spec", "The connection specification");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.internal.wantAdd", "sss", "is", true,
+    rb.DefineMethod("slobrok.internal.wantAdd", "sss", "is",
                     FRT_METHOD(RPCHooks::rpc_wantAdd), this);
     rb.MethodDesc("remote location broker wants to add a rpcserver");
     rb.ParamDesc("slobrok", "Name of remote location broker");
@@ -122,7 +114,7 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
     rb.ReturnDesc("denied", "non-zero if request was denied");
     rb.ReturnDesc("reason", "reason for denial");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.internal.doAdd", "sss", "is", true,
+    rb.DefineMethod("slobrok.internal.doAdd", "sss", "is",
                     FRT_METHOD(RPCHooks::rpc_doAdd), this);
     rb.MethodDesc("add rpcserver managed by remote location broker");
     rb.ParamDesc("slobrok", "Name of remote location broker");
@@ -131,7 +123,7 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
     rb.ReturnDesc("denied", "non-zero if request was denied");
     rb.ReturnDesc("reason", "reason for denial");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.internal.doRemove", "sss", "is", true,
+    rb.DefineMethod("slobrok.internal.doRemove", "sss", "is",
                     FRT_METHOD(RPCHooks::rpc_doRemove), this);
     rb.MethodDesc("remove rpcserver managed by remote location broker");
     rb.ParamDesc("slobrok", "Name of remote location broker");
@@ -142,31 +134,31 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
     //-------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.callback.listNamesServed", "", "S", true,
+    rb.DefineMethod("slobrok.callback.listNamesServed", "", "S",
                     FRT_METHOD(RPCHooks::rpc_listNamesServed), this);
     rb.MethodDesc("List rpcservers served");
     rb.ReturnDesc("names", "The rpcserver names this server wants to serve");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.callback.notifyUnregistered", "s", "", true,
+    rb.DefineMethod("slobrok.callback.notifyUnregistered", "s", "",
                     FRT_METHOD(RPCHooks::rpc_notifyUnregistered), this);
     rb.MethodDesc("Notify a server about removed registration");
     rb.ParamDesc("name", "NamedService name");
     //-------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.admin.removePeer", "ss", "", true,
+    rb.DefineMethod("slobrok.admin.removePeer", "ss", "",
                     FRT_METHOD(RPCHooks::rpc_removePeer), this);
     rb.MethodDesc("stop syncing with other location broker");
     rb.ParamDesc("slobrok", "NamedService name of remote location broker");
     rb.ParamDesc("spec", "Connection specification of remote location broker");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.admin.addPeer", "ss", "", true,
+    rb.DefineMethod("slobrok.admin.addPeer", "ss", "",
                     FRT_METHOD(RPCHooks::rpc_addPeer), this);
     rb.MethodDesc("sync our information with other location broker");
     rb.ParamDesc("slobrok", "NamedService name of remote location broker");
     rb.ParamDesc("spec", "Connection specification of remote location broker");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.admin.listAllRpcServers", "", "SSS", true,
+    rb.DefineMethod("slobrok.admin.listAllRpcServers", "", "SSS",
                     FRT_METHOD(RPCHooks::rpc_listAllRpcServers), this);
     rb.MethodDesc("List all known rpcservers");
     rb.ReturnDesc("names", "NamedService names");
@@ -175,13 +167,13 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
     //-------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.unregisterRpcServer", "ss", "", true,
+    rb.DefineMethod("slobrok.unregisterRpcServer", "ss", "",
                     FRT_METHOD(RPCHooks::rpc_unregisterRpcServer), this);
     rb.MethodDesc("Unregister a rpcserver");
     rb.ParamDesc("name", "NamedService name");
     rb.ParamDesc("spec", "The connection specification");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.registerRpcServer", "ss", "", true,
+    rb.DefineMethod("slobrok.registerRpcServer", "ss", "",
                     FRT_METHOD(RPCHooks::rpc_registerRpcServer), this);
     rb.MethodDesc("Register a rpcserver");
     rb.ParamDesc("name", "NamedService name");
@@ -189,7 +181,7 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
     //-------------------------------------------------------------------------
 
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.mirror.fetch", "ii", "SSi", true,
+    rb.DefineMethod("slobrok.mirror.fetch", "ii", "SSi",
                     FRT_METHOD(RPCHooks::rpc_mirrorFetch), this);
     rb.MethodDesc("Fetch or update mirror of name to spec map");
     rb.ParamDesc("gencnt", "generation already known by client");
@@ -199,7 +191,7 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
     rb.ReturnDesc("specs", "Array of connection specifications (same order)");
     rb.ReturnDesc("newgen", "Generation count for new version of the map");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.incremental.fetch", "ii", "iSSSi", true,
+    rb.DefineMethod("slobrok.incremental.fetch", "ii", "iSSSi",
                     FRT_METHOD(RPCHooks::rpc_incrementalFetch), this);
     rb.MethodDesc("Fetch or update mirror of name to spec map");
     rb.ParamDesc("gencnt",  "generation already known by client");
@@ -212,7 +204,7 @@ RPCHooks::initRPC(FRT_Supervisor *supervisor)
     rb.ReturnDesc("specs",   "Array of connection specifications (same order)");
     rb.ReturnDesc("newgen",  "Generation count for new version of the map");
     //-------------------------------------------------------------------------
-    rb.DefineMethod("slobrok.lookupRpcServer", "s", "SS", true,
+    rb.DefineMethod("slobrok.lookupRpcServer", "s", "SS",
                     FRT_METHOD(RPCHooks::rpc_lookupRpcServer), this);
     rb.MethodDesc("Look up rpcservers");
     rb.ParamDesc("pattern", "The pattern of the rpcservers to lookup.\n"
@@ -236,7 +228,7 @@ RPCHooks::rpc_listNamesServed(FRT_RPCRequest *req)
 {
     FRT_Values &dst = *req->GetReturn();
     FRT_StringValue *names = dst.AddStringArray(1);
-    dst.SetString(names, _env.mySpec());
+    dst.SetString(names, _env.mySpec().c_str());
     _cnts.otherReqs++;
     return;
 }
@@ -422,8 +414,8 @@ RPCHooks::rpc_lookupRpcServer(FRT_RPCRequest *req)
     FRT_StringValue *names = dst.AddStringArray(rpcsrvlist.size());
     FRT_StringValue *specs = dst.AddStringArray(rpcsrvlist.size());
     for (uint32_t i = 0; i < rpcsrvlist.size(); ++i) {
-        dst.SetString(&names[i], rpcsrvlist[i]->getName());
-        dst.SetString(&specs[i], rpcsrvlist[i]->getSpec());
+        dst.SetString(&names[i], rpcsrvlist[i]->getName().c_str());
+        dst.SetString(&specs[i], rpcsrvlist[i]->getSpec().c_str());
     }
     if (rpcsrvlist.size() < 1) {
         LOG(debug, "RPC: lookupRpcServers(%s) -> no match",
@@ -431,7 +423,7 @@ RPCHooks::rpc_lookupRpcServer(FRT_RPCRequest *req)
     } else {
         LOG(debug, "RPC: lookupRpcServers(%s) -> %u matches, first [%s,%s]",
             rpcserverPattern, (unsigned int)rpcsrvlist.size(),
-            rpcsrvlist[0]->getName(), rpcsrvlist[0]->getSpec());
+            rpcsrvlist[0]->getName().c_str(), rpcsrvlist[0]->getSpec().c_str());
     }
     return;
 }
@@ -446,15 +438,15 @@ RPCHooks::rpc_listManagedRpcServers(FRT_RPCRequest *req)
     FRT_StringValue *names = dst.AddStringArray(rpcsrvlist.size());
     FRT_StringValue *specs = dst.AddStringArray(rpcsrvlist.size());
     for (uint32_t i = 0; i < rpcsrvlist.size(); ++i) {
-        dst.SetString(&names[i], rpcsrvlist[i]->getName());
-        dst.SetString(&specs[i], rpcsrvlist[i]->getSpec());
+        dst.SetString(&names[i], rpcsrvlist[i]->getName().c_str());
+        dst.SetString(&specs[i], rpcsrvlist[i]->getSpec().c_str());
     }
     if (rpcsrvlist.size() < 1) {
         LOG(debug, "RPC: listManagedRpcServers() -> 0 managed");
     } else {
         LOG(debug, "RPC: listManagedRpcServers() -> %u managed, first [%s,%s]",
             (unsigned int)rpcsrvlist.size(),
-            rpcsrvlist[0]->getName(), rpcsrvlist[0]->getSpec());
+            rpcsrvlist[0]->getName().c_str(), rpcsrvlist[0]->getSpec().c_str());
     }
     return;
 }
@@ -466,14 +458,14 @@ RPCHooks::rpc_lookupManaged(FRT_RPCRequest *req)
     FRT_Values &args = *req->GetParams();
     const char *name = args[0]._string._str;
     LOG(debug, "RPC: lookupManaged(%s)", name);
-    ManagedRpcServer *found = _rpcsrvmap.lookupManaged(name);
+    const ManagedRpcServer *found = _rpcsrvmap.lookupManaged(name);
 
     if (found == nullptr) {
         req->SetError(FRTE_RPC_METHOD_FAILED, "Not found");
     } else {
         FRT_Values &dst = *req->GetReturn();
-        dst.AddString(found->getName());
-        dst.AddString(found->getSpec());
+        dst.AddString(found->getName().c_str());
+        dst.AddString(found->getSpec().c_str());
     }
     return;
 }
@@ -493,9 +485,9 @@ RPCHooks::rpc_listAllRpcServers(FRT_RPCRequest *req)
 
     int j = 0;
     for (uint32_t i = 0; i < mrpcsrvlist.size(); ++i, ++j) {
-        dst.SetString(&names[j], mrpcsrvlist[i]->getName());
-        dst.SetString(&specs[j], mrpcsrvlist[i]->getSpec());
-        dst.SetString(&owner[j], _env.mySpec());
+        dst.SetString(&names[j], mrpcsrvlist[i]->getName().c_str());
+        dst.SetString(&specs[j], mrpcsrvlist[i]->getSpec().c_str());
+        dst.SetString(&owner[j], _env.mySpec().c_str());
     }
 
     if (sz > 0) {

@@ -43,7 +43,7 @@ NBOSerializer &NBOSerializer::put(const IFieldBase &, double value) {
     return *this;
 }
 
-NBOSerializer &NBOSerializer::put(const IFieldBase &, const stringref & value) {
+NBOSerializer &NBOSerializer::put(const IFieldBase &, stringref value) {
     _stream << value;
     return *this;
 }

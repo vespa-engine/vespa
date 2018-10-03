@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
  * @author freva
  */
 public class NodeRetirerTest {
+
     private NodeRetirerTester tester;
     private NodeRetirer retirer;
     private final RetirementPolicy policy = mock(RetirementPolicy.class);
@@ -171,4 +172,5 @@ public class NodeRetirerTest {
         verify(retirer, never()).retireUnallocated();
         verify(retirer, never()).retireAllocated();
     }
+
 }

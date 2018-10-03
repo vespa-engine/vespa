@@ -67,6 +67,13 @@ public class Reference extends TypeContext.Name {
     }
 
     /**
+     * Returns whether this is a simple identifier - no arguments or output
+     */
+    public boolean isIdentifier() {
+        return this.arguments.expressions().size() == 0 && output == null;
+    }
+
+    /**
      * A <i>simple feature reference</i> is a reference with a single identifier argument
      * (and an optional output).
      */
@@ -95,13 +102,6 @@ public class Reference extends TypeContext.Name {
         else {
             return Optional.empty();
         }
-    }
-
-    /**
-     * Returns whether this is a simple identifier - no arguments or output
-     */
-    public boolean isIdentifier() {
-        return this.arguments.expressions().size() == 0 && output == null;
     }
 
     public Reference withArguments(Arguments arguments) {

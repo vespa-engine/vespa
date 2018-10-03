@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
+
 namespace logdemon {
+
+class Performer;
 
 class CmdBuf
 {
@@ -10,10 +13,9 @@ private:
     char *_bp;
     int _left;
     void extend();
-
-    CmdBuf(const CmdBuf& other);
-    CmdBuf& operator= (const CmdBuf& other);
 public:
+    CmdBuf(const CmdBuf& other) = delete;
+    CmdBuf& operator= (const CmdBuf& other) = delete;
     CmdBuf();
     ~CmdBuf();
     bool hasCmd();

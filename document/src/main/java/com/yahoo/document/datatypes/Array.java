@@ -11,7 +11,14 @@ import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.document.serialization.XmlSerializationHelper;
 import com.yahoo.document.serialization.XmlStream;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.RandomAccess;
 
 /**
  * FieldValue which encapsulates a Array value
@@ -303,11 +310,12 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
 
                         if (idx < values.size()) {
                             return iterateSubset(idx, idx, fieldPath, null, pos + 1, handler);
+                        } else {
+                            return FieldPathIteratorHandler.ModificationStatus.NOT_MODIFIED;
                         }
                     } else {
                         return iterateSubset(0, values.size() - 1, fieldPath, fieldPath.get(pos).getVariableName(), pos + 1, handler);
                     }
-                    break;
                 }
                 default:
             }

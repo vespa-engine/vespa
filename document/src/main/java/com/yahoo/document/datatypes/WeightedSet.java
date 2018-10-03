@@ -1,14 +1,25 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.datatypes;
 
-import com.yahoo.collections.CollectionComparator;
-import com.yahoo.document.*;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Field;
+import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.FieldPath;
 import com.yahoo.document.serialization.FieldReader;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.document.serialization.XmlSerializationHelper;
 import com.yahoo.document.serialization.XmlStream;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+
 
 /**
  * A weighted set, a unique set of keys with an associated integer weight. This class
@@ -241,8 +252,7 @@ public final class WeightedSet<K extends FieldValue> extends CollectionFieldValu
      */
     public boolean equals(Object o) {
         if (!(o instanceof WeightedSet)) return false;
-        WeightedSet otherSet = (WeightedSet) o;
-        return (super.equals(o) && map.equals(otherSet.map));
+        return (super.equals(o) && map.equals(((WeightedSet<K>)o).map));
     }
 
     /**
@@ -293,15 +303,7 @@ public final class WeightedSet<K extends FieldValue> extends CollectionFieldValu
             return comp;
         }
 
-        //types are equal, this must be of this type
-        WeightedSet otherValue = (WeightedSet) fieldValue;
-        comp = CollectionComparator.compare(map.keySet(), otherValue.map.keySet());
-
-        if (comp != 0) {
-            return comp;
-        }
-
-        return CollectionComparator.compare(map.values(), otherValue.map.values());
+        return map.compareTo(((WeightedSet<K>)fieldValue).map);
     }
 
 

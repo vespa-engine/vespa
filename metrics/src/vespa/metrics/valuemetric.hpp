@@ -226,7 +226,7 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::print(
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
 int64_t
-ValueMetric<AvgVal, TotVal, SumOnAdd>::getLongValue(const stringref & id) const
+ValueMetric<AvgVal, TotVal, SumOnAdd>::getLongValue(stringref id) const
 {
     Values values(_values.getValues());
     if (id == "last" || (SumOnAdd && id == "value"))
@@ -245,7 +245,7 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::getLongValue(const stringref & id) const
 
 template<typename AvgVal, typename TotVal, bool SumOnAdd>
 double
-ValueMetric<AvgVal, TotVal, SumOnAdd>::getDoubleValue(const stringref & id) const
+ValueMetric<AvgVal, TotVal, SumOnAdd>::getDoubleValue(stringref id) const
 {
     Values values(_values.getValues());
     if (id == "last" || (SumOnAdd && id == "value"))

@@ -116,11 +116,10 @@ public class JsonSerializationHelper {
     }
 
     public static void serializeStringField(JsonGenerator generator, FieldBase field, StringFieldValue value) {
-        // Hide empty strings
-        if (value.getString().length() == 0) {
+        // Hide fields which only contains an empty string
+        if (value.getString().length() == 0 && field != null) {
             return;
         }
-
         serializeString(generator, field, value.getString());
     }
 
@@ -237,10 +236,6 @@ public class JsonSerializationHelper {
     }
 
     public static void serializeString(JsonGenerator generator, FieldBase field, String value) {
-        if (value.length() == 0) {
-            return;
-        }
-
         fieldNameIfNotNull(generator, field);
         wrapIOException(() -> generator.writeString(value));
     }

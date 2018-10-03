@@ -77,7 +77,6 @@ public class ComponentGraph {
 
     private Optional<Node> lookupGlobalComponent(Key<?> key) {
         if (!(key.getTypeLiteral().getType() instanceof Class)) {
-
             throw new RuntimeException("Type not supported " + key.getTypeLiteral());
         }
         Class<?> clazz = key.getTypeLiteral().getRawType();

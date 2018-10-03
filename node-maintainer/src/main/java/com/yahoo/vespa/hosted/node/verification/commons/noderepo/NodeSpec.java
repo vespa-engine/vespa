@@ -20,14 +20,16 @@ public class NodeSpec {
     private final double minMainMemoryAvailableGb;
     private final double minCpuCores;
     private final boolean fastDisk;
+    private final double bandwidth;
     private final String[] ipAddresses;
 
     public NodeSpec(double minDiskAvailableGb, double minMainMemoryAvailableGb, double minCpuCores, boolean fastDisk,
-                    String[] ipAddresses) {
+                    double bandwidth, String[] ipAddresses) {
         this.minDiskAvailableGb = minDiskAvailableGb;
         this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
         this.minCpuCores = minCpuCores;
         this.fastDisk = fastDisk;
+        this.bandwidth = bandwidth;
         this.ipAddresses = ipAddresses;
     }
 
@@ -37,6 +39,7 @@ public class NodeSpec {
         hardwareInfo.setMinDiskAvailableGb(this.minDiskAvailableGb);
         hardwareInfo.setMinCpuCores((int) Math.round(this.minCpuCores));
         hardwareInfo.setDiskType(this.fastDisk ? DiskType.FAST : DiskType.SLOW);
+        hardwareInfo.setInterfaceSpeedMbs(bandwidth);
         hardwareInfo.setIpv6Connection(getIpv6Address() != null);
         return hardwareInfo;
     }
@@ -54,4 +57,6 @@ public class NodeSpec {
                 .filter(ip -> ip instanceof Inet4Address)
                 .findFirst().map(InetAddress::getHostAddress).orElse(null);
     }
+
+    public double getBandwidth() { return bandwidth ; }
 }

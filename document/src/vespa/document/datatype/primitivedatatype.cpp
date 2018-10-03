@@ -79,7 +79,7 @@ PrimitiveDataType::print(std::ostream& out, bool verbose, const std::string& ind
 }
 
 void
-PrimitiveDataType::onBuildFieldPath(FieldPath &, const vespalib::stringref & rest) const
+PrimitiveDataType::onBuildFieldPath(FieldPath &, vespalib::stringref rest) const
 {
     if ( ! rest.empty()) {
         std::ostringstream ost;

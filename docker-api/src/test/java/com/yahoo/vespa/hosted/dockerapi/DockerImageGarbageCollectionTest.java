@@ -5,145 +5,214 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.model.Image;
+import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author freva
  */
 public class DockerImageGarbageCollectionTest {
+
+    private final ImageGcTester gcTester = new ImageGcTester();
+
     @Test
     public void noImagesMeansNoUnusedImages() {
-        new ImageGcTester(0)
-                .withExistingImages()
-                .expectUnusedImages();
+        gcTester.withExistingImages()
+                .expectDeletedImages();
     }
 
     @Test
     public void singleImageWithoutContainersIsUnused() {
-        new ImageGcTester(0)
-                .withExistingImages(new ImageBuilder("image-1"))
-                .expectUnusedImages("image-1");
+        gcTester.withExistingImages(new ImageBuilder("image-1"))
+                // Even though nothing is using the image, we will keep it for at least 1h
+                .expectDeletedImagesAfterMinutes(0)
+                .expectDeletedImagesAfterMinutes(30)
+                .expectDeletedImagesAfterMinutes(30, "image-1");
     }
 
     @Test
     public void singleImageWithContainerIsUsed() {
-        new ImageGcTester(0)
-                .withExistingImages(ImageBuilder.forId("image-1"))
+        gcTester.withExistingImages(ImageBuilder.forId("image-1"))
                 .andExistingContainers(ContainerBuilder.forId("container-1").withImageId("image-1"))
-                .expectUnusedImages();
+                .expectDeletedImages();
     }
 
     @Test
     public void multipleUnusedImagesAreIdentified() {
-        new ImageGcTester(0)
-                .withExistingImages(
+        gcTester.withExistingImages(
                         ImageBuilder.forId("image-1"),
                         ImageBuilder.forId("image-2"))
-                .expectUnusedImages("image-1", "image-2");
+                .expectDeletedImages("image-1", "image-2");
     }
 
     @Test
     public void multipleUnusedLeavesAreIdentified() {
-        new ImageGcTester(0)
-                .withExistingImages(
+        gcTester.withExistingImages(
                         ImageBuilder.forId("parent-image"),
                         ImageBuilder.forId("image-1").withParentId("parent-image"),
                         ImageBuilder.forId("image-2").withParentId("parent-image"))
-                .expectUnusedImages("image-1", "image-2", "parent-image");
+                .expectDeletedImages("image-1", "image-2", "parent-image");
     }
 
     @Test
     public void unusedLeafWithUsedSiblingIsIdentified() {
-        new ImageGcTester(0)
-                .withExistingImages(
+        gcTester.withExistingImages(
                         ImageBuilder.forId("parent-image"),
                         ImageBuilder.forId("image-1").withParentId("parent-image").withTags("latest"),
                         ImageBuilder.forId("image-2").withParentId("parent-image").withTags("1.24"))
                 .andExistingContainers(ContainerBuilder.forId("vespa-node-1").withImageId("image-1"))
-                .expectUnusedImages("1.24");
+                .expectDeletedImages("1.24"); // Deleting the only tag will delete the image
     }
 
     @Test
     public void unusedImagesWithMultipleTags() {
-        new ImageGcTester(0)
-                .withExistingImages(
+        gcTester.withExistingImages(
                         ImageBuilder.forId("parent-image"),
                         ImageBuilder.forId("image-1").withParentId("parent-image")
                                 .withTags("vespa-6", "vespa-6.28", "vespa:latest"))
-                .expectUnusedImages("vespa-6", "vespa-6.28", "vespa:latest", "parent-image");
+                .expectDeletedImages("vespa-6", "vespa-6.28", "vespa:latest", "parent-image");
     }
 
     @Test
     public void taggedImageWithNoContainersIsUnused() {
-        new ImageGcTester(0)
-                .withExistingImages(ImageBuilder.forId("image-1").withTags("vespa-6"))
-                .expectUnusedImages("vespa-6");
+        gcTester.withExistingImages(ImageBuilder.forId("image-1").withTags("vespa-6"))
+                .expectDeletedImages("vespa-6");
     }
 
     @Test
     public void unusedImagesWithSimpleImageGc() {
-        new ImageGcTester(20)
+        gcTester.withExistingImages(ImageBuilder.forId("parent-image"))
+                .expectDeletedImagesAfterMinutes(30)
                 .withExistingImages(
-                        ImageBuilder.forId("parent-image").withLastUsedMinutesAgo(25),
-                        ImageBuilder.forId("image-1").withParentId("parent-image").withLastUsedMinutesAgo(5))
-                .expectUnusedImages();
+                        ImageBuilder.forId("parent-image"),
+                        ImageBuilder.forId("image-1").withParentId("parent-image"))
+                .expectDeletedImagesAfterMinutes(0)
+                .expectDeletedImagesAfterMinutes(30)
+                // At this point, parent-image has been unused for 1h, but image-1 depends on parent-image and it has
+                // only been unused for 30m, so we cannot delete parent-image yet. 30 mins later both can be removed
+                .expectDeletedImagesAfterMinutes(30, "image-1", "parent-image");
     }
 
     @Test
-    public void unusedImagesWithImageGc() {
-        new ImageGcTester(20)
-                .withExistingImages(
-                        ImageBuilder.forId("parent-1").withLastUsedMinutesAgo(40),
-                        ImageBuilder.forId("parent-2").withTags("p-tag:1").withLastUsedMinutesAgo(10),
-                        ImageBuilder.forId("image-1-1").withParentId("parent-1").withTags("i-tag:1", "i-tag:2", "i-tag-3").withLastUsedMinutesAgo(5),
-                        ImageBuilder.forId("image-1-2").withParentId("parent-1").withLastUsedMinutesAgo(25),
-                        ImageBuilder.forId("image-2-1").withParentId("parent-2").withTags("i-tag:4").withLastUsedMinutesAgo(30))
-                .andExistingContainers(
-                        ContainerBuilder.forId("cont-1").withImageId("image-1-1"))
-                .expectUnusedImages("image-1-2", "i-tag:4");
+    public void reDownloadingImageIsNotImmediatelyDeleted() {
+        gcTester.withExistingImages(ImageBuilder.forId("image"))
+                .expectDeletedImages("image") // After 1h we delete image
+                .expectDeletedImagesAfterMinutes(0) // image is immediately re-downloaded, but is not deleted
+                .expectDeletedImagesAfterMinutes(10)
+                .expectDeletedImages("image"); // 1h after re-download it is deleted again
     }
 
-    private static class ImageGcTester {
-        private static DockerImageGarbageCollector imageGC;
+    @Test
+    public void reDownloadingImageIsNotImmediatelyDeletedWhenDeletingByTag() {
+        gcTester.withExistingImages(ImageBuilder.forId("image").withTags("image-1", "my-tag"))
+                .expectDeletedImages("image-1", "my-tag") // After 1h we delete image
+                .expectDeletedImagesAfterMinutes(0) // image is immediately re-downloaded, but is not deleted
+                .expectDeletedImagesAfterMinutes(10)
+                .expectDeletedImages("image-1", "my-tag"); // 1h after re-download it is deleted again
+    }
 
-        private List<Image> existingImages = Collections.emptyList();
-        private List<com.github.dockerjava.api.model.Container> existingContainers = Collections.emptyList();
+    /** Same scenario as in {@link #multipleUnusedImagesAreIdentified()} */
+    @Test
+    public void doesNotDeleteExcludedByIdImages() {
+        gcTester.withExistingImages(
+                    ImageBuilder.forId("parent-image"),
+                    ImageBuilder.forId("image-1").withParentId("parent-image"),
+                    ImageBuilder.forId("image-2").withParentId("parent-image"))
+                // Normally, image-1 and parent-image should also be deleted, but because we exclude image-1
+                // we cannot delete parent-image, so only image-2 is deleted
+                .expectDeletedImages(Collections.singletonList("image-1"), "image-2");
+    }
 
-        private ImageGcTester(int imageGcMinTimeInMinutes) {
-            imageGC = new DockerImageGarbageCollector(Duration.ofMinutes(imageGcMinTimeInMinutes));
-        }
+    /** Same as in {@link #doesNotDeleteExcludedByIdImages()} but with tags */
+    @Test
+    public void doesNotDeleteExcludedByTagImages() {
+        gcTester.withExistingImages(
+                    ImageBuilder.forId("parent-image").withTags("rhel-6"),
+                    ImageBuilder.forId("image-1").withParentId("parent-image").withTags("vespa:6.288.16"),
+                    ImageBuilder.forId("image-2").withParentId("parent-image").withTags("vespa:6.289.94"))
+                .expectDeletedImages(Collections.singletonList("vespa:6.288.16"), "vespa:6.289.94");
+    }
 
-        private ImageGcTester withExistingImages(final ImageBuilder... images) {
-            this.existingImages = Arrays.stream(images)
+    @Test
+    public void exludingNotDownloadedImageIsNoop() {
+        gcTester.withExistingImages(
+                    ImageBuilder.forId("parent-image").withTags("rhel-6"),
+                    ImageBuilder.forId("image-1").withParentId("parent-image").withTags("vespa:6.288.16"),
+                    ImageBuilder.forId("image-2").withParentId("parent-image").withTags("vespa:6.289.94"))
+                .expectDeletedImages(Collections.singletonList("vespa:6.300.1"), "vespa:6.288.16", "vespa:6.289.94", "rhel-6");
+    }
+
+    private class ImageGcTester {
+        private final DockerImpl docker = mock(DockerImpl.class);
+        private final ManualClock clock = new ManualClock();
+        private final DockerImageGarbageCollector imageGC = new DockerImageGarbageCollector(docker, clock);
+        private final Map<DockerImage, Integer> numDeletes = new HashMap<>();
+        private boolean initialized = false;
+
+        private ImageGcTester withExistingImages(ImageBuilder... images) {
+            when(docker.listAllImages()).thenReturn(Arrays.stream(images)
                     .map(ImageBuilder::toImage)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList()));
             return this;
         }
 
-        private ImageGcTester andExistingContainers(final ContainerBuilder... containers) {
-            this.existingContainers = Arrays.stream(containers)
+        private ImageGcTester andExistingContainers(ContainerBuilder... containers) {
+            when(docker.listAllContainers()).thenReturn(Arrays.stream(containers)
                     .map(ContainerBuilder::toContainer)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList()));
             return this;
         }
 
-        private void expectUnusedImages(final String... imageIds) {
-            final List<DockerImage> expectedUnusedImages = Arrays.stream(imageIds)
-                    .map(DockerImage::new)
-                    .collect(Collectors.toList());
+        private ImageGcTester expectDeletedImages(String... imageIds) {
+            return expectDeletedImagesAfterMinutes(60, imageIds);
+        }
 
-            assertThat(imageGC.getUnusedDockerImages(existingImages, existingContainers), is(expectedUnusedImages));
+        private ImageGcTester expectDeletedImages(List<String> except, String... imageIds) {
+            return expectDeletedImagesAfterMinutes(60, except, imageIds);
+        }
+        private ImageGcTester expectDeletedImagesAfterMinutes(int minutesAfter, String... imageIds) {
+            return expectDeletedImagesAfterMinutes(minutesAfter, Collections.emptyList(), imageIds);
+        }
+
+        private ImageGcTester expectDeletedImagesAfterMinutes(int minutesAfter, List<String> except, String... imageIds) {
+            if (!initialized) {
+                // Run once with a very long expiry to initialize internal state of existing images
+                imageGC.deleteUnusedDockerImages(Collections.emptyList(), Duration.ofDays(999));
+                initialized = true;
+            }
+
+            clock.advance(Duration.ofMinutes(minutesAfter));
+
+            imageGC.deleteUnusedDockerImages(
+                    except.stream().map(DockerImage::new).collect(Collectors.toList()),
+                    Duration.ofHours(1).minusSeconds(1));
+
+            Arrays.stream(imageIds)
+                    .map(DockerImage::new)
+                    .forEach(image -> {
+                        int newValue = numDeletes.getOrDefault(image, 0) + 1;
+                        numDeletes.put(image, newValue);
+                        verify(docker, times(newValue)).deleteImage(eq(image));
+                    });
+
+            verify(docker, times(numDeletes.values().stream().mapToInt(i -> i).sum())).deleteImage(any());
+            return this;
         }
     }
 
@@ -185,11 +254,6 @@ public class DockerImageGarbageCollectionTest {
         private static ImageBuilder forId(String id) { return new ImageBuilder(id); }
         private ImageBuilder withParentId(String parentId) { this.parentId = parentId; return this; }
         private ImageBuilder withTags(String... tags) { this.repoTags = tags; return this; }
-        private ImageBuilder withLastUsedMinutesAgo(int minutesAgo) {
-            ImageGcTester.imageGC.updateLastUsedTimeFor(id, Instant.now().minus(Duration.ofMinutes(minutesAgo)));
-            return this;
-        }
-
         private Image toImage() { return createFrom(Image.class, this); }
     }
 

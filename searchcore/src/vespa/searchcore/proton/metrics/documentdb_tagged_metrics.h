@@ -4,6 +4,7 @@
 #include "attribute_metrics.h"
 #include "memory_usage_metrics.h"
 #include "executor_threading_service_metrics.h"
+#include "sessionmanager_metrics.h"
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/valuemetric.h>
 #include <vespa/searchcore/proton/matching/matching_stats.h>
@@ -49,10 +50,23 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
 
         struct DocumentStoreMetrics : metrics::MetricSet
         {
+            struct CacheMetrics : metrics::MetricSet
+            {
+                metrics::LongValueMetric memoryUsage;
+                metrics::LongValueMetric elements;
+                metrics::LongAverageMetric hitRate;
+                metrics::LongCountMetric lookups;
+                metrics::LongCountMetric invalidations;
+
+                CacheMetrics(metrics::MetricSet *parent);
+                ~CacheMetrics();
+            };
+
             metrics::LongValueMetric diskUsage;
             metrics::LongValueMetric diskBloat;
             metrics::DoubleValueMetric maxBucketSpread;
             MemoryUsageMetrics memoryUsage;
+            CacheMetrics cache;
 
             DocumentStoreMetrics(metrics::MetricSet *parent);
             ~DocumentStoreMetrics();
@@ -79,6 +93,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         };
 
         ResourceUsageMetrics resourceUsage;
+        MemoryUsageMetrics totalMemoryUsage;
 
         AttributeMetrics(metrics::MetricSet *parent);
         ~AttributeMetrics();
@@ -88,6 +103,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     {
         metrics::LongValueMetric diskUsage;
         MemoryUsageMetrics memoryUsage;
+        metrics::LongValueMetric docsInMemory;
 
         IndexMetrics(metrics::MetricSet *parent);
         ~IndexMetrics();
@@ -145,6 +161,24 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         ~MatchingMetrics();
     };
 
+    struct SessionCacheMetrics : metrics::MetricSet {
+        SessionManagerMetrics search;
+        SessionManagerMetrics grouping;
+
+        SessionCacheMetrics(metrics::MetricSet *parent);
+        ~SessionCacheMetrics();
+    };
+
+    struct DocumentsMetrics : metrics::MetricSet {
+        metrics::LongValueMetric active;
+        metrics::LongValueMetric ready;
+        metrics::LongValueMetric total;
+        metrics::LongValueMetric removed;
+
+        DocumentsMetrics(metrics::MetricSet *parent);
+        ~DocumentsMetrics();
+    };
+
     JobMetrics job;
     AttributeMetrics attribute;
     IndexMetrics index;
@@ -153,6 +187,10 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     SubDBMetrics removed;
     ExecutorThreadingServiceMetrics threadingService;
     MatchingMetrics matching;
+    SessionCacheMetrics sessionCache;
+    DocumentsMetrics documents;
+    MemoryUsageMetrics totalMemoryUsage;
+    metrics::LongValueMetric totalDiskUsage;
 
     DocumentDBTaggedMetrics(const vespalib::string &docTypeName);
     ~DocumentDBTaggedMetrics();

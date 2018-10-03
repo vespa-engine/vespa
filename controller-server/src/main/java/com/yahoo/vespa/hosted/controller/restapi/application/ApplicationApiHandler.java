@@ -16,6 +16,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
+import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -48,10 +49,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFact
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
@@ -63,12 +63,10 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
-import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
@@ -90,7 +88,7 @@ import java.net.URISyntaxException;
 import java.security.Principal;
 import java.time.DayOfWeek;
 import java.time.Duration;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -172,18 +170,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job"))
-            return JobControllerApiHandlerHelper.jobTypeResponse(jobTypes(path), latestRuns(path), request.getUri());
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}"))
-            return JobControllerApiHandlerHelper.runStatusResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/run/{number}"))
-            return JobControllerApiHandlerHelper.runDetailsResponse(controller.jobController(), runIdFromPath(path));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.getUri().getQuery());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job")) return JobControllerApiHandlerHelper.jobTypeResponse(controller, appIdFromPath(path), request.getUri());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/run/{number}")) return JobControllerApiHandlerHelper.runDetailsResponse(controller.jobController(), runIdFromPath(path), request.getProperty("after"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deployment(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service")) return services(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/service/{service}/{*}")) return service(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.getRest(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation")) return rotationStatus(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override"))
-            return getGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override")) return getGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -353,9 +348,37 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
+    private HttpResponse logs(String tenantName, String applicationName, String instanceName, String environment, String region, String query) {
+        ApplicationId application = ApplicationId.from(tenantName, applicationName, instanceName);
+        ZoneId zone = ZoneId.from(environment, region);
+        DeploymentId deployment = new DeploymentId(application, zone);
+        HashMap<String, String> queryParameters = getParameters(query);
+        Optional<Logs> response = controller.configServer().getLogs(deployment, queryParameters);
+        Slime slime = new Slime();
+        Cursor object = slime.setObject();
+        if (response.isPresent()) {
+            response.get().logs().entrySet().stream().forEach(entry -> object.setString(entry.getKey(), entry.getValue()));
+        }
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HashMap<String, String> getParameters(String query) {
+        HashMap<String, String> keyValPair = new HashMap<>();
+        Arrays.stream(query.split("&")).forEach(pair -> {
+            String[] splitPair = pair.split("=");
+            keyValPair.put(splitPair[0], splitPair[1]);
+        });
+        return keyValPair;
+    }
+
     private void toSlime(Cursor object, Application application, HttpRequest request) {
         object.setString("application", application.id().application().value());
         object.setString("instance", application.id().instance().value());
+        object.setString("deployments", withPath("/application/v4" +
+                                                 "/tenant/" + application.id().tenant().value() +
+                                                 "/application/" + application.id().application().value() +
+                                                 "/instance/" + application.id().instance().value() + "/job/",
+                                                 request.getUri()).toString());
 
         // Currently deploying change
         if (application.change().isPresent()) {
@@ -370,7 +393,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         // Jobs sorted according to deployment spec
         List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
                 .steps(application.deploymentSpec())
-                .sortBy(application.deploymentJobs().jobStatus().values());
+                .sortedJobs(application.deploymentJobs().jobStatus().values());
 
         Cursor deploymentsArray = object.setArray("deploymentJobs");
         for (JobStatus job : jobStatus) {
@@ -402,16 +425,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Rotation
         Cursor globalRotationsArray = object.setArray("globalRotations");
-        application.rotation().ifPresent(rotation -> {
+
+        application.globalDnsName(controller.system()).ifPresent(rotation -> {
             globalRotationsArray.addString(rotation.url().toString());
             globalRotationsArray.addString(rotation.secureUrl().toString());
-            object.setString("rotationId", rotation.id().asString());
+            object.setString("rotationId", application.rotation().get().asString());
         });
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments = controller.applications().deploymentTrigger()
                 .steps(application.deploymentSpec())
-                .sortBy2(application.deployments().values());
+                .sortedDeployments(application.deployments().values());
         Cursor instancesArray = object.setArray("instances");
         for (Deployment deployment : deployments) {
             Cursor deploymentObject = instancesArray.addObject();
@@ -419,10 +443,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             deploymentObject.setString("environment", deployment.zone().environment().value());
             deploymentObject.setString("region", deployment.zone().region().value());
             deploymentObject.setString("instance", application.id().instance().value()); // pointless
-            controller.applications().rotationRepository().getRotation(application).ifPresent(rotation -> {
-                Map<String, RotationStatus> rotationHealthStatus = controller.rotationStatus(rotation);
-                setRotationStatus(deployment, rotationHealthStatus, deploymentObject);
-            });
+            if (application.rotation().isPresent() && deployment.zone().environment() == Environment.prod) {
+                toSlime(application.rotationStatus(deployment), deploymentObject);
+            }
 
             if (recurseOverDeployments(request)) // List full deployment information when recursive.
                 toSlime(deploymentObject, new DeploymentId(application.id(), deployment.zone()), deployment, request);
@@ -533,6 +556,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("gitCommit", revision.get().commit());
     }
 
+    private void toSlime(RotationStatus status, Cursor object) {
+        Cursor bcpStatus = object.setObject("bcpStatus");
+        bcpStatus.setString("rotationStatus", status.name().toUpperCase());
+    }
+
     private URI monitoringSystemUri(DeploymentId deploymentId) {
         return controller.zoneRegistry().getMonitoringSystemUri(deploymentId);
     }
@@ -593,24 +621,18 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse rotationStatus(String tenantName, String applicationName, String instanceName, String environment, String region) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
         Application application = controller.applications().require(applicationId);
+        ZoneId zone = ZoneId.from(environment, region);
         if (!application.rotation().isPresent()) {
-            throw new NotExistsException("global rotation does not exist for '" + environment + "." + region + "'");
+            throw new NotExistsException("global rotation does not exist for " + application);
+        }
+        Deployment deployment = application.deployments().get(zone);
+        if (deployment == null) {
+            throw new NotExistsException(application + " has no deployment in " + zone);
         }
 
         Slime slime = new Slime();
         Cursor response = slime.setObject();
-
-        Map<String, RotationStatus> rotationStatus = controller.applications().rotationRepository()
-                                                               .getRotation(application)
-                                                               .map(controller::rotationStatus)
-                                                               .orElseGet(Collections::emptyMap);
-        for (String rotationEndpoint : rotationStatus.keySet()) {
-            if (rotationEndpoint.contains(toDns(environment)) && rotationEndpoint.contains(toDns(region))) {
-                Cursor bcpStatusObject = response.setObject("bcpStatus");
-                bcpStatusObject.setString("rotationStatus", rotationStatus.getOrDefault(rotationEndpoint, RotationStatus.UNKNOWN).name());
-            }
-        }
-
+        toSlime(application.rotationStatus(deployment), response);
         return new SlimeJsonResponse(slime);
     }
 
@@ -649,19 +671,27 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse updateTenant(String tenantName, HttpRequest request) {
-        Optional<AthenzTenant> existingTenant = controller.tenants().athenzTenant(TenantName.from(tenantName));
-        if ( ! existingTenant.isPresent()) return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
+        Optional<AthenzTenant> tenant = controller.tenants().athenzTenant(TenantName.from(tenantName));
+        if ( ! tenant.isPresent()) return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
 
         Inspector requestData = toSlime(request.getData()).get();
-        AthenzTenant updatedTenant = existingTenant.get()
-                                                   .with(new AthenzDomain(mandatory("athensDomain", requestData).asString()))
-                                                   .with(new Property(mandatory("property", requestData).asString()));
-        Optional<PropertyId> propertyId = optional("propertyId", requestData).map(PropertyId::new);
-        if (propertyId.isPresent()) {
-            updatedTenant = updatedTenant.with(propertyId.get());
-        }
-        controller.tenants().updateTenant(updatedTenant, requireNToken(request, "Could not update " + tenantName));
-        return tenant(updatedTenant, request, true);
+        NToken token = requireNToken(request, "Could not update " + tenantName);
+
+        controller.tenants().lockOrThrow(tenant.get().name(), lockedTenant -> {
+            lockedTenant = lockedTenant.with(new Property(mandatory("property", requestData).asString()));
+            lockedTenant = controller.tenants().withDomain(
+                    lockedTenant,
+                    new AthenzDomain(mandatory("athensDomain", requestData).asString()),
+                    token
+            );
+            Optional<PropertyId> propertyId = optional("propertyId", requestData).map(PropertyId::new);
+            if (propertyId.isPresent()) {
+                lockedTenant = lockedTenant.with(propertyId.get());
+            }
+            controller.tenants().store(lockedTenant);
+        });
+
+        return tenant(controller.tenants().requireAthenzTenant(tenant.get().name()), request, true);
     }
 
     private HttpResponse createTenant(String tenantName, HttpRequest request) {
@@ -820,7 +850,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Application application = controller.applications().require(ApplicationId.from(tenantName, applicationName, instanceName));
 
         // Attempt to deactivate application even if the deployment is not known by the controller
-        controller.applications().deactivate(application, ZoneId.from(environment, region));
+        controller.applications().deactivate(application.id(), ZoneId.from(environment, region));
 
         // TODO: Change to return JSON
         return new StringResponse("Deactivated " + path(TenantResource.API_PATH, tenantName,
@@ -904,13 +934,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request, boolean listApplications) {
         object.setString("tenant", tenant.name().value());
         object.setString("type", tentantType(tenant));
-        Optional<PropertyId> propertyId = Optional.empty();
         if (tenant instanceof AthenzTenant) {
             AthenzTenant athenzTenant = (AthenzTenant) tenant;
             object.setString("athensDomain", athenzTenant.domain().getName());
             object.setString("property", athenzTenant.property().id());
-            propertyId = athenzTenant.propertyId();
-            propertyId.ifPresent(id -> object.setString("propertyId", id.toString()));
+            athenzTenant.propertyId().ifPresent(id -> object.setString("propertyId", id.toString()));
         }
         Cursor applicationArray = object.setArray("applications");
         if (listApplications) { // This cludge is needed because we call this after deleting the tenant. As this call makes another tenant lookup it will fail. TODO is to support lookup on tenant
@@ -923,23 +951,19 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 }
             }
         }
-        propertyId.ifPresent(id -> {
-            try {
-                object.setString("propertyUrl", controller.organization().propertyUri(id).toString());
-                object.setString("contactsUrl", controller.organization().contactsUri(id).toString());
-                object.setString("issueCreationUrl", controller.organization().issueCreationUri(id).toString());
-                Cursor lists = object.setArray("contacts");
-                for (List<? extends User> contactList : controller.organization().contactsFor(id)) {
-                    Cursor list = lists.addArray();
-                    for (User contact : contactList)
-                        list.addString(contact.displayName());
-                }
-            }
-            catch (RuntimeException e) {
-                log.log(Level.WARNING, "Error fetching property info for " + tenant + " with propertyId " + id + ": " +
-                        Exceptions.toMessageString(e));
-            }
-        });
+        if (tenant instanceof AthenzTenant) {
+            AthenzTenant athenzTenant = (AthenzTenant) tenant;
+            athenzTenant.contact().ifPresent(c -> {
+                object.setString("propertyUrl", c.propertyUrl().toString());
+                object.setString("contactsUrl", c.url().toString());
+                object.setString("issueCreationUrl", c.issueTrackerUrl().toString());
+                Cursor contactsArray = object.setArray("contacts");
+                c.persons().forEach(persons -> {
+                    Cursor personArray = contactsArray.addArray();
+                    persons.forEach(personArray::addString);
+                });
+            });
+        }
     }
 
     // A tenant has different content when in a list ... antipattern, but not solvable before application/v5
@@ -963,28 +987,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         catch (URISyntaxException e) {
             throw new RuntimeException("Will not happen", e);
         }
-    }
-
-    private void setRotationStatus(Deployment deployment, Map<String, RotationStatus> healthStatus, Cursor object) {
-        if ( ! deployment.zone().environment().equals(Environment.prod)) return;
-
-        Cursor bcpStatusObject = object.setObject("bcpStatus");
-        bcpStatusObject.setString("rotationStatus", findRotationStatus(deployment, healthStatus).name());
-    }
-
-    private RotationStatus findRotationStatus(Deployment deployment, Map<String, RotationStatus> healthStatus) {
-        for (String endpoint : healthStatus.keySet()) {
-            if (endpoint.contains(toDns(deployment.zone().environment().value())) &&
-                endpoint.contains(toDns(deployment.zone().region().value()))) {
-                return healthStatus.getOrDefault(endpoint, RotationStatus.UNKNOWN);
-            }
-        }
-
-        return RotationStatus.UNKNOWN;
-    }
-
-    private String toDns(String id) {
-        return id.replace('_', '-');
     }
 
     private long asLong(String valueOrNull, long defaultWhenNull) {
@@ -1215,37 +1217,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 message + ": No NToken provided"));
     }
 
-    private ApplicationId appIdFromPath(Path path) {
+    private static ApplicationId appIdFromPath(Path path) {
         return ApplicationId.from(path.get("tenant"), path.get("application"), path.get("instance"));
     }
 
-    private JobType jobTypeFromPath(Path path) {
+    private static JobType jobTypeFromPath(Path path) {
         return JobType.fromJobName(path.get("jobtype"));
     }
 
-    private RunId runIdFromPath(Path path) {
+    private static RunId runIdFromPath(Path path) {
         long number = Long.parseLong(path.get("number"));
         return new RunId(appIdFromPath(path), jobTypeFromPath(path), number);
-    }
-
-    private List<JobType> jobTypes(Path path) {
-        ApplicationId appId = appIdFromPath(path);
-        DeploymentSpec deploymentSpec = controller.applications().get(appId).get().deploymentSpec();
-        DeploymentSteps deploymentSteps = new DeploymentSteps(deploymentSpec, controller::system);
-        return deploymentSteps.jobs();
-    }
-
-    private Map<JobType, RunStatus> latestRuns(Path path) {
-        Map<JobType, RunStatus> jobMap = new HashMap<>();
-        ApplicationId appId = appIdFromPath(path);
-        controller.jobController().jobs(appId)
-                .forEach(jobType -> jobMap.put(jobType, controller.jobController()
-                        .last(appId, jobType)
-                        .orElseThrow(() -> new RuntimeException(String.format("Job %s for application %s appears in " +
-                                        "the list of previously ran jobs, but no status of the last execution found",
-                                jobType.jobName(), appId.toShortString())))));
-
-        return jobMap;
     }
 
     private HttpResponse submit(String tenant, String application, HttpRequest request) {
@@ -1254,9 +1236,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         SourceRevision sourceRevision = toSourceRevision(submitOptions).orElseThrow(() ->
                 new IllegalArgumentException("Must specify 'repository', 'branch', and 'commit'"));
 
+        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
+        if ( ! applicationPackage.deploymentSpec().athenzDomain().isPresent())
+            throw new IllegalArgumentException("Application must define an Athenz service in deployment.xml!");
+        verifyApplicationIdentityConfiguration(tenant, Optional.of(applicationPackage));
+
         return JobControllerApiHandlerHelper.submitResponse(controller.jobController(), tenant, application,
                 sourceRevision,
-                dataParts.get(EnvironmentResource.APPLICATION_ZIP),
+                applicationPackage.zippedContent(),
                 dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
     }
 }

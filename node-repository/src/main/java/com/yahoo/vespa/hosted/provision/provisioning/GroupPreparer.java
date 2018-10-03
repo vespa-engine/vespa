@@ -52,7 +52,6 @@ public class GroupPreparer {
                                                                   application,
                                                                   cluster,
                                                                   requestedNodes,
-                                                                  nodeRepository.getAvailableFlavors(),
                                                                   spareCount,
                                                                   nodeRepository.nameResolver());
 

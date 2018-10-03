@@ -38,10 +38,8 @@ shouldCreateMapper(const ValueType &tensorType)
 
 }
 
-TensorAttribute::TensorAttribute(const vespalib::stringref &baseFileName,
-                                 const Config &cfg,
-                                 TensorStore &tensorStore)
-    : NotImplementedAttribute(baseFileName, cfg),
+TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, TensorStore &tensorStore)
+    : NotImplementedAttribute(name, cfg),
       _refVector(cfg.getGrowStrategy().getDocsInitialCapacity(),
                  cfg.getGrowStrategy().getDocsGrowPercent(),
                  cfg.getGrowStrategy().getDocsGrowDelta(),
@@ -56,9 +54,7 @@ TensorAttribute::TensorAttribute(const vespalib::stringref &baseFileName,
 }
 
 
-TensorAttribute::~TensorAttribute()
-{
-}
+TensorAttribute::~TensorAttribute() = default;
 
 const ITensorAttribute *
 TensorAttribute::asTensorAttribute() const

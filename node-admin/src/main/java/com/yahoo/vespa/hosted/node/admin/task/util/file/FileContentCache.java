@@ -13,23 +13,23 @@ import java.util.Optional;
 class FileContentCache {
     private final UnixPath path;
 
-    private Optional<String> value = Optional.empty();
+    private Optional<byte[]> value = Optional.empty();
     private Optional<Instant> modifiedTime = Optional.empty();
 
     FileContentCache(UnixPath path) {
         this.path = path;
     }
 
-    String get(Instant lastModifiedTime) {
+    byte[] get(Instant lastModifiedTime) {
         if (!value.isPresent() || lastModifiedTime.compareTo(modifiedTime.get()) > 0) {
-            value = Optional.of(path.readUtf8File());
+            value = Optional.of(path.readBytes());
             modifiedTime = Optional.of(lastModifiedTime);
         }
 
         return value.get();
     }
 
-    void updateWith(String content, Instant modifiedTime) {
+    void updateWith(byte[] content, Instant modifiedTime) {
         this.value = Optional.of(content);
         this.modifiedTime = Optional.of(modifiedTime);
     }

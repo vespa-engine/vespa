@@ -24,6 +24,7 @@ import java.util.Map;
 /**
  * Performs the labelling of the predicate tree. The algorithm is based on the label algorithm described in
  * <a href="http://dl.acm.org/citation.cfm?id=1807171">Efficiently evaluating complex boolean expressions</a>.
+ *
  * @author bjorncs
  * @see <a href="http://dl.acm.org/citation.cfm?id=1807171">Efficiently evaluating complex boolean expressions</a>
  */
@@ -175,4 +176,5 @@ public class PredicateTreeAnnotator {
             this.subTreeSizes = subTreeSizes;
         }
     }
+
 }

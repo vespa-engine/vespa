@@ -1,6 +1,4 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("stringattribute_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/attribute/enumstore.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
@@ -13,6 +11,9 @@ LOG_SETUP("stringattribute_test");
 #include <vespa/searchlib/attribute/singlestringpostattribute.hpp>
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/multistringpostattribute.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP("stringattribute_test");
 
 namespace search {
 
@@ -418,7 +419,7 @@ StringAttributeTest::testSingleValue(Attribute & svsa, Config &cfg)
 
 
     Attribute load("load", cfg);
-    svsa.saveAs(load.getBaseFileName());
+    svsa.save(load.getBaseFileName());
     load.load();
 }
 
@@ -430,11 +431,8 @@ StringAttributeTest::Main()
     TEST_INIT("stringattribute_test");
 
     testMultiValue();
-
     testMultiValueMultipleClearDocBetweenCommit();
-
     testMultiValueRemove();
-
     testSingleValue();
 
     TEST_DONE();

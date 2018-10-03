@@ -17,15 +17,13 @@ import com.yahoo.jdisc.http.server.FilterBindings;
 
 import java.io.IOException;
 
-import static com.google.inject.name.Names.named;
-
 /**
  * @author Simon Thoresen Hult
  */
 public class TestDrivers {
 
-    private static final String KEY_STORE = "src/test/resources/ssl_keystore_test.jks";
-    public static final String KEY_STORE_PASSWORD = "secret";
+    private static final String PRIVATE_KEY_FILE = "src/test/resources/pem/test.key";
+    private static final String CERTIFICATE_FILE = "src/test/resources/pem/test.crt";
 
     public static TestDriver newConfiguredInstance(final RequestHandler requestHandler,
                                                    final ServerConfig.Builder serverConfig,
@@ -59,18 +57,10 @@ public class TestDrivers {
                         new ConnectorConfig.Builder()
                                 .ssl(new ConnectorConfig.Ssl.Builder()
                                              .enabled(true)
-                                             .keyDbKey("dummy-key-for-StaticKeyDbConnectorFactory.getPasswordFromKeydb")
-                                             .keyStorePath(KEY_STORE)
-                                             .trustStorePath(KEY_STORE)),
-                        Modules.combine(new AbstractModule() {
-
-                            @Override
-                            protected void configure() {
-                                bind(String.class).annotatedWith(named("keyStorePassword"))
-                                        .toInstance(KEY_STORE_PASSWORD);
-                            }
-                        }, Modules.combine(guiceModules))
-                ));
+                                             .privateKeyFile(PRIVATE_KEY_FILE)
+                                             .certificateFile(CERTIFICATE_FILE)
+                                             .caCertificateFile(CERTIFICATE_FILE)),
+                        Modules.combine(guiceModules)));
     }
 
     private static Module newConfigModule(

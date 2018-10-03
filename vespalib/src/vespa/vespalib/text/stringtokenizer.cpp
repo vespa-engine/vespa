@@ -7,7 +7,7 @@ namespace {
 class AsciiSet
 {
 public:
-    AsciiSet(const vespalib::stringref & s) {
+    AsciiSet(vespalib::stringref s) {
         memset(_set, 0, sizeof(_set));
         for (size_t i(0), m(s.size()); i < m; i++) {
             add(s[i]);
@@ -31,7 +31,7 @@ typedef vespalib::StringTokenizer::TokenList TokenList;
  * strip leading and trailing sequences
  * of characters contained in the strip set.
  **/
-Token stripString(const vespalib::stringref & source,
+Token stripString(vespalib::stringref source,
                         const AsciiSet & strip)
 {
     Token::size_type start = 0;
@@ -46,7 +46,7 @@ Token stripString(const vespalib::stringref & source,
 }
 
 void parse(TokenList& output,
-           const vespalib::stringref & source,
+           vespalib::stringref source,
            const AsciiSet & separators,
            const AsciiSet & strip)
 {
@@ -66,9 +66,9 @@ void parse(TokenList& output,
 
 namespace vespalib {
 
-StringTokenizer::StringTokenizer(const vespalib::stringref & source,
-                                 const vespalib::stringref & separators,
-                                 const vespalib::stringref & strip)
+StringTokenizer::StringTokenizer(vespalib::stringref source,
+                                 vespalib::stringref separators,
+                                 vespalib::stringref strip)
     : _tokens()
 {
     AsciiSet sep(separators);

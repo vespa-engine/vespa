@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "filter_attribute_manager.h"
-#include "i_attribute_functor.h"
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 
 using search::AttributeGuard;
@@ -69,7 +69,7 @@ FilterAttributeManager::FilterAttributeManager(const AttributeSet &acceptedAttri
     }
 }
 
-FilterAttributeManager::~FilterAttributeManager() { }
+FilterAttributeManager::~FilterAttributeManager() = default;
 
 search::attribute::IAttributeContext::UP
 FilterAttributeManager::createContext() const {
@@ -185,14 +185,12 @@ FilterAttributeManager::getWritableAttributes() const
 }
 
 void
-FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>
-                                        func) const
+FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor> func) const
 {
     // Run by document db master thread
     std::vector<AttributeGuard> completeList;
     _mgr->getAttributeList(completeList);
-    search::ISequencedTaskExecutor &attributeFieldWriter =
-        getAttributeFieldWriter();
+    search::ISequencedTaskExecutor &attributeFieldWriter = getAttributeFieldWriter();
     for (auto &guard : completeList) {
         search::AttributeVector::SP attrsp = guard.getSP();
         // Name must be extracted in document db master thread or attribute
@@ -202,14 +200,23 @@ FilterAttributeManager::asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>
     }
 }
 
+void
+FilterAttributeManager::asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const {
+    AttributeGuard::UP attr = _mgr->getAttribute(name);
+    if (!attr) { return; }
+    search::ISequencedTaskExecutor &attributeFieldWriter = getAttributeFieldWriter();
+    vespalib::string attrName = (*attr)->getNamePrefix();
+    attributeFieldWriter.execute(attributeFieldWriter.getExecutorId(attrName),
+                                  [attr=std::move(attr), func=std::move(func)]() mutable {
+                                      (*func)(**attr);
+                                  });
+
+}
+
 ExclusiveAttributeReadAccessor::UP
 FilterAttributeManager::getExclusiveReadAccessor(const vespalib::string &name) const
 {
-    if (acceptAttribute(name)) {
-        return _mgr->getExclusiveReadAccessor(name);
-    } else {
-        return ExclusiveAttributeReadAccessor::UP();
-    }
+    return (acceptAttribute(name)) ? _mgr->getExclusiveReadAccessor(name) : ExclusiveAttributeReadAccessor::UP();
 }
 
 void

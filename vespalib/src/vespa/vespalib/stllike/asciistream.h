@@ -31,7 +31,7 @@ class asciistream
 {
 public:
     asciistream();
-    asciistream(const stringref & buf);
+    asciistream(stringref buf);
     ~asciistream();
     asciistream(const asciistream & rhs);
     asciistream & operator = (const asciistream & rhs);
@@ -43,7 +43,7 @@ public:
     asciistream & operator << (unsigned char v)       { doFill(1); write(&v, 1); return *this; }
     asciistream & operator << (const char * v)        { if (v != nullptr) { size_t n(strlen(v)); doFill(n); write(v, n); } return *this; }
     asciistream & operator << (const string & v)      { doFill(v.size()); write(v.data(), v.size()); return *this; }
-    asciistream & operator << (const stringref & v)   { doFill(v.size()); write(v.data(), v.size()); return *this; }
+    asciistream & operator << (stringref v)           { doFill(v.size()); write(v.data(), v.size()); return *this; }
     asciistream & operator << (const std::string & v) { doFill(v.size()); write(v.data(), v.size()); return *this; }
     asciistream & operator << (int16_t v)    { return *this << static_cast<int64_t>(v); }
     asciistream & operator << (uint16_t v)   { return *this << static_cast<uint64_t>(v); }
@@ -144,8 +144,8 @@ public:
     asciistream & operator << (Precision v);
     asciistream & operator >> (Precision v);
     void eatWhite();
-    static asciistream createFromFile(const vespalib::stringref & fileName);
-    static asciistream createFromDevice(const vespalib::stringref & fileName);
+    static asciistream createFromFile(stringref fileName);
+    static asciistream createFromDevice(stringref fileName);
     string getline(char delim='\n');
     std::vector<string> getlines(char delim='\n');
     char getFill() const noexcept { return _fill; }
@@ -166,15 +166,15 @@ private:
     }
     void write(const void * buf, size_t len);
     size_t length() const { return _rbuf.size(); }
-    size_t       _rPos;
-    string       _wbuf;
-    stringref    _rbuf;
-    Base         _base;
-    FloatSpec    _floatSpec;
+    size_t        _rPos;
+    string        _wbuf;
+    stringref     _rbuf;
+    Base          _base;
+    FloatSpec     _floatSpec;
     FloatModifier _floatModifier;
-    uint32_t     _width;
-    char         _fill;
-    uint8_t      _precision;
+    uint32_t      _width;
+    char          _fill;
+    uint8_t       _precision;
 };
 
 ssize_t getline(asciistream & is, vespalib::string & line, char delim='\n');

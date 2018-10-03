@@ -34,11 +34,6 @@ private:
     NumericDirectAttribute & operator=(const NumericDirectAttribute &);
     bool onLoad() override;
     typename B::BaseType getFromEnum(EnumHandle e) const override { return _data[e]; }
-    void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const override {
-        for (size_t i(0); i < sz; i++) {
-            e[i] = v[i];
-        }
-    }
 protected:
     typedef typename B::BaseType   BaseType;
     typedef typename B::DocId      DocId;
@@ -47,7 +42,7 @@ protected:
     typedef typename B::Config     Config;
 
     NumericDirectAttribute(const vespalib::string & baseFileName, const Config & c);
-    ~NumericDirectAttribute();
+    ~NumericDirectAttribute() override;
 
     bool findEnum(BaseType value, EnumHandle & e) const override;
     void onCommit() override;
@@ -88,7 +83,6 @@ private:
     uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const override { return getAllEnumHelper(doc, e, sz); }
 
     uint32_t getValueCount(DocId doc) const override { return getValueCountHelper(doc); }
-    bool hasEnum2Value() const override { return false; }
 
     uint32_t getValueCountHelper(DocId doc) const {
         if (F::IsMultiValue()) {
@@ -150,14 +144,9 @@ private:
     const char * getStringFromEnum(EnumHandle e) const override { return &_buffer[e]; }
 protected:
     StringDirectAttribute(const vespalib::string & baseFileName, const Config & c);
-    ~StringDirectAttribute();
+    ~StringDirectAttribute() override;
     bool findEnum(const char * value, EnumHandle & e) const override;
     std::vector<EnumHandle> findFoldedEnums(const char *) const override;
-    void getEnumValue(const EnumHandle * v, uint32_t *e, uint32_t sz) const override {
-        for (size_t i(0); i < sz; i++) {
-            e[i] = v[i];
-        }
-    }
     void onCommit() override;
     void onUpdateStat() override { }
     bool addDoc(DocId & ) override;
@@ -192,7 +181,6 @@ private:
     uint32_t get(DocId doc, WeightedEnum * e, uint32_t sz)  const override { return getAllEnumHelper(doc, e, sz); }
     uint32_t get(DocId doc, WeightedString * v, uint32_t sz)    const override { return getAllHelper(doc, v, sz); }
     uint32_t get(DocId doc, WeightedConstChar * v, uint32_t sz) const override { return getAllHelper(doc, v, sz); }
-    bool hasEnum2Value() const override { return true; }
 
     uint32_t getValueCountHelper(DocId doc) const {
         if (F::IsMultiValue()) {

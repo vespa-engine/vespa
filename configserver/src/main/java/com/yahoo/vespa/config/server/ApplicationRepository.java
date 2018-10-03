@@ -10,6 +10,8 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.HostInfo;
+import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostFilter;
@@ -36,6 +38,7 @@ import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.http.CompressedApplicationInputStream;
+import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
@@ -61,6 +64,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -282,19 +286,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @throws RuntimeException if the delete transaction fails. This method is exception safe.
      */
     public boolean delete(ApplicationId applicationId) {
-        List<String> hostedZonesToUseDeleteApplication =
-                Arrays.asList("dev.us-east-1", "dev.corp-us-east-1", "test.us-east-1",
-                              "prod.corp-us-east-1", "prod.aws-us-east-1a", "prod.aws-us-west-1b");
-        boolean useDeleteApplicationLegacyInThisZone = !hostedZonesToUseDeleteApplication.contains(zone().toString());
-
-        // TODO: Use deleteApplication() in all zones
-        if (configserverConfig.deleteApplicationLegacy() ||
-                (configserverConfig.hostedVespa() && zone().system() == SystemName.main &&
-                        useDeleteApplicationLegacyInThisZone)) {
-            return deleteApplicationLegacy(applicationId);
-        } else {
-            return deleteApplication(applicationId);
-        }
+        return configserverConfig.deleteApplicationLegacy() ? deleteApplicationLegacy(applicationId) : deleteApplication(applicationId);
     }
 
     /**
@@ -399,7 +391,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileDistributionStatus.status(getApplication(applicationId), timeout);
     }
 
-    public Set<String> deleteUnusedFiledistributionReferences(File fileReferencesPath, boolean deleteFromDisk) {
+    public Set<String> deleteUnusedFiledistributionReferences(File fileReferencesPath) {
         if (!fileReferencesPath.isDirectory()) throw new RuntimeException(fileReferencesPath + " is not a directory");
 
         // Find all file references in use
@@ -424,7 +416,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
                 .filter(fileReference -> isFileLastModifiedBefore(new File(fileReferencesPath, fileReference), instant))
                 .collect(Collectors.toSet());
-        if (deleteFromDisk && fileReferencesToDelete.size() > 0) {
+        if (fileReferencesToDelete.size() > 0) {
             log.log(LogLevel.INFO, "Will delete file references not in use: " + fileReferencesToDelete);
             fileReferencesToDelete.forEach(fileReference -> {
                 File file = new File(fileReferencesPath, fileReference);
@@ -485,8 +477,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return convergeChecker.checkService(getApplication(applicationId), hostAndPort, uri, timeout);
     }
 
-    public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri, Duration timeout) {
-        return convergeChecker.servicesToCheck(getApplication(applicationId), uri, timeout);
+    public HttpResponse servicesToCheckForConfigConvergence(ApplicationId applicationId, URI uri, Duration timeoutPerService) {
+        return convergeChecker.servicesToCheck(getApplication(applicationId), uri, timeoutPerService);
+    }
+
+    // ---------------- Logs ----------------------------------------------------------------
+
+    public HttpResponse getLogs(ApplicationId applicationId, String apiParams) {
+        String logServerURI = getLogServerURI(applicationId) + apiParams;
+        LogRetriever logRetriever = new LogRetriever();
+        return logRetriever.getLogs(logServerURI);
     }
 
     // ---------------- Session operations ----------------------------------------------------------------
@@ -557,9 +557,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public int deleteExpiredRemoteSessions(Duration expiryTime) {
         return listApplications()
                 .stream()
-                .map(app -> tenantRepository.getTenant(app.tenant()).getRemoteSessionRepo()
-                        // TODO: Delete in all zones
-                        .deleteExpiredSessions(expiryTime, zone().system() == SystemName.cd))
+                .map(app -> tenantRepository.getTenant(app.tenant()).getRemoteSessionRepo().deleteExpiredSessions(expiryTime))
                 .mapToInt(i -> i)
                 .sum();
     }
@@ -704,14 +702,39 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
+    private String getLogServerURI(ApplicationId applicationId) {
+        Application application = getApplication(applicationId);
+        Collection<HostInfo> hostInfos = application.getModel().getHosts();
+
+        HostInfo logServerHostInfo = hostInfos.stream()
+                .filter(host -> host.getServices().stream()
+                        .filter(serviceInfo ->
+                                        serviceInfo.getServiceType().equalsIgnoreCase("logserver"))
+                                .count() > 0)
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HostInfo for LogServer"));
+
+        ServiceInfo containerServiceInfo = logServerHostInfo.getServices().stream()
+                .filter(service -> service.getServiceType().equals("container"))
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("No container running on logserver host"));
+
+        int port = containerServiceInfo.getPorts().stream()
+                .filter(portInfo -> portInfo.getTags().stream()
+                        .filter(tag -> tag.equalsIgnoreCase("http")).count() > 0)
+                .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find HTTP port"))
+                .getPort();
+
+        return "http://" + logServerHostInfo.getHostname() + ":" + port + "/logs";
+    }
+
     /** Returns version to use when deploying application in given environment */
-    static Version decideVersion(ApplicationId application, Environment environment, Version targetVersion, boolean bootstrap) {
-        if (environment.isManuallyDeployed() &&
-            !"hosted-vespa".equals(application.tenant().value()) && // Never change version of system applications
-            !bootstrap) { // Do not use current version when bootstrapping config server
+    static Version decideVersion(ApplicationId application, Environment environment, Version sessionVersion, boolean bootstrap) {
+        if (     environment.isManuallyDeployed()
+            && ! "hosted-vespa".equals(application.tenant().value()) // Never change version of system applications
+            && ! application.instance().isTester() // Never upgrade tester containers
+            && ! bootstrap) { // Do not use current version when bootstrapping config server
             return Vtag.currentVersion;
         }
-        return targetVersion;
+        return sessionVersion;
     }
 
     public Slime createDeployLog() {

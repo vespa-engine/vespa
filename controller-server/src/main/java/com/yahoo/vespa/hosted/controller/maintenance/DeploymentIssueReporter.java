@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
@@ -12,7 +13,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.yolean.Exceptions;
 
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -45,9 +48,22 @@ public class DeploymentIssueReporter extends Maintainer {
 
     @Override
     protected void maintain() {
-        maintainDeploymentIssues(controller().applications().asList());
-        maintainPlatformIssue(controller().applications().asList());
-        escalateInactiveDeploymentIssues(controller().applications().asList());
+        try {
+            maintainDeploymentIssues(applications());
+            maintainPlatformIssue(applications());
+            escalateInactiveDeploymentIssues(applications());
+        }
+        catch (UncheckedIOException e) {
+            log.log(Level.INFO, () -> "IO exception handling issues, will retry in " + maintenanceInterval() + ": '" + Exceptions.toMessageString(e));
+        }
+    }
+
+    /** Returns the applications to maintain issue status for. */
+    private List<Application> applications() {
+        return ApplicationList.from(controller().applications().asList())
+                              .withProjectId()
+                              .notPullRequest()
+                              .asList();
     }
 
     /**
@@ -75,6 +91,9 @@ public class DeploymentIssueReporter extends Maintainer {
      * longer than the set grace period, or update this list if the issue already exists.
      */
     private void maintainPlatformIssue(List<Application> applications) {
+        if (controller().system() == SystemName.cd)
+            return;
+        
         Version systemVersion = controller().systemVersion();
 
         if ((controller().versionStatus().version(systemVersion).confidence() != broken))

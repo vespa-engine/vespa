@@ -23,7 +23,7 @@ private:
     vespalib::string _doctype;
 
 public:
-    DocType(const vespalib::stringref& doctype);
+    DocType(vespalib::stringref doctype);
 
     ResultList contains(const Context&) const override;
     ResultList trace(const Context&, std::ostream& trace) const override;

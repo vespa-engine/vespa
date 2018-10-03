@@ -66,7 +66,6 @@ public class DocumentProtocol implements Protocol {
     public static final int MESSAGE_EMPTYBUCKETS = DOCUMENT_MESSAGE + 23;
     public static final int MESSAGE_REMOVELOCATION = DOCUMENT_MESSAGE + 24;
     public static final int MESSAGE_QUERYRESULT = DOCUMENT_MESSAGE + 25;
-    public static final int MESSAGE_BATCHDOCUMENTUPDATE = DOCUMENT_MESSAGE + 26;
 
     /**
      * All reply types that are implemented by this protocol.
@@ -89,7 +88,6 @@ public class DocumentProtocol implements Protocol {
     public static final int REPLY_EMPTYBUCKETS = DOCUMENT_REPLY + 23;
     public static final int REPLY_REMOVELOCATION = DOCUMENT_REPLY + 24;
     public static final int REPLY_QUERYRESULT = DOCUMENT_REPLY + 25;
-    public static final int REPLY_BATCHDOCUMENTUPDATE = DOCUMENT_REPLY + 26;
     public static final int REPLY_WRONGDISTRIBUTION = DOCUMENT_REPLY + 1000;
     public static final int REPLY_DOCUMENTIGNORED = DOCUMENT_REPLY + 1001;
 
@@ -303,65 +301,50 @@ public class DocumentProtocol implements Protocol {
         putRoutingPolicyFactory("SubsetService", new RoutingPolicyFactories.SubsetServicePolicyFactory());
 
         // Prepare version specifications to use when adding routable factories.
-        VersionSpecification version50 = new VersionSpecification(5, 0);
-        VersionSpecification version51 = new VersionSpecification(5, 1);
         VersionSpecification version52 = new VersionSpecification(5, 115);
         VersionSpecification version6 = new VersionSpecification(6, 221);
 
-        List<VersionSpecification> from50 = Arrays.asList(version50, version51, version52, version6);
-        List<VersionSpecification> from51 = Arrays.asList(version51, version52, version6);
         List<VersionSpecification> from52 = Arrays.asList(version52, version6);
         List<VersionSpecification> from6 = Collections.singletonList(version6); // TODO decide minor version...
 
-        // 5.0 serialization (keep alphabetized please)
-        putRoutableFactory(MESSAGE_BATCHDOCUMENTUPDATE, new RoutableFactories50.BatchDocumentUpdateMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_CREATEVISITOR, new RoutableFactories50.CreateVisitorMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_DESTROYVISITOR, new RoutableFactories50.DestroyVisitorMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_DOCUMENTLIST, new RoutableFactories50.DocumentListMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_DOCUMENTSUMMARY, new RoutableFactories50.DocumentSummaryMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_EMPTYBUCKETS, new RoutableFactories50.EmptyBucketsMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_GETBUCKETLIST, new RoutableFactories50.GetBucketListMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_GETBUCKETSTATE, new RoutableFactories50.GetBucketStateMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_GETDOCUMENT, new RoutableFactories50.GetDocumentMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_MAPVISITOR, new RoutableFactories50.MapVisitorMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_PUTDOCUMENT, new RoutableFactories50.PutDocumentMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_QUERYRESULT, new RoutableFactories50.QueryResultMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_REMOVEDOCUMENT, new RoutableFactories50.RemoveDocumentMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_REMOVELOCATION, new RoutableFactories50.RemoveLocationMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_SEARCHRESULT, new RoutableFactories50.SearchResultMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_STATBUCKET, new RoutableFactories50.StatBucketMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_UPDATEDOCUMENT, new RoutableFactories50.UpdateDocumentMessageFactory(), from50);
-        putRoutableFactory(MESSAGE_VISITORINFO, new RoutableFactories50.VisitorInfoMessageFactory(), from50);
-        putRoutableFactory(REPLY_BATCHDOCUMENTUPDATE, new RoutableFactories50.BatchDocumentUpdateReplyFactory(), from50);
-        putRoutableFactory(REPLY_CREATEVISITOR, new RoutableFactories50.CreateVisitorReplyFactory(), from50);
-        putRoutableFactory(REPLY_DESTROYVISITOR, new RoutableFactories50.DestroyVisitorReplyFactory(), from50);
-        putRoutableFactory(REPLY_DOCUMENTLIST, new RoutableFactories50.DocumentListReplyFactory(), from50);
-        putRoutableFactory(REPLY_DOCUMENTSUMMARY, new RoutableFactories50.DocumentSummaryReplyFactory(), from50);
-        putRoutableFactory(REPLY_EMPTYBUCKETS, new RoutableFactories50.EmptyBucketsReplyFactory(), from50);
-        putRoutableFactory(REPLY_GETBUCKETLIST, new RoutableFactories50.GetBucketListReplyFactory(), from50);
-        putRoutableFactory(REPLY_GETBUCKETSTATE, new RoutableFactories50.GetBucketStateReplyFactory(), from50);
-        putRoutableFactory(REPLY_GETDOCUMENT, new RoutableFactories50.GetDocumentReplyFactory(), from50);
-        putRoutableFactory(REPLY_MAPVISITOR, new RoutableFactories50.MapVisitorReplyFactory(), from50);
-        putRoutableFactory(REPLY_PUTDOCUMENT, new RoutableFactories50.PutDocumentReplyFactory(), from50);
-        putRoutableFactory(REPLY_QUERYRESULT, new RoutableFactories50.QueryResultReplyFactory(), from50);
-        putRoutableFactory(REPLY_REMOVEDOCUMENT, new RoutableFactories50.RemoveDocumentReplyFactory(), from50);
-        putRoutableFactory(REPLY_REMOVELOCATION, new RoutableFactories50.RemoveLocationReplyFactory(), from50);
-        putRoutableFactory(REPLY_SEARCHRESULT, new RoutableFactories50.SearchResultReplyFactory(), from50);
-        putRoutableFactory(REPLY_STATBUCKET, new RoutableFactories50.StatBucketReplyFactory(), from50);
-        putRoutableFactory(REPLY_UPDATEDOCUMENT, new RoutableFactories50.UpdateDocumentReplyFactory(), from50);
-        putRoutableFactory(REPLY_UPDATEDOCUMENT, new RoutableFactories50.UpdateDocumentReplyFactory(), from50);
-        putRoutableFactory(REPLY_VISITORINFO, new RoutableFactories50.VisitorInfoReplyFactory(), from50);
-        putRoutableFactory(REPLY_WRONGDISTRIBUTION, new RoutableFactories50.WrongDistributionReplyFactory(), from50);
-
-        // 5.1 serialization
-        putRoutableFactory(MESSAGE_CREATEVISITOR, new RoutableFactories51.CreateVisitorMessageFactory(), from51);
-        putRoutableFactory(MESSAGE_GETDOCUMENT, new RoutableFactories51.GetDocumentMessageFactory(), from51);
-        putRoutableFactory(REPLY_DOCUMENTIGNORED, new RoutableFactories51.DocumentIgnoredReplyFactory(), from51);
-
-        // 5.2 serialization
+        // 5.2 serialization (keep alphabetized please)
+        putRoutableFactory(MESSAGE_CREATEVISITOR, new RoutableFactories52.CreateVisitorMessageFactory(), from52);
+        putRoutableFactory(MESSAGE_DESTROYVISITOR, new RoutableFactories52.DestroyVisitorMessageFactory(), from52);
+        putRoutableFactory(MESSAGE_DOCUMENTLIST, new RoutableFactories52.DocumentListMessageFactory(), from52);
+        putRoutableFactory(MESSAGE_DOCUMENTSUMMARY, new RoutableFactories52.DocumentSummaryMessageFactory(), from52);
+        putRoutableFactory(MESSAGE_EMPTYBUCKETS, new RoutableFactories52.EmptyBucketsMessageFactory(), from52);
+        putRoutableFactory(MESSAGE_GETBUCKETLIST, new RoutableFactories52.GetBucketListMessageFactory(), from52);
+        putRoutableFactory(MESSAGE_GETBUCKETSTATE, new RoutableFactories52.GetBucketStateMessageFactory(), from52);
+        putRoutableFactory(MESSAGE_GETDOCUMENT, new RoutableFactories52.GetDocumentMessageFactory(), from52);
+        putRoutableFactory(MESSAGE_MAPVISITOR, new RoutableFactories52.MapVisitorMessageFactory(), from52);
         putRoutableFactory(MESSAGE_PUTDOCUMENT, new RoutableFactories52.PutDocumentMessageFactory(), from52);
-        putRoutableFactory(MESSAGE_UPDATEDOCUMENT, new RoutableFactories52.UpdateDocumentMessageFactory(), from52);
+        putRoutableFactory(MESSAGE_QUERYRESULT, new RoutableFactories52.QueryResultMessageFactory(), from52);
         putRoutableFactory(MESSAGE_REMOVEDOCUMENT, new RoutableFactories52.RemoveDocumentMessageFactory(), from52);
+        putRoutableFactory(MESSAGE_REMOVELOCATION, new RoutableFactories52.RemoveLocationMessageFactory(), from52);
+        putRoutableFactory(MESSAGE_SEARCHRESULT, new RoutableFactories52.SearchResultMessageFactory(), from52);
+        putRoutableFactory(MESSAGE_STATBUCKET, new RoutableFactories52.StatBucketMessageFactory(), from52);
+        putRoutableFactory(MESSAGE_UPDATEDOCUMENT, new RoutableFactories52.UpdateDocumentMessageFactory(), from52);
+        putRoutableFactory(MESSAGE_VISITORINFO, new RoutableFactories52.VisitorInfoMessageFactory(), from52);
+        putRoutableFactory(REPLY_CREATEVISITOR, new RoutableFactories52.CreateVisitorReplyFactory(), from52);
+        putRoutableFactory(REPLY_DESTROYVISITOR, new RoutableFactories52.DestroyVisitorReplyFactory(), from52);
+        putRoutableFactory(REPLY_DOCUMENTIGNORED, new RoutableFactories52.DocumentIgnoredReplyFactory(), from52);
+        putRoutableFactory(REPLY_DOCUMENTLIST, new RoutableFactories52.DocumentListReplyFactory(), from52);
+        putRoutableFactory(REPLY_DOCUMENTSUMMARY, new RoutableFactories52.DocumentSummaryReplyFactory(), from52);
+        putRoutableFactory(REPLY_EMPTYBUCKETS, new RoutableFactories52.EmptyBucketsReplyFactory(), from52);
+        putRoutableFactory(REPLY_GETBUCKETLIST, new RoutableFactories52.GetBucketListReplyFactory(), from52);
+        putRoutableFactory(REPLY_GETBUCKETSTATE, new RoutableFactories52.GetBucketStateReplyFactory(), from52);
+        putRoutableFactory(REPLY_GETDOCUMENT, new RoutableFactories52.GetDocumentReplyFactory(), from52);
+        putRoutableFactory(REPLY_MAPVISITOR, new RoutableFactories52.MapVisitorReplyFactory(), from52);
+        putRoutableFactory(REPLY_PUTDOCUMENT, new RoutableFactories52.PutDocumentReplyFactory(), from52);
+        putRoutableFactory(REPLY_QUERYRESULT, new RoutableFactories52.QueryResultReplyFactory(), from52);
+        putRoutableFactory(REPLY_REMOVEDOCUMENT, new RoutableFactories52.RemoveDocumentReplyFactory(), from52);
+        putRoutableFactory(REPLY_REMOVELOCATION, new RoutableFactories52.RemoveLocationReplyFactory(), from52);
+        putRoutableFactory(REPLY_SEARCHRESULT, new RoutableFactories52.SearchResultReplyFactory(), from52);
+        putRoutableFactory(REPLY_STATBUCKET, new RoutableFactories52.StatBucketReplyFactory(), from52);
+        putRoutableFactory(REPLY_UPDATEDOCUMENT, new RoutableFactories52.UpdateDocumentReplyFactory(), from52);
+        putRoutableFactory(REPLY_UPDATEDOCUMENT, new RoutableFactories52.UpdateDocumentReplyFactory(), from52);
+        putRoutableFactory(REPLY_VISITORINFO, new RoutableFactories52.VisitorInfoReplyFactory(), from52);
+        putRoutableFactory(REPLY_WRONGDISTRIBUTION, new RoutableFactories52.WrongDistributionReplyFactory(), from52);
 
         // 6.x serialization
         putRoutableFactory(MESSAGE_CREATEVISITOR, new RoutableFactories60.CreateVisitorMessageFactory(), from6);

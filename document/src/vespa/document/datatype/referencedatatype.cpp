@@ -15,8 +15,7 @@ ReferenceDataType::ReferenceDataType(const DocumentType& targetDocType, int id)
 {
 }
 
-ReferenceDataType::~ReferenceDataType() {
-}
+ReferenceDataType::~ReferenceDataType() = default;
 
 std::unique_ptr<FieldValue> ReferenceDataType::createFieldValue() const {
     return std::make_unique<ReferenceFieldValue>(*this);
@@ -25,20 +24,25 @@ std::unique_ptr<FieldValue> ReferenceDataType::createFieldValue() const {
 void ReferenceDataType::print(std::ostream& os, bool verbose, const std::string& indent) const {
     (void) verbose;
     (void) indent;
-    os << "ReferenceDataType(" << _targetDocType.getName()
-       << ", id " << getId() << ')';
+    os << "ReferenceDataType(" << _targetDocType.getName() << ", id " << getId() << ')';
 }
 
 ReferenceDataType* ReferenceDataType::clone() const {
     return new ReferenceDataType(_targetDocType, getId());
 }
 
-void ReferenceDataType::onBuildFieldPath(FieldPath &, const vespalib::stringref& remainingFieldName) const {
+void ReferenceDataType::onBuildFieldPath(FieldPath &, vespalib::stringref remainingFieldName) const {
     if ( ! remainingFieldName.empty() ) {
         throw IllegalArgumentException(make_string("Reference data type does not support further field recursion: '%s'",
                                                    vespalib::string(remainingFieldName).c_str()), VESPA_STRLOC);
     }
 
+}
+
+bool ReferenceDataType::operator==(const DataType &rhs) const {
+    return DataType::operator==(rhs)
+           && rhs.inherits(classId)
+           && (_targetDocType == static_cast<const ReferenceDataType &>(rhs)._targetDocType);
 }
 
 } // document

@@ -15,7 +15,7 @@ typedef TermBase<vespalib::string> StringBase;
 class NumberTerm : public QueryNodeMixin<NumberTerm, StringBase >
 {
 public:
-    NumberTerm(Type term, const vespalib::stringref &view, int32_t id, Weight weight)
+    NumberTerm(Type term, vespalib::stringref view, int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight) {}
     virtual ~NumberTerm() = 0;
 };
@@ -25,7 +25,7 @@ public:
 class PrefixTerm : public QueryNodeMixin<PrefixTerm, StringBase >
 {
 public:
-    PrefixTerm(const Type &term, const vespalib::stringref &view,
+    PrefixTerm(const Type &term, vespalib::stringref view,
                int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
@@ -37,7 +37,7 @@ public:
 class RangeTerm : public QueryNodeMixin<RangeTerm, TermBase<Range> >
 {
 public:
-    RangeTerm(const Type& term, const vespalib::stringref &view,
+    RangeTerm(const Type& term, vespalib::stringref view,
               int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
@@ -58,7 +58,7 @@ public:
 class SubstringTerm : public QueryNodeMixin<SubstringTerm, StringBase >
 {
  public:
-    SubstringTerm(const Type &term, const vespalib::stringref &view,
+    SubstringTerm(const Type &term, vespalib::stringref view,
                   int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
@@ -70,7 +70,7 @@ class SubstringTerm : public QueryNodeMixin<SubstringTerm, StringBase >
 class SuffixTerm : public QueryNodeMixin<SuffixTerm, StringBase >
 {
 public:
-    SuffixTerm(const Type &term, const vespalib::stringref &view,
+    SuffixTerm(const Type &term, vespalib::stringref view,
                int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
@@ -82,7 +82,7 @@ public:
 class LocationTerm : public QueryNodeMixin<LocationTerm, TermBase<Location> >
 {
 public:
-    LocationTerm(const Type &term, const vespalib::stringref &view,
+    LocationTerm(const Type &term, vespalib::stringref view,
                  int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
@@ -95,7 +95,7 @@ class PredicateQuery : public QueryNodeMixin<PredicateQuery,
                                              TermBase<PredicateQueryTerm::UP> >
 {
 public:
-    PredicateQuery(PredicateQueryTerm::UP term, const vespalib::stringref &view,
+    PredicateQuery(PredicateQueryTerm::UP term, vespalib::stringref view,
                    int32_t id, Weight weight)
         : QueryNodeMixinType(std::move(term), view, id, weight)
     {}
@@ -106,7 +106,7 @@ public:
 class RegExpTerm : public QueryNodeMixin<RegExpTerm, StringBase>
 {
 public:
-    RegExpTerm(const Type &term, const vespalib::stringref &view,
+    RegExpTerm(const Type &term, vespalib::stringref view,
                int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}

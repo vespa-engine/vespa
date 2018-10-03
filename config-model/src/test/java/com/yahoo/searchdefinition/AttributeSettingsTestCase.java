@@ -2,12 +2,17 @@
 package com.yahoo.searchdefinition;
 
 import com.yahoo.document.StructDataType;
+import com.yahoo.searchdefinition.derived.AttributeFields;
+import com.yahoo.searchdefinition.derived.IndexingScript;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.searchdefinition.document.Sorting;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.vespa.config.search.AttributesConfig;
+import com.yahoo.vespa.configdefinition.IlscriptsConfig;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -21,6 +26,9 @@ import static org.junit.Assert.*;
  * @author  bratseth
  */
 public class AttributeSettingsTestCase extends SearchDefinitionTestCase {
+
+    @Rule
+    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void testAttributeSettings() throws IOException, ParseException {
@@ -90,6 +98,113 @@ public class AttributeSettingsTestCase extends SearchDefinitionTestCase {
         assertTrue(field.getAttributes().size() == 1);
         Attribute attr = field.getAttributes().get(field.getName());
         assertTrue(attr.isFastAccess());
+    }
+
+    private Search getSearch(String sd) throws ParseException {
+        SearchBuilder builder = new SearchBuilder();
+        builder.importString(sd);
+        builder.build();
+        return builder.getSearch();
+    }
+
+    private Attribute getAttributeF(String sd) throws ParseException {
+        Search search = getSearch(sd);
+        SDField field = (SDField) search.getDocument().getField("f");
+        return field.getAttributes().get(field.getName());
+    }
+    @Test
+    public void requireThatMutableIsDefaultOff() throws ParseException {
+        Attribute attr = getAttributeF(
+                "search test {\n" +
+                "  document test { \n" +
+                "    field f type int { \n" +
+                "      indexing: attribute \n" +
+                "    }\n" +
+                "  }\n" +
+                "}\n");
+        assertFalse(attr.isMutable());
+    }
+
+    @Test
+    public void requireThatMutableCanNotbeSetInDocument() throws ParseException {
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage("Field 'f' in 'test' can not be marked mutable as it is inside the document clause.");
+        getSearch("search test {\n" +
+                    "  document test {\n" +
+                    "    field f type int {\n" +
+                    "      indexing: attribute\n" +
+                    "      attribute: mutable\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "}\n");
+    }
+
+    @Test
+    public void requireThatMutableExtraFieldCanBeSet() throws ParseException {
+        Attribute attr = getAttributeF(
+                "search test {\n" +
+                        "  document test { \n" +
+                        "    field a type int { \n" +
+                        "      indexing: attribute \n" +
+                        "    }\n" +
+                        "  }\n" +
+                        "  field f type long {\n" +
+                        "    indexing: 0 | to_long | attribute\n" +
+                        "    attribute: mutable\n" +
+                        "  }\n" +
+                        "}\n");
+        assertTrue(attr.isMutable());
+    }
+
+    private Search getSearchWithMutables() throws ParseException {
+        return getSearch(
+                "search test {\n" +
+                    "  document test { \n" +
+                    "    field a type int { \n" +
+                    "      indexing: attribute \n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "  field m type long {\n" +
+                    "    indexing: attribute\n" +
+                    "    attribute: mutable\n" +
+                    "  }\n" +
+                    "  field f type long {\n" +
+                    "    indexing: 0 | to_long | attribute\n" +
+                    "  }\n" +
+                    "}\n");
+    }
+
+    @Test
+    public void requireThatMutableConfigIsProperlyPropagated() throws ParseException {
+
+        AttributeFields attributes = new AttributeFields(getSearchWithMutables());
+        AttributesConfig.Builder builder = new AttributesConfig.Builder();
+        attributes.getConfig(builder);
+        AttributesConfig cfg = new AttributesConfig(builder);
+        assertEquals("a", cfg.attribute().get(0).name());
+        assertFalse(cfg.attribute().get(0).ismutable());
+
+        assertEquals("f", cfg.attribute().get(1).name());
+        assertFalse(cfg.attribute().get(1).ismutable());
+
+        assertEquals("m", cfg.attribute().get(2).name());
+        assertTrue(cfg.attribute().get(2).ismutable());
+
+    }
+
+    @Test
+    public void requireThatMutableIsAllowedThroughIndexing() throws ParseException {
+        IndexingScript script = new IndexingScript(getSearchWithMutables());
+        IlscriptsConfig.Builder builder = new IlscriptsConfig.Builder();
+        script.getConfig(builder);
+        IlscriptsConfig cfg = new IlscriptsConfig(builder);
+        assertEquals(1, cfg.ilscript().size());
+        IlscriptsConfig.Ilscript ils = cfg.ilscript(0);
+        assertEquals("test", ils.doctype());
+        assertEquals(2, ils.docfield().size());
+        assertEquals("a", ils.docfield(0));
+        assertEquals("m", ils.docfield(1));
+
     }
 
     @Test

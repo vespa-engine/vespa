@@ -119,8 +119,9 @@ public:
     int  getAdvise()         const { return _advise; }
 
     template <typename TuneControlConfig, typename MMapConfig>
-    void
-    setFromConfig(const enum TuneControlConfig::Io & tuneControlConfig, const MMapConfig & mmapFlags);
+    void setFromConfig(const enum TuneControlConfig::Io & tuneControlConfig, const MMapConfig & mmapFlags);
+    template <typename MMapConfig>
+    void setFromMmapConfig(const MMapConfig & mmapFlags);
 
     bool operator==(const TuneFileRandRead &rhs) const {
         return (_tuneControl == rhs._tuneControl) && (_mmapFlags == rhs._mmapFlags);

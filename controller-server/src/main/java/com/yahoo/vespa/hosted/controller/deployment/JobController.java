@@ -1,23 +1,29 @@
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.LogStore;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
+import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
-import java.util.HashMap;
+import java.net.URI;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,21 +33,22 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+import java.util.logging.Level;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.testerOf;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 
 /**
  * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
  *
- * Keys are the {@link ApplicationId} of the real application, for which the deployment job is run, and the
- * {@link JobType} of the real deployment to test.
- * Although the deployment jobs are themselves applications, their IDs are not to be referenced.
+ * Keys are the {@link ApplicationId} of the real application, for which the deployment job is run, the
+ * {@link JobType} to run, and the strictly increasing run number of this combination.
+ * The deployment jobs run tests using regular applications, but these tester application IDs are not to be used elsewhere.
  *
  * Jobs consist of sets of {@link Step}s, defined in {@link JobProfile}s.
- * Each run is represented by a {@link RunStatus}, which holds the status of each step of the run, as well as
+ * Each run is represented by a {@link Run}, which holds the status of each step of the run, as well as
  * some other meta data.
  *
  * @author jonmv
@@ -50,53 +57,76 @@ public class JobController {
 
     private final Controller controller;
     private final CuratorDb curator;
-    private final LogStore logs;
+    private final BufferedLogStore logs;
+    private final TesterCloud cloud;
 
-    public JobController(Controller controller, LogStore logStore) {
+    public JobController(Controller controller, RunDataStore runDataStore, TesterCloud testerCloud) {
         this.controller = controller;
         this.curator = controller.curator();
-        this.logs = logStore;
+        this.logs = new BufferedLogStore(curator, runDataStore);
+        this.cloud = testerCloud;
+    }
 
+    public TesterCloud cloud() {
+        return cloud;
     }
 
     /** Rewrite all job data with the newest format. */
     public void updateStorage() {
         for (ApplicationId id : applications())
             for (JobType type : jobs(id)) {
-                locked(id, type, runs -> {
+                locked(id, type, runs -> { // runs is unmodified, and written back as such.
                     curator.readLastRun(id, type).ifPresent(curator::writeLastRun);
                 });
             }
     }
 
-    /** Returns the details currently logged for the given run, if known. */
-    public Optional<RunDetails> details(RunId id) {
-        RunStatus run = runs(id.application(), id.type()).get(id);
-        if (run == null)
-            return Optional.empty();
-
-        Map<Step, byte[]> details = new HashMap<>();
-        for (Step step : run.steps().keySet()) {
-            byte[] log = logs.get(id, step.name());
-            if (log.length > 0)
-                details.put(step, log);
-        }
-        return Optional.of(new RunDetails(details));
+    /** Returns all entries currently logged for the given run. */
+    public Optional<RunLog> details(RunId id) {
+        return details(id, -1);
     }
 
-    /** Appends the given log bytes to the currently stored bytes for the given run and step. */
-    public void log(RunId id, Step step, byte[] log) {
+    /** Returns the logged entries for the given run, which are after the given id threshold. */
+    public Optional<RunLog> details(RunId id, long after) {
         try (Lock __ = curator.lock(id.application(), id.type())) {
-            logs.append(id, step.name(), log);
+            Run run = runs(id.application(), id.type()).get(id);
+            if (run == null)
+                return Optional.empty();
+
+            return active(id).isPresent()
+                    ? Optional.of(logs.readActive(id.application(), id.type(), after))
+                    : logs.readFinished(id, after);
         }
     }
 
-    // TODO jvenstad: Remove this, and let the DeploymentTrigger trigger directly with the correct BuildService.
-    /** Returns whether the given application has registered with this build service. */
-    public boolean builds(ApplicationId id) {
-        return controller.applications().get(id)
-                         .map(application -> application.deploymentJobs().builtInternally())
-                         .orElse(false);
+    /** Stores the given log record for the given run and step. */
+    public void log(RunId id, Step step, Level level, String message) {
+        locked(id, __ -> {
+            LogEntry entry = new LogEntry(0, controller.clock().millis(), LogEntry.typeOf(level), message);
+            logs.append(id.application(), id.type(), step, Collections.singletonList(entry));
+            return __;
+        });
+    }
+
+    /** Fetches any new test log entries, and records the id of the last of these, for continuation. */
+    public void updateTestLog(RunId id) {
+        try (Lock __ = curator.lock(id.application(), id.type())) {
+            active(id).ifPresent(run -> {
+                if ( ! run.readySteps().contains(endTests))
+                    return;
+
+                Optional<URI> testerEndpoint = testerEndpoint(id);
+                if ( ! testerEndpoint.isPresent())
+                    return;
+
+                List<LogEntry> entries = cloud.getLog(testerEndpoint.get(), run.lastTestLogEntry());
+                if (entries.isEmpty())
+                    return;
+
+                logs.append(id.application(), id.type(), endTests, entries);
+                curator.writeLastRun(run.with(entries.stream().mapToLong(LogEntry::id).max().getAsLong()));
+            });
+        }
     }
 
     /** Returns a list of all application which have registered. */
@@ -115,33 +145,33 @@ public class JobController {
     }
 
     /** Returns an immutable map of all known runs for the given application and job type. */
-    public Map<RunId, RunStatus> runs(ApplicationId id, JobType type) {
-        Map<RunId, RunStatus> runs = curator.readHistoricRuns(id, type);
+    public Map<RunId, Run> runs(ApplicationId id, JobType type) {
+        Map<RunId, Run> runs = curator.readHistoricRuns(id, type);
         last(id, type).ifPresent(run -> runs.putIfAbsent(run.id(), run));
         return ImmutableMap.copyOf(runs);
     }
 
     /** Returns the run with the given id, if it exists. */
-    public Optional<RunStatus> run(RunId id) {
+    public Optional<Run> run(RunId id) {
         return runs(id.application(), id.type()).values().stream()
                                                 .filter(run -> run.id().equals(id))
                                                 .findAny();
     }
 
     /** Returns the last run of the given type, for the given application, if one has been run. */
-    public Optional<RunStatus> last(ApplicationId id, JobType type) {
+    public Optional<Run> last(ApplicationId id, JobType type) {
         return curator.readLastRun(id, type);
     }
 
     /** Returns the run with the given id, provided it is still active. */
-    public Optional<RunStatus> active(RunId id) {
+    public Optional<Run> active(RunId id) {
         return last(id.application(), id.type())
                 .filter(run -> ! run.hasEnded())
                 .filter(run -> run.id().equals(id));
     }
 
     /** Returns a list of all active runs. */
-    public List<RunStatus> active() {
+    public List<Run> active() {
         return copyOf(applications().stream()
                                     .flatMap(id -> Stream.of(JobType.values())
                                                          .map(type -> last(id, type))
@@ -151,15 +181,16 @@ public class JobController {
     }
 
     /** Changes the status of the given step, for the given run, provided it is still active. */
-    public void update(RunId id, Step.Status status, LockedStep step) {
+    public void update(RunId id, RunStatus status, LockedStep step) {
         locked(id, run -> run.with(status, step));
     }
 
     /** Changes the status of the given run to inactive, and stores it as a historic run. */
     public void finish(RunId id) {
         locked(id, run -> { // Store the modified run after it has been written to the collection, in case the latter fails.
-            RunStatus finishedRun = run.finished(controller.clock().instant());
+            Run finishedRun = run.finished(controller.clock().instant());
             locked(id.application(), id.type(), runs -> runs.put(run.id(), finishedRun));
+            logs.flush(id);
             return finishedRun;
         });
     }
@@ -169,28 +200,37 @@ public class JobController {
         locked(id, run -> run.aborted());
     }
 
-    /** Registers the given application, such that it may have deployment jobs run here. */
-    public void register(ApplicationId id) {
-        controller.applications().lockIfPresent(id, application ->
-                controller.applications().store(application.withBuiltInternally(true)));
-    }
-
-    /** Accepts and stores a new application package and test jar pair under a generated application version key. */
+    /**
+     * Accepts and stores a new application package and test jar pair under a generated application version key.
+     */
     public ApplicationVersion submit(ApplicationId id, SourceRevision revision,
-                                     byte[] applicationPackage, byte[] applicationTestPackage) {
+                                     byte[] packageBytes, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
-            controller.applications().store(application.withBuiltInternally(true));
+            if ( ! application.get().deploymentJobs().builtInternally()) {
+                // Copy all current packages to the new application store
+                application.get().deployments().values().stream()
+                           .map(Deployment::applicationVersion)
+                           .distinct()
+                           .forEach(appVersion -> {
+                               byte[] content = controller.applications().artifacts().getApplicationPackage(application.get().id(), appVersion.id());
+                               controller.applications().applicationStore().putApplicationPackage(application.get().id(), appVersion.id(), content);
+                           });
+            }
 
             long run = nextBuild(id);
             version.set(ApplicationVersion.from(revision, run));
 
-            // TODO smorgrav: Store the pair.
-//            controller.applications().artifacts().putApplicationPackage(id, version.toString(), applicationPackage);
-//            controller.applications().artifacts().putTesterPackage(
-//                    InternalStepRunner.testerOf(id), version.toString(), applicationTestPackage);
-//
-//            notifyOfNewSubmission(id, revision, run);
+            controller.applications().applicationStore().putApplicationPackage(id,
+                                                                               version.get().id(),
+                                                                               packageBytes);
+            controller.applications().applicationStore().putTesterPackage(testerOf(id),
+                                                                          version.get().id(),
+                                                                          testPackageBytes);
+
+            controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(packageBytes));
+
+            notifyOfNewSubmission(id, revision, run);
         });
         return version.get();
     }
@@ -202,12 +242,12 @@ public class JobController {
                 throw new IllegalArgumentException(id + " is not built here!");
 
             locked(id, type, __ -> {
-                Optional<RunStatus> last = last(id, type);
+                Optional<Run> last = last(id, type);
                 if (last.flatMap(run -> active(run.id())).isPresent())
                     throw new IllegalStateException("Can not start " + type + " for " + id + "; it is already running!");
 
                 RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-                curator.writeLastRun(RunStatus.initial(newId, versions, controller.clock().instant()));
+                curator.writeLastRun(Run.initial(newId, versions, controller.clock().instant()));
             });
         });
     }
@@ -235,25 +275,44 @@ public class JobController {
                            locked(id, type, deactivateTester, __ -> {
                                try (Lock ___ = curator.lock(id, type)) {
                                    deactivateTester(id, type);
-                                   curator.deleteJobData(id, type);
+                                   curator.deleteRunData(id, type);
+                                   logs.delete(id);
                                }
                            });
                    }
                    catch (TimeoutException e) {
                        return; // Don't remove the data if we couldn't deactivate all testers.
                    }
-                   curator.deleteJobData(id);
+                   curator.deleteRunData(id);
                });
     }
 
-    // TODO jvenstad: Urgh, clean this up somehow?
     public void deactivateTester(ApplicationId id, JobType type) {
         try {
-            controller.configServer().deactivate(new DeploymentId(testerOf(id), type.zone(controller.system()).get()));
+            controller.configServer().deactivate(new DeploymentId(testerOf(id), type.zone(controller.system())));
         }
         catch (NoInstanceException ignored) {
-            // ok; already gone
+            // Already gone -- great!
         }
+    }
+
+    /** Returns the application id of the tester application for the real application with the given id. */
+    public static ApplicationId testerOf(ApplicationId id) {
+        return ApplicationId.from(id.tenant().value(),
+                                  id.application().value(),
+                                  id.instance().value() + "-t");
+    }
+
+    /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
+    Optional<URI> testerEndpoint(RunId id) {
+        ApplicationId tester = testerOf(id.application());
+        return controller.applications().getDeploymentEndpoints(new DeploymentId(tester, id.type().zone(controller.system())))
+                         .flatMap(uris -> uris.stream()
+                                              .filter(uri -> uri.getHost().contains(String.format("%s--%s--%s.",
+                                                                                                  tester.instance().value(),
+                                                                                                  tester.application().value(),
+                                                                                                  tester.tenant().value())))
+                                              .findAny());
     }
 
     // TODO jvenstad: Find a more appropriate way of doing this, at least when this is the only build service.
@@ -277,18 +336,18 @@ public class JobController {
     }
 
     /** Locks and modifies the list of historic runs for the given application and job type. */
-    private void locked(ApplicationId id, JobType type, Consumer<Map<RunId, RunStatus>> modifications) {
+    private void locked(ApplicationId id, JobType type, Consumer<Map<RunId, Run>> modifications) {
         try (Lock __ = curator.lock(id, type)) {
-            Map<RunId, RunStatus> runs = curator.readHistoricRuns(id, type);
+            Map<RunId, Run> runs = curator.readHistoricRuns(id, type);
             modifications.accept(runs);
             curator.writeHistoricRuns(id, type, runs.values());
         }
     }
 
     /** Locks and modifies the run with the given id, provided it is still active. */
-    private void locked(RunId id, UnaryOperator<RunStatus> modifications) {
+    private void locked(RunId id, UnaryOperator<Run> modifications) {
         try (Lock __ = curator.lock(id.application(), id.type())) {
-            RunStatus run = active(id).orElseThrow(() -> new IllegalArgumentException(id + " is not an active run!"));
+            Run run = active(id).orElseThrow(() -> new IllegalArgumentException(id + " is not an active run!"));
             run = modifications.apply(run);
             curator.writeLastRun(run);
         }

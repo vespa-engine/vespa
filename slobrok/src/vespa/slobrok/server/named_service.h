@@ -25,11 +25,11 @@ public:
     NamedService(const NamedService &) = delete;
     NamedService &operator=(const NamedService &) = delete;
 
-    NamedService(const char *name, const char *spec);
+    NamedService(const std::string & name, const std::string & spec);
     virtual ~NamedService();
 
-    const char *getName() const { return _name.c_str(); }
-    const char *getSpec() const { return _spec.c_str(); }
+    const std::string & getName() const { return _name; }
+    const std::string & getSpec() const { return _spec; }
 };
 
 //-----------------------------------------------------------------------------

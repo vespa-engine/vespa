@@ -10,8 +10,10 @@ import com.yahoo.search.result.Hit;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -26,7 +28,10 @@ public class GroupingRequestTestCase {
         assertTrue(req.continuations().isEmpty());
 
         Continuation foo = new Continuation() {
-
+            @Override
+            public Continuation copy() {
+                return null;
+            }
         };
         req.continuations().add(foo);
         assertEquals(Arrays.asList(foo), req.continuations());
@@ -43,7 +48,22 @@ public class GroupingRequestTestCase {
 
         res.hits().add(new Hit("foo"));
         RootGroup bar = newRootGroup(0);
-        req.setResultGroup(bar);
+        res.hits().add(bar);
+        res.hits().add(new Hit("baz"));
+
+        Group grp = req.getResultGroup(res);
+        assertNotNull(grp);
+        assertSame(bar, grp);
+    }
+
+    @Test
+    public void requireThatResultIsFoundAfterCloning() {
+        Query query = new Query();
+        GroupingRequest req = GroupingRequest.newInstance(query);
+        Result res = new Result(query.clone());
+
+        res.hits().add(new Hit("foo"));
+        RootGroup bar = newRootGroup(0);
         res.hits().add(bar);
         res.hits().add(new Hit("baz"));
 
@@ -59,12 +79,10 @@ public class GroupingRequestTestCase {
 
         GroupingRequest reqA = GroupingRequest.newInstance(query);
         RootGroup grpA = newRootGroup(0);
-        reqA.setResultGroup(grpA);
         res.hits().add(grpA);
 
         GroupingRequest reqB = GroupingRequest.newInstance(query);
         RootGroup grpB = newRootGroup(1);
-        reqB.setResultGroup(grpB);
         res.hits().add(grpB);
 
         Group grp = reqA.getResultGroup(res);
@@ -83,7 +101,6 @@ public class GroupingRequestTestCase {
 
         res.hits().add(new Hit("foo"));
         RootGroup bar = newRootGroup(0);
-        req.setResultGroup(bar);
         res.hits().add(new Hit("baz"));
 
         assertNull(req.getResultGroup(res));
@@ -96,7 +113,6 @@ public class GroupingRequestTestCase {
         Result res = new Result(query);
 
         RootGroup grp = newRootGroup(0);
-        req.setResultGroup(grp);
         res.hits().add(new Hit(grp.getId().toString()));
 
         assertNull(req.getResultGroup(res));
@@ -105,32 +121,22 @@ public class GroupingRequestTestCase {
     @Test
     public void requireThatGetRequestsReturnsAllRequests() {
         Query query = new Query();
-        assertEquals(Collections.emptyList(), GroupingRequest.getRequests(query));
+        assertEquals(Collections.emptyList(), query.getSelect().getGrouping());
 
         GroupingRequest foo = GroupingRequest.newInstance(query);
-        assertEquals(Arrays.asList(foo), GroupingRequest.getRequests(query));
+        assertEquals(Arrays.asList(foo), query.getSelect().getGrouping());
 
         GroupingRequest bar = GroupingRequest.newInstance(query);
-        assertEquals(Arrays.asList(foo, bar), GroupingRequest.getRequests(query));
+        assertEquals(Arrays.asList(foo, bar), query.getSelect().getGrouping());
     }
-
-    @Test
-    public void requireThatGetRequestThrowsIllegalArgumentOnBadProperty() throws Exception {
-        Query query = new Query();
-        Field propName = GroupingRequest.class.getDeclaredField("PROP_REQUEST");
-        propName.setAccessible(true);
-        query.properties().set((CompoundName)propName.get(null), new Object());
-        try {
-            GroupingRequest.getRequests(query);
-            fail();
-        } catch (IllegalArgumentException e) {
-
-        }
-    }
+    
 
     private static RootGroup newRootGroup(int id) {
         return new RootGroup(id, new Continuation() {
-
+            @Override
+            public Continuation copy() {
+                return null;
+            }
         });
     }
 }

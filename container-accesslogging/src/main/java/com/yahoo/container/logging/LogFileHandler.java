@@ -2,6 +2,8 @@
 package com.yahoo.container.logging;
 
 import com.yahoo.container.core.AccessLogConfig;
+import com.yahoo.io.NativeIO;
+import com.yahoo.log.LogFileDb;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -250,6 +252,7 @@ public class LogFileHandler extends StreamHandler {
             FileOutputStream os = new FileOutputStream(fileName, true); // append mode, for safety
             super.setOutputStream(os);
             currentOutputStream = os;
+            if (! useSequenceNameScheme) LogFileDb.nowLoggingTo(fileName);
         }
         catch (IOException e) {
             throw new RuntimeException("Couldn't open log file '" + fileName + "'", e);
@@ -261,15 +264,31 @@ public class LogFileHandler extends StreamHandler {
         numberOfRecords = 0;
         lastRotationTime = now;
         nextRotationTime = 0; //figure it out later (lazy evaluation)
-        if (compressOnRotation && (oldFileName != null)) {
-            triggerCompression(oldFileName);
+        if ((oldFileName != null)) {
+            File oldFile = new File(oldFileName);
+            if (oldFile.exists()) {
+                if (compressOnRotation) {
+                    triggerCompression(oldFile);
+                } else {
+                    NativeIO nativeIO = new NativeIO();
+                    nativeIO.dropFileFromCache(oldFile);
+                }
+            }
         }
     }
 
-    private void triggerCompression(String oldFileName) {
+    private void triggerCompression(File oldFile) {
         try {
+            String oldFileName = oldFile.getPath();
+            String gzippedFileName = oldFileName + ".gz";
             Runtime r = Runtime.getRuntime();
-            Process p = r.exec(new String[] { "gzip", oldFileName });
+            StringBuilder cmd = new StringBuilder("gzip");
+            cmd.append(" < "). append(oldFileName).append(" > ").append(gzippedFileName);
+            Process p = r.exec(cmd.toString());
+            NativeIO nativeIO = new NativeIO();
+            nativeIO.dropFileFromCache(oldFile); // Drop from cache in case somebody else has a reference to it preventing from dying quickly.
+            oldFile.delete();
+            nativeIO.dropFileFromCache(new File(gzippedFileName));
             // Detonator pattern: Think of all the fun we can have if gzip isn't what we
             // think it is, if it doesn't return, etc, etc
         } catch (IOException e) {
@@ -310,7 +329,9 @@ public class LogFileHandler extends StreamHandler {
             if (thisN>largestN)
                 largestN=thisN;
         }
-        file.renameTo(new File(dir,file.getName() + "." + (largestN + 1)));
+        File newFn = new File(dir, file.getName() + "." + (largestN + 1));
+        LogFileDb.nowLoggingTo(newFn.getAbsolutePath());
+        file.renameTo(newFn);
     }
 
     /**

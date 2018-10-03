@@ -8,11 +8,13 @@ import java.nio.file.Paths;
  * Constants used by Vespa to make the simple metrics implementation available
  * to other components.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class MetricProperties {
+
     private MetricProperties() {
     }
 
     public static final String BUNDLE_SYMBOLIC_NAME = "simplemetrics";
+
 }

@@ -30,7 +30,7 @@ search book {
         attribute: prefetch
       }
 
-      field mynestedwsfloat type weightedset<weightedset<float>> {}
+      field mynestedwsfloat type weightedset<float> {}
 
       field myarrayint type array<int> {
         indexing: attribute

@@ -34,12 +34,13 @@ import com.yahoo.searchdefinition.document.annotation.TemporaryAnnotationReferen
 import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchdefinition.DocumentsOnlyRankProfile;
 import com.yahoo.searchdefinition.DefaultRankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile.MatchPhaseSettings;
 import com.yahoo.searchdefinition.RankProfile.DiversitySettings;
 import com.yahoo.searchdefinition.Search;
-import com.yahoo.searchdefinition.UnproperSearch;
+import com.yahoo.searchdefinition.DocumentOnlySearch;
 import com.yahoo.searchdefinition.UnrankedRankProfile;
 import com.yahoo.searchdefinition.fieldoperation.*;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
@@ -58,6 +59,8 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.query.ranking.Diversity;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import org.apache.commons.lang.StringUtils;
@@ -73,6 +76,7 @@ public class SDParser {
     private ApplicationPackage app;
     private DeployLogger deployLogger;
     private RankProfileRegistry rankProfileRegistry;
+    private boolean documentsOnly;
 
     /** For testing only */
     public SDParser(String input, DeployLogger deployLogger) {
@@ -81,17 +85,24 @@ public class SDParser {
 
     /** For testing only */
     public SDParser(SimpleCharStream stream, DeployLogger deployLogger) {
-        this(stream, deployLogger, MockApplicationPackage.createEmpty(), new RankProfileRegistry());
+        this(stream, deployLogger, MockApplicationPackage.createEmpty(), new RankProfileRegistry(), false);
     }
 
+    /**
+     * Creates a parser
+     *
+     * @param documentsOnly true to only parse the document aspect of a search definition (e.g skip rank profiles)
+     */
     public SDParser(SimpleCharStream stream,
                     DeployLogger deployLogger,
                     ApplicationPackage applicationPackage,
-                    RankProfileRegistry rankProfileRegistry) {
+                    RankProfileRegistry rankProfileRegistry,
+                    boolean documentsOnly) {
         this(stream);
         this.deployLogger = deployLogger;
         this.app = applicationPackage;
         this.rankProfileRegistry = rankProfileRegistry;
+        this.documentsOnly = documentsOnly;
     }
 
     /**
@@ -281,6 +292,7 @@ TOKEN :
 | < ENABLEBITVECTORS: "enable-bit-vectors" >
 | < ENABLEONLYBITVECTOR: "enable-only-bit-vector" >
 | < FASTACCESS: "fast-access" >
+| < MUTABLE: "mutable" >
 | < FASTSEARCH: "fast-search" >
 | < HUGE: "huge" >
 | < PREFETCH: "prefetch" >
@@ -353,7 +365,7 @@ TOKEN :
 | < LONG: ("-")? (["0"-"9"])+"L" >
 | < STRING: (["a"-"z","A"-"Z","_","0"-"9","."])+ >
 | < FILE_PATH: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-", "/", "."])+ >
-| < HTTP: ["h","H"] ["t","T"] ["t","T"] ["p","P"] >
+| < HTTP: ["h","H"] ["t","T"] ["t","T"] ["p","P"] (["s","S"])? >
 | < URI_PATH: <HTTP> <COLON> ("//")? (["a"-"z","A"-"Z","0"-"9","_","-", "/", ".",":"])+ >
 | < LESSTHAN: "<" >
 | < GREATERTHAN: ">" >
@@ -407,8 +419,8 @@ Search rootSearch(String dir) :
                                          deployLogger.log(Level.WARNING, name + " can not be used in YQL+ expressions.");
                                      }
                                      search = new Search(name, app);
-                                     rankProfileRegistry.addRankProfile(new DefaultRankProfile(search, rankProfileRegistry));
-                                     rankProfileRegistry.addRankProfile(new UnrankedRankProfile(search, rankProfileRegistry));}
+                                     rankProfileRegistry.add(new DefaultRankProfile(search, rankProfileRegistry));
+                                     rankProfileRegistry.add(new UnrankedRankProfile(search, rankProfileRegistry));}
       lbrace() (rootSearchItem(search) (<NL>)*)* <RBRACE> (<NL>)* <EOF>)
     { return search; }
 }
@@ -445,7 +457,7 @@ Object rootSearchItem(Search search) : { }
  */
 Search rootDocument(String dir) :
 {
-    Search search = new UnproperSearch();
+    Search search = new DocumentOnlySearch();
 }
 {
     ( (rootDocumentItem(search) (<NL>)*)*<EOF> )
@@ -1190,16 +1202,18 @@ Object attributeSetting(FieldOperationContainer field, AttributeOperation attrib
 }
 {
     (
-        <HUGE>               { attribute.setHuge(true); }
-      | <FASTSEARCH>         { attribute.setFastSearch(true); }
-      | <FASTACCESS>         { attribute.setFastAccess(true); }
-      | <ENABLEBITVECTORS>   { attribute.setEnableBitVectors(true); }
+        <HUGE>                { attribute.setHuge(true); }
+      | <FASTSEARCH>          { attribute.setFastSearch(true); }
+      | <FASTACCESS>          { attribute.setFastAccess(true); }
+      | <MUTABLE>             { attribute.setMutable(true); }
+      | <ENABLEBITVECTORS>    { attribute.setEnableBitVectors(true); }
       | <ENABLEONLYBITVECTOR> { attribute.setEnableOnlyBitVector(true); }
-      | <NOPREFETCH>         {
+
+      | <NOPREFETCH> {
           deployLogger.log(Level.WARNING, field + ": 'attribute : no-prefetch' is deprecated and has no effect.");
           attribute.setPrefetch(false);
       }
-      | <PREFETCH>           {
+      | <PREFETCH> {
           deployLogger.log(Level.WARNING, field + ": 'attribute : prefetch' is deprecated and has no effect.");
           attribute.setPrefetch(true);
       }
@@ -1772,7 +1786,7 @@ Object indexBody(IndexOperation index) :
       | <ALIAS> <COLON> str = identifier()       { index.addAlias(str); }
       | <STEMMING> <COLON> str = identifier()    { index.setStemming(str); }
       | <RISE> {
-              throw new ParseException("'index:rise' is no longer an option. Use 'indexing:attribute' instead. " +
+              if (true) throw new ParseException("'index:rise' is no longer an option. Use 'indexing:attribute' instead. " +
                                        "If it is a weighted set field you should also add 'attribute:fast-search'." +
                                        "This change will require refeeding.");
           }
@@ -1801,7 +1815,8 @@ void rankingConstant(Search search) :
         }
       lbrace() (rankingConstantItem(constant) (<NL>)*)+ <RBRACE> )
     {
-        search.addRankingConstant(constant);
+        if (documentsOnly) return;
+        search.rankingConstants().add(constant);
     }
 }
 
@@ -1856,8 +1871,11 @@ void rankProfile(Search search) :
 {
     ( <RANKPROFILE> name = identifier()
         {
-            if ("default".equals(name)) {
-                profile = rankProfileRegistry.getRankProfile(search, "default");
+            if (documentsOnly) {
+                profile = new DocumentsOnlyRankProfile(name, search, rankProfileRegistry);
+            }
+            else if ("default".equals(name)) {
+                profile = rankProfileRegistry.get(search, "default");
             } else {
                 profile = new RankProfile(name, search, rankProfileRegistry);
             }
@@ -1865,7 +1883,8 @@ void rankProfile(Search search) :
       [inheritsRankProfile(profile)]
       lbrace() (rankProfileItem(profile) (<NL>)*)* <RBRACE> )
     {
-        rankProfileRegistry.addRankProfile(profile);
+        if (documentsOnly) return;
+        rankProfileRegistry.add(profile);
     }
 }
 
@@ -1882,7 +1901,7 @@ Object rankProfileItem(RankProfile profile) : { }
       | fieldRankFilter(profile)
       | firstPhase(profile)
       | matchPhase(profile)
-      | macro(profile)
+      | function(profile)
       | ignoreRankFeatures(profile)
       | numThreadsPerSearch(profile)
       | minHitsPerThread(profile)
@@ -1907,7 +1926,8 @@ void inheritsRankProfile(RankProfile profile) :
     String str;
 }
 {
-    <INHERITS> str = identifier() { profile.setInherited(str); }
+    <INHERITS> str = identifier()
+    { profile.setInherited(str); }
 }
 
 /**
@@ -1915,19 +1935,20 @@ void inheritsRankProfile(RankProfile profile) :
  *
  * @param profile The profile to modify.
  */
-void macro(RankProfile profile) :
+void function(RankProfile profile) :
 {
-    String macro, param, expr;
+    String name, expression, parameter;
+    List parameters = new ArrayList();
     boolean inline = false;
 }
 {
-    ( <MACRO> inline = inline() macro = identifier() [ "$" { macro = macro + token.image; } ]
-      "("                                { profile.addMacro(macro, inline); }
-          [ param = identifier()         { profile.getMacros().get(macro).addParam(param); }
-          ( <COMMA> param = identifier() { profile.getMacros().get(macro).addParam(param); } )* ]
+    (  ( <FUNCTION> | <MACRO> ) inline = inline() name = identifier() [ "$" { name = name + token.image; } ]
+      "("
+          [ parameter = identifier()         { parameters.add(parameter); }
+          ( <COMMA> parameter = identifier() { parameters.add(parameter); } )* ]
       ")"
-      lbrace() expr = expression() (<NL>)* <RBRACE> )
-    { profile.getMacros().get(macro).setTextualExpression(expr); }
+      lbrace() expression = expression() (<NL>)* <RBRACE> )
+    { profile.addFunction(name, parameters, expression, inline); }
 }
 
 boolean inline() :
@@ -2031,7 +2052,7 @@ Object firstPhaseItem(RankProfile profile) :
   double dropLimit;
 }
 {
-    ( expression = expression()                        { profile.setFirstPhaseRankingString(expression); }
+    ( expression = expression()                        { profile.setFirstPhaseRanking(expression); }
       | (<KEEPRANKCOUNT> <COLON> rerankCount = integer()) { profile.setKeepRankCount(rerankCount); }
       | (<RANKSCOREDROPLIMIT> <COLON> dropLimit = consumeFloat()) { profile.setRankScoreDropLimit(dropLimit); }
     )
@@ -2060,7 +2081,7 @@ Object secondPhaseItem(RankProfile profile) :
     int rerankCount;
 }
 {
-    ( expression = expression()                 { profile.setSecondPhaseRankingString(expression); }
+    ( expression = expression()                 { profile.setSecondPhaseRanking(expression); }
       | (<RERANKCOUNT> <COLON> rerankCount = integer()) { profile.setRerankCount(rerankCount); }
     )
     { return null; }
@@ -2515,6 +2536,7 @@ String identifier() : { }
       | <MAXFILTERCOVERAGE>
       | <MAXHITS>
       | <MTOKEN>
+      | <MUTABLE>
       | <NEVER>
       | <NONE>
       | <NOPREFETCH>

@@ -20,7 +20,7 @@ public class StemmingSettingTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testStemmingSettings() throws IOException, ParseException {
-        Search search = UnprocessingSearchBuilder.buildUnprocessedFromFile("src/test/examples/stemmingsetting.sd");
+        Search search = SearchBuilder.buildFromFile("src/test/examples/stemmingsetting.sd");
 
         SDField artist = (SDField)search.getDocument().getField("artist");
         assertEquals(Stemming.SHORTEST, artist.getStemming(search));

@@ -147,8 +147,8 @@ public:
     void print(std::ostream&, bool verbose,
                const std::string& indent, uint64_t secondsPassed) const override;
 
-    int64_t getLongValue(const stringref & id) const override;
-    double getDoubleValue(const stringref & id) const override;
+    int64_t getLongValue(stringref id) const override;
+    double getDoubleValue(stringref id) const override;
 
     bool inUse(const MetricValueClass& v) const override {
         const Values& values(static_cast<const Values&>(v));

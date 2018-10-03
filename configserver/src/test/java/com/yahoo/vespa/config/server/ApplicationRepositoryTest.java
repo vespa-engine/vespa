@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
@@ -13,6 +15,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
 import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
@@ -41,6 +44,11 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -58,6 +66,7 @@ public class ApplicationRepositoryTest {
     private final static File testApp = new File("src/test/apps/app");
     private final static File testAppJdiscOnly = new File("src/test/apps/app-jdisc-only");
     private final static File testAppJdiscOnlyRestart = new File("src/test/apps/app-jdisc-only-restart");
+    private final static File testAppLogServerWithContainer = new File("src/test/apps/app-logserver-with-container");
 
     private final static TenantName tenant1 = TenantName.from("test1");
     private final static TenantName tenant2 = TenantName.from("test2");
@@ -109,6 +118,27 @@ public class ApplicationRepositoryTest {
     }
 
     @Test
+    public void getLogs() {
+        WireMockServer wireMock = new WireMockServer(wireMockConfig().port(8080));
+        wireMock.start();
+        WireMock.configureFor("localhost", wireMock.port());
+        stubFor(get(urlEqualTo("/logs"))
+                .willReturn(aResponse()
+                        .withStatus(200)));
+        wireMock.start();
+        deployApp(testAppLogServerWithContainer);
+        HttpResponse response = applicationRepository.getLogs(applicationId(), "");
+        assertEquals(200, response.getStatus());
+        wireMock.stop();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getLogsNoContainerOnLogServerHostShouldThrowException() {
+        deployApp(testApp);
+        applicationRepository.getLogs(applicationId(), "");
+    }
+
+    @Test
     public void deleteUnusedTenants() {
         // Set clock to epoch plus hour, as mock curator will always return epoch as creation time
         Instant now = ManualClock.at("1970-01-01T01:00:00");
@@ -135,19 +165,25 @@ public class ApplicationRepositoryTest {
     public void decideVersion() {
         ApplicationId regularApp = ApplicationId.from("tenant1", "application1", "default");
         ApplicationId systemApp = ApplicationId.from("hosted-vespa", "routing", "default");
-        Version targetVersion = Version.fromString("5.0");
+        ApplicationId testerApp = ApplicationId.from("tenant1", "application1", "default-t");
+        Version sessionVersion = Version.fromString("5.0");
 
-        // Always use target for system application
-        assertEquals(targetVersion, ApplicationRepository.decideVersion(systemApp, Environment.prod, targetVersion, false));
-        assertEquals(targetVersion, ApplicationRepository.decideVersion(systemApp, Environment.dev, targetVersion, false));
-        assertEquals(targetVersion, ApplicationRepository.decideVersion(systemApp, Environment.perf, targetVersion, false));
+        // Always use session version for system application
+        assertEquals(sessionVersion, ApplicationRepository.decideVersion(systemApp, Environment.prod, sessionVersion, false));
+        assertEquals(sessionVersion, ApplicationRepository.decideVersion(systemApp, Environment.dev, sessionVersion, false));
+        assertEquals(sessionVersion, ApplicationRepository.decideVersion(systemApp, Environment.perf, sessionVersion, false));
+
+        // Always use session version for tester application
+        assertEquals(sessionVersion, ApplicationRepository.decideVersion(testerApp, Environment.prod, sessionVersion, false));
+        assertEquals(sessionVersion, ApplicationRepository.decideVersion(testerApp, Environment.dev, sessionVersion, false));
+        assertEquals(sessionVersion, ApplicationRepository.decideVersion(testerApp, Environment.perf, sessionVersion, false));
 
         // Target for regular application depends on environment
-        assertEquals(targetVersion, ApplicationRepository.decideVersion(regularApp, Environment.prod, targetVersion, false));
-        assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, targetVersion, false));
+        assertEquals(sessionVersion, ApplicationRepository.decideVersion(regularApp, Environment.prod, sessionVersion, false));
+        assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, sessionVersion, false));
         // If bootstrap, version should be target version
-        assertEquals(targetVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, targetVersion, true));
-        assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.perf, targetVersion, false));
+        assertEquals(sessionVersion, ApplicationRepository.decideVersion(regularApp, Environment.dev, sessionVersion, true));
+        assertEquals(Vtag.currentVersion, ApplicationRepository.decideVersion(regularApp, Environment.perf, sessionVersion, false));
     }
 
     @Test
@@ -168,14 +204,7 @@ public class ApplicationRepositoryTest {
         PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
         deployApp(new File("src/test/apps/app"), prepareParams);
 
-        boolean deleteFiles = false;
-        Set<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, deleteFiles);
-        assertEquals(Collections.singleton("foo"), toBeDeleted);
-        assertTrue(filereferenceDir.exists());
-        assertTrue(filereferenceDir2.exists());
-
-        deleteFiles = true;
-        toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, deleteFiles);
+        Set<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir);
         assertEquals(Collections.singleton("foo"), toBeDeleted);
         assertFalse(filereferenceDir.exists());
         assertTrue(filereferenceDir2.exists());

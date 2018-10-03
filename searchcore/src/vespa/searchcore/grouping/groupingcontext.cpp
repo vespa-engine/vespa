@@ -2,6 +2,7 @@
 
 #include "groupingcontext.h"
 #include <vespa/searchlib/aggregation/predicates.h>
+#include <vespa/searchlib/aggregation/modifiers.h>
 
 namespace search {
 

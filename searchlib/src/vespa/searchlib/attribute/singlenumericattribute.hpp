@@ -192,12 +192,12 @@ SingleValueNumericAttribute<B>::onShrinkLidSpace()
 
 template <typename B>
 std::unique_ptr<AttributeSaver>
-SingleValueNumericAttribute<B>::onInitSave()
+SingleValueNumericAttribute<B>::onInitSave(vespalib::stringref fileName)
 {
     const uint32_t numDocs(this->getCommittedDocIdLimit());
     assert(numDocs <= _data.size());
     return std::make_unique<SingleValueNumericAttributeSaver>
-        (this->createAttributeHeader(), &_data[0], numDocs * sizeof(T));
+        (this->createAttributeHeader(fileName), &_data[0], numDocs * sizeof(T));
 }
 
 template <typename B>

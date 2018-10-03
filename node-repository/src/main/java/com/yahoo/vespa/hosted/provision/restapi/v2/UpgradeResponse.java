@@ -6,24 +6,25 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
+import com.yahoo.vespa.hosted.provision.provisioning.OsVersions;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Comparator;
-import java.util.Map;
 
 /**
- * A response containing infrastructure versions
+ * A response containing targets for infrastructure Vespa version and OS version.
  *
  * @author freva
  */
 public class UpgradeResponse extends HttpResponse {
 
     private final InfrastructureVersions infrastructureVersions;
+    private final OsVersions osVersions;
 
-    public UpgradeResponse(InfrastructureVersions infrastructureVersions) {
+    public UpgradeResponse(InfrastructureVersions infrastructureVersions, OsVersions osVersions) {
         super(200);
         this.infrastructureVersions = infrastructureVersions;
+        this.osVersions = osVersions;
     }
 
     @Override
@@ -32,10 +33,10 @@ public class UpgradeResponse extends HttpResponse {
         Cursor root = slime.setObject();
 
         Cursor versionsObject = root.setObject("versions");
-        infrastructureVersions.getTargetVersions().entrySet().stream()
-                .sorted(Comparator.comparing(Map.Entry::getKey)) // Sort for stable tests
-                .forEach(entry ->
-                        versionsObject.setString(entry.getKey().name(), entry.getValue().toFullString()));
+        infrastructureVersions.getTargetVersions().forEach((nodeType, version) -> versionsObject.setString(nodeType.name(), version.toFullString()));
+
+        Cursor osVersionsObject = root.setObject("osVersions");
+        osVersions.targets().forEach((nodeType, version) -> osVersionsObject.setString(nodeType.name(), version.toFullString()));
 
         new JsonFormat(true).encode(stream, slime);
     }

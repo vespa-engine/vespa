@@ -19,7 +19,7 @@ public:
 
     FunctionNode &setResult(const ResultNode::CP res) { _tmpResult = res; return *this; }
 protected:
-    void setResultType(ResultNode::UP res) { _tmpResult.reset(res.release()); }
+    void setResultType(ResultNode::UP res) { _tmpResult = std::move(res); }
     void selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation) override;
 private:
     mutable ResultNode::CP _tmpResult;

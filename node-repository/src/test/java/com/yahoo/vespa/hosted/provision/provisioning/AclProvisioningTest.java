@@ -158,7 +158,6 @@ public class AclProvisioningTest {
 
         // Check trusted nodes for all nodes
         activeDockerHostNodes.forEach(node -> {
-            System.out.println("Checking node " + node);
             List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
             assertAcls(Arrays.asList(activeDockerHostNodes, configServers), dockerBridgeNetwork, nodeAcls);
         });

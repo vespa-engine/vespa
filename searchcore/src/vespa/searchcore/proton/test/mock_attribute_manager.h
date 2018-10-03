@@ -23,59 +23,60 @@ public:
         _mock.addAttribute(name, attr);
     }
 
-    virtual search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override {
+    search::AttributeGuard::UP getAttribute(const vespalib::string &name) const override {
         return _mock.getAttribute(name);
     }
-    virtual std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(const vespalib::string &name, bool stableEnumGuard) const override {
+    std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(const vespalib::string &name, bool stableEnumGuard) const override {
         return _mock.getAttributeReadGuard(name, stableEnumGuard);
     }
-    virtual void getAttributeList(std::vector<search::AttributeGuard> &list) const override {
+    void getAttributeList(std::vector<search::AttributeGuard> &list) const override {
         _mock.getAttributeList(list);
     }
-    virtual search::attribute::IAttributeContext::UP createContext() const override {
+    search::attribute::IAttributeContext::UP createContext() const override {
         return _mock.createContext();
     }
-    virtual IAttributeManager::SP create(const AttributeCollectionSpec &) const override {
+    IAttributeManager::SP create(const AttributeCollectionSpec &) const override {
         return IAttributeManager::SP();
     }
-    virtual std::vector<searchcorespi::IFlushTarget::SP> getFlushTargets() const override {
+    std::vector<searchcorespi::IFlushTarget::SP> getFlushTargets() const override {
         return std::vector<searchcorespi::IFlushTarget::SP>();
     }
-    virtual search::SerialNum getFlushedSerialNum(const vespalib::string &) const override {
+    search::SerialNum getFlushedSerialNum(const vespalib::string &) const override {
         return search::SerialNum();
     }
-    virtual search::SerialNum getOldestFlushedSerialNumber() const override {
+    search::SerialNum getOldestFlushedSerialNumber() const override {
         return search::SerialNum();
     }
-    virtual search::SerialNum getNewestFlushedSerialNumber() const override {
+    search::SerialNum getNewestFlushedSerialNumber() const override {
         return search::SerialNum();
     }
-    virtual void getAttributeListAll(std::vector<search::AttributeGuard> &) const override {
-    }
-    virtual void pruneRemovedFields(search::SerialNum) override {
-    }
-    virtual const IAttributeFactory::SP &getFactory() const override {
+    void getAttributeListAll(std::vector<search::AttributeGuard> &) const override { }
+    void pruneRemovedFields(search::SerialNum) override { }
+    const IAttributeFactory::SP &getFactory() const override {
         HDR_ABORT("should not be reached");
     }
-    virtual search::ISequencedTaskExecutor &getAttributeFieldWriter() const override {
+    search::ISequencedTaskExecutor &getAttributeFieldWriter() const override {
         HDR_ABORT("should not be reached");
     }
-    virtual search::AttributeVector *getWritableAttribute(const vespalib::string &) const override {
+    search::AttributeVector *getWritableAttribute(const vespalib::string &) const override {
         return nullptr;
     }
-    virtual const std::vector<search::AttributeVector *> &getWritableAttributes() const override {
+    const std::vector<search::AttributeVector *> &getWritableAttributes() const override {
         HDR_ABORT("should not be reached");
     }
-    virtual void asyncForEachAttribute(std::shared_ptr<IAttributeFunctor>) const override {
+    void asyncForEachAttribute(std::shared_ptr<IConstAttributeFunctor>) const override {
     }
-    virtual ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &) const override {
+    ExclusiveAttributeReadAccessor::UP getExclusiveReadAccessor(const vespalib::string &) const override {
         return ExclusiveAttributeReadAccessor::UP();
     }
-    virtual void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> importedAttributes) override {
+    void setImportedAttributes(std::unique_ptr<ImportedAttributesRepo> importedAttributes) override {
         _importedAttributes = std::move(importedAttributes);
     }
-    virtual const ImportedAttributesRepo *getImportedAttributes() const override {
+    const ImportedAttributesRepo *getImportedAttributes() const override {
         return _importedAttributes.get();
+    }
+    void asyncForAttribute(const vespalib::string & name, std::unique_ptr<IAttributeFunctor> func) const override {
+        _mock.asyncForAttribute(name, std::move(func));
     }
 };
 

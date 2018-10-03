@@ -7,6 +7,7 @@
 #include "named_service.h"
 #include <vespa/fnet/task.h>
 #include <vector>
+#include <memory>
 
 namespace slobrok {
 
@@ -39,60 +40,30 @@ private:
         ManagedRpcServer *rpcsrv;
         RegRpcSrvCommand      handler;
         MRSandRRSC(ManagedRpcServer *d, RegRpcSrvCommand h)
-            : rpcsrv(d), handler(h) {}
-
-        MRSandRRSC(const MRSandRRSC &rhs)
-            : rpcsrv(rhs.rpcsrv),
-              handler(rhs.handler)
-        {
-        }
-
-        MRSandRRSC& operator=(const MRSandRRSC &rhs)
-        {
-            rpcsrv = rhs.rpcsrv;
-            handler = rhs.handler;
-            return *this;
-        }
+            : rpcsrv(d), handler(std::move(h)) {}
     };
     std::vector<MRSandRRSC>         _addManageds;
-    std::vector<ManagedRpcServer *> _deleteList;
-
-    RpcServerManager(const RpcServerManager &);            // Not used
-    RpcServerManager &operator=(const RpcServerManager &); // Not used
-
+    std::vector<std::unique_ptr<ManagedRpcServer>> _deleteList;
 public:
-    OkState checkPartner(const char *remslobrok);
+    OkState checkPartner(const std::string & remslobrok);
 
-    OkState addPeer(const char *remsbname,
-                    const char *remsbspec);
-    OkState removePeer(const char *remsbname,
-                       const char *remsbspec);
+    OkState addPeer(const std::string & remsbname, const std::string & remsbspec);
+    OkState removePeer(const std::string & remsbname, const std::string &  remsbspec);
+    OkState addRemote(const std::string & name, const std::string & spec);
 
-    OkState addLocal(const char *name,
-                     const char *spec,
-                     FRT_RPCRequest *req);
-    OkState addRemote(const char *name,
-                      const char *spec);
+    OkState addRemReservation(const std::string & remslobrok, const std::string & name, const std::string & spec);
+    OkState addMyReservation(const std::string & name, const std::string & spec);
 
-    OkState addRemReservation(const char *remslobrok,
-                              const char *name,
-                              const char *spec);
-    OkState addMyReservation(const char *name,
-                           const char *spec);
-
-    bool alreadyManaged(const char *name,
-                        const char *spec);
-    void addManaged(const char *name,
-                    const char *spec,
-                    RegRpcSrvCommand rdc);
+    bool alreadyManaged(const std::string & name, const std::string & spec);
+    void addManaged(const std::string & name, const std::string & spec, RegRpcSrvCommand rdc);
 
     OkState remove(ManagedRpcServer *rpcsrv);
 
-    OkState removeLocal(const char *name, const char *spec);
+    OkState removeLocal(const std::string & name, const std::string & spec);
+    OkState removeRemote(const std::string & name, const std::string & spec);
 
-    OkState removeRemote(const char *name,
-                         const char *spec);
-
+    RpcServerManager(const RpcServerManager &) = delete;
+    RpcServerManager &operator=(const RpcServerManager &) = delete;
     RpcServerManager(SBEnv &sbenv);
     ~RpcServerManager();
 

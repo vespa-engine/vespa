@@ -27,7 +27,6 @@ import java.time.Clock;
 import java.util.Collections;
 import java.util.Optional;
 
-import static com.yahoo.vespa.config.server.SuperModelRequestHandlerTest.emptyNodeFlavors;
 
 /**
  * @author Ulf Lilleengen
@@ -56,7 +55,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                                   ModelFactoryRegistry modelFactoryRegistry,
                                   PermanentApplicationPackage permanentApplicationPackage,
                                   FileDistributionFactory fileDistributionFactory,
-                                  SuperModelGenerationCounter superModelGenerationCounter,
                                   HostRegistries hostRegistries,
                                   ConfigserverConfig configserverConfig,
                                   SessionPreparer sessionPreparer,
@@ -72,7 +70,7 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
         this.configserverConfig = configserverConfig;
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
-        this.superModelGenerationCounter = superModelGenerationCounter;
+        this.superModelGenerationCounter = new SuperModelGenerationCounter(curator);
         this.defRepo = defRepo;
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.hostRegistries = hostRegistries;
@@ -88,7 +86,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
     public static class Builder {
 
         private Curator curator = new MockCurator();
-        private Optional<ConfigCurator> configCurator = Optional.empty();
         private Metrics metrics = Metrics.createTestMetrics();
         private ConfigserverConfig configserverConfig = new ConfigserverConfig(
                 new ConfigserverConfig.Builder()
@@ -112,11 +109,6 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
 
         public Builder curator(Curator curator) {
             this.curator = curator;
-            return this;
-        }
-
-        public Builder configCurator(ConfigCurator configCurator) {
-            this.configCurator = Optional.ofNullable(configCurator);
             return this;
         }
 
@@ -155,21 +147,16 @@ public class TestComponentRegistry implements GlobalComponentRegistry {
                     .orElse(new PermanentApplicationPackage(configserverConfig));
             FileDistributionFactory fileDistributionFactory = this.fileDistributionFactory
                     .orElse(new MockFileDistributionFactory(configserverConfig));
-            HostProvisionerProvider hostProvisionerProvider = hostProvisioner.isPresent() ?
-                    HostProvisionerProvider.withProvisioner(hostProvisioner.get()) :
-                    HostProvisionerProvider.empty();
+            HostProvisionerProvider hostProvisionerProvider = hostProvisioner.
+                    map(HostProvisionerProvider::withProvisioner).orElseGet(HostProvisionerProvider::empty);
             SessionPreparer sessionPreparer = new SessionPreparer(modelFactoryRegistry, fileDistributionFactory,
                                                                   hostProvisionerProvider, permApp,
                                                                   configserverConfig, defRepo, curator,
                                                                   zone);
-            return new TestComponentRegistry(curator, configCurator.orElse(ConfigCurator.create(curator)),
-                                             metrics, modelFactoryRegistry,
-                                             permApp,
-                                             fileDistributionFactory,
-                                             new SuperModelGenerationCounter(curator),
-                                             hostRegistries, configserverConfig, sessionPreparer,
-                                             hostProvisioner, defRepo, reloadListener,
-                                             tenantListener, zone, clock);
+            return new TestComponentRegistry(curator, ConfigCurator.create(curator), metrics, modelFactoryRegistry,
+                                             permApp, fileDistributionFactory, hostRegistries, configserverConfig,
+                                             sessionPreparer, hostProvisioner, defRepo, reloadListener, tenantListener,
+                                             zone, clock);
         }
     }
 

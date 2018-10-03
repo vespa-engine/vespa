@@ -59,8 +59,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class FRT_RPCInvoker : public FastOS_Runnable,
-                       public FRT_IReturnHandler
+class FRT_RPCInvoker : public FRT_IReturnHandler
 {
 private:
     FRT_RPCRequest *_req;
@@ -76,15 +75,13 @@ public:
                    bool noReply);
 
     void ForceMethod(FRT_Method *method) { _method = method; }
-    bool IsInstant();
 
     FRT_RPCRequest *GetRequest() { return _req; }
 
     void HandleDone(bool freeChannel);
-    bool Invoke(bool freeChannel);
+    bool Invoke();
     void HandleReturn() override;
     FNET_Connection *GetConnection() override;
-    void Run(FastOS_ThreadInterface *, void *) override;
 };
 
 //-----------------------------------------------------------------------------

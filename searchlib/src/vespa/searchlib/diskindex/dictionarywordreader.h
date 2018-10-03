@@ -29,7 +29,7 @@ public:
     }
 
     void
-    tryWriteWord(const vespalib::stringref &word)
+    tryWriteWord(vespalib::stringref word)
     {
         if (word != _word || _wordNum == 0) {
             ++_wordNum;

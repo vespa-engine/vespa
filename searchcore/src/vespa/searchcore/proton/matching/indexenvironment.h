@@ -10,8 +10,7 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 /**
  * Index environment implementation for the proton matching pipeline.
@@ -47,40 +46,21 @@ public:
                      const search::fef::Properties &props,
                      const IConstantValueRepo &constantValueRepo);
 
-    // inherited from search::fef::IIndexEnvironment
-    virtual const search::fef::Properties &getProperties() const override;
+    const search::fef::Properties &getProperties() const override;
+    uint32_t getNumFields() const override;
+    const search::fef::FieldInfo *getField(uint32_t id) const override;
+    const search::fef::FieldInfo *getFieldByName(const string &name) const override;
+    const search::fef::ITableManager &getTableManager() const override;
+    FeatureMotivation getFeatureMotivation() const override;
+    void hintFeatureMotivation(FeatureMotivation motivation) const override;
+    void hintFieldAccess(uint32_t fieldId) const override;
+    void hintAttributeAccess(const string &name) const override;
 
-    // inherited from search::fef::IIndexEnvironment
-    virtual uint32_t getNumFields() const override;
-
-    // inherited from search::fef::IIndexEnvironment
-    virtual const search::fef::FieldInfo *getField(uint32_t id) const override;
-
-    // inherited from search::fef::IIndexEnvironment
-    virtual const search::fef::FieldInfo *
-    getFieldByName(const string &name) const override;
-
-    // inherited from search::fef::IIndexEnvironment
-    virtual const search::fef::ITableManager &getTableManager() const override;
-
-    virtual FeatureMotivation getFeatureMotivation() const override;
-
-    // inherited from search::fef::IIndexEnvironment
-    virtual void hintFeatureMotivation(FeatureMotivation motivation) const override;
-
-    // inherited from search::fef::IIndexEnvironment
-    virtual void hintFieldAccess(uint32_t fieldId) const override;
-
-    // inherited from search::fef::IIndexEnvironment
-    virtual void hintAttributeAccess(const string &name) const override;
-
-    virtual vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override {
+    vespalib::eval::ConstantValue::UP getConstantValue(const vespalib::string &name) const override {
         return _constantValueRepo.getConstant(name);
     }
 
-    virtual ~IndexEnvironment();
+    ~IndexEnvironment() override;
 };
 
-} // namespace matching
-} // namespace proton
-
+}

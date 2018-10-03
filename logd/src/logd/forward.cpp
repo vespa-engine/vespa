@@ -2,6 +2,7 @@
 
 #include "forward.h"
 #include "errhandle.h"
+#include "metrics.h"
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/locale/c.h>
 #include <unistd.h>
@@ -19,7 +20,7 @@ Forwarder::Forwarder(Metrics &metrics)
       knownServices(),
       _badLines(0)
 {}
-Forwarder::~Forwarder() {}
+Forwarder::~Forwarder() = default;
 
 void
 Forwarder::forwardText(const char *text, int len)
@@ -44,7 +45,7 @@ Forwarder::sendMode()
     snprintf(buf, 1024, "mode logd %s\n", vespalib::VersionTag);
     int len = strlen(buf);
     if (len < 100) {
-            forwardText(buf, len);
+        forwardText(buf, len);
     } else {
         LOG(warning, "too long mode line: %s", buf);
     }
@@ -68,16 +69,13 @@ Forwarder::forwardLine(const char *line, const char *eol)
 bool
 Forwarder::parseline(const char *linestart, const char *lineend)
 {
-    using vespalib::string;
-
     int llength = lineend - linestart;
 
     const char *fieldstart = linestart;
     // time
     const char *tab = strchr(fieldstart, '\t');
-    if (tab == NULL || tab == fieldstart) {
-        LOG(spam, "bad logline no 1. tab: %.*s",
-            llength, linestart);
+    if (tab == nullptr || tab == fieldstart) {
+        LOG(spam, "bad logline no 1. tab: %.*s", llength, linestart);
         ++_badLines;
         return false;
     }
@@ -85,23 +83,20 @@ Forwarder::parseline(const char *linestart, const char *lineend)
     double logtime = vespalib::locale::c::strtod(fieldstart, &eod);
     if (eod != tab) {
         int fflen = tab - linestart;
-        LOG(spam, "bad logline first field not strtod parsable: %.*s",
-            fflen, linestart);
+        LOG(spam, "bad logline first field not strtod parsable: %.*s", fflen, linestart);
         ++_badLines;
         return false;
     }
-    time_t now = time(NULL);
+    time_t now = time(nullptr);
     if (logtime - 864000 > now) {
         int fflen = tab - linestart;
-        LOG(warning, "bad logline, time %.*s > 10 days in the future",
-            fflen, linestart);
+        LOG(warning, "bad logline, time %.*s > 10 days in the future", fflen, linestart);
         ++_badLines;
         return false;
     }
     if (logtime + 8640000 < now) {
         int fflen = tab - linestart;
-        LOG(warning, "bad logline, time %.*s > 100 days in the past",
-            fflen, linestart);
+        LOG(warning, "bad logline, time %.*s > 100 days in the past", fflen, linestart);
         ++_badLines;
         return false;
     }
@@ -109,9 +104,8 @@ Forwarder::parseline(const char *linestart, const char *lineend)
     // hostname
     fieldstart = tab + 1;
     tab = strchr(fieldstart, '\t');
-    if (tab == NULL) {
-        LOG(spam, "bad logline no 2. tab: %.*s",
-            llength, linestart);
+    if (tab == nullptr) {
+        LOG(spam, "bad logline no 2. tab: %.*s", llength, linestart);
         ++_badLines;
         return false;
     }
@@ -119,9 +113,8 @@ Forwarder::parseline(const char *linestart, const char *lineend)
     // pid
     fieldstart = tab + 1;
     tab = strchr(fieldstart, '\t');
-    if (tab == NULL || tab == fieldstart) {
-        LOG(spam, "bad logline no 3. tab: %.*s",
-            llength, linestart);
+    if (tab == nullptr || tab == fieldstart) {
+        LOG(spam, "bad logline no 3. tab: %.*s", llength, linestart);
         return false;
     }
     int pid = strtol(fieldstart, &eod, 10);
@@ -130,45 +123,40 @@ Forwarder::parseline(const char *linestart, const char *lineend)
     // service
     fieldstart = tab + 1;
     tab = strchr(fieldstart, '\t');
-    if (tab == NULL) {
-        LOG(spam, "bad logline no 4. tab: %.*s",
-            llength, linestart);
+    if (tab == nullptr) {
+        LOG(spam, "bad logline no 4. tab: %.*s", llength, linestart);
         ++_badLines;
         return false;
     }
     if (tab == fieldstart) {
-        LOG(spam, "empty service in logline: %.*s",
-            llength, linestart);
+        LOG(spam, "empty service in logline: %.*s", llength, linestart);
     }
-    string service(fieldstart, tab-fieldstart);
+    std::string service(fieldstart, tab-fieldstart);
 
     // component
     fieldstart = tab + 1;
     tab = strchr(fieldstart, '\t');
-    if (tab == NULL || tab == fieldstart) {
-        LOG(spam, "bad logline no 5. tab: %.*s",
-            llength, linestart);
+    if (tab == nullptr || tab == fieldstart) {
+        LOG(spam, "bad logline no 5. tab: %.*s", llength, linestart);
         ++_badLines;
         return false;
     }
-    string component(fieldstart, tab-fieldstart);
+    std::string component(fieldstart, tab-fieldstart);
 
     // level
     fieldstart = tab + 1;
     tab = strchr(fieldstart, '\t');
-    if (tab == NULL || tab == fieldstart) {
-        LOG(spam, "bad logline no 6. tab: %.*s",
-            llength, linestart);
+    if (tab == nullptr || tab == fieldstart) {
+        LOG(spam, "bad logline no 6. tab: %.*s", llength, linestart);
         ++_badLines;
         return false;
     }
-    string level(fieldstart, tab-fieldstart);
+    std::string level(fieldstart, tab-fieldstart);
     LogLevel l = _levelparser.parseLevel(level.c_str());
 
     // rest is freeform message, must be on this line:
     if (tab > lineend) {
-        LOG(spam, "bad logline last tab after end: %.*s",
-            llength, linestart);
+        LOG(spam, "bad logline last tab after end: %.*s", llength, linestart);
         ++_badLines;
         return false;
     }
@@ -181,8 +169,8 @@ Forwarder::parseline(const char *linestart, const char *lineend)
         return found->second;
     }
 
-    Service *svcp = knownServices.getService(service.c_str());
-    Component *cp = svcp->getComponent(component.c_str());
+    Service *svcp = knownServices.getService(service);
+    Component *cp = svcp->getComponent(component);
     cp->remember(logtime, pid);
     bool retval = cp->shouldForward(l);
     return retval;
@@ -197,9 +185,9 @@ LevelParser::parseLevel(const char *level)
     if (l >= 0 && l <= Logger::NUM_LOGLEVELS) {
         return l;
     }
-    if (! _seenLevelMap[level]) {
+    if (_seenLevelMap.find(level) == _seenLevelMap.end()) {
         LOG(warning, "unknown level '%s'", level);
-        _seenLevelMap.set(level, true);
+        _seenLevelMap.insert(level);
     }
     return Logger::fatal;
 }

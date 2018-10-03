@@ -4,11 +4,10 @@ package com.yahoo.vespa.model.container.http;
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.ssl.DefaultSslKeyStoreConfigurator;
-import com.yahoo.jdisc.http.ssl.DefaultSslTrustStoreConfigurator;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
+import com.yahoo.vespa.model.container.http.ssl.LegacySslProvider;
 import org.w3c.dom.Element;
 
 import static com.yahoo.component.ComponentSpecification.fromString;
@@ -17,22 +16,23 @@ import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.KeyStoreType;
 /**
  * @author Einar M R Rosenvinge
  * @author bjorncs
+ * @author mortent
  */
 public class ConnectorFactory extends SimpleComponent implements ConnectorConfig.Producer {
 
     private final String name;
     private final int listenPort;
     private final Element legacyConfig;
+    private final SimpleComponent sslProviderComponent;
 
     public ConnectorFactory(String name, int listenPort) {
-        this(name, listenPort, null, null, null);
+        this(name, listenPort, null, new LegacySslProvider(name));
     }
 
     public ConnectorFactory(String name,
                             int listenPort,
                             Element legacyConfig,
-                            Element sslKeystoreConfigurator,
-                            Element sslTruststoreConfigurator) {
+                            SimpleComponent sslProviderComponent) {
         super(new ComponentModel(
                 new BundleInstantiationSpecification(new ComponentId(name),
                                                      fromString("com.yahoo.jdisc.http.server.jetty.ConnectorFactory"),
@@ -40,8 +40,9 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         this.name = name;
         this.listenPort = listenPort;
         this.legacyConfig = legacyConfig;
-        addSslKeyStoreConfigurator(name, sslKeystoreConfigurator);
-        addSslTrustStoreConfigurator(name, sslTruststoreConfigurator);
+        this.sslProviderComponent = sslProviderComponent;
+        addChild(sslProviderComponent);
+        inject(sslProviderComponent);
     }
 
     @Override
@@ -49,6 +50,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
         configureWithLegacyHttpConfig(legacyConfig, connectorBuilder);
         connectorBuilder.listenPort(listenPort);
         connectorBuilder.name(name);
+        ((ConnectorConfig.Producer)sslProviderComponent).getConfig(connectorBuilder);
     }
 
     public String getName() {
@@ -152,31 +154,4 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
             }
         }
     }
-
-    private void addSslKeyStoreConfigurator(String name, Element sslKeystoreConfigurator) {
-        addSslConfigurator("ssl-keystore-configurator@" + name,
-                           DefaultSslKeyStoreConfigurator.class,
-                           sslKeystoreConfigurator);
-    }
-
-    private void addSslTrustStoreConfigurator(String name, Element sslKeystoreConfigurator) {
-        addSslConfigurator("ssl-truststore-configurator@" + name,
-                           DefaultSslTrustStoreConfigurator.class,
-                           sslKeystoreConfigurator);
-    }
-
-    private void addSslConfigurator(String idSpec, Class<?> defaultImplementation, Element configuratorElement) {
-        SimpleComponent configuratorComponent;
-        if (configuratorElement != null) {
-            String className = configuratorElement.getAttribute("class");
-            String bundleName = configuratorElement.getAttribute("bundle");
-            configuratorComponent = new SimpleComponent(new ComponentModel(idSpec, className, bundleName));
-        } else {
-            configuratorComponent =
-                    new SimpleComponent(new ComponentModel(idSpec, defaultImplementation.getName(), "jdisc_http_service"));
-        }
-        addChild(configuratorComponent);
-        inject(configuratorComponent);
-    }
-
 }

@@ -87,7 +87,7 @@ public:
     explicit MyAttributeManager(AttributeVector *attr);
 
     explicit MyAttributeManager(AttributeVector::SP attr);
-    ~MyAttributeManager();
+    ~MyAttributeManager() override;
 
     void set_other(AttributeVector::SP attr) {
         _other = attr;
@@ -95,15 +95,16 @@ public:
 
     AttributeGuard::UP getAttribute(const string &name) const override {
         if (name == field) {
-            return AttributeGuard::UP(new AttributeGuard(_attribute_vector));
+            return std::make_unique<AttributeGuard>(_attribute_vector);
         } else if (name == other) {
-            return AttributeGuard::UP(new AttributeGuard(_other));
+            return std::make_unique<AttributeGuard>(_other);
         } else {
             return AttributeGuard::UP(nullptr);
         }
     }
 
-    std::unique_ptr<attribute::AttributeReadGuard> getAttributeReadGuard(const string &name, bool stableEnumGuard) const override {
+    std::unique_ptr<attribute::AttributeReadGuard>
+    getAttributeReadGuard(const string &name, bool stableEnumGuard) const override {
         if (name == field && _attribute_vector) {
             return _attribute_vector->makeReadGuard(stableEnumGuard);
         } else if (name == other && _other) {
@@ -120,6 +121,8 @@ public:
         assert(!"Not implemented");
         return IAttributeContext::UP();
     }
+
+    void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
 };
 
 struct Result {
@@ -156,7 +159,7 @@ Result::Result(size_t est_hits_in, bool est_empty_in)
       wand_initial_threshold(0), wand_boost_factor(0.0), hits(), iterator_dump()
 {}
 
-Result::~Result() {}
+Result::~Result() = default;
 
 
 MyAttributeManager::MyAttributeManager(MyAttributeManager && rhs)
@@ -174,9 +177,14 @@ MyAttributeManager::MyAttributeManager(AttributeVector::SP attr)
       _other()
 {}
 
-MyAttributeManager::~MyAttributeManager() {}
+MyAttributeManager::~MyAttributeManager() = default;
 
-void extract_posting_info(Result &result, const PostingInfo *postingInfo) {
+void
+MyAttributeManager::asyncForAttribute(const vespalib::string &, std::unique_ptr<IAttributeFunctor>) const {
+
+}
+
+    void extract_posting_info(Result &result, const PostingInfo *postingInfo) {
     if (postingInfo != NULL) {
         const MinMaxPostingInfo *minMax = dynamic_cast<const MinMaxPostingInfo *>(postingInfo);
         if (minMax != NULL) {

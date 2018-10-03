@@ -16,11 +16,17 @@ import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.config.application.api.ApplicationPackage;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * For testing purposes only
@@ -32,6 +38,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     public static final String MUSIC_SEARCHDEFINITION = createSearchDefinition("music", "foo");
     public static final String BOOK_SEARCHDEFINITION = createSearchDefinition("book", "bar");
 
+    private final File root;
     private final String hostsS;
     private final String servicesS;
     private final List<String> searchDefinitions;
@@ -42,9 +49,11 @@ public class MockApplicationPackage implements ApplicationPackage {
     private final QueryProfileRegistry queryProfileRegistry;
     private final ApplicationMetaData applicationMetaData;
 
-    protected MockApplicationPackage(String hosts, String services, List<String> searchDefinitions, String searchDefinitionDir,
+    protected MockApplicationPackage(File root, String hosts, String services, List<String> searchDefinitions,
+                                     String searchDefinitionDir,
                                      String deploymentSpec, String validationOverrides, boolean failOnValidateXml,
                                      String queryProfile, String queryProfileType) {
+        this.root = root;
         this.hostsS = hosts;
         this.servicesS = services;
         this.searchDefinitions = searchDefinitions;
@@ -54,8 +63,11 @@ public class MockApplicationPackage implements ApplicationPackage {
         this.failOnValidateXml = failOnValidateXml;
         queryProfileRegistry = new QueryProfileXMLReader().read(asNamedReaderList(queryProfileType),
                                                                 asNamedReaderList(queryProfile));
-        applicationMetaData = new ApplicationMetaData("user", "dir", 0L, false, "application", "checksum", 0L, 0L);
+        applicationMetaData = new ApplicationMetaData("user", "dir", 0L, false, "application", "checksum", 1L, 0L);
     }
+
+    /** Returns the root of this application package relative to the current dir */
+    protected File root() { return root; }
 
     @Override
     public String getApplicationName() {
@@ -107,7 +119,12 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     @Override
     public ApplicationFile getFile(Path file) {
-        throw new UnsupportedOperationException();
+        return new MockApplicationFile(file, Path.fromString(root.toString()));
+    }
+
+    @Override
+    public File getFileReference(Path path) {
+        return Path.fromString(root.toString()).append(path).toFile();
     }
 
     @Override
@@ -163,6 +180,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     public static class Builder {
 
+        private File root = new File("nonexisting");
         private String hosts = null;
         private String services = null;
         private List<String> searchDefinitions = Collections.emptyList();
@@ -174,6 +192,11 @@ public class MockApplicationPackage implements ApplicationPackage {
         private String queryProfileType = null;
 
         public Builder() {
+        }
+
+        public Builder withRoot(File root) {
+            this.root = root;
+            return this;
         }
 
         public Builder withEmptyHosts() {
@@ -235,7 +258,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         }
 
         public ApplicationPackage build() {
-                return new MockApplicationPackage(hosts, services, searchDefinitions, searchDefinitionDir,
+                return new MockApplicationPackage(root, hosts, services, searchDefinitions, searchDefinitionDir,
                                                   deploymentSpec, validationOverrides, failOnValidateXml,
                                                   queryProfile, queryProfileType);
         }
@@ -281,6 +304,124 @@ public class MockApplicationPackage implements ApplicationPackage {
         int idEnd = Math.min(xmlStringWithIdAttribute.indexOf(" ", idStart),
                              xmlStringWithIdAttribute.indexOf(">", idStart));
         return xmlStringWithIdAttribute.substring(idStart + 4, idEnd - 1);
+    }
+
+    public static class MockApplicationFile extends ApplicationFile {
+
+        /** The path to the application package root */
+        private final Path root;
+
+        /** The File pointing to the actual file represented by this */
+        private final File file;
+
+        public MockApplicationFile(Path filePath, Path applicationPackagePath) {
+            super(filePath);
+            this.root = applicationPackagePath;
+            file = applicationPackagePath.append(filePath).toFile();
+        }
+
+        @Override
+        public boolean isDirectory() {
+            return file.isDirectory();
+        }
+
+        @Override
+        public boolean exists() {
+            return file.exists();
+        }
+
+        @Override
+        public Reader createReader() throws FileNotFoundException {
+            try {
+                if ( ! exists()) throw new FileNotFoundException("File '" + file + "' does not exist");
+                return IOUtils.createReader(file, "UTF-8");
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        public InputStream createInputStream() throws FileNotFoundException {
+            try {
+                if ( ! exists()) throw new FileNotFoundException("File '" + file + "' does not exist");
+                return new BufferedInputStream(new FileInputStream(file));
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        public ApplicationFile createDirectory() {
+            file.mkdirs();
+            return this;
+        }
+
+        @Override
+        public ApplicationFile writeFile(Reader input) {
+            try {
+                IOUtils.writeFile(file, IOUtils.readAll(input), false);
+                return this;
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        public ApplicationFile appendFile(String value) {
+            try {
+                IOUtils.writeFile(file, value, true);
+                return this;
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        public List<ApplicationFile> listFiles(PathFilter filter) {
+            if ( ! isDirectory()) return Collections.emptyList();
+            return Arrays.stream(file.listFiles()).filter(f -> filter.accept(Path.fromString(f.toString())))
+                         .map(f -> new MockApplicationFile(asApplicationRelativePath(f), root))
+                         .collect(Collectors.toList());
+        }
+
+        @Override
+        public ApplicationFile delete() {
+            file.delete();
+            return this;
+        }
+
+        @Override
+        public MetaData getMetaData() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int compareTo(ApplicationFile other) {
+            return this.getPath().getName().compareTo((other).getPath().getName());
+        }
+
+        /** Strips the application package root path prefix from the path of the given file */
+        private Path asApplicationRelativePath(File file) {
+            Path path = Path.fromString(file.toString());
+
+            Iterator<String> pathIterator = path.iterator();
+            // Skip the path elements this shares with the root
+            for (Iterator<String> rootIterator = root.iterator(); rootIterator.hasNext(); ) {
+                String rootElement = rootIterator.next();
+                String pathElement = pathIterator.next();
+                if ( ! rootElement.equals(pathElement)) throw new RuntimeException("Assumption broken");
+            }
+            // Build a path from the remaining
+            Path relative = Path.fromString("");
+            while (pathIterator.hasNext())
+                relative = relative.append(pathIterator.next());
+            return relative;
+        }
+
     }
 
 }

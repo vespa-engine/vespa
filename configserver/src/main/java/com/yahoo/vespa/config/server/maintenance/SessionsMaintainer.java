@@ -28,8 +28,9 @@ public class SessionsMaintainer extends Maintainer {
         // Expired remote sessions are not expected to exist, they should have been deleted when
         // a deployment happened or when the application was deleted. We still see them from time to time,
         // probably due to some race or another bug
-        Duration expiryTime = Duration.ofDays(30);
-        if (hostedVespa)
+        if (hostedVespa) {
+            Duration expiryTime = Duration.ofDays(30);
             applicationRepository.deleteExpiredRemoteSessions(expiryTime);
+        }
     }
 }

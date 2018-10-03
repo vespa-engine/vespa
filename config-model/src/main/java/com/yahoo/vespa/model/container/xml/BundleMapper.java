@@ -11,8 +11,7 @@ import java.util.Optional;
 
 /**
  * @author gjoranv
- * @author lulf
- * @since 5.45
+ * @author Ulf Lilleengen
  */
 public class BundleMapper {
 

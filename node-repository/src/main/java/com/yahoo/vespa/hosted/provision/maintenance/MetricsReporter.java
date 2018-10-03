@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -36,17 +37,20 @@ public class MetricsReporter extends Maintainer {
     private final Orchestrator orchestrator;
     private final ServiceMonitor serviceMonitor;
     private final Map<Map<String, String>, Metric.Context> contextMap = new HashMap<>();
+    private final Supplier<Integer> pendingRedeploymentsSupplier;
 
     public MetricsReporter(NodeRepository nodeRepository,
                            Metric metric,
                            Orchestrator orchestrator,
                            ServiceMonitor serviceMonitor,
+                           Supplier<Integer> pendingRedeploymentsSupplier,
                            Duration interval,
                            JobControl jobControl) {
         super(nodeRepository, interval, jobControl);
         this.metric = metric;
         this.orchestrator = orchestrator;
         this.serviceMonitor = serviceMonitor;
+        this.pendingRedeploymentsSupplier = pendingRedeploymentsSupplier;
     }
 
     @Override
@@ -58,7 +62,12 @@ public class MetricsReporter extends Maintainer {
 
         nodes.forEach(node -> updateNodeMetrics(node, servicesByHost));
         updateStateMetrics(nodes);
+        updateMaintenanceMetrics();
         updateDockerMetrics(nodes);
+    }
+
+    private void updateMaintenanceMetrics() {
+        metric.set("hostedVespa.pendingRedeployments", pendingRedeploymentsSupplier.get(), null);
     }
 
     private void updateNodeMetrics(Node node, Map<HostName, List<ServiceInstance>> servicesByHost) {
@@ -225,7 +234,6 @@ public class MetricsReporter extends Maintainer {
         for (Flavor flavor : dockerFlavors) {
             Metric.Context context = getContextAt("flavor", flavor.name());
             metric.set("hostedVespa.docker.freeCapacityFlavor", capacity.freeCapacityInFlavorEquivalence(flavor), context);
-            metric.set("hostedVespa.docker.idealHeadroomFlavor", flavor.getIdealHeadroom(), context);
             metric.set("hostedVespa.docker.hostsAvailableFlavor", capacity.getNofHostsAvailableFor(flavor), context);
         }
 

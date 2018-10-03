@@ -18,7 +18,7 @@ NumericDirectAttribute(const vespalib::string & baseFileName, const Config & c)
 }
 
 template <typename B>
-NumericDirectAttribute<B>::~NumericDirectAttribute() {}
+NumericDirectAttribute<B>::~NumericDirectAttribute() = default;
 
 template <typename B>
 bool NumericDirectAttribute<B>::onLoad()

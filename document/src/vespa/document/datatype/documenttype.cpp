@@ -22,7 +22,7 @@ DocumentType::DocumentType()
 {
 }
 
-DocumentType::DocumentType(const stringref& name, int32_t id)
+DocumentType::DocumentType(stringref name, int32_t id)
     : StructuredDataType(name, id),
       _inheritedTypes(),
       _ownedFields(new StructDataType(name + ".header")),
@@ -34,7 +34,7 @@ DocumentType::DocumentType(const stringref& name, int32_t id)
     }
 }
 
-DocumentType::DocumentType(const stringref& name, int32_t id, const StructDataType& fields)
+DocumentType::DocumentType(stringref name, int32_t id, const StructDataType& fields)
     : StructuredDataType(name, id),
       _inheritedTypes(),
       _fields(&fields),
@@ -45,7 +45,7 @@ DocumentType::DocumentType(const stringref& name, int32_t id, const StructDataTy
     }
 }
 
-DocumentType::DocumentType(const stringref& name)
+DocumentType::DocumentType(stringref name)
     : StructuredDataType(name),
       _inheritedTypes(),
       _ownedFields(new StructDataType(name + ".header")),
@@ -57,7 +57,7 @@ DocumentType::DocumentType(const stringref& name)
     }
 }
 
-DocumentType::DocumentType(const stringref& name, const StructDataType& fields)
+DocumentType::DocumentType(stringref name, const StructDataType& fields)
     : StructuredDataType(name),
       _inheritedTypes(),
       _fields(&fields),
@@ -210,7 +210,7 @@ DocumentType::operator==(const DataType& other) const
 }
 
 const Field&
-DocumentType::getField(const stringref& name) const
+DocumentType::getField(stringref name) const
 {
     return _fields->getField(name);
 }
@@ -221,7 +221,7 @@ DocumentType::getField(int fieldId) const
     return _fields->getField(fieldId);
 }
 
-bool DocumentType::hasField(const stringref &name) const {
+bool DocumentType::hasField(stringref name) const {
     return _fields->hasField(name);
 }
 

@@ -5,11 +5,9 @@
 #include <vespa/vespalib/objects/identifiable.hpp>
 #include <vespa/vespalib/objects/visit.h>
 
-namespace search {
+namespace search::attribute { class IAttributeContext; }
 
-namespace attribute { class IAttributeContext; }
-
-namespace expression {
+namespace search::expression {
 
 typedef uint32_t DocId;
 
@@ -55,5 +53,3 @@ private:
 typedef ExpressionNode::CP * ExpressionNodeArray;
 
 }
-}
-
