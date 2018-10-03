@@ -4,7 +4,7 @@ package com.yahoo.searchlib.expression;
 /**
  * This function converts its argument to a raw function node.
  *
- * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
+ * @author Ulf Lilleengen</a>
  */
 public class ToRawFunctionNode extends UnaryFunctionNode {
 

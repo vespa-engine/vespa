@@ -17,7 +17,7 @@ import java.util.*;
  * ConfigModel subclasses or Collection of ConfigModels as subsequent arguments.
  * Only Collection, not Collection subtypes can be used.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class ModelNode<MODEL extends ConfigModel> implements ConfigModelInstanceFactory<MODEL> {

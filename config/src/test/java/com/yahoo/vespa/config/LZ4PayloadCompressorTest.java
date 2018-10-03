@@ -8,7 +8,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.19
  */
 public class LZ4PayloadCompressorTest {

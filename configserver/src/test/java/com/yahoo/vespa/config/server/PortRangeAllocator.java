@@ -12,7 +12,7 @@ import java.util.Stack;
 /**
  * Allocates port ranges for all configserver tests.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1.26
  */
 public class PortRangeAllocator {

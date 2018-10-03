@@ -5,7 +5,7 @@ import org.junit.Test;
 import org.osgi.framework.BundleException;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class DisableOsgiFrameworkTest {

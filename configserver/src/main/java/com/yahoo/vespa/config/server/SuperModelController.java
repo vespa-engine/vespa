@@ -23,7 +23,7 @@ import java.io.StringReader;
  * Handler for global configs that must be resolved using the global SuperModel instance. Deals with
  * reloading of config as well.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.9
  */
 public class SuperModelController {

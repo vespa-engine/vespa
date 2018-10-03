@@ -11,7 +11,7 @@ import java.util.Map;
  * Class which converts a selection tree into a set of queries per document type.
  * If unsupported operations are or illegal arguments are encountered, an exception is thrown.
  *
- * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
+ * @author Ulf Lilleengen</a>
  */
 public class SelectionExpressionConverter implements Visitor {
 

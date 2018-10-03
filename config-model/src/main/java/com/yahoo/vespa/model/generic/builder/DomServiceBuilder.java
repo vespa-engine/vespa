@@ -9,7 +9,7 @@ import com.yahoo.vespa.model.generic.service.ServiceCluster;
 import org.w3c.dom.Element;
 
 /**
-* @author lulf
+* @author Ulf Lilleengen
 * @since 5.1
 */
 public class DomServiceBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Service> {

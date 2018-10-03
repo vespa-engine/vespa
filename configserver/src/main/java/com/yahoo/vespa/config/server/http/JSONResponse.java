@@ -12,7 +12,7 @@ import java.io.OutputStream;
 /**
  * Response that contains some utility stuff for rendering json.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.3
  */
 public class JSONResponse extends HttpResponse {

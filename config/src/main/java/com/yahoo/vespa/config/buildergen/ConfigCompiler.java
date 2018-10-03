@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.buildergen;
 /**
  * Interface towards compilers for compiling builders from a config class definition.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.2
  */
 public interface ConfigCompiler {

@@ -9,7 +9,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class CuratorLock implements Lock {

@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * In memory {@link TenantApplications} to be used when testing.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class MemoryTenantApplications implements TenantApplications {

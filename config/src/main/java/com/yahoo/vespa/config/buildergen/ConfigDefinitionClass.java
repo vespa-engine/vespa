@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.buildergen;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class ConfigDefinitionClass {
     private final String name;

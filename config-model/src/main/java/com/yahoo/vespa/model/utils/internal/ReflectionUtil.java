@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * Utility class containing static methods for retrievinig information about the config producer tree.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @author bjorncs
  * @since 5.1
  */

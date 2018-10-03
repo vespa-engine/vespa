@@ -11,7 +11,7 @@ import java.util.Stack;
 /**
  * Serialize a {@link TraceNode} to {@link com.yahoo.slime.Slime}.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.5
  */
 public class SlimeTraceSerializer extends TraceVisitor {

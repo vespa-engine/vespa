@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Contains a repository of mapped log level controllers.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class MappedLevelControllerRepo {

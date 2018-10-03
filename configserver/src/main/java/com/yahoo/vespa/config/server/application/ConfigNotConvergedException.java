@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.application;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class ConfigNotConvergedException extends RuntimeException {
     public ConfigNotConvergedException(String message) {

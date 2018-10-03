@@ -17,7 +17,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class MockServiceTest {
 

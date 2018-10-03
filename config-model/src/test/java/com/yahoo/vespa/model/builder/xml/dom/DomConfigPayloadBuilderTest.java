@@ -28,7 +28,7 @@ import static org.junit.Assert.fail;
  * Tests for the {@link com.yahoo.vespa.model.builder.xml.dom.DomConfigPayloadBuilder} class.
  *
  * @author gjoranv
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class DomConfigPayloadBuilderTest {
 

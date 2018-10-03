@@ -9,7 +9,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertNotNull;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class MbusClientProviderTest {

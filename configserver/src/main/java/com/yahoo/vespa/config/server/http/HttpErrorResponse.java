@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 import static com.yahoo.jdisc.Response.Status.*;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class HttpErrorResponse extends HttpResponse {

@@ -7,7 +7,7 @@ import java.util.Objects;
  * Represents an applications region, which may be any kind of string or default. This type is defined
  * in order to provide a type safe API for defining regions.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.11
  */
 public class RegionName implements Comparable<RegionName> {

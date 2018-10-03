@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 /**
  * For debugging tenant issues in configserver. Activate by loading component.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class TenantDebugger implements TreeCacheListener {
 

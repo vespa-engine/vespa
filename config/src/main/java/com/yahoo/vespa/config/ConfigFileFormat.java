@@ -12,7 +12,7 @@ import java.io.*;
 import java.util.Stack;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class ConfigFileFormat implements SlimeFormat, ObjectTraverser {
 

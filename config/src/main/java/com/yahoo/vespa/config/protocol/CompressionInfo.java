@@ -9,7 +9,7 @@ import java.io.IOException;
 /**
  * Contains info relevant for compression and decompression.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.19
  */
 public class CompressionInfo {

@@ -7,7 +7,7 @@ import com.yahoo.vespa.config.server.application.ApplicationSet;
 import java.util.Set;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1.24
  */
 public class MockReloadHandler implements ReloadHandler {

@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class MapConfigModelRegistry extends ConfigModelRegistry {

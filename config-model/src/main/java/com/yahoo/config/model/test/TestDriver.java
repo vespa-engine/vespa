@@ -21,7 +21,7 @@ import java.util.List;
  * Test driver for testing config models. Add custom builders for plugins to be tested. Builds a model from the
  * xml string and returns a config producer that can be use to test getConfig.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1.20
  */
 @Beta

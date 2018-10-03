@@ -10,7 +10,7 @@ import java.util.List;
  * in the commit step or throw an exception if it fails.
  * Operations are performed in the order they are added.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @author bratseth
  */
 public interface Transaction extends AutoCloseable {

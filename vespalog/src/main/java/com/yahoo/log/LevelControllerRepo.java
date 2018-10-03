@@ -5,7 +5,7 @@ package com.yahoo.log;
  * The level controller repository is an interface towards something that is able to provide level
  * controllers for a given component.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public interface LevelControllerRepo {

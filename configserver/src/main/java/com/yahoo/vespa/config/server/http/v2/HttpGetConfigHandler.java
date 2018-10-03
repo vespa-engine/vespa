@@ -17,7 +17,7 @@ import java.util.Optional;
 /**
  * HTTP handler for a getConfig operation
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class HttpGetConfigHandler extends HttpHandler {

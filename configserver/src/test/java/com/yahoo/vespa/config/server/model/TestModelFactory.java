@@ -9,7 +9,7 @@ import com.yahoo.config.provision.Version;
 import com.yahoo.vespa.model.VespaModelFactory;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class TestModelFactory extends VespaModelFactory {
     private final Version vespaVersion;

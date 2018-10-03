@@ -8,7 +8,7 @@ import com.yahoo.vespa.objects.Serializer;
 /**
  * This is a debug wait function node that waits for a specified amount of time before executing its expression.
  *
- * @author <a href="mailto:lulf@yahoo-inc.com">Ulf Lilleengen</a>
+ * @author Ulf Lilleengen</a>
  */
 public class DebugWaitFunctionNode extends UnaryFunctionNode {
 

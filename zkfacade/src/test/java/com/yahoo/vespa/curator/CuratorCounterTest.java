@@ -7,7 +7,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @date 19.08.13
  */
 public class CuratorCounterTest {

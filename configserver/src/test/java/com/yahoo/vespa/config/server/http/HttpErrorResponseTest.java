@@ -11,7 +11,7 @@ import static org.junit.Assert.assertThat;
 import static com.yahoo.jdisc.http.HttpResponse.Status.*;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class HttpErrorResponseTest {

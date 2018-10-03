@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * A factory for creating metric updates with a given context.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.15
  */
 public interface MetricUpdaterFactory {

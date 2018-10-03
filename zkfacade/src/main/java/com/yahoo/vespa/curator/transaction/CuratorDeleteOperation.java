@@ -6,7 +6,7 @@ import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.api.transaction.CuratorTransaction;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @author bratseth
  */
 class CuratorDeleteOperation implements CuratorOperation {

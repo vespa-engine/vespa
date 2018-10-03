@@ -7,7 +7,7 @@ import java.util.Collection;
  * A read only host registry that has mappings from a host to some type T.
  * strings.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.9
  */
 public interface HostValidator<T> {

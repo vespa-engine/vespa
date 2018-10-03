@@ -14,7 +14,7 @@ import java.nio.file.Files;
 /**
  * To run this test, place a payload in src/test/ca.json. The file is not checked in because it is huge.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.12
  */
 public class LZ4CompressionTest {

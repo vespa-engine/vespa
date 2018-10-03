@@ -16,7 +16,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class HttpConfigRequestTest {

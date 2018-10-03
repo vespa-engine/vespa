@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * ZooKeeper create operation.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @author bratseth
  */
 class CuratorCreateOperation implements CuratorOperation {

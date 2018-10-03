@@ -28,7 +28,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.9
  */
 public class SuperModelRequestHandlerTest {

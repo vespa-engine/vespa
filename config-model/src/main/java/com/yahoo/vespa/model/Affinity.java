@@ -5,7 +5,7 @@ package com.yahoo.vespa.model;
  * Represents a set of affinities that can be expressed by a service. Currently only supports
  * CPU socket affinity.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.12
  */
 public class Affinity {

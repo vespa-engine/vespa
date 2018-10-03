@@ -12,7 +12,7 @@ import org.w3c.dom.Element;
  * A model builder that can be used to deal with toplevel config overrides and create another
  * producer in between. This should not be used by new model plugins.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public abstract class LegacyConfigModelBuilder<MODEL extends ConfigModel> extends ConfigModelBuilder<MODEL> {

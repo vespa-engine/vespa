@@ -2,7 +2,7 @@
 package com.yahoo.config.provision;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.25
  */
 public class InstanceNameTest extends IdentifierTestBase<InstanceName> {

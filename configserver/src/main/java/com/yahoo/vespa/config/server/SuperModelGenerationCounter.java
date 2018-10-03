@@ -11,7 +11,7 @@ import com.yahoo.vespa.curator.Curator;
 /**
  * Distributed global generation counter for the super model.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.9
  */
 public class SuperModelGenerationCounter implements GenerationCounter {

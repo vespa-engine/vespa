@@ -12,7 +12,7 @@ struct ConfigState;
  * Baseclass for config requests.
  *
  * @author <a href="gv@yahoo-inc.com">Gj&oslash;ran Voldengen</a>
- * @version : $Id: configrequest.h 125304 2011-08-25 07:53:59Z lulf $
+ * @version : $Id: configrequest.h 125304 2011-08-25 07:53:59Z Ulf Lilleengen $
  */
 
 class ConfigRequest {

@@ -21,7 +21,7 @@ import static org.junit.Assert.assertThat;
 import static com.yahoo.foo.FunctionTestConfig.*;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class ConfigInstanceUtilTest {

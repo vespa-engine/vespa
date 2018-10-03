@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 /**
  * A {@link DeployLogger} which persists messages as a {@link Slime} tree, and holds a tenant and application name.
  * 
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class DeployHandlerLogger implements DeployLogger {

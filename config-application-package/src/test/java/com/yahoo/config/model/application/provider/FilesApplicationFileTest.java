@@ -10,7 +10,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class FilesApplicationFileTest extends ApplicationFileTest {

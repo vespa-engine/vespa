@@ -21,7 +21,7 @@ import java.util.Optional;
  * applications for a single tenant.
  *
  * @author vegardh
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1.26
  */
 public class Tenant implements TenantHandlerProvider {

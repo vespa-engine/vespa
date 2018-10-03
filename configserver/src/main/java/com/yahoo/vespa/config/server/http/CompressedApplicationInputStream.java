@@ -17,7 +17,7 @@ import java.util.zip.GZIPInputStream;
 /**
  * A compressed application points to an application package that can be decompressed.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class CompressedApplicationInputStream implements AutoCloseable {

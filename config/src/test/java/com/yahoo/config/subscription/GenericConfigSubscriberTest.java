@@ -20,7 +20,7 @@ import static org.junit.Assert.*;
  *
  * Test cases for the "generic" (class-less) subscription mechanism.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class GenericConfigSubscriberTest {

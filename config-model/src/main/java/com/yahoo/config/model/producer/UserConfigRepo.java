@@ -13,7 +13,7 @@ import java.util.Set;
  * A UserConfigRepo is a repository for user configs, typically for a particular config producer. The repo encapsulates
  * how the user configs are stored, and defines the methods to retrieve user configs and merge the repo with others.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class UserConfigRepo {

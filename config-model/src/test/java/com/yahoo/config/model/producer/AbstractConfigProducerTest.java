@@ -11,7 +11,7 @@ import static org.junit.Assert.assertThat;
 /**
  * Verifies some of the logic in the abstract config producer that is not tested in other classes.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class AbstractConfigProducerTest {

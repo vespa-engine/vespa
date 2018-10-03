@@ -17,7 +17,7 @@ import java.util.Collection;
  * Used if clustercontroller is run standalone (not as part of the config server ZooKeeper cluster)
  * to provide common configs to container components.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.6
  */
 public class ClusterControllerCluster extends AbstractConfigProducer<ContainerCluster> implements ZookeeperServerConfig.Producer, ZookeepersConfig.Producer {

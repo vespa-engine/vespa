@@ -14,7 +14,7 @@ import java.util.Collection;
 /**
  * Response that lists applications.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1
  */
 public class ListApplicationsResponse extends HttpResponse {

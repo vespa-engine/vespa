@@ -12,7 +12,7 @@ import java.io.StringReader;
 
 /**
  * Represents a higher level functionality on a config definition to (in the future) hide the InnerCNode class.
- * @author lulf
+ * @author Ulf Lilleengen
  */
 public class ConfigDefinition {
     private final String name;

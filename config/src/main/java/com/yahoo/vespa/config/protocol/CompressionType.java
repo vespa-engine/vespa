@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.protocol;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.18
  */
 public enum CompressionType {

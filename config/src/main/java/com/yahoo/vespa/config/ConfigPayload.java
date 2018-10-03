@@ -19,7 +19,7 @@ import java.io.OutputStream;
 /**
  * A class that holds a representation of a config payload.
  *
- * @author lulf
+ * @author Ulf Lilleengen
  * @since 5.1.6
  */
 public class ConfigPayload {

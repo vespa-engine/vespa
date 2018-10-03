@@ -11,7 +11,7 @@ import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 /**
- * @author lulf
+ * @author Ulf Lilleengen
  * @author vegard
  * @since 5.1
  */
