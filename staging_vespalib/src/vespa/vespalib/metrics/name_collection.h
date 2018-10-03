@@ -21,7 +21,7 @@ public:
     size_t resolve(const vespalib::string& name);
     size_t size() const;
 
-    NameCollection() = default;
+    NameCollection();
     ~NameCollection() {}
 };
 
