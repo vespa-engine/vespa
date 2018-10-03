@@ -9,7 +9,7 @@ import com.yahoo.document.select.rule.ComparisonNode;
  * Represents a query containing a valid now() expression. The now expression
  * is very strict right now, but can be expanded later.
  *
- * @author Ulf Lilleengen</a>
+ * @author Ulf Lilleengen
  */
 public class NowQueryExpression {
     private final AttributeNode attribute;

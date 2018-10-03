@@ -4,7 +4,7 @@ import com.yahoo.document.BucketIdFactory;
 import com.yahoo.document.select.*;
 
 /**
- * @author Ulf Lilleengen</a>
+ * @author Ulf Lilleengen
  */
 public class NowNode implements ExpressionNode {
 

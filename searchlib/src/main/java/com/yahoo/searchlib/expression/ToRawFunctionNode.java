@@ -4,7 +4,7 @@ package com.yahoo.searchlib.expression;
 /**
  * This function converts its argument to a raw function node.
  *
- * @author Ulf Lilleengen</a>
+ * @author Ulf Lilleengen
  */
 public class ToRawFunctionNode extends UnaryFunctionNode {
 

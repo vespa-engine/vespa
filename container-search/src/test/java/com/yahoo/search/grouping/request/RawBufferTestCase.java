@@ -10,7 +10,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author Ulf Lilleengen</a>
+ * @author Ulf Lilleengen
  */
 public class RawBufferTestCase {
 

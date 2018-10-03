@@ -6,7 +6,7 @@ import com.yahoo.document.select.rule.*;
 /**
  * This interface can be used to create custom visitors for the selection tree.
  *
- * @author Ulf Lilleengen</a>
+ * @author Ulf Lilleengen
  */
 
 public interface Visitor {

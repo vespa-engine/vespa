@@ -7,7 +7,7 @@ import com.yahoo.document.select.rule.*;
 /**
  * Traverse and check if there exists any now() function in the expression tree.
  *
- * @author Ulf Lilleengen</a>
+ * @author Ulf Lilleengen
  */
 
 public class NowCheckVisitor implements Visitor {

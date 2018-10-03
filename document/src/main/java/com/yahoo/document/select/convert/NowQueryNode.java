@@ -6,7 +6,7 @@ import com.yahoo.document.select.rule.ArithmeticNode;
 /**
  * Represents the now node in a query expression.
  *
- * @author Ulf Lilleengen</a>
+ * @author Ulf Lilleengen
  */
 public class NowQueryNode {
     private final long value;

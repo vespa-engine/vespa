@@ -5,7 +5,7 @@ package com.yahoo.searchlib.expression;
  * This is an abstract class for all functions that perform arithmetics. This node implements the necessary API for
  * doing arithmetic operations.
  *
- * @author Ulf Lilleengen</a>
+ * @author Ulf Lilleengen
  */
 public abstract class NumericFunctionNode extends MultiArgFunctionNode {
 
