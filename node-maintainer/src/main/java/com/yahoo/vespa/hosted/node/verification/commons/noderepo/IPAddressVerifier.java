@@ -9,7 +9,10 @@ import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
@@ -28,9 +31,11 @@ public class IPAddressVerifier {
     private static final Logger logger = Logger.getLogger(IPAddressVerifier.class.getName());
 
     private final String expectedHostname;
+    private final boolean skipReverseLookup;
 
-    public IPAddressVerifier(String expectedHostname) {
+    public IPAddressVerifier(String expectedHostname, boolean skipReverseLookup) {
         this.expectedHostname = expectedHostname;
+        this.skipReverseLookup = skipReverseLookup;
     }
 
     public void reportFaultyIpAddresses(NodeSpec nodeSpec, SpecVerificationReport specVerificationReport) {
@@ -44,41 +49,78 @@ public class IPAddressVerifier {
         List<String> faultyIpAddresses = new ArrayList<>();
         if (expectedHostname == null || expectedHostname.equals(""))
             return new String[0];
-        if (!isValidIpv4(nodeSpec.getIpv4Address(), expectedHostname)) {
+
+        if (!isValidIpv4(nodeSpec.getIpv4Address())) {
             faultyIpAddresses.add(nodeSpec.getIpv4Address());
         }
-        if (!isValidIpv6(nodeSpec.getIpv6Address(), expectedHostname)) {
+        if (!isValidIpv6(nodeSpec.getIpv6Address())) {
             faultyIpAddresses.add(nodeSpec.getIpv6Address());
         }
         return faultyIpAddresses.toArray(new String[0]);
     }
 
-    private boolean isValidIpv4(String ipv4Address, String expectedHostname) {
-        if (ipv4Address == null) {
+    private boolean hostnameResolvesToIpAddress(String ipAddress) {
+        InetAddress addressFromIpAddress;
+        try {
+            addressFromIpAddress = InetAddress.getByName(ipAddress);
+        } catch (UnknownHostException e) {
+            logger.log(Level.WARNING, "Failed to parse IP address " + ipAddress, e);
+            return false;
+        }
+
+        List<InetAddress> addressesFromHostname;
+        try {
+            addressesFromHostname = mockableGetAllByName(expectedHostname);
+        } catch (UnknownHostException e) {
+            logger.log(Level.WARNING, "Failed to get IP addresses of hostname " + expectedHostname, e);
+            return false;
+        }
+
+        if (addressesFromHostname.stream().noneMatch(addressFromIpAddress::equals)) {
+            logger.log(Level.WARNING, "Hostname " + expectedHostname + " resolved to " + addressesFromHostname +
+                            " which does not contain the IP address " + ipAddress);
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean ipAddressResolvesToHostname(String ipAddressLookupFormat) {
+        if (skipReverseLookup) {
             return true;
         }
-        String ipv4LookupFormat = convertIpv4ToLookupFormat(ipv4Address);
+
         try {
-            String ipv4Hostname = reverseLookUp(ipv4LookupFormat);
-            return ipv4Hostname.equals(expectedHostname);
+            String hostnameFromIpAddress = reverseLookUp(ipAddressLookupFormat);
+            if (hostnameFromIpAddress.equals(expectedHostname)) {
+                return true;
+            }
+
+            logger.log(Level.WARNING, "IP address " + ipAddressLookupFormat + " resolved to " +
+                    hostnameFromIpAddress + ", not " + expectedHostname);
         } catch (NamingException e) {
-            logger.log(Level.WARNING, "Could not get IPv4 hostname", e);
+            logger.log(Level.WARNING, "Could not get hostname of IP address " + ipAddressLookupFormat, e);
         }
+
         return false;
     }
 
-    private boolean isValidIpv6(String ipv6Address, String expectedHostname) {
+    private boolean isValidIpv4(String ipv4Address) {
+        if (ipv4Address == null) {
+            return true;
+        }
+
+        return hostnameResolvesToIpAddress(ipv4Address) &&
+                ipAddressResolvesToHostname(convertIpv4ToLookupFormat(ipv4Address));
+    }
+
+    private boolean isValidIpv6(String ipv6Address) {
         if (ipv6Address == null) {
             return true;
         }
-        String ipv6LookupFormat = convertIpv6ToLookupFormat(ipv6Address);
-        try {
-            String ipv6Hostname = reverseLookUp(ipv6LookupFormat);
-            return ipv6Hostname.equals(expectedHostname);
-        } catch (NamingException e) {
-            logger.log(Level.WARNING, "Could not get IPv6 hostname", e);
-        }
-        return false;
+
+        return hostnameResolvesToIpAddress(ipv6Address) &&
+                ipAddressResolvesToHostname(convertIpv6ToLookupFormat(ipv6Address));
     }
 
     String reverseLookUp(String ipAddress) throws NamingException {
@@ -130,4 +172,7 @@ public class IPAddressVerifier {
         return convertedIpAddress.toString();
     }
 
+    List<InetAddress> mockableGetAllByName(String hostname) throws UnknownHostException {
+        return Arrays.asList(InetAddress.getAllByName(hostname));
+    }
 }
