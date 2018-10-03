@@ -16,7 +16,6 @@ ManagedRpcServer::ManagedRpcServer(const std::string & name,
                                    const std::string & spec,
                                    IRpcServerManager &manager)
     : NamedService(name, spec),
-      FNET_Task(manager.getSupervisor()->GetScheduler()),
       _mmanager(manager),
       _monitor(*this, *manager.getSupervisor()),
       _monitoredServer(nullptr),
@@ -88,13 +87,6 @@ void
 ManagedRpcServer::RequestDone(FRT_RPCRequest *req)
 {
     LOG_ASSERT(req == _checkServerReq);
-    ScheduleNow();
-}
-
-void
-ManagedRpcServer::PerformTask()
-{
-    FRT_RPCRequest *req = _checkServerReq;
     FRT_Values &answer = *(req->GetReturn());
 
     if (req->GetErrorCode() == FRTE_RPC_ABORT) {

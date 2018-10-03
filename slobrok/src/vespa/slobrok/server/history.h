@@ -14,8 +14,6 @@ private:
     struct HistoryEntry {
         std::string      name;
         vespalib::GenCnt gen;
-        HistoryEntry(const std::string &n, vespalib::GenCnt g)
-          : name(n), gen(g) {}
     };
 
     std::vector<HistoryEntry> _entries;
