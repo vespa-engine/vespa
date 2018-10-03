@@ -23,6 +23,7 @@ class IRpcServerManager;
 
 class ManagedRpcServer: public NamedService,
                         public FRT_IRequestWait,
+                        public FNET_Task,
                         public IMonitoredServer
 {
 public:
@@ -44,6 +45,7 @@ private:
                            FRT_StringValue *strings);
 public:
     void RequestDone(FRT_RPCRequest *req) override;
+    void PerformTask() override;
     void notifyDisconnected() override; // lost connection to service
 };
 

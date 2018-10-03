@@ -120,15 +120,22 @@ ExchangeManager::healthCheck()
 ExchangeManager::WorkPackage::WorkItem::WorkItem(WorkPackage &pkg,
                                                  RemoteSlobrok *rem,
                                                  FRT_RPCRequest *req)
-    : _pkg(pkg), _pendingReq(req), _remslob(rem)
+    : FNET_Task(pkg._exchanger._env.getScheduler()), _pkg(pkg), _pendingReq(req), _remslob(rem)
 {
 }
 
 void
 ExchangeManager::WorkPackage::WorkItem::RequestDone(FRT_RPCRequest *req)
 {
-    bool denied = false;
     LOG_ASSERT(req == _pendingReq);
+    ScheduleNow();
+}
+
+void
+ExchangeManager::WorkPackage::WorkItem::PerformTask()
+{
+    bool denied = false;
+    FRT_RPCRequest *req = _pendingReq;
     FRT_Values &answer = *(req->GetReturn());
 
     if (!req->IsError() && strcmp(answer.GetTypeString(), "is") == 0) {

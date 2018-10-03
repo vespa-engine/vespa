@@ -44,7 +44,7 @@ private:
     class WorkPackage
     {
     private:
-        class WorkItem: public FRT_IRequestWait
+        class WorkItem: public FRT_IRequestWait, public FNET_Task
         {
         private:
             WorkPackage    &_pkg;
@@ -53,6 +53,7 @@ private:
         public:
             void expedite();
             void RequestDone(FRT_RPCRequest *req) override;
+            void PerformTask() override;
             WorkItem(WorkPackage &pkg, RemoteSlobrok *rem, FRT_RPCRequest *req);
             WorkItem(const WorkItem&) = delete;
             WorkItem& operator= (const WorkItem&) = delete;
