@@ -311,6 +311,13 @@ public class SerializationTest {
         assertEquals(Version.fromString("7.1"), serialized.status().osVersion().get());
     }
 
+    @Test
+    public void serialize_node_types() {
+        for (NodeType t : NodeType.values()) {
+            assertEquals(t, NodeSerializer.nodeTypeFromString(NodeSerializer.toString(t)));
+        }
+    }
+
     private byte[] createNodeJson(String hostname, String... ipAddress) {
         String ipAddressJsonPart = "";
         if (ipAddress.length > 0) {

@@ -33,6 +33,7 @@ public class InfrastructureVersions {
             case confighost:
             case proxyhost:
             case controller:
+            case controllerhost:
                 break;
             default:
                 throw new IllegalArgumentException("Cannot set version for type " + nodeType);

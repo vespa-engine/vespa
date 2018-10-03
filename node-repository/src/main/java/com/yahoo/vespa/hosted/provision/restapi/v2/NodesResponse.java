@@ -138,7 +138,7 @@ class NodesResponse extends HttpResponse {
         object.setString("state", NodeStateSerializer.wireNameOf(node.state()));
         object.setString("type", node.type().name());
         object.setString("hostname", node.hostname());
-        object.setString("type", toString(node.type()));
+        object.setString("type", NodeSerializer.toString(node.type()));
         if (node.parentHostname().isPresent()) {
             object.setString("parentHostname", node.parentHostname().get());
         }
@@ -186,20 +186,6 @@ class NodesResponse extends HttpResponse {
         ipAddressesToSlime(node.ipAddresses(), object.setArray("ipAddresses"));
         ipAddressesToSlime(node.additionalIpAddresses(), object.setArray("additionalIpAddresses"));
         node.status().hardwareDivergence().ifPresent(hardwareDivergence -> object.setString("hardwareDivergence", hardwareDivergence));
-    }
-
-    private String toString(NodeType type) {
-        switch(type) {
-            case tenant: return "tenant";
-            case host: return "host";
-            case proxy: return "proxy";
-            case proxyhost: return "proxyhost";
-            case config: return "config";
-            case confighost: return "confighost";
-            case controller: return "controller";
-            default:
-                throw new RuntimeException("New type added to enum, not implemented in NodesResponse: " + type.name());
-        }
     }
 
     private void toSlime(ApplicationId id, Cursor object) {
