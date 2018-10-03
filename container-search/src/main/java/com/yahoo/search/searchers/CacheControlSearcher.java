@@ -67,7 +67,7 @@ public class CacheControlSearcher extends Searcher {
         int staleage = query.properties().getInteger(cachecontrolStaleage, -1);
         if (staleage > 0) {
             result.getHeaders(true).put(CACHE_CONTROL_HEADER, "stale-while-revalidate=" + staleage);
-            query.trace("CacheControlSearcher: Set stale-while-revalidate header to " + maxage, false, 4);
+            query.trace("CacheControlSearcher: Set stale-while-revalidate header to " + staleage, false, 4);
         }
 
         return result;

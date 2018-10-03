@@ -102,9 +102,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private ConfigModelRepo configModelRepo = new ConfigModelRepo();
     private final AllocatedHosts allocatedHosts;
 
-    /**
-     * The config id for the root config producer
-     */
+    /** The config id for the root config producer */
     public static final String ROOT_CONFIGID = "";
 
     private ApplicationConfigProducerRoot root;
