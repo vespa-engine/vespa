@@ -55,6 +55,7 @@ public class NodesApiHandler extends LoggingRequestHandler {
     private final NodeRepository nodeRepository;
     private final NodeRepositoryMaintenance maintenance;
     private final NodeFlavors nodeFlavors;
+    private final NodeSerializer serializer = new NodeSerializer();
 
     @Inject
     public NodesApiHandler(LoggingRequestHandler.Context parentCtx, Orchestrator orchestrator,
@@ -227,9 +228,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
                 nodeTypeFromSlime(inspector.field("type")));
     }
 
-    private static NodeType nodeTypeFromSlime(Inspector object) {
+    private NodeType nodeTypeFromSlime(Inspector object) {
         if (! object.valid()) return NodeType.tenant; // default
-        return NodeSerializer.typeFrom(object.asString());
+        return serializer.typeFrom(object.asString());
     }
 
     public static NodeFilter toNodeFilter(HttpRequest request) {
