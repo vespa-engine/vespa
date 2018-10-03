@@ -7,7 +7,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
@@ -21,6 +21,7 @@ import com.yahoo.vespa.model.container.component.Handler;
 import org.w3c.dom.Element;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -94,13 +95,13 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     }
 
     private NodesSpecification createNodesSpecificationForLogserver() {
-        // TODO: Enable for main system as well
+        // TODO: Enable for all zones
         DeployState deployState = context.getDeployState();
         if (deployState.getProperties().useDedicatedNodeForLogserver() &&
                 context.getApplicationType() == ConfigModelContext.ApplicationType.DEFAULT &&
                 deployState.isHosted() &&
-                deployState.zone().system() == SystemName.cd &&
-                deployState.zone().environment() == Environment.dev)
+                (Arrays.asList(Environment.dev, Environment.perf).contains(deployState.zone().environment()) ||
+                        deployState.zone().region().equals(RegionName.from("eu-west-1"))))
             return NodesSpecification.dedicated(1, context);
         else
             return NodesSpecification.nonDedicated(1, context);
