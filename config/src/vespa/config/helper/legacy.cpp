@@ -41,15 +41,14 @@ isLegacyConfigId(const std::string & configId)
 std::unique_ptr<SourceSpec>
 legacyConfigId2Spec(const std::string & configId)
 {
-    std::unique_ptr<SourceSpec> spec(new ServerSpec());
     if (isFileLegacy(configId)) {
-        spec.reset(new FileSpec(createFileSpecFromId(configId)));
+        return std::make_unique<FileSpec>(createFileSpecFromId(configId));
     } else if (isDirLegacy(configId)) {
-        spec.reset(new DirSpec(dirNameFromId(configId)));
+        return std::make_unique<DirSpec>(dirNameFromId(configId));
     } else if (isRawLegacy(configId)) {
-        spec.reset(new RawSpec(createRawSpecFromId(configId)));
+        return std::make_unique<RawSpec>(createRawSpecFromId(configId));
     }
-    return spec;
+    return std::make_unique<ServerSpec>();
 }
 
 const std::string

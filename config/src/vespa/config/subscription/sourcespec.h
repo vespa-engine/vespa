@@ -153,8 +153,7 @@ public:
      */
     ServerSpec(const vespalib::string & hostSpec);
 
-    // Implements SourceSpec
-    virtual SourceFactorySP createSourceFactory(const TimingValues & timingValues) const override;
+    SourceFactorySP createSourceFactory(const TimingValues & timingValues) const override;
 
     /**
      * Add another host to this source spec, allowing failover.

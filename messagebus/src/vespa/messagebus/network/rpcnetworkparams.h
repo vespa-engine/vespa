@@ -27,6 +27,7 @@ private:
 
 public:
     RPCNetworkParams();
+    RPCNetworkParams(config::ConfigUri configUri);
     ~RPCNetworkParams();
 
     /**
@@ -66,17 +67,6 @@ public:
      */
     const config::ConfigUri & getSlobrokConfig() const {
         return _slobrokConfig;
-    }
-
-    /**
-     * Sets of the slobrok config.
-     *
-     * @param slobrokConfigId The new config.
-     * @return This, to allow chaining.
-     */
-    RPCNetworkParams &setSlobrokConfig(const config::ConfigUri & slobrokConfig) {
-        _slobrokConfig = slobrokConfig;
-        return *this;
     }
 
     /**

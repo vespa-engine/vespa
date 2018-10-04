@@ -12,7 +12,7 @@ Identity::Identity(const string &configId) :
     _hostname = vespalib::HostName::get();
 }
 
-Identity::~Identity() {}
+Identity::~Identity() = default;
 
 std::vector<string>
 Identity::split(const string &name)

@@ -11,7 +11,6 @@
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/config/print/asciiconfigwriter.h>
 
-
 namespace config {
 
 class BuilderMap : public std::map<ConfigKey, ConfigInstance *> {
@@ -25,10 +24,9 @@ RawSpec::RawSpec(const vespalib::string & config)
 }
 
 SourceFactory::UP
-RawSpec::createSourceFactory(const TimingValues & timingValues) const
+RawSpec::createSourceFactory(const TimingValues &) const
 {
-    (void) timingValues;
-    return SourceFactory::UP(new RawSourceFactory(_config));
+    return std::make_unique<RawSourceFactory>(_config);
 }
 
 FileSpec::FileSpec(const vespalib::string & fileName)
@@ -50,10 +48,9 @@ FileSpec::verifyName(const vespalib::string & fileName)
 }
 
 SourceFactory::UP
-FileSpec::createSourceFactory(const TimingValues & timingValues) const
+FileSpec::createSourceFactory(const TimingValues & ) const
 {
-    (void) timingValues;
-    return SourceFactory::UP(new FileSourceFactory(*this));
+    return std::make_unique<FileSourceFactory>(*this);
 }
 
 DirSpec::DirSpec(const vespalib::string & dirName)
@@ -62,10 +59,9 @@ DirSpec::DirSpec(const vespalib::string & dirName)
 }
 
 SourceFactory::UP
-DirSpec::createSourceFactory(const TimingValues & timingValues) const
+DirSpec::createSourceFactory(const TimingValues & ) const
 {
-    (void) timingValues;
-    return SourceFactory::UP(new DirSourceFactory(*this));
+    return std::make_unique<DirSourceFactory>(*this);
 }
 
 ServerSpec::ServerSpec()
@@ -75,7 +71,7 @@ ServerSpec::ServerSpec()
       _compressionType(protocol::readProtocolCompressionType())
 {
     char* cfgSourcesPtr = getenv("VESPA_CONFIG_SOURCES");
-    if (cfgSourcesPtr != NULL) {
+    if (cfgSourcesPtr != nullptr) {
         vespalib::string cfgSourcesStr(cfgSourcesPtr);
         initialize(cfgSourcesStr);
     } else {
@@ -89,7 +85,7 @@ ServerSpec::initialize(const vespalib::string & hostSpec)
     typedef vespalib::StringTokenizer tokenizer;
     tokenizer tok(hostSpec, ",");
     for (tokenizer::Iterator it = tok.begin(); it != tok.end(); it++) {
-        std::string srcHost = *it;
+        vespalib::string srcHost = *it;
         vespalib::asciistream spec;
         if (srcHost.find("tcp/") == std::string::npos) {
             spec << "tcp/";
@@ -123,26 +119,26 @@ SourceFactory::UP
 ServerSpec::createSourceFactory(const TimingValues & timingValues) const
 {
     const auto vespaVersion = VespaVersion::getCurrentVersion();
-    return SourceFactory::UP(new FRTSourceFactory(ConnectionFactory::UP(new FRTConnectionPool(*this, timingValues)), timingValues, _protocolVersion, _traceLevel, vespaVersion, _compressionType));
+    return std::make_unique<FRTSourceFactory>(std::make_unique<FRTConnectionPool>(*this, timingValues), timingValues,
+                                              _protocolVersion, _traceLevel, vespaVersion, _compressionType);
 }
 
 
 ConfigSet::ConfigSet()
-    : _builderMap(new BuilderMap())
+    : _builderMap(std::make_unique<BuilderMap>())
 {
 }
 
 SourceFactory::UP
-ConfigSet::createSourceFactory(const TimingValues & timingValues) const
+ConfigSet::createSourceFactory(const TimingValues & ) const
 {
-    (void) timingValues;
-    return SourceFactory::UP(new ConfigSetSourceFactory(_builderMap));
+    return std::make_unique<ConfigSetSourceFactory>(_builderMap);
 }
 
 void
 ConfigSet::addBuilder(const vespalib::string & configId, ConfigInstance * builder)
 {
-    assert(builder != NULL);
+    assert(builder != nullptr);
     BuilderMap & builderMap(*_builderMap);
     const ConfigKey key(configId, builder->defName(), builder->defNamespace(), builder->defMd5());
     builderMap[key] = builder;
@@ -157,10 +153,9 @@ ConfigInstanceSpec::ConfigInstanceSpec(const ConfigInstance& instance)
 }
 
 SourceFactory::UP
-ConfigInstanceSpec::createSourceFactory(const TimingValues& timingValues) const
+ConfigInstanceSpec::createSourceFactory(const TimingValues& ) const
 {
-    (void) timingValues;
-    return SourceFactory::UP(new ConfigInstanceSourceFactory(_key, _buffer));
+    return std::make_unique<ConfigInstanceSourceFactory>(_key, _buffer);
 }
 
 

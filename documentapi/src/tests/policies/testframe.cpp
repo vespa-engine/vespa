@@ -20,14 +20,9 @@ private:
     string _address;
 
 public:
-    MyServiceAddress(const string &address) :
-        _address(address) {
-        // empty
-    }
+    MyServiceAddress(const string &address) : _address(address) {}
 
-    const string &getAddress() {
-        return _address;
-    }
+    const string &getAddress() { return _address; }
 };
 
 class MyNetwork : public mbus::RPCNetwork {
@@ -37,13 +32,12 @@ private:
 public:
     MyNetwork(const mbus::RPCNetworkParams &params) :
         mbus::RPCNetwork(params),
-        _nodes() {
-        // empty
-    }
+        _nodes()
+    { }
 
     bool allocServiceAddress(mbus::RoutingNode &recipient) override {
         string hop = recipient.getRoute().getHop(0).toString();
-        recipient.setServiceAddress(mbus::IServiceAddress::UP(new MyServiceAddress(hop)));
+        recipient.setServiceAddress(std::make_unique<MyServiceAddress>(hop));
         return true;
     }
 
@@ -63,18 +57,14 @@ public:
 
 TestFrame::TestFrame(const std::shared_ptr<const DocumentTypeRepo> &repo, const string &ident) :
     _identity(ident),
-    _slobrok(new mbus::Slobrok()),
+    _slobrok(std::make_shared<mbus::Slobrok>()),
     _set(),
-    _net(new MyNetwork(mbus::RPCNetworkParams()
-                       .setIdentity(mbus::Identity(ident))
-                       .setSlobrokConfig(_slobrok->config()))),
-    _mbus(new mbus::MessageBus(*_net, mbus::MessageBusParams()
-                               .addProtocol(mbus::IProtocol::SP(new DocumentProtocol(_set, repo))))),
+    _net(std::make_shared<MyNetwork>(mbus::RPCNetworkParams(_slobrok->config()).setIdentity(mbus::Identity(ident)))),
+    _mbus(std::make_shared<mbus::MessageBus>(*_net, mbus::MessageBusParams().addProtocol(std::make_shared<DocumentProtocol>(_set, repo)))),
     _msg(),
     _hop(mbus::HopSpec("foo", "bar")),
     _handler()
 {
-    // empty
 }
 
 TestFrame::TestFrame(TestFrame &frame) :
@@ -87,13 +77,9 @@ TestFrame::TestFrame(TestFrame &frame) :
     _hop(mbus::HopSpec("baz", "cox")),
     _handler()
 {
-    // empty
 }
 
-TestFrame::~TestFrame()
-{
-    // empty
-}
+TestFrame::~TestFrame() = default;
 
 void
 TestFrame::setHop(const mbus::HopSpec &hop)
@@ -107,7 +93,7 @@ TestFrame::select(std::vector<mbus::RoutingNode*> &selected, uint32_t numExpecte
 {
     _msg->setRoute(mbus::Route::parse(_hop.getName()));
     _msg->pushHandler(*this);
-    mbus::SendProxy &proxy = *(new mbus::SendProxy(*_mbus, *_net, NULL)); // deletes self
+    mbus::SendProxy &proxy = *(new mbus::SendProxy(*_mbus, *_net, nullptr)); // deletes self
     proxy.handleMessage(std::move(_msg));
 
     static_cast<MyNetwork&>(*_net).removeNodes(selected);
@@ -125,21 +111,18 @@ TestFrame::testSelect(const std::vector<string> &expected)
     if (!select(selected, expected.size())) {
         LOG(error, "Failed to select recipients.");
         for (size_t i = 0; i < selected.size(); ++i) {
-            LOG(error, "Selected: %s",
-                selected[i]->getRoute().toString().c_str());
+            LOG(error, "Selected: %s", selected[i]->getRoute().toString().c_str());
         }
         return false;
     }
-    for (std::vector<mbus::RoutingNode*>::iterator it = selected.begin();
-         it != selected.end(); ++it)
-    {
-        string route = (*it)->getRoute().toString();
+    for (mbus::RoutingNode* node : selected) {
+        string route = node->getRoute().toString();
         if (find(expected.begin(), expected.end(), route) == expected.end()) {
             LOG(error, "Recipient '%s' not selected.", route.c_str());
         }
-        (*it)->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
+        node->handleReply(std::make_unique<mbus::EmptyReply>());
     }
-    if (_handler.getReply(600).get() == NULL) {
+    if (_handler.getReply(600).get() == nullptr) {
         LOG(error, "Reply not propagated to handler.");
         return false;
     }
@@ -168,25 +151,23 @@ TestFrame::testMerge(const ReplyMap &replies,
         return false;
     }
 
-    for (std::vector<mbus::RoutingNode*>::iterator it = selected.begin();
-         it != selected.end(); ++it)
-    {
-        string route = (*it)->getRoute().toString();
+    for (mbus::RoutingNode* node : selected) {
+        string route = node->getRoute().toString();
         ReplyMap::const_iterator mip = replies.find(route);
         if (mip == replies.end()) {
             LOG(error, "Recipient '%s' not expected.", route.c_str());
             return false;
         }
 
-        mbus::Reply::UP ret(new mbus::SimpleReply(route));
+        auto ret = std::make_unique<mbus::SimpleReply>(route);
         if (mip->second != mbus::ErrorCode::NONE) {
             ret->addError(mbus::Error(mip->second, route));
         }
-        (*it)->handleReply(std::move(ret));
+        node->handleReply(std::move(ret));
     }
 
     mbus::Reply::UP reply = _handler.getReply(600);
-    if (reply.get() == NULL) {
+    if (reply.get() == nullptr) {
         LOG(error, "Reply not propagated to handler.");
         return false;
     }

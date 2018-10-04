@@ -4,9 +4,13 @@
 
 namespace mbus {
 
-RPCNetworkParams::RPCNetworkParams() :
+RPCNetworkParams::RPCNetworkParams()
+    : RPCNetworkParams("admin/slobrok.0")
+{ }
+
+RPCNetworkParams::RPCNetworkParams(config::ConfigUri configUri) :
     _identity(Identity("")),
-    _slobrokConfig("admin/slobrok.0"),
+    _slobrokConfig(std::move(configUri)),
     _listenPort(0),
     _maxInputBufferSize(256*1024),
     _maxOutputBufferSize(256*1024),

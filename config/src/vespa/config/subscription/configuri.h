@@ -46,7 +46,7 @@ public:
      * @param configId The config id.
      * @param context A context object that can be shared with multiple URIs.
      */
-    ConfigUri(const vespalib::string &configId, const IConfigContext::SP & context);
+    ConfigUri(const vespalib::string &configId, IConfigContext::SP context);
 
     ~ConfigUri();
 
