@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.DispatchConfig;
@@ -283,16 +282,19 @@ public class IndexedSearchCluster extends SearchCluster
             }
         }
     }
-    @Override
-    protected void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches, DeployState deployState) {
+    protected void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches,
+                                              List<com.yahoo.searchdefinition.Search> globalSearches) {
         for (SearchDefinitionSpec spec : localSearches) {
             com.yahoo.searchdefinition.Search search = spec.getSearchDefinition().getSearch();
             if ( ! (search instanceof DocumentOnlySearch)) {
-                DocumentDatabase db = new DocumentDatabase(this, search.getName(),
-                                                           new DerivedConfiguration(search, deployLogger(),
-                                                                                    deployState.rankProfileRegistry(),
-                                                                                    deployState.getQueryProfiles().getRegistry(),
-                                                                                    deployState.getImportedModels()));
+                DocumentDatabase db = new DocumentDatabase(this,
+                                                           search.getName(),
+                                                           new DerivedConfiguration(search,
+                                                                                    globalSearches,
+                                                                                    deployLogger(),
+                                                                                    getRoot().getDeployState().rankProfileRegistry(),
+                                                                                    getRoot().getDeployState().getQueryProfiles().getRegistry(),
+                                                                                    getRoot().getDeployState().getImportedModels()));
                 // TODO: remove explicit adding of user configs when the complete content model is built using builders.
                 db.mergeUserConfigs(spec.getUserConfigs());
                 documentDbs.add(db);

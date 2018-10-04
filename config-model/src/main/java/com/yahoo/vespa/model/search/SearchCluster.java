@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.searchdefinition.derived.RawRankProfile;
 import com.yahoo.searchdefinition.derived.SummaryMap;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -49,8 +48,8 @@ public abstract class SearchCluster extends AbstractSearchCluster
      * Also stores the document names contained in the search
      * definitions.
      */
-    public void deriveSearchDefinitions(DeployState deployState) {
-        deriveAllSearchDefinitions(getLocalSDS(), deployState);
+    public void deriveSearchDefinitions(List<com.yahoo.searchdefinition.Search> global) {
+        deriveAllSearchDefinitions(getLocalSDS(), global);
     }
 
     @Override
@@ -140,7 +139,8 @@ public abstract class SearchCluster extends AbstractSearchCluster
         return false;
     }
 
-    protected abstract void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches, DeployState deployState);
+    protected abstract void deriveAllSearchDefinitions(List<SearchDefinitionSpec> localSearches,
+                                                       List<com.yahoo.searchdefinition.Search> globalSearches);
 
     public abstract void defaultDocumentsConfig();
     public abstract DerivedConfiguration getSdConfig();

@@ -2,7 +2,6 @@
 package com.yahoo.config.model;
 
 import com.yahoo.cloud.config.*;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Version;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
@@ -126,11 +125,11 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
     }
 
     // TODO: Do this as another config model depending on the other models
-    public void setupRouting(DeployState deployState, VespaModel vespaModel, ConfigModelRepo configModels) {
+    public void setupRouting(VespaModel vespaModel, ConfigModelRepo configModels) {
         if (admin != null) {
             Routing routing = configModels.getRouting();
             if (routing == null) {
-                routing = new Routing(ConfigModelContext.create(deployState, vespaModel, configModels, this, "routing"));
+                routing = new Routing(ConfigModelContext.create(vespaModel, configModels, this, "routing"));
                 configModels.add(routing);
             }
             this.routing = routing;

@@ -1,25 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.model.*;
 import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.model.ApplicationConfigProducerRoot;
-import com.yahoo.config.model.ConfigModel;
-import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.documentmodel.DocumentModel;
-import com.yahoo.vespa.model.AbstractService;
-import com.yahoo.vespa.model.Affinity;
-import com.yahoo.vespa.model.Client;
-import com.yahoo.vespa.model.HostSystem;
-import com.yahoo.vespa.model.SimpleConfigProducer;
+import com.yahoo.vespa.model.*;
 import com.yahoo.vespa.model.builder.UserConfigBuilder;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -95,7 +88,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
     public ApplicationConfigProducerRoot getRoot(String name, DeployState deployState, AbstractConfigProducer parent) {
         try {
             return new DomRootBuilder(name, deployState).
-                    build(deployState, parent, XmlHelper.getDocument(deployState.getApplicationPackage().getServices()).getDocumentElement());
+                    build(parent, XmlHelper.getDocument(deployState.getApplicationPackage().getServices()).getDocumentElement());
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
@@ -120,16 +113,12 @@ public class VespaDomBuilder extends VespaModelBuilder {
 
         // TODO: find good way to provide access to app package
         public final T build(AbstractConfigProducer ancestor, Element producerSpec) {
-            return build(ancestor.getRoot().getDeployState(), ancestor, producerSpec);
-        }
-
-        public final T build(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             T t = doBuild(ancestor, producerSpec);
 
             if (t instanceof AbstractService) {
-                initializeService((AbstractService)t, deployState, ancestor.getHostSystem(), producerSpec);
+                initializeService((AbstractService)t, ancestor, producerSpec);
             } else {
-                initializeProducer(t, deployState, producerSpec);
+                initializeProducer(t, ancestor, producerSpec);
             }
 
             return t;
@@ -138,9 +127,9 @@ public class VespaDomBuilder extends VespaModelBuilder {
         protected abstract T doBuild(AbstractConfigProducer ancestor, Element producerSpec);
 
         private void initializeProducer(AbstractConfigProducer child,
-                                        DeployState deployState,
+                                        AbstractConfigProducer ancestor,
                                         Element producerSpec) {
-            UserConfigRepo userConfigs = UserConfigBuilder.build(producerSpec, deployState, deployState.getDeployLogger());
+            UserConfigRepo userConfigs = UserConfigBuilder.build(producerSpec, ancestor.getRoot().getDeployState(), ancestor.getRoot().deployLogger());
             // TODO: must be made to work:
             //userConfigs.applyWarnings(child);
             log.log(LogLevel.DEBUG, "Adding user configs " + userConfigs + " for " + producerSpec);
@@ -148,10 +137,9 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
 
         private void initializeService(AbstractService t,
-                                       DeployState deployState,
-                                       HostSystem hostSystem,
+                                       AbstractConfigProducer ancestor,
                                        Element producerSpec) {
-            initializeProducer(t, deployState, producerSpec);
+            initializeProducer(t, ancestor, producerSpec);
             if (producerSpec != null) {
                 if (producerSpec.hasAttribute(JVMARGS_ATTRIB_NAME)) {
                     t.appendJvmArgs(producerSpec.getAttribute(JVMARGS_ATTRIB_NAME));
@@ -184,7 +172,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
                 if (port > 0) {
                     t.setBasePort(port);
                 }
-                allocateHost(t, hostSystem, producerSpec);
+                allocateHost(t, ancestor.getHostSystem(), producerSpec);
             }
             // This depends on which constructor in AbstractService is used, but the best way
             // is to let this method do initialize.
@@ -221,7 +209,8 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
 
         @Override
-        protected SimpleConfigProducer doBuild(AbstractConfigProducer parent, Element producerSpec) {
+        protected SimpleConfigProducer doBuild(AbstractConfigProducer parent,
+                                               Element producerSpec) {
             return new SimpleConfigProducer(parent, configId);
         }
     }
@@ -330,7 +319,8 @@ public class VespaDomBuilder extends VespaModelBuilder {
     }
 
     @Override
-    public List<ServiceCluster> getClusters(ApplicationPackage pkg, AbstractConfigProducer parent) {
+    public List<ServiceCluster> getClusters(ApplicationPackage pkg,
+                                            AbstractConfigProducer parent) {
         List<ServiceCluster> clusters = new ArrayList<>();
         Document services = XmlHelper.getDocument(pkg.getServices());
         for (Element clusterSpec : XML.getChildren(services.getDocumentElement(), "cluster")) {

@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.content.cluster;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -500,11 +499,11 @@ public class ContentCluster extends AbstractConfigProducer implements
         this.zone = zone;
     }
 
-    public void prepare(DeployState deployState) {
+    public void prepare() {
         search.prepare();
 
         if (clusterControllers != null) {
-            clusterControllers.prepare(deployState);
+            clusterControllers.prepare();
         }
     }
 
