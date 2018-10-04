@@ -40,6 +40,14 @@ public class SimpleLinguistics implements Linguistics {
         this.characterClasses = new CharacterClasses();
         this.gramSplitter = new GramSplitter(characterClasses);
     }
+    public SimpleLinguistics(boolean enableOptimaize) {
+        CharacterClasses characterClasses = new CharacterClasses();
+        this.normalizer = new SimpleNormalizer();
+        this.transformer = new SimpleTransformer();
+        this.detector = new SimpleDetector(enableOptimaize);
+        this.characterClasses = new CharacterClasses();
+        this.gramSplitter = new GramSplitter(characterClasses);
+    }
 
     public SimpleLinguistics(SimpleLinguisticsConfig config) {
         CharacterClasses characterClasses = new CharacterClasses();

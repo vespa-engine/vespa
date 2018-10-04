@@ -90,7 +90,7 @@ public class ScriptExpression extends ExpressionList<StatementExpression> {
 
     /** Creates an expression with simple lingustics for testing */
     public static ScriptExpression fromString(String expression) throws ParseException {
-        return fromString(expression, new SimpleLinguistics());
+        return fromString(expression, new SimpleLinguistics(false));
     }
 
     public static ScriptExpression fromString(String expression, Linguistics linguistics) throws ParseException {

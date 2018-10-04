@@ -112,7 +112,7 @@ public class SDParser {
      * @param multiline Whether or not to allow multi-line expressions.
      */
     private IndexingOperation newIndexingOperation(boolean multiline) throws ParseException {
-        return newIndexingOperation(multiline, new SimpleLinguistics());
+        return newIndexingOperation(multiline, new SimpleLinguistics(false));
     }
 
     /**
