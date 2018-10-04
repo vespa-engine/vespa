@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model;
 
-import com.google.common.collect.ImmutableList;
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
@@ -26,17 +25,14 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.log.LogLevel;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.RankingConstants;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.searchdefinition.processing.Processing;
-import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.ml.ConvertedModel;
-import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModel;
 import com.yahoo.searchlib.rankingexpression.integration.ml.ImportedModels;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -118,7 +114,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /** The global ranking constants of this model */
     private final RankingConstants rankingConstants = new RankingConstants();
 
-    private DeployState deployState;
     private DeployLogger deployLogger;
 
     /** The validation overrides of this. This is never null. */
@@ -178,9 +173,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
         if (complete) { // create a a completed, frozen model
             this.deployLogger = deployState.getDeployLogger();
-            this.deployState = deployState;
             configModelRepo.readConfigModels(deployState, this, builder, root, configModelRegistry);
-            this.deployState = null;
             addServiceClusters(deployState, builder);
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs()); // must happen after the two lines above
             setupRouting(deployState);
@@ -195,7 +188,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         else { // create a model with no services instantiated and the given file distributor
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
             this.fileDistributor = fileDistributor;
-            this.deployState = deployState;
             this.deployLogger = deployState.getDeployLogger();
         }
     }
@@ -500,12 +492,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             ret.add(new ConfigKey<>(userKey.getName(), cp.getConfigId(), userKey.getNamespace()));
         }
         return ret;
-    }
-
-    public DeployState getDeployState() {
-        if (deployState == null)
-            throw new IllegalStateException("Cannot call getDeployState() once model has been built");
-        return deployState;
     }
 
     /**
