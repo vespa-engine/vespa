@@ -17,9 +17,9 @@ class GaugeAggregator;
 class Gauge {
 private:
     std::shared_ptr<MetricsManager> _manager;
-    MetricName _id;
+    MetricId _id;
 public:
-    Gauge(std::shared_ptr<MetricsManager> m, MetricName id)
+    Gauge(std::shared_ptr<MetricsManager> m, MetricId id)
         : _manager(std::move(m)), _id(id)
     {}
 

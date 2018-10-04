@@ -14,7 +14,7 @@
 #include "json_formatter.h"
 #include "label.h"
 #include "metric_point_id.h"
-#include "metric_name.h"
+#include "metric_id.h"
 #include "metrics_manager.h"
 #include "point_builder.h"
 #include "point.h"

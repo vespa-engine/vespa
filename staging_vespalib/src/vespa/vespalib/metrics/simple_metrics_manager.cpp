@@ -51,7 +51,7 @@ SimpleMetricsManager::createForTest(const SimpleManagerConfig &config,
 Counter
 SimpleMetricsManager::counter(const vespalib::string &name, const vespalib::string &)
 {
-    MetricName mn = NameRepo::instance.metric(name);
+    MetricId mn = NameRepo::instance.metric(name);
     _metricTypes.check(mn.id(), name, MetricTypes::MetricType::COUNTER);
     LOG(debug, "counter with metric name %s -> %zu", name.c_str(), mn.id());
     return Counter(shared_from_this(), mn);
@@ -60,7 +60,7 @@ SimpleMetricsManager::counter(const vespalib::string &name, const vespalib::stri
 Gauge
 SimpleMetricsManager::gauge(const vespalib::string &name, const vespalib::string &)
 {
-    MetricName mn = NameRepo::instance.metric(name);
+    MetricId mn = NameRepo::instance.metric(name);
     _metricTypes.check(mn.id(), name, MetricTypes::MetricType::GAUGE);
     LOG(debug, "gauge with metric name %s -> %zu", name.c_str(), mn.id());
     return Gauge(shared_from_this(), mn);
@@ -118,14 +118,14 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
         }
     }
     for (const CounterAggregator& entry : bucket.counters) {
-        MetricName mn = entry.idx.name();
+        MetricId mn = entry.idx.name();
         size_t pi = entry.idx.point().id();
         const vespalib::string &name = NameRepo::instance.metricName(mn);
         CounterSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
     for (const GaugeAggregator& entry : bucket.gauges) {
-        MetricName mn = entry.idx.name();
+        MetricId mn = entry.idx.name();
         size_t pi = entry.idx.point().id();
         const vespalib::string &name = NameRepo::instance.metricName(mn);
         GaugeSnapshot val(name, snap.points()[pi], entry);

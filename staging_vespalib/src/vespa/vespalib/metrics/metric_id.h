@@ -5,11 +5,11 @@
 
 namespace vespalib::metrics {
 
-struct MetricNameTag {};
+struct MetricIdTag {};
 
 /**
  * Opaque handle representing an uniquely named metric.
  **/
-using MetricName = Handle<MetricNameTag>;
+using MetricId = Handle<MetricIdTag>;
 
 } // namespace vespalib::metrics

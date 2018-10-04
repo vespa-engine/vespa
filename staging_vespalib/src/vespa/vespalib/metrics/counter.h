@@ -17,14 +17,14 @@ class CounterAggregator;
  **/
 class Counter {
     std::shared_ptr<MetricsManager> _manager;
-    MetricName _id;
+    MetricId _id;
 public:
     Counter() : _manager(), _id(0) {}
     Counter(const Counter&) = delete;
     Counter(Counter &&other) = default;
     Counter& operator= (const Counter &) = delete;
     Counter& operator= (Counter &&other) = default;
-    Counter(std::shared_ptr<MetricsManager> m, MetricName id)
+    Counter(std::shared_ptr<MetricsManager> m, MetricId id)
         : _manager(std::move(m)), _id(id)
     {}
 

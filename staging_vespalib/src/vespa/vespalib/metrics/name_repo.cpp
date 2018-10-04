@@ -7,12 +7,12 @@ LOG_SETUP(".vespalib.metrics.name_repo");
 namespace vespalib {
 namespace metrics {
 
-MetricName
+MetricId
 NameRepo::metric(const vespalib::string &name)
 {
     size_t id = _metricNames.resolve(name);
     LOG(debug, "metric name %s -> %zu", name.c_str(), id);
-    return MetricName(id);
+    return MetricId(id);
 }
 
 Dimension
@@ -32,7 +32,7 @@ NameRepo::label(const vespalib::string &value)
 }
 
 const vespalib::string&
-NameRepo::metricName(MetricName metric)
+NameRepo::metricName(MetricId metric)
 {
     return _metricNames.lookup(metric.id());
 }
