@@ -24,7 +24,7 @@ public class FilterChainsTest extends DomBuilderTest {
 
     @Before
     public void setupFilterChains() {
-        http = new HttpBuilder().build(root, servicesXml());
+        http = new HttpBuilder().build(root.getDeployState(), root, servicesXml());
         root.freezeModelTopology();
     }
 

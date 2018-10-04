@@ -12,11 +12,26 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.cluster.DomResourceLimitsBuilder;
-import com.yahoo.vespa.model.search.*;
+import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.IndexedSearchCluster;
+import com.yahoo.vespa.model.search.NodeSpec;
+import com.yahoo.vespa.model.search.SearchCluster;
+import com.yahoo.vespa.model.search.SearchDefinition;
+import com.yahoo.vespa.model.search.SearchDefinitionXMLHandler;
+import com.yahoo.vespa.model.search.SearchNode;
+import com.yahoo.vespa.model.search.StreamingSearchCluster;
+import com.yahoo.vespa.model.search.TransactionLogServer;
+import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
 
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
@@ -28,7 +43,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
     private final boolean flushOnShutdown;
 
     /** If this is set up for streaming search, it is modelled as one search cluster per search definition */
-    private Map<String, AbstractSearchCluster>  clusters = new TreeMap<>();
+    private Map<String, AbstractSearchCluster> clusters = new TreeMap<>();
 
     /** The single, indexed search cluster this sets up (supporting multiple document types), or null if none */
     private IndexedSearchCluster indexedCluster;
@@ -63,18 +78,17 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         }
 
         @Override
-        protected ContentSearchCluster doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
+        protected ContentSearchCluster doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             ModelElement clusterElem = new ModelElement(producerSpec);
             String clusterName = ContentCluster.getClusterName(clusterElem);
             Boolean flushOnShutdownElem = clusterElem.childAsBoolean("engine.proton.flush-on-shutdown");
-            DeployState deployState = AbstractConfigProducer.deployStateFrom(ancestor);
 
             ContentSearchCluster search = new ContentSearchCluster(ancestor, clusterName, documentDefinitions, globallyDistributedDocuments,
                     getFlushOnShutdown(flushOnShutdownElem, deployState));
 
             ModelElement tuning = clusterElem.getChildByPath("engine.proton.tuning");
             if (tuning != null) {
-                search.setTuning(new DomSearchTuningBuilder().build(search, tuning.getXml()));
+                search.setTuning(new DomSearchTuningBuilder().build(deployState, search, tuning.getXml()));
             }
             ModelElement protonElem = clusterElem.getChildByPath("engine.proton");
             if (protonElem != null) {
@@ -90,7 +104,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             if (flushOnShutdownElem != null) {
                 return flushOnShutdownElem;
             }
-            return (stateIsHosted(deployState) ? false : true);
+            return ! stateIsHosted(deployState);
         }
 
         private Double getQueryTimeout(ModelElement clusterElem) {
@@ -165,7 +179,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         this.flushOnShutdown = flushOnShutdown;
     }
 
-    void addSearchCluster(DeployState deployState, SearchCluster cluster, Double queryTimeout, List<ModelElement> documentDefs) {
+    private void addSearchCluster(DeployState deployState, SearchCluster cluster, Double queryTimeout, List<ModelElement> documentDefs) {
         addSearchDefinitions(deployState, documentDefs, cluster);
 
         if (queryTimeout != null) {
@@ -210,7 +224,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         return hasIndexedCluster() ? getIndexed().getSearchNodes() : nonIndexed;
     }
 
-    public void addSearchNode(ContentNode node, StorageGroup parentGroup, ModelElement element) {
+    public void addSearchNode(DeployState deployState, ContentNode node, StorageGroup parentGroup, ModelElement element) {
         AbstractConfigProducer parent = hasIndexedCluster() ? getIndexed() : this;
 
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
@@ -218,7 +232,8 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         TransactionLogServer tls;
         Optional<Tuning> tuning = Optional.ofNullable(this.tuning);
         if (element == null) {
-            snode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec, clusterName, node, flushOnShutdown, tuning);
+            snode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
+                                      clusterName, node, flushOnShutdown, tuning, parentGroup.getOwner().isHostedVespa());
             snode.setHostResource(node.getHostResource());
             snode.initService();
 
@@ -226,8 +241,8 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             tls.setHostResource(snode.getHostResource());
             tls.initService();
         } else {
-            snode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown, tuning).build(parent, element.getXml());
-            tls = new TransactionLogServer.Builder(clusterName).build(snode, element.getXml());
+            snode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown, tuning).build(deployState, parent, element.getXml());
+            tls = new TransactionLogServer.Builder(clusterName).build(deployState, snode, element.getXml());
         }
         snode.setTls(tls);
         if (hasIndexedCluster()) {
@@ -255,7 +270,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         tuning = t;
     }
 
-    public void setResourceLimits(ResourceLimits resourceLimits) {
+    private void setResourceLimits(ResourceLimits resourceLimits) {
         this.resourceLimits = Optional.of(resourceLimits);
     }
 

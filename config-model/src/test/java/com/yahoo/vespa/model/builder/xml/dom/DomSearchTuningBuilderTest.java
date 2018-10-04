@@ -39,7 +39,7 @@ public class DomSearchTuningBuilderTest extends DomBuilderTest {
 
     private Tuning createTuning(Element xml) {
         DomSearchTuningBuilder b = new DomSearchTuningBuilder();
-        return b.build(root, xml);
+        return b.build(root.getDeployState(), root, xml);
     }
 
     String getProtonCfg(Tuning tuning) {

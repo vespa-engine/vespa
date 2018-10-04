@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.builder.xml.dom.chains.search;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.builder.xml.XmlHelper;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import com.yahoo.search.searchchain.model.federation.FederationSearcherModel;
 import com.yahoo.text.XML;
@@ -70,18 +71,19 @@ public class DomFederationSearcherBuilder extends VespaDomBuilder.DomConfigProdu
         }
     }
 
-    protected FederationSearcher doBuild(AbstractConfigProducer ancestor, Element searcherElement) {
+    @Override
+    protected FederationSearcher doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element searcherElement) {
         FederationSearcherModel model = new FederationSearcherModelBuilder(searcherElement).build();
-        Optional<Component> targetSelector = buildTargetSelector(ancestor, searcherElement, model.getComponentId());
+        Optional<Component> targetSelector = buildTargetSelector(deployState, ancestor, searcherElement, model.getComponentId());
 
         return new FederationSearcher(model, targetSelector);
     }
 
-    private Optional<Component> buildTargetSelector(AbstractConfigProducer ancestor, Element searcherElement, ComponentId namespace) {
+    private Optional<Component> buildTargetSelector(DeployState deployState, AbstractConfigProducer ancestor, Element searcherElement, ComponentId namespace) {
         Element targetSelectorElement = XML.getChild(searcherElement, "target-selector");
         if (targetSelectorElement == null)
             return Optional.empty();
 
-        return Optional.of(new DomComponentBuilder(namespace).build(ancestor, targetSelectorElement));
+        return Optional.of(new DomComponentBuilder(namespace).build(deployState, ancestor, targetSelectorElement));
     }
 }

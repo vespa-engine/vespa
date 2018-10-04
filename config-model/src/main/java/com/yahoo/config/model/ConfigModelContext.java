@@ -64,18 +64,6 @@ public final class ConfigModelContext {
 
     /**
      * Create an application context from a parent producer and an id.
-     * 
-     * @param parent the parent to be used for the config model.
-     * @param producerId the id to be used for the config model.
-     * @return a model context that can be passed to a model.
-     */
-    public static ConfigModelContext create(VespaModel vespaModel, ConfigModelRepoAdder configModelRepoAdder,
-                                            AbstractConfigProducer parent, String producerId) {
-        return create(parent.getRoot().getDeployState(), vespaModel, configModelRepoAdder, parent, producerId);
-    }
-
-    /**
-     * Create an application context from a parent producer and an id.
      *
      * @param deployState the global deploy state for this model
      * @param parent the parent to be used for the config model

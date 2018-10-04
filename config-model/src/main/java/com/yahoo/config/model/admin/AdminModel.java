@@ -82,7 +82,7 @@ public class AdminModel extends ConfigModel {
                                                                  modelContext.getDeployState().getFileRegistry(),
                                                                  properties.multitenant(),
                                                                  properties.configServerSpecs());
-            model.admin = domBuilder.build(parent, adminElement);
+            model.admin = domBuilder.build(modelContext.getDeployState(), parent, adminElement);
             // TODO: Is required since other models depend on admin.
             if (parent instanceof ApplicationConfigProducerRoot) {
                 ((ApplicationConfigProducerRoot)parent).setupAdmin(model.admin);
@@ -111,7 +111,7 @@ public class AdminModel extends ConfigModel {
                                                                  properties.multitenant(),
                                                                  properties.configServerSpecs(),
                                                                  model.getContainerModels());
-            model.admin = domBuilder.build(parent, adminElement);
+            model.admin = domBuilder.build(modelContext.getDeployState(), parent, adminElement);
             // TODO: Is required since other models depend on admin.
             if (parent instanceof ApplicationConfigProducerRoot) {
                 ((ApplicationConfigProducerRoot)parent).setupAdmin(model.admin);

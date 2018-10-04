@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.http.xml;
 
 import com.yahoo.config.model.builder.xml.XmlHelper;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -24,9 +25,9 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
     private static final Logger log = Logger.getLogger(JettyConnectorBuilder.class.getName());
 
     @Override
-    protected ConnectorFactory doBuild(AbstractConfigProducer ancestor, Element serverSpec) {
+    protected ConnectorFactory doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element serverSpec) {
         String name = XmlHelper.getIdString(serverSpec);
-        int port = HttpBuilder.readPort(serverSpec, ancestor.getRoot().getDeployState());
+        int port = HttpBuilder.readPort(serverSpec, deployState.isHosted(), deployState.getDeployLogger());
 
         Element legacyServerConfig = XML.getChild(serverSpec, "config");
         if (legacyServerConfig != null) {

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.core.AccessLogConfig;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -101,7 +102,7 @@ public class AccessLogBuilder {
         }
     }
 
-    public static Optional<AccessLogComponent> buildIfNotDisabled(ContainerCluster cluster, Element accessLogSpec) {
+    public static Optional<AccessLogComponent> buildIfNotDisabled(DeployState deployState, ContainerCluster cluster, Element accessLogSpec) {
         AccessLogTypeLiteral typeLiteral =
                 getOptionalAttribute(accessLogSpec, "type").
                         map(AccessLogTypeLiteral::fromAttributeValue).
@@ -111,6 +112,6 @@ public class AccessLogBuilder {
             return Optional.empty();
         }
         boolean hosted = cluster.isHostedVespa();
-        return Optional.of(new DomBuilder(logType, hosted).build(cluster, accessLogSpec));
+        return Optional.of(new DomBuilder(logType, hosted).build(deployState, cluster, accessLogSpec));
     }
 }

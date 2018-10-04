@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.graph;
 
-import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.test.MockRoot;
 import org.junit.Rule;
@@ -9,7 +8,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
@@ -64,10 +62,10 @@ public class ModelGraphTest {
         ModelGraph graph = new ModelGraphBuilder().addBuilder(new GraphMock.BC()).addBuilder(new GraphMock.BB()).addBuilder(new GraphMock.BA()).build();
         List<ModelNode> nodes = graph.topologicalSort();
         MockRoot root = new MockRoot();
-        GraphMock.A a = (GraphMock.A) nodes.get(0).createModel(ConfigModelContext.create(null, null, root, "first"));
-        GraphMock.B b = (GraphMock.B) nodes.get(1).createModel(ConfigModelContext.create(null, null, root, "second"));
-        GraphMock.B b2 = (GraphMock.B) nodes.get(1).createModel(ConfigModelContext.create(null, null, root, "second2"));
-        GraphMock.C c = (GraphMock.C) nodes.get(2).createModel(ConfigModelContext.create(null, null, root, "third"));
+        GraphMock.A a = (GraphMock.A) nodes.get(0).createModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "first"));
+        GraphMock.B b = (GraphMock.B) nodes.get(1).createModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "second"));
+        GraphMock.B b2 = (GraphMock.B) nodes.get(1).createModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "second2"));
+        GraphMock.C c = (GraphMock.C) nodes.get(2).createModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "third"));
         assertNotNull(a);
         assertNotNull(b);
         assertNotNull(b2);
@@ -91,7 +89,8 @@ public class ModelGraphTest {
         expectedEx.expect(IllegalArgumentException.class);
         expectedEx.expectMessage("Constructor for " + GraphMock.Bad.class.getName() + " must have as its first argument a " + ConfigModelContext.class.getName());
         ModelNode node = new ModelNode(new GraphMock.Bad.Builder());
-        node.createModel(ConfigModelContext.create(null, null, new MockRoot(), "foo"));
+        MockRoot root = new MockRoot();
+        node.createModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "foo"));
     }
 
     @Test
@@ -99,7 +98,8 @@ public class ModelGraphTest {
         expectedEx.expect(IllegalArgumentException.class);
         expectedEx.expectMessage("Unable to find constructor argument class java.lang.String for com.yahoo.config.model.graph.GraphMock$Bad2");
         ModelNode node = new ModelNode(new GraphMock.Bad2.Builder());
-        node.createModel(ConfigModelContext.create(null, null, new MockRoot(), "foo"));
+        MockRoot root = new MockRoot();
+        node.createModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "foo"));
     }
 
     @Test
@@ -107,8 +107,8 @@ public class ModelGraphTest {
         ModelGraph graph = new ModelGraphBuilder().addBuilder(new GraphMock.BC()).addBuilder(new GraphMock.BA()).build();
         List<ModelNode> nodes = graph.topologicalSort();
         MockRoot root = new MockRoot();
-        GraphMock.A a = (GraphMock.A) nodes.get(0).createModel(ConfigModelContext.create(null, null, root, "first"));
-        GraphMock.C c = (GraphMock.C) nodes.get(1).createModel(ConfigModelContext.create(null, null, root, "second"));
+        GraphMock.A a = (GraphMock.A) nodes.get(0).createModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "first"));
+        GraphMock.C c = (GraphMock.C) nodes.get(1).createModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "second"));
         assertThat(c.a, is(a));
         assertTrue(c.b.isEmpty());
     }

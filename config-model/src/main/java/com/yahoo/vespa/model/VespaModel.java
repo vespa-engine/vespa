@@ -181,16 +181,16 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             this.deployState = deployState;
             configModelRepo.readConfigModels(deployState, this, builder, root, configModelRegistry);
             this.deployState = null;
-            addServiceClusters(deployState.getApplicationPackage(), builder);
+            addServiceClusters(deployState, builder);
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs()); // must happen after the two lines above
             setupRouting(deployState);
             this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
             getAdmin().addPerHostServices(hostSystem.getHosts(), deployState);
-            this.deployLogger = null;
             freezeModelTopology();
             root.prepare(configModelRepo);
             configModelRepo.prepareConfigModels(deployState);
             validateWrapExceptions();
+            this.deployLogger = null;
         }
         else { // create a model with no services instantiated and the given file distributor
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
@@ -222,8 +222,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     /** Adds generic application specific clusters of services */
-    private void addServiceClusters(ApplicationPackage app, VespaModelBuilder builder) {
-        serviceClusters.addAll(builder.getClusters(app, this));
+    private void addServiceClusters(DeployState deployState, VespaModelBuilder builder) {
+        serviceClusters.addAll(builder.getClusters(deployState, this));
     }
 
     /**
@@ -502,7 +502,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         return ret;
     }
 
-    @Override
     public DeployState getDeployState() {
         if (deployState == null)
             throw new IllegalStateException("Cannot call getDeployState() once model has been built");

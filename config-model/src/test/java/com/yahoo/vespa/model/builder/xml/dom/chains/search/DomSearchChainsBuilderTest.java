@@ -69,7 +69,7 @@ public class DomSearchChainsBuilderTest extends DomBuilderTest {
 
     @Before
     public void createSearchChains() {
-        searchChains = new DomSearchChainsBuilder().build(root, element);
+        searchChains = new DomSearchChainsBuilder().build(root.getDeployState(), root, element);
     }
 
     @Test
@@ -88,7 +88,8 @@ public class DomSearchChainsBuilderTest extends DomBuilderTest {
                 "</searchchains>");
 
         try {
-            new DomSearchChainsBuilder().build(new MockRoot(), element);
+            MockRoot root = new MockRoot();
+            new DomSearchChainsBuilder().build(root.getDeployState(), root, element);
             fail("Expected exception when referring to an outer 'federation' as a 'searcher'.");
         } catch (RuntimeException e) {
             assertThat(e.getMessage(), containsString("Two different types declared for the component with name 'federationSearcher'"));

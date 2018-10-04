@@ -63,12 +63,6 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         return (deployState != null) && deployState.isHosted();
     }
 
-    protected static DeployState deployStateFrom(AbstractConfigProducer parent) {
-        if (parent == null) return null;
-        if (parent.getRoot() == null) return null;
-        return parent.getRoot().getDeployState();
-    }
-
     /**
      * Creates a new AbstractConfigProducer with the given parent and subId.
      * This constructor will add the resulting producer to the children of parent.

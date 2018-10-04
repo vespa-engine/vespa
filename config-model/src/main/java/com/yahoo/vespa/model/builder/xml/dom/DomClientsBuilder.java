@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
-import com.yahoo.vespa.model.clients.*;
+import com.yahoo.vespa.model.clients.Clients;
 import org.w3c.dom.Element;
 
 import java.util.Arrays;
@@ -30,7 +30,7 @@ public class DomClientsBuilder extends LegacyConfigModelBuilder<Clients> {
         String version = clientsE.getAttribute("version");
         if (version.startsWith("2.")) {
             DomV20ClientsBuilder parser = new DomV20ClientsBuilder(clients, version);
-            parser.build(clientsE);
+            parser.build(modelContext.getDeployState(), clientsE);
         } else {
             throw new IllegalArgumentException("Version '" + version + "' of 'clients' not supported.");
         }

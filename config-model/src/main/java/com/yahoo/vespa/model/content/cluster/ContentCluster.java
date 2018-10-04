@@ -9,7 +9,6 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.config.content.MessagetyperouteselectorpolicyConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
@@ -36,7 +35,18 @@ import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
-import com.yahoo.vespa.model.content.*;
+import com.yahoo.vespa.model.content.ClusterControllerConfig;
+import com.yahoo.vespa.model.content.ContentSearch;
+import com.yahoo.vespa.model.content.ContentSearchCluster;
+import com.yahoo.vespa.model.content.DistributionBitCalculator;
+import com.yahoo.vespa.model.content.DistributorCluster;
+import com.yahoo.vespa.model.content.GlobalDistributionValidator;
+import com.yahoo.vespa.model.content.IndexedHierarchicDistributionValidator;
+import com.yahoo.vespa.model.content.Redundancy;
+import com.yahoo.vespa.model.content.ReservedDocumentTypeNameValidator;
+import com.yahoo.vespa.model.content.StorageGroup;
+import com.yahoo.vespa.model.content.StorageNode;
+import com.yahoo.vespa.model.content.TuningDispatch;
 import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
@@ -45,7 +55,15 @@ import com.yahoo.vespa.model.search.MultilevelDispatchValidator;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -102,10 +120,10 @@ public class ContentCluster extends AbstractConfigProducer implements
         public ContentCluster build(Collection<ContainerModel> containers, ConfigModelContext context, Element w3cContentElement) {
 
             ModelElement contentElement = new ModelElement(w3cContentElement);
-
+            DeployState deployState = context.getDeployState();
             ModelElement documentsElement = contentElement.getChild("documents");
             Map<String, NewDocumentType> documentDefinitions =
-                    new SearchDefinitionBuilder().build(context.getDeployState().getDocumentModel().getDocumentManager(), documentsElement);
+                    new SearchDefinitionBuilder().build(deployState.getDocumentModel().getDocumentManager(), documentsElement);
 
             String routingSelection = new DocumentSelectionBuilder().build(documentsElement);
             Redundancy redundancy = new RedundancyBuilder().build(contentElement);
@@ -113,13 +131,13 @@ public class ContentCluster extends AbstractConfigProducer implements
 
             ContentCluster c = new ContentCluster(context.getParentProducer(), getClusterName(contentElement), documentDefinitions, 
                                                   globallyDistributedDocuments, routingSelection, redundancy,
-                                                  context.getDeployState().zone());
-            c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterName(contentElement), contentElement).build(c, contentElement.getXml());
-            c.search = new ContentSearchCluster.Builder(documentDefinitions, globallyDistributedDocuments).build(c, contentElement.getXml());
+                                                  deployState.zone(), deployState.isHosted());
+            c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterName(contentElement), contentElement).build(deployState, c, contentElement.getXml());
+            c.search = new ContentSearchCluster.Builder(documentDefinitions, globallyDistributedDocuments).build(deployState, c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
-            c.storageNodes = new StorageCluster.Builder().build(c, w3cContentElement);
-            c.distributorNodes = new DistributorCluster.Builder(c).build(c, w3cContentElement);
-            c.rootGroup = new StorageGroup.Builder(contentElement, c, context).buildRootGroup();
+            c.storageNodes = new StorageCluster.Builder().build(deployState, c, w3cContentElement);
+            c.distributorNodes = new DistributorCluster.Builder(c).build(deployState, c, w3cContentElement);
+            c.rootGroup = new StorageGroup.Builder(contentElement, c, context).buildRootGroup(deployState);
             validateThatGroupSiblingsAreUnique(c.clusterName, c.rootGroup);
             redundancy.setExplicitGroups(c.getRootGroup().getNumberOfLeafGroups());
             c.search.handleRedundancy(redundancy);
@@ -255,7 +273,7 @@ public class ContentCluster extends AbstractConfigProducer implements
         }
 
         private void validateGroupSiblings(String cluster, StorageGroup group) {
-            HashSet<String> siblings = new HashSet<>();
+            Set<String> siblings = new HashSet<>();
             for (StorageGroup g : group.getSubgroups()) {
                 String name = g.getName();
                 if (siblings.contains(name)) {
@@ -299,8 +317,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                 Collection<HostResource> hosts = nodesSpecification.isDedicated() ?
                                                  getControllerHosts(nodesSpecification, admin, clusterName, context) :
                                                  drawControllerHosts(nodesSpecification.count(), rootGroup, containers);
-
-                clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"), hosts, clusterName, true);
+                clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"), hosts, clusterName, true, context.getDeployState());
                 contentCluster.clusterControllers = clusterControllers;
             }
             else {
@@ -310,7 +327,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                     if (hosts.size() > 1) {
                         admin.deployLogger().log(Level.INFO, "When having content cluster(s) and more than 1 config server it is recommended to configure cluster controllers explicitly.");
                     }
-                    clusterControllers = createClusterControllers(admin, hosts, "cluster-controllers", false);
+                    clusterControllers = createClusterControllers(admin, hosts, "cluster-controllers", false, context.getDeployState());
                     admin.setClusterControllers(clusterControllers);
                 }
             }
@@ -439,18 +456,17 @@ public class ContentCluster extends AbstractConfigProducer implements
 
         private ContainerCluster createClusterControllers(AbstractConfigProducer parent,
                                                           Collection<HostResource> hosts,
-                                                          String name,
-                                                          boolean multitenant) {
-            ContainerCluster clusterControllers = new ContainerCluster(parent,
-                                                                       name,
-                                                                       name,
-                                                                       new ClusterControllerClusterVerifier());
+                                                          String name, boolean multitenant,
+                                                          DeployState deployState) {
+            ContainerCluster clusterControllers = new ContainerCluster(parent, name, name,
+                                                                       new ClusterControllerClusterVerifier(),
+                                                                       deployState);
             List<Container> containers = new ArrayList<>();
             // Add a cluster controller on each config server (there is always at least one).
             if (clusterControllers.getContainers().isEmpty()) {
                 int index = 0;
                 for (HostResource host : hosts) {
-                    ClusterControllerContainer clusterControllerContainer = new ClusterControllerContainer(clusterControllers, index, multitenant);
+                    ClusterControllerContainer clusterControllerContainer = new ClusterControllerContainer(clusterControllers, index, multitenant, deployState.isHosted());
                     clusterControllerContainer.setHostResource(host);
                     clusterControllerContainer.initService();
                     clusterControllerContainer.setProp("clustertype", "admin")
@@ -483,15 +499,12 @@ public class ContentCluster extends AbstractConfigProducer implements
 
     }
 
-    private ContentCluster(AbstractConfigProducer parent,
-                           String clusterName,
+    private ContentCluster(AbstractConfigProducer parent, String clusterName,
                            Map<String, NewDocumentType> documentDefinitions,
                            Set<NewDocumentType> globallyDistributedDocuments,
-                           String routingSelection,
-                           Redundancy redundancy,
-                           Zone zone) {
+                           String routingSelection, Redundancy redundancy, Zone zone, boolean isHostedVespa) {
         super(parent, clusterName);
-        this.isHostedVespa = stateIsHosted(deployStateFrom(parent));
+        this.isHostedVespa = isHostedVespa;
         this.clusterName = clusterName;
         this.documentDefinitions = documentDefinitions;
         this.globallyDistributedDocuments = globallyDistributedDocuments;

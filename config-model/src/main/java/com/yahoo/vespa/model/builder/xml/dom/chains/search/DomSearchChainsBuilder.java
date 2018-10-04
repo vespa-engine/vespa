@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom.chains.search;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.ComponentType;
@@ -37,9 +38,9 @@ public class DomSearchChainsBuilder extends DomChainsBuilder<Searcher<?>, Search
     }
 
     @Override
-    protected SearchChainsBuilder readChains(AbstractConfigProducer ancestor, List<Element> searchChainsElements,
+    protected SearchChainsBuilder readChains(DeployState deployState, AbstractConfigProducer ancestor, List<Element> searchChainsElements,
                                              Map<String, ComponentType> outerComponentTypeByComponentName) {
-        return new SearchChainsBuilder(ancestor, searchChainsElements, outerComponentTypeByComponentName);
+        return new SearchChainsBuilder(deployState, ancestor, searchChainsElements, outerComponentTypeByComponentName);
     }
 
 }

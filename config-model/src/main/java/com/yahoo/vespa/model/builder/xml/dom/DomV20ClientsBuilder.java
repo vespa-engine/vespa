@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.content.spooler.SpoolerConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
@@ -37,10 +38,10 @@ public class DomV20ClientsBuilder {
         this.clients = clients;
     }
 
-    public void build(Element spec) {
+    public void build(DeployState deployState, Element spec) {
         NodeList children = spec.getElementsByTagName("spoolers");
         for (int i = 0; i < children.getLength(); i++) {
-            createSpoolers(clients.getConfigProducer(), (Element) children.item(i), clients);
+            createSpoolers(deployState, clients.getConfigProducer(), (Element) children.item(i), clients);
         }
 
         children = spec.getElementsByTagName("load-types");
@@ -59,13 +60,13 @@ public class DomV20ClientsBuilder {
     /**
      * Creates VespaSpooler objects using the given xml Element.
      */
-    private void createSpoolers(AbstractConfigProducer pcp, Element element, Clients clients) {
+    private void createSpoolers(DeployState deployState, AbstractConfigProducer pcp, Element element, Clients clients) {
         String jvmArgs = null;
         if (element.hasAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME)) jvmArgs=element.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
         SimpleConfigProducer spoolerCfg = new VespaDomBuilder.DomSimpleConfigProducerBuilder(element.getNodeName()).
-                build(pcp, element);
+                build(deployState, pcp, element);
         Element spoolersFeederOptions = findFeederOptions(element);
-        createSpoolMasters(spoolerCfg, element);
+        createSpoolMasters(deployState, spoolerCfg, element);
         for (Element e : XML.getChildren(element, "spooler")) {
             String configId = e.getAttribute("id").trim();
             FeederConfig.Builder feederConfig = getFeederConfig(spoolersFeederOptions, e);
@@ -73,21 +74,21 @@ public class DomV20ClientsBuilder {
             if (configId.length() == 0) {
                 int index = clients.getVespaSpoolers().size();
                 VespaSpoolerService spoolerService = new VespaSpoolerServiceBuilder(index, new VespaSpooler(feederConfig, spoolConfig)).
-                        build(spoolerCfg, e);
+                        build(deployState, spoolerCfg, e);
                 if ("".equals(spoolerService.getJvmArgs()) && jvmArgs!=null) spoolerService.setJvmArgs(jvmArgs);
                 spoolerService.setProp("index", String.valueOf(index));
                 clients.getVespaSpoolers().add(spoolerService);
             } else {
                 new VespaSpoolerProducerBuilder(configId, new VespaSpooler(feederConfig, spoolConfig)).
-                        build(spoolerCfg, e);
+                        build(deployState, spoolerCfg, e);
             }
         }
     }
 
-    private void createSpoolMasters(SimpleConfigProducer producer, Element element) {
+    private void createSpoolMasters(DeployState deployState, SimpleConfigProducer producer, Element element) {
         int i=0;
         for (Element e : XML.getChildren(element, "spoolmaster"))
-            new VespaSpoolMasterBuilder(i++).build(producer, e);
+            new VespaSpoolMasterBuilder(i++).build(deployState, producer, e);
     }
 
     private SpoolerConfig.Builder getSpoolConfig(Element conf) {

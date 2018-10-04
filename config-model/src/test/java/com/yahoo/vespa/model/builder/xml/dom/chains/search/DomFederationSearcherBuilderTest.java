@@ -27,7 +27,7 @@ public class DomFederationSearcherBuilderTest extends DomBuilderTest {
 
     @Test
     public void ensureCorrectModel() {
-        FederationSearcher searcher = new DomFederationSearcherBuilder().doBuild(root, parse(
+        FederationSearcher searcher = new DomFederationSearcherBuilder().doBuild(root.getDeployState(), root, parse(
                 "<federation id='theId'>",
                 "    <provides>p2</provides>",
                 "    <source-set inherits=\"default\" />",
@@ -59,7 +59,7 @@ public class DomFederationSearcherBuilderTest extends DomBuilderTest {
 
     @Test
     public void require_that_target_selector_can_be_configured() {
-        FederationSearcher searcher = new DomFederationSearcherBuilder().doBuild(root, parse(
+        FederationSearcher searcher = new DomFederationSearcherBuilder().doBuild(root.getDeployState(), root, parse(
                 "<federation id='federation-id'>",
                 "    <target-selector id='my-id' class='my-class' />",
                 "</federation>"));

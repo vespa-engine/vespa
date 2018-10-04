@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.builder.xml.dom.chains;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.builder.xml.XmlHelper;
@@ -19,7 +20,15 @@ import com.yahoo.vespa.model.container.docproc.DocumentProcessor;
 import com.yahoo.vespa.model.container.search.searchchain.Searcher;
 import org.w3c.dom.Element;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 
 /**
  * Creates component models and component references from xml for a given scope.
@@ -29,7 +38,7 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
 
     // NOTE: the 'name' string must match the xml tag name for the component in services.
     public static class ComponentType<T extends ChainedComponent<?>> {
-        static ArrayList<ComponentType> values = new ArrayList<>();
+        static List<ComponentType> values = new ArrayList<>();
         public static final ComponentType<DocumentProcessor> documentprocessor = new ComponentType<>("documentprocessor", DomDocumentProcessorBuilder.class);
         public static final ComponentType<Searcher<?>> searcher = new ComponentType<>("searcher", DomSearcherBuilder.class);
         public static final ComponentType<Processor> processor = new ComponentType<>("processor", DomProcessorBuilder.class);
@@ -63,15 +72,16 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
      * @param outerComponentTypeByComponentName Use null if this is the outermost scope, i.e.
      *                                          every component is a definition, not a reference.
      */
-    ComponentsBuilder(AbstractConfigProducer ancestor,
+    ComponentsBuilder(DeployState deployState,
+                      AbstractConfigProducer ancestor,
                       Collection<ComponentType<T>> componentTypes,
                       List<Element> elementsContainingComponentElems,
                       Map<String, ComponentType> outerComponentTypeByComponentName) {
 
-        readComponents(ancestor, componentTypes, elementsContainingComponentElems, unmodifiable(outerComponentTypeByComponentName));
+        readComponents(deployState, ancestor, componentTypes, elementsContainingComponentElems, unmodifiable(outerComponentTypeByComponentName));
     }
 
-    private void readComponents(AbstractConfigProducer ancestor,
+    private void readComponents(DeployState deployState, AbstractConfigProducer ancestor,
                                 Collection<ComponentType<T>> componentTypes,
                                 List<Element> elementsContainingComponentElems,
                                 Map<String, ComponentType> outerComponentTypeByComponentName) {
@@ -79,13 +89,13 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
         for (ComponentType<T> componentType : componentTypes) {
             for (Element elemContainingComponentElems : elementsContainingComponentElems) {
                 for (Element componentElement : XML.getChildren(elemContainingComponentElems, componentType.name)) {
-                    readComponent(ancestor, componentElement, componentType, outerComponentTypeByComponentName);
+                    readComponent(deployState, ancestor, componentElement, componentType, outerComponentTypeByComponentName);
                 }
             }
         }
     }
 
-    private void readComponent(AbstractConfigProducer ancestor,
+    private void readComponent(DeployState deployState, AbstractConfigProducer ancestor,
                                Element componentElement,
                                ComponentType<T> componentType,
                                Map<String, ComponentType> outerComponentTypeByComponentName) {
@@ -95,7 +105,7 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
         if (outerComponentTypeByComponentName.containsKey(componentSpecification.getName())) {
             readComponentReference(componentElement, componentType, componentSpecification, outerComponentTypeByComponentName);
         } else {
-            readComponentDefinition(ancestor, componentElement, componentType);
+            readComponentDefinition(deployState, ancestor, componentElement, componentType);
         }
     }
 
@@ -109,8 +119,8 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
         outerComponentReferences.add(componentSpecification);
     }
 
-    private void readComponentDefinition(AbstractConfigProducer ancestor, Element componentElement, ComponentType<T> componentType) {
-        T component = componentType.createBuilder().build(ancestor, componentElement);
+    private void readComponentDefinition(DeployState deployState, AbstractConfigProducer ancestor, Element componentElement, ComponentType<T> componentType) {
+        T component = componentType.createBuilder().build(deployState, ancestor, componentElement);
         componentDefinitions.add(component);
         updateComponentTypes(component.getComponentId(), componentType);
     }
@@ -139,7 +149,7 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
     private Map<String, ComponentType> unmodifiable(Map<String, ComponentType> outerComponentTypeByComponentName) {
         return (outerComponentTypeByComponentName != null)?
                 Collections.unmodifiableMap(outerComponentTypeByComponentName):
-                Collections.<String, ComponentType>emptyMap();
+                Collections.emptyMap();
     }
 
     public Collection<T> getComponentDefinitions() {

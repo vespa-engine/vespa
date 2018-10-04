@@ -11,7 +11,6 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -32,7 +31,7 @@ public class GenericServicesModelTest {
     @Test
     public void test_generic_services_model() {
         MockRoot root = new MockRoot();
-        GenericServicesModel model = new GenericServicesModel(ConfigModelContext.create(null, null, root, "foo"));
+        GenericServicesModel model = new GenericServicesModel(ConfigModelContext.create(root.getDeployState(), null, null, root, "foo"));
         assertThat(model.serviceClusters().size(), is(0));
         model.addCluster(new ServiceCluster(root, "mycluster", "/bin/foo"));
         assertThat(model.serviceClusters().size(), is(1));

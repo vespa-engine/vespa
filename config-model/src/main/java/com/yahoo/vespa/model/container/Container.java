@@ -76,20 +76,20 @@ public class Container extends AbstractService implements
     private static final int numRpcServerPorts = 2;
     private static final String defaultHostedJVMArgs = "-XX:+UseOSErrorReporting -XX:+SuppressFatalErrorMessage";
 
-    public Container(AbstractConfigProducer parent, String name, int index) {
-        this(parent, name, Collections.emptyList(), index);
+    public Container(AbstractConfigProducer parent, String name, int index, boolean isHostedVespa) {
+        this(parent, name, Collections.emptyList(), index, isHostedVespa);
     }
-    public Container(AbstractConfigProducer parent, String name, boolean retired, int index) {
-        this(parent, name, retired, Collections.emptyList(), index);
+    public Container(AbstractConfigProducer parent, String name, boolean retired, int index, boolean isHostedVespa) {
+        this(parent, name, retired, Collections.emptyList(), index, isHostedVespa);
     }
-    public Container(AbstractConfigProducer parent, String name, List<PortOverride> portOverrides, int index) {
-        this(parent, name, false, portOverrides, index);
+    public Container(AbstractConfigProducer parent, String name, List<PortOverride> portOverrides, int index, boolean isHostedVespa) {
+        this(parent, name, false, portOverrides, index, isHostedVespa);
     }
-    public Container(AbstractConfigProducer parent, String name, boolean retired, List<PortOverride> portOverrides, int index) {
+    public Container(AbstractConfigProducer parent, String name, boolean retired, List<PortOverride> portOverrides, int index, boolean isHostedVespa) {
         super(parent, name);
         this.name = name;
         this.parent = parent;
-        this.isHostedVespa = stateIsHosted(deployStateFrom(parent));
+        this.isHostedVespa = isHostedVespa;
         this.portOverrides = Collections.unmodifiableList(new ArrayList<>(portOverrides));
         this.retired = retired;
         this.index = index;

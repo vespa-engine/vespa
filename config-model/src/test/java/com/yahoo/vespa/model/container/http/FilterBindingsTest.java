@@ -30,7 +30,7 @@ public class FilterBindingsTest extends DomBuilderTest {
     private static final String MY_CHAIN_BINDING = "http://*/my-chain-binding";
 
     private Http buildHttp(Element xml) throws Exception {
-        Http http = new HttpBuilder().build(root, xml);
+        Http http = new HttpBuilder().build(root.getDeployState(), root, xml);
         root.freezeModelTopology();
         http.validate();
         return http;

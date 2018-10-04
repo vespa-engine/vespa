@@ -3,12 +3,16 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
-import com.yahoo.vespa.model.admin.*;
+import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.vespa.model.admin.Configserver;
+import com.yahoo.vespa.model.admin.LogForwarder;
+import com.yahoo.vespa.model.admin.ModelConfigProvider;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.DefaultMonitoring;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
@@ -18,7 +22,10 @@ import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.config.application.api.FileRegistry;
 import org.w3c.dom.Element;
 
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import static com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets.predefinedMetricSets;
 import static java.util.logging.Level.WARNING;
@@ -63,7 +70,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
     }
 
     @Override
-    protected Admin doBuild(AbstractConfigProducer parent, Element adminElement) {
+    protected Admin doBuild(DeployState deployState, AbstractConfigProducer parent, Element adminElement) {
         Monitoring monitoring = getMonitoring(getChildWithFallback(adminElement, "monitoring", "yamas"));
         Metrics metrics = new MetricsBuilder(applicationType, predefinedMetricSets)
                 .buildMetrics(XML.getChild(adminElement, "metrics"));
@@ -74,9 +81,10 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         }
         FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent);
 
-        Admin admin = new Admin(parent, monitoring, metrics, legacyMetricsConsumers, multitenant, fileDistributionConfigProducer);
+        Admin admin = new Admin(parent, monitoring, metrics, legacyMetricsConsumers, multitenant,
+                                fileDistributionConfigProducer, deployState.isHosted());
         admin.setApplicationType(applicationType);
-        doBuildAdmin(admin, adminElement);
+        doBuildAdmin(deployState, admin, adminElement);
         new ModelConfigProvider(admin);
 
         return admin;
@@ -92,7 +100,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         return XML.getChild(parent, alternativeChildName);
     }
 
-    protected abstract void doBuildAdmin(Admin admin, Element adminE);
+    protected abstract void doBuildAdmin(DeployState deployState, Admin admin, Element adminE);
 
     private Monitoring getMonitoring(Element monitoringElement) {
         if (monitoringElement == null) return new DefaultMonitoring(DEFAULT_CLUSTER_NAME, DEFAULT_INTERVAL);

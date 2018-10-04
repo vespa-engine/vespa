@@ -10,7 +10,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -142,7 +141,7 @@ public class HostResource implements Comparable<HostResource> {
             int port = wantedPort + i;
             if (portDB.containsKey(port)) {
                 AbstractService s = (AbstractService)portDB.get(port);
-                s.getRoot().getDeployState().getDeployLogger().log(Level.WARNING, service.getServiceName() +" cannot reserve port " + port + " on " +
+                s.getRoot().deployLogger().log(Level.WARNING, service.getServiceName() +" cannot reserve port " + port + " on " +
                         this + ": Already reserved for " + s.getServiceName() +
                         ". Using default port range from " + serviceBasePort);
                 return false;

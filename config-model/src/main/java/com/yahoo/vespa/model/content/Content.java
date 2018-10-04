@@ -307,7 +307,7 @@ public class Content extends ConfigModel {
             AbstractConfigProducer parent = root.getChildren().get(ContainerModel.DOCPROC_RESERVED_NAME);
             if (parent == null)
                 parent = new SimpleConfigProducer(root, ContainerModel.DOCPROC_RESERVED_NAME);
-            ContainerCluster indexingCluster = new ContainerCluster(parent, "cluster." + indexerName, indexerName);
+            ContainerCluster indexingCluster = new ContainerCluster(parent, "cluster." + indexerName, indexerName, modelContext.getDeployState());
             ContainerModel indexingClusterModel = new ContainerModel(modelContext.withParent(parent).withId(indexingCluster.getSubId()));
             indexingClusterModel.setCluster(indexingCluster);
             modelContext.getConfigModelRepoAdder().add(indexingClusterModel);
@@ -324,7 +324,8 @@ public class Content extends ConfigModel {
                 HostResource host = searchNode.getHostResource();
                 if (!processedHosts.contains(host)) {
                     String containerName = String.valueOf(searchNode.getDistributionKey());
-                    Container docprocService = new Container(indexingCluster, containerName, index);
+                    Container docprocService = new Container(indexingCluster, containerName, index,
+                                                             modelContext.getDeployState().isHosted());
                     index++;
                     docprocService.setBasePort(host.nextAvailableBaseport(docprocService.getPortCount()));
                     docprocService.setHostResource(host);

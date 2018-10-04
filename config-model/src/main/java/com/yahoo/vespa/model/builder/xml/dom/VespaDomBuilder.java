@@ -10,7 +10,6 @@ import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.XML;
@@ -119,12 +118,8 @@ public class VespaDomBuilder extends VespaModelBuilder {
     public static abstract class DomConfigProducerBuilder<T extends AbstractConfigProducer> {
 
         // TODO: find good way to provide access to app package
-        public final T build(AbstractConfigProducer ancestor, Element producerSpec) {
-            return build(ancestor.getRoot().getDeployState(), ancestor, producerSpec);
-        }
-
         public final T build(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
-            T t = doBuild(ancestor, producerSpec);
+            T t = doBuild(deployState, ancestor, producerSpec);
 
             if (t instanceof AbstractService) {
                 initializeService((AbstractService)t, deployState, ancestor.getHostSystem(), producerSpec);
@@ -135,11 +130,15 @@ public class VespaDomBuilder extends VespaModelBuilder {
             return t;
         }
 
-        protected abstract T doBuild(AbstractConfigProducer ancestor, Element producerSpec);
+        protected T doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
+            throw new IllegalArgumentException("DomConfigProducerBuilder.doBuild(AbstractConfigProducer ancestor, Element producerSpec) should never be called");
+        }
 
-        private void initializeProducer(AbstractConfigProducer child,
-                                        DeployState deployState,
-                                        Element producerSpec) {
+        protected T doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+            return doBuild(ancestor, producerSpec);
+        }
+
+        private void initializeProducer(AbstractConfigProducer child, DeployState deployState, Element producerSpec) {
             UserConfigRepo userConfigs = UserConfigBuilder.build(producerSpec, deployState, deployState.getDeployLogger());
             // TODO: must be made to work:
             //userConfigs.applyWarnings(child);
@@ -147,10 +146,9 @@ public class VespaDomBuilder extends VespaModelBuilder {
             child.mergeUserConfigs(userConfigs);
         }
 
-        private void initializeService(AbstractService t,
-                                       DeployState deployState,
-                                       HostSystem hostSystem,
-                                       Element producerSpec) {
+        private void initializeService(AbstractService t, DeployState deployState,
+                                       HostSystem hostSystem, Element producerSpec)
+        {
             initializeProducer(t, deployState, producerSpec);
             if (producerSpec != null) {
                 if (producerSpec.hasAttribute(JVMARGS_ATTRIB_NAME)) {
@@ -330,12 +328,12 @@ public class VespaDomBuilder extends VespaModelBuilder {
     }
 
     @Override
-    public List<ServiceCluster> getClusters(ApplicationPackage pkg, AbstractConfigProducer parent) {
+    public List<ServiceCluster> getClusters(DeployState deployState, AbstractConfigProducer parent) {
         List<ServiceCluster> clusters = new ArrayList<>();
-        Document services = XmlHelper.getDocument(pkg.getServices());
+        Document services = XmlHelper.getDocument(deployState.getApplicationPackage().getServices());
         for (Element clusterSpec : XML.getChildren(services.getDocumentElement(), "cluster")) {
             DomServiceClusterBuilder clusterBuilder = new DomServiceClusterBuilder(clusterSpec.getAttribute("name"));
-            clusters.add(clusterBuilder.build(parent.getRoot(), clusterSpec));
+            clusters.add(clusterBuilder.build(deployState, parent.getRoot(), clusterSpec));
         }
         return clusters;
     }

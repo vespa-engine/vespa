@@ -196,19 +196,10 @@ public final class ContainerCluster
         }
     }
 
-    /** Creates a container cluster */
-    public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name) {
-        this(parent, subId, name, new AcceptAllVerifier());
-    }
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         this(parent, subId, name, new AcceptAllVerifier(), deployState);
     }
 
-    public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, ContainerClusterVerifier verifier) {
-        this(parent, subId, name, verifier, deployStateFrom(parent));
-    }
-
-    /** Creates a container cluster */
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name,
                             ContainerClusterVerifier verifier, DeployState deployState) {
         super(parent, subId);

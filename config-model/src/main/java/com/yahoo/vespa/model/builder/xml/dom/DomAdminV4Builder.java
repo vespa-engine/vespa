@@ -49,7 +49,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     }
 
     @Override
-    protected void doBuildAdmin(Admin admin, Element w3cAdminElement) {
+    protected void doBuildAdmin(DeployState deployState, Admin admin, Element w3cAdminElement) {
         ModelElement adminElement = new ModelElement(w3cAdminElement);
         admin.addConfigservers(getConfigServersFromSpec(admin));
 
@@ -61,7 +61,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
                 NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("logservers"), context);
 
         assignSlobroks(requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
-        assignLogserver(requestedLogservers.orElse(createNodesSpecificationForLogserver()), admin);
+        assignLogserver(deployState, requestedLogservers.orElse(createNodesSpecificationForLogserver()), admin);
 
         addLogForwarders(adminElement.getChild("logforwarding"), admin);
     }
@@ -75,7 +75,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         }
     }
 
-    private void assignLogserver(NodesSpecification nodesSpecification, Admin admin) {
+    private void assignLogserver(DeployState deployState, NodesSpecification nodesSpecification, Admin admin) {
         if (nodesSpecification.count() > 1) throw new IllegalArgumentException("You can only request a single log server");
 
         if (nodesSpecification.isDedicated()) {
@@ -83,7 +83,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
             if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
 
             Logserver logserver = createLogserver(admin, hosts);
-            createAdditionalContainerOnLogserverHost(admin, logserver.getHostResource());
+            createAdditionalContainerOnLogserverHost(deployState, admin, logserver.getHostResource());
         } else if (containerModels.iterator().hasNext()) {
             List<HostResource> hosts = sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.count(), false);
             if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
@@ -109,8 +109,8 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
     // Creates a container cluster 'logserver-cluster' with 1 container on logserver host
     // for setting up a handler for getting logs from logserver
-    private void createAdditionalContainerOnLogserverHost(Admin admin, HostResource hostResource) {
-        ContainerCluster logServerCluster = new ContainerCluster(admin, "logserver-cluster", "logserver-cluster");
+    private void createAdditionalContainerOnLogserverHost(DeployState deployState, Admin admin, HostResource hostResource) {
+        ContainerCluster logServerCluster = new ContainerCluster(admin, "logserver-cluster", "logserver-cluster", deployState);
         ContainerModel logserverClusterModel = new ContainerModel(context.withParent(admin).withId(logServerCluster.getSubId()));
 
         // Add base handlers and the log handler
@@ -123,7 +123,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
         logserverClusterModel.setCluster(logServerCluster);
 
-        Container container = new Container(logServerCluster, "" + 0, 0);
+        Container container = new Container(logServerCluster, "" + 0, 0, deployState.isHosted());
         container.setHostResource(hostResource);
         container.initService();
         logServerCluster.addContainer(container);

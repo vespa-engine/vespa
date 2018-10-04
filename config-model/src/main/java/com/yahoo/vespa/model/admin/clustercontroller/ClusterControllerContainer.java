@@ -6,7 +6,6 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.log.LogLevel;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
@@ -36,8 +35,8 @@ public class ClusterControllerContainer extends Container implements
 
     private final Set<String> bundles = new TreeSet<>();
 
-    public ClusterControllerContainer(AbstractConfigProducer parent, int index, boolean runStandaloneZooKeeper) {
-        super(parent, "" + index, index);
+    public ClusterControllerContainer(AbstractConfigProducer parent, int index, boolean runStandaloneZooKeeper, boolean isHosted) {
+        super(parent, "" + index, index, isHosted);
         this.index = index;
         addHandler(
                 new Handler(new ComponentModel(new BundleInstantiationSpecification(
@@ -70,7 +69,7 @@ public class ClusterControllerContainer extends Container implements
         addBundle("file:" + getDefaults().underVespaHome("lib/jars/zkfacade-jar-with-dependencies.jar"));
 
         log.log(LogLevel.DEBUG, "Adding access log for cluster controller ...");
-        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.queryAccessLog, "controller", stateIsHosted(deployStateFrom(parent))));
+        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.queryAccessLog, "controller", isHosted));
     }
 
     @Override

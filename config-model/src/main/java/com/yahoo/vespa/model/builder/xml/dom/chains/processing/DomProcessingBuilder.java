@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom.chains.processing;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder;
@@ -32,9 +33,9 @@ public class DomProcessingBuilder extends DomChainsBuilder<Processor, Processing
     }
 
     @Override
-    protected ProcessingChainsBuilder readChains(AbstractConfigProducer ancestor, List<Element> processingChainsElements,
-                                                Map<String, ComponentsBuilder.ComponentType> outerComponentTypeByComponentName) {
-        return new ProcessingChainsBuilder(ancestor, processingChainsElements, outerComponentTypeByComponentName);
+    protected ProcessingChainsBuilder readChains(DeployState deployState, AbstractConfigProducer ancestor, List<Element> processingChainsElements,
+                                                 Map<String, ComponentsBuilder.ComponentType> outerComponentTypeByComponentName) {
+        return new ProcessingChainsBuilder(deployState, ancestor, processingChainsElements, outerComponentTypeByComponentName);
     }
 
 }

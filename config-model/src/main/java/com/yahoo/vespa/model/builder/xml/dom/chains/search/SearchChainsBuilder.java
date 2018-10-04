@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom.chains.search;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ChainsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder;
@@ -9,7 +10,10 @@ import com.yahoo.vespa.model.container.search.searchchain.SearchChain;
 import com.yahoo.vespa.model.container.search.searchchain.Searcher;
 import org.w3c.dom.Element;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Tony Vaagenes
@@ -26,9 +30,9 @@ public class SearchChainsBuilder extends ChainsBuilder<Searcher<?>, SearchChain>
                 put("provider", DomProviderBuilder.class);
             }});
 
-    public SearchChainsBuilder(AbstractConfigProducer ancestor, List<Element> searchChainsElements,
+    public SearchChainsBuilder(DeployState deployState, AbstractConfigProducer ancestor, List<Element> searchChainsElements,
                                Map<String, ComponentsBuilder.ComponentType> outerSearcherTypeByComponentName) {
-        super(ancestor, searchChainsElements, outerSearcherTypeByComponentName, chainType2builderClass);
+        super(deployState, ancestor, searchChainsElements, outerSearcherTypeByComponentName, chainType2builderClass);
     }
 
 }

@@ -13,7 +13,8 @@ import static org.junit.Assert.assertEquals;
 public class FleetControllerClusterTest {
     ClusterControllerConfig parse(String xml) {
         Document doc = XML.getDocument(xml);
-        return new ClusterControllerConfig.Builder("storage", new ModelElement(doc.getDocumentElement())).build(new MockRoot(),
+        MockRoot root = new MockRoot();
+        return new ClusterControllerConfig.Builder("storage", new ModelElement(doc.getDocumentElement())).build(root.getDeployState(), root,
                 new ModelElement(doc.getDocumentElement()).getXml());
     }
 

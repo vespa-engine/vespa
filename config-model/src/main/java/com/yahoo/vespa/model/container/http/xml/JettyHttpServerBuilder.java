@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.http.xml;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -15,10 +16,10 @@ import org.w3c.dom.Element;
  */
 public class JettyHttpServerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<JettyHttpServer> {
     @Override
-    protected JettyHttpServer doBuild(AbstractConfigProducer ancestor, Element http) {
+    protected JettyHttpServer doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element http) {
         JettyHttpServer jettyHttpServer = new JettyHttpServer(new ComponentId("jdisc-jetty"));
         for (Element serverSpec: XML.getChildren(http, "server")) {
-            ConnectorFactory connectorFactory = new JettyConnectorBuilder().build(ancestor, serverSpec);
+            ConnectorFactory connectorFactory = new JettyConnectorBuilder().build(deployState, ancestor, serverSpec);
             jettyHttpServer.addConnector(connectorFactory);
         }
 

@@ -20,7 +20,7 @@ public class ConfigModelContextTest {
 
     @Test
     public void testConfigModelContext() {
-        AbstractConfigProducer root = new MockRoot();
+        MockRoot root = new MockRoot();
         String id = "foobar";
         ApplicationPackage pkg = new MockApplicationPackage.Builder()
                 .withServices("<services version=\"1.0\"><admin version=\"2.0\" /></services>")
@@ -32,7 +32,7 @@ public class ConfigModelContextTest {
         assertThat(ctx.getProducerId(), is(id));
         assertThat(ctx.getParentProducer(), is(root));
         assertThat(ctx.getDeployLogger(), is(logger));
-        ctx = ConfigModelContext.create(null, null, root, id);
+        ctx = ConfigModelContext.create(root.getDeployState(), null, null, root, id);
         assertThat(ctx.getProducerId(), is(id));
         assertThat(ctx.getParentProducer(), is(root));
         AbstractConfigProducer newRoot = new MockRoot("bar");
