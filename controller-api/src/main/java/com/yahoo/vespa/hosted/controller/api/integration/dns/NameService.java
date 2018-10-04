@@ -20,7 +20,7 @@ public interface NameService {
      */
     RecordId createCname(RecordName alias, RecordData canonicalName);
 
-    /** Find record by type and name - will throw exception if more tha one record matches */
+    /** Find record by type and name - will throw exception if more than one record matches */
     Optional<Record> findRecord(Record.Type type, RecordName name);
 
     /** Find record by type and name - may return multiple records */
