@@ -50,7 +50,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     @Override
     protected void doBuildAdmin(DeployState deployState, Admin admin, Element w3cAdminElement) {
         ModelElement adminElement = new ModelElement(w3cAdminElement);
-        admin.addConfigservers(getConfigServersFromSpec(admin));
+        admin.addConfigservers(getConfigServersFromSpec(deployState.getDeployLogger(), admin));
 
         // Note: These two elements only exists in admin version 4.0
         // This build handles admin version 3.0 by ignoring its content (as the content is not useful)

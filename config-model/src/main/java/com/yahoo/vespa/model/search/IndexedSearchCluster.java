@@ -289,7 +289,7 @@ public class IndexedSearchCluster extends SearchCluster
             com.yahoo.searchdefinition.Search search = spec.getSearchDefinition().getSearch();
             if ( ! (search instanceof DocumentOnlySearch)) {
                 DocumentDatabase db = new DocumentDatabase(this, search.getName(),
-                                                           new DerivedConfiguration(search, deployLogger(),
+                                                           new DerivedConfiguration(search, deployState.getDeployLogger(),
                                                                                     deployState.rankProfileRegistry(),
                                                                                     deployState.getQueryProfiles().getRegistry(),
                                                                                     deployState.getImportedModels()));

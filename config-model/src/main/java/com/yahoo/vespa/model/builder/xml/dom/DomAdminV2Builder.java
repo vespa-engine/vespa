@@ -59,13 +59,13 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
     private List<Configserver> parseConfigservers(DeployState deployState, Admin admin, Element adminE) {
         List<Configserver> configservers;
         if (multitenant) {
-            configservers = getConfigServersFromSpec(admin);
+            configservers = getConfigServersFromSpec(deployState.getDeployLogger(), admin);
         } else {
             configservers = getConfigServers(deployState, admin, adminE);
         }
         int count = configservers.size();
         if (count % 2 == 0) {
-            admin.deployLogger().log(Level.WARNING, "An even number (" + count + ") of config servers have been configured. " +
+            deployState.getDeployLogger().log(Level.WARNING, "An even number (" + count + ") of config servers have been configured. " +
                     "This is discouraged, see doc for configuration server ");
         }
         return configservers;
@@ -117,7 +117,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
             if (configserverE == null) {
                 configserverE = XML.getChild(adminE, "adminserver");
             } else {
-                parent.deployLogger().log(LogLevel.INFO, "Specifying configserver without parent element configservers in services.xml is deprecated");
+                deployState.getDeployLogger().log(LogLevel.INFO, "Specifying configserver without parent element configservers in services.xml is deprecated");
             }
             Configserver cfgs0 = new ConfigserverBuilder(0, configServerSpecs).build(deployState, configServers, configserverE);
             cfgs0.setProp("index", 0);

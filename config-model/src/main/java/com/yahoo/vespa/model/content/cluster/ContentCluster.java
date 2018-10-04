@@ -325,7 +325,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                 if (clusterControllers == null) {
                     List<HostResource> hosts = admin.getClusterControllerHosts();
                     if (hosts.size() > 1) {
-                        admin.deployLogger().log(Level.INFO, "When having content cluster(s) and more than 1 config server it is recommended to configure cluster controllers explicitly.");
+                        context.getDeployState().getDeployLogger().log(Level.INFO, "When having content cluster(s) and more than 1 config server it is recommended to configure cluster controllers explicitly.");
                     }
                     clusterControllers = createClusterControllers(admin, hosts, "cluster-controllers", false, context.getDeployState());
                     admin.setClusterControllers(clusterControllers);

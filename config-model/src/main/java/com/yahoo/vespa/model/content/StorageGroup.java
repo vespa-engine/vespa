@@ -210,7 +210,7 @@ public class StorageGroup {
             if (group.isPresent() && nodes.isPresent())
                 throw new IllegalStateException("Both group and nodes exists, only one of these tags is legal");
             if (group.isPresent() && (group.get().getStringAttribute("name") != null || group.get().getIntegerAttribute("distribution-key") != null))
-                    owner.deployLogger().log(LogLevel.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
+                    deployState.getDeployLogger().log(LogLevel.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
 
             GroupBuilder groupBuilder = collectGroup(group, nodes, null, null);
             if (owner.isHostedVespa()) {
