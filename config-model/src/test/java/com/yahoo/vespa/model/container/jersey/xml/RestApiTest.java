@@ -55,7 +55,7 @@ public class RestApiTest extends ContainerModelBuilderTestBase {
     public void setup() throws Exception {
         createModel(root, restApiXml);
         root.validate();
-        getContainerCluster(CLUSTER_ID).prepare(root.getDeployState());
+        getContainerCluster(CLUSTER_ID).prepare();
         restApi = getContainerCluster(CLUSTER_ID).getRestApiMap().values().iterator().next();
         servlet = restApi.getJersey2Servlet();
         context = restApi.getContext();

@@ -99,18 +99,18 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private static final long serialVersionUID = 1L;
 
     public static final Logger log = Logger.getLogger(VespaModel.class.getPackage().toString());
-    private final ConfigModelRepo configModelRepo = new ConfigModelRepo();
+    private ConfigModelRepo configModelRepo = new ConfigModelRepo();
     private final AllocatedHosts allocatedHosts;
 
     /** The config id for the root config producer */
     public static final String ROOT_CONFIGID = "";
 
-    private final ApplicationConfigProducerRoot root;
+    private ApplicationConfigProducerRoot root;
 
     private final ApplicationPackage applicationPackage;
 
     /** Generic service instances - service clusters which have no specific model */
-    private final List<ServiceCluster> serviceClusters = new ArrayList<>();
+    private List<ServiceCluster> serviceClusters = new ArrayList<>();
 
     /** The global rank profiles of this model */
     private final RankProfileList rankProfileList;
@@ -119,7 +119,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private final RankingConstants rankingConstants = new RankingConstants();
 
     private DeployState deployState;
-    private DeployLogger deployLogger;
 
     /** The validation overrides of this. This is never null. */
     private final ValidationOverrides validationOverrides;
@@ -160,15 +159,16 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     private VespaModel(ConfigModelRegistry configModelRegistry, DeployState deployState, boolean complete, FileDistributor fileDistributor) throws IOException, SAXException {
         super("vespamodel");
+        this.deployState = deployState;
         this.validationOverrides = deployState.validationOverrides();
         configModelRegistry = new VespaConfigModelRegistry(configModelRegistry);
         VespaModelBuilder builder = new VespaDomBuilder();
         this.applicationPackage = deployState.getApplicationPackage();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
 
-        HostSystem hostSystem = root.getHostSystem();
-        createGlobalRankProfiles(deployState.getDeployLogger(), deployState.getImportedModels(),
-                                 deployState.rankProfileRegistry(), deployState.getQueryProfiles());
+        createGlobalRankProfiles(deployState.getImportedModels(),
+                                 deployState.rankProfileRegistry(),
+                                 deployState.getQueryProfiles());
         this.rankProfileList = new RankProfileList(null, // null search -> global
                                                    rankingConstants,
                                                    AttributeFields.empty,
@@ -177,26 +177,22 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                                    deployState.getImportedModels());
 
         if (complete) { // create a a completed, frozen model
-            this.deployLogger = deployState.getDeployLogger();
-            this.deployState = deployState;
             configModelRepo.readConfigModels(deployState, this, builder, root, configModelRegistry);
-            this.deployState = null;
             addServiceClusters(deployState.getApplicationPackage(), builder);
-            this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs()); // must happen after the two lines above
-            setupRouting(deployState);
+            this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs()); // must happen after the two lines above
+
+            setupRouting();
             this.fileDistributor = root.getFileDistributionConfigProducer().getFileDistributor();
-            getAdmin().addPerHostServices(hostSystem.getHosts(), deployState);
-            this.deployLogger = null;
+            getAdmin().addPerHostServices(getHostSystem().getHosts(), deployState);
             freezeModelTopology();
             root.prepare(configModelRepo);
-            configModelRepo.prepareConfigModels(deployState);
+            configModelRepo.prepareConfigModels();
             validateWrapExceptions();
+            this.deployState = null;
         }
         else { // create a model with no services instantiated and the given file distributor
-            this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
+            this.allocatedHosts = AllocatedHosts.withHosts(root.getHostSystem().getHostSpecs());
             this.fileDistributor = fileDistributor;
-            this.deployState = deployState;
-            this.deployLogger = deployState.getDeployLogger();
         }
     }
 
@@ -230,7 +226,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * Creates a rank profile not attached to any search definition, for each imported model in the application package,
      * and adds it to the given rank profile registry.
      */
-    private void createGlobalRankProfiles(DeployLogger deployLogger, ImportedModels importedModels,
+    private void createGlobalRankProfiles(ImportedModels importedModels,
                                           RankProfileRegistry rankProfileRegistry,
                                           QueryProfiles queryProfiles) {
         if ( ! importedModels.all().isEmpty()) { // models/ directory is available
@@ -253,14 +249,16 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                 convertedModel.expressions().values().forEach(f -> profile.addFunction(f, false));
             }
         }
-        new Processing().processRankProfiles(deployLogger, rankProfileRegistry, queryProfiles, true, false);
+        new Processing().processRankProfiles(deployState.getDeployLogger(),
+                                             rankProfileRegistry,
+                                             queryProfiles, true, false);
     }
 
     /** Returns the global rank profiles as a rank profile list */
     public RankProfileList rankProfileList() { return rankProfileList; }
 
-    private void setupRouting(DeployState deployState) {
-        root.setupRouting(deployState, this, configModelRepo);
+    private void setupRouting() {
+        root.setupRouting(this, configModelRepo);
     }
 
     /** Returns the one and only HostSystem of this VespaModel */
@@ -271,9 +269,9 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /** Return a collection of all hostnames used in this application */
     @Override
     public Set<HostInfo> getHosts() {
-        return getHostSystem().getHosts().stream()
-                .map(HostResource::getHostInfo)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return root.getHostSystem().getHosts().stream()
+                   .map(HostResource::getHostInfo)
+                   .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public FileDistributor getFileDistributor() {
@@ -317,6 +315,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             throw new RuntimeException(e);
         }
     }
+
 
     /**
      * Populates an instance of configClass with config produced by configProducer.
@@ -617,7 +616,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     @Override
     public DeployLogger deployLogger() {
-        return deployLogger;
+        return getDeployState().getDeployLogger();
     }
     
 }

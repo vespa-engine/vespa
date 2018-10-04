@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.searchdefinition.derived.AttributeFields;
@@ -90,22 +89,23 @@ public class StreamingSearchCluster extends SearchCluster implements
         }
     }
 
-    @Override
-    protected void deriveAllSearchDefinitions(List<SearchDefinitionSpec> local, DeployState deployState) {
+    protected void deriveAllSearchDefinitions(List<SearchDefinitionSpec> local,
+                                              List<com.yahoo.searchdefinition.Search> global) {
         if (local.size() == 1) {
-            deriveSingleSearchDefinition(local.get(0).getSearchDefinition().getSearch(), deployState);
+            deriveSingleSearchDefinition(local.get(0).getSearchDefinition().getSearch(), global);
         } else if (local.size() > 1){
             throw new IllegalStateException("Logical indexes are not supported: Got " + local.size() + " search definitions, expected 1");
         }
     }
-    private void deriveSingleSearchDefinition(com.yahoo.searchdefinition.Search localSearch,  DeployState deployState) {
+    private void deriveSingleSearchDefinition(com.yahoo.searchdefinition.Search localSearch,
+                                              List<com.yahoo.searchdefinition.Search> globalSearches) {
         if (!localSearch.getName().equals(docTypeName)) {
             throw new IllegalStateException("Mismatch between document type name (" + docTypeName + ") and name of search definition (" + localSearch.getName() + ")");
         }
-        this.sdConfig = new DerivedConfiguration(localSearch, deployLogger(),
-                                                 deployState.rankProfileRegistry(),
-                                                 deployState.getQueryProfiles().getRegistry(),
-                                                 deployState.getImportedModels());
+        this.sdConfig = new DerivedConfiguration(localSearch, globalSearches, deployLogger(),
+                                                 getRoot().getDeployState().rankProfileRegistry(),
+                                                 getRoot().getDeployState().getQueryProfiles().getRegistry(),
+                                                 getRoot().getDeployState().getImportedModels());
     }
     @Override
     public DerivedConfiguration getSdConfig() {

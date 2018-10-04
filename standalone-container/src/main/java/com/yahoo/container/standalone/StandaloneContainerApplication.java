@@ -243,7 +243,7 @@ public class StandaloneContainerApplication implements Application {
 
         Element spec = containerRootElement(applicationPackage);
         ContainerModel containerModel = newContainerModelBuilder(networkingOption).build(deployState, root, configModelRepo, vespaRoot, spec);
-        containerModel.getCluster().prepare(deployState);
+        containerModel.getCluster().prepare();
         initializeContainerModel(containerModel, configModelRepo);
         Container container = first(containerModel.getCluster().getContainers());
 

@@ -200,20 +200,16 @@ public final class ContainerCluster
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name) {
         this(parent, subId, name, new AcceptAllVerifier());
     }
-    public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
-        this(parent, subId, name, new AcceptAllVerifier(), deployState);
-    }
-
-    public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, ContainerClusterVerifier verifier) {
-        this(parent, subId, name, verifier, deployStateFrom(parent));
-    }
 
     /** Creates a container cluster */
-    public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name,
-                            ContainerClusterVerifier verifier, DeployState deployState) {
+    public ContainerCluster(AbstractConfigProducer<?> parent,
+                            String subId,
+                            String name,
+                            ContainerClusterVerifier verifier) {
         super(parent, subId);
         this.clusterVerifier = verifier;
         this.name = name;
+        DeployState deployState = deployStateFrom(parent);
         this.isHostedVespa = stateIsHosted(deployState);
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
         componentGroup = new ComponentGroup<>(this, "component");
@@ -342,18 +338,18 @@ public final class ContainerCluster
         addComponent(new SimpleComponent(className));
     }
 
-    public void prepare(DeployState deployState) {
-        addAndSendApplicationBundles(deployState);
+    public void prepare() {
+        addAndSendApplicationBundles();
         if (modelEvaluation != null)
             modelEvaluation.prepare(containers);
         sendUserConfiguredFiles();
-        setApplicationMetaData(deployState);
+        setApplicationMetaData();
         for (RestApi restApi : restApiGroup.getComponents())
             restApi.prepare();
     }
 
-    private void setApplicationMetaData(DeployState deployState) {
-        applicationMetaData = deployState.getApplicationPackage().getMetaData();
+    private void setApplicationMetaData() {
+        applicationMetaData = getRoot().getDeployState().getApplicationPackage().getMetaData();
     }
 
     public void addMbusServer(ComponentId chainId) {
@@ -366,8 +362,8 @@ public final class ContainerCluster
                         null))));
     }
 
-    private void addAndSendApplicationBundles(DeployState deployState) {
-        for (ComponentInfo component : deployState.getApplicationPackage().getComponentsInfo(deployState.getProperties().vespaVersion())) {
+    private void addAndSendApplicationBundles() {
+        for (ComponentInfo component : getRoot().getDeployState().getApplicationPackage().getComponentsInfo(getRoot().getDeployState().getProperties().vespaVersion())) {
             FileReference reference = FileSender.sendFileToServices(component.getPathRelativeToAppDir(), containers);
             applicationBundles.add(reference);
         }

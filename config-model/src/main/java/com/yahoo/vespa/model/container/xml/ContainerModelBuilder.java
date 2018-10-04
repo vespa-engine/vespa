@@ -12,7 +12,6 @@ import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Capacity;
@@ -24,6 +23,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
+import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.text.XML;
@@ -149,10 +149,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return new VespaDomBuilder.DomConfigProducerBuilder<ContainerCluster>() {
             @Override
             protected ContainerCluster doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
-                return new ContainerCluster(ancestor, modelContext.getProducerId(),
-                                            modelContext.getProducerId(), modelContext.getDeployState());
+                return new ContainerCluster(ancestor, modelContext.getProducerId(), modelContext.getProducerId());
             }
-        }.build(modelContext.getDeployState(), modelContext.getParentProducer(), spec);
+        }.build(modelContext.getParentProducer(), spec);
     }
 
     private void addClusterContent(ContainerCluster cluster, Element spec, ConfigModelContext context) {
@@ -172,7 +171,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addStatusHandlers(cluster, context);
         setDefaultMetricConsumerFactory(cluster);
 
-        addHttp(context.getDeployState(), spec, cluster);
+        addHttp(spec, cluster);
 
         addAccessLogs(cluster, spec);
         addRoutingAliases(cluster, spec, context.getDeployState().zone().environment());
@@ -330,15 +329,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
 
-    protected final void addHttp(DeployState deployState, Element spec, ContainerCluster cluster) {
+    protected void addHttp(Element spec, ContainerCluster cluster) {
         Element httpElement = XML.getChild(spec, "http");
         if (httpElement != null) {
-            cluster.setHttp(buildHttp(deployState, cluster, httpElement));
+            cluster.setHttp(buildHttp(cluster, httpElement));
         }
     }
 
-    private Http buildHttp(DeployState deployState, ContainerCluster cluster, Element httpElement) {
-        Http http = new HttpBuilder().build(deployState, cluster, httpElement);
+    private Http buildHttp(ContainerCluster cluster, Element httpElement) {
+        Http http = new HttpBuilder().build(cluster, httpElement);
 
         if (networking == Networking.disable)
             http.removeAllServers();

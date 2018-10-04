@@ -67,10 +67,9 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             ModelElement clusterElem = new ModelElement(producerSpec);
             String clusterName = ContentCluster.getClusterName(clusterElem);
             Boolean flushOnShutdownElem = clusterElem.childAsBoolean("engine.proton.flush-on-shutdown");
-            DeployState deployState = AbstractConfigProducer.deployStateFrom(ancestor);
 
             ContentSearchCluster search = new ContentSearchCluster(ancestor, clusterName, documentDefinitions, globallyDistributedDocuments,
-                    getFlushOnShutdown(flushOnShutdownElem, deployState));
+                    getFlushOnShutdown(flushOnShutdownElem, AbstractConfigProducer.deployStateFrom(ancestor)));
 
             ModelElement tuning = clusterElem.getChildByPath("engine.proton.tuning");
             if (tuning != null) {
@@ -81,8 +80,8 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
                 search.setResourceLimits(DomResourceLimitsBuilder.build(protonElem));
             }
 
-            buildAllStreamingSearchClusters(deployState, clusterElem, clusterName, search);
-            buildIndexedSearchCluster(deployState, clusterElem, clusterName, search);
+            buildAllStreamingSearchClusters(clusterElem, clusterName, search);
+            buildIndexedSearchCluster(clusterElem, clusterName, search);
             return search;
         }
 
@@ -97,7 +96,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             return clusterElem.childAsDouble("engine.proton.query-timeout");
         }
 
-        private void buildAllStreamingSearchClusters(DeployState deployState, ModelElement clusterElem, String clusterName, ContentSearchCluster search) {
+        private void buildAllStreamingSearchClusters(ModelElement clusterElem, String clusterName, ContentSearchCluster search) {
             ModelElement docElem = clusterElem.getChild("documents");
 
             if (docElem == null) {
@@ -107,20 +106,20 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             for (ModelElement docType : docElem.subElements("document")) {
                 String mode = docType.getStringAttribute("mode");
                 if ("streaming".equals(mode)) {
-                    buildStreamingSearchCluster(deployState, clusterElem, clusterName, search, docType);
+                    buildStreamingSearchCluster(clusterElem, clusterName, search, docType);
                 }
             }
         }
 
-        private void buildStreamingSearchCluster(DeployState deployState, ModelElement clusterElem, String clusterName,
-                                                 ContentSearchCluster search, ModelElement docType) {
+        private void buildStreamingSearchCluster(ModelElement clusterElem, String clusterName, ContentSearchCluster search, ModelElement docType) {
             String docTypeName = docType.getStringAttribute("type");
             StreamingSearchCluster cluster = new StreamingSearchCluster(search, clusterName + "." + docTypeName, 0, docTypeName, clusterName);
-            search.addSearchCluster(deployState, cluster, getQueryTimeout(clusterElem), Arrays.asList(docType));
+            search.addSearchCluster(cluster, getQueryTimeout(clusterElem), Arrays.asList(docType));
         }
 
-        private void buildIndexedSearchCluster(DeployState deployState, ModelElement clusterElem,
-                                               String clusterName, ContentSearchCluster search) {
+        private void buildIndexedSearchCluster(ModelElement clusterElem,
+                                               String clusterName,
+                                               ContentSearchCluster search) {
             List<ModelElement> indexedDefs = getIndexedSearchDefinitions(clusterElem);
             if (!indexedDefs.isEmpty()) {
                 IndexedSearchCluster isc = new IndexedSearchCluster(search, clusterName, 0);
@@ -131,7 +130,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
                     isc.setVisibilityDelay(visibilityDelay);
                 }
 
-                search.addSearchCluster(deployState, isc, getQueryTimeout(clusterElem), indexedDefs);
+                search.addSearchCluster(isc, getQueryTimeout(clusterElem), indexedDefs);
             }
         }
 
@@ -165,29 +164,29 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
         this.flushOnShutdown = flushOnShutdown;
     }
 
-    void addSearchCluster(DeployState deployState, SearchCluster cluster, Double queryTimeout, List<ModelElement> documentDefs) {
-        addSearchDefinitions(deployState, documentDefs, cluster);
+    void addSearchCluster(SearchCluster cluster, Double queryTimeout, List<ModelElement> documentDefs) {
+        addSearchDefinitions(documentDefs, cluster);
 
         if (queryTimeout != null) {
             cluster.setQueryTimeout(queryTimeout);
         }
         cluster.defaultDocumentsConfig();
-        cluster.deriveSearchDefinitions(deployState);
+        cluster.deriveSearchDefinitions(new ArrayList<>());
         addCluster(cluster);
     }
 
-    private void addSearchDefinitions(DeployState deployState, List<ModelElement> searchDefs, AbstractSearchCluster sc) {
+    private void addSearchDefinitions(List<ModelElement> searchDefs, AbstractSearchCluster sc) {
         for (ModelElement e : searchDefs) {
             SearchDefinitionXMLHandler searchDefinitionXMLHandler = new SearchDefinitionXMLHandler(e);
             SearchDefinition searchDefinition =
-                    searchDefinitionXMLHandler.getResponsibleSearchDefinition(deployState.getSearchDefinitions());
+                    searchDefinitionXMLHandler.getResponsibleSearchDefinition(sc.getRoot().getDeployState().getSearchDefinitions());
             if (searchDefinition == null)
                 throw new RuntimeException("Search definition parsing error or file does not exist: '" +
                         searchDefinitionXMLHandler.getName() + "'");
 
             // TODO: remove explicit building of user configs when the complete content model is built using builders.
             sc.getLocalSDS().add(new AbstractSearchCluster.SearchDefinitionSpec(searchDefinition,
-                    UserConfigBuilder.build(e.getXml(), deployState, sc.getRoot().deployLogger())));
+                    UserConfigBuilder.build(e.getXml(), sc.getRoot().getDeployState(), sc.getRoot().deployLogger())));
             //need to get the document names from this sdfile
             sc.addDocumentNames(searchDefinition);
         }
