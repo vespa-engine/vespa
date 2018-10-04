@@ -95,7 +95,6 @@ public class ApplicationController {
     private final RotationRepository rotationRepository;
     private final AthenzClientFactory zmsClientFactory;
     private final NameService nameService;
-    private final NameService newNameService;
     private final ConfigServer configServer;
     private final RoutingGenerator routingGenerator;
     private final Clock clock;
@@ -104,14 +103,13 @@ public class ApplicationController {
 
     ApplicationController(Controller controller, CuratorDb curator,
                           AthenzClientFactory zmsClientFactory, RotationsConfig rotationsConfig,
-                          NameService nameService, NameService newNameService, ConfigServer configServer,
+                          NameService nameService, ConfigServer configServer,
                           ArtifactRepository artifactRepository, ApplicationStore applicationStore,
                           RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
         this.controller = controller;
         this.curator = curator;
         this.zmsClientFactory = zmsClientFactory;
         this.nameService = nameService;
-        this.newNameService = newNameService;
         this.configServer = configServer;
         this.routingGenerator = routingGenerator;
         this.clock = clock;
