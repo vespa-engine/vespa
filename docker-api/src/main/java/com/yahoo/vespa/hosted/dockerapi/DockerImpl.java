@@ -10,7 +10,6 @@ import com.github.dockerjava.api.exception.DockerClientException;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.Image;
-import com.github.dockerjava.api.model.Network;
 import com.github.dockerjava.api.model.Statistics;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
@@ -29,13 +28,8 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -48,15 +42,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
-import static com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator.NetworkAddressInterface;
 
 public class DockerImpl implements Docker {
     private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
 
     static final String LABEL_NAME_MANAGEDBY = "com.yahoo.vespa.managedby";
-    private static final String DOCKER_CUSTOM_MACVLAN_NETWORK_NAME = "vespa-macvlan";
     private static final String FRAMEWORK_CONTAINER_PREFIX = "/";
-    private static final int SECONDS_TO_WAIT_BEFORE_KILLING = 10;
+    private static final Duration WAIT_BEFORE_KILLING = Duration.ofSeconds(10);
 
     private final Object monitor = new Object();
     private final Set<DockerImage> scheduledPulls = new HashSet<>();
@@ -76,43 +68,6 @@ public class DockerImpl implements Docker {
 
         Dimensions dimensions = new Dimensions.Builder().add("role", "docker").build();
         numberOfDockerDaemonFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "daemon.api_fails");
-    }
-
-    @Override
-    public void start() {
-        try {
-            setupDockerNetworkIfNeeded();
-        } catch (Exception e) {
-            throw new DockerException("Could not setup docker network", e);
-        }
-    }
-
-    private void setupDockerNetworkIfNeeded() throws IOException {
-        if (!dockerClient.listNetworksCmd().withNameFilter(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME).exec().isEmpty()) return;
-
-        // Use IPv6 address if there is a mix of IP4 and IPv6 by taking the longest address.
-        List<InetAddress> hostAddresses = Arrays.asList(InetAddress.getAllByName(com.yahoo.net.HostName.getLocalhost()));
-        InetAddress hostAddress = Collections.max(hostAddresses,
-                (o1, o2) -> o1.getAddress().length - o2.getAddress().length);
-
-        NetworkAddressInterface networkAddressInterface = DockerNetworkCreator.getInterfaceForAddress(hostAddress);
-        boolean isIPv6 = networkAddressInterface.interfaceAddress.getAddress() instanceof Inet6Address;
-
-        Network.Ipam ipam = new Network.Ipam().withConfig(new Network.Ipam.Config()
-                .withSubnet(hostAddress.getHostAddress() + "/" + networkAddressInterface.interfaceAddress.getNetworkPrefixLength())
-                .withGateway(DockerNetworkCreator.getDefaultGatewayLinux(isIPv6).getHostAddress()));
-
-        Map<String, String> dockerNetworkOptions = new HashMap<>();
-        dockerNetworkOptions.put("parent", networkAddressInterface.networkInterface.getDisplayName());
-        dockerNetworkOptions.put("macvlan_mode", "bridge");
-
-        dockerClient.createNetworkCmd()
-                .withName(DOCKER_CUSTOM_MACVLAN_NETWORK_NAME)
-                .withDriver("macvlan")
-                .withEnableIpv6(isIPv6)
-                .withIpam(ipam)
-                .withOptions(dockerNetworkOptions)
-                .exec();
     }
 
     @Override
@@ -163,21 +118,6 @@ public class DockerImpl implements Docker {
     public CreateContainerCommand createContainerCommand(DockerImage image, ContainerResources containerResources,
                                                          ContainerName name, String hostName) {
         return new CreateContainerCommandImpl(dockerClient, image, containerResources, name, hostName);
-    }
-
-    @Override
-    public void connectContainerToNetwork(ContainerName containerName, String networkName) {
-        try {
-            dockerClient.connectToNetworkCmd()
-                    .withContainerId(containerName.asString())
-                    .withNetworkId(networkName).exec();
-        } catch (NotFoundException e) {
-            throw new ContainerNotFoundException(containerName);
-        } catch (RuntimeException e) {
-            numberOfDockerDaemonFails.add();
-            throw new DockerException("Failed to connect container '" + containerName.asString() +
-                    "' to network '" + networkName + "'", e);
-        }
     }
 
     @Override
@@ -285,7 +225,7 @@ public class DockerImpl implements Docker {
     @Override
     public void stopContainer(ContainerName containerName) {
         try {
-            dockerClient.stopContainerCmd(containerName.asString()).withTimeout(SECONDS_TO_WAIT_BEFORE_KILLING).exec();
+            dockerClient.stopContainerCmd(containerName.asString()).withTimeout((int) WAIT_BEFORE_KILLING.getSeconds()).exec();
         } catch (NotFoundException e) {
             throw new ContainerNotFoundException(containerName);
         } catch (NotModifiedException ignored) {

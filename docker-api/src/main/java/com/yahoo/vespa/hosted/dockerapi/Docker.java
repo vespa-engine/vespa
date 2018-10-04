@@ -11,11 +11,6 @@ import java.util.Optional;
  * and to avoid OSGi exporting those classes.
  */
 public interface Docker {
-    /**
-     * Should only be called by non-host-admin. May be called more than once.
-     * TODO: Remove when migration to host-admin is done
-     */
-    void start();
 
     interface CreateContainerCommand {
         CreateContainerCommand withLabel(String name, String value);
@@ -69,8 +64,6 @@ public interface Docker {
     void stopContainer(ContainerName containerName);
 
     void deleteContainer(ContainerName containerName);
-
-    void connectContainerToNetwork(ContainerName containerName, String networkName);
 
     List<Container> getAllContainersManagedBy(String manager);
 
