@@ -349,7 +349,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.get.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.update.sum.count.rate"));
-        metrics.add(new Metric("vds.filestor.alldisks.allthreads.createiterator.sum.count.rate"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.createiterator.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.visit.sum.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.queuesize.average","diskqueuesize"));
         metrics.add(new Metric("vds.filestor.alldisks.averagequeuewait.sum.average","diskqueuewait"));
@@ -364,7 +364,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.remove.sum.latency.average"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.get.sum.latency.average"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.update.sum.latency.average"));
-        metrics.add(new Metric("vds.filestor.alldisks.allthreads.createiterator.sum.latency.average"));
+        metrics.add(new Metric("vds.filestor.alldisks.allthreads.createiterator.latency.average"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.visit.sum.latency.average"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.splitbuckets.count.rate"));
         metrics.add(new Metric("vds.filestor.alldisks.allthreads.joinbuckets.count.rate"));
