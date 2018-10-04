@@ -54,7 +54,7 @@ public class AccessLogBuilder {
         }
 
         @Override
-        protected AccessLogComponent doBuild(AbstractConfigProducer ancestor, Element spec) {
+        protected AccessLogComponent doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element spec) {
             return new AccessLogComponent(
                     accessLogType,
                     fileNamePattern(spec),

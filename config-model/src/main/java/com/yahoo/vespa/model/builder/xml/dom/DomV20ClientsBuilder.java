@@ -188,8 +188,7 @@ public class DomV20ClientsBuilder {
         }
 
         @Override
-        protected VespaSpoolerService doBuild(AbstractConfigProducer parent,
-                Element spec) {
+        protected VespaSpoolerService doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
             return new VespaSpoolerService(parent, index, spoolerConfig);
         }
     }
@@ -204,8 +203,7 @@ public class DomV20ClientsBuilder {
         }
 
         @Override
-        protected VespaSpoolerProducer doBuild(AbstractConfigProducer parent,
-                Element producerSpec) {
+        protected VespaSpoolerProducer doBuild(DeployState deployState, AbstractConfigProducer parent, Element producerSpec) {
             return new VespaSpoolerProducer(parent, name, spooler);
         }
     }
@@ -219,8 +217,7 @@ public class DomV20ClientsBuilder {
         }
 
         @Override
-        protected VespaSpoolMaster doBuild(AbstractConfigProducer parent,
-                Element spec) {
+        protected VespaSpoolMaster doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
             return new VespaSpoolMaster(parent, index);
         }
     }

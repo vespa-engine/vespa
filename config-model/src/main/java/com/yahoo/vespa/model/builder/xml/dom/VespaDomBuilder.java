@@ -1,19 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelRepo;
-import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.UserConfigRepo;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.XML;
-import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.Affinity;
 import com.yahoo.vespa.model.Client;
@@ -93,7 +89,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
     @Override
     public ApplicationConfigProducerRoot getRoot(String name, DeployState deployState, AbstractConfigProducer parent) {
         try {
-            return new DomRootBuilder(name, deployState).
+            return new DomRootBuilder(name).
                     build(deployState, parent, XmlHelper.getDocument(deployState.getApplicationPackage().getServices()).getDocumentElement());
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
@@ -130,13 +126,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
             return t;
         }
 
-        protected T doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
-            throw new IllegalArgumentException("DomConfigProducerBuilder.doBuild(AbstractConfigProducer ancestor, Element producerSpec) should never be called");
-        }
-
-        protected T doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
-            return doBuild(ancestor, producerSpec);
-        }
+        protected abstract T doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec);
 
         private void initializeProducer(AbstractConfigProducer child, DeployState deployState, Element producerSpec) {
             UserConfigRepo userConfigs = UserConfigBuilder.build(producerSpec, deployState, deployState.getDeployLogger());
@@ -219,35 +209,28 @@ public class VespaDomBuilder extends VespaModelBuilder {
         }
 
         @Override
-        protected SimpleConfigProducer doBuild(AbstractConfigProducer parent, Element producerSpec) {
+        protected SimpleConfigProducer doBuild(DeployState deployState, AbstractConfigProducer parent, Element producerSpec) {
             return new SimpleConfigProducer(parent, configId);
         }
     }
 
     public static class DomRootBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ApplicationConfigProducerRoot> {
         private final String name;
-        private final DeployProperties deployProperties;
-        private final DocumentModel documentModel;
-        private final HostProvisioner provisioner;
 
         /**
          * @param name The name of the Vespa to create. Usually 'root' when there is only one.
          */
-        public DomRootBuilder(String name, DeployState deployState) {
+        public DomRootBuilder(String name) {
             this.name = name;
-            this.deployProperties = deployState.getProperties();
-            this.documentModel = deployState.getDocumentModel();
-            this.provisioner = deployState.getProvisioner();
         }
 
         @Override
-        protected ApplicationConfigProducerRoot doBuild(AbstractConfigProducer parent, Element producerSpec) {
-            ApplicationConfigProducerRoot root = new ApplicationConfigProducerRoot(parent,
-                                                                                   name,
-                                                                                   documentModel,
-                                                                                   deployProperties.vespaVersion(),
-                                                                                   deployProperties.applicationId());
-            root.setHostSystem(new HostSystem(root, "hosts", provisioner));
+        protected ApplicationConfigProducerRoot doBuild(DeployState deployState, AbstractConfigProducer parent, Element producerSpec) {
+            ApplicationConfigProducerRoot root = new ApplicationConfigProducerRoot(parent, name,
+                    deployState.getDocumentModel(),
+                    deployState.getProperties().vespaVersion(),
+                    deployState.getProperties().applicationId());
+            root.setHostSystem(new HostSystem(root, "hosts", deployState.getProvisioner()));
             new Client(root);
             return root;
         }

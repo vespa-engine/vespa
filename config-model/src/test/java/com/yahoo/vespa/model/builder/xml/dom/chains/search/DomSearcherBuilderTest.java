@@ -16,7 +16,7 @@ public class DomSearcherBuilderTest extends DomBuilderTest {
 
     @Test
     public void ensureCorrectModel() {
-        ChainedComponent<ChainedComponentModel> searcher = new DomSearcherBuilder().doBuild(root, parse(
+        ChainedComponent<ChainedComponentModel> searcher = new DomSearcherBuilder().doBuild(root.getDeployState(), root, parse(
                 "<searcher id='theId' class='theclassid' bundle='thebundle' provides='p1'>",
                 "    <provides>p2</provides>",
                 "</searcher>"));

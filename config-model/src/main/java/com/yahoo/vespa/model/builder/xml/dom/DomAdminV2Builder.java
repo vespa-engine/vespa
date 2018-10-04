@@ -160,7 +160,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected Logserver doBuild(AbstractConfigProducer parent, Element producerSpec) {
+        protected Logserver doBuild(DeployState deployState, AbstractConfigProducer parent, Element producerSpec) {
             return new Logserver(parent);
         }
     }
@@ -179,7 +179,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected Configserver doBuild(AbstractConfigProducer parent, Element spec) {
+        protected Configserver doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
             return new Configserver(parent, "configserver." + i, rpcPort);
         }
     }
@@ -192,8 +192,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected Slobrok doBuild(AbstractConfigProducer parent,
-                                  Element spec) {
+        protected Slobrok doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
             return new Slobrok(parent, i);
         }
     }
@@ -208,8 +207,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
 
         @Override
-        protected ClusterControllerContainer doBuild(DeployState deployState, AbstractConfigProducer parent,
-                                                     Element spec) {
+        protected ClusterControllerContainer doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
             return new ClusterControllerContainer(parent, i, runStandaloneZooKeeper, deployState.isHosted());
         }
     }

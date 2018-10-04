@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.search.Tuning;
@@ -16,7 +17,7 @@ import java.util.logging.Level;
 public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Tuning> {
 
     @Override
-    protected Tuning doBuild(AbstractConfigProducer parent, Element spec) {
+    protected Tuning doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
         Tuning tuning = new Tuning(parent);
         for (Element e : XML.getChildren(spec)) {
             if (equals("dispatch", e)) {

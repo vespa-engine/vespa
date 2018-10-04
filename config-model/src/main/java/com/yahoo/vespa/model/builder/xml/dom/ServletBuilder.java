@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
@@ -19,7 +20,7 @@ import java.util.Map;
  */
 public class ServletBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Servlet> {
     @Override
-    protected ServletProvider doBuild(AbstractConfigProducer ancestor, Element servletElement) {
+    protected ServletProvider doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element servletElement) {
         SimpleComponent servlet = createServletComponent(servletElement);
         ServletProvider servletProvider = createServletProvider(servletElement, servlet);
 
