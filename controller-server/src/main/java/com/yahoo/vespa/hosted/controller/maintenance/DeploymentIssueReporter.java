@@ -48,14 +48,9 @@ public class DeploymentIssueReporter extends Maintainer {
 
     @Override
     protected void maintain() {
-        try {
-            maintainDeploymentIssues(applications());
-            maintainPlatformIssue(applications());
-            escalateInactiveDeploymentIssues(applications());
-        }
-        catch (UncheckedIOException e) {
-            log.log(Level.INFO, () -> "IO exception handling issues, will retry in " + maintenanceInterval() + ": '" + Exceptions.toMessageString(e));
-        }
+        maintainDeploymentIssues(applications());
+        maintainPlatformIssue(applications());
+        escalateInactiveDeploymentIssues(applications());
     }
 
     /** Returns the applications to maintain issue status for. */
@@ -137,7 +132,7 @@ public class DeploymentIssueReporter extends Maintainer {
             store(applicationId, issueId);
         }
         catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
-            log.log(Level.WARNING, "Exception caught when attempting to file an issue for " + applicationId, e);
+            log.log(Level.INFO, "Exception caught when attempting to file an issue for '" + applicationId + "': " + Exceptions.toMessageString(e));
         }
     }
 
@@ -153,7 +148,7 @@ public class DeploymentIssueReporter extends Maintainer {
                 deploymentIssues.escalateIfInactive(issueId, propertyId, maxInactivity);
             }
             catch (RuntimeException e) {
-                log.log(Level.WARNING, "Exception caught when attempting to escalate issue with id " + issueId, e);
+                log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
             }
         }));
     }
