@@ -118,7 +118,7 @@ FNET_TransportThread::PostEvent(FNET_ControlPacket *cpacket,
         std::unique_lock<std::mutex> guard(_lock);
         if (_shutdown) {
             guard.unlock();
-            DiscardEvent(cpacket, context);
+            SafeDiscardEvent(cpacket, context);
             return false;
         }
         wasEmpty = _queue.IsEmpty_NoLock();
@@ -150,6 +150,14 @@ FNET_TransportThread::DiscardEvent(FNET_ControlPacket *cpacket,
     }
 }
 
+void
+FNET_TransportThread::SafeDiscardEvent(FNET_ControlPacket *cpacket,
+                                       FNET_Context context)
+{
+    WaitFinished(); // make sure actual thread is all done
+    std::lock_guard guard(_pseudo_thread); // be the thread
+    DiscardEvent(cpacket, context);
+}
 
 void
 FNET_TransportThread::handle_add_cmd(FNET_IOComponent *ioc)
@@ -215,6 +223,7 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
       _myQueue(),
       _lock(),
       _cond(),
+      _pseudo_thread(),
       _started(false),
       _shutdown(false),
       _finished(false),

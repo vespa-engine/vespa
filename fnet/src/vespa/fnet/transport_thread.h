@@ -46,12 +46,12 @@ private:
     FNET_PacketQueue_NoLock  _myQueue;        // inner event queue
     std::mutex               _lock;           // used for synchronization
     std::condition_variable  _cond;           // used for synchronization
+    std::recursive_mutex     _pseudo_thread;  // used after transport thread has shut down
     bool                     _started;        // event loop started ?
     bool                     _shutdown;       // should stop event loop ?
     bool                     _finished;       // event loop stopped ?
     bool                     _waitFinished;   // someone is waiting for _finished
     bool                     _deleted;        // destructor called ?
-
 
     FNET_TransportThread(const FNET_TransportThread &);
     FNET_TransportThread &operator=(const FNET_TransportThread &);
@@ -132,6 +132,9 @@ private:
      * @param context the event parameter
      **/
     void DiscardEvent(FNET_ControlPacket *cpacket, FNET_Context context);
+
+    // safely discard events using the pseudo thread mutex
+    void SafeDiscardEvent(FNET_ControlPacket *cpacket, FNET_Context context);
 
 
     /**
