@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.component;
 import com.google.common.base.Strings;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.utils.AthenzIdentities;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
@@ -14,11 +12,9 @@ import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesImpl;
 
 import java.net.URI;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -34,18 +30,6 @@ public class Environment {
     private static final DateTimeFormatter filenameFormatter = DateTimeFormatter
             .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS").withZone(ZoneOffset.UTC);
     public static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
-
-    private static final String ENVIRONMENT = "ENVIRONMENT";
-    private static final String REGION = "REGION";
-    private static final String SYSTEM = "SYSTEM";
-    private static final String CLOUD = "CLOUD";
-    private static final String LOGSTASH_NODES = "LOGSTASH_NODES";
-    private static final String COREDUMP_FEED_ENDPOINT = "COREDUMP_FEED_ENDPOINT";
-    private static final String CERTIFICATE_DNS_SUFFIX = "CERTIFICATE_DNS_SUFFIX";
-    private static final String ZTS_URI = "ZTS_URL";
-    private static final String NODE_ATHENZ_IDENTITY = "NODE_ATHENZ_IDENTITY";
-    private static final String ENABLE_NODE_AGENT_CERT = "ENABLE_NODE_AGENT_CERT";
-    private static final String TRUST_STORE_PATH = "TRUST_STORE_PATH";
 
     private final ConfigServerInfo configServerInfo;
     private final String environment;
@@ -66,28 +50,6 @@ public class Environment {
     private final boolean isRunningOnHost;
     private final Path trustStorePath;
     private final DockerNetworking dockerNetworking;
-
-    public Environment(ConfigServerConfig configServerConfig) {
-        this(configServerConfig,
-             Paths.get(getEnvironmentVariable(TRUST_STORE_PATH)),
-             getEnvironmentVariable(ENVIRONMENT),
-             getEnvironmentVariable(REGION),
-             getEnvironmentVariable(SYSTEM),
-             getEnvironmentVariable(CLOUD),
-             Defaults.getDefaults().vespaHostname(),
-             new IPAddressesImpl(),
-             new PathResolver(),
-             getLogstashNodesFromEnvironment(),
-             Optional.of(getEnvironmentVariable(COREDUMP_FEED_ENDPOINT)),
-             NodeType.host,
-             new DefaultContainerEnvironmentResolver(),
-             getEnvironmentVariable(CERTIFICATE_DNS_SUFFIX),
-             URI.create(getEnvironmentVariable(ZTS_URI)),
-             (AthenzService)AthenzIdentities.from(getEnvironmentVariable(NODE_ATHENZ_IDENTITY)),
-             Boolean.valueOf(getEnvironmentVariable(ENABLE_NODE_AGENT_CERT)),
-             false,
-             DockerNetworking.MACVLAN);
-    }
 
     private Environment(ConfigServerConfig configServerConfig,
                         Path trustStorePath,
@@ -159,14 +121,6 @@ public class Environment {
 
     public String getZone() {
         return getEnvironment() + "." + getRegion();
-    }
-
-    private static List<String> getLogstashNodesFromEnvironment() {
-        String logstashNodes = System.getenv(LOGSTASH_NODES);
-        if (Strings.isNullOrEmpty(logstashNodes)) {
-            return Collections.emptyList();
-        }
-        return Arrays.asList(logstashNodes.split("[,\\s]+"));
     }
 
     public IPAddresses getIpAddresses() {
@@ -415,7 +369,7 @@ public class Environment {
                                    nodeAthenzIdentity,
                                    nodeAgentCertEnabled,
                                    isRunningOnHost,
-                                   Optional.ofNullable(dockerNetworking).orElseGet(() -> DockerNetworking.from(cloud, nodeType, isRunningOnHost)));
+                                   dockerNetworking);
         }
     }
 }
