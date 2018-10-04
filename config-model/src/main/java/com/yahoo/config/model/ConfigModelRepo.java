@@ -215,9 +215,9 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
      * Initialize part 2.:
      * Prepare all config models for starting. Must be called after plugins are loaded and frozen.
      */
-    public void prepareConfigModels() {
+    public void prepareConfigModels(DeployState deployState) {
         for (ConfigModel model : configModels) {
-            model.prepare(ConfigModelRepo.this);
+            model.prepare(this, deployState);
         }
     }
 

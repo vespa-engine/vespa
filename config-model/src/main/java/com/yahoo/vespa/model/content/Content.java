@@ -12,10 +12,12 @@ import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.admin.AdminModel;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.log.LogLevel;
-import com.yahoo.searchdefinition.derived.RankProfileList;
-import com.yahoo.vespa.model.*;
+import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -31,7 +33,13 @@ import com.yahoo.vespa.model.search.IndexingDocprocChain;
 import com.yahoo.vespa.model.search.SearchNode;
 import org.w3c.dom.Element;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -158,7 +166,7 @@ public class Content extends ConfigModel {
     }
 
     @Override
-    public void prepare(ConfigModelRepo models) {
+    public void prepare(ConfigModelRepo models, DeployState deployState) {
         if (cluster.getRootGroup().useCpuSocketAffinity()) {
             setCpuSocketAffinity();
         }
@@ -192,7 +200,7 @@ public class Content extends ConfigModel {
                 s.setVespaMallocDebugStackTrace(cluster.getRootGroup().getVespaMallocDebugStackTrace().get());
             }
         }
-        cluster.prepare();
+        cluster.prepare(deployState);
     }
 
     private void setCpuSocketAffinity() {
