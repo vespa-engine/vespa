@@ -85,6 +85,8 @@ public class SecretAgentCheckConfig {
             case proxyhost: return "routinghost";
             case config: return "configserver";
             case confighost: return "configserverhost";
+            case controller: return "controller";
+            case controllerhost: return "controllerhost";
             default: throw new IllegalArgumentException("Unknown node type " + nodeType);
         }
     }

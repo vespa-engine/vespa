@@ -89,7 +89,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
                 .withAddCapability("SYS_ADMIN"); // Needed for perf
 
-        if (environment.getNodeType() == NodeType.confighost || environment.getNodeType() == NodeType.proxyhost) {
+        if (isInfrastructureHost(environment.getNodeType())) {
             command.withVolume("/var/lib/sia", "/var/lib/sia");
         }
 
@@ -373,4 +373,12 @@ public class DockerOperationsImpl implements DockerOperations {
 
         return Collections.unmodifiableMap(directoriesToMount);
     }
+
+    /** Returns whether given nodeType is a Docker host for infrastructure nodes */
+    private static boolean isInfrastructureHost(NodeType nodeType) {
+        return nodeType == NodeType.confighost ||
+               nodeType == NodeType.proxyhost ||
+               nodeType == NodeType.controllerhost;
+    }
+
 }
