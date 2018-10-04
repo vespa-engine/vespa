@@ -242,6 +242,8 @@ FNET_TransportThread::~FNET_TransportThread()
     }
     if (_started && !_finished) {
         LOG(error, "Transport: delete called on active object!");
+    } else {
+        std::lock_guard guard(_pseudo_thread);
     }
 }
 
