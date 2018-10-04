@@ -276,11 +276,9 @@ public:
 
     //-------------------------------------------------------------------------
     // single-threaded API forwarding. num_threads must be 1. Note: Choose
-    // only one of: (a) Start, (b) Main, (c) InitEventLoop + EventLoopIteration
+    // only one of: (a) Start, (b) Main
     // -------------------------------------------------------------------------
 
     FastOS_TimeInterface *GetTimeSampler();
-    bool InitEventLoop();
-    bool EventLoopIteration();
     void Main();
 };

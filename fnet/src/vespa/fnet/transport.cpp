@@ -201,18 +201,6 @@ FNET_Transport::GetTimeSampler() {
     return _threads[0]->GetTimeSampler();
 }
 
-bool
-FNET_Transport::InitEventLoop() {
-    assert(_threads.size() == 1);
-    return _threads[0]->InitEventLoop();
-}
-
-bool
-FNET_Transport::EventLoopIteration() {
-    assert(_threads.size() == 1);
-    return _threads[0]->EventLoopIteration();
-}
-
 void
 FNET_Transport::Main() {
     assert(_threads.size() == 1);

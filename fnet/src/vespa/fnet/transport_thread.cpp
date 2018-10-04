@@ -154,7 +154,6 @@ void
 FNET_TransportThread::SafeDiscardEvent(FNET_ControlPacket *cpacket,
                                        FNET_Context context)
 {
-    WaitFinished(); // make sure actual thread is all done
     std::lock_guard guard(_pseudo_thread); // be the thread
     DiscardEvent(cpacket, context);
 }
@@ -638,6 +637,7 @@ FNET_TransportThread::Main()
 void
 FNET_TransportThread::Run(FastOS_ThreadInterface *thisThread, void *)
 {
+    std::lock_guard guard(_pseudo_thread); // be the thread
     if (!InitEventLoop()) {
         LOG(warning, "Transport: Run: Could not init event loop");
         return;

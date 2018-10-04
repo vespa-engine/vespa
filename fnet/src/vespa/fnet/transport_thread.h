@@ -149,6 +149,28 @@ private:
     void handle_add_cmd(FNET_IOComponent *ioc);
     void handle_close_cmd(FNET_IOComponent *ioc);
 
+    /**
+     * This method is called to initialize the transport thread event
+     * loop. It is called from the FRT_Transport::Run method. If you
+     * want to customize the event loop, you should do this by invoking
+     * this method once, then invoke the @ref EventLoopIteration method
+     * until it returns false (indicating transport shutdown).
+     *
+     * @return true on success, false on failure.
+     **/
+    bool InitEventLoop();
+
+    /**
+     * Perform a single transport thread event loop iteration. This
+     * method is called by the FRT_Transport::Run method. If you want to
+     * customize the event loop, you should do this by invoking the @ref
+     * InitEventLoop method once, then invoke this method until it
+     * returns false (indicating transport shutdown).
+     *
+     * @return true when active, false after shutdown.
+     **/
+    bool EventLoopIteration();
+
 public:
     /**
      * Construct a transport object. To activate your newly created
@@ -478,34 +500,11 @@ public:
     void WaitFinished();
 
 
-    /**
-     * This method is called to initialize the transport thread event
-     * loop. It is called from the FRT_Transport::Run method. If you
-     * want to customize the event loop, you should do this by invoking
-     * this method once, then invoke the @ref EventLoopIteration method
-     * until it returns false (indicating transport shutdown).
-     *
-     * @return true on success, false on failure.
-     **/
-    bool InitEventLoop();
-
-
     // selector call-back for selector wakeup
     void handle_wakeup();
 
     // selector call-back for io-events
     void handle_event(FNET_IOComponent &ctx, bool read, bool write);
-
-    /**
-     * Perform a single transport thread event loop iteration. This
-     * method is called by the FRT_Transport::Run method. If you want to
-     * customize the event loop, you should do this by invoking the @ref
-     * InitEventLoop method once, then invoke this method until it
-     * returns false (indicating transport shutdown).
-     *
-     * @return true when active, false after shutdown.
-     **/
-    bool EventLoopIteration();
 
 
     /**
@@ -529,9 +528,7 @@ public:
 
     /**
      * This is where the transport thread lives, when started by
-     * invoking one of the @ref Main or @ref Start methods. If you want
-     * to combine the FNET event loop with your own, you may use the
-     * @ref InitEventLoop and @ref EventLoopIteration methods directly.
+     * invoking one of the @ref Main or @ref Start methods.
      **/
     void Run(FastOS_ThreadInterface *thisThread, void *args) override;
 };
