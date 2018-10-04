@@ -321,7 +321,7 @@ void
 MetricSet::print(std::ostream& out, bool verbose,
                  const std::string& indent, uint64_t secondsPassed) const
 {
-    out << _name << ":";
+    out << getName() << ":";
     for (const Metric* metric : _metricOrder) {
         out << "\n" << indent << "  ";
         metric->print(out, verbose, indent + "  ", secondsPassed);

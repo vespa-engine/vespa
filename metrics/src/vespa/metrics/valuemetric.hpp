@@ -213,7 +213,7 @@ ValueMetric<AvgVal, TotVal, SumOnAdd>::print(
     (void) secondsPassed;
     Values values(_values.getValues());
     if (!inUse(values) && !verbose) return;
-    out << this->_name << " average=" << (values._count == 0
+    out << this->getName() << " average=" << (values._count == 0
             ? 0 : static_cast<double>(values._total) / values._count)
         << " last=" << values._last;
     if (!summedAverage()) {

@@ -64,7 +64,8 @@ Metric::Metric(const String& name,
                const String& tags,
                const String& description,
                MetricSet* owner)
-    : _name(name),
+    : _name(Repo::metricId(name)),
+      _mangledName(_name),
       _description(description),
       _tags(legacyTagStringToKeyedTags(tags)),
       _owner(nullptr) // Set later by registry
@@ -78,7 +79,8 @@ Metric::Metric(const String& name,
                Tags dimensions,
                const String& description,
                MetricSet* owner)
-    : _name(name),
+    : _name(Repo::metricId(name)),
+      _mangledName(_name),
       _description(description),
       _tags(std::move(dimensions)),
       _owner(nullptr)
@@ -92,6 +94,7 @@ Metric::Metric(const String& name,
 Metric::Metric(const Metric& other, MetricSet* owner)
     : Printable(other),
       _name(other._name),
+      _mangledName(other._mangledName),
       _description(other._description),
       _tags(other._tags),
       _owner(nullptr)
@@ -120,7 +123,8 @@ Metric::assignMangledNameWithDimensions()
         return;
     }
     sortTagsInDeterministicOrder();
-    _mangledName = createMangledNameWithDimensions();
+    vespalib::string mangled = createMangledNameWithDimensions();
+    _mangledName = Repo::metricId(mangled);
 }
 
 void
@@ -131,11 +135,11 @@ Metric::sortTagsInDeterministicOrder()
     });
 }
 
-std::string
+vespalib::string
 Metric::createMangledNameWithDimensions() const
 {
     vespalib::asciistream s;
-    s << _name << '{';
+    s << getName() << '{';
     const size_t sz = _tags.size();
     for (size_t i = 0; i < sz; ++i) {
         const Tag& dimension(_tags[i]);
@@ -154,13 +158,13 @@ Metric::createMangledNameWithDimensions() const
 void
 Metric::verifyConstructionParameters()
 {
-    if (_name.size() == 0) {
+    if (getName().size() == 0) {
         throw vespalib::IllegalArgumentException(
                 "Metric cannot have empty name", VESPA_STRLOC);
     }
-    if (!_namePattern.match(_name)) {
+    if (!_namePattern.match(getName())) {
         throw vespalib::IllegalArgumentException(
-                "Illegal metric name '" + _name + "'. Names must match pattern "
+                "Illegal metric name '" + getName() + "'. Names must match pattern "
                 + namePattern, VESPA_STRLOC);
     }
 }
@@ -185,9 +189,9 @@ vespalib::string
 Metric::getPath() const
 {
     if (_owner == 0 || _owner->_owner == 0) {
-        return _name;
+        return getName();
     } else {
-        return _owner->getPath() + "." + _name;
+        return _owner->getPath() + "." + getName();
     }
 }
 
@@ -195,10 +199,10 @@ std::vector<Metric::String>
 Metric::getPathVector() const
 {
     std::vector<String> result;
-    result.push_back(_name);
+    result.push_back(getName());
     const MetricSet* owner(_owner);
     while (owner != 0) {
-        result.push_back(owner->_name);
+        result.push_back(owner->getName());
         owner = owner->_owner;
     }
     std::reverse(result.begin(), result.end());
@@ -217,7 +221,7 @@ void
 Metric::addMemoryUsage(MemoryConsumption& mc) const
 {
     ++mc._metricCount;
-    mc._metricName += mc.getStringMemoryUsage(_name, mc._metricNameUnique);
+    mc._metricName += mc.getStringMemoryUsage(getName(), mc._metricNameUnique);
     mc._metricDescription += mc.getStringMemoryUsage(
                                     _description, mc._metricDescriptionUnique);
     mc._metricTagCount += _tags.size();
@@ -231,7 +235,6 @@ void
 Metric::updateNames(NameHash& hash) const
 {
     Metric& m(const_cast<Metric&>(*this));
-    hash.updateName(m._name);
     hash.updateName(m._description);
     // Tags use vespalib::string which isn't refcounted under the hood and
     // use small string optimizations, meaning the implicit ref sharing hack
@@ -242,7 +245,7 @@ void
 Metric::printDebug(std::ostream& out, const std::string& indent) const
 {
     (void) indent;
-    out << "name=" << _name << ", instance=" << ((const void*) this)
+    out << "name=" << getName() << ", instance=" << ((const void*) this)
         << ", owner=" << ((const void*) _owner);
 }
 

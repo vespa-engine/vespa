@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/regexp.h>
+#include "repo.h"
 
 namespace metrics {
 
@@ -120,13 +121,13 @@ public:
     Metric & operator = (Metric && rhs) = default;
     ~Metric();
 
-    const String& getName() const { return _name; }
+    const vespalib::string& getName() const { return Repo::metricName(_name); }
     /**
      * Get mangled name iff the metric contains any dimensions, otherwise
      * the original metric name is returned.
      */
-    const String& getMangledName() const {
-        return (_mangledName.empty() ? _name : _mangledName);
+    const vespalib::string& getMangledName() const {
+        return Repo::metricName(_mangledName);
     }
     vespalib::string getPath() const;
     std::vector<String> getPathVector() const;
@@ -216,7 +217,8 @@ public:
 
     /** Used by sum metric to alter name of cloned metric for sum. */
     void setName(const String& name) {
-        _name = name;
+        MetricNameId newName = Repo::metricId(name);
+        _name = newName;
         assignMangledNameWithDimensions();
     }
 
@@ -282,7 +284,7 @@ private:
      */
     void sortTagsInDeterministicOrder();
 
-    std::string createMangledNameWithDimensions() const;
+    vespalib::string createMangledNameWithDimensions() const;
 
     void verifyConstructionParameters();
     /**
@@ -292,8 +294,8 @@ private:
     void registerWithOwnerIfRequired(MetricSet* owner);
 
 protected:
-    String _name;
-    String _mangledName;
+    MetricNameId _name;
+    MetricNameId _mangledName;
     String _description;
     std::vector<Tag> _tags;
     MetricSet* _owner;
