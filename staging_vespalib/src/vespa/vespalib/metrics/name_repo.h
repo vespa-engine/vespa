@@ -24,9 +24,9 @@ private:
     NameCollection _labelValues;
     PointMapCollection _pointMaps;
 
-public:
     NameRepo() = default;
     ~NameRepo() = default;
+public:
 
     MetricName metric(const vespalib::string &name);
     Dimension dimension(const vespalib::string &name);
