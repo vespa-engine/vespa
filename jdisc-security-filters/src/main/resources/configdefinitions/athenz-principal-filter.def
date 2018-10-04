@@ -6,3 +6,6 @@ principalHeaderName             string  default="Athenz-Principal-Auth"
 
 # Path to athenz.conf file
 athenzConfFile                  string
+
+# Pass-through mode
+passthroughMode                 bool    default=false
