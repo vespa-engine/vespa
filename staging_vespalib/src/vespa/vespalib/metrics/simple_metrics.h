@@ -13,7 +13,7 @@
 #include "gauge.h"
 #include "json_formatter.h"
 #include "label.h"
-#include "metric_identifier.h"
+#include "metric_point_id.h"
 #include "metric_name.h"
 #include "metrics_manager.h"
 #include "point_builder.h"

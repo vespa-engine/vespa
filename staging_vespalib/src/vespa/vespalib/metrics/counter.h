@@ -2,7 +2,7 @@
 #pragma once
 
 #include <memory>
-#include "metric_identifier.h"
+#include "metric_point_id.h"
 #include "point.h"
 
 namespace vespalib {
@@ -42,10 +42,10 @@ public:
 
     // internal
     struct Increment {
-        MetricIdentifier idx;
+        MetricPointId idx;
         size_t value;
         Increment() = delete;
-        Increment(MetricIdentifier id, size_t v) : idx(id), value(v) {}
+        Increment(MetricPointId id, size_t v) : idx(id), value(v) {}
     };
 
     typedef CounterAggregator aggregator_type;
