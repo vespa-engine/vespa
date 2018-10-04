@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
-import com.yahoo.vespa.hosted.dockerapi.DockerNetworkCreator;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -32,8 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
-
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Class that wraps the Docker class and have some tools related to running programs in docker.
@@ -109,10 +106,7 @@ public class DockerOperationsImpl implements DockerOperations {
         DockerNetworking networking = environment.getDockerNetworking();
         command.withNetworkMode(networking.getDockerNetworkMode());
 
-        if (networking == DockerNetworking.MACVLAN) { // TODO: Remove this if when migration to host-admin is complete
-            command.withIpAddress(ipV6Address);
-            command.withSharedVolume("/etc/hosts", "/etc/hosts");
-        } else if (networking == DockerNetworking.NPT) {
+        if (networking == DockerNetworking.NPT) {
             InetAddress ipV6Prefix = InetAddresses.forString(IPV6_NPT_PREFIX);
             InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, ipV6Prefix, 8);
             command.withIpAddress(ipV6Local);
@@ -180,15 +174,7 @@ public class DockerOperationsImpl implements DockerOperations {
         PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         logger.info("Starting container " + containerName);
 
-        if (environment.getDockerNetworking() == DockerNetworking.MACVLAN) {
-            docker.connectContainerToNetwork(containerName, "bridge");
-        }
-
         docker.startContainer(containerName);
-
-        if (environment.getDockerNetworking() == DockerNetworking.MACVLAN) {
-            setupContainerNetworkConnectivity(containerName);
-        }
 
         directoriesToMount.entrySet().stream()
                 .filter(Map.Entry::getValue)
@@ -213,18 +199,6 @@ public class DockerOperationsImpl implements DockerOperations {
     @Override
     public Optional<Container> getContainer(ContainerName containerName) {
         return docker.getContainer(containerName);
-    }
-
-    /**
-     * For macvlan:
-     * <p>
-     * Due to a bug in docker (https://github.com/docker/libnetwork/issues/1443), we need to manually set
-     * IPv6 gateway in containers connected to more than one docker network
-     */
-    private void setupContainerNetworkConnectivity(ContainerName containerName) {
-        InetAddress hostDefaultGateway = uncheck(() -> DockerNetworkCreator.getDefaultGatewayLinux(true));
-        executeCommandInNetworkNamespace(containerName,
-                "route", "-A", "inet6", "add", "default", "gw", hostDefaultGateway.getHostAddress(), "dev", "eth1");
     }
 
     @Override
@@ -264,7 +238,7 @@ public class DockerOperationsImpl implements DockerOperations {
         Path procPath = environment.getPathResolver().getPathToRootOfHost().resolve("proc");
 
         final String[] wrappedCommand = Stream.concat(
-                Stream.of("sudo", "nsenter", String.format("--net=%s/%d/ns/net", procPath, containerPid), "--"),
+                Stream.of("nsenter", String.format("--net=%s/%d/ns/net", procPath, containerPid), "--"),
                 Stream.of(command))
                 .toArray(String[]::new);
 
