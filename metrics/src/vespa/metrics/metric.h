@@ -131,7 +131,7 @@ public:
     }
     vespalib::string getPath() const;
     std::vector<String> getPathVector() const;
-    const String& getDescription() const { return _description; }
+    const vespalib::string& getDescription() const { return Repo::description(_description); }
     const Tags& getTags() const { return _tags; }
     /** Return whether there exists a tag with a key equal to 'tag' */
     bool hasTag(const String& tag) const;
@@ -223,7 +223,9 @@ public:
     }
 
     /** Used by sum metric to alter description of cloned metric for sum. */
-    void setDescription(const String& d) { _description = d; }
+    void setDescription(const vespalib::string& d) {
+        _description = Repo::descriptionId(d);
+    }
     /** Used by sum metric to alter tag of cloned metric for sum. */
     void setTags(Tags tags) {
         _tags = std::move(tags);
@@ -296,7 +298,7 @@ private:
 protected:
     MetricNameId _name;
     MetricNameId _mangledName;
-    String _description;
+    DescriptionId _description;
     std::vector<Tag> _tags;
     MetricSet* _owner;
 

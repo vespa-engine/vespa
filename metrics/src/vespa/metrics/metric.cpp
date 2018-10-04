@@ -66,7 +66,7 @@ Metric::Metric(const String& name,
                MetricSet* owner)
     : _name(Repo::metricId(name)),
       _mangledName(_name),
-      _description(description),
+      _description(Repo::descriptionId(description)),
       _tags(legacyTagStringToKeyedTags(tags)),
       _owner(nullptr) // Set later by registry
 {
@@ -81,7 +81,7 @@ Metric::Metric(const String& name,
                MetricSet* owner)
     : _name(Repo::metricId(name)),
       _mangledName(_name),
-      _description(description),
+      _description(Repo::descriptionId(description)),
       _tags(std::move(dimensions)),
       _owner(nullptr)
 {
@@ -222,8 +222,7 @@ Metric::addMemoryUsage(MemoryConsumption& mc) const
 {
     ++mc._metricCount;
     mc._metricName += mc.getStringMemoryUsage(getName(), mc._metricNameUnique);
-    mc._metricDescription += mc.getStringMemoryUsage(
-                                    _description, mc._metricDescriptionUnique);
+    mc._metricDescription += mc.getStringMemoryUsage(getDescription(), mc._metricDescriptionUnique);
     mc._metricTagCount += _tags.size();
     // XXX figure out what we actually want to report from tags here...
     // XXX we don't care about unique strings since they don't matter anymore.
@@ -232,13 +231,9 @@ Metric::addMemoryUsage(MemoryConsumption& mc) const
 }
 
 void
-Metric::updateNames(NameHash& hash) const
+Metric::updateNames(NameHash&) const
 {
-    Metric& m(const_cast<Metric&>(*this));
-    hash.updateName(m._description);
-    // Tags use vespalib::string which isn't refcounted under the hood and
-    // use small string optimizations, meaning the implicit ref sharing hack
-    // won't work for them anyway.
+    // not relevant anymore
 }
 
 void
