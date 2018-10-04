@@ -37,13 +37,8 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
 
     @Override
     protected void maintain() {
-        try {
-            confirmApplicationOwnerships();
-            ensureConfirmationResponses();
-        }
-        catch (UncheckedIOException e) {
-            log.log(Level.INFO, () -> "IO exception handling issues, will retry in " + maintenanceInterval() + ": '" + Exceptions.toMessageString(e));
-        }
+        confirmApplicationOwnerships();
+        ensureConfirmationResponses();
     }
 
     /** File an ownership issue with the owners of all applications we know about. */
@@ -65,7 +60,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                                ourIssueId.ifPresent(issueId -> store(issueId, application.id()));
                            }
                            catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
-                               log.log(Level.WARNING, "Exception caught when attempting to file an issue for " + application.id(), e);
+                               log.log(Level.INFO, "Exception caught when attempting to file an issue for '" + application.id() + "': " + Exceptions.toMessageString(e));
                            }
                        });
 
@@ -84,7 +79,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                     ownershipIssues.ensureResponse(issueId, propertyId);
                 }
                 catch (RuntimeException e) {
-                    log.log(Level.WARNING, "Exception caught when attempting to escalate issue with id " + issueId, e);
+                    log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
                 }
             });
     }
