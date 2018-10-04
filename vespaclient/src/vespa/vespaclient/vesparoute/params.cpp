@@ -11,6 +11,7 @@ Params::Params() :
     _documentTypesConfigId("client"),
     _routingConfigId("client"),
     _protocol("document"),
+    _slobrokConfigId(""),
     _lstHops(false),
     _lstRoutes(false),
     _lstServices(false),

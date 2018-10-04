@@ -109,7 +109,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
     if (_closed.load(std::memory_order_relaxed)) {
         LOG(debug, "Not handling command of type %d as we have closed down", msg->getType());
         MBUS_TRACE(msg->getTrace(), 6, "Communication manager: Failing message as we are closed");
-        std::unique_ptr<mbus::Reply> reply(new mbus::EmptyReply());
+        auto reply = std::make_unique<mbus::EmptyReply>();
         reply->addError(mbus::Error(documentapi::DocumentProtocol::ERROR_ABORTED, "Node shutting down"));
         msg->swapState(*reply);
         _messageBusSession->reply(std::move(reply));
@@ -138,7 +138,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
         }
 
         cmd->setTrace(docMsgPtr->getTrace());
-        cmd->setTransportContext(std::unique_ptr<api::TransportContext>(new StorageTransportContext(std::move(docMsgPtr))));
+        cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::move(docMsgPtr)));
 
         enqueue(std::move(cmd));
     } else if (protocolName == mbusprot::StorageProtocol::NAME) {
@@ -150,7 +150,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
         std::shared_ptr<api::StorageCommand> cmd = storMsgPtr->getCommand();
         cmd->setTimeout(storMsgPtr->getTimeRemaining());
         cmd->setTrace(storMsgPtr->getTrace());
-        cmd->setTransportContext(std::unique_ptr<api::TransportContext>(new StorageTransportContext(std::move(storMsgPtr))));
+        cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::move(storMsgPtr)));
 
         enqueue(std::move(cmd));
     } else {
@@ -182,9 +182,8 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
             if (protocolName == documentapi::DocumentProtocol::NAME) {
                 convertedReply = static_cast<documentapi::DocumentMessage &>(*message).createReply();
             } else if (protocolName == mbusprot::StorageProtocol::NAME) {
-                std::shared_ptr<api::StorageReply> repl(
-                        static_cast<mbusprot::StorageCommand &>(*message).getCommand()->makeReply());
-                mbusprot::StorageReply::UP sreply(new mbusprot::StorageReply(repl));
+                std::shared_ptr<api::StorageReply> repl(static_cast<mbusprot::StorageCommand &>(*message).getCommand()->makeReply());
+                auto sreply = std::make_unique<mbusprot::StorageReply>(repl);
 
                 if (reply->hasErrors()) {
                     // Convert only the first error since storageapi only
@@ -311,7 +310,7 @@ CommunicationManager::CommunicationManager(StorageComponentRegister& compReg, co
 void
 CommunicationManager::onOpen()
 {
-    _configFetcher.reset(new config::ConfigFetcher(_configUri.getContext()));
+    _configFetcher = std::make_unique<config::ConfigFetcher>(_configUri.getContext());
     _configFetcher->subscribe<vespa::config::content::core::StorCommunicationmanagerConfig>(_configUri.getConfigId(), this);
     _configFetcher->start();
     framework::MilliSecTime maxProcessingTime(60 * 1000);
@@ -418,10 +417,8 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
     };
 
     if (!_configUri.empty()) {
-        mbus::RPCNetworkParams params;
         LOG(debug, "setting up slobrok config from id: '%s", _configUri.getConfigId().c_str());
-
-        params.setSlobrokConfig(_configUri);
+        mbus::RPCNetworkParams params(_configUri);
         params.setConnectionExpireSecs(config->mbus.rpctargetcache.ttl);
         params.setNumThreads(std::max(1, config->mbus.numThreads));
         params.setDispatchOnDecode(config->mbus.dispatchOnDecode);
@@ -450,7 +447,7 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         configureMessageBusLimits(*config);
     }
 
-    _listener.reset(new FNetListener(*this, _configUri, config->rpcport));
+    _listener = std::make_unique<FNetListener>(*this, _configUri, config->rpcport);
 
     if (_mbus) {
         mbus::DestinationSessionParams dstParams;
@@ -578,7 +575,7 @@ CommunicationManager::sendCommand(
     {
         LOG(spam, "Send to %s: %s", address.toString().c_str(), msg->toString().c_str());
 
-        std::unique_ptr<mbus::Message> cmd(new mbusprot::StorageCommand(msg));
+        auto cmd = std::make_unique<mbusprot::StorageCommand>(msg);
 
         cmd->setContext(mbus::Context(msg->getMsgId()));
         cmd->setRetryEnabled(address.retryEnabled());
@@ -681,7 +678,7 @@ CommunicationManager::sendMessageBusReply(
     // state.
     if (context._docAPIMsg.get()) {
         if (reply->getResult().getResult() == api::ReturnCode::WRONG_DISTRIBUTION) {
-            replyUP.reset(new documentapi::WrongDistributionReply(reply->getResult().getMessage()));
+            replyUP = std::make_unique<documentapi::WrongDistributionReply>(reply->getResult().getMessage());
             replyUP->swapState(*context._docAPIMsg);
             replyUP->setTrace(reply->getTrace());
             replyUP->addError(mbus::Error(documentapi::DocumentProtocol::ERROR_WRONG_DISTRIBUTION,
@@ -694,7 +691,7 @@ CommunicationManager::sendMessageBusReply(
             _docApiConverter.transferReplyState(*reply, *replyUP);
         }
     } else if (context._storageProtocolMsg.get()) {
-        replyUP.reset(new mbusprot::StorageReply(reply));
+        replyUP = std::make_unique<mbusprot::StorageReply>(reply);
         if (reply->getResult().getResult() != api::ReturnCode::OK) {
             replyUP->addError(mbus::Error(reply->getResult().getResult(), reply->getResult().getMessage()));
         }
@@ -787,7 +784,7 @@ void CommunicationManager::updateMessagebusProtocol(
         auto newDocumentProtocol = std::make_shared<documentapi::DocumentProtocol>(*_component.getLoadTypes(), repo);
         std::lock_guard<std::mutex> guard(_earlierGenerationsLock);
         _earlierGenerations.push_back(std::make_pair(now, _mbus->getMessageBus().putProtocol(newDocumentProtocol)));
-        mbus::IProtocol::SP newStorageProtocol(new mbusprot::StorageProtocol(repo, *_component.getLoadTypes(), _component.enableMultipleBucketSpaces()));
+        auto newStorageProtocol = std::make_shared<mbusprot::StorageProtocol>(repo, *_component.getLoadTypes(), _component.enableMultipleBucketSpaces());
         _earlierGenerations.push_back(std::make_pair(now, _mbus->getMessageBus().putProtocol(newStorageProtocol)));
     }
 }

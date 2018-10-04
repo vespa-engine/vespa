@@ -44,9 +44,8 @@ Test::requireThatListenFailedIsExceptionSafe()
     Slobrok slobrok;
     try {
         TestServer bar(MessageBusParams(),
-                       RPCNetworkParams()
-                       .setListenPort(orb.GetListenPort())
-                       .setSlobrokConfig(slobrok.config()));
+                       RPCNetworkParams(slobrok.config())
+                       .setListenPort(orb.GetListenPort()));
         EXPECT_TRUE(false);
     } catch (vespalib::Exception &e) {
         EXPECT_EQUAL("Failed to start network.",
@@ -60,25 +59,23 @@ Test::requireThatShutdownOnSourceWithPendingIsSafe()
 {
     Slobrok slobrok;
     TestServer dstServer(MessageBusParams()
-                         .addProtocol(IProtocol::SP(new SimpleProtocol())),
-                         RPCNetworkParams()
-                         .setIdentity(Identity("dst"))
-                         .setSlobrokConfig(slobrok.config()));
+                         .addProtocol(std::make_shared<SimpleProtocol>()),
+                         RPCNetworkParams(slobrok.config())
+                         .setIdentity(Identity("dst")));
     Receptor dstHandler;
     DestinationSession::UP dstSession = dstServer.mb.createDestinationSession(
             DestinationSessionParams()
             .setName("session")
             .setMessageHandler(dstHandler));
-    ASSERT_TRUE(dstSession.get() != NULL);
+    ASSERT_TRUE(dstSession);
 
     for (uint32_t i = 0; i < 10; ++i) {
         Message::UP msg(new SimpleMessage("msg"));
         {
             TestServer srcServer(MessageBusParams()
-                    .setRetryPolicy(IRetryPolicy::SP(new RetryTransientErrorsPolicy()))
-                    .addProtocol(IProtocol::SP(new SimpleProtocol())),
-                    RPCNetworkParams()
-                    .setSlobrokConfig(slobrok.config()));
+                    .setRetryPolicy(std::make_shared<RetryTransientErrorsPolicy>())
+                    .addProtocol(std::make_shared<SimpleProtocol>()),
+                    RPCNetworkParams(slobrok.config()));
             Receptor srcHandler;
             SourceSession::UP srcSession = srcServer.mb.createSourceSession(SourceSessionParams()
                     .setThrottlePolicy(IThrottlePolicy::SP())
@@ -98,52 +95,49 @@ Test::requireThatShutdownOnIntermediateWithPendingIsSafe()
 {
     Slobrok slobrok;
     TestServer dstServer(MessageBusParams()
-                         .addProtocol(IProtocol::SP(new SimpleProtocol())),
-                         RPCNetworkParams()
-                         .setIdentity(Identity("dst"))
-                         .setSlobrokConfig(slobrok.config()));
+                         .addProtocol(std::make_shared<SimpleProtocol>()),
+                         RPCNetworkParams(slobrok.config())
+                         .setIdentity(Identity("dst")));
     Receptor dstHandler;
     DestinationSession::UP dstSession = dstServer.mb.createDestinationSession(
             DestinationSessionParams()
             .setName("session")
             .setMessageHandler(dstHandler));
-    ASSERT_TRUE(dstSession.get() != NULL);
+    ASSERT_TRUE(dstSession);
 
     TestServer srcServer(MessageBusParams()
                          .setRetryPolicy(IRetryPolicy::SP())
-                         .addProtocol(IProtocol::SP(new SimpleProtocol())),
-                         RPCNetworkParams()
-                         .setSlobrokConfig(slobrok.config()));
+                         .addProtocol(std::make_shared<SimpleProtocol>()),
+                         RPCNetworkParams(slobrok.config()));
     Receptor srcHandler;
     SourceSession::UP srcSession = srcServer.mb.createSourceSession(SourceSessionParams()
             .setThrottlePolicy(IThrottlePolicy::SP())
             .setReplyHandler(srcHandler));
-    ASSERT_TRUE(srcSession.get() != NULL);
+    ASSERT_TRUE(srcSession);
     ASSERT_TRUE(srcServer.waitSlobrok("dst/session", 1));
 
     for (uint32_t i = 0; i < 10; ++i) {
         Message::UP msg(new SimpleMessage("msg"));
         {
             TestServer itrServer(MessageBusParams()
-                    .setRetryPolicy(IRetryPolicy::SP(new RetryTransientErrorsPolicy()))
-                    .addProtocol(IProtocol::SP(new SimpleProtocol())),
-                    RPCNetworkParams()
-                    .setIdentity(Identity("itr"))
-                    .setSlobrokConfig(slobrok.config()));
+                    .setRetryPolicy(std::make_shared<RetryTransientErrorsPolicy>())
+                    .addProtocol(std::make_shared<SimpleProtocol>()),
+                    RPCNetworkParams(slobrok.config())
+                    .setIdentity(Identity("itr")));
             Receptor itrHandler;
             IntermediateSession::UP itrSession = itrServer.mb.createIntermediateSession(
                     IntermediateSessionParams()
                     .setName("session")
                     .setMessageHandler(itrHandler)
                     .setReplyHandler(itrHandler));
-            ASSERT_TRUE(itrSession.get() != NULL);
+            ASSERT_TRUE(itrSession);
             ASSERT_TRUE(srcServer.waitSlobrok("itr/session", 1));
             ASSERT_TRUE(srcSession->send(std::move(msg), "itr/session dst/session", true).isAccepted());
             msg = itrHandler.getMessage(TIMEOUT);
-            ASSERT_TRUE(msg.get() != NULL);
+            ASSERT_TRUE(msg);
             itrSession->forward(std::move(msg));
             msg = dstHandler.getMessage(TIMEOUT);
-            ASSERT_TRUE(msg.get() != NULL);
+            ASSERT_TRUE(msg);
         }
         ASSERT_TRUE(srcServer.waitSlobrok("itr/session", 0));
         dstSession->acknowledge(std::move(msg));

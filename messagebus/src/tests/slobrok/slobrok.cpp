@@ -63,15 +63,12 @@ Test::Main()
 {
     TEST_INIT("slobrok_test");
     Slobrok slobrok;
-    RPCNetwork net1(RPCNetworkParams()
-                    .setIdentity(Identity("net/a"))
-                    .setSlobrokConfig(slobrok.config()));
-    RPCNetwork net2(RPCNetworkParams()
-                    .setIdentity(Identity("net/b"))
-                    .setSlobrokConfig(slobrok.config()));
-    RPCNetwork net3(RPCNetworkParams()
-                    .setIdentity(Identity("net/c"))
-                    .setSlobrokConfig(slobrok.config()));
+    RPCNetwork net1(RPCNetworkParams(slobrok.config())
+                    .setIdentity(Identity("net/a")));
+    RPCNetwork net2(RPCNetworkParams(slobrok.config())
+                    .setIdentity(Identity("net/b")));
+    RPCNetwork net3(RPCNetworkParams(slobrok.config())
+                    .setIdentity(Identity("net/c")));
     ASSERT_TRUE(net1.start());
     ASSERT_TRUE(net2.start());
     ASSERT_TRUE(net3.start());

@@ -114,32 +114,32 @@ public:
 TEST_APPHOOK(Test);
 
 TestData::TestData() :
-    _repo(new DocumentTypeRepo),
+    _repo(std::make_shared<DocumentTypeRepo>()),
     _slobrok(),
     _loadTypes(),
-    _srcProtocol(new DocumentProtocol(_loadTypes, _repo)),
+    _srcProtocol(std::make_shared<DocumentProtocol>(_loadTypes, _repo)),
     _srcServer(mbus::MessageBusParams().addProtocol(_srcProtocol),
-               mbus::RPCNetworkParams().setSlobrokConfig(_slobrok.config())),
+               mbus::RPCNetworkParams(_slobrok.config())),
     _srcSession(),
     _srcHandler(),
-    _dstProtocol(new DocumentProtocol(_loadTypes, _repo)),
+    _dstProtocol(std::make_shared<DocumentProtocol>(_loadTypes, _repo)),
     _dstServer(mbus::MessageBusParams().addProtocol(_dstProtocol),
-               mbus::RPCNetworkParams().setIdentity(mbus::Identity("dst")).setSlobrokConfig(_slobrok.config())),
+               mbus::RPCNetworkParams(_slobrok.config()).setIdentity(mbus::Identity("dst"))),
     _dstSession(),
     _dstHandler()
 { }
 
-TestData::~TestData() {}
+TestData::~TestData() = default;
 
 bool
 TestData::start()
 {
     _srcSession = _srcServer.mb.createSourceSession(mbus::SourceSessionParams().setReplyHandler(_srcHandler));
-    if (_srcSession.get() == NULL) {
+    if ( ! _srcSession) {
         return false;
     }
     _dstSession = _dstServer.mb.createDestinationSession(mbus::DestinationSessionParams().setName("session").setMessageHandler(_dstHandler));
-    if (_dstSession.get() == NULL) {
+    if ( ! _dstSession) {
         return false;
     }
     if (!_srcServer.waitSlobrok("dst/session", 1u)) {

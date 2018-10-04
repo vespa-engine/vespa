@@ -45,33 +45,29 @@ Application::Main()
             return EXIT_SUCCESS;
         }
 
-        std::shared_ptr<const DocumentTypeRepo> repo(
-                new DocumentTypeRepo(
-                        *ConfigGetter<DocumenttypesConfig>::getConfig(_params.getDocumentTypesConfigId())));
-        _net.reset(new MyNetwork(_params.getRPCNetworkParams()));
-        _mbus.reset(
-                new mbus::MessageBus(
+        auto repo = std::make_shared<DocumentTypeRepo>(
+                        *ConfigGetter<DocumenttypesConfig>::getConfig(_params.getDocumentTypesConfigId()));
+        _net = std::make_unique<MyNetwork>(mbus::RPCNetworkParams(_params.getSlobrokConfigId())
+                .setIdentity(_params.getRPCNetworkParams().getIdentity())
+                .setListenPort(_params.getRPCNetworkParams().getListenPort()));
+        _mbus = std::make_unique<mbus::MessageBus>(
                         *_net,
                         mbus::MessageBusParams()
                         .setRetryPolicy(mbus::IRetryPolicy::SP())
-                        .addProtocol(mbus::IProtocol::SP(
-                                        new documentapi::DocumentProtocol(
-                                                _loadTypes, repo)))));
+                        .addProtocol(std::make_shared<documentapi::DocumentProtocol>(_loadTypes, repo)));
         mbus::ConfigAgent cfg(*_mbus);
         cfg.configure(ConfigGetter<MessagebusConfig>::getConfig(_params.getRoutingConfigId()));
 
         // _P_A_R_A_N_O_I_A_
         mbus::RoutingTable::SP table = _mbus->getRoutingTable(_params.getProtocol());
-        if (table.get() == NULL) {
+        if ( ! table) {
             throw config::InvalidConfigException(vespalib::make_string("There is no routing table for protocol '%s'.",
                                                                        _params.getProtocol().c_str()));
         }
-        for (std::vector<std::string>::iterator it = _params.getHops().begin();
-             it != _params.getHops().end(); ++it)
-        {
-            if (table->getHop(*it) == NULL) {
+        for (const std::string & hop : _params.getHops()) {
+            if (table->getHop(hop) == NULL) {
                 throw config::InvalidConfigException(vespalib::make_string("There is no hop named '%s' for protocol '%s'.",
-                                                                           it->c_str(), _params.getProtocol().c_str()));
+                                                                           hop.c_str(), _params.getProtocol().c_str()));
             }
         }
 
@@ -166,7 +162,7 @@ Application::parseArgs()
             _params.setListServices(true);
         } else if (strcasecmp(_argv[arg], "--slobrokconfigid") == 0) {
             if (++arg < _argc) {
-                _params.getRPCNetworkParams().setSlobrokConfig(_argv[arg]);
+                _params.setSlobrokId(_argv[arg]);
             } else {
                 throw config::InvalidConfigException("Missing value for parameter 'slobrokconfigid'.");
             }

@@ -546,26 +546,24 @@ TEST_APPHOOK(Test);
 
 TestData::TestData() :
     _slobrok(),
-    _retryPolicy(new RetryTransientErrorsPolicy()),
+    _retryPolicy(std::make_shared<RetryTransientErrorsPolicy>()),
     _srcServer(MessageBusParams()
                .setRetryPolicy(_retryPolicy)
-               .addProtocol(IProtocol::SP(new SimpleProtocol())),
-               RPCNetworkParams()
-               .setSlobrokConfig(_slobrok.config())),
+               .addProtocol(std::make_shared<SimpleProtocol>()),
+               RPCNetworkParams(_slobrok.config())),
     _srcSession(),
     _srcHandler(),
     _dstServer(MessageBusParams()
-               .addProtocol(IProtocol::SP(new SimpleProtocol())),
-               RPCNetworkParams()
-               .setIdentity(Identity("dst"))
-               .setSlobrokConfig(_slobrok.config())),
+               .addProtocol(std::make_shared<SimpleProtocol>()),
+               RPCNetworkParams(_slobrok.config())
+               .setIdentity(Identity("dst"))),
     _dstSession(),
     _dstHandler()
 {
     _retryPolicy->setBaseDelay(0);
 }
 
-TestData::~TestData() {}
+TestData::~TestData() = default;
 
 bool
 TestData::start()
@@ -573,13 +571,13 @@ TestData::start()
     _srcSession = _srcServer.mb.createSourceSession(SourceSessionParams()
                                                     .setThrottlePolicy(IThrottlePolicy::SP())
                                                     .setReplyHandler(_srcHandler));
-    if (_srcSession.get() == NULL) {
+    if ( ! _srcSession) {
         return false;
     }
     _dstSession = _dstServer.mb.createDestinationSession(DestinationSessionParams()
                                                          .setName("session")
                                                          .setMessageHandler(_dstHandler));
-    if (_dstSession.get() == NULL) {
+    if ( ! _dstSession) {
         return false;
     }
     if (!_srcServer.waitSlobrok("dst/session", 1u)) {

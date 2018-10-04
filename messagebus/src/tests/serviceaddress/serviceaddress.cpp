@@ -37,9 +37,8 @@ void
 Test::testAddrServiceAddress()
 {
     Slobrok slobrok;
-    RPCNetwork network(RPCNetworkParams()
-                       .setIdentity(Identity("foo"))
-                       .setSlobrokConfig(slobrok.config()));
+    RPCNetwork network(RPCNetworkParams(slobrok.config())
+                       .setIdentity(Identity("foo")));
     ASSERT_TRUE(network.start());
 
     EXPECT_TRUE(testNullAddress(network, "tcp"));
@@ -60,9 +59,8 @@ void
 Test::testNameServiceAddress()
 {
     Slobrok slobrok;
-    RPCNetwork network(RPCNetworkParams()
-                       .setIdentity(Identity("foo"))
-                       .setSlobrokConfig(slobrok.config()));
+    RPCNetwork network(RPCNetworkParams(slobrok.config())
+                       .setIdentity(Identity("foo")));
     ASSERT_TRUE(network.start());
 
     network.unregisterSession("session");

@@ -49,23 +49,21 @@ TestData::TestData() :
     _slobrok(),
     _srcServer(MessageBusParams()
                .setRetryPolicy(IRetryPolicy::SP())
-               .addProtocol(IProtocol::SP(new SimpleProtocol())),
-               RPCNetworkParams()
-               .setSlobrokConfig(_slobrok.config())),
+               .addProtocol(std::make_shared<SimpleProtocol>()),
+               RPCNetworkParams(_slobrok.config())),
     _srcSession(),
     _srcHandler(),
     _dstServer(MessageBusParams()
-               .addProtocol(IProtocol::SP(new SimpleProtocol())),
-               RPCNetworkParams()
-               .setIdentity(Identity("dst"))
-               .setSlobrokConfig(_slobrok.config())),
+               .addProtocol(std::make_shared<SimpleProtocol>()),
+               RPCNetworkParams(_slobrok.config())
+               .setIdentity(Identity("dst"))),
     _dstSession(),
     _dstHandler()
 {
     // empty
 }
 
-TestData::~TestData() {}
+TestData::~TestData() = default;
 
 bool
 TestData::start()

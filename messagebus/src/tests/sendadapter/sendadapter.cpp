@@ -65,36 +65,36 @@ TestData::TestData() :
     _slobrok(),
     _srcProtocol(new TestProtocol()),
     _srcServer(MessageBusParams().setRetryPolicy(IRetryPolicy::SP()).addProtocol(_srcProtocol),
-               RPCNetworkParams().setSlobrokConfig(_slobrok.config())),
+               RPCNetworkParams(_slobrok.config())),
     _srcSession(),
     _srcHandler(),
     _itrProtocol(new TestProtocol()),
     _itrServer(MessageBusParams().addProtocol(_itrProtocol),
-               RPCNetworkParams().setIdentity(Identity("itr")).setSlobrokConfig(_slobrok.config())),
+               RPCNetworkParams(_slobrok.config()).setIdentity(Identity("itr"))),
     _itrSession(),
     _itrHandler(),
     _dstProtocol(new TestProtocol()),
     _dstServer(MessageBusParams().addProtocol(_dstProtocol),
-               RPCNetworkParams().setIdentity(Identity("dst")).setSlobrokConfig(_slobrok.config())),
+               RPCNetworkParams(_slobrok.config()).setIdentity(Identity("dst"))),
     _dstSession(),
     _dstHandler()
 { }
 
-TestData::~TestData() {}
+TestData::~TestData() = default;
 
 bool
 TestData::start()
 {
     _srcSession = _srcServer.mb.createSourceSession(SourceSessionParams().setReplyHandler(_srcHandler));
-    if (_srcSession.get() == NULL) {
+    if ( ! _srcSession) {
         return false;
     }
     _itrSession = _itrServer.mb.createIntermediateSession(IntermediateSessionParams().setName("session").setMessageHandler(_itrHandler).setReplyHandler(_itrHandler));
-    if (_itrSession.get() == NULL) {
+    if ( ! _itrSession) {
         return false;
     }
     _dstSession = _dstServer.mb.createDestinationSession(DestinationSessionParams().setName("session").setMessageHandler(_dstHandler));
-    if (_dstSession.get() == NULL) {
+    if ( ! _dstSession) {
         return false;
     }
     if (!_srcServer.waitSlobrok("*/session", 2u)) {

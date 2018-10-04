@@ -268,31 +268,26 @@ namespace {
         }
 
         void init() {
-            documentapi::DocumentProtocol::SP protocol(
-                    new documentapi::DocumentProtocol(_loadTypes, _repo));
-            storage::mbusprot::StorageProtocol::SP storageProtocol(
-                    new storage::mbusprot::StorageProtocol(_repo, _loadTypes));
+            auto protocol = std::make_shared<documentapi::DocumentProtocol>(_loadTypes, _repo);
+            auto storageProtocol = std::make_shared<storage::mbusprot::StorageProtocol>(_repo, _loadTypes);
             mbus::ProtocolSet protocols;
             protocols.add(protocol);
             protocols.add(storageProtocol);
-            mbus::RPCNetworkParams networkParams;
-            networkParams.setSlobrokConfig(config::ConfigUri(_config.getConfigId()));
-            _mbus.reset(new mbus::RPCMessageBus(protocols, networkParams,
-                                                _config.getConfigId()));
+            mbus::RPCNetworkParams networkParams(config::ConfigUri(_config.getConfigId()));
+            _mbus = std::make_unique<mbus::RPCMessageBus>(protocols, networkParams, _config.getConfigId());
             mbus::SourceSessionParams sourceParams;
             sourceParams.setTimeout(5000);
-            mbus::StaticThrottlePolicy::SP policy(new mbus::StaticThrottlePolicy());
+            auto policy = std::make_shared<mbus::StaticThrottlePolicy>();
             policy->setMaxPendingCount(_maxPending);
             sourceParams.setThrottlePolicy(policy);
-            _sourceSession = _mbus->getMessageBus().createSourceSession(
-                    *this, sourceParams);
+            _sourceSession = _mbus->getMessageBus().createSourceSession(*this, sourceParams);
         }
 
         virtual void notifyStartingShutdown() {
             _startedShutdown = true;
         }
 
-        virtual void handleReply(mbus::Reply::UP reply) override {
+        void handleReply(mbus::Reply::UP reply) override {
             using documentapi::DocumentProtocol;
             --_currentPending;
             if (!reply->hasErrors()) {

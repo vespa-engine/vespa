@@ -92,6 +92,9 @@ public:
     /** Returns wether or not to verify service names. */
     bool getVerify() const { return _verify; }
 
+    const std::string & getSlobrokConfigId() const { return _slobrokConfigId; }
+    void setSlobrokId(const std::string & id) { _slobrokConfigId = id; }
+
 private:
     mbus::RPCNetworkParams   _rpcParams;
     std::vector<std::string> _hops;
@@ -99,6 +102,7 @@ private:
     std::string              _documentTypesConfigId;
     std::string              _routingConfigId;
     std::string              _protocol;
+    std::string              _slobrokConfigId;
     bool                     _lstHops;
     bool                     _lstRoutes;
     bool                     _lstServices;

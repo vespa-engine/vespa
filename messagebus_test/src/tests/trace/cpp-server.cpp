@@ -67,10 +67,9 @@ App::Main()
         fprintf(stderr, "usage: %s <service-prefix>\n", _argv[0]);
         return 1;
     }
-    RPCMessageBus mb(ProtocolSet().add(IProtocol::SP(new SimpleProtocol())),
-                     RPCNetworkParams()
-                     .setIdentity(Identity(_argv[1]))
-                     .setSlobrokConfig("file:slobrok.cfg"),
+    RPCMessageBus mb(ProtocolSet().add(std::make_shared<SimpleProtocol>()),
+                     RPCNetworkParams("file:slobrok.cfg")
+                     .setIdentity(Identity(_argv[1])),
                      "file:routing.cfg");
     Server server(mb.getMessageBus(), _argv[1]);
     while (true) {
