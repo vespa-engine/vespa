@@ -154,8 +154,6 @@ public class ZKTenantApplications implements TenantApplications, PathChildrenCac
 
     public void removeUnusedApplications() {
         ImmutableSet<ApplicationId> activeApplications = ImmutableSet.copyOf(listApplications());
-        log.log(LogLevel.DEBUG, "Removing stale applications for tenant '" + tenant +
-                "', not removing these active applications: " + activeApplications);
         reloadHandler.removeApplicationsExcept(activeApplications);
     }
 

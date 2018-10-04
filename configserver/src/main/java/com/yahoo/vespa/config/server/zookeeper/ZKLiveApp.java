@@ -9,7 +9,6 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -62,18 +61,11 @@ public class ZKLiveApp {
             for (String child : children) {
                 if (fileNameSuffix == null || child.endsWith(fileNameSuffix)) {
                     result.add(new NamedReader(namePrefix + child, reader(zk.getData(fullPath, child))));
-                    if (log.isLoggable(Level.FINER))
-                        log.finer("ZKApplicationPackage: Added '" + child + "' (matched suffix " + fileNameSuffix + ")");
-                } else {
-                    if (log.isLoggable(Level.FINER))
-                        log.finer("ZKApplicationPackage: Skipped '" + child + "' (did not match suffix " + fileNameSuffix + ")");
                 }
                 if (recursive)
                     result.addAll(getAllDataFromDirectory(path + "/" + child,
                                                           namePrefix + child + "/", fileNameSuffix, recursive));
             }
-            if (log.isLoggable(Level.FINE))
-                log.fine("ZKApplicationPackage: Found '" + result.size() + "' files in " + fullPath);
             return result;
         } catch (Exception e) {
             throw new RuntimeException("Could not retrieve all data from '" + fullPath + "' in zookeeper", e);
