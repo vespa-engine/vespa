@@ -2,6 +2,9 @@
 package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.yahoo.container.core.identity.IdentityConfig;
+import com.yahoo.security.KeyAlgorithm;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SslContextBuilder;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
@@ -11,9 +14,6 @@ import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
-import com.yahoo.security.KeyAlgorithm;
-import com.yahoo.security.KeyUtils;
-import com.yahoo.security.SslContextBuilder;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.defaults.Defaults;
@@ -66,7 +66,7 @@ class AthenzCredentialsService {
         this.nodeIdentityProvider = nodeIdentityProvider;
         this.trustStoreJks = trustStoreJks;
         this.hostname = hostname;
-        this.instanceCsrGenerator = new InstanceCsrGenerator(identityConfig.athenzDnsSuffix());
+        this.instanceCsrGenerator = new InstanceCsrGenerator(identityConfig.athenzDnsSuffix(), identityConfig.configserverIdentityName());
         this.clock = clock;
     }
 

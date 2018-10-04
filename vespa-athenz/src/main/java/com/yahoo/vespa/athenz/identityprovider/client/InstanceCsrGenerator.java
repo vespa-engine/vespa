@@ -23,16 +23,18 @@ import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.IP_ADDRESS;
 public class InstanceCsrGenerator {
 
     private final String dnsSuffix;
+    private final String providerService;
 
-    public InstanceCsrGenerator(String dnsSuffix) {
+    public InstanceCsrGenerator(String dnsSuffix, String providerService) {
         this.dnsSuffix = dnsSuffix;
+        this.providerService = providerService;
     }
 
     public Pkcs10Csr generateCsr(AthenzIdentity instanceIdentity,
                                  VespaUniqueInstanceId instanceId,
                                  Set<String> ipAddresses,
                                  KeyPair keyPair) {
-        X500Principal subject = new X500Principal("CN=" + instanceIdentity.getFullName());
+        X500Principal subject = new X500Principal(String.format("OU=%s, CN=%s", providerService, instanceIdentity.getFullName()));
         // Add SAN dnsname <service>.<domain-with-dashes>.<provider-dnsname-suffix>
         // and SAN dnsname <provider-unique-instance-id>.instanceid.athenz.<provider-dnsname-suffix>
         Pkcs10CsrBuilder pkcs10CsrBuilder = Pkcs10CsrBuilder.fromKeypair(subject, keyPair, SignatureAlgorithm.SHA256_WITH_RSA)

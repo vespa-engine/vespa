@@ -81,7 +81,7 @@ public class AthenzCredentialsMaintainer {
         this.containerIdentity = environment.getNodeAthenzIdentity();
         this.ztsEndpoint = environment.getZtsUri();
         this.configserverIdentity = environment.getConfigserverAthenzIdentity();
-        this.csrGenerator = new InstanceCsrGenerator(environment.getCertificateDnsSuffix());
+        this.csrGenerator = new InstanceCsrGenerator(environment.getCertificateDnsSuffix(), configserverIdentity.getFullName());
         this.trustStorePath = environment.getTrustStorePath();
         this.privateKeyFile = SiaUtils.getPrivateKeyFile(containerSiaDirectory, containerIdentity);
         this.certificateFile = SiaUtils.getCertificateFile(containerSiaDirectory, containerIdentity);
