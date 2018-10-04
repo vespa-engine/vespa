@@ -346,7 +346,7 @@ public final class ContainerCluster
         addAndSendApplicationBundles(deployState);
         if (modelEvaluation != null)
             modelEvaluation.prepare(containers);
-        sendUserConfiguredFiles();
+        sendUserConfiguredFiles(deployState);
         setApplicationMetaData(deployState);
         for (RestApi restApi : restApiGroup.getComponents())
             restApi.prepare();
@@ -373,10 +373,10 @@ public final class ContainerCluster
         }
     }
 
-    private void sendUserConfiguredFiles() {
+    private void sendUserConfiguredFiles(DeployState deployState) {
         // Files referenced from user configs to all components.
         for (Component<?, ?> component : getAllComponents()) {
-            FileSender.sendUserConfiguredFiles(component, containers, deployLogger());
+            FileSender.sendUserConfiguredFiles(component, containers, deployState.getDeployLogger());
         }
     }
 
