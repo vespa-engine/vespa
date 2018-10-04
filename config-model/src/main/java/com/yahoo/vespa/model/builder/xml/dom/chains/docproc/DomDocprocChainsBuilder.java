@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom.chains.docproc;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.ComponentType;
@@ -31,8 +32,8 @@ public class DomDocprocChainsBuilder  extends DomChainsBuilder<DocumentProcessor
     }
 
     @Override
-    protected DocprocChainsBuilder readChains(AbstractConfigProducer ancestor, List<Element> docprocChainsElements,
+    protected DocprocChainsBuilder readChains(DeployState deployState, AbstractConfigProducer ancestor, List<Element> docprocChainsElements,
                                               Map<String, ComponentType> outerComponentTypeByComponentName) {
-        return new DocprocChainsBuilder(ancestor, docprocChainsElements, outerComponentTypeByComponentName);
+        return new DocprocChainsBuilder(deployState, ancestor, docprocChainsElements, outerComponentTypeByComponentName);
     }
 }

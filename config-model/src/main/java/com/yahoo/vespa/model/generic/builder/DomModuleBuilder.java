@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.generic.builder;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -17,16 +18,16 @@ public class DomModuleBuilder extends VespaDomBuilder.DomConfigProducerBuilder<M
         this.name = name;
     }
 
-    private void addChildren(Module s, Element subServiceSpec) {
+    private void addChildren(DeployState deployState, Module s, Element subServiceSpec) {
         for (Element nodeSpec : XML.getChildren(subServiceSpec, "module")) {
-            new DomModuleBuilder(nodeSpec.getAttribute("name")).build(s, nodeSpec);
+            new DomModuleBuilder(nodeSpec.getAttribute("name")).build(deployState, s, nodeSpec);
         }
     }
 
     @Override
-    protected Module doBuild(AbstractConfigProducer ancestor, Element subServiceSpec) {
+    protected Module doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element subServiceSpec) {
         Module s = new Module(ancestor, name);
-        addChildren(s, subServiceSpec);
+        addChildren(deployState, s, subServiceSpec);
         return s;
     }
 }

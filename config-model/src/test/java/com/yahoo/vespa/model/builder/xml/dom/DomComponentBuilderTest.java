@@ -19,7 +19,7 @@ public class DomComponentBuilderTest extends DomBuilderTest {
 
     @Test
     public void ensureCorrectModel() {
-        Component<?, ?> handler = new DomComponentBuilder().doBuild(root, parse(
+        Component<?, ?> handler = new DomComponentBuilder().doBuild(root.getDeployState(), root, parse(
                 "<handler id='theId' class='theClass' bundle='theBundle' />"));
 
         BundleInstantiationSpecification instantiationSpecification = handler.model.bundleInstantiationSpec;
@@ -31,7 +31,7 @@ public class DomComponentBuilderTest extends DomBuilderTest {
     @Test
     @SuppressWarnings("unchecked")
     public void components_can_be_nested() {
-        Component<Component<?, ?>, ?> parent = new DomComponentBuilder().doBuild(root, parse(
+        Component<Component<?, ?>, ?> parent = new DomComponentBuilder().doBuild(root.getDeployState(), root, parse(
                 "<component id='parent'>",
                 "  <component id='child' />",
                 "</component>"));

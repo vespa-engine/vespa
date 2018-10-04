@@ -58,7 +58,7 @@ public class DomProviderBuilderTest extends DomBuilderTest {
 
     @Test
     public void testCertificateConfig_noProxy() {
-        provider = new DomProviderBuilder(new HashMap<String, ComponentsBuilder.ComponentType>()).doBuild(root, noProxy);
+        provider = new DomProviderBuilder(new HashMap<String, ComponentsBuilder.ComponentType>()).doBuild(root.getDeployState(), root, noProxy);
 
         ChainedComponent providerSearcher = provider.getInnerComponents().iterator().next();
         assertThat(providerSearcher, instanceOf(HttpProviderSearcher.class));
@@ -72,7 +72,7 @@ public class DomProviderBuilderTest extends DomBuilderTest {
 
     @Test
     public void testCertificatewConfig_defaultProxy() {
-        provider = new DomProviderBuilder(new HashMap<String, ComponentsBuilder.ComponentType>()).doBuild(root, defaultProxy);
+        provider = new DomProviderBuilder(new HashMap<String, ComponentsBuilder.ComponentType>()).doBuild(root.getDeployState(), root, defaultProxy);
 
         ProviderConfig.Builder providerBuilder = new ProviderConfig.Builder();
         ((HttpProvider)provider).getConfig(providerBuilder);
@@ -86,7 +86,7 @@ public class DomProviderBuilderTest extends DomBuilderTest {
 
     @Test
     public void testCertificateConfig_proprietaryProxy() {
-        provider = new DomProviderBuilder(new HashMap<String, ComponentsBuilder.ComponentType>()).doBuild(root, proprietaryProxy);
+        provider = new DomProviderBuilder(new HashMap<String, ComponentsBuilder.ComponentType>()).doBuild(root.getDeployState(), root, proprietaryProxy);
 
         ProviderConfig.Builder providerBuilder = new ProviderConfig.Builder();
         ((HttpProvider)provider).getConfig(providerBuilder);
@@ -101,7 +101,7 @@ public class DomProviderBuilderTest extends DomBuilderTest {
     @Test
     public void testFail_ycaProxyWithoutId() {
         try {
-            provider = new DomProviderBuilder(new HashMap<String, ComponentsBuilder.ComponentType>()).doBuild(root, illegal_proxyWithoutId);
+            provider = new DomProviderBuilder(new HashMap<String, ComponentsBuilder.ComponentType>()).doBuild(root.getDeployState(), root, illegal_proxyWithoutId);
             fail("Expected exception upon illegal xml.");
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), is("Provider 'yca-provider' must have a certificate application ID, since a certificate store proxy is given"));

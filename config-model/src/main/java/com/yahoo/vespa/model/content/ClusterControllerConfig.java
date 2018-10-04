@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -27,7 +28,7 @@ public class ClusterControllerConfig extends AbstractConfigProducer implements F
         }
 
         @Override
-        protected ClusterControllerConfig doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
+        protected ClusterControllerConfig doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             ModelElement tuning = null;
 
             ModelElement clusterTuning = clusterElement.getChild("tuning");

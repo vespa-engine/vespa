@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.http.xml;
 
 import com.yahoo.component.chain.model.ChainSpecification;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainBuilderBase;
 import com.yahoo.vespa.model.container.component.chain.Chain;
@@ -26,7 +27,7 @@ public class FilterChainBuilder extends DomChainBuilderBase<Filter, Chain<Filter
     }
 
     @Override
-    protected Chain<Filter> buildChain(AbstractConfigProducer ancestor, Element producerSpec, ChainSpecification specWithoutInnerComponents) {
+    protected Chain<Filter> buildChain(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec, ChainSpecification specWithoutInnerComponents) {
         return new Chain<>(specWithoutInnerComponents);
     }
 }

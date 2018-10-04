@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.builder.xml.dom.chains.processing;
 
 import com.yahoo.component.chain.model.ChainSpecification;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainBuilderBase;
@@ -22,8 +23,8 @@ public class DomProcessingChainBuilder extends DomChainBuilderBase<Processor, Pr
         super(Arrays.asList(ComponentsBuilder.ComponentType.processor), outerComponentTypeByComponentName);
     }
 
-    protected ProcessingChain buildChain(AbstractConfigProducer ancestor, Element producerSpec,
-                                        ChainSpecification specWithoutInnerComponents) {
+    protected ProcessingChain buildChain(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec,
+                                         ChainSpecification specWithoutInnerComponents) {
         return new ProcessingChain(specWithoutInnerComponents);
     }
 

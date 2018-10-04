@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.jersey.xml;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -20,12 +21,11 @@ import java.util.Map;
 public class RestApiBuilder extends VespaDomBuilder.DomConfigProducerBuilder<RestApi>  {
 
     @Override
-    protected RestApi doBuild(AbstractConfigProducer ancestor, Element spec) {
+    protected RestApi doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element spec) {
         String bindingPath = spec.getAttribute("path");
         RestApi restApi = new RestApi(bindingPath);
 
-        restApi.setRestApiContext(
-                createRestApiContext(ancestor, spec, bindingPath));
+        restApi.setRestApiContext(createRestApiContext(ancestor, spec, bindingPath));
         return restApi;
     }
 
@@ -46,8 +46,7 @@ public class RestApiBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Res
     }
 
     private RestApiContext.BundleInfo getBundle(Element bundleElement) {
-        RestApiContext.BundleInfo bundle = new RestApiContext.BundleInfo(
-                bundleElement.getAttribute("bundle"));
+        RestApiContext.BundleInfo bundle = new RestApiContext.BundleInfo(bundleElement.getAttribute("bundle"));
 
         for (Element packageElement : XML.getChildren(bundleElement, "package"))
             bundle.addPackageToScan(XML.getValue(packageElement));

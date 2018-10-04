@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.document.select.DocumentSelector;
@@ -93,7 +94,7 @@ public class DistributorCluster extends AbstractConfigProducer<Distributor> impl
         }
 
         @Override
-        protected DistributorCluster doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
+        protected DistributorCluster doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             final ModelElement clusterElement = new ModelElement(producerSpec);
             final ModelElement documentsNode = clusterElement.getChild("documents");
             final GcOptions gc = parseGcOptions(documentsNode);

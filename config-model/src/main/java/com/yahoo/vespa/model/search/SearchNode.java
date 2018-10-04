@@ -81,8 +81,9 @@ public class SearchNode extends AbstractService implements
         }
 
         @Override
-        protected SearchNode doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
-            return new SearchNode(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName, contentNode, flushOnShutdown, tuning);
+        protected SearchNode doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+            return new SearchNode(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName, contentNode,
+                                  flushOnShutdown, tuning, deployState.isHosted());
         }
     }
 
@@ -90,21 +91,25 @@ public class SearchNode extends AbstractService implements
      * Creates a SearchNode in elastic mode.
      */
     public static SearchNode create(AbstractConfigProducer parent, String name, int distributionKey, NodeSpec nodeSpec,
-                                    String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown, Optional<Tuning> tuning) {
-        return new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService, flushOnShutdown, tuning);
+                                    String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
+                                    Optional<Tuning> tuning, boolean isHostedVespa) {
+        return new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService,
+                              flushOnShutdown, tuning, isHostedVespa);
     }
 
     private SearchNode(AbstractConfigProducer parent, String name, int distributionKey, NodeSpec nodeSpec,
-                       String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown, Optional<Tuning> tuning) {
-        this(parent, name, nodeSpec, clusterName, flushOnShutdown, tuning);
+                       String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
+                       Optional<Tuning> tuning, boolean isHostedVespa) {
+        this(parent, name, nodeSpec, clusterName, flushOnShutdown, tuning, isHostedVespa);
         this.distributionKey = distributionKey;
         this.serviceLayerService = serviceLayerService;
         setPropertiesElastic(clusterName, distributionKey);
     }
 
-    private SearchNode(AbstractConfigProducer parent, String name, NodeSpec nodeSpec, String clusterName, boolean flushOnShutdown, Optional<Tuning> tuning) {
+    private SearchNode(AbstractConfigProducer parent, String name, NodeSpec nodeSpec, String clusterName,
+                       boolean flushOnShutdown, Optional<Tuning> tuning, boolean isHostedVespa) {
         super(parent, name);
-        this.isHostedVespa = stateIsHosted(deployStateFrom(parent));
+        this.isHostedVespa = isHostedVespa;
         this.nodeSpec = nodeSpec;
         this.clusterName = clusterName;
         this.flushOnShutdown = flushOnShutdown;

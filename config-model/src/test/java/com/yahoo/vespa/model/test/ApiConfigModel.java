@@ -54,12 +54,11 @@ public class ApiConfigModel extends ConfigModel {
         }
 
         @Override
-        public void doBuild(ApiConfigModel configModel, Element spec, ConfigModelContext modelContext) {
+        public void doBuild(ApiConfigModel configModel, Element spec, ConfigModelContext context) {
             NodeList pl = spec.getElementsByTagName("apiservice");
             if (pl.getLength() > 0) {
                 for (int i=0; i < pl.getLength(); i++) {
-                    configModel.apiServices.add(new DomTestServiceBuilder.ApiServiceBuilder(i).build(modelContext.getParentProducer(),
-                                           (Element) pl.item(i)));
+                    configModel.apiServices.add(new DomTestServiceBuilder.ApiServiceBuilder(i).build(context.getDeployState(), context.getParentProducer(), (Element) pl.item(i)));
                 }
             }
         }

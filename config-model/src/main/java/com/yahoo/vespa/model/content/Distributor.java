@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -25,7 +26,7 @@ public class Distributor extends ContentNode {
         }
 
         @Override
-        protected Distributor doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
+        protected Distributor doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             return new Distributor((DistributorCluster)ancestor, new ModelElement(producerSpec).getIntegerAttribute("distribution-key"),
                     clusterXml.getIntegerAttribute("distributor-base-port"), persistenceProvider);
         }

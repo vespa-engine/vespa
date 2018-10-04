@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.xml;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.ConfigModelUtils;
 import com.yahoo.config.model.builder.xml.XmlHelper;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -28,8 +29,8 @@ public class ContainerServiceBuilder extends VespaDomBuilder.DomConfigProducerBu
     }
 
     @Override
-    protected Container doBuild(AbstractConfigProducer parent, Element nodeElem) {
-        return new Container(parent, id, readServerPortOverrides(nodeElem), index);
+    protected Container doBuild(DeployState deployState, AbstractConfigProducer parent, Element nodeElem) {
+        return new Container(parent, id, readServerPortOverrides(nodeElem), index, deployState.isHosted());
     }
 
     private List<Container.PortOverride> readServerPortOverrides(Element spec) {

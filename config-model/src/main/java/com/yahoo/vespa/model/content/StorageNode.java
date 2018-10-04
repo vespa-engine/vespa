@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorBucketmoverConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
@@ -27,7 +28,7 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<StorageNode> {
         @Override
-        protected StorageNode doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
+        protected StorageNode doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             ModelElement e = new ModelElement(producerSpec);
             return new StorageNode((StorageCluster)ancestor, e.getDoubleAttribute("capacity"), e.getIntegerAttribute("distribution-key"), false);
         }

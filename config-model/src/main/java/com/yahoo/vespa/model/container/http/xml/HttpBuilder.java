@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.http.xml;
 
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -32,19 +33,19 @@ import static com.yahoo.vespa.model.container.http.AccessControl.ACCESS_CONTROL_
 public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> {
 
     @Override
-    protected Http doBuild(AbstractConfigProducer ancestor, Element spec) {
+    protected Http doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element spec) {
         FilterChains filterChains;
         List<Binding> bindings = new ArrayList<>();
         AccessControl accessControl = null;
 
         Element filteringElem = XML.getChild(spec, "filtering");
         if (filteringElem != null) {
-            filterChains = new FilterChainsBuilder().build(ancestor, filteringElem);
+            filterChains = new FilterChainsBuilder().build(deployState, ancestor, filteringElem);
             bindings = readFilterBindings(filteringElem);
 
             Element accessControlElem = XML.getChild(filteringElem, "access-control");
             if (accessControlElem != null) {
-                accessControl = buildAccessControl(ancestor, accessControlElem);
+                accessControl = buildAccessControl(deployState, ancestor, accessControlElem);
                 bindings.addAll(accessControl.getBindings());
                 filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
             }
@@ -55,14 +56,14 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         Http http = new Http(bindings, accessControl);
         http.setFilterChains(filterChains);
 
-        buildHttpServers(ancestor, http, spec);
+        buildHttpServers(deployState, ancestor, http, spec);
 
         return http;
     }
 
-    private AccessControl buildAccessControl(AbstractConfigProducer ancestor, Element accessControlElem) {
+    private AccessControl buildAccessControl(DeployState deployState, AbstractConfigProducer ancestor, Element accessControlElem) {
         String application = XmlHelper.getOptionalChildValue(accessControlElem, "application")
-                .orElse(getDeployedApplicationId(ancestor).value());
+                .orElse(getDeployedApplicationId(deployState, ancestor).value());
 
         AccessControl.Builder builder = new AccessControl.Builder(accessControlElem.getAttribute("domain"), application);
 
@@ -89,9 +90,9 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
     /**
      * Returns the id of the deployed application, or the default value if not explicitly set (self-hosted).
      */
-    private static ApplicationName getDeployedApplicationId(AbstractConfigProducer ancestor) {
+    private static ApplicationName getDeployedApplicationId(DeployState deployState, AbstractConfigProducer ancestor) {
         return getContainerCluster(ancestor)
-                .map(cluster -> cluster.getRoot().getDeployState().getProperties().applicationId().application())
+                .map(cluster -> deployState.getProperties().applicationId().application())
                 .orElse(ApplicationId.defaultId().application());
     }
 
@@ -122,11 +123,11 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         return result;
     }
 
-    private void buildHttpServers(AbstractConfigProducer ancestor, Http http, Element spec) {
-        http.setHttpServer(new JettyHttpServerBuilder().build(ancestor, spec));
+    private void buildHttpServers(DeployState deployState, AbstractConfigProducer ancestor, Http http, Element spec) {
+        http.setHttpServer(new JettyHttpServerBuilder().build(deployState, ancestor, spec));
     }
 
-    static int readPort(Element spec, DeployState deployState) {
+    static int readPort(Element spec, boolean isHosted, DeployLogger deployLogger) {
         String portString = spec.getAttribute("port");
 
         int port = Integer.parseInt(portString);
@@ -134,8 +135,8 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
             throw new IllegalArgumentException(String.format("Invalid port %d.", port));
 
         int legalPortInHostedVespa = Container.BASEPORT;
-        if (deployState.isHosted() && port != legalPortInHostedVespa) {
-            deployState.getDeployLogger().log(LogLevel.WARNING,
+        if (isHosted && port != legalPortInHostedVespa) {
+            deployLogger.log(LogLevel.WARNING,
                     String.format("Trying to set port to %d for http server with id %s. You cannot set port to anything else than %s",
                             port, spec.getAttribute("id"), legalPortInHostedVespa));
         }

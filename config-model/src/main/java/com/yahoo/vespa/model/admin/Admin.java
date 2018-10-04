@@ -72,14 +72,11 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     private FileDistributionConfigProducer fileDistribution;
     private final boolean multitenant;
 
-    public Admin(AbstractConfigProducer parent,
-                 Monitoring monitoring,
-                 Metrics metrics,
-                 Map<String, MetricsConsumer> legacyMetricsConsumers,
-                 boolean multitenant,
-                 FileDistributionConfigProducer fileDistributionConfigProducer) {
+    public Admin(AbstractConfigProducer parent, Monitoring monitoring, Metrics metrics,
+                 Map<String, MetricsConsumer> legacyMetricsConsumers, boolean multitenant,
+                 FileDistributionConfigProducer fileDistributionConfigProducer,boolean isHostedVespa) {
         super(parent, "admin");
-        this.isHostedVespa = stateIsHosted(deployStateFrom(parent));
+        this.isHostedVespa = isHostedVespa;
         this.monitoring = monitoring;
         this.metrics = metrics;
         this.legacyMetricsConsumers = legacyMetricsConsumers;

@@ -6,6 +6,7 @@ import com.yahoo.component.chain.dependencies.Dependencies;
 import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.model.ChainSpecification;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import com.yahoo.search.searchchain.model.federation.HttpProviderSpec;
 import com.yahoo.search.searchchain.model.federation.LocalProviderSpec;
@@ -171,8 +172,8 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
     }
 
     @Override
-    protected Provider buildChain(AbstractConfigProducer ancestor, Element providerElement,
-                                        ChainSpecification specWithoutInnerComponents) {
+    protected Provider buildChain(DeployState deployState, AbstractConfigProducer ancestor, Element providerElement,
+                                  ChainSpecification specWithoutInnerComponents) {
 
         ProviderReader providerReader = new ProviderReader(providerElement);
         if (providerReader.certificateApplicationId == null && providerReader.certificateProxy != null) {
@@ -185,17 +186,17 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
 
         Provider provider = buildProvider(specWithoutInnerComponents, providerReader, federationOptions);
 
-        Collection<Source> sources = buildSources(ancestor, providerElement);
+        Collection<Source> sources = buildSources(deployState, ancestor, providerElement);
         addSources(provider, sources);
 
         return provider;
     }
 
 
-    private Collection<Source> buildSources(AbstractConfigProducer ancestor, Element providerElement) {
+    private Collection<Source> buildSources(DeployState deployState, AbstractConfigProducer ancestor, Element providerElement) {
         List<Source> sources = new ArrayList<>();
         for (Element sourceElement : XML.getChildren(providerElement, "source")) {
-            sources.add(new DomSourceBuilder(outerComponentTypeByComponentName).build(ancestor, sourceElement));
+            sources.add(new DomSourceBuilder(outerComponentTypeByComponentName).build(deployState, ancestor, sourceElement));
         }
         return sources;
     }

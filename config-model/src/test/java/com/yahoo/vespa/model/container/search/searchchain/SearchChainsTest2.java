@@ -33,7 +33,8 @@ public class SearchChainsTest2 {
                 "  <chain id='default' inherits='nonexistent' />",
                 "</search>");
         try {
-            SearchChains chains = new DomSearchChainsBuilder().build(new MockRoot(), searchElem);
+            MockRoot root = new MockRoot();
+            SearchChains chains = new DomSearchChainsBuilder().build(root.getDeployState(), root, searchElem);
             chains.validate();
             fail("Expected exception when inheriting a nonexistent search chain.");
         } catch (Exception e) {

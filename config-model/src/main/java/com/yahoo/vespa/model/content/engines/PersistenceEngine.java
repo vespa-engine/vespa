@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.engines;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -19,7 +20,7 @@ public abstract class PersistenceEngine extends AbstractConfigProducer implement
      */
     public interface PersistenceFactory {
 
-        PersistenceEngine create(StorageNode storageNode, StorageGroup parentGroup, ModelElement storageNodeElement);
+        PersistenceEngine create(DeployState deployState, StorageNode storageNode, StorageGroup parentGroup, ModelElement storageNodeElement);
 
         /**
          * If a write request succeeds on some nodes and fails on others, causing request to

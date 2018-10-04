@@ -24,7 +24,7 @@ public abstract class LegacyConfigModelBuilder<MODEL extends ConfigModel> extend
     @Override
     public MODEL build(ConfigModelInstanceFactory<MODEL> factory, Element spec, ConfigModelContext context) {
         VespaDomBuilder.DomSimpleConfigProducerBuilder builder = new VespaDomBuilder.DomSimpleConfigProducerBuilder(context.getProducerId());
-        AbstractConfigProducer producer = builder.build(context.getParentProducer(), spec);
+        AbstractConfigProducer producer = builder.build(context.getDeployState(), context.getParentProducer(), spec);
         return super.build(factory, spec, context.withParent(producer));
     }
 

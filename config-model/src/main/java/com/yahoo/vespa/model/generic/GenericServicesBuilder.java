@@ -26,8 +26,8 @@ public class GenericServicesBuilder extends ConfigModelBuilder<GenericServicesMo
     }
 
     @Override
-    public void doBuild(GenericServicesModel model, Element spec, ConfigModelContext modelContext) {
+    public void doBuild(GenericServicesModel model, Element spec, ConfigModelContext context) {
         String name = spec.getAttribute("name");
-        model.addCluster(new DomServiceClusterBuilder(name).build(modelContext.getParentProducer(), spec));
+        model.addCluster(new DomServiceClusterBuilder(name).build(context.getDeployState(), context.getParentProducer(), spec));
     }
 }

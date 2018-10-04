@@ -26,7 +26,7 @@ public class ProcessingChainsTest extends DomBuilderTest {
     @Before
     public void setupProcessingChains() {
         DomProcessingBuilder processingBuilder = new DomProcessingBuilder(null);
-        processingBuilder.build(root, servicesXml());
+        processingBuilder.build(root.getDeployState(), root, servicesXml());
         processingChains = (Chains<ProcessingChain>)root.getChildren().get("processing");
     }
 

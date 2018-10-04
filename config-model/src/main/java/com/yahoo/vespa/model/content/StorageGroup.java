@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.application.api.DeployLogger;
@@ -202,7 +203,7 @@ public class StorageGroup {
             this.context = context;
         }
 
-        public StorageGroup buildRootGroup() {
+        public StorageGroup buildRootGroup(DeployState deployState) {
             Optional<ModelElement> group = Optional.ofNullable(clusterElement.getChild("group"));
             Optional<ModelElement> nodes = getNodes(clusterElement);
 
@@ -213,9 +214,9 @@ public class StorageGroup {
 
             GroupBuilder groupBuilder = collectGroup(group, nodes, null, null);
             if (owner.isHostedVespa()) {
-                return groupBuilder.buildHosted(owner, Optional.empty());
+                return groupBuilder.buildHosted(deployState, owner, Optional.empty());
             } else {
-                return groupBuilder.buildNonHosted(owner, Optional.empty());
+                return groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
             }
         }
 
@@ -251,16 +252,16 @@ public class StorageGroup {
              * @param parent the parent storage group, or empty if this is the root group
              * @return the storage group build by this
              */
-            public StorageGroup buildNonHosted(ContentCluster owner, Optional<GroupBuilder> parent) {
+            public StorageGroup buildNonHosted(DeployState deployState, ContentCluster owner, Optional<GroupBuilder> parent) {
                 for (GroupBuilder subGroup : subGroups) {
-                    storageGroup.subgroups.add(subGroup.buildNonHosted(owner, Optional.of(this)));
+                    storageGroup.subgroups.add(subGroup.buildNonHosted(deployState, owner, Optional.of(this)));
                 }
                 for (XmlNodeBuilder nodeBuilder : nodeBuilders) {
-                    storageGroup.nodes.add(nodeBuilder.build(owner, storageGroup));
+                    storageGroup.nodes.add(nodeBuilder.build(deployState, owner, storageGroup));
                 }
                 
                 if ( ! parent.isPresent() && subGroups.isEmpty() && nodeBuilders.isEmpty()) // no nodes or groups: create single node
-                    storageGroup.nodes.add(buildSingleNode(owner));
+                    storageGroup.nodes.add(buildSingleNode(deployState, owner));
                     
                 if ( ! parent.isPresent())
                     owner.redundancy().setTotalNodes(storageGroup.countNodes());
@@ -268,11 +269,11 @@ public class StorageGroup {
                 return storageGroup;
             }
 
-            private StorageNode buildSingleNode(ContentCluster parent) {
+            private StorageNode buildSingleNode(DeployState deployState, ContentCluster parent) {
                 int distributionKey = 0;
                 StorageNode sNode = new StorageNode(parent.getStorageNodes(), 1.0, distributionKey , false);
                 sNode.setHostResource(parent.getHostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
-                PersistenceEngine provider = parent.getPersistence().create(sNode, storageGroup, null);
+                PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, storageGroup, null);
                 new Distributor(parent.getDistributorNodes(), distributionKey, null, provider);
                 return sNode;
             }
@@ -284,7 +285,7 @@ public class StorageGroup {
              * @param parent the parent storage group, or empty if this is the root group
              * @return the storage group build by this
              */
-            public StorageGroup buildHosted(ContentCluster owner, Optional<GroupBuilder> parent) {
+            public StorageGroup buildHosted(DeployState deployState, ContentCluster owner, Optional<GroupBuilder> parent) {
                 if (storageGroup.getIndex() != null)
                     throw new IllegalArgumentException("Specifying individual groups is not supported on hosted applications");
                 Map<HostResource, ClusterMembership> hostMapping =
@@ -310,17 +311,17 @@ public class StorageGroup {
                         String groupIndex = String.valueOf(hostGroup.getKey().get().index());
                         StorageGroup subgroup = new StorageGroup(owner, groupIndex, groupIndex);
                         for (Map.Entry<HostResource, ClusterMembership> host : hostGroup.getValue().entrySet()) {
-                            subgroup.nodes.add(createStorageNode(owner, host.getKey(), subgroup, host.getValue()));
+                            subgroup.nodes.add(createStorageNode(deployState, owner, host.getKey(), subgroup, host.getValue()));
                         }
                         storageGroup.subgroups.add(subgroup);
                     }
                 }
                 else { // or otherwise just create the nodes directly on this group, or the explicitly enumerated subgroups
                     for (Map.Entry<HostResource, ClusterMembership> host : hostMapping.entrySet()) {
-                        storageGroup.nodes.add(createStorageNode(owner, host.getKey(), storageGroup, host.getValue()));
+                        storageGroup.nodes.add(createStorageNode(deployState, owner, host.getKey(), storageGroup, host.getValue()));
                     }
                     for (GroupBuilder subGroup : subGroups) {
-                        storageGroup.subgroups.add(subGroup.buildHosted(owner, Optional.of(this)));
+                        storageGroup.subgroups.add(subGroup.buildHosted(deployState, owner, Optional.of(this)));
                     }
                     if ( ! parent.isPresent())
                         owner.redundancy().setTotalNodes(storageGroup.countNodes());
@@ -367,10 +368,10 @@ public class StorageGroup {
                 this.element = element;
             }
 
-            public StorageNode build(ContentCluster parent, StorageGroup storageGroup) {
-                StorageNode sNode = new StorageNode.Builder().build(parent.getStorageNodes(), element.getXml());
-                PersistenceEngine provider = parent.getPersistence().create(sNode, storageGroup, element);
-                new Distributor.Builder(clusterElement, provider).build(parent.getDistributorNodes(), element.getXml());
+            public StorageNode build(DeployState deployState, ContentCluster parent, StorageGroup storageGroup) {
+                StorageNode sNode = new StorageNode.Builder().build(deployState, parent.getStorageNodes(), element.getXml());
+                PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, storageGroup, element);
+                new Distributor.Builder(clusterElement, provider).build(deployState, parent.getDistributorNodes(), element.getXml());
                 return sNode;
             }
         }
@@ -410,7 +411,7 @@ public class StorageGroup {
             Optional<NodesSpecification> nodeRequirement;
             if (nodesElement.isPresent() && nodesElement.get().getStringAttribute("count") != null ) // request these nodes
                 nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context));
-            else if (! nodesElement.isPresent() && subGroups.isEmpty() && owner.getRoot().getDeployState().isHosted()) // request one node
+            else if (! nodesElement.isPresent() && subGroups.isEmpty() && context.getDeployState().isHosted()) // request one node
                 nodeRequirement = Optional.of(NodesSpecification.nonDedicated(1, context));
             else // Nodes or groups explicitly listed, and/opr not hosted - resolve in GroupBuilder
                 nodeRequirement = Optional.empty();
@@ -466,13 +467,13 @@ public class StorageGroup {
             return subGroups;
         }
 
-        private static StorageNode createStorageNode(ContentCluster parent, HostResource hostResource, StorageGroup parentGroup, ClusterMembership clusterMembership) {
+        private static StorageNode createStorageNode(DeployState deployState, ContentCluster parent, HostResource hostResource, StorageGroup parentGroup, ClusterMembership clusterMembership) {
             StorageNode sNode = new StorageNode(parent.getStorageNodes(), null, clusterMembership.index(), clusterMembership.retired());
             sNode.setHostResource(hostResource);
             sNode.initService();
 
             // TODO: Supplying null as XML is not very nice
-            PersistenceEngine provider = parent.getPersistence().create(sNode, parentGroup, null);
+            PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, parentGroup, null);
             Distributor d = new Distributor(parent.getDistributorNodes(), clusterMembership.index(), null, provider);
             d.setHostResource(sNode.getHostResource());
             d.initService();

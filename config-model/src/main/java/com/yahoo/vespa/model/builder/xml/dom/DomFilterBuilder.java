@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.HttpFilter;
@@ -12,7 +13,7 @@ import org.w3c.dom.Element;
  */
 public class DomFilterBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Component> {
     @Override
-    protected Component doBuild(AbstractConfigProducer ancestor, Element element) {
+    protected Component doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element element) {
         return new HttpFilter(BundleInstantiationSpecificationBuilder.build(element));
     }
 }

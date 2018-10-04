@@ -12,6 +12,7 @@ import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Capacity;
@@ -23,13 +24,13 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
-import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.HostSystem;
 import com.yahoo.vespa.model.builder.xml.dom.DomClientProviderBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomComponentBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomFilterBuilder;
@@ -61,8 +62,6 @@ import com.yahoo.vespa.model.container.processing.ProcessingChains;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.GUIHandler;
 import com.yahoo.vespa.model.container.search.PageTemplates;
-import com.yahoo.vespa.model.container.search.QueryProfiles;
-import com.yahoo.vespa.model.container.search.SemanticRules;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.container.xml.document.DocumentFactoryBuilder;
 import com.yahoo.vespa.model.content.StorageGroup;
@@ -148,38 +147,40 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private ContainerCluster createContainerCluster(Element spec, ConfigModelContext modelContext) {
         return new VespaDomBuilder.DomConfigProducerBuilder<ContainerCluster>() {
             @Override
-            protected ContainerCluster doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
-                return new ContainerCluster(ancestor, modelContext.getProducerId(), modelContext.getProducerId());
+            protected ContainerCluster doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+                return new ContainerCluster(ancestor, modelContext.getProducerId(),
+                                            modelContext.getProducerId(), deployState);
             }
-        }.build(modelContext.getParentProducer(), spec);
+        }.build(modelContext.getDeployState(), modelContext.getParentProducer(), spec);
     }
 
     private void addClusterContent(ContainerCluster cluster, Element spec, ConfigModelContext context) {
+        DeployState deployState = context.getDeployState();
         DocumentFactoryBuilder.buildDocumentFactories(cluster, spec);
-        addConfiguredComponents(cluster, spec);
+        addConfiguredComponents(deployState, cluster, spec);
         addSecretStore(cluster, spec);
-        addHandlers(cluster, spec);
-        addRestApis(spec, cluster);
-        addServlets(spec, cluster);
-        addProcessing(spec, cluster);
-        addSearch(spec, cluster, context.getDeployState().getQueryProfiles(), context.getDeployState().getSemanticRules());
+        addHandlers(deployState, cluster, spec);
+        addRestApis(deployState, spec, cluster);
+        addServlets(deployState, spec, cluster);
+        addProcessing(deployState, spec, cluster);
+        addSearch(deployState, spec, cluster);
         addModelEvaluation(spec, cluster, context);
-        addDocproc(spec, cluster);
+        addDocproc(deployState, spec, cluster);
         addDocumentApi(spec, cluster);  // NOTE: Must be done after addSearch
 
         addDefaultHandlers(cluster);
         addStatusHandlers(cluster, context);
         setDefaultMetricConsumerFactory(cluster);
 
-        addHttp(spec, cluster);
+        addHttp(deployState, spec, cluster);
 
-        addAccessLogs(cluster, spec);
-        addRoutingAliases(cluster, spec, context.getDeployState().zone().environment());
+        addAccessLogs(deployState, cluster, spec);
+        addRoutingAliases(cluster, spec, deployState.zone().environment());
         addNodes(cluster, spec, context);
 
-        addClientProviders(spec, cluster);
-        addServerProviders(spec, cluster);
-        addLegacyFilters(spec, cluster);  // TODO: Remove for Vespa 7
+        addClientProviders(deployState, spec, cluster);
+        addServerProviders(deployState, spec, cluster);
+        addLegacyFilters(deployState, spec, cluster);  // TODO: Remove for Vespa 7
 
         addAthensCopperArgos(cluster, context);  // Must be added after nodes.
     }
@@ -243,12 +244,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private void addConfiguredComponents(ContainerCluster cluster, Element spec) {
+    private void addConfiguredComponents(DeployState deployState, ContainerCluster cluster, Element spec) {
         for (Element components : XML.getChildren(spec, "components")) {
             addIncludes(components);
-            addConfiguredComponents(cluster, components, "component");
+            addConfiguredComponents(deployState, cluster, components, "component");
         }
-        addConfiguredComponents(cluster, spec, "component");
+        addConfiguredComponents(deployState, cluster, spec, "component");
     }
 
     protected void setDefaultMetricConsumerFactory(ContainerCluster cluster) {
@@ -287,37 +288,36 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addStatisticsHandler();
     }
 
-    private void addClientProviders(Element spec, ContainerCluster cluster) {
+    private void addClientProviders(DeployState deployState, Element spec, ContainerCluster cluster) {
         for (Element clientSpec: XML.getChildren(spec, "client")) {
-            cluster.addComponent(new DomClientProviderBuilder().build(cluster, clientSpec));
+            cluster.addComponent(new DomClientProviderBuilder().build(deployState, cluster, clientSpec));
         }
     }
 
-    private void addServerProviders(Element spec, ContainerCluster cluster) {
-        addConfiguredComponents(cluster, spec, "server");
+    private void addServerProviders(DeployState deployState, Element spec, ContainerCluster cluster) {
+        addConfiguredComponents(deployState, cluster, spec, "server");
     }
 
-    private void addLegacyFilters(Element spec, ContainerCluster cluster) {
-        for (Component component : buildLegacyFilters(cluster, spec)) {
+    private void addLegacyFilters(DeployState deployState, Element spec, ContainerCluster cluster) {
+        for (Component component : buildLegacyFilters(deployState, cluster, spec)) {
             cluster.addComponent(component);
         }
     }
 
-    private List<Component> buildLegacyFilters(AbstractConfigProducer ancestor,
-                                               Element spec) {
+    private List<Component> buildLegacyFilters(DeployState deployState, AbstractConfigProducer ancestor, Element spec) {
         List<Component> components = new ArrayList<>();
 
         for (Element node : XML.getChildren(spec, "filter")) {
-            components.add(new DomFilterBuilder().build(ancestor, node));
+            components.add(new DomFilterBuilder().build(deployState, ancestor, node));
         }
         return components;
     }
 
-    protected void addAccessLogs(ContainerCluster cluster, Element spec) {
+    protected void addAccessLogs(DeployState deployState, ContainerCluster cluster, Element spec) {
         List<Element> accessLogElements = getAccessLogElements(spec);
 
         for (Element accessLog : accessLogElements) {
-            AccessLogBuilder.buildIfNotDisabled(cluster, accessLog).ifPresent(cluster::addComponent);
+            AccessLogBuilder.buildIfNotDisabled(deployState, cluster, accessLog).ifPresent(cluster::addComponent);
         }
 
         if (accessLogElements.isEmpty() && cluster.getSearch() != null)
@@ -329,15 +329,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
 
-    protected void addHttp(Element spec, ContainerCluster cluster) {
+    protected final void addHttp(DeployState deployState, Element spec, ContainerCluster cluster) {
         Element httpElement = XML.getChild(spec, "http");
         if (httpElement != null) {
-            cluster.setHttp(buildHttp(cluster, httpElement));
+            cluster.setHttp(buildHttp(deployState, cluster, httpElement));
         }
     }
 
-    private Http buildHttp(ContainerCluster cluster, Element httpElement) {
-        Http http = new HttpBuilder().build(cluster, httpElement);
+    private Http buildHttp(DeployState deployState, ContainerCluster cluster, Element httpElement) {
+        Http http = new HttpBuilder().build(deployState, cluster, httpElement);
 
         if (networking == Networking.disable)
             http.removeAllServers();
@@ -345,16 +345,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return http;
     }
 
-    protected void addRestApis(Element spec, ContainerCluster cluster) {
+    protected void addRestApis(DeployState deployState, Element spec, ContainerCluster cluster) {
         for (Element restApiElem : XML.getChildren(spec, "rest-api")) {
             cluster.addRestApi(
-                    new RestApiBuilder().build(cluster, restApiElem));
+                    new RestApiBuilder().build(deployState, cluster, restApiElem));
         }
     }
 
-    private void addServlets(Element spec, ContainerCluster cluster) {
+    private void addServlets(DeployState deployState, Element spec, ContainerCluster cluster) {
         for (Element servletElem : XML.getChildren(spec, "servlet"))
-            cluster.addServlet(new ServletBuilder().build(cluster, servletElem));
+            cluster.addServlet(new ServletBuilder().build(deployState, cluster, servletElem));
     }
 
     private void addDocumentApi(Element spec, ContainerCluster cluster) {
@@ -364,8 +364,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.setDocumentApi(containerDocumentApi);
     }
 
-    private void addDocproc(Element spec, ContainerCluster cluster) {
-        ContainerDocproc containerDocproc = buildDocproc(cluster, spec);
+    private void addDocproc(DeployState deployState, Element spec, ContainerCluster cluster) {
+        ContainerDocproc containerDocproc = buildDocproc(deployState, cluster, spec);
         if (containerDocproc == null) return;
         cluster.setDocproc(containerDocproc);
 
@@ -374,16 +374,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 docprocOptions.maxConcurrentFactor, docprocOptions.documentExpansionFactor, docprocOptions.containerCoreMemory));
     }
 
-    private void addSearch(Element spec, ContainerCluster cluster, QueryProfiles queryProfiles, SemanticRules semanticRules) {
+    private void addSearch(DeployState deployState, Element spec, ContainerCluster cluster) {
         Element searchElement = XML.getChild(spec, "search");
         if (searchElement == null) return;
 
         addIncludes(searchElement);
-        cluster.setSearch(buildSearch(cluster, searchElement, queryProfiles, semanticRules));
+        cluster.setSearch(buildSearch(deployState, cluster, searchElement));
 
         addSearchHandler(cluster, searchElement);
         addGUIHandler(cluster);
-        validateAndAddConfiguredComponents(cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
+        validateAndAddConfiguredComponents(deployState, cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
     }
 
     private void addModelEvaluation(Element spec, ContainerCluster cluster, ConfigModelContext context) {
@@ -395,25 +395,24 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.setModelEvaluation(new ContainerModelEvaluation(cluster, profiles));
     }
 
-    private void addProcessing(Element spec, ContainerCluster cluster) {
+    private void addProcessing(DeployState deployState, Element spec, ContainerCluster cluster) {
         Element processingElement = XML.getChild(spec, "processing");
         if (processingElement == null) return;
 
         addIncludes(processingElement);
-        cluster.setProcessingChains(new DomProcessingBuilder(null).build(cluster, processingElement),
+        cluster.setProcessingChains(new DomProcessingBuilder(null).build(deployState, cluster, processingElement),
                                     serverBindings(processingElement, ProcessingChains.defaultBindings));
-        validateAndAddConfiguredComponents(cluster, processingElement, "renderer", ContainerModelBuilder::validateRendererElement);
+        validateAndAddConfiguredComponents(deployState, cluster, processingElement, "renderer", ContainerModelBuilder::validateRendererElement);
     }
 
-    private ContainerSearch buildSearch(ContainerCluster containerCluster, Element producerSpec,
-                                        QueryProfiles queryProfiles, SemanticRules semanticRules) {
-        SearchChains searchChains = new DomSearchChainsBuilder(null, false).build(containerCluster, producerSpec);
+    private ContainerSearch buildSearch(DeployState deployState, ContainerCluster containerCluster, Element producerSpec) {
+        SearchChains searchChains = new DomSearchChainsBuilder(null, false).build(deployState, containerCluster, producerSpec);
 
         ContainerSearch containerSearch = new ContainerSearch(containerCluster, searchChains, new ContainerSearch.Options());
 
-        applyApplicationPackageDirectoryConfigs(containerCluster.getRoot().getDeployState().getApplicationPackage(), containerSearch);
-        containerSearch.setQueryProfiles(queryProfiles);
-        containerSearch.setSemanticRules(semanticRules);
+        applyApplicationPackageDirectoryConfigs(deployState.getApplicationPackage(), containerSearch);
+        containerSearch.setQueryProfiles(deployState.getQueryProfiles());
+        containerSearch.setSemanticRules(deployState.getSemanticRules());
 
         return containerSearch;
     }
@@ -423,10 +422,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         containerSearch.setPageTemplates(PageTemplates.create(applicationPackage));
     }
 
-    private void addHandlers(ContainerCluster cluster, Element spec) {
+    private void addHandlers(DeployState deployState, ContainerCluster cluster, Element spec) {
         for (Element component: XML.getChildren(spec, "handler")) {
             cluster.addComponent(
-                    new DomHandlerBuilder().build(cluster, component));
+                    new DomHandlerBuilder().build(deployState, cluster, component));
         }
     }
 
@@ -446,14 +445,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addStandaloneNode(ContainerCluster cluster) {
-        Container container =  new Container(cluster, "standalone", cluster.getContainers().size());
+        Container container =  new Container(cluster, "standalone", cluster.getContainers().size(), cluster.isHostedVespa());
         cluster.addContainers(Collections.singleton(container));
     }
 
     private void addNodesFromXml(ContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         if (nodesElement == null) { // default single node on localhost
-            Container node = new Container(cluster, "container.0", 0);
+            Container node = new Container(cluster, "container.0", 0, cluster.isHostedVespa());
             HostResource host = allocateSingleNodeHost(cluster, log, containerElement, context);
             node.setHostResource(host);
             node.initService();
@@ -480,7 +479,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         else if (nodesElement.hasAttribute("of")) // hosted node spec referencing a content cluster
             return createNodesFromContentServiceReference(cluster, nodesElement, context);
         else // the non-hosted option
-            return createNodesFromNodeList(cluster, nodesElement);
+            return createNodesFromNodeList(context.getDeployState(), cluster, nodesElement);
     }
 
     private void applyRoutingAliasProperties(List<Container> result, ContainerCluster cluster) {
@@ -516,7 +515,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     
     /** Creates a single host when there is no nodes tag */
     private HostResource allocateSingleNodeHost(ContainerCluster cluster, DeployLogger logger, Element containerElement, ConfigModelContext context) {
-        if (cluster.getRoot().getDeployState().isHosted()) {
+        DeployState deployState = context.getDeployState();
+        HostSystem hostSystem = cluster.getHostSystem();
+        if (deployState.isHosted()) {
             Optional<HostResource> singleContentHost = getHostResourceFromContentClusters(cluster, containerElement, context);
             if (singleContentHost.isPresent()) { // there is a content cluster; put the container on its first node 
                 return singleContentHost.get();
@@ -524,16 +525,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             else { // request 1 node
                 ClusterSpec clusterSpec = ClusterSpec.request(ClusterSpec.Type.container,
                                                               ClusterSpec.Id.from(cluster.getName()),
-                                                              context.getDeployState().getWantedNodeVespaVersion(),
+                                                              deployState.getWantedNodeVespaVersion(),
                                                               false);
                 Capacity capacity = Capacity.fromNodeCount(1,
                                                            Optional.empty(),
                                                            false,
-                                                           ! context.getDeployState().getProperties().isBootstrap());
-                return cluster.getHostSystem().allocateHosts(clusterSpec, capacity, 1, logger).keySet().iterator().next();
+                                                           ! deployState.getProperties().isBootstrap());
+                return hostSystem.allocateHosts(clusterSpec, capacity, 1, logger).keySet().iterator().next();
             }
         } else {
-            return cluster.getHostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);
+            return hostSystem.getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);
         }
     }
 
@@ -622,7 +623,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         List<Container> nodes = new ArrayList<>();
         for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
             String id = "container." + entry.getValue().index();
-            Container container = new Container(cluster, id, entry.getValue().retired(), entry.getValue().index());
+            Container container = new Container(cluster, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa());
             container.setHostResource(entry.getKey());
             container.initService();
             nodes.add(container);
@@ -630,11 +631,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return nodes;
     }
 
-    private List<Container> createNodesFromNodeList(ContainerCluster cluster, Element nodesElement) {
+    private List<Container> createNodesFromNodeList(DeployState deployState, ContainerCluster cluster, Element nodesElement) {
         List<Container> nodes = new ArrayList<>();
         int nodeIndex = 0;
         for (Element nodeElem: XML.getChildren(nodesElement, "node")) {
-            nodes.add(new ContainerServiceBuilder("container." + nodeIndex, nodeIndex).build(cluster, nodeElem));
+            nodes.add(new ContainerServiceBuilder("container." + nodeIndex, nodeIndex).build(deployState, cluster, nodeElem));
             nodeIndex++;
         }
         return nodes;
@@ -718,13 +719,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return new ContainerDocumentApi(cluster, documentApiOptions);
     }
 
-    private ContainerDocproc buildDocproc(ContainerCluster cluster, Element spec) {
+    private ContainerDocproc buildDocproc(DeployState deployState, ContainerCluster cluster, Element spec) {
         Element docprocElement = XML.getChild(spec, "document-processing");
         if (docprocElement == null)
             return null;
 
         addIncludes(docprocElement);
-        DocprocChains chains = new DomDocprocChainsBuilder(null, false).build(cluster, docprocElement);
+        DocprocChains chains = new DomDocprocChainsBuilder(null, false).build(deployState, cluster, docprocElement);
 
         ContainerDocproc.Options docprocOptions = DocprocOptionsBuilder.build(docprocElement);
         return new ContainerDocproc(cluster, chains, docprocOptions, !standaloneBuilder);
@@ -757,16 +758,16 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    public static void addConfiguredComponents(ContainerCluster cluster, Element spec, String componentName) {
+    public static void addConfiguredComponents(DeployState deployState, ContainerCluster cluster, Element spec, String componentName) {
         for (Element node : XML.getChildren(spec, componentName)) {
-            cluster.addComponent(new DomComponentBuilder().build(cluster, node));
+            cluster.addComponent(new DomComponentBuilder().build(deployState, cluster, node));
         }
     }
 
-    public static void validateAndAddConfiguredComponents(ContainerCluster cluster, Element spec, String componentName, Consumer<Element> elementValidator) {
+    public static void validateAndAddConfiguredComponents(DeployState deployState, ContainerCluster cluster, Element spec, String componentName, Consumer<Element> elementValidator) {
         for (Element node : XML.getChildren(spec, componentName)) {
             elementValidator.accept(node); // throws exception here if something is wrong
-            cluster.addComponent(new DomComponentBuilder().build(cluster, node));
+            cluster.addComponent(new DomComponentBuilder().build(deployState, cluster, node));
         }
     }
 

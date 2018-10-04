@@ -9,6 +9,7 @@ import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.builder.xml.dom.DomAdminV2Builder;
@@ -44,12 +45,12 @@ public class AdminModel extends ConfigModel {
     private Collection<ContainerModel> getContainerModels() { return containerModels; }
 
     @Override
-    public void prepare(ConfigModelRepo configModelRepo) {
+    public void prepare(ConfigModelRepo configModelRepo, DeployState deployState) {
         verifyClusterControllersOnlyDefinedForContent(configModelRepo);
         if (admin == null) return;
         if (admin.getClusterControllers() != null)
-            admin.getClusterControllers().prepare();
-        admin.getLogServerContainerCluster().ifPresent(ContainerCluster::prepare);
+            admin.getClusterControllers().prepare(deployState);
+        admin.getLogServerContainerCluster().ifPresent((ContainerCluster cc) -> cc.prepare(deployState));
     }
 
     private void verifyClusterControllersOnlyDefinedForContent(ConfigModelRepo configModelRepo) {
@@ -81,7 +82,7 @@ public class AdminModel extends ConfigModel {
                                                                  modelContext.getDeployState().getFileRegistry(),
                                                                  properties.multitenant(),
                                                                  properties.configServerSpecs());
-            model.admin = domBuilder.build(parent, adminElement);
+            model.admin = domBuilder.build(modelContext.getDeployState(), parent, adminElement);
             // TODO: Is required since other models depend on admin.
             if (parent instanceof ApplicationConfigProducerRoot) {
                 ((ApplicationConfigProducerRoot)parent).setupAdmin(model.admin);
@@ -110,7 +111,7 @@ public class AdminModel extends ConfigModel {
                                                                  properties.multitenant(),
                                                                  properties.configServerSpecs(),
                                                                  model.getContainerModels());
-            model.admin = domBuilder.build(parent, adminElement);
+            model.admin = domBuilder.build(modelContext.getDeployState(), parent, adminElement);
             // TODO: Is required since other models depend on admin.
             if (parent instanceof ApplicationConfigProducerRoot) {
                 ((ApplicationConfigProducerRoot)parent).setupAdmin(model.admin);

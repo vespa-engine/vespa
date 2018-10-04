@@ -15,7 +15,7 @@ public abstract class SearchChainsTestBase extends DomBuilderTest {
 
     @Before
     public void setupSearchChains() {
-        SearchChains searchChains = new DomSearchChainsBuilder().build(root, servicesXml());
+        SearchChains searchChains = new DomSearchChainsBuilder().build(root.getDeployState(), root, servicesXml());
         searchChains.initialize(MockSearchClusters.twoMockClusterSpecsByName(root),
                                 new BinaryScaledAmount(100, BinaryPrefix.mega));
         root.freezeModelTopology();

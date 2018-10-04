@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.searchlib.TranslogserverConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
@@ -28,7 +29,7 @@ public class TransactionLogServer extends AbstractService  {
         }
 
         @Override
-        protected TransactionLogServer doBuild(AbstractConfigProducer ancestor, Element producerSpec) {
+        protected TransactionLogServer doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             return new TransactionLogServer(ancestor, clusterName);
         }
     }

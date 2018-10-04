@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.container.xml;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.collections.CollectionUtil;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
-import com.yahoo.config.model.test.TestUtil;
 import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.http.AccessControl;
@@ -61,7 +60,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "    </filtering>",
                 "  </http>");
 
-        Http http = new HttpBuilder().build(root, clusterElem);
+        Http http = new HttpBuilder().build(root.getDeployState(), root, clusterElem);
         root.freezeModelTopology();
 
         assertTrue(http.getFilterChains().hasChain(AccessControl.ACCESS_CONTROL_CHAIN_ID));
@@ -79,7 +78,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "    </filtering>",
                 "  </http>");
 
-        Http http = new HttpBuilder().build(root, clusterElem);
+        Http http = new HttpBuilder().build(root.getDeployState(), root, clusterElem);
         root.freezeModelTopology();
         AccessControl accessControl = http.getAccessControl().get();
 
@@ -97,7 +96,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "    </filtering>",
                 "  </http>");
 
-        Http http = new HttpBuilder().build(root, clusterElem);
+        Http http = new HttpBuilder().build(root.getDeployState(), root, clusterElem);
         root.freezeModelTopology();
 
         assertFalse("Wrong default value for read.", http.getAccessControl().get().readEnabled);
@@ -113,7 +112,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 "    </filtering>",
                 "  </http>");
 
-        Http http = new HttpBuilder().build(root, clusterElem);
+        Http http = new HttpBuilder().build(root.getDeployState(), root, clusterElem);
         root.freezeModelTopology();
 
         assertTrue("Given read value not honoured.", http.getAccessControl().get().readEnabled);

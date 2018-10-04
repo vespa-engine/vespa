@@ -4,10 +4,8 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
@@ -16,7 +14,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
 import com.yahoo.search.config.QrStartConfig;
-import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.vespa.model.Host;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerClusterVerifier;
@@ -81,7 +78,7 @@ public class ContainerClusterTest {
                                                      .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region")))
                                                      .build();
         MockRoot root = new MockRoot("foo", state);
-        ContainerCluster cluster = new ContainerCluster(root, "container0", "container1");
+        ContainerCluster cluster = new ContainerCluster(root, "container0", "container1", state);
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
         cluster.getConfig(builder);
         ConfigserverConfig config = new ConfigserverConfig(builder);
@@ -112,8 +109,8 @@ public class ContainerClusterTest {
         MockRoot root = new MockRoot("foo", state);
 
         ContainerCluster cluster = extraComponents.isPresent()
-                ? new ContainerCluster(root, "container0", "container1", extraComponents.get())
-                : new ContainerCluster(root, "container0", "container1");
+                ? new ContainerCluster(root, "container0", "container1", extraComponents.get(), state)
+                : new ContainerCluster(root, "container0", "container1", state);
         if (isCombinedCluster)
             cluster.setHostClusterId("test-content-cluster");
         cluster.setMemoryPercentage(memoryPercentage);
@@ -258,7 +255,7 @@ public class ContainerClusterTest {
     public void requireThatRoutingProviderIsDisabledForNonHosted() {
         DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(false).build()).build();
         MockRoot root = new MockRoot("foo", state);
-        ContainerCluster cluster = new ContainerCluster(root, "container0", "container1");
+        ContainerCluster cluster = new ContainerCluster(root, "container0", "container1", state);
         RoutingProviderConfig.Builder builder = new RoutingProviderConfig.Builder();
         cluster.getConfig(builder);
         RoutingProviderConfig config = new RoutingProviderConfig(builder);
@@ -268,21 +265,21 @@ public class ContainerClusterTest {
 
 
     private static void addContainer(ContainerCluster cluster, String name, String hostName) {
-        Container container = new Container(cluster, name, 0);
+        Container container = new Container(cluster, name, 0, cluster.isHostedVespa());
         container.setHostResource(new HostResource(new Host(null, hostName)));
         container.initService();
         cluster.addContainer(container);
     }
 
     private static void addClusterController(ContainerCluster cluster, String hostName) {
-        Container container = new ClusterControllerContainer(cluster, 1, false);
+        Container container = new ClusterControllerContainer(cluster, 1, false, cluster.isHostedVespa());
         container.setHostResource(new HostResource(new Host(null, hostName)));
         container.initService();
         cluster.addContainer(container);
     }
 
     private static ContainerCluster newContainerCluster() {
-        ContainerCluster cluster = new ContainerCluster(null, "subId", "name");
+        ContainerCluster cluster = new ContainerCluster(null, "subId", "name", DeployState.createTestState());
         addContainer(cluster, "c1", "host-c1");
         addContainer(cluster, "c2", "host-c2");
         return cluster;

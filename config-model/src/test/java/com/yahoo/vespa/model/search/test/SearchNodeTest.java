@@ -47,14 +47,15 @@ public class SearchNodeTest {
         root.freezeModelTopology();
     }
 
-    private static SearchNode createSearchNode(AbstractConfigProducer parent, String name, int distributionKey, NodeSpec nodeSpec, boolean flushOnShutDown) {
-        return SearchNode.create(parent, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown, Optional.empty());
+    private static SearchNode createSearchNode(AbstractConfigProducer parent, String name, int distributionKey,
+                                               NodeSpec nodeSpec, boolean flushOnShutDown, boolean isHosted) {
+        return SearchNode.create(parent, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown, Optional.empty(), isHosted);
     }
 
     @Test
     public void requireThatBasedirIsCorrectForElasticMode() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false);
+        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted());
         prepare(root, node);
         assertBaseDir(Defaults.getDefaults().underVespaHome("var/db/vespa/search/cluster.mycluster/n3"), node);
     }
@@ -62,7 +63,7 @@ public class SearchNodeTest {
     @Test
     public void requireThatPreShutdownCommandIsEmptyWhenNotActivated() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false);
+        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted());
         node.setHostResource(new HostResource(new Host(node, "mynbode")));
         node.initService();
         assertFalse(node.getPreShutdownCommand().isPresent());
@@ -71,7 +72,7 @@ public class SearchNodeTest {
     @Test
     public void requireThatPreShutdownCommandUsesPrepareRestartWhenActivated() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true);
+        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, root.getDeployState().isHosted());
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
         node.initService();
         assertTrue(node.getPreShutdownCommand().isPresent());

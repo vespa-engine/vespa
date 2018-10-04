@@ -37,10 +37,10 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
         this.runsConfigServer = runsConfigServer;
         this.hostname = hostname;
         if (parent instanceof HostSystem)
-            checkName((HostSystem) parent, hostname);            
+            checkName(hostname);
     }
 
-    private void checkName(HostSystem parent, String hostname) {
+    private void checkName(String hostname) {
         // Give a warning if the host does not exist
         try {
             Object address = java.net.InetAddress.getByName(hostname);

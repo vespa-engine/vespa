@@ -47,7 +47,7 @@ public class SimpleConfigModel extends ConfigModel implements TestApi {
         }
 
         @Override
-        public void doBuild(SimpleConfigModel configModel, Element spec, ConfigModelContext modelContext) {
+        public void doBuild(SimpleConfigModel configModel, Element spec, ConfigModelContext context) {
             int s,p; s=p=0;
 
             // Validate the services given in the config
@@ -62,11 +62,11 @@ public class SimpleConfigModel extends ConfigModel implements TestApi {
                 String service = e.getTagName();
 
                 if (service.equals("simpleservice")) {
-                    configModel.simpleServices.add(new DomTestServiceBuilder.SimpleServiceBuilder(s).build(modelContext.getParentProducer(), e));
+                    configModel.simpleServices.add(new DomTestServiceBuilder.SimpleServiceBuilder(s).build(context.getDeployState(), context.getParentProducer(), e));
                     s++;
                 }
                 else if (service.equals("parentservice")) {
-                    configModel.parentServices.add(new DomTestServiceBuilder.ParentServiceBuilder(p).build(modelContext.getParentProducer(), e));
+                    configModel.parentServices.add(new DomTestServiceBuilder.ParentServiceBuilder(p).build(context.getDeployState(), context.getParentProducer(), e));
                     p++;
                 }
                 else {

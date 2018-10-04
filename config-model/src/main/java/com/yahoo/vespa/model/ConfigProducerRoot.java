@@ -39,11 +39,6 @@ public interface ConfigProducerRoot extends ConfigProducer {
      * @return A config instance of the given type
      */
     public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> clazz, String configId);
-    
-    /**
-     * Get the global deploy state of this model.
-     */
-    DeployState getDeployState();
 
     FileDistributor getFileDistributor();
 

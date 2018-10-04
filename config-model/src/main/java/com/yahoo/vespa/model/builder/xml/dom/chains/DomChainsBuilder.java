@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.builder.xml.dom.chains;
 
 import com.yahoo.config.application.Xml;
-import com.yahoo.text.XML;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.ComponentType;
@@ -41,13 +41,13 @@ class DomChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chai
     protected abstract CHAINS newChainsInstance(AbstractConfigProducer parent);
 
     @Override
-    protected final CHAINS doBuild(AbstractConfigProducer parent, Element chainsElement) {
+    protected final CHAINS doBuild(DeployState deployState, AbstractConfigProducer parent, Element chainsElement) {
         CHAINS chains = newChainsInstance(parent);
 
-        List<Element> allChainElements = allChainElements(parent, chainsElement);
+        List<Element> allChainElements = allChainElements(deployState, parent, chainsElement);
         if (! allChainElements.isEmpty()) {
-            ComponentsBuilder<COMPONENT> outerComponentsBuilder = readOuterComponents(chains, allChainElements);
-            ChainsBuilder<COMPONENT, CHAIN> chainsBuilder = readChains(chains, allChainElements,
+            ComponentsBuilder<COMPONENT> outerComponentsBuilder = readOuterComponents(deployState, chains, allChainElements);
+            ChainsBuilder<COMPONENT, CHAIN> chainsBuilder = readChains(deployState, chains, allChainElements,
                                                                        outerComponentsBuilder.getComponentTypeByComponentName());
 
             addOuterComponents(chains, outerComponentsBuilder);
@@ -56,24 +56,24 @@ class DomChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chai
         return chains;
     }
 
-    private List<Element> allChainElements(AbstractConfigProducer ancestor, Element chainsElement) {
+    private List<Element> allChainElements(DeployState deployState, AbstractConfigProducer ancestor, Element chainsElement) {
         List<Element> chainsElements = new ArrayList<>();
         if (outerChainsElem != null)
             chainsElements.add(outerChainsElem);
         chainsElements.add(chainsElement);
 
         if (appPkgChainsDir != null)
-            chainsElements.addAll(Xml.allElemsFromPath(ancestor.getRoot().getDeployState().getApplicationPackage(), appPkgChainsDir));
+            chainsElements.addAll(Xml.allElemsFromPath(deployState.getApplicationPackage(), appPkgChainsDir));
 
         return chainsElements;
     }
 
-    private ComponentsBuilder<COMPONENT> readOuterComponents(AbstractConfigProducer ancestor, List<Element> chainsElems) {
-        return new ComponentsBuilder<>(ancestor, allowedComponentTypes, chainsElems, null);
+    private ComponentsBuilder<COMPONENT> readOuterComponents(DeployState deployState, AbstractConfigProducer ancestor, List<Element> chainsElems) {
+        return new ComponentsBuilder<>(deployState, ancestor, allowedComponentTypes, chainsElems, null);
     }
 
     protected abstract
-    ChainsBuilder<COMPONENT, CHAIN> readChains(AbstractConfigProducer ancestor, List<Element> allChainsElems,
+    ChainsBuilder<COMPONENT, CHAIN> readChains(DeployState deployState, AbstractConfigProducer ancestor, List<Element> allChainsElems,
                                                Map<String, ComponentsBuilder.ComponentType> outerComponentTypeByComponentName);
 
     private void addOuterComponents(CHAINS chains, ComponentsBuilder<COMPONENT> outerComponentsBuilder) {

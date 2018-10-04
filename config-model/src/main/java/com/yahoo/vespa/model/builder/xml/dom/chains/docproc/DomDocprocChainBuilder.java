@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.builder.xml.dom.chains.docproc;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.component.chain.model.ChainSpecification;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainBuilderBase;
@@ -24,7 +25,8 @@ public class DomDocprocChainBuilder extends DomChainBuilderBase<DocumentProcesso
         super(Arrays.asList(ComponentsBuilder.ComponentType.documentprocessor), outerComponentTypeByComponentName);
     }
 
-    protected DocprocChain buildChain(AbstractConfigProducer ancestor, Element producerSpec,
+    @Override
+    protected DocprocChain buildChain(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec,
                                       ChainSpecification specWithoutInnerComponents) {
         Map<Pair<String, String>, String> fieldNameSchemaMap = DocumentProcessorModelBuilder.parseFieldNameSchemaMap(producerSpec);
         return new DocprocChain(specWithoutInnerComponents, fieldNameSchemaMap);

@@ -1,12 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.engines;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.StorageGroup;
 import com.yahoo.vespa.model.content.StorageNode;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.search.SearchNode;
 
 /**
  * Initializes the engines engine on each storage node. May include creating other
@@ -21,8 +21,8 @@ public class ProtonEngine {
         }
 
         @Override
-        public PersistenceEngine create(StorageNode storageNode, StorageGroup parentGroup, ModelElement storageNodeElement) {
-            search.addSearchNode(storageNode, parentGroup, storageNodeElement);
+        public PersistenceEngine create(DeployState deployState, StorageNode storageNode, StorageGroup parentGroup, ModelElement storageNodeElement) {
+            search.addSearchNode(deployState, storageNode, parentGroup, storageNodeElement);
             return new ProtonProvider(storageNode);
         }
 

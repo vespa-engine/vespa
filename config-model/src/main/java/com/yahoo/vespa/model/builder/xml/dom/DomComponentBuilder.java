@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -28,9 +29,10 @@ public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilde
         this.namespace = namespace;
     }
 
-    protected Component doBuild(AbstractConfigProducer ancestor, Element spec) {
+    @Override
+    protected Component doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element spec) {
         Component component = buildComponent(spec);
-        addChildren(ancestor, spec, component);
+        addChildren(deployState, ancestor, spec, component);
         return component;
     }
 
@@ -41,14 +43,14 @@ public class DomComponentBuilder extends VespaDomBuilder.DomConfigProducerBuilde
         return new Component<Component<?, ?>, ComponentModel>(new ComponentModel(bundleSpec));
     }
 
-    public static void addChildren(AbstractConfigProducer ancestor, Element componentNode, Component<? super Component<?, ?>, ?> component) {
+    public static void addChildren(DeployState deployState, AbstractConfigProducer ancestor, Element componentNode, Component<? super Component<?, ?>, ?> component) {
         for (Element childNode : XML.getChildren(componentNode, elementName)) {
-            addAndInjectChild(ancestor, component, childNode);
+            addAndInjectChild(deployState, ancestor, component, childNode);
         }
     }
 
-    private static void addAndInjectChild(AbstractConfigProducer ancestor, Component<? super Component<?, ?>, ?> component, Element childNode) {
-        Component<?, ?> child = new DomComponentBuilder(component.getComponentId()).build(ancestor, childNode);
+    private static void addAndInjectChild(DeployState deployState, AbstractConfigProducer ancestor, Component<? super Component<?, ?>, ?> component, Element childNode) {
+        Component<?, ?> child = new DomComponentBuilder(component.getComponentId()).build(deployState, ancestor, childNode);
         component.addComponent(child);
         component.inject(child);
     }

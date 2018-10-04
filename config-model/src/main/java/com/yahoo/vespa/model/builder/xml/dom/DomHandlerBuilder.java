@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
@@ -16,7 +17,7 @@ import org.w3c.dom.Element;
 public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Handler> {
 
     @Override
-    protected Handler doBuild(AbstractConfigProducer ancestor, Element handlerElement) {
+    protected Handler doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element handlerElement) {
         Handler<? super Component<?, ?>> handler = getHandler(handlerElement);
 
         for (Element binding : XML.getChildren(handlerElement, "binding"))
@@ -25,14 +26,13 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
         for (Element clientBinding : XML.getChildren(handlerElement, "clientBinding"))
             handler.addClientBindings(XML.getValue(clientBinding));
 
-        DomComponentBuilder.addChildren(ancestor, handlerElement, handler);
+        DomComponentBuilder.addChildren(deployState, ancestor, handlerElement, handler);
 
         return handler;
     }
 
     protected Handler<? super Component<?, ?>> getHandler(Element handlerElement) {
         BundleInstantiationSpecification bundleSpec = BundleInstantiationSpecificationBuilder.build(handlerElement);
-        return new Handler<>(
-                new ComponentModel(bundleSpec));
+        return new Handler<>(new ComponentModel(bundleSpec));
     }
 }

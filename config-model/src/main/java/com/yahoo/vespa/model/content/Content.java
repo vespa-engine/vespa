@@ -12,10 +12,12 @@ import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.admin.AdminModel;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.log.LogLevel;
-import com.yahoo.searchdefinition.derived.RankProfileList;
-import com.yahoo.vespa.model.*;
+import com.yahoo.vespa.model.AbstractService;
+import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -31,7 +33,13 @@ import com.yahoo.vespa.model.search.IndexingDocprocChain;
 import com.yahoo.vespa.model.search.SearchNode;
 import org.w3c.dom.Element;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -158,7 +166,7 @@ public class Content extends ConfigModel {
     }
 
     @Override
-    public void prepare(ConfigModelRepo models) {
+    public void prepare(ConfigModelRepo models, DeployState deployState) {
         if (cluster.getRootGroup().useCpuSocketAffinity()) {
             setCpuSocketAffinity();
         }
@@ -192,7 +200,7 @@ public class Content extends ConfigModel {
                 s.setVespaMallocDebugStackTrace(cluster.getRootGroup().getVespaMallocDebugStackTrace().get());
             }
         }
-        cluster.prepare();
+        cluster.prepare(deployState);
     }
 
     private void setCpuSocketAffinity() {
@@ -299,7 +307,7 @@ public class Content extends ConfigModel {
             AbstractConfigProducer parent = root.getChildren().get(ContainerModel.DOCPROC_RESERVED_NAME);
             if (parent == null)
                 parent = new SimpleConfigProducer(root, ContainerModel.DOCPROC_RESERVED_NAME);
-            ContainerCluster indexingCluster = new ContainerCluster(parent, "cluster." + indexerName, indexerName);
+            ContainerCluster indexingCluster = new ContainerCluster(parent, "cluster." + indexerName, indexerName, modelContext.getDeployState());
             ContainerModel indexingClusterModel = new ContainerModel(modelContext.withParent(parent).withId(indexingCluster.getSubId()));
             indexingClusterModel.setCluster(indexingCluster);
             modelContext.getConfigModelRepoAdder().add(indexingClusterModel);
@@ -316,7 +324,8 @@ public class Content extends ConfigModel {
                 HostResource host = searchNode.getHostResource();
                 if (!processedHosts.contains(host)) {
                     String containerName = String.valueOf(searchNode.getDistributionKey());
-                    Container docprocService = new Container(indexingCluster, containerName, index);
+                    Container docprocService = new Container(indexingCluster, containerName, index,
+                                                             modelContext.getDeployState().isHosted());
                     index++;
                     docprocService.setBasePort(host.nextAvailableBaseport(docprocService.getPortCount()));
                     docprocService.setHostResource(host);

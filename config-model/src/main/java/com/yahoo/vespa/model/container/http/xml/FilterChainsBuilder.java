@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.container.http.xml;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ChainsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder;
@@ -13,7 +14,10 @@ import com.yahoo.vespa.model.container.http.Filter;
 import com.yahoo.vespa.model.container.http.FilterChains;
 import org.w3c.dom.Element;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Tony Vaagenes
@@ -37,9 +41,10 @@ public class FilterChainsBuilder extends DomChainsBuilder<Filter, Chain<Filter>,
 
     @Override
     protected ChainsBuilder<Filter, Chain<Filter>> readChains(
+            DeployState deployState,
             AbstractConfigProducer ancestor,
             List<Element> allChainsElems, Map<String, ComponentsBuilder.ComponentType> outerComponentTypeByComponentName) {
 
-        return new ChainsBuilder<>(ancestor, allChainsElems, outerComponentTypeByComponentName, chainType2BuilderClass);
+        return new ChainsBuilder<>(deployState, ancestor, allChainsElems, outerComponentTypeByComponentName, chainType2BuilderClass);
     }
 }
