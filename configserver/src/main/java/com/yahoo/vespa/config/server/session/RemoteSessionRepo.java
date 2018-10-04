@@ -198,7 +198,7 @@ public class RemoteSessionRepo extends SessionRepo<RemoteSession> implements Nod
                     break;
                 }
             } catch (Exception e) {
-                log.log(LogLevel.WARNING, session.logPre() + " error reading session id for " + applicationId);
+                log.log(LogLevel.WARNING, session.logPre() + " error reading session id for " + applicationId, e);
             }
         }
     }
