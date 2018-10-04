@@ -5,7 +5,6 @@
 #include "connectionfactory.h"
 #include <vespa/config/subscription/sourcespec.h>
 #include <vector>
-#include <string>
 #include <map>
 
 namespace config {
@@ -13,8 +12,6 @@ namespace config {
 class FRTConnectionPool : public ConnectionFactory {
 
 private:
-    FRTConnectionPool(const FRTConnectionPool&);
-    FRTConnectionPool& operator=(const FRTConnectionPool&);
 
     /**
      * This class makes it possible to iterate over the entries in the
@@ -35,12 +32,14 @@ private:
     std::unique_ptr<FRT_Supervisor> _supervisor;
     int _selectIdx;
     vespalib::string _hostname;
-    typedef std::map<FRTConnectionKey, FRTConnection::SP> ConnectionMap;
+    using ConnectionMap = std::map<FRTConnectionKey, FRTConnection::SP>;
     ConnectionMap _connections;
 
 public:
     FRTConnectionPool(const ServerSpec & spec, const TimingValues & timingValues);
-    ~FRTConnectionPool();
+    FRTConnectionPool(const FRTConnectionPool&) = delete;
+    FRTConnectionPool& operator=(const FRTConnectionPool&) = delete;
+    ~FRTConnectionPool() override;
 
     void syncTransport() override;
 

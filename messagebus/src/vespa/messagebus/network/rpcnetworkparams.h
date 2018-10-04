@@ -27,6 +27,7 @@ private:
 
 public:
     RPCNetworkParams();
+    RPCNetworkParams(config::ConfigUri configUri);
     ~RPCNetworkParams();
 
     /**
@@ -69,15 +70,8 @@ public:
     }
 
     /**
-     * Sets of the slobrok config.
      *
-     * @param slobrokConfigId The new config.
-     * @return This, to allow chaining.
      */
-    RPCNetworkParams &setSlobrokConfig(const config::ConfigUri & slobrokConfig) {
-        _slobrokConfig = slobrokConfig;
-        return *this;
-    }
 
     /**
      * Returns the port to listen to.

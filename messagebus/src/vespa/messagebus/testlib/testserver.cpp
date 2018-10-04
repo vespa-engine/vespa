@@ -23,10 +23,8 @@ TestServer::TestServer(const Identity &ident,
                        const RoutingSpec &spec,
                        const Slobrok &slobrok,
                        IProtocol::SP protocol) :
-    net(RPCNetworkParams()
-        .setIdentity(ident)
-        .setSlobrokConfig(slobrok.config())),
-    mb(net, ProtocolSet().add(IProtocol::SP(new SimpleProtocol())).add(protocol))
+    net(RPCNetworkParams(slobrok.config()).setIdentity(ident)),
+    mb(net, ProtocolSet().add(std::make_shared<SimpleProtocol>()).add(protocol))
 {
     mb.setupRouting(spec);
 }
@@ -37,7 +35,7 @@ TestServer::TestServer(const MessageBusParams &mbusParams,
     mb(net, mbusParams)
 {}
 
-TestServer::~TestServer() {}
+TestServer::~TestServer() = default;
 
 bool
 TestServer::waitSlobrok(const string &pattern, uint32_t cnt)

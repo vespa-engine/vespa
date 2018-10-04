@@ -13,19 +13,19 @@ namespace config {
 
 ConfigUri::ConfigUri(const vespalib::string &configId)
     : _configId(legacyConfigId2ConfigId(configId)),
-      _context(new ConfigContext(*legacyConfigId2Spec(configId))),
+      _context(std::make_shared<ConfigContext>(*legacyConfigId2Spec(configId))),
       _empty(checkEmpty(configId))
 {
 }
 
-ConfigUri::ConfigUri(const vespalib::string &configId, const IConfigContext::SP & context)
+ConfigUri::ConfigUri(const vespalib::string &configId, IConfigContext::SP context)
     : _configId(configId),
-      _context(context),
+      _context(std::move(context)),
       _empty(false)
 {
 }
 
-ConfigUri::~ConfigUri() { }
+ConfigUri::~ConfigUri() = default;
 
 ConfigUri
 ConfigUri::createWithNewId(const vespalib::string & configId) const
@@ -39,20 +39,20 @@ const IConfigContext::SP & ConfigUri::getContext() const { return _context; }
 ConfigUri
 ConfigUri::createFromInstance(const ConfigInstance & instance)
 {
-    return ConfigUri("", IConfigContext::SP(new ConfigContext(ConfigInstanceSpec(instance))));
+    return ConfigUri("", std::make_shared<ConfigContext>(ConfigInstanceSpec(instance)));
 }
 
 ConfigUri
 ConfigUri::createEmpty()
 {
-    ConfigUri uri("", IConfigContext::SP(new ConfigContext(RawSpec(""))));
+    ConfigUri uri("", std::make_shared<ConfigContext>(RawSpec("")));
     uri._empty = true;
     return uri;
 }
 
 ConfigUri ConfigUri::createFromSpec(const vespalib::string& configId, const SourceSpec& spec)
 {
-    return ConfigUri(configId, IConfigContext::SP(new ConfigContext(spec)));
+    return ConfigUri(configId, std::make_shared<ConfigContext>(spec));
 }
 
 

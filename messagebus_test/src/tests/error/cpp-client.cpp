@@ -20,10 +20,9 @@ public:
 int
 App::Main()
 {
-    RPCMessageBus mb(ProtocolSet().add(IProtocol::SP(new SimpleProtocol())),
-                     RPCNetworkParams()
-                     .setIdentity(Identity("server/cpp"))
-                     .setSlobrokConfig("file:slobrok.cfg"),
+    RPCMessageBus mb(ProtocolSet().add(std::make_shared<SimpleProtocol>()),
+                     RPCNetworkParams("file:slobrok.cfg")
+                     .setIdentity(Identity("server/cpp")),
                      "file:routing.cfg");
 
     Receptor src;

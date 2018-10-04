@@ -59,8 +59,8 @@ Test::Main()
     }
     
     EXPECT_TRUE(system((ctl_script + " start all").c_str()) == 0);
-    RPCMessageBus mb(ProtocolSet().add(IProtocol::SP(new SimpleProtocol())),
-                     RPCNetworkParams().setSlobrokConfig("file:slobrok.cfg"),
+    RPCMessageBus mb(ProtocolSet().add(std::make_shared<SimpleProtocol>()),
+                     RPCNetworkParams("file:slobrok.cfg"),
                      "file:routing.cfg");
     EXPECT_TRUE(waitSlobrok(mb, "server/cpp/1/A/session"));
     EXPECT_TRUE(waitSlobrok(mb, "server/cpp/2/A/session"));

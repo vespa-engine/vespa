@@ -5,7 +5,7 @@
 namespace config {
 
 FRTSourceFactory::FRTSourceFactory(ConnectionFactory::UP connectionFactory, const TimingValues & timingValues, int protocolVersion, int traceLevel, const VespaVersion & vespaVersion, const CompressionType & compressionType)
-    : _connectionFactory(connectionFactory.release()),
+    : _connectionFactory(std::move(connectionFactory)),
       _requestFactory(protocolVersion, traceLevel, vespaVersion, compressionType),
       _timingValues(timingValues)
 {
@@ -14,7 +14,7 @@ FRTSourceFactory::FRTSourceFactory(ConnectionFactory::UP connectionFactory, cons
 Source::UP
 FRTSourceFactory::createSource(const IConfigHolder::SP & holder, const ConfigKey & key) const
 {
-    return Source::UP(new FRTSource(_connectionFactory, _requestFactory, ConfigAgent::UP(new FRTConfigAgent(holder, _timingValues)), key));
+    return std::make_unique<FRTSource>(_connectionFactory, _requestFactory, std::make_unique<FRTConfigAgent>(holder, _timingValues), key);
 }
 
 } // namespace config

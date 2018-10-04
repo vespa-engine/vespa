@@ -26,19 +26,18 @@ Test::Main()
 
     Slobrok slobrok;
     TestServer server(MessageBusParams()
-                      .addProtocol(IProtocol::SP(new SimpleProtocol()))
-                      .setRetryPolicy(IRetryPolicy::SP(new RetryTransientErrorsPolicy())),
-                      RPCNetworkParams()
-                      .setSlobrokConfig(slobrok.config()));
+                      .addProtocol(std::make_shared<SimpleProtocol>())
+                      .setRetryPolicy(std::make_shared<RetryTransientErrorsPolicy>()),
+                      RPCNetworkParams(slobrok.config()));
     Receptor receptor;
     SourceSession::UP session = server.mb.createSourceSession(
             SourceSessionParams()
             .setReplyHandler(receptor));
-    Message::UP msg(new MyMessage());
+    auto msg = std::make_unique<MyMessage>();
     msg->setRoute(Route::parse("foo"));
     ASSERT_TRUE(session->send(std::move(msg)).isAccepted());
     Reply::UP reply = receptor.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply.get() != nullptr);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::SEQUENCE_ERROR, reply->getError(0).getCode());
 

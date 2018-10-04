@@ -13,16 +13,14 @@ using documentapi::string;
 
 class TestFrame : public mbus::IReplyHandler {
 private:
-    string                         _identity;
+    string                            _identity;
     std::shared_ptr<mbus::Slobrok>    _slobrok;
-    documentapi::LoadTypeSet            _set;
+    documentapi::LoadTypeSet          _set;
     std::shared_ptr<mbus::INetwork>   _net;
     std::shared_ptr<mbus::MessageBus> _mbus;
-    mbus::Message::UP                   _msg;
-    mbus::HopSpec                       _hop;
-    mbus::Receptor                      _handler;
-
-    TestFrame &operator=(const TestFrame &); // hide
+    mbus::Message::UP                 _msg;
+    mbus::HopSpec                     _hop;
+    mbus::Receptor                    _handler;
 
 public:
     /**
@@ -38,6 +36,8 @@ public:
     TestFrame(const std::shared_ptr<const document::DocumentTypeRepo> &repo,
               const string &ident = "anonymous");
 
+    TestFrame &operator=(const TestFrame &) = delete;
+
     /**
      * Create a test frame running on the same slobrok and mbus as another.
      *
@@ -45,10 +45,7 @@ public:
      */
     TestFrame(TestFrame &frame);
 
-    /**
-     * Cleans up allocated resources.
-     */
-    virtual ~TestFrame();
+    ~TestFrame() override;
 
     /**
      * Routes the contained message based on the current setup, and returns the leaf send contexts.
@@ -135,13 +132,6 @@ public:
      * @return The ident string.
      */
     const string &getIdentity() { return _identity; }
-
-    /**
-     * Returns the private slobrok server.
-     *
-     * @return The slobrok.
-     */
-    mbus::Slobrok &getSlobrok() { return *_slobrok; }
 
     /**
      * Returns the private message bus.

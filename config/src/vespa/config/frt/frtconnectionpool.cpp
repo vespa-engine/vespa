@@ -11,7 +11,6 @@ FRTConnectionPool::FRTConnectionKey::FRTConnectionKey(int idx, const vespalib::s
     : _idx(idx),
       _hostname(hostname)
 {
-
 }
 
 int
@@ -33,7 +32,7 @@ FRTConnectionPool::FRTConnectionPool(const ServerSpec & spec, const TimingValues
 {
     for (size_t i(0); i < spec.numHosts(); i++) {
         FRTConnectionKey key(i, spec.getHost(i));
-        _connections[key].reset(new FRTConnection(spec.getHost(i), *_supervisor, timingValues));
+        _connections[key] = std::make_shared<FRTConnection>(spec.getHost(i), *_supervisor, timingValues);
     }
     setHostname();
     _supervisor->Start();
@@ -67,7 +66,7 @@ FRTConnectionPool::getNextRoundRobin()
     getReadySources(readySources);
     std::vector<FRTConnection *> suspendedSources;
     getSuspendedSources(suspendedSources);
-    FRTConnection* nextFRTConnection = NULL;
+    FRTConnection* nextFRTConnection = nullptr;
 
     if (!readySources.empty()) {
         int sel = _selectIdx % (int)readySources.size();
@@ -88,7 +87,7 @@ FRTConnectionPool::getNextHashBased()
     getReadySources(readySources);
     std::vector<FRTConnection*> suspendedSources;
     getSuspendedSources(suspendedSources);
-    FRTConnection* nextFRTConnection = NULL;
+    FRTConnection* nextFRTConnection = nullptr;
 
     if (!readySources.empty()) {
         int sel = std::abs(hashCode(_hostname) % (int)readySources.size());
@@ -104,8 +103,8 @@ const std::vector<FRTConnection *> &
 FRTConnectionPool::getReadySources(std::vector<FRTConnection*> & readySources) const
 {
     readySources.clear();
-    for (ConnectionMap::const_iterator iter = _connections.begin(); iter != _connections.end(); iter++) {
-        FRTConnection* source = iter->second.get();
+    for (const auto & entry : _connections) {
+        FRTConnection* source = entry.second.get();
         int64_t tnow = time(0);
         tnow *= 1000;
         int64_t timestamp = tnow;
@@ -120,8 +119,8 @@ const std::vector<FRTConnection *> &
 FRTConnectionPool::getSuspendedSources(std::vector<FRTConnection*> & suspendedSources) const
 {
     suspendedSources.clear();
-    for (ConnectionMap::const_iterator iter = _connections.begin(); iter != _connections.end(); iter++) {
-        FRTConnection* source = iter->second.get();
+    for (const auto & entry : _connections) {
+        FRTConnection* source = entry.second.get();
         int64_t tnow = time(0);
         tnow *= 1000;
         int64_t timestamp = tnow;

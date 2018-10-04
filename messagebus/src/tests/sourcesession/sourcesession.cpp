@@ -115,10 +115,10 @@ void
 Test::testResendError()
 {
     Slobrok slobrok;
-    RetryTransientErrorsPolicy::SP retryPolicy(new RetryTransientErrorsPolicy());
+    auto retryPolicy = std::make_shared<RetryTransientErrorsPolicy>();
     retryPolicy->setBaseDelay(0);
-    TestServer src(MessageBusParams().addProtocol(IProtocol::SP(new SimpleProtocol())).setRetryPolicy(retryPolicy),
-                   RPCNetworkParams().setSlobrokConfig(slobrok.config()));
+    TestServer src(MessageBusParams().addProtocol(std::make_shared<SimpleProtocol>()).setRetryPolicy(retryPolicy),
+                   RPCNetworkParams(slobrok.config()));
     src.mb.setupRouting(getRouting());
     TestServer dst(Identity("dst"), getRouting(), slobrok);
 
@@ -176,10 +176,10 @@ void
 Test::testResendConnDown()
 {
     Slobrok slobrok;
-    RetryTransientErrorsPolicy::SP retryPolicy(new RetryTransientErrorsPolicy());
+    auto retryPolicy = std::make_shared<RetryTransientErrorsPolicy>();
     retryPolicy->setBaseDelay(0);
-    TestServer src(MessageBusParams().addProtocol(IProtocol::SP(new SimpleProtocol())).setRetryPolicy(retryPolicy),
-                   RPCNetworkParams().setSlobrokConfig(slobrok.config()));
+    TestServer src(MessageBusParams().addProtocol(std::make_shared<SimpleProtocol>()).setRetryPolicy(retryPolicy),
+                   RPCNetworkParams(slobrok.config()));
     src.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
                                                .addHop(HopSpec("dst", "dst2/session"))
                                                .addHop(HopSpec("pxy", "[All]").addRecipient("dst"))
@@ -223,10 +223,9 @@ Test::testIllegalRoute()
 {
     Slobrok slobrok;
     TestServer src(MessageBusParams()
-                   .addProtocol(IProtocol::SP(new SimpleProtocol()))
+                   .addProtocol(std::make_shared<SimpleProtocol>())
                    .setRetryPolicy(IRetryPolicy::SP()),
-                   RPCNetworkParams()
-                   .setSlobrokConfig(slobrok.config()));
+                   RPCNetworkParams(slobrok.config()));
     src.mb.setupRouting(getRouting());
 
     RoutableQueue srcQ;
@@ -257,10 +256,9 @@ Test::testNoServices()
 {
     Slobrok slobrok;
     TestServer src(MessageBusParams()
-                   .addProtocol(IProtocol::SP(new SimpleProtocol()))
+                   .addProtocol(std::make_shared<SimpleProtocol>())
                    .setRetryPolicy(IRetryPolicy::SP()),
-                   RPCNetworkParams()
-                   .setSlobrokConfig(slobrok.config()));
+                   RPCNetworkParams(slobrok.config()));
     src.mb.setupRouting(getBadRouting());
 
     RoutableQueue srcQ;

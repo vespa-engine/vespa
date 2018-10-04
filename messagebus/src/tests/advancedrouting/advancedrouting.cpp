@@ -49,13 +49,13 @@ TEST_APPHOOK(Test);
 TestData::~TestData() {}
 TestData::TestData() :
     _slobrok(),
-    _retryPolicy(new RetryTransientErrorsPolicy()),
-    _srcServer(MessageBusParams().setRetryPolicy(_retryPolicy).addProtocol(IProtocol::SP(new SimpleProtocol())),
-               RPCNetworkParams().setSlobrokConfig(_slobrok.config())),
+    _retryPolicy(std::make_shared<RetryTransientErrorsPolicy>()),
+    _srcServer(MessageBusParams().setRetryPolicy(_retryPolicy).addProtocol(std::make_shared<SimpleProtocol>()),
+               RPCNetworkParams(_slobrok.config())),
     _srcSession(),
     _srcHandler(),
-    _dstServer(MessageBusParams().addProtocol(IProtocol::SP(new SimpleProtocol())),
-               RPCNetworkParams().setIdentity(Identity("dst")).setSlobrokConfig(_slobrok.config())),
+    _dstServer(MessageBusParams().addProtocol(std::make_shared<SimpleProtocol>()),
+               RPCNetworkParams(_slobrok.config()).setIdentity(Identity("dst"))),
     _fooSession(),
     _fooHandler(),
     _barSession(),
@@ -70,19 +70,19 @@ bool
 TestData::start()
 {
     _srcSession = _srcServer.mb.createSourceSession(SourceSessionParams().setReplyHandler(_srcHandler));
-    if (_srcSession.get() == NULL) {
+    if ( ! _srcSession) {
         return false;
     }
     _fooSession = _dstServer.mb.createDestinationSession(DestinationSessionParams().setName("foo").setMessageHandler(_fooHandler));
-    if (_fooSession.get() == NULL) {
+    if ( ! _fooSession) {
         return false;
     }
     _barSession = _dstServer.mb.createDestinationSession(DestinationSessionParams().setName("bar").setMessageHandler(_barHandler));
-    if (_barSession.get() == NULL) {
+    if ( ! _barSession) {
         return false;
     }
     _bazSession = _dstServer.mb.createDestinationSession(DestinationSessionParams().setName("baz").setMessageHandler(_bazHandler));
-    if (_bazSession.get() == NULL) {
+    if ( ! _bazSession) {
         return false;
     }
     if (!_srcServer.waitSlobrok("dst/*", 3u)) {
@@ -94,7 +94,7 @@ TestData::start()
 Message::UP
 Test::createMessage(const string &msg)
 {
-    Message::UP ret(new SimpleMessage(msg));
+    auto ret = std::make_unique<SimpleMessage>(msg);
     ret->getTrace().setLevel(9);
     return ret;
 }

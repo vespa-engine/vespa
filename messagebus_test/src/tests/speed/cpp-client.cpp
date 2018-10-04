@@ -90,10 +90,10 @@ public:
 int
 App::Main()
 {
-    RetryTransientErrorsPolicy::SP retryPolicy(new RetryTransientErrorsPolicy());
+    auto retryPolicy = std::make_shared<RetryTransientErrorsPolicy>();
     retryPolicy->setBaseDelay(0.1);
-    RPCMessageBus mb(MessageBusParams().setRetryPolicy(retryPolicy).addProtocol(IProtocol::SP(new SimpleProtocol())),
-                     RPCNetworkParams().setIdentity(Identity("server/cpp")).setSlobrokConfig("file:slobrok.cfg"),
+    RPCMessageBus mb(MessageBusParams().setRetryPolicy(retryPolicy).addProtocol(std::make_shared<SimpleProtocol>()),
+                     RPCNetworkParams("file:slobrok.cfg").setIdentity(Identity("server/cpp")),
                      "file:routing.cfg");
     Client client(mb.getMessageBus(), SourceSessionParams().setTimeout(30));
 

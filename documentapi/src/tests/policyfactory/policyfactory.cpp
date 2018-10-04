@@ -54,13 +54,13 @@ public:
 mbus::IRoutingPolicy::UP
 MyFactory::createPolicy(const string &param) const
 {
-    return mbus::IRoutingPolicy::UP(new MyPolicy(param));
+    return std::make_unique<MyPolicy>(param);
 }
 
 mbus::Message::UP
 createMessage()
 {
-    mbus::Message::UP ret(new RemoveDocumentMessage(document::DocumentId("doc:scheme:")));
+    auto ret = std::make_unique<RemoveDocumentMessage>(document::DocumentId("doc:scheme:"));
     ret->getTrace().setLevel(9);
     return ret;
 }
@@ -82,27 +82,27 @@ Test::Main()
     mbus::Slobrok slobrok;
     LoadTypeSet loadTypes;
     mbus::TestServer
-        srv(mbus::MessageBusParams().addProtocol(mbus::IProtocol::SP(new DocumentProtocol(loadTypes, repo))),
-            mbus::RPCNetworkParams().setSlobrokConfig(slobrok.config()));
+        srv(mbus::MessageBusParams().addProtocol(std::make_shared<DocumentProtocol>(loadTypes, repo)),
+            mbus::RPCNetworkParams(slobrok.config()));
     mbus::Receptor handler;
     mbus::SourceSession::UP src = srv.mb.createSourceSession(mbus::SourceSessionParams().setReplyHandler(handler));
 
     mbus::Route route = mbus::Route::parse("[MyPolicy]");
     ASSERT_TRUE(src->send(createMessage(), route).isAccepted());
     mbus::Reply::UP reply = static_cast<mbus::Receptor&>(src->getReplyHandler()).getReply(600);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     fprintf(stderr, "%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)mbus::ErrorCode::UNKNOWN_POLICY, reply->getError(0).getCode());
 
     mbus::IProtocol * obj = srv.mb.getProtocol(DocumentProtocol::NAME);
     DocumentProtocol * protocol = dynamic_cast<DocumentProtocol*>(obj);
-    ASSERT_TRUE(protocol != NULL);
-    protocol->putRoutingPolicyFactory("MyPolicy", IRoutingPolicyFactory::SP(new MyFactory()));
+    ASSERT_TRUE(protocol != nullptr);
+    protocol->putRoutingPolicyFactory("MyPolicy", std::make_shared<MyFactory>());
 
     ASSERT_TRUE(src->send(createMessage(), route).isAccepted());
     reply = static_cast<mbus::Receptor&>(src->getReplyHandler()).getReply(600);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     fprintf(stderr, "%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)DocumentProtocol::ERROR_POLICY_FAILURE, reply->getError(0).getCode());

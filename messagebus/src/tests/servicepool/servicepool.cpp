@@ -28,7 +28,7 @@ void
 Test::testMaxSize()
 {
     Slobrok slobrok;
-    RPCNetwork net(RPCNetworkParams().setSlobrokConfig(slobrok.config()));
+    RPCNetwork net(RPCNetworkParams(slobrok.config()));
     RPCServicePool pool(net, 2);
     net.start();
 
