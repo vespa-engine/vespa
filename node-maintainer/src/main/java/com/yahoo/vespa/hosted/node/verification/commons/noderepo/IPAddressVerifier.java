@@ -31,10 +31,12 @@ public class IPAddressVerifier {
     private static final Logger logger = Logger.getLogger(IPAddressVerifier.class.getName());
 
     private final String expectedHostname;
+    private final boolean skipLookup;
     private final boolean skipReverseLookup;
 
-    public IPAddressVerifier(String expectedHostname, boolean skipReverseLookup) {
+    public IPAddressVerifier(String expectedHostname, boolean skipLookup, boolean skipReverseLookup) {
         this.expectedHostname = expectedHostname;
+        this.skipLookup = skipLookup;
         this.skipReverseLookup = skipReverseLookup;
     }
 
@@ -60,6 +62,10 @@ public class IPAddressVerifier {
     }
 
     private boolean hostnameResolvesToIpAddress(String ipAddress) {
+        if (skipLookup) {
+            return true;
+        }
+
         InetAddress addressFromIpAddress;
         try {
             addressFromIpAddress = InetAddress.getByName(ipAddress);
@@ -78,7 +84,7 @@ public class IPAddressVerifier {
 
         if (addressesFromHostname.stream().noneMatch(addressFromIpAddress::equals)) {
             logger.log(Level.WARNING, "Hostname " + expectedHostname + " resolved to " + addressesFromHostname +
-                            " which does not contain the IP address " + ipAddress);
+                            " which does not contain the IP address " + addressFromIpAddress);
             return false;
         }
 

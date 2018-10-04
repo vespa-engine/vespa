@@ -45,7 +45,10 @@ public class SpecVerifier extends Main.VerifierCommand {
     @Option(name = {"-i", "--ips"}, description = "Comma separated list of IP addresses assigned to this node")
     private String ipAddresses;
 
-    @Option(name = {"-S", "--skip-reverse-lookup"}, required = false, description = "Skip verification of reverse lookup of IP addresses")
+    @Option(name = {"--skip-lookup"}, required = false, description = "Skip verification of hostname -> IP addresses")
+    private boolean skipLookup = false;
+
+    @Option(name = {"--skip-reverse-lookup"}, required = false, description = "Skip verification of IP addresses -> hostname")
     private boolean skipReverseLookup = false;
 
     @Override
@@ -64,12 +67,16 @@ public class SpecVerifier extends Main.VerifierCommand {
     private SpecVerificationReport verifySpec(NodeSpec nodeSpec, CommandExecutor commandExecutor) {
         VerifierSettings verifierSettings = new VerifierSettings(false);
         HardwareInfo actualHardware = HardwareInfoRetriever.retrieve(commandExecutor, verifierSettings);
-        return makeVerificationReport(actualHardware, nodeSpec, skipReverseLookup);
+        return makeVerificationReport(actualHardware, nodeSpec, skipLookup, skipReverseLookup);
     }
 
-    private static SpecVerificationReport makeVerificationReport(HardwareInfo actualHardware, NodeSpec nodeSpec, boolean skipReverseLookup) {
+    private static SpecVerificationReport makeVerificationReport(
+            HardwareInfo actualHardware,
+            NodeSpec nodeSpec,
+            boolean skipLookup,
+            boolean skipReverseLookup) {
         SpecVerificationReport specVerificationReport = HardwareNodeComparator.compare(NodeJsonConverter.convertJsonModelToHardwareInfo(nodeSpec), actualHardware);
-        IPAddressVerifier ipAddressVerifier = new IPAddressVerifier(Defaults.getDefaults().vespaHostname(), skipReverseLookup);
+        IPAddressVerifier ipAddressVerifier = new IPAddressVerifier(Defaults.getDefaults().vespaHostname(), skipLookup, skipReverseLookup);
         ipAddressVerifier.reportFaultyIpAddresses(nodeSpec, specVerificationReport);
         return specVerificationReport;
     }

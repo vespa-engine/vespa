@@ -25,7 +25,7 @@ public class IPAddressVerifierTest {
     private final NodeSpec nodeSpec = new NodeSpec(1920, 256, 48, true, 10_000, new String[]{ipv4Address, ipv6Address});
     private final String hostname = "test123.region.domain.tld";
 
-    private IPAddressVerifier ipAddressVerifier = spy(new IPAddressVerifier(hostname, false));
+    private IPAddressVerifier ipAddressVerifier = spy(new IPAddressVerifier(hostname, false, false));
     private String ipv4LookupFormat;
     private String ipv6LookupFormat;
 
@@ -91,8 +91,18 @@ public class IPAddressVerifierTest {
     }
 
     @Test
+    public void getFaultyIpAddresses_should_return_empty_array_when_lookup_is_skipped() throws Exception {
+        ipAddressVerifier = spy(new IPAddressVerifier(hostname, true, false));
+        doReturn(hostname).when(ipAddressVerifier).reverseLookUp(ipv4LookupFormat);
+        doReturn(hostname).when(ipAddressVerifier).reverseLookUp(ipv6LookupFormat);
+        String[] faultyIpAddresses = ipAddressVerifier.getFaultyIpAddresses(nodeSpec);
+        String[] expectedFaultyIpAddresses = new String[]{};
+        assertArrayEquals(expectedFaultyIpAddresses, faultyIpAddresses);
+    }
+
+    @Test
     public void getFaultyIpAddresses_should_return_empty_array_when_reverse_lookup_is_skipped() throws Exception {
-        ipAddressVerifier = spy(new IPAddressVerifier(hostname, true));
+        ipAddressVerifier = spy(new IPAddressVerifier(hostname, false, true));
         doReturn(Arrays.asList(InetAddress.getByName(ipv4Address), InetAddress.getByName(ipv6Address))).when(ipAddressVerifier).mockableGetAllByName(hostname);
         String[] faultyIpAddresses = ipAddressVerifier.getFaultyIpAddresses(nodeSpec);
         String[] expectedFaultyIpAddresses = new String[]{};
