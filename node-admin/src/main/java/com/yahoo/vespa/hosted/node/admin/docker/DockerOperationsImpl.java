@@ -295,13 +295,6 @@ public class DockerOperationsImpl implements DockerOperations {
         return docker.getAllContainersManagedBy(MANAGER_NAME);
     }
 
-    // TODO: Remove after migrating to host-admin
-    @Override
-    public void deleteUnusedDockerImages() {
-        if (environment.isRunningOnHost()) return;
-        docker.deleteUnusedDockerImages(Collections.emptyList(), Duration.ofHours(1));
-    }
-
     /**
      * Returns map of directories to mount and whether they should be writable by everyone
      */

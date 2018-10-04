@@ -52,6 +52,4 @@ public interface DockerOperations {
      * Returns the list of containers managed by node-admin
      */
     List<Container> getAllManagedContainers();
-
-    void deleteUnusedDockerImages();
 }
