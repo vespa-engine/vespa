@@ -29,14 +29,14 @@ Repo::descriptionId(const vespalib::string &name)
 }
 
 TagKeyId
-Repo::tagKey(const vespalib::string &name)
+Repo::tagKeyId(const vespalib::string &name)
 {
     size_t id = tagKeys.resolve(name);
     return TagKeyId(id);
 }
 
 TagValueId
-Repo::tagValue(const vespalib::string &value)
+Repo::tagValueId(const vespalib::string &value)
 {
     size_t id = tagValues.resolve(value);
     return TagValueId(id);

@@ -52,8 +52,8 @@ namespace {
 vespalib::Regexp Metric::_namePattern(namePattern);
 
 Tag::Tag(vespalib::stringref k, vespalib::stringref v)
-    : key(k),
-      value(v)
+    : _key(Repo::tagKeyId(k)),
+      _value(Repo::tagValueId(v))
 { }
 
 Tag::Tag(const Tag &) = default;
@@ -111,7 +111,7 @@ Metric::~Metric() { }
 bool
 Metric::tagsSpecifyAtLeastOneDimension(const Tags& tags) const
 {
-    auto hasNonEmptyTagValue = [](const Tag& t) { return !t.value.empty(); };
+    auto hasNonEmptyTagValue = [](const Tag& t) { return !t.value().empty(); };
     return std::any_of(tags.begin(), tags.end(), hasNonEmptyTagValue);
 }
 
@@ -131,7 +131,7 @@ void
 Metric::sortTagsInDeterministicOrder()
 {
     std::sort(_tags.begin(), _tags.end(), [](const Tag& a, const Tag& b) {
-        return a.key < b.key;
+        return a.key() < b.key();
     });
 }
 
@@ -143,13 +143,13 @@ Metric::createMangledNameWithDimensions() const
     const size_t sz = _tags.size();
     for (size_t i = 0; i < sz; ++i) {
         const Tag& dimension(_tags[i]);
-        if (dimension.value.empty()) {
+        if (dimension.value().empty()) {
             continue;
         }
         if (i != 0) {
             s << ',';
         }
-        s << dimension.key << ':' << dimension.value;
+        s << dimension.key() << ':' << dimension.value();
     }
     s << '}';
     return s.str();
@@ -213,7 +213,7 @@ bool
 Metric::hasTag(const String& tag) const
 {
     return std::find_if(_tags.begin(), _tags.end(), [&](const Tag& t) {
-        return t.key == tag;
+        return t.key() == tag;
     }) != _tags.end();
 }
 

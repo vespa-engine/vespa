@@ -84,8 +84,8 @@ struct MetricVisitor {
  */
 struct Tag
 {
-    vespalib::string key;
-    vespalib::string value;
+    const vespalib::string& key() const { return Repo::tagKey(_key); }
+    const vespalib::string& value() const { return Repo::tagValue(_value); }
 
     Tag(vespalib::stringref k, vespalib::stringref v);
     Tag(const Tag &);
@@ -93,6 +93,10 @@ struct Tag
     Tag(Tag &&) = default;
     Tag & operator = (Tag &&) = default;
     ~Tag();
+
+private:
+    TagKeyId _key;
+    TagValueId _value;
 };
 
 class Metric : public vespalib::Printable

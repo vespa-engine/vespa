@@ -943,8 +943,8 @@ public:
         CPPUNIT_ASSERT_EQUAL_MSG(_jsonText, dimensions.size(),
                                  nthMetricDimensionCount(metricIndex));
         for (auto& dim : dimensions) {
-            CPPUNIT_ASSERT_EQUAL_MSG(_jsonText, std::string(dim.value),
-                                     nthMetricDimension(metricIndex, dim.key));
+            CPPUNIT_ASSERT_EQUAL_MSG(_jsonText, std::string(dim.value()),
+                                     nthMetricDimension(metricIndex, dim.key()));
         }
     }
 };
