@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.util;
 
+import com.yahoo.config.provision.NodeType;
 import org.junit.Test;
 
 import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author freva
@@ -75,4 +77,12 @@ public class SecretAgentCheckConfigTest {
                 "  user: barfoo\n" +
                 "  check: /some/test\n", scheduleMaker.render());
     }
+
+    @Test
+    public void supportsAllNodeTypes() {
+        for (NodeType nodeType : NodeType.values()) {
+            assertNotNull(SecretAgentCheckConfig.nodeTypeToRole(nodeType));
+        }
+    }
+
 }
