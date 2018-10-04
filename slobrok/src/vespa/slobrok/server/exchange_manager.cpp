@@ -120,7 +120,8 @@ ExchangeManager::healthCheck()
 ExchangeManager::WorkPackage::WorkItem::WorkItem(WorkPackage &pkg,
                                                  RemoteSlobrok *rem,
                                                  FRT_RPCRequest *req)
-    : FNET_Task(pkg._exchanger._env.getScheduler()), _pkg(pkg), _pendingReq(req), _remslob(rem)
+    : FNET_Task(pkg._exchanger._env.getScheduler()),
+      _pkg(pkg), _pendingReq(req), _remslob(rem)
 {
 }
 
@@ -128,7 +129,13 @@ void
 ExchangeManager::WorkPackage::WorkItem::RequestDone(FRT_RPCRequest *req)
 {
     LOG_ASSERT(req == _pendingReq);
-    ScheduleNow();
+    if (req->GetErrorCode() == FRTE_RPC_ABORT) {
+        LOG(debug, "WorkItem aborted");
+        req->SubRef();
+        _pendingReq = nullptr;
+    } else {
+        ScheduleNow();
+    }
 }
 
 void
@@ -164,6 +171,7 @@ ExchangeManager::WorkPackage::WorkItem::~WorkItem()
 {
     if (_pendingReq != nullptr) {
         _pendingReq->Abort();
+        // _pendingReq cleared by RequestDone Method
         LOG_ASSERT(_pendingReq == nullptr);
     }
 }

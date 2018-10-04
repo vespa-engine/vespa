@@ -88,7 +88,13 @@ void
 ManagedRpcServer::RequestDone(FRT_RPCRequest *req)
 {
     LOG_ASSERT(req == _checkServerReq);
-    ScheduleNow();
+    if (req->GetErrorCode() == FRTE_RPC_ABORT) {
+        LOG(debug, "rpcserver[%s].check aborted", getName().c_str());
+        req->SubRef();
+        _checkServerReq = nullptr;
+    } else {
+        ScheduleNow();
+    }
 }
 
 void
@@ -96,13 +102,6 @@ ManagedRpcServer::PerformTask()
 {
     FRT_RPCRequest *req = _checkServerReq;
     FRT_Values &answer = *(req->GetReturn());
-
-    if (req->GetErrorCode() == FRTE_RPC_ABORT) {
-        LOG(debug, "rpcserver[%s].check aborted", getName().c_str());
-        req->SubRef();
-        _checkServerReq = nullptr;
-        return;
-    }
 
     if (req->IsError()
         || strcmp(answer.GetTypeString(), "S") != 0
