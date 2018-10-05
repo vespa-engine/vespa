@@ -33,27 +33,21 @@ public class SimpleLinguistics implements Linguistics {
 
     @Inject
     public SimpleLinguistics() {
-        CharacterClasses characterClasses = new CharacterClasses();
-        this.normalizer = new SimpleNormalizer();
-        this.transformer = new SimpleTransformer();
-        this.detector = new SimpleDetector();
-        this.characterClasses = new CharacterClasses();
-        this.gramSplitter = new GramSplitter(characterClasses);
+        this(true);
+
     }
     public SimpleLinguistics(boolean enableOptimaize) {
-        CharacterClasses characterClasses = new CharacterClasses();
-        this.normalizer = new SimpleNormalizer();
-        this.transformer = new SimpleTransformer();
-        this.detector = new SimpleDetector(enableOptimaize);
-        this.characterClasses = new CharacterClasses();
-        this.gramSplitter = new GramSplitter(characterClasses);
+        this(new SimpleDetector(enableOptimaize));
     }
 
     public SimpleLinguistics(SimpleLinguisticsConfig config) {
-        CharacterClasses characterClasses = new CharacterClasses();
+        this(new SimpleDetector(config.detector()));
+    }
+
+    private SimpleLinguistics(Detector detector) {
         this.normalizer = new SimpleNormalizer();
         this.transformer = new SimpleTransformer();
-        this.detector = new SimpleDetector(config.detector());
+        this.detector = detector;
         this.characterClasses = new CharacterClasses();
         this.gramSplitter = new GramSplitter(characterClasses);
     }
