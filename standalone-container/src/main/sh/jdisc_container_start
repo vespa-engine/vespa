@@ -90,7 +90,7 @@ export LOGGER_LEVEL="ALL"
 export LOGGER_TAG="${VESPA_CONFIG_ID}"
 
 if [ -z "$VESPA_LOG_CONTROL_FILE" ]; then
-    VESPA_LOG_CONTROL_FILE="$VESPA_HOME/var/db/vespa/logcontrol/jdisc-container.logcontrol"
+    VESPA_LOG_CONTROL_FILE="$VESPA_HOME/var/db/jdisc/logcontrol/jdisc-container.logcontrol"
 fi
 export VESPA_LOG_CONTROL_FILE
 
