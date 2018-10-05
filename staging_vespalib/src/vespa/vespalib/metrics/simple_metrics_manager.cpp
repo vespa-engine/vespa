@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "simple_metrics_manager.h"
 #include "simple_tick.h"
+#include "name_repo.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.metrics.simple_metrics_manager");
@@ -51,7 +52,7 @@ SimpleMetricsManager::createForTest(const SimpleManagerConfig &config,
 Counter
 SimpleMetricsManager::counter(const vespalib::string &name, const vespalib::string &)
 {
-    MetricId mn = NameRepo::instance.metric(name);
+    MetricId mn = MetricId::from_name(name);
     _metricTypes.check(mn.id(), name, MetricTypes::MetricType::COUNTER);
     LOG(debug, "counter with metric name %s -> %zu", name.c_str(), mn.id());
     return Counter(shared_from_this(), mn);
@@ -60,7 +61,7 @@ SimpleMetricsManager::counter(const vespalib::string &name, const vespalib::stri
 Gauge
 SimpleMetricsManager::gauge(const vespalib::string &name, const vespalib::string &)
 {
-    MetricId mn = NameRepo::instance.metric(name);
+    MetricId mn = MetricId::from_name(name);
     _metricTypes.check(mn.id(), name, MetricTypes::MetricType::GAUGE);
     LOG(debug, "gauge with metric name %s -> %zu", name.c_str(), mn.id());
     return Gauge(shared_from_this(), mn);
@@ -112,7 +113,7 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
             const PointMap::BackingMap &map = NameRepo::instance.pointMap(Point(point_id));
             PointSnapshot point;
             for (const PointMap::BackingMap::value_type &kv : map) {
-                point.dimensions.emplace_back(nameFor(kv.first), valueFor(kv.second));
+                point.dimensions.emplace_back(kv.first.as_name(), kv.second.as_value());
             }
             snap.add(point);
         }
@@ -120,14 +121,14 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
     for (const CounterAggregator& entry : bucket.counters) {
         MetricId mn = entry.idx.name();
         size_t pi = entry.idx.point().id();
-        const vespalib::string &name = NameRepo::instance.metricName(mn);
+        const vespalib::string &name = mn.as_name();
         CounterSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
     for (const GaugeAggregator& entry : bucket.gauges) {
         MetricId mn = entry.idx.name();
         size_t pi = entry.idx.point().id();
-        const vespalib::string &name = NameRepo::instance.metricName(mn);
+        const vespalib::string &name = mn.as_name();
         GaugeSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
@@ -170,7 +171,7 @@ SimpleMetricsManager::collectCurrentSamples(TimeStamp prev,
 Dimension
 SimpleMetricsManager::dimension(const vespalib::string &name)
 {
-    Dimension dim = NameRepo::instance.dimension(name);
+    Dimension dim = Dimension::from_name(name);
     LOG(debug, "dimension name %s -> %zu", name.c_str(), dim.id());
     return dim;
 }
@@ -178,7 +179,7 @@ SimpleMetricsManager::dimension(const vespalib::string &name)
 Label
 SimpleMetricsManager::label(const vespalib::string &value)
 {
-    Label l = NameRepo::instance.label(value);
+    Label l = Label::from_value(value);
     LOG(debug, "label value %s -> %zu", value.c_str(), l.id());
     return l;
 }
