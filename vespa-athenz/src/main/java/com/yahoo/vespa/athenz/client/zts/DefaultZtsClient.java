@@ -24,7 +24,6 @@ import com.yahoo.vespa.athenz.client.zts.utils.IdentityCsrGenerator;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.ServiceIdentitySslSocketFactory;
 import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
-import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
@@ -40,7 +39,6 @@ import org.eclipse.jetty.http.HttpStatus;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
@@ -50,9 +48,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
-import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
-import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.RFC822_NAME;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -163,15 +158,7 @@ public class DefaultZtsClient implements ZtsClient {
     }
 
     @Override
-    public X509Certificate getRoleCertificate(AthenzRole role,
-                                              Duration expiry,
-                                              KeyPair keyPair,
-                                              String cloud) {
-        X500Principal principal = new X500Principal(String.format("cn=%s:role.%s", role.domain().getName(), role.roleName()));
-        Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(principal, keyPair, SHA256_WITH_RSA)
-                .addSubjectAlternativeName(DNS_NAME, String.format("%s.%s.%s", identity.getName(), identity.getDomainName().replace('.', '-'), cloud))
-                .addSubjectAlternativeName(RFC822_NAME, String.format("%s.%s@%s", identity.getDomainName(), identity.getName(), cloud))
-                .build();
+    public X509Certificate getRoleCertificate(AthenzRole role, Pkcs10Csr csr, Duration expiry) {
         RoleCertificateRequestEntity requestEntity = new RoleCertificateRequestEntity(csr, expiry);
         URI uri = ztsUrl.resolve(String.format("domain/%s/role/%s/token", role.domain().getName(), role.roleName()));
         HttpUriRequest request = RequestBuilder.post(uri)
@@ -184,10 +171,8 @@ public class DefaultZtsClient implements ZtsClient {
     }
 
     @Override
-    public X509Certificate getRoleCertificate(AthenzRole role,
-                                              KeyPair keyPair,
-                                              String cloud) {
-        return getRoleCertificate(role, null, keyPair, cloud);
+    public X509Certificate getRoleCertificate(AthenzRole role, Pkcs10Csr csr) {
+        return getRoleCertificate(role, csr, null);
     }
 
     @Override

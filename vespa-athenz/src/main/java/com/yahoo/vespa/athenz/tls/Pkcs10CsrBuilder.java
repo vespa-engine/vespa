@@ -2,6 +2,7 @@
 package com.yahoo.vespa.athenz.tls;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
@@ -72,7 +73,7 @@ public class Pkcs10CsrBuilder {
     public Pkcs10Csr build() {
         try {
             PKCS10CertificationRequestBuilder requestBuilder =
-                    new JcaPKCS10CertificationRequestBuilder(subject, keyPair.getPublic());
+                    new JcaPKCS10CertificationRequestBuilder(new X500Name(subject.getName()), keyPair.getPublic());
             ExtensionsGenerator extGen = new ExtensionsGenerator();
             if (basicConstraintsExtension != null) {
                 extGen.addExtension(

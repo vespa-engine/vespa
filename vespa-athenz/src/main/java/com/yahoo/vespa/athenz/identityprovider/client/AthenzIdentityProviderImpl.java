@@ -22,6 +22,7 @@ import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.SslContextBuilder;
+import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.defaults.Defaults;
 
@@ -69,6 +70,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final LoadingCache<AthenzRole, SSLContext> roleSslContextCache;
     private final LoadingCache<AthenzRole, ZToken> roleSpecificRoleTokenCache;
     private final LoadingCache<AthenzDomain, ZToken> domainSpecificRoleTokenCache;
+    private final CsrGenerator csrGenerator;
 
     @Inject
     public AthenzIdentityProviderImpl(IdentityConfig config, Metric metric) {
@@ -100,6 +102,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         roleSslContextCache = createCache(ROLE_SSL_CONTEXT_EXPIRY, this::createRoleSslContext);
         roleSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);
         domainSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);
+        this.csrGenerator = new CsrGenerator(config.athenzDnsSuffix(), config.configserverIdentityName());
         registerInstance();
     }
 
@@ -174,8 +177,9 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     private SSLContext createRoleSslContext(AthenzRole role) {
+        Pkcs10Csr csr = csrGenerator.generateRoleCsr(identity, role, credentials.getIdentityDocument().providerUniqueId(), credentials.getKeyPair());
         try (ZtsClient client = createZtsClient()) {
-            X509Certificate roleCertificate = client.getRoleCertificate(role, credentials.getKeyPair(), dnsSuffix);
+            X509Certificate roleCertificate = client.getRoleCertificate(role, csr);
             return new SslContextBuilder()
                     .withKeyStore(credentials.getKeyPair().getPrivate(), roleCertificate)
                     .withTrustStore(getDefaultTrustStoreLocation().toPath(), KeyStoreType.JKS)
