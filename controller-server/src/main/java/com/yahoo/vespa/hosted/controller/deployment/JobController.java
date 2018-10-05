@@ -195,7 +195,7 @@ public class JobController {
                 runs.put(run.id(), finishedRun);
                 long last = id.number();
                 Iterator<RunId> ids = runs.keySet().iterator();
-                for (RunId old = ids.next(); old.number() < last - historyLength; old = ids.next()) {
+                for (RunId old = ids.next(); old.number() <= last - historyLength; old = ids.next()) {
                     logs.delete(old);
                     ids.remove();
                 }
