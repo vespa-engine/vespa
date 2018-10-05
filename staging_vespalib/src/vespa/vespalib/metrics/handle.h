@@ -14,7 +14,7 @@ namespace metrics {
 template <typename T>
 class Handle {
 private:
-    const size_t _id;
+    size_t _id;
 public:
     explicit Handle(size_t id) : _id(id) {}
     size_t id() const { return _id; }

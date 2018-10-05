@@ -7,6 +7,16 @@ namespace metrics {
 
 using Guard = std::lock_guard<std::mutex>;
 
+NameCollection::NameCollection()
+{
+    size_t first = resolve("");
+    assert(first == 0);
+    assert(lookup(first) == "");
+    assert(_names_by_id.size() == 1);
+    assert(_names.size() == 1);
+    (void) first; // in case of NOP asserts
+}
+
 const vespalib::string &
 NameCollection::lookup(size_t id) const
 {
