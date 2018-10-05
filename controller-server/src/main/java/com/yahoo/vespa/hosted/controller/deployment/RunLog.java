@@ -31,7 +31,10 @@ public class RunLog {
     /** Creates a RunLog which contains a deep copy of the given log. */
     public static RunLog of(Map<Step, List<LogEntry>> log) {
         ImmutableMap.Builder<Step, List<LogEntry>> builder = ImmutableMap.builder();
-        log.forEach((step, entries) -> builder.put(step, ImmutableList.copyOf(entries)));
+        log.forEach((step, entries) -> {
+            if ( ! entries.isEmpty())
+                builder.put(step, ImmutableList.copyOf(entries));
+        });
         OptionalLong lastId = log.values().stream()
                                  .flatMap(List::stream)
                                  .mapToLong(LogEntry::id)
@@ -45,8 +48,8 @@ public class RunLog {
     }
 
     /** Returns the log entries for the given step, if any are recorded. */
-    public Optional<List<LogEntry>> get(Step step) {
-        return Optional.ofNullable(log.get(step));
+    public List<LogEntry> get(Step step) {
+        return log.getOrDefault(step, Collections.emptyList());
     }
 
     /** Returns the id of the last log entry in this, if it has any. */

@@ -43,23 +43,23 @@ public class BufferedLogStoreTest {
 
         logs.append(id.application(), id.type(), Step.deployReal, Collections.singletonList(entry));
         assertEquals(Arrays.asList(entry0),
-                     logs.readActive(id.application(), id.type(), -1).get(Step.deployReal).get());
+                     logs.readActive(id.application(), id.type(), -1).get(Step.deployReal));
         assertEquals(RunLog.empty(), logs.readActive(id.application(), id.type(), 0));
 
         logs.append(id.application(), id.type(), Step.deployReal, Collections.singletonList(entry));
         assertEquals(Arrays.asList(entry0, entry1),
-                     logs.readActive(id.application(), id.type(), -1).get(Step.deployReal).get());
+                     logs.readActive(id.application(), id.type(), -1).get(Step.deployReal));
         assertEquals(Arrays.asList(entry1),
-                     logs.readActive(id.application(), id.type(), 0).get(Step.deployReal).get());
+                     logs.readActive(id.application(), id.type(), 0).get(Step.deployReal));
         assertEquals(RunLog.empty(), logs.readActive(id.application(), id.type(), 1));
 
         logs.append(id.application(), id.type(), Step.deployReal, Collections.singletonList(entry));
         assertEquals(Arrays.asList(entry0, entry1, entry2),
-                     logs.readActive(id.application(), id.type(), -1).get(Step.deployReal).get());
+                     logs.readActive(id.application(), id.type(), -1).get(Step.deployReal));
         assertEquals(Arrays.asList(entry1, entry2),
-                     logs.readActive(id.application(), id.type(), 0).get(Step.deployReal).get());
+                     logs.readActive(id.application(), id.type(), 0).get(Step.deployReal));
         assertEquals(Arrays.asList(entry2),
-                     logs.readActive(id.application(), id.type(), 1).get(Step.deployReal).get());
+                     logs.readActive(id.application(), id.type(), 1).get(Step.deployReal));
         assertEquals(RunLog.empty(), logs.readActive(id.application(), id.type(), 2));
 
         // We should now have two chunks, with two and one entries.
@@ -73,12 +73,12 @@ public class BufferedLogStoreTest {
         assertEquals(RunLog.empty(), logs.readActive(id.application(), id.type(), -1));
 
         assertEquals(Arrays.asList(entry0, entry1, entry2),
-                     logs.readFinished(id, -1).get().get(Step.deployReal).get());
+                     logs.readFinished(id, -1).get().get(Step.deployReal));
         assertEquals(Arrays.asList(entry1, entry2),
-                     logs.readFinished(id, 0).get().get(Step.deployReal).get());
+                     logs.readFinished(id, 0).get().get(Step.deployReal));
         assertEquals(Arrays.asList(entry2),
-                     logs.readFinished(id, 1).get().get(Step.deployReal).get());
-        assertEquals(Collections.emptyList(), logs.readFinished(id, 2).get().get(Step.deployReal).get());
+                     logs.readFinished(id, 1).get().get(Step.deployReal));
+        assertEquals(Collections.emptyList(), logs.readFinished(id, 2).get().get(Step.deployReal));
     }
 
 }

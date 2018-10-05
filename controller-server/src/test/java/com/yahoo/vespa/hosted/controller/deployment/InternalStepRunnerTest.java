@@ -257,7 +257,7 @@ public class InternalStepRunnerTest {
     }
 
     private void assertTestLogEntries(RunId id, Step step, LogEntry... entries) {
-        assertEquals(Arrays.asList(entries), tester.jobs().details(id).get().get(step).get());
+        assertEquals(Arrays.asList(entries), tester.jobs().details(id).get().get(step));
     }
 
     @Test

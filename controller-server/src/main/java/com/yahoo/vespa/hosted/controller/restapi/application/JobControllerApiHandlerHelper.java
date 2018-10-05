@@ -371,7 +371,8 @@ class JobControllerApiHandlerHelper {
 
         Cursor logObject = detailsObject.setObject("log");
         for (Step step : Step.values()) {
-            runLog.get(step).ifPresent(entries -> toSlime(logObject.setArray(step.name()), entries));
+            if ( ! runLog.get(step).isEmpty())
+                toSlime(logObject.setArray(step.name()), runLog.get(step));
         }
         runLog.lastId().ifPresent(id -> detailsObject.setLong("lastId", id));
 
