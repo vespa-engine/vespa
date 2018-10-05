@@ -37,6 +37,7 @@ import java.util.logging.Logger;
  *
  * If multiple locks is taken, the allowed locking order is: 1. Thread monitor. 2. Metric lock. 3. Config lock.
  */
+// TODO: Remove on Vespa 7
 public class MetricManager implements Runnable {
 
     private static final int STATE_CREATED = 0;
@@ -46,12 +47,12 @@ public class MetricManager implements Runnable {
     private final CountDownLatch termination = new CountDownLatch(1);
     private final MetricSnapshot activeMetrics = new MetricSnapshot("Active metrics showing updates since " +
                                                                     "last snapshot");
-    private final Map<String, ConsumerSpec> consumerConfig = new HashMap<String, ConsumerSpec>();
-    private final List<UpdateHook> periodicUpdateHooks = new ArrayList<UpdateHook>();
-    private final List<UpdateHook> snapshotUpdateHooks = new ArrayList<UpdateHook>();
+    private final Map<String, ConsumerSpec> consumerConfig = new HashMap<>();
+    private final List<UpdateHook> periodicUpdateHooks = new ArrayList<>();
+    private final List<UpdateHook> snapshotUpdateHooks = new ArrayList<>();
     private final Timer timer;
     private Pair<Integer, Integer> logPeriod;
-    private List<MetricSnapshotSet> snapshots = new ArrayList<MetricSnapshotSet>();
+    private List<MetricSnapshotSet> snapshots = new ArrayList<>();
     private MetricSnapshot totalMetrics = new MetricSnapshot("Empty metrics before init", 0,
                                                              activeMetrics.getMetrics(), false);
     private int state = STATE_CREATED;
@@ -66,17 +67,17 @@ public class MetricManager implements Runnable {
     MetricManager(Timer timer) {
         this.timer = timer;
         initializeSnapshots();
-        logPeriod = new Pair<Integer, Integer>(snapshots.get(0).getPeriod(), 0);
+        logPeriod = new Pair<>(snapshots.get(0).getPeriod(), 0);
     }
 
     void initializeSnapshots() {
         int currentTime = timer.secs();
 
-        List<Pair<Integer, String>> snapshotPeriods = new ArrayList<Pair<Integer, String>>();
-        snapshotPeriods.add(new Pair<Integer, String>(60 * 5, "5 minute"));
-        snapshotPeriods.add(new Pair<Integer, String>(60 * 60, "1 hour"));
-        snapshotPeriods.add(new Pair<Integer, String>(60 * 60 * 24, "1 day"));
-        snapshotPeriods.add(new Pair<Integer, String>(60 * 60 * 24 * 7, "1 week"));
+        List<Pair<Integer, String>> snapshotPeriods = new ArrayList<>();
+        snapshotPeriods.add(new Pair<>(60 * 5, "5 minute"));
+        snapshotPeriods.add(new Pair<>(60 * 60, "1 hour"));
+        snapshotPeriods.add(new Pair<>(60 * 60 * 24, "1 day"));
+        snapshotPeriods.add(new Pair<>(60 * 60 * 24 * 7, "1 week"));
 
         int count = 1;
         for (int i = 0; i < snapshotPeriods.size(); ++i) {

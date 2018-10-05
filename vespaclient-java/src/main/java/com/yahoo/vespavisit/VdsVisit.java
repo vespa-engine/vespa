@@ -28,11 +28,12 @@ import java.nio.charset.Charset;
 import java.util.Map;
 
 /**
- * Example client using visiting
+ * Client using visiting, used by the vespa-visit command line tool.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>, based on work by <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
+ * @author Einar M R Rosenvinge
  */
 public class VdsVisit {
+
     private VdsVisitParameters params;
     private MessageBusParams mbparams = new MessageBusParams(new LoadTypeSet());
     private VisitorSession session;
@@ -42,19 +43,26 @@ public class VdsVisit {
     private ShutdownHookRegistrar shutdownHookRegistrar;
 
     public interface ShutdownHookRegistrar {
-        public void registerShutdownHook(Thread thread);
+
+        void registerShutdownHook(Thread thread);
+
     }
 
     public interface VisitorSessionAccessor {
-        public VisitorSession createVisitorSession(VisitorParameters params) throws ParseException;
-        public void shutdown();
+
+        VisitorSession createVisitorSession(VisitorParameters params) throws ParseException;
+        void shutdown();
+
     }
 
     public interface VisitorSessionAccessorFactory {
-        public VisitorSessionAccessor createVisitorSessionAccessor();
+
+        VisitorSessionAccessor createVisitorSessionAccessor();
+
     }
 
     private static class MessageBusVisitorSessionAccessor implements VisitorSessionAccessor {
+
         private MessageBusDocumentAccess access;
 
         private MessageBusVisitorSessionAccessor(MessageBusParams mbparams) {
@@ -69,9 +77,11 @@ public class VdsVisit {
         public void shutdown() {
             access.shutdown();
         }
+
     }
 
     private static class MessageBusVisitorSessionAccessorFactory implements VisitorSessionAccessorFactory {
+
         MessageBusParams mbparams;
 
         private MessageBusVisitorSessionAccessorFactory(MessageBusParams mbparams) {
@@ -82,13 +92,16 @@ public class VdsVisit {
         public VisitorSessionAccessor createVisitorSessionAccessor() {
             return new MessageBusVisitorSessionAccessor(mbparams);
         }
+
     }
 
     private static class JvmRuntimeShutdownHookRegistrar implements ShutdownHookRegistrar {
+
         @Override
         public void registerShutdownHook(Thread thread) {
             Runtime.getRuntime().addShutdownHook(thread);
         }
+
     }
 
     public VdsVisit() {
@@ -96,9 +109,7 @@ public class VdsVisit {
         this.shutdownHookRegistrar = new JvmRuntimeShutdownHookRegistrar();
     }
 
-    public VdsVisit(VisitorSessionAccessorFactory sessionAccessorFactory,
-                    ShutdownHookRegistrar shutdownHookRegistrar)
-    {
+    public VdsVisit(VisitorSessionAccessorFactory sessionAccessorFactory, ShutdownHookRegistrar shutdownHookRegistrar) {
         this.sessionAccessorFactory = sessionAccessorFactory;
         this.shutdownHookRegistrar = shutdownHookRegistrar;
     }
@@ -350,6 +361,7 @@ public class VdsVisit {
     }
 
     public static class VdsVisitParameters {
+
         private VisitorParameters visitorParameters;
         /** If not specified in options, will get form cluster list */
         private String cluster = null;
