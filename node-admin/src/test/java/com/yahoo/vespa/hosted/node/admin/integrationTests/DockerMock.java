@@ -33,9 +33,6 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public void start() { }
-
-    @Override
     public CreateContainerCommand createContainerCommand(
             DockerImage dockerImage,
             ContainerResources containerResources,
@@ -49,13 +46,6 @@ public class DockerMock implements Docker {
         }
 
         return new StartContainerCommandMock();
-    }
-
-    @Override
-    public void connectContainerToNetwork(ContainerName containerName, String networkName) {
-        synchronized (monitor) {
-            callOrderVerifier.add("Connecting " + containerName + " to network: " + networkName);
-        }
     }
 
     @Override

@@ -81,15 +81,11 @@ public class DockerOperationsImplTest {
     }
 
     @Test
-    public void runsCommandInNetworkNamespace() {
+    public void runsCommandInNetworkNamespace() throws IOException {
         Container container = makeContainer("container-42", Container.State.RUNNING, 42);
 
-        try {
-            when(processExecuter.exec(aryEq(new String[]{"sudo", "nsenter", "--net=/host/proc/42/ns/net", "--", "iptables", "-nvL"})))
-                    .thenReturn(new Pair<>(0, ""));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        when(processExecuter.exec(aryEq(new String[]{"nsenter", "--net=/host/proc/42/ns/net", "--", "iptables", "-nvL"})))
+                .thenReturn(new Pair<>(0, ""));
 
         dockerOperations.executeCommandInNetworkNamespace(container.name, "iptables", "-nvL");
     }

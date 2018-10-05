@@ -84,7 +84,6 @@ public class NodeAdminImpl implements NodeAdmin {
 
         storageMaintainer.cleanNodeAdmin();
         synchronizeNodesToNodeAgents(hostnamesOfContainersToRun);
-        dockerOperations.deleteUnusedDockerImages();
 
         updateNodeAgentMetrics();
     }

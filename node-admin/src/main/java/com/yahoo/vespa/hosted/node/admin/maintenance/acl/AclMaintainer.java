@@ -63,17 +63,12 @@ public class AclMaintainer implements Runnable {
         IPTablesEditor.editFlushOnError(dockerOperations, container.name, IPVersion.IPv6, "filter", FilterTableLineEditor.from(acl, IPVersion.IPv6));
         IPTablesEditor.editFlushOnError(dockerOperations, container.name, IPVersion.IPv4, "filter", FilterTableLineEditor.from(acl, IPVersion.IPv4));
 
-        // Apply redirect to the nat table
-        if (environment.getDockerNetworking() == DockerNetworking.NPT) {
-            ipAddresses.getAddress(container.hostname, IPVersion.IPv4).ifPresent(addr -> applyRedirect(container, addr));
-            ipAddresses.getAddress(container.hostname, IPVersion.IPv6).ifPresent(addr -> applyRedirect(container, addr));
-        }
+        ipAddresses.getAddress(container.hostname, IPVersion.IPv4).ifPresent(addr -> applyRedirect(container, addr));
+        ipAddresses.getAddress(container.hostname, IPVersion.IPv6).ifPresent(addr -> applyRedirect(container, addr));
     }
 
     private synchronized void configureAcls() {
-        if (environment.getDockerNetworking() == DockerNetworking.HOST_NETWORK) {
-            return;
-        }
+        if (environment.getDockerNetworking() != DockerNetworking.NPT) return;
 
         log.info("Configuring ACLs"); // Needed to potentially nail down when ACL maintainer stopped working
         Map<String, Container> runningContainers = dockerOperations
