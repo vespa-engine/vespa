@@ -73,12 +73,12 @@ public class ZtsClientMock implements ZtsClient {
     }
 
     @Override
-    public X509Certificate getRoleCertificate(AthenzRole role, Duration expiry, KeyPair keyPair, String cloud) {
+    public X509Certificate getRoleCertificate(AthenzRole role, Pkcs10Csr csr, Duration expiry) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public X509Certificate getRoleCertificate(AthenzRole role, KeyPair keyPair, String cloud) {
+    public X509Certificate getRoleCertificate(AthenzRole role, Pkcs10Csr csr) {
         throw new UnsupportedOperationException();
     }
 
