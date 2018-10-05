@@ -276,7 +276,7 @@ class JobControllerApiHandlerHelper {
         controller.jobController().runs(application.id(), type).values().stream()
                   .sorted(Comparator.comparing(run -> -run.id().number()))
                   .limit(Math.max(0, 10 - runs))
-                  .forEach(run -> runToSlime(runArray.addObject(), run, baseUriForJob, true));
+                  .forEach(run -> runToSlime(runArray.addObject(), run, baseUriForJob));
 
         jobObject.setString("url", baseUriForJob.toString());
     }
@@ -301,7 +301,7 @@ class JobControllerApiHandlerHelper {
         }
     }
 
-    private static void runToSlime(Cursor runObject, Run run, URI baseUriForJobType, boolean summarize) {
+    private static void runToSlime(Cursor runObject, Run run, URI baseUriForJobType) {
         runObject.setLong("id", run.id().number());
         runObject.setString("status", run.status().name());
         runObject.setLong("start", run.start().toEpochMilli());
@@ -309,10 +309,8 @@ class JobControllerApiHandlerHelper {
 
         versionsToSlime(runObject, run.versions());
 
-        if ( ! summarize) {
-            Cursor stepsObject = runObject.setObject("steps");
-            run.steps().forEach((step, status) -> stepsObject.setString(step.name(), status.name()));
-        }
+        Cursor stepsObject = runObject.setObject("steps");
+        run.steps().forEach((step, status) -> stepsObject.setString(step.name(), status.name()));
         Cursor tasksObject = runObject.setObject("tasks");
         taskStatus(deployReal, run).ifPresent(status -> tasksObject.setString("deploy", status));
         taskStatus(Step.installReal, run).ifPresent(status -> tasksObject.setString("install", status));
@@ -333,7 +331,7 @@ class JobControllerApiHandlerHelper {
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
 
-        runs.forEach((runid, run) -> runToSlime(cursor.setObject(Long.toString(runid.number())), run, baseUriForJobType, false));
+        runs.forEach((runid, run) -> runToSlime(cursor.setObject(Long.toString(runid.number())), run, baseUriForJobType));
 
         return new SlimeJsonResponse(slime);
     }
@@ -371,7 +369,8 @@ class JobControllerApiHandlerHelper {
 
         Cursor logObject = detailsObject.setObject("log");
         for (Step step : Step.values()) {
-            runLog.get(step).ifPresent(entries -> toSlime(logObject.setArray(step.name()), entries));
+            if ( ! runLog.get(step).isEmpty())
+                toSlime(logObject.setArray(step.name()), runLog.get(step));
         }
         runLog.lastId().ifPresent(id -> detailsObject.setLong("lastId", id));
 
