@@ -7,7 +7,7 @@ namespace metrics {
 
 using Guard = std::lock_guard<std::mutex>;
 
-const PointMap &
+const HashedPointMap &
 PointMapCollection::lookup(size_t id) const
 {
     Guard guard(_lock);
@@ -17,7 +17,7 @@ PointMapCollection::lookup(size_t id) const
 }
 
 size_t
-PointMapCollection::resolve(PointMap map)
+PointMapCollection::resolve(HashedPointMap map)
 {
     Guard guard(_lock);
     size_t nextId = _vec.size();

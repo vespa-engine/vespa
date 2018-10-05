@@ -5,18 +5,18 @@
 namespace vespalib {
 namespace metrics {
 
-PointMap::PointMap(BackingMap &&from)
+HashedPointMap::HashedPointMap(PointMap &&from)
     : _map(std::move(from)),
       _hash(0)
 {
-    for (const BackingMap::value_type &entry : _map) {
+    for (const PointMap::value_type &entry : _map) {
         _hash = (_hash << 7) + (_hash >> 31) + entry.first.id();
         _hash = (_hash << 7) + (_hash >> 31) + entry.second.id();
     }
 }
 
 bool
-PointMap::operator< (const PointMap &other) const
+HashedPointMap::operator< (const HashedPointMap &other) const
 {
     // cheap comparison first
     if (_hash != other._hash) {

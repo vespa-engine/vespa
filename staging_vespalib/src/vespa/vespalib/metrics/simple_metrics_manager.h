@@ -70,7 +70,7 @@ public:
     Dimension dimension(const vespalib::string &name) override;
     Label label(const vespalib::string &value) override;
     PointBuilder pointBuilder(Point from) override;
-    Point pointFrom(PointMap::BackingMap map) override;
+    Point pointFrom(PointMap map) override;
     Snapshot snapshot() override;
     Snapshot totalSnapshot() override;
 

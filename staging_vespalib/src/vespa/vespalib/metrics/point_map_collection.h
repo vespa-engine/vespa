@@ -12,14 +12,14 @@ namespace metrics {
 // internal
 class PointMapCollection {
 private:
-    using PointMapMap = std::map<PointMap, size_t>;
+    using PointMapMap = std::map<HashedPointMap, size_t>;
 
     mutable std::mutex _lock;
     PointMapMap _map;
     std::vector<PointMapMap::const_iterator> _vec;
 public:
-    const PointMap &lookup(size_t id) const;
-    size_t resolve(PointMap map);
+    const HashedPointMap &lookup(size_t id) const;
+    size_t resolve(HashedPointMap map);
     size_t size() const;
 
     PointMapCollection() = default;

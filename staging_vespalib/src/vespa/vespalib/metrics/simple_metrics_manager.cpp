@@ -25,7 +25,7 @@ SimpleMetricsManager::SimpleMetricsManager(const SimpleManagerConfig &config,
       _thread(&SimpleMetricsManager::tickerLoop, this)
 {
     if (_maxBuckets < 1) _maxBuckets = 1;
-    Point empty = pointFrom(PointMap::BackingMap());
+    Point empty = pointFrom(PointMap());
     assert(empty.id() == 0);
 }
 
@@ -110,9 +110,9 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
     Snapshot snap(s, e);
     {
         for (size_t point_id = 0; point_id <= max_point_id; ++point_id) {
-            const PointMap::BackingMap &map = NameRepo::instance.pointMap(Point(point_id));
+            const PointMap &map = NameRepo::instance.pointMap(Point(point_id));
             PointSnapshot point;
-            for (const PointMap::BackingMap::value_type &kv : map) {
+            for (const PointMap::value_type &kv : map) {
                 point.dimensions.emplace_back(kv.first.as_name(), kv.second.as_value());
             }
             snap.add(point);
@@ -187,12 +187,12 @@ SimpleMetricsManager::label(const vespalib::string &value)
 PointBuilder
 SimpleMetricsManager::pointBuilder(Point from)
 {
-    const PointMap::BackingMap &map = NameRepo::instance.pointMap(from);
+    const PointMap &map = NameRepo::instance.pointMap(from);
     return PointBuilder(shared_from_this(), map);
 }
 
 Point
-SimpleMetricsManager::pointFrom(PointMap::BackingMap map)
+SimpleMetricsManager::pointFrom(PointMap map)
 {
     return NameRepo::instance.pointFrom(std::move(map));
 }

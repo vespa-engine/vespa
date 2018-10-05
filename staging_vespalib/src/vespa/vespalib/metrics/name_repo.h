@@ -36,8 +36,8 @@ public:
     const vespalib::string& dimensionName(Dimension dim) const;
     const vespalib::string& labelValue(Label l) const;
 
-    const PointMap::BackingMap& pointMap(Point from) const;
-    Point pointFrom(PointMap::BackingMap map);
+    const PointMap& pointMap(Point from) const;
+    Point pointFrom(PointMap map);
 
     static NameRepo instance;
 };
