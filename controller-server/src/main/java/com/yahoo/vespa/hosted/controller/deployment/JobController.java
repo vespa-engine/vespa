@@ -75,7 +75,7 @@ public class JobController {
     public void updateStorage() {
         for (ApplicationId id : applications())
             for (JobType type : jobs(id)) {
-                locked(id, type, runs -> { // runs is unmodified, and written back as such.
+                locked(id, type, runs -> { // runs is not modified here, and is written as it was.
                     curator.readLastRun(id, type).ifPresent(curator::writeLastRun);
                 });
             }

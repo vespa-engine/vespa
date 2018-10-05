@@ -20,9 +20,9 @@ import com.yahoo.vespa.hosted.controller.deployment.Versions;
 
 import java.time.Instant;
 import java.util.EnumMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Optional;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
@@ -46,6 +46,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
+import static java.util.Comparator.comparing;
 
 /**
  * Serialises and deserialises RunStatus objects for persistent storage.
@@ -74,8 +75,8 @@ class RunSerializer {
         return runFromSlime(slime.get());
     }
 
-    Map<RunId, Run> runsFromSlime(Slime slime) {
-        Map<RunId, Run> runs = new LinkedHashMap<>();
+    SortedMap<RunId, Run> runsFromSlime(Slime slime) {
+        SortedMap<RunId, Run> runs = new TreeMap<>(comparing(RunId::number));
         Inspector runArray = slime.get();
         runArray.traverse((ArrayTraverser) (__, runObject) -> {
             Run run = runFromSlime(runObject);
