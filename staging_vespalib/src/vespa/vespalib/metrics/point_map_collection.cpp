@@ -25,24 +25,8 @@ HashedPointMap::operator< (const HashedPointMap &other) const
     if (_map.size() != other._map.size()) {
         return _map.size() < other._map.size();
     }
-    // sizes equal, iterate in parallel
-    for (auto m = _map.begin(), o = other._map.begin();
-         m != _map.end();
-         ++m, ++o)
-    {
-        const Dimension& d1 = m->first;
-        const Dimension& d2 = o->first;
-        if (d1 != d2) {
-            return d1 < d2;
-        }
-        const Label &l1 = m->second;
-        const Label &l2 = o->second;
-        if (l1 != l2) {
-            return l1 < l2;
-        }
-    }
-    // equal
-    return false;
+    // sizes equal, fall back to std::map::operator<
+    return _map < other._map; 
 }
 
 using Guard = std::lock_guard<std::mutex>;

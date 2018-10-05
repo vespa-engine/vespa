@@ -15,7 +15,6 @@ private:
     const PointMap _map;
     size_t _hash;
 public:
-    HashedPointMap() : _map(), _hash(0) {}
     HashedPointMap(PointMap &&from);
     bool operator< (const HashedPointMap &other) const;
 
