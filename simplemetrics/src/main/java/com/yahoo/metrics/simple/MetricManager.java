@@ -17,7 +17,7 @@ import com.yahoo.log.LogLevel;
  * This is the coordinating class owning the executor and the top level objects
  * for measured metrics.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class MetricManager extends AbstractComponent implements Provider<MetricReceiver> {
 
