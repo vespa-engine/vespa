@@ -116,6 +116,8 @@ public class JobControllerApiHandlerHelperTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
 
+        System.err.println(baos);
+
         JSONObject actualJSON = new JSONObject(new String(baos.toByteArray()));
         JSONObject expectedJSON = new JSONObject(expected);
         assertEquals(expectedJSON.toString(), actualJSON.toString());

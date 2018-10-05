@@ -109,6 +109,17 @@
               "gitCommit": "commit1"
             }
           },
+          "steps": {
+            "deployReal": "succeeded",
+            "installReal": "succeeded",
+            "deployTester": "succeeded",
+            "installTester": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "deactivateReal": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
+          },
           "tasks": {
             "deploy": "succeeded",
             "install": "succeeded",
@@ -141,6 +152,17 @@
               "gitCommit": "commit1"
             }
           },
+          "steps": {
+            "deployReal": "succeeded",
+            "installReal": "succeeded",
+            "deployTester": "succeeded",
+            "installTester": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "deactivateReal": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
+          },
           "tasks": {
             "deploy": "succeeded",
             "install": "succeeded",
@@ -162,6 +184,17 @@
               "gitBranch": "master",
               "gitCommit": "commit1"
             }
+          },
+          "steps": {
+            "deployReal": "succeeded",
+            "installReal": "succeeded",
+            "deployTester": "succeeded",
+            "installTester": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "deactivateReal": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
           },
           "tasks": {
             "deploy": "succeeded",
@@ -227,6 +260,19 @@
               "gitCommit": "commit1"
             }
           },
+          "steps": {
+            "deployInitialReal": "succeeded",
+            "installInitialReal": "failed",
+            "deployReal": "unfinished",
+            "installReal": "unfinished",
+            "deployTester": "succeeded",
+            "installTester": "unfinished",
+            "startTests": "unfinished",
+            "endTests": "unfinished",
+            "deactivateReal": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
+          },
           "tasks": {},
           "log": "https://some.url:43/root/staging-test/run/4"
         },
@@ -254,6 +300,19 @@
               "gitBranch": "master",
               "gitCommit": "commit1"
             }
+          },
+          "steps": {
+            "deployInitialReal": "succeeded",
+            "installInitialReal": "succeeded",
+            "deployReal": "succeeded",
+            "installReal": "succeeded",
+            "deployTester": "succeeded",
+            "installTester": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "deactivateReal": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
           },
           "tasks": {
             "deploy": "succeeded",
@@ -287,6 +346,19 @@
               "gitCommit": "commit1"
             }
           },
+          "steps": {
+            "deployInitialReal": "succeeded",
+            "installInitialReal": "succeeded",
+            "deployReal": "succeeded",
+            "installReal": "succeeded",
+            "deployTester": "succeeded",
+            "installTester": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "deactivateReal": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
+          },
           "tasks": {
             "deploy": "succeeded",
             "install": "succeeded",
@@ -308,6 +380,19 @@
               "gitBranch": "master",
               "gitCommit": "commit1"
             }
+          },
+          "steps": {
+            "deployInitialReal": "succeeded",
+            "installInitialReal": "succeeded",
+            "deployReal": "succeeded",
+            "installReal": "succeeded",
+            "deployTester": "succeeded",
+            "installTester": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "deactivateReal": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
           },
           "tasks": {
             "deploy": "succeeded",
@@ -345,6 +430,16 @@
               "gitCommit": "commit1"
             }
           },
+          "steps": {
+            "deployReal": "succeeded",
+            "installReal": "unfinished",
+            "deployTester": "succeeded",
+            "installTester": "unfinished",
+            "startTests": "unfinished",
+            "endTests": "unfinished",
+            "deactivateTester": "unfinished",
+            "report": "unfinished"
+          },
           "tasks": {
             "deploy": "succeeded",
             "install": "running"
@@ -376,6 +471,16 @@
               "gitCommit": "commit1"
             }
           },
+          "steps": {
+            "deployReal": "succeeded",
+            "installReal": "succeeded",
+            "deployTester": "succeeded",
+            "installTester": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
+          },
           "tasks": {
             "deploy": "succeeded",
             "install": "succeeded",
@@ -397,6 +502,16 @@
               "gitBranch": "master",
               "gitCommit": "commit1"
             }
+          },
+          "steps": {
+            "deployReal": "succeeded",
+            "installReal": "succeeded",
+            "deployTester": "succeeded",
+            "installTester": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
           },
           "tasks": {
             "deploy": "succeeded",
@@ -461,6 +576,16 @@
               "gitCommit": "commit1"
             }
           },
+          "steps": {
+            "deployReal": "succeeded",
+            "installReal": "succeeded",
+            "deployTester": "succeeded",
+            "installTester": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "failed",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
+          },
           "tasks": {
             "deploy": "succeeded",
             "install": "succeeded",
@@ -482,6 +607,16 @@
               "gitBranch": "master",
               "gitCommit": "commit1"
             }
+          },
+          "steps": {
+            "deployReal": "succeeded",
+            "installReal": "succeeded",
+            "deployTester": "succeeded",
+            "installTester": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
           },
           "tasks": {
             "deploy": "succeeded",
@@ -547,6 +682,16 @@
               "gitCommit": "commit1"
             }
           },
+          "steps": {
+            "deployReal": "failed",
+            "installReal": "unfinished",
+            "deployTester": "unfinished",
+            "installTester": "unfinished",
+            "startTests": "unfinished",
+            "endTests": "unfinished",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
+          },
           "tasks": {
             "deploy": "failed"
           },
@@ -566,6 +711,16 @@
               "gitBranch": "master",
               "gitCommit": "commit1"
             }
+          },
+          "steps": {
+            "deployReal": "succeeded",
+            "installReal": "succeeded",
+            "deployTester": "succeeded",
+            "installTester": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
           },
           "tasks": {
             "deploy": "succeeded",
