@@ -11,8 +11,13 @@ using LabelValue = vespalib::string;
 struct LabelTag {};
 
 /**
- * Opaque handle representing an uniquely named label.
+ * Opaque handle representing an unique label value.
  **/
-using Label = Handle<LabelTag>;
+struct Label : Handle<LabelTag>
+{
+    explicit Label(size_t id) : Handle(id) {}
+    static Label from_value(const vespalib::string& value);
+    const vespalib::string& as_value() const;
+};
 
 } // namespace vespalib::metrics
