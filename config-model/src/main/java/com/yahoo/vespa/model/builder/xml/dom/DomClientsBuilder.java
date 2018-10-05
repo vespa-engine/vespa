@@ -30,7 +30,7 @@ public class DomClientsBuilder extends LegacyConfigModelBuilder<Clients> {
         String version = clientsE.getAttribute("version");
         if (version.startsWith("2.")) {
             DomV20ClientsBuilder parser = new DomV20ClientsBuilder(clients, version);
-            parser.build(modelContext.getDeployState(), clientsE);
+            parser.build(clientsE);
         } else {
             throw new IllegalArgumentException("Version '" + version + "' of 'clients' not supported.");
         }
