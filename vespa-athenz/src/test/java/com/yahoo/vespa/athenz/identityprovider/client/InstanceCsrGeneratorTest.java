@@ -25,13 +25,13 @@ public class InstanceCsrGeneratorTest {
 
     @Test
     public void it_generates_csr_with_correct_subject() {
-        InstanceCsrGenerator instanceCsrGenerator = new InstanceCsrGenerator(DNS_SUFFIX, PROVIDER_SERVICE);
+        CsrGenerator csrGenerator = new CsrGenerator(DNS_SUFFIX, PROVIDER_SERVICE);
 
         AthenzService service = new AthenzService(ATHENZ_SERVICE);
         VespaUniqueInstanceId vespaUniqueInstanceId = VespaUniqueInstanceId.fromDottedString("0.default.default.foo-app.vespa.us-north-1.prod.node");
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
 
-        Pkcs10Csr csr = instanceCsrGenerator.generateCsr(service, vespaUniqueInstanceId, Collections.emptySet(), keyPair);
+        Pkcs10Csr csr = csrGenerator.generateInstanceCsr(service, vespaUniqueInstanceId, Collections.emptySet(), keyPair);
         assertEquals(new X500Principal(String.format("OU=%s, CN=%s", PROVIDER_SERVICE, ATHENZ_SERVICE)), csr.getSubject());
     }
 }

@@ -51,7 +51,7 @@ class AthenzCredentialsService {
     private final ServiceIdentityProvider nodeIdentityProvider;
     private final File trustStoreJks;
     private final String hostname;
-    private final InstanceCsrGenerator instanceCsrGenerator;
+    private final CsrGenerator csrGenerator;
     private final Clock clock;
 
     AthenzCredentialsService(IdentityConfig identityConfig,
@@ -66,7 +66,7 @@ class AthenzCredentialsService {
         this.nodeIdentityProvider = nodeIdentityProvider;
         this.trustStoreJks = trustStoreJks;
         this.hostname = hostname;
-        this.instanceCsrGenerator = new InstanceCsrGenerator(identityConfig.athenzDnsSuffix(), identityConfig.configserverIdentityName());
+        this.csrGenerator = new CsrGenerator(identityConfig.athenzDnsSuffix(), identityConfig.configserverIdentityName());
         this.clock = clock;
     }
 
@@ -78,7 +78,7 @@ class AthenzCredentialsService {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         IdentityDocumentClient identityDocumentClient = createIdentityDocumentClient();
         SignedIdentityDocument document = identityDocumentClient.getTenantIdentityDocument(hostname);
-        Pkcs10Csr csr = instanceCsrGenerator.generateCsr(
+        Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 tenantIdentity,
                 document.providerUniqueId(),
                 document.ipAddresses(),
@@ -102,7 +102,7 @@ class AthenzCredentialsService {
 
     AthenzCredentials updateCredentials(SignedIdentityDocument document, SSLContext sslContext) {
         KeyPair newKeyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        Pkcs10Csr csr = instanceCsrGenerator.generateCsr(
+        Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 tenantIdentity,
                 document.providerUniqueId(),
                 document.ipAddresses(),

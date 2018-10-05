@@ -70,7 +70,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final LoadingCache<AthenzRole, SSLContext> roleSslContextCache;
     private final LoadingCache<AthenzRole, ZToken> roleSpecificRoleTokenCache;
     private final LoadingCache<AthenzDomain, ZToken> domainSpecificRoleTokenCache;
-    private final InstanceCsrGenerator instanceCsrGenerator;
+    private final CsrGenerator csrGenerator;
 
     @Inject
     public AthenzIdentityProviderImpl(IdentityConfig config, Metric metric) {
@@ -102,7 +102,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         roleSslContextCache = createCache(ROLE_SSL_CONTEXT_EXPIRY, this::createRoleSslContext);
         roleSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);
         domainSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);
-        this.instanceCsrGenerator = new InstanceCsrGenerator(config.athenzDnsSuffix(), config.configserverIdentityName());
+        this.csrGenerator = new CsrGenerator(config.athenzDnsSuffix(), config.configserverIdentityName());
         registerInstance();
     }
 
@@ -177,7 +177,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     private SSLContext createRoleSslContext(AthenzRole role) {
-        Pkcs10Csr csr = instanceCsrGenerator.generateRoleCsr(identity, role, credentials.getIdentityDocument().providerUniqueId(), credentials.getKeyPair());
+        Pkcs10Csr csr = csrGenerator.generateRoleCsr(identity, role, credentials.getIdentityDocument().providerUniqueId(), credentials.getKeyPair());
         try (ZtsClient client = createZtsClient()) {
             X509Certificate roleCertificate = client.getRoleCertificate(role, csr);
             return new SslContextBuilder()

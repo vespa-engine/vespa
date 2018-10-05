@@ -16,7 +16,7 @@ import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityDocumentClient;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.client.DefaultIdentityDocumentClient;
-import com.yahoo.vespa.athenz.identityprovider.client.InstanceCsrGenerator;
+import com.yahoo.vespa.athenz.identityprovider.client.CsrGenerator;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -65,7 +65,7 @@ public class AthenzCredentialsMaintainer {
     private final Clock clock;
     private final ServiceIdentityProvider hostIdentityProvider;
     private final IdentityDocumentClient identityDocumentClient;
-    private final InstanceCsrGenerator csrGenerator;
+    private final CsrGenerator csrGenerator;
     private final AthenzService configserverIdentity;
 
     private Instant lastRefreshAttempt = Instant.EPOCH; // Used as an optimization to ensure ZTS is not DDoS'ed on continuously failing refresh attempts
@@ -81,7 +81,7 @@ public class AthenzCredentialsMaintainer {
         this.containerIdentity = environment.getNodeAthenzIdentity();
         this.ztsEndpoint = environment.getZtsUri();
         this.configserverIdentity = environment.getConfigserverAthenzIdentity();
-        this.csrGenerator = new InstanceCsrGenerator(environment.getCertificateDnsSuffix(), configserverIdentity.getFullName());
+        this.csrGenerator = new CsrGenerator(environment.getCertificateDnsSuffix(), configserverIdentity.getFullName());
         this.trustStorePath = environment.getTrustStorePath();
         this.privateKeyFile = SiaUtils.getPrivateKeyFile(containerSiaDirectory, containerIdentity);
         this.certificateFile = SiaUtils.getCertificateFile(containerSiaDirectory, containerIdentity);
@@ -172,7 +172,7 @@ public class AthenzCredentialsMaintainer {
     private void registerIdentity() {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         SignedIdentityDocument signedIdentityDocument = identityDocumentClient.getNodeIdentityDocument(hostname);
-        com.yahoo.vespa.athenz.tls.Pkcs10Csr csr = csrGenerator.generateCsr(
+        com.yahoo.vespa.athenz.tls.Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 containerIdentity, signedIdentityDocument.providerUniqueId(), signedIdentityDocument.ipAddresses(), keyPair);
         try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, hostIdentityProvider)) {
             InstanceIdentity instanceIdentity =
@@ -195,7 +195,7 @@ public class AthenzCredentialsMaintainer {
     private void refreshIdentity() {
         SignedIdentityDocument identityDocument = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        com.yahoo.vespa.athenz.tls.Pkcs10Csr csr = csrGenerator.generateCsr(containerIdentity, identityDocument.providerUniqueId(), identityDocument.ipAddresses(), keyPair);
+        com.yahoo.vespa.athenz.tls.Pkcs10Csr csr = csrGenerator.generateInstanceCsr(containerIdentity, identityDocument.providerUniqueId(), identityDocument.ipAddresses(), keyPair);
         SSLContext containerIdentitySslContext =
                 new SslContextBuilder()
                         .withKeyStore(privateKeyFile, certificateFile)
