@@ -8,7 +8,7 @@ namespace metrics {
 using Guard = std::lock_guard<std::mutex>;
 
 const PointMap &
-PointMapCollection::lookup(size_t id)
+PointMapCollection::lookup(size_t id) const
 {
     Guard guard(_lock);
     assert(id < _vec.size());

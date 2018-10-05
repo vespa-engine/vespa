@@ -32,26 +32,26 @@ NameRepo::label(const vespalib::string &value)
 }
 
 const vespalib::string&
-NameRepo::metricName(MetricId metric)
+NameRepo::metricName(MetricId metric) const
 {
     return _metricNames.lookup(metric.id());
 }
 
 const vespalib::string&
-NameRepo::dimensionName(Dimension dim)
+NameRepo::dimensionName(Dimension dim) const
 {
     return _dimensionNames.lookup(dim.id());
 }
 
 const vespalib::string&
-NameRepo::labelValue(Label l)
+NameRepo::labelValue(Label l) const
 {
     return _labelValues.lookup(l.id());
 }
 
 
 const PointMap::BackingMap&
-NameRepo::pointMap(Point from)
+NameRepo::pointMap(Point from) const
 {
     const PointMap &map = _pointMaps.lookup(from.id());
     return map.backingMap();

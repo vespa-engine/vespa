@@ -32,11 +32,11 @@ public:
     Dimension dimension(const vespalib::string &name);
     Label label(const vespalib::string &value);
 
-    const vespalib::string& metricName(MetricId metric);
-    const vespalib::string& dimensionName(Dimension dim);
-    const vespalib::string& labelValue(Label l);
+    const vespalib::string& metricName(MetricId metric) const;
+    const vespalib::string& dimensionName(Dimension dim) const;
+    const vespalib::string& labelValue(Label l) const;
 
-    const PointMap::BackingMap& pointMap(Point from);
+    const PointMap::BackingMap& pointMap(Point from) const;
     Point pointFrom(PointMap::BackingMap map);
 
     static NameRepo instance;

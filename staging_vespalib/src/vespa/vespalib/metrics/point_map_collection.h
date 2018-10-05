@@ -18,7 +18,7 @@ private:
     PointMapMap _map;
     std::vector<PointMapMap::const_iterator> _vec;
 public:
-    const PointMap &lookup(size_t id);
+    const PointMap &lookup(size_t id) const;
     size_t resolve(PointMap map);
     size_t size() const;
 
