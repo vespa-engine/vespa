@@ -229,6 +229,33 @@ public class JobRunnerTest {
     }
 
     @Test
+    public void historyPruning() {
+        DeploymentTester tester = new DeploymentTester();
+        JobController jobs = tester.controller().jobController();
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
+                                         inThreadExecutor(), (id, step) -> Optional.of(running));
+
+        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
+        jobs.submit(id, versions.targetApplication().source().get(), new byte[0], new byte[0]);
+
+        for (int i = 0; i < jobs.historyLength(); i++) {
+            jobs.start(id, systemTest, versions);
+            runner.run();
+        }
+
+        assertEquals(256, jobs.runs(id, systemTest).size());
+        assertTrue(jobs.details(new RunId(id, systemTest, 1)).isPresent());
+
+        jobs.start(id, systemTest, versions);
+        runner.run();
+
+        assertEquals(256, jobs.runs(id, systemTest).size());
+        assertEquals(2, jobs.runs(id, systemTest).keySet().iterator().next().number());
+        assertFalse(jobs.details(new RunId(id, systemTest, 1)).isPresent());
+        assertTrue(jobs.details(new RunId(id, systemTest, 257)).isPresent());
+    }
+
+    @Test
     public void timeout() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();

@@ -71,9 +71,8 @@ public class JobController {
         this.cloud = testerCloud;
     }
 
-    public TesterCloud cloud() {
-        return cloud;
-    }
+    public TesterCloud cloud() { return cloud; }
+    public int historyLength() { return historyLength; }
 
     /** Rewrite all job data with the newest format. */
     public void updateStorage() {
