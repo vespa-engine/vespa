@@ -214,7 +214,9 @@ public class NodeRepository extends AbstractComponent {
                 break;
 
             case proxy:
-                // Accept connections from the world on 4443
+                // Accept connections from the world on 443 (for dashboard app), 4080 (insecure tb removed), and 4443
+                trustedPorts.add(443);
+                trustedPorts.add(4080);
                 trustedPorts.add(4443);
                 break;
 
