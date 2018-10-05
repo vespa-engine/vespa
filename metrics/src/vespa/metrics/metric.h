@@ -15,7 +15,6 @@ class MetricSet;
 class MetricSnapshot;
 class XmlWriterMetricVisitor;
 class MemoryConsumption;
-class NameHash;
 
 /** Implement class to visit metrics. */
 struct MetricVisitor {
@@ -249,18 +248,6 @@ public:
     void setRegistered(MetricSet* owner) { _owner = owner; }
 
     virtual void addMemoryUsage(MemoryConsumption&) const;
-
-    /**
-     * Update names using the given name hash, to utilize ref counting.
-     *
-     * NOTE:
-     * This is a hack that only works on GCC until they decide to finally break
-     * ABI compatibility and remove that particular multicore-hostile feature
-     * of their std::string implementation. If we want proper string ref
-     * counting, all strings should be replaced with explicit string handles
-     * and should only be created via a shared factory.
-     */
-    virtual void updateNames(NameHash&) const;
 
     /** Print debug information of the metric tree. */
     virtual void printDebug(std::ostream&, const std::string& indent="") const;

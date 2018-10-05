@@ -4,7 +4,7 @@
 #include "countmetric.h"
 #include "valuemetric.h"
 #include "metricset.h"
-#include "namehash.h"
+#include "memoryconsumption.h"
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -228,12 +228,6 @@ Metric::addMemoryUsage(MemoryConsumption& mc) const
     // XXX we don't care about unique strings since they don't matter anymore.
     //mc._metricTags += mc.getStringMemoryUsage(_tags, mc._metricTagsUnique);
     mc._metricMeta += sizeof(Metric);
-}
-
-void
-Metric::updateNames(NameHash&) const
-{
-    // not relevant anymore
 }
 
 void

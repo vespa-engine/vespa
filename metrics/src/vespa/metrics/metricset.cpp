@@ -350,15 +350,6 @@ MetricSet::addMemoryUsage(MemoryConsumption& mc) const
 }
 
 void
-MetricSet::updateNames(NameHash& hash) const
-{
-    Metric::updateNames(hash);
-    for (const Metric* metric : _metricOrder) {
-        metric->updateNames(hash);
-    }
-}
-
-void
 MetricSet::printDebug(std::ostream& out, const std::string& indent) const
 {
     out << "set ";

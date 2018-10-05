@@ -75,8 +75,6 @@ public:
     bool used() const override;
     void addMemoryUsage(MemoryConsumption&) const override;
 
-    /** Update names using the given name hash, to utilize ref counting. */
-    void updateNames(NameHash&) const override;
     void printDebug(std::ostream&, const std::string& indent="") const override;
     bool isMetricSet() const override { return true; }
     void addToPart(Metric& m) const override { addTo(m, 0); }

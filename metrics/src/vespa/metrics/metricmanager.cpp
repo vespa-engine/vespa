@@ -366,23 +366,15 @@ MetricManager::handleMetricsAltered(const MetricLockGuard & guard)
         configMap[consumer.name] = ConsumerSpec::SP(new ConsumerSpec(std::move(consumerMetricBuilder._matchedMetrics)));
     }
     LOG(debug, "Recreating snapshots to include altered metrics");
-    _activeMetrics.updateNames(_nameHash);
     _totalMetrics->recreateSnapshot(_activeMetrics.getMetrics(),
                                     _snapshotUnsetMetrics);
-    _totalMetrics->updateNames(_nameHash);
     for (uint32_t i=0; i<_snapshots.size(); ++i) {
         _snapshots[i]->recreateSnapshot(_activeMetrics.getMetrics(),
                                         _snapshotUnsetMetrics);
-        _snapshots[i]->updateNames(_nameHash);
     }
     LOG(debug, "Setting new consumer config. Clearing dirty flag");
     _consumerConfig.swap(configMap);
     _consumerConfigChanged = false;
-    LOG(debug, "Unified %u of %u strings configuring %" PRIu64 " consumers.",
-        _nameHash.getUnifiedStringCount(),
-        _nameHash.getCheckedStringCount(),
-        _config->consumer.size());
-    _nameHash.resetCounts();
 }
 
 namespace {
@@ -966,7 +958,6 @@ MetricManager::getMemoryConsumption(const MetricLockGuard & guard) const
     _totalMetrics->addMemoryUsage(*mc);
     postTotal = mc->getTotalMemoryUsage();
     mc->addSnapShotUsage("total", postTotal - preTotal);
-    _nameHash.addMemoryUsage(*mc);
     return mc;
 }
 

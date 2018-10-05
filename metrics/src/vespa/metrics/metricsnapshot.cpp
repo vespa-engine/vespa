@@ -148,13 +148,6 @@ MetricSnapshotSet::addMemoryUsage(MemoryConsumption& mc) const
 }
 
 void
-MetricSnapshotSet::updateNames(NameHash& hash) const
-{
-    if (_count != 1) _building->updateNames(hash);
-    _current->updateNames(hash);
-}
-
-void
 MetricSnapshotSet::setFromTime(time_t fromTime)
 {
     if (_count != 1) _building->setFromTime(fromTime);
