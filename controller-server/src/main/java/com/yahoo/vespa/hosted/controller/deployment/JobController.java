@@ -114,23 +114,21 @@ public class JobController {
 
     /** Fetches any new test log entries, and records the id of the last of these, for continuation. */
     public void updateTestLog(RunId id) {
-        try (Lock __ = curator.lock(id.application(), id.type())) {
-            active(id).ifPresent(run -> {
+            locked(id, run -> {
                 if ( ! run.readySteps().contains(endTests))
-                    return;
+                    return run;
 
                 Optional<URI> testerEndpoint = testerEndpoint(id);
                 if ( ! testerEndpoint.isPresent())
-                    return;
+                    return run;
 
                 List<LogEntry> entries = cloud.getLog(testerEndpoint.get(), run.lastTestLogEntry());
                 if (entries.isEmpty())
-                    return;
+                    return run;
 
                 logs.append(id.application(), id.type(), endTests, entries);
-                curator.writeLastRun(run.with(entries.stream().mapToLong(LogEntry::id).max().getAsLong()));
+                return run.with(entries.stream().mapToLong(LogEntry::id).max().getAsLong());
             });
-        }
     }
 
     /** Returns a list of all application which have registered. */
@@ -268,11 +266,7 @@ public class JobController {
     public void unregister(ApplicationId id) {
         controller.applications().lockIfPresent(id, application -> {
             controller.applications().store(application.withBuiltInternally(false));
-            jobs(id).forEach(type -> {
-                try (Lock __ = curator.lock(id, type)) {
-                    last(id, type).ifPresent(last -> active(last.id()).ifPresent(active -> abort(active.id())));
-                }
-            });
+            jobs(id).forEach(type -> last(id, type).ifPresent(last -> abort(last.id())));
         });
     }
 
@@ -359,9 +353,10 @@ public class JobController {
     /** Locks and modifies the run with the given id, provided it is still active. */
     private void locked(RunId id, UnaryOperator<Run> modifications) {
         try (Lock __ = curator.lock(id.application(), id.type())) {
-            Run run = active(id).orElseThrow(() -> new IllegalArgumentException(id + " is not an active run!"));
-            run = modifications.apply(run);
-            curator.writeLastRun(run);
+            active(id).ifPresent(run -> {
+                run = modifications.apply(run);
+                curator.writeLastRun(run);
+            });
         }
     }
 
