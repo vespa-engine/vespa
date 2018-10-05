@@ -1,42 +1,46 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#all: services.xsd hosts.xsd
+
+srcdir=resources/schema
+outputdir=../../target/generated-sources/trang/resources/schema
 
 trangjar=../../target/trang.jar
 
-all: resources/schema/services.rng resources/schema/hosts.rng resources/schema/container-include.rng resources/schema/services.xsd resources/schema/hosts.xsd resources/schema/container-include.xsd resources/schema/deployment.xsd
+all: ${outputdir} ${outputdir}/services.rng ${outputdir}/hosts.rng ${outputdir}/container-include.rng ${outputdir}/services.xsd ${outputdir}/hosts.xsd ${outputdir}/container-include.xsd ${outputdir}/deployment.xsd
 
-resources/schema/services.rng: resources/schema/services.rnc resources/schema/common.rnc resources/schema/admin.rnc resources/schema/clients.rnc resources/schema/docproc.rnc resources/schema/routing.rnc resources/schema/clients-v2.rnc resources/schema/content.rnc resources/schema/genericmodule.rnc resources/schema/legacygenericcluster.rnc resources/schema/genericcluster.rnc resources/schema/legacygenericmodule.rnc resources/schema/containercluster.rnc
-	java -jar $(trangjar) -I rnc -O rng resources/schema/services.rnc resources/schema/services.rng
+${outputdir}:
+	mkdir -p ${outputdir}
 
-resources/schema/services.xsd: resources/schema/services.rng
-	java -jar $(trangjar) -I rng -O xsd resources/schema/services.rng resources/schema/services.xsd
+${outputdir}/services.rng: ${srcdir}/services.rnc ${srcdir}/common.rnc ${srcdir}/admin.rnc ${srcdir}/clients.rnc ${srcdir}/docproc.rnc ${srcdir}/routing.rnc ${srcdir}/clients-v2.rnc ${srcdir}/content.rnc ${srcdir}/genericmodule.rnc ${srcdir}/legacygenericcluster.rnc ${srcdir}/genericcluster.rnc ${srcdir}/legacygenericmodule.rnc ${srcdir}/containercluster.rnc
+	java -jar $(trangjar) -I rnc -O rng ${srcdir}/services.rnc ${outputdir}/services.rng
 
-
-resources/schema/container-include.rng: resources/schema/common.rnc resources/schema/containercluster.rnc
-	java -jar $(trangjar) -I rnc -O rng resources/schema/container-include.rnc resources/schema/container-include.rng
-
-resources/schema/container-include.xsd: resources/schema/container-include.rng
-	java -jar $(trangjar) -I rng -O xsd resources/schema/container-include.rng resources/schema/container-include.xsd
+${outputdir}/services.xsd: ${outputdir}/services.rng
+	java -jar $(trangjar) -I rng -O xsd ${outputdir}/services.rng ${outputdir}/services.xsd
 
 
-resources/schema/hosts.rng: resources/schema/hosts.rnc
-	java -jar $(trangjar) -I rnc -O rng resources/schema/hosts.rnc resources/schema/hosts.rng
+${outputdir}/container-include.rng: ${srcdir}/common.rnc ${srcdir}/containercluster.rnc
+	java -jar $(trangjar) -I rnc -O rng ${srcdir}/container-include.rnc ${outputdir}/container-include.rng
 
-resources/schema/hosts.xsd: resources/schema/hosts.rng
-	java -jar $(trangjar) -I rng -O xsd resources/schema/hosts.rng resources/schema/hosts.xsd
+${outputdir}/container-include.xsd: ${outputdir}/container-include.rng
+	java -jar $(trangjar) -I rng -O xsd ${outputdir}/container-include.rng ${outputdir}/container-include.xsd
 
-resources/schema/deployment.rng: resources/schema/deployment.rnc
-	java -jar $(trangjar) -I rnc -O rng resources/schema/deployment.rnc resources/schema/deployment.rng
 
-resources/schema/deployment.xsd: resources/schema/deployment.rng
-	java -jar $(trangjar) -I rng -O xsd resources/schema/deployment.rng resources/schema/deployment.xsd
+${outputdir}/hosts.rng: ${srcdir}/hosts.rnc
+	java -jar $(trangjar) -I rnc -O rng ${srcdir}/hosts.rnc ${outputdir}/hosts.rng
 
-resources/schema/validation-overrides.rng: resources/schema/validation-overrides.rnc
-	java -jar $(trangjar) -I rnc -O rng resources/schema/validation-overrides.rnc resources/schema/validation-overrides.rng
+${outputdir}/hosts.xsd: ${outputdir}/hosts.rng
+	java -jar $(trangjar) -I rng -O xsd ${outputdir}/hosts.rng ${outputdir}/hosts.xsd
 
-resources/schema/deployment.xsd: resources/schema/validation-overrides.rng
-	java -jar $(trangjar) -I rng -O xsd resources/schema/validation-overrides.rng resources/schema/validation-overrides.xsd
+${outputdir}/deployment.rng: ${srcdir}/deployment.rnc
+	java -jar $(trangjar) -I rnc -O rng ${srcdir}/deployment.rnc ${outputdir}/deployment.rng
+
+${outputdir}/deployment.xsd: ${outputdir}/deployment.rng
+	java -jar $(trangjar) -I rng -O xsd ${outputdir}/deployment.rng ${outputdir}/deployment.xsd
+
+${outputdir}/validation-overrides.rng: ${srcdir}/validation-overrides.rnc
+	java -jar $(trangjar) -I rnc -O rng ${srcdir}/validation-overrides.rnc ${outputdir}/validation-overrides.rng
+
+${outputdir}/deployment.xsd: ${outputdir}/validation-overrides.rng
+	java -jar $(trangjar) -I rng -O xsd ${outputdir}/validation-overrides.rng ${outputdir}/validation-overrides.xsd
 
 clean:
-	rm -f resources/schema/*.rng
-	rm -f resources/schema/*.xsd
+	rm -rf ${outputdir}
