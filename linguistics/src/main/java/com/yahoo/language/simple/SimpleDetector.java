@@ -68,7 +68,7 @@ public class SimpleDetector implements Detector {
 
     private final boolean enableOptimaize;
 
-    private SimpleDetector(boolean enableOptimaize) {
+    SimpleDetector(boolean enableOptimaize) {
         initOptimaize(enableOptimaize);
         this.enableOptimaize = enableOptimaize;
 
