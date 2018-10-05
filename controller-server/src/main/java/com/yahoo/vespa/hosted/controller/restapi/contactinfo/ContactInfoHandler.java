@@ -5,9 +5,13 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.Path;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Organization;
@@ -21,6 +25,9 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -65,14 +72,14 @@ public class ContactInfoHandler extends LoggingRequestHandler {
 
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
-        if (!path.matches("/contactinfo/v1/tenantname/{tenantname}")) return getContactInfo(path.get("tenantname"), request);
+        if (!path.matches("/contactinfo/v1/tenant/{tenant}")) return getContactInfo(path.get("tenant"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
-        if (path.matches("/contactinfo/v1/tenantname/{tenantname}"))
-            return postContactInfo(path.get("tenantname"), request);
+        if (path.matches("/contactinfo/v1/tenant/{tenant}"))
+            return postContactInfo(path.get("tenant"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -112,7 +119,7 @@ public class ContactInfoHandler extends LoggingRequestHandler {
                     lockedTenant -> controller.tenants().store(lockedTenant.with(contact)));
             return new StringResponse("Added contact info for " + tenantName + " - " + contact.toString());
         }
-        catch (ClassNotFoundException | IOException e) {
+        catch (URISyntaxException | IOException e) {
             return ErrorResponse.notFoundError("Unable to create Contact object from request data");
         }
     }
@@ -138,9 +145,22 @@ public class ContactInfoHandler extends LoggingRequestHandler {
         return new PropertyId(request.getProperty("propertyId"));
     }
 
-    private Contact getContactFromRequest(HttpRequest request) throws IOException, ClassNotFoundException {
-        ObjectInputStream is = new ObjectInputStream(request.getData());
-        return (Contact) is.readObject();
+    private Contact getContactFromRequest(HttpRequest request) throws IOException, URISyntaxException {
+        Slime slime = SlimeUtils.jsonToSlime(IOUtils.readBytes(request.getData(), 1000 * 1000));
+        Inspector inspector = slime.get();
+        URI propertyUrl = new URI(inspector.field("propertyUrl").asString());
+        URI url = new URI(inspector.field("url").asString());
+        URI issueTrackerUrl = new URI(inspector.field("issueTrackerUrl").asString());
+        Inspector personInspector = inspector.field("persons");
+        List<List<String>> personList = new ArrayList<>();
+        personInspector.traverse((ArrayTraverser) (index, entry) -> {
+                List<String> subList = new ArrayList<>();
+                entry.traverse((ArrayTraverser) (idx, subEntry) -> {
+                    subList.add(subEntry.asString());
+                });
+                personList.add(subList);
+        });
+        return new Contact(url, propertyUrl, issueTrackerUrl, personList);
     }
 
     private Optional<Contact> findContactFromOpsDb(AthenzTenant tenant) {
