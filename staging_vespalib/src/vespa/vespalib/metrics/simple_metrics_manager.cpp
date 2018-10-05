@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "simple_metrics_manager.h"
 #include "simple_tick.h"
-#include "name_repo.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.metrics.simple_metrics_manager");
@@ -110,7 +109,7 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
     Snapshot snap(s, e);
     {
         for (size_t point_id = 0; point_id <= max_point_id; ++point_id) {
-            const PointMap &map = NameRepo::instance.pointMap(Point(point_id));
+            const PointMap &map = Point(point_id).as_map();
             PointSnapshot point;
             for (const PointMap::value_type &kv : map) {
                 point.dimensions.emplace_back(kv.first.as_name(), kv.second.as_value());
@@ -187,16 +186,15 @@ SimpleMetricsManager::label(const vespalib::string &value)
 PointBuilder
 SimpleMetricsManager::pointBuilder(Point from)
 {
-    const PointMap &map = NameRepo::instance.pointMap(from);
+    const PointMap &map = from.as_map();
     return PointBuilder(shared_from_this(), map);
 }
 
 Point
 SimpleMetricsManager::pointFrom(PointMap map)
 {
-    return NameRepo::instance.pointFrom(std::move(map));
+    return Point::from_map(std::move(map));
 }
-
 
 void
 SimpleMetricsManager::tickerLoop()

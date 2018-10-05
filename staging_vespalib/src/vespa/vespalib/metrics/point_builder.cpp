@@ -60,7 +60,7 @@ PointBuilder::bind(DimensionName dimension, LabelValue label) &&
 Point
 PointBuilder::build()
 {
-    return _owner->pointFrom(PointMap(_map));
+    return _owner->pointFrom(_map);
 }
 
 PointBuilder::operator Point() &&
