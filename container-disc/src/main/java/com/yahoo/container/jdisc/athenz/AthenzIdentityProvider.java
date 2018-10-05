@@ -2,6 +2,9 @@
 package com.yahoo.container.jdisc.athenz;
 
 import javax.net.ssl.SSLContext;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.List;
 
 /**
  * @author mortent
@@ -13,4 +16,6 @@ public interface AthenzIdentityProvider {
     SSLContext getRoleSslContext(String domain, String role);
     String getRoleToken(String domain);
     String getRoleToken(String domain, String role);
+    List<X509Certificate> getIdentityCertificate();
+    PrivateKey getPrivateKey();
 }

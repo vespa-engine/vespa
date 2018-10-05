@@ -12,6 +12,8 @@ import com.yahoo.container.jdisc.athenz.AthenzIdentityProvider;
 import com.yahoo.container.jdisc.athenz.AthenzIdentityProviderException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
+import com.yahoo.security.KeyStoreType;
+import com.yahoo.security.SslContextBuilder;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -20,18 +22,19 @@ import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
-import com.yahoo.security.KeyStoreType;
-import com.yahoo.security.SslContextBuilder;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.defaults.Defaults;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.net.URI;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -171,6 +174,16 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         } catch (Exception e) {
             throw new AthenzIdentityProviderException("Could not retrieve role token: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public PrivateKey getPrivateKey() {
+        return credentials.getKeyPair().getPrivate();
+    }
+
+    @Override
+    public List<X509Certificate> getIdentityCertificate() {
+        return Collections.singletonList(credentials.getCertificate());
     }
 
     private SSLContext createRoleSslContext(AthenzRole role) {
