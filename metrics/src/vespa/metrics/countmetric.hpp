@@ -8,15 +8,6 @@
 namespace metrics {
 
 template <typename T, bool SumOnAdd>
-CountMetric<T, SumOnAdd>::CountMetric(const String& name, const String& tags,
-                                      const String& desc, MetricSet* owner)
-    : AbstractCountMetric(name, tags, desc, owner),
-      _values()
-{
-    _values.setFlag(LOG_IF_UNSET);
-}
-
-template <typename T, bool SumOnAdd>
 CountMetric<T, SumOnAdd>::CountMetric(const String& name, Tags dimensions,
                                       const String& desc, MetricSet* owner)
     : AbstractCountMetric(name, std::move(dimensions), desc, owner),

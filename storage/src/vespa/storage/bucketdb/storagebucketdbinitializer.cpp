@@ -93,26 +93,26 @@ StorageBucketDBInitializer::System::getBucketDatabase(document::BucketSpace buck
 }
 
 StorageBucketDBInitializer::Metrics::Metrics(framework::Component& component)
-    : metrics::MetricSet("dbinit", "",
+    : metrics::MetricSet("dbinit", {},
                          "Metrics for the storage bucket database initializer"),
-      _wrongDisk("wrongdisk", "",
+      _wrongDisk("wrongdisk", {},
               "Number of buckets found on non-ideal disk.", this),
-      _insertedCount("insertedcount", "",
+      _insertedCount("insertedcount", {},
               "Number of buckets inserted into database in list step.", this),
-      _joinedCount("joinedcount", "",
+      _joinedCount("joinedcount", {},
               "Number of buckets found in list step already found "
               "(added from other disks).", this),
-      _infoReadCount("infocount", "",
+      _infoReadCount("infocount", {},
               "Number of buckets we have read bucket information from.", this),
-      _infoSetByLoad("infosetbyload", "",
+      _infoSetByLoad("infosetbyload", {},
               "Number of buckets we did not need to request bucket info for "
               "due to load already having updated them.", this),
-      _dirsListed("dirslisted", "",
+      _dirsListed("dirslisted", {},
               "Directories listed in list step of initialization.", this),
       _startTime(component.getClock()),
-      _listLatency("listlatency", "",
+      _listLatency("listlatency", {},
               "Time used until list phase is done. (in ms)", this),
-      _initLatency("initlatency", "",
+      _initLatency("initlatency", {},
               "Time used until initialization is complete. (in ms)", this)
 {
     component.registerMetric(*this);

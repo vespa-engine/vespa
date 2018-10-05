@@ -7,24 +7,24 @@ using namespace metrics;
 namespace storage {
 
 CommunicationManagerMetrics::CommunicationManagerMetrics(const LoadTypeSet& loadTypes, MetricSet* owner)
-    : MetricSet("communication", "", "Metrics for the communication manager", owner),
-      queueSize("messagequeue", "", "Size of input message queue.", this),
+    : MetricSet("communication", {}, "Metrics for the communication manager", owner),
+      queueSize("messagequeue", {}, "Size of input message queue.", this),
       messageProcessTime(loadTypes,
-                         DoubleAverageMetric("messageprocesstime", "",
+                         DoubleAverageMetric("messageprocesstime", {},
                                              "Time transport thread uses to process a single message"),
                          this),
       exceptionMessageProcessTime(loadTypes,
-                                  DoubleAverageMetric("exceptionmessageprocesstime", "",
+                                  DoubleAverageMetric("exceptionmessageprocesstime", {},
                                                       "Time transport thread uses to process a single message "
                                                       "that fails with an exception thrown into communication manager"),
                                   this),
-      failedDueToTooLittleMemory("toolittlememory", "", "Number of messages failed due to too little memory available", this),
-      convertToStorageAPIFailures("convertfailures", "",
+      failedDueToTooLittleMemory("toolittlememory", {}, "Number of messages failed due to too little memory available", this),
+      convertToStorageAPIFailures("convertfailures", {},
                                   "Number of messages that failed to get converted to storage API messages", this),
-      bucketSpaceMappingFailures("bucket_space_mapping_failures", "",
+      bucketSpaceMappingFailures("bucket_space_mapping_failures", {},
                                  "Number of messages that could not be resolved to a known bucket space", this),
-      sendCommandLatency("sendcommandlatency", "", "Average ms used to send commands to MBUS", this),
-      sendReplyLatency("sendreplylatency", "", "Average ms used to send replies to MBUS", this)
+      sendCommandLatency("sendcommandlatency", {}, "Average ms used to send commands to MBUS", this),
+      sendReplyLatency("sendreplylatency", {}, "Average ms used to send replies to MBUS", this)
 {
 }
 

@@ -42,7 +42,7 @@ private:
     std::vector<const AddendMetric*> _metricsToSum;
 
 public:
-    SumMetric(const String& name, const String& tags, const String& description, MetricSet* owner = 0);
+    SumMetric(const String& name, Tags tags, const String& description, MetricSet* owner = 0);
     SumMetric(const SumMetric<AddendMetric>& other, std::vector<Metric::UP> & ownerList, MetricSet* owner = 0);
     ~SumMetric();
 

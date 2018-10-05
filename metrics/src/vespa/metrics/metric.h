@@ -86,12 +86,15 @@ struct Tag
     const vespalib::string& key() const { return NameRepo::tagKey(_key); }
     const vespalib::string& value() const { return NameRepo::tagValue(_value); }
 
+    Tag(vespalib::stringref k);
     Tag(vespalib::stringref k, vespalib::stringref v);
     Tag(const Tag &);
     Tag & operator = (const Tag &);
     Tag(Tag &&) = default;
     Tag & operator = (Tag &&) = default;
     ~Tag();
+
+    bool hasValue() const { return _value.id() != 0; }
 
 private:
     TagKeyId _key;
@@ -108,9 +111,6 @@ public:
     using Tags = std::vector<Tag>;
 
     static vespalib::Regexp _namePattern;
-
-    Metric(const String& name, const String& tags,
-           const String& description, MetricSet* owner = 0);
 
     Metric(const String& name,
            Tags dimensions,

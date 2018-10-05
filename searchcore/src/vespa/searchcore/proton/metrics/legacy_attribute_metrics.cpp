@@ -5,9 +5,9 @@
 namespace proton {
 
 LegacyAttributeMetrics::List::Entry::Entry(const std::string &name)
-    : metrics::MetricSet(name, "", "Attribute vector metrics", 0),
-      memoryUsage("memoryusage", "", "Memory usage", this),
-      bitVectors("bitvectors", "", "Number of bitvectors", this)
+    : metrics::MetricSet(name, {}, "Attribute vector metrics", 0),
+      memoryUsage("memoryusage", {}, "Memory usage", this),
+      bitVectors("bitvectors", {}, "Number of bitvectors", this)
 {
 }
 
@@ -56,7 +56,7 @@ LegacyAttributeMetrics::List::release()
 }
 
 LegacyAttributeMetrics::List::List(metrics::MetricSet *parent)
-    : metrics::MetricSet("list", "", "Metrics per attribute vector", parent),
+    : metrics::MetricSet("list", {}, "Metrics per attribute vector", parent),
       metrics()
 {
 }
@@ -64,10 +64,10 @@ LegacyAttributeMetrics::List::List(metrics::MetricSet *parent)
 LegacyAttributeMetrics::List::~List() = default;
 
 LegacyAttributeMetrics::LegacyAttributeMetrics(metrics::MetricSet *parent)
-    : metrics::MetricSet("attributes", "", "Attribute metrics", parent),
+    : metrics::MetricSet("attributes", {}, "Attribute metrics", parent),
       list(this),
-      memoryUsage("memoryusage", "", "Memory usage for attributes", this),
-      bitVectors("bitvectors", "", "Number of bitvectors for attributes", this)
+      memoryUsage("memoryusage", {}, "Memory usage for attributes", this),
+      bitVectors("bitvectors", {}, "Number of bitvectors for attributes", this)
 {
 }
 

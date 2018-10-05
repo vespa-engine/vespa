@@ -67,26 +67,26 @@ MergeThrottler::ChainedMergeState::ChainedMergeState(const api::StorageMessage::
 MergeThrottler::ChainedMergeState::~ChainedMergeState() {}
 
 MergeThrottler::Metrics::Metrics(metrics::MetricSet* owner)
-    : metrics::MetricSet("mergethrottler", "", "", owner),
-      averageQueueWaitingTime("averagequeuewaitingtime", "", "Average time a merge spends in the throttler queue", this),
-      bounced_due_to_back_pressure("bounced_due_to_back_pressure", "", "Number of merges bounced due to resource exhaustion back-pressure", this),
+    : metrics::MetricSet("mergethrottler", {}, "", owner),
+      averageQueueWaitingTime("averagequeuewaitingtime", {}, "Average time a merge spends in the throttler queue", this),
+      bounced_due_to_back_pressure("bounced_due_to_back_pressure", {}, "Number of merges bounced due to resource exhaustion back-pressure", this),
       chaining("mergechains", this),
       local("locallyexecutedmerges", this)
 { }
 MergeThrottler::Metrics::~Metrics() {}
 
 MergeThrottler::MergeFailureMetrics::MergeFailureMetrics(metrics::MetricSet* owner)
-    : metrics::MetricSet("failures", "", "Detailed failure statistics", owner),
-      sum("total", "", "Sum of all failures", this),
-      notready("notready", "", "The number of merges discarded because distributor was not ready", this),
-      timeout("timeout", "", "The number of merges that failed because they timed out towards storage", this),
-      aborted("aborted", "", "The number of merges that failed because the storage node was (most likely) shutting down", this),
-      wrongdistribution("wrongdistribution", "", "The number of merges that were discarded (flushed) because they were initiated at an older cluster state than the current", this),
-      bucketnotfound("bucketnotfound", "", "The number of operations that failed because the bucket did not exist", this),
-      busy("busy", "", "The number of merges that failed because the storage node was busy", this),
-      exists("exists", "", "The number of merges that were rejected due to a merge operation for their bucket already being processed", this),
-      rejected("rejected", "", "The number of merges that were rejected", this),
-      other("other", "", "The number of other failures", this)
+    : metrics::MetricSet("failures", {}, "Detailed failure statistics", owner),
+      sum("total", {}, "Sum of all failures", this),
+      notready("notready", {}, "The number of merges discarded because distributor was not ready", this),
+      timeout("timeout", {}, "The number of merges that failed because they timed out towards storage", this),
+      aborted("aborted", {}, "The number of merges that failed because the storage node was (most likely) shutting down", this),
+      wrongdistribution("wrongdistribution", {}, "The number of merges that were discarded (flushed) because they were initiated at an older cluster state than the current", this),
+      bucketnotfound("bucketnotfound", {}, "The number of operations that failed because the bucket did not exist", this),
+      busy("busy", {}, "The number of merges that failed because the storage node was busy", this),
+      exists("exists", {}, "The number of merges that were rejected due to a merge operation for their bucket already being processed", this),
+      rejected("rejected", {}, "The number of merges that were rejected", this),
+      other("other", {}, "The number of other failures", this)
 {
     sum.addMetricToSum(notready);
     sum.addMetricToSum(timeout);
@@ -102,8 +102,8 @@ MergeThrottler::MergeFailureMetrics::~MergeFailureMetrics() { }
 
 
 MergeThrottler::MergeOperationMetrics::MergeOperationMetrics(const std::string& name, metrics::MetricSet* owner)
-    : metrics::MetricSet(name, "", vespalib::make_string("Statistics for %s", name.c_str()), owner),
-      ok("ok", "", vespalib::make_string("The number of successful merges for '%s'", name.c_str()), this),
+    : metrics::MetricSet(name, {}, vespalib::make_string("Statistics for %s", name.c_str()), owner),
+      ok("ok", {}, vespalib::make_string("The number of successful merges for '%s'", name.c_str()), this),
       failures(this)
 {
 }

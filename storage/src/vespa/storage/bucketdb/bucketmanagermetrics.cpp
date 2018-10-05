@@ -10,12 +10,12 @@ using vespalib::IllegalStateException;
 using vespalib::make_string;
 
 DataStoredMetrics::DataStoredMetrics(const std::string& name, metrics::MetricSet* owner)
-    : metrics::MetricSet(name, "partofsum yamasdefault", "", owner),
-      buckets("buckets", "", "buckets managed", this),
-      docs("docs", "", "documents stored", this),
-      bytes("bytes", "", "bytes stored", this),
-      active("activebuckets", "", "Number of active buckets on the node", this),
-      ready("readybuckets", "", "Number of ready buckets on the node", this)
+    : metrics::MetricSet(name, {{"partofsum"},{"yamasdefault"}}, "", owner),
+      buckets("buckets", {}, "buckets managed", this),
+      docs("docs", {}, "documents stored", this),
+      bytes("bytes", {}, "bytes stored", this),
+      active("activebuckets", {}, "Number of active buckets on the node", this),
+      ready("readybuckets", {}, "Number of ready buckets on the node", this)
 {
     docs.logOnlyIfSet();
     bytes.logOnlyIfSet();
@@ -26,15 +26,15 @@ DataStoredMetrics::DataStoredMetrics(const std::string& name, metrics::MetricSet
 DataStoredMetrics::~DataStoredMetrics() { }
 
 BucketManagerMetrics::BucketManagerMetrics()
-    : metrics::MetricSet("datastored", "", ""),
+    : metrics::MetricSet("datastored", {}, ""),
       disks(),
-      total("alldisks", "sum", "Sum of data stored metrics for all disks", this),
-      simpleBucketInfoRequestSize("simplebucketinforeqsize", "",
+      total("alldisks", {{"sum"}}, "Sum of data stored metrics for all disks", this),
+      simpleBucketInfoRequestSize("simplebucketinforeqsize", {},
             "Amount of buckets returned in simple bucket info requests",
             this),
-      fullBucketInfoRequestSize("fullbucketinforeqsize", "",
+      fullBucketInfoRequestSize("fullbucketinforeqsize", {},
             "Amount of distributors answered at once in full bucket info requests.", this),
-      fullBucketInfoLatency("fullbucketinfolatency", "",
+      fullBucketInfoLatency("fullbucketinfolatency", {},
             "Amount of time spent to process a full bucket info request", this)
 { }
 

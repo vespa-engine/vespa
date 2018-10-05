@@ -102,7 +102,7 @@ MetricTest::manglingDoesNotChangeOriginalMetricName()
 void
 MetricTest::legacyTagsDoNotCreateMangledName()
 {
-    LongValueMetric m("test", "foo bar", "");
+    LongValueMetric m("test", {{"foo"},{"bar"}}, "");
     CPPUNIT_ASSERT_EQUAL(vespalib::string("test"), m.getName());
     CPPUNIT_ASSERT_EQUAL(vespalib::string("test"), m.getMangledName());
 }

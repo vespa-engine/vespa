@@ -28,10 +28,6 @@ struct AbstractValueMetric : public Metric {
     virtual bool summedAverage() const = 0;
 
 protected:
-    AbstractValueMetric(const String& name, const String& tags,
-                        const String& description, MetricSet* owner)
-        : Metric(name, tags, description, owner) {}
-
     AbstractValueMetric(const String& name, Tags dimensions,
                         const String& description, MetricSet* owner)
         : Metric(name, std::move(dimensions), description, owner) {}
@@ -83,9 +79,6 @@ class ValueMetric : public AbstractValueMetric {
     bool checkFinite(AvgVal, std::false_type) { return true; }
 
 public:
-    ValueMetric(const String &name, const String &tags,
-                const String &description, MetricSet *owner = 0);
-
     ValueMetric(const ValueMetric<AvgVal, TotVal, SumOnAdd> &,
                 CopyType, MetricSet *owner);
 

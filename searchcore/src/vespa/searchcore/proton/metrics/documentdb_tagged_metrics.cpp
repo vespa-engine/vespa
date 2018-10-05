@@ -9,27 +9,27 @@ namespace proton {
 using matching::MatchingStats;
 
 DocumentDBTaggedMetrics::JobMetrics::JobMetrics(metrics::MetricSet* parent)
-    : MetricSet("job", "", "Job load average for various jobs in a document database", parent),
-      attributeFlush("attribute_flush", "", "Flushing of attribute vector(s) to disk", this),
-      memoryIndexFlush("memory_index_flush", "", "Flushing of memory index to disk", this),
-      diskIndexFusion("disk_index_fusion", "", "Fusion of disk indexes", this),
-      documentStoreFlush("document_store_flush", "", "Flushing of document store to disk", this),
-      documentStoreCompact("document_store_compact", "",
+    : MetricSet("job", {}, "Job load average for various jobs in a document database", parent),
+      attributeFlush("attribute_flush", {}, "Flushing of attribute vector(s) to disk", this),
+      memoryIndexFlush("memory_index_flush", {}, "Flushing of memory index to disk", this),
+      diskIndexFusion("disk_index_fusion", {}, "Fusion of disk indexes", this),
+      documentStoreFlush("document_store_flush", {}, "Flushing of document store to disk", this),
+      documentStoreCompact("document_store_compact", {},
               "Compaction of document store on disk", this),
-      bucketMove("bucket_move", "",
+      bucketMove("bucket_move", {},
               "Moving of buckets between 'ready' and 'notready' sub databases", this),
-      lidSpaceCompact("lid_space_compact", "",
+      lidSpaceCompact("lid_space_compact", {},
               "Compaction of lid space in document meta store and attribute vectors", this),
-      removedDocumentsPrune("removed_documents_prune", "",
+      removedDocumentsPrune("removed_documents_prune", {},
               "Pruning of removed documents in 'removed' sub database", this),
-      total("total", "", "The job load average total of all job metrics", this)
+      total("total", {}, "The job load average total of all job metrics", this)
 {
 }
 
 DocumentDBTaggedMetrics::JobMetrics::~JobMetrics() = default;
 
 DocumentDBTaggedMetrics::SubDBMetrics::SubDBMetrics(const vespalib::string &name, MetricSet *parent)
-    : MetricSet(name, "", "Sub database metrics", parent),
+    : MetricSet(name, {}, "Sub database metrics", parent),
       lidSpace(this),
       documentStore(this),
       attributes(this)
@@ -39,14 +39,14 @@ DocumentDBTaggedMetrics::SubDBMetrics::SubDBMetrics(const vespalib::string &name
 DocumentDBTaggedMetrics::SubDBMetrics::~SubDBMetrics() = default;
 
 DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::LidSpaceMetrics(MetricSet *parent)
-    : MetricSet("lid_space", "", "Local document id (lid) space metrics for this document sub DB", parent),
-      lidLimit("lid_limit", "", "The size of the allocated lid space", this),
-      usedLids("used_lids", "", "The number of lids used", this),
-      lowestFreeLid("lowest_free_lid", "", "The lowest free lid", this),
-      highestUsedLid("highest_used_lid", "", "The highest used lid", this),
-      lidBloatFactor("lid_bloat_factor", "", "The bloat factor of this lid space, indicating the total amount of holes in the allocated lid space "
+    : MetricSet("lid_space", {}, "Local document id (lid) space metrics for this document sub DB", parent),
+      lidLimit("lid_limit", {}, "The size of the allocated lid space", this),
+      usedLids("used_lids", {}, "The number of lids used", this),
+      lowestFreeLid("lowest_free_lid", {}, "The lowest free lid", this),
+      highestUsedLid("highest_used_lid", {}, "The highest used lid", this),
+      lidBloatFactor("lid_bloat_factor", {}, "The bloat factor of this lid space, indicating the total amount of holes in the allocated lid space "
               "((lid_limit - used_lids) / lid_limit)", this),
-      lidFragmentationFactor("lid_fragmentation_factor", "",
+      lidFragmentationFactor("lid_fragmentation_factor", {},
               "The fragmentation factor of this lid space, indicating the amount of holes in the currently used part of the lid space "
               "((highest_used_lid - used_lids) / highest_used_lid)", this)
 {
@@ -55,22 +55,22 @@ DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::LidSpaceMetrics(MetricSe
 DocumentDBTaggedMetrics::SubDBMetrics::LidSpaceMetrics::~LidSpaceMetrics() = default;
 
 DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::CacheMetrics::CacheMetrics(MetricSet *parent)
-    : MetricSet("cache", "", "Document store cache metrics", parent),
-      memoryUsage("memory_usage", "", "Memory usage of the cache (in bytes)", this),
-      elements("elements", "", "Number of elements in the cache", this),
-      hitRate("hit_rate", "", "Rate of hits in the cache compared to number of lookups", this),
-      lookups("lookups", "", "Number of lookups in the cache (hits + misses)", this),
-      invalidations("invalidations", "", "Number of invalidations (erased elements) in the cache. ", this)
+    : MetricSet("cache", {}, "Document store cache metrics", parent),
+      memoryUsage("memory_usage", {}, "Memory usage of the cache (in bytes)", this),
+      elements("elements", {}, "Number of elements in the cache", this),
+      hitRate("hit_rate", {}, "Rate of hits in the cache compared to number of lookups", this),
+      lookups("lookups", {}, "Number of lookups in the cache (hits + misses)", this),
+      invalidations("invalidations", {}, "Number of invalidations (erased elements) in the cache. ", this)
 {
 }
 
 DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::CacheMetrics::~CacheMetrics() = default;
 
 DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::DocumentStoreMetrics(MetricSet *parent)
-    : MetricSet("document_store", "", "Document store metrics for this document sub DB", parent),
-      diskUsage("disk_usage", "", "Disk space usage in bytes", this),
-      diskBloat("disk_bloat", "", "Disk space bloat in bytes", this),
-      maxBucketSpread("max_bucket_spread", "", "Max bucket spread in underlying files (sum(unique buckets in each chunk)/unique buckets in file)", this),
+    : MetricSet("document_store", {}, "Document store metrics for this document sub DB", parent),
+      diskUsage("disk_usage", {}, "Disk space usage in bytes", this),
+      diskBloat("disk_bloat", {}, "Disk space bloat in bytes", this),
+      maxBucketSpread("max_bucket_spread", {}, "Max bucket spread in underlying files (sum(unique buckets in each chunk)/unique buckets in file)", this),
       memoryUsage(this),
       cache(this)
 {
@@ -79,7 +79,7 @@ DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::DocumentStoreMetric
 DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics::~DocumentStoreMetrics() = default;
 
 DocumentDBTaggedMetrics::AttributeMetrics::AttributeMetrics(MetricSet *parent)
-    : MetricSet("attribute", "", "Attribute vector metrics for this document db", parent),
+    : MetricSet("attribute", {}, "Attribute vector metrics for this document db", parent),
       resourceUsage(this),
       totalMemoryUsage(this)
 {
@@ -88,22 +88,22 @@ DocumentDBTaggedMetrics::AttributeMetrics::AttributeMetrics(MetricSet *parent)
 DocumentDBTaggedMetrics::AttributeMetrics::~AttributeMetrics() = default;
 
 DocumentDBTaggedMetrics::AttributeMetrics::ResourceUsageMetrics::ResourceUsageMetrics(MetricSet *parent)
-    : MetricSet("resource_usage", "", "Usage metrics for various attribute vector resources", parent),
-      enumStore("enum_store", "", "The highest relative amount of enum store address space used among "
+    : MetricSet("resource_usage", {}, "Usage metrics for various attribute vector resources", parent),
+      enumStore("enum_store", {}, "The highest relative amount of enum store address space used among "
               "all enumerated attribute vectors in this document db (value in the range [0, 1])", this),
-      multiValue("multi_value", "", "The highest relative amount of multi-value address space used among "
+      multiValue("multi_value", {}, "The highest relative amount of multi-value address space used among "
               "all multi-value attribute vectors in this document db (value in the range [0, 1])", this),
-      feedingBlocked("feeding_blocked", "", "Whether feeding is blocked due to attribute resource limits being reached (value is either 0 or 1)", this)
+      feedingBlocked("feeding_blocked", {}, "Whether feeding is blocked due to attribute resource limits being reached (value is either 0 or 1)", this)
 {
 }
 
 DocumentDBTaggedMetrics::AttributeMetrics::ResourceUsageMetrics::~ResourceUsageMetrics() = default;
 
 DocumentDBTaggedMetrics::IndexMetrics::IndexMetrics(MetricSet *parent)
-    : MetricSet("index", "", "Index metrics (memory and disk) for this document db", parent),
-      diskUsage("disk_usage", "", "Disk space usage in bytes", this),
+    : MetricSet("index", {}, "Index metrics (memory and disk) for this document db", parent),
+      diskUsage("disk_usage", {}, "Disk space usage in bytes", this),
       memoryUsage(this),
-      docsInMemory("docs_in_memory", "", "Number of documents in memory index", this)
+      docsInMemory("docs_in_memory", {}, "Number of documents in memory index", this)
 {
 }
 
@@ -124,14 +124,14 @@ DocumentDBTaggedMetrics::MatchingMetrics::update(const MatchingStats &stats)
 }
 
 DocumentDBTaggedMetrics::MatchingMetrics::MatchingMetrics(MetricSet *parent)
-    : MetricSet("matching", "", "Matching metrics", parent),
-      docsMatched("docs_matched", "", "Number of documents matched", this),
-      docsRanked("docs_ranked", "", "Number of documents ranked (first phase)", this),
-      docsReRanked("docs_reranked", "", "Number of documents re-ranked (second phase)", this),
-      queries("queries", "", "Number of queries executed", this),
-      softDoomFactor("soft_doom_factor", "", "Factor used to compute soft-timeout", this),
-      queryCollateralTime("query_collateral_time", "", "Average time (sec) spent setting up and tearing down queries", this),
-      queryLatency("query_latency", "", "Average latency (sec) when matching a query", this)
+    : MetricSet("matching", {}, "Matching metrics", parent),
+      docsMatched("docs_matched", {}, "Number of documents matched", this),
+      docsRanked("docs_ranked", {}, "Number of documents ranked (first phase)", this),
+      docsReRanked("docs_reranked", {}, "Number of documents re-ranked (second phase)", this),
+      queries("queries", {}, "Number of queries executed", this),
+      softDoomFactor("soft_doom_factor", {}, "Factor used to compute soft-timeout", this),
+      queryCollateralTime("query_collateral_time", {}, "Average time (sec) spent setting up and tearing down queries", this),
+      queryLatency("query_latency", {}, "Average latency (sec) when matching a query", this)
 {
 }
 
@@ -141,16 +141,16 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::RankProfileMetrics
                                                                                  size_t numDocIdPartitions,
                                                                                  MetricSet *parent)
     : MetricSet("rank_profile", {{"rankProfile", name}}, "Rank profile metrics", parent),
-      docsMatched("docs_matched", "", "Number of documents matched", this),
-      docsRanked("docs_ranked", "", "Number of documents ranked (first phase)", this),
-      docsReRanked("docs_reranked", "", "Number of documents re-ranked (second phase)", this),
-      queries("queries", "", "Number of queries executed", this),
-      limitedQueries("limited_queries", "", "Number of queries limited in match phase", this),
-      matchTime("match_time", "", "Average time (sec) for matching a query", this),
-      groupingTime("grouping_time", "", "Average time (sec) spent on grouping", this),
-      rerankTime("rerank_time", "", "Average time (sec) spent on 2nd phase ranking", this),
-      queryCollateralTime("query_collateral_time", "", "Average time (sec) spent setting up and tearing down queries", this),
-      queryLatency("query_latency", "", "Average latency (sec) when matching a query", this)
+      docsMatched("docs_matched", {}, "Number of documents matched", this),
+      docsRanked("docs_ranked", {}, "Number of documents ranked (first phase)", this),
+      docsReRanked("docs_reranked", {}, "Number of documents re-ranked (second phase)", this),
+      queries("queries", {}, "Number of queries executed", this),
+      limitedQueries("limited_queries", {}, "Number of queries limited in match phase", this),
+      matchTime("match_time", {}, "Average time (sec) for matching a query", this),
+      groupingTime("grouping_time", {}, "Average time (sec) spent on grouping", this),
+      rerankTime("rerank_time", {}, "Average time (sec) spent on 2nd phase ranking", this),
+      queryCollateralTime("query_collateral_time", {}, "Average time (sec) spent setting up and tearing down queries", this),
+      queryLatency("query_latency", {}, "Average latency (sec) when matching a query", this)
 {
     for (size_t i = 0; i < numDocIdPartitions; ++i) {
         vespalib::string partition(vespalib::make_string("docid_part%02ld", i));
@@ -162,11 +162,11 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::~RankProfileMetric
 
 DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::DocIdPartition(const vespalib::string &name, MetricSet *parent) :
     MetricSet("docid_partition", {{"docidPartition", name}}, "DocId Partition profile metrics", parent),
-    docsMatched("docs_matched", "", "Number of documents matched", this),
-    docsRanked("docs_ranked", "", "Number of documents ranked (first phase)", this),
-    docsReRanked("docs_reranked", "", "Number of documents re-ranked (second phase)", this),
-    activeTime("active_time", "", "Time (sec) spent doing actual work", this),
-    waitTime("wait_time", "", "Time (sec) spent waiting for other external threads and resources", this)
+    docsMatched("docs_matched", {}, "Number of documents matched", this),
+    docsRanked("docs_ranked", {}, "Number of documents ranked (first phase)", this),
+    docsReRanked("docs_reranked", {}, "Number of documents re-ranked (second phase)", this),
+    activeTime("active_time", {}, "Time (sec) spent doing actual work", this),
+    waitTime("wait_time", {}, "Time (sec) spent waiting for other external threads and resources", this)
 { }
 
 DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::DocIdPartition::~DocIdPartition() = default;
@@ -215,7 +215,7 @@ DocumentDBTaggedMetrics::MatchingMetrics::RankProfileMetrics::update(const Match
 }
 
 DocumentDBTaggedMetrics::SessionCacheMetrics::SessionCacheMetrics(metrics::MetricSet *parent)
-    : metrics::MetricSet("session_cache", "", "Metrics for session caches (search / grouping requests)", parent),
+    : metrics::MetricSet("session_cache", {}, "Metrics for session caches (search / grouping requests)", parent),
       search("search", this),
       grouping("grouping", this)
 {
@@ -224,11 +224,11 @@ DocumentDBTaggedMetrics::SessionCacheMetrics::SessionCacheMetrics(metrics::Metri
 DocumentDBTaggedMetrics::SessionCacheMetrics::~SessionCacheMetrics() = default;
 
 DocumentDBTaggedMetrics::DocumentsMetrics::DocumentsMetrics(metrics::MetricSet *parent)
-    : metrics::MetricSet("documents", "", "Metrics for various document counts in this document db", parent),
-      active("active", "", "The number of active / searchable documents in this document db", this),
-      ready("ready", "", "The number of ready documents in this document db", this),
-      total("total", "", "The total number of documents in this documents db (ready + not-ready)", this),
-      removed("removed", "", "The number of removed documents in this document db", this)
+    : metrics::MetricSet("documents", {}, "Metrics for various document counts in this document db", parent),
+      active("active", {}, "The number of active / searchable documents in this document db", this),
+      ready("ready", {}, "The number of ready documents in this document db", this),
+      total("total", {}, "The total number of documents in this documents db (ready + not-ready)", this),
+      removed("removed", {}, "The number of removed documents in this document db", this)
 {
 }
 
@@ -247,7 +247,7 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docType
       sessionCache(this),
       documents(this),
       totalMemoryUsage(this),
-      totalDiskUsage("disk_usage", "", "The total disk usage (in bytes) for this document db", this)
+      totalDiskUsage("disk_usage", {}, "The total disk usage (in bytes) for this document db", this)
 {
 }
 

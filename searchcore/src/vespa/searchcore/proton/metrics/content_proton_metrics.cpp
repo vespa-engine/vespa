@@ -5,7 +5,7 @@
 namespace proton {
 
 ContentProtonMetrics::ProtonExecutorMetrics::ProtonExecutorMetrics(metrics::MetricSet *parent)
-    : metrics::MetricSet("executor", "", "Metrics for top-level executors shared among all document databases", parent),
+    : metrics::MetricSet("executor", {}, "Metrics for top-level executors shared among all document databases", parent),
       proton("proton", this),
       flush("flush", this),
       match("match", this),
@@ -18,7 +18,7 @@ ContentProtonMetrics::ProtonExecutorMetrics::ProtonExecutorMetrics(metrics::Metr
 ContentProtonMetrics::ProtonExecutorMetrics::~ProtonExecutorMetrics() = default;
 
 ContentProtonMetrics::ContentProtonMetrics()
-    : metrics::MetricSet("content.proton", "", "Search engine metrics", nullptr),
+    : metrics::MetricSet("content.proton", {}, "Search engine metrics", nullptr),
       transactionLog(this),
       resourceUsage(this),
       executor(this)

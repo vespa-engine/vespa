@@ -5,12 +5,12 @@
 namespace proton {
 
 LegacySessionManagerMetrics::LegacySessionManagerMetrics(metrics::MetricSet *parent)
-    : metrics::MetricSet("sessionmanager", "", "Grouping session manager metrics", parent),
-      numInsert("numinsert", "", "Number of inserted sessions", this),
-      numPick("numpick", "", "Number if picked sessions", this),
-      numDropped("numdropped", "", "Number of dropped cached sessions", this),
-      numCached("numcached", "", "Number of currently cached sessions", this),
-      numTimedout("numtimedout", "", "Number of timed out sessions", this)
+    : metrics::MetricSet("sessionmanager", {}, "Grouping session manager metrics", parent),
+      numInsert("numinsert", {}, "Number of inserted sessions", this),
+      numPick("numpick", {}, "Number if picked sessions", this),
+      numDropped("numdropped", {}, "Number of dropped cached sessions", this),
+      numCached("numcached", {}, "Number of currently cached sessions", this),
+      numTimedout("numtimedout", {}, "Number of timed out sessions", this)
 {
 }
 

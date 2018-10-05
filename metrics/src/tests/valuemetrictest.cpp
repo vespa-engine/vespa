@@ -46,7 +46,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(ValueMetricTest);
 
 void ValueMetricTest::testDoubleValueMetric()
 {
-    DoubleValueMetric m("test", "tag", "description");
+    DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValue(100);
     ASSERT_AVERAGE(m, 100, 100, 100, 1, 100);
     m.addValue(100);
@@ -58,7 +58,7 @@ void ValueMetricTest::testDoubleValueMetric()
     m.reset();
     ASSERT_AVERAGE(m, 0, 0, 0, 0, 0);
 
-    DoubleValueMetric n("m2", "", "desc");
+    DoubleValueMetric n("m2", {}, "desc");
     n.addValue(60);
     ASSERT_AVERAGE(n, 60, 60, 60, 1, 60);
 
@@ -94,7 +94,7 @@ void ValueMetricTest::testDoubleValueMetric()
 void
 ValueMetricTest::testDoubleValueMetricNotUpdatedOnNaN()
 {
-    DoubleValueMetric m("test", "tag", "description");
+    DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValue(std::numeric_limits<double>::quiet_NaN());
     CPPUNIT_ASSERT_EQUAL(std::string(), m.toString());
 
@@ -111,7 +111,7 @@ ValueMetricTest::testDoubleValueMetricNotUpdatedOnNaN()
 void
 ValueMetricTest::testDoubleValueMetricNotUpdatedOnInfinity()
 {
-    DoubleValueMetric m("test", "tag", "description");
+    DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValue(std::numeric_limits<double>::infinity());
     CPPUNIT_ASSERT_EQUAL(std::string(), m.toString());
 
@@ -127,7 +127,7 @@ ValueMetricTest::testDoubleValueMetricNotUpdatedOnInfinity()
 
 void ValueMetricTest::testLongValueMetric()
 {
-    LongValueMetric m("test", "tag", "description");
+    LongValueMetric m("test", {{"tag"}}, "description");
     m.addValue(100);
     ASSERT_AVERAGE(m, 100, 100, 100, 1, 100);
     m.addValue(100);
@@ -139,7 +139,7 @@ void ValueMetricTest::testLongValueMetric()
     m.reset();
     ASSERT_AVERAGE(m, 0, 0, 0, 0, 0);
 
-    LongValueMetric n("m2", "", "desc");
+    LongValueMetric n("m2", {}, "desc");
     n.addValue(60);
     ASSERT_AVERAGE(n, 60, 60, 60, 1, 60);
 
@@ -174,7 +174,7 @@ void ValueMetricTest::testLongValueMetric()
 
 void ValueMetricTest::testSmallAverage()
 {
-    DoubleValueMetric m("test", "tag", "description");
+    DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValue(0.0001);
     m.addValue(0.0002);
     m.addValue(0.0003);
@@ -186,7 +186,7 @@ void ValueMetricTest::testSmallAverage()
 }
 
 void ValueMetricTest::testAddValueBatch() {
-    DoubleValueMetric m("test", "tag", "description");
+    DoubleValueMetric m("test", {{"tag"}}, "description");
     m.addValueBatch(100, 3, 80, 120);
     ASSERT_AVERAGE(m, 100, 80, 120, 3, 100);
     m.addValueBatch(123, 0, 12, 1234);
@@ -222,7 +222,7 @@ namespace {
 
 void ValueMetricTest::testJson() {
     MetricManager mm;
-    DoubleValueMetric m("test", "tag", "description");
+    DoubleValueMetric m("test", {{"tag"}}, "description");
     mm.registerMetric(mm.getMetricLock(), m);
 
     vespalib::string expected("'\n"

@@ -24,7 +24,7 @@ SumMetric<AddendMetric>::visit(MetricVisitor& visitor,
 }
 
 template<typename AddendMetric>
-SumMetric<AddendMetric>::SumMetric(const String& name, const String& tags,
+SumMetric<AddendMetric>::SumMetric(const String& name, Tags tags,
                                    const String& description, MetricSet* owner)
     : Metric(name, tags, description, owner),
       _startValue(),

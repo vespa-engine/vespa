@@ -48,7 +48,7 @@ LoadMetricTest::testNormalUsage()
     LoadTypeSetImpl loadTypes;
     loadTypes.add(32, "foo").add(1000, "bar");
     LoadMetric<LongValueMetric> metric(
-            loadTypes, LongValueMetric("put", "", "Put"));
+            loadTypes, LongValueMetric("put", {}, "Put"));
 }
 
 namespace {
@@ -56,8 +56,8 @@ namespace {
         LongAverageMetric metric;
 
         MyMetricSet(MetricSet* owner = 0)
-            : MetricSet("tick", "", "", owner),
-              metric("tack", "", "", this)
+            : MetricSet("tick", {}, "", owner),
+              metric("tack", {}, "", this)
         { }
 
         MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
@@ -80,7 +80,7 @@ LoadMetricTest::testClone(Metric::CopyType copyType)
 {
     LoadTypeSetImpl loadTypes;
     loadTypes.add(32, "foo").add(1000, "bar");
-    MetricSet top("top", "", "");
+    MetricSet top("top", {}, "");
     MyMetricSet myset;
     LoadMetric<MyMetricSet> metric(loadTypes, myset, &top);
     metric[loadTypes["foo"]].metric.addValue(5);
@@ -110,7 +110,7 @@ LoadMetricTest::testAdding()
 {
     LoadTypeSetImpl loadTypes;
     loadTypes.add(32, "foo").add(1000, "bar");
-    MetricSet top("top", "", "");
+    MetricSet top("top", {}, "");
     MyMetricSet myset;
     LoadMetric<MyMetricSet> metric(loadTypes, myset, &top);
     metric[loadTypes["foo"]].metric.addValue(5);
