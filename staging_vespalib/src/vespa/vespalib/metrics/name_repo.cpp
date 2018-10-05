@@ -53,14 +53,13 @@ NameRepo::labelValue(Label l) const
 const PointMap&
 NameRepo::pointMap(Point from) const
 {
-    const HashedPointMap &map = _pointMaps.lookup(from.id());
-    return map.backingMap();
+    return _pointMaps.lookup(from.id());
 }
 
 Point
 NameRepo::pointFrom(PointMap map)
 {
-    size_t id = _pointMaps.resolve(HashedPointMap(std::move(map)));
+    size_t id = _pointMaps.resolve(std::move(map));
     return Point(id);
 }
 
