@@ -30,6 +30,24 @@ MemoryConsumption::getStringMemoryUsage(const std::string& s, uint32_t& uniqueCo
     return s.capacity();
 }
 
+
+uint32_t
+MemoryConsumption::getStringMemoryUsage(const vespalib::string& s, uint32_t& uniqueCount) {
+    ++_totalStringCount;
+    const char* internalString = s.c_str();
+    if (_seenStrings->find(internalString) != _seenStrings->end()) {
+        return 0;
+    }
+    ++uniqueCount;
+    _seenStrings->insert(internalString);
+    const void *p = &s;
+    if ((p <= internalString) && (internalString - sizeof(vespalib::string) < p)) {
+        // no extra space allocated outside object
+        return 0;
+    }
+    return s.capacity();
+}
+
 void
 MemoryConsumption::addSnapShotUsage(const std::string& name, uint32_t usage) {
     _snapShotUsage->push_back(std::pair<std::string, uint32_t>(name, usage));
