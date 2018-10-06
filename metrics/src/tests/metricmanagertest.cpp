@@ -68,7 +68,7 @@ struct SubMetricSet : public MetricSet
 
 
 SubMetricSet::SubMetricSet(const Metric::String & name, MetricSet* owner)
-    : MetricSet(name, "sub", "sub desc", owner, "sub"),
+    : MetricSet(name, "sub", "sub desc", owner),
       val1("val1", "tag4 snaptest", "val1 desc", this),
       val2("val2", "tag5", "val2 desc", this),
       valsum("valsum", "tag4 snaptest", "valsum desc", this)

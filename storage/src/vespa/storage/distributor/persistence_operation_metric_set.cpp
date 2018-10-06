@@ -55,7 +55,7 @@ PersistenceFailuresMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType
 }
 
 PersistenceOperationMetricSet::PersistenceOperationMetricSet(const std::string& name, MetricSet* owner)
-    : MetricSet(name, "", vespalib::make_string("Statistics for the %s command", name.c_str()), owner, "operationtype"),
+    : MetricSet(name, "", vespalib::make_string("Statistics for the %s command", name.c_str()), owner),
       latency("latency", "yamasdefault", vespalib::make_string("The average latency of %s operations", name.c_str()), this),
       ok("ok", "logdefault yamasdefault", vespalib::make_string("The number of successful %s operations performed", name.c_str()), this),
       failures(this)
