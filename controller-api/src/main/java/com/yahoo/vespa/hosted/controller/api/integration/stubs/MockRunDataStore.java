@@ -27,6 +27,11 @@ public class MockRunDataStore implements RunDataStore {
     }
 
     @Override
+    public void delete(RunId id) {
+        logs.remove(id);
+    }
+
+    @Override
     public void delete(ApplicationId id) {
         logs.keySet().removeIf(runId -> runId.application().equals(id));
     }
