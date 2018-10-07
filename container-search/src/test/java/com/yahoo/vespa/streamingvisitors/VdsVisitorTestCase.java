@@ -232,7 +232,11 @@ public class VdsVisitorTestCase {
         } else if (qa.groupName != null) {
             assertEquals(docType + " and id.group==\""+qa.groupName+"\"", params.getDocumentSelection());
         } else if (qa.selection != null) {
-            assertEquals(docType + " and " +qa.selection, params.getDocumentSelection());
+            if (qa.selection.isEmpty()) {
+                assertEquals(docType, params.getDocumentSelection());
+            } else {
+                assertEquals(docType + " and " + qa.selection, params.getDocumentSelection());
+            }
         } else {
             assertEquals("", params.getDocumentSelection());
         }
@@ -382,6 +386,9 @@ public class VdsVisitorTestCase {
         qa.ordering = "+"; // non-default ordering, default maxBucketsPerVisitor
         qa.maxBucketsPerVisitor = 0;
         qa.loadTypeName = null; // default loadTypeName, non-default priority
+        verifyVisitorOk(factory, qa, route, searchCluster);
+        qa.selection = "";
+
         verifyVisitorOk(factory, qa, route, searchCluster);
 
         // Userdoc and lots of non-default parameters

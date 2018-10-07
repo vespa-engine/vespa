@@ -127,15 +127,29 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         return Math.max(query.getTraceLevel(), implicitLevel);
     }
 
-    private void setVisitorParameters(String searchCluster, Route route, String documentType) {
-        String limitDocumentType = documentType + " and ";
-        if (query.properties().getString(streamingUserid) != null) {
-            params.setDocumentSelection(limitDocumentType + "id.user==" + query.properties().getString(streamingUserid));
-        } else if (query.properties().getString(streamingGroupname) != null) {
-            params.setDocumentSelection(limitDocumentType + "id.group==\"" + query.properties().getString(streamingGroupname) + "\"");
-        } else if (query.properties().getString(streamingSelection) != null) {
-            params.setDocumentSelection(limitDocumentType + query.properties().getString(streamingSelection));
+    private static String createSelectionString(String documentType, String selection) {
+        if (selection == null) return "";
+        if (selection.isEmpty()) return documentType;
+
+        StringBuilder sb = new StringBuilder(documentType);
+        sb.append(" and ").append(selection);
+        return sb.toString();
+    }
+
+    private String createQuerySelectionString() {
+        String s = query.properties().getString(streamingUserid);
+        if (s != null) {
+            return "id.user==" + s;
         }
+        s = query.properties().getString(streamingGroupname);
+        if (s != null) {
+            return "id.group==\"" + s + "\"";
+        }
+        return query.properties().getString(streamingSelection);
+    }
+
+    private void setVisitorParameters(String searchCluster, Route route, String documentType) {
+        params.setDocumentSelection(createSelectionString(documentType, createQuerySelectionString()));
         params.setTimeoutMs(query.getTimeout()); // Per bucket visitor timeout
         params.setSessionTimeoutMs(query.getTimeout());
         params.setVisitorLibrary("searchvisitor");
