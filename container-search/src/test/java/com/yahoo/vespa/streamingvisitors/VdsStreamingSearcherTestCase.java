@@ -4,12 +4,14 @@ package com.yahoo.vespa.streamingvisitors;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.messagebus.routing.Route;
+import com.yahoo.prelude.fastsearch.CacheKey;
+import com.yahoo.prelude.fastsearch.CacheParams;
+import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.fs4.QueryPacket;
-import com.yahoo.prelude.Ping;
-import com.yahoo.prelude.Pong;
-import com.yahoo.prelude.fastsearch.*;
+import com.yahoo.prelude.fastsearch.SummaryParameters;
+import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Hit;
@@ -25,7 +27,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 /**
  * @author <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
@@ -35,18 +41,20 @@ public class VdsStreamingSearcherTestCase {
     public static final String GROUPDOC_ID_PREFIX = "groupdoc:namespace:group1:userspecific";
 
     private static class MockVisitor implements Visitor {
-        private Query query;
-        String searchCluster;
-        Route route;
+        private final Query query;
+        final String searchCluster;
+        final Route route;
+        final String documentType;
         int totalHitCount;
         private final List<SearchResult.Hit> hits = new ArrayList<>();
         private final Map<String, DocumentSummary.Summary> summaryMap = new HashMap<>();
         private final List<Grouping> groupings = new ArrayList<>();
 
-        MockVisitor(Query query, String searchCluster, Route route) {
+        MockVisitor(Query query, String searchCluster, Route route, String documentType) {
             this.query = query;
             this.searchCluster = searchCluster;
             this.route = route;
+            this.documentType = documentType;
         }
 
         @Override
@@ -124,8 +132,8 @@ public class VdsStreamingSearcherTestCase {
 
     private static class MockVisitorFactory implements VisitorFactory {
         @Override
-        public Visitor createVisitor(Query query, String searchCluster, Route route) {
-            return new MockVisitor(query, searchCluster, route);
+        public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType) {
+            return new MockVisitor(query, searchCluster, route, documentType);
         }
     }
 
