@@ -224,15 +224,15 @@ public class VdsVisitorTestCase {
         return query;
     }
 
-    private void verifyVisitorParameters(VisitorParameters params, QueryArguments qa, String searchCluster, String docType, Route route) {
+    private void verifyVisitorParameters(VisitorParameters params, QueryArguments qa, String searchCluster, Route route) {
         //System.out.println("params="+params);
         // Verify parameters based on properties
         if (qa.userId != null) {
-            assertEquals(docType + " and id.user=="+qa.userId, params.getDocumentSelection());
+            assertEquals("id.user=="+qa.userId, params.getDocumentSelection());
         } else if (qa.groupName != null) {
-            assertEquals(docType + " and id.group==\""+qa.groupName+"\"", params.getDocumentSelection());
+            assertEquals("id.group==\""+qa.groupName+"\"", params.getDocumentSelection());
         } else if (qa.selection != null) {
-            assertEquals(docType + " and " +qa.selection, params.getDocumentSelection());
+            assertEquals(qa.selection, params.getDocumentSelection());
         } else {
             assertEquals("", params.getDocumentSelection());
         }
@@ -407,15 +407,15 @@ public class VdsVisitorTestCase {
     }
 
     private void verifyVisitorOk(MockVisitorSessionFactory factory, QueryArguments qa, Route route, String searchCluster) throws Exception {
-        VdsVisitor visitor = new VdsVisitor(buildQuery(qa), searchCluster, route, "mytype", factory);
+        VdsVisitor visitor = new VdsVisitor(buildQuery(qa), searchCluster, route, factory);
         visitor.doSearch();
-        verifyVisitorParameters(factory.getParams(), qa, searchCluster, "mytype", route);
+        verifyVisitorParameters(factory.getParams(), qa, searchCluster, route);
         supplyResults(visitor);
         verifyResults(qa, visitor);
     }
 
     private void verifyVisitorFails(MockVisitorSessionFactory factory, QueryArguments qa, Route route, String searchCluster) throws Exception {
-        VdsVisitor visitor = new VdsVisitor(buildQuery(qa), searchCluster, route, "mytype", factory);
+        VdsVisitor visitor = new VdsVisitor(buildQuery(qa), searchCluster, route, factory);
         try {
             visitor.doSearch();
             assertTrue("Visitor did not fail", false);

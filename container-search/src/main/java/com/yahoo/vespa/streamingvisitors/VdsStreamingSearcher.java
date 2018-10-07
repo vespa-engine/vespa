@@ -56,17 +56,13 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
     private Route route;
     /** The configId used to access the searchcluster. */
     private String searchClusterConfigId = null;
-    private String documentType;
     /** The route to the storage cluster. */
     private String storageClusterRouteSpec = null;
 
-    private String getSearchClusterConfigId() { return searchClusterConfigId; }
-    private String getStorageClusterRouteSpec() { return storageClusterRouteSpec; }
+    String getSearchClusterConfigId() { return searchClusterConfigId; }
+    String getStorageClusterRouteSpec() { return storageClusterRouteSpec; }
     public final void setSearchClusterConfigId(String clusterName) {
         this.searchClusterConfigId = clusterName;
-    }
-    public final void setDocumentType(String documentType) {
-        this.documentType = documentType;
     }
 
     public final void setStorageClusterRouteSpec(String storageClusterRouteSpec) {
@@ -75,8 +71,8 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
     private static class VdsVisitorFactory implements VisitorFactory {
         @Override
-        public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType) {
-            return new VdsVisitor(query, searchCluster, route, documentType);
+        public Visitor createVisitor(Query query, String searchCluster, Route route) {
+            return new VdsVisitor(query, searchCluster, route);
         }
     }
 
@@ -131,8 +127,8 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
                     "only one of these query parameters to be set: streaming.userid, streaming.groupname, " +
                     "streaming.selection"));
         }
-        query.trace("Routing to search cluster " + getSearchClusterConfigId() + " and document type " + documentType, 4);
-        Visitor visitor = visitorFactory.createVisitor(query, getSearchClusterConfigId(), route, documentType);
+        query.trace("Routing to search cluster " + getSearchClusterConfigId(), 4);
+        Visitor visitor = visitorFactory.createVisitor(query, getSearchClusterConfigId(), route);
         try {
             visitor.doSearch();
         } catch (ParseException e) {
