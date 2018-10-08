@@ -128,8 +128,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     }
 
     private static String createSelectionString(String documentType, String selection) {
-        if (selection == null) return "";
-        if (selection.isEmpty()) return documentType;
+        if ((selection == null) || selection.isEmpty()) return documentType;
 
         StringBuilder sb = new StringBuilder(documentType);
         sb.append(" and ( ").append(selection).append(" )");
