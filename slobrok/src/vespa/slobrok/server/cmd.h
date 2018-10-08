@@ -9,34 +9,26 @@ class FRT_RPCRequest;
 namespace slobrok {
 
 class SBEnv;
+struct ScriptData;
 
-struct RegRpcSrvData;
-
-/**
- * @class RegRpcSrvCommand
- * @brief Small "script" to handle the various stages of a registration
- *
- * XXX should change name, also used for other tasks
- **/
-class RegRpcSrvCommand
+class ScriptCommand
 {
 private:
-    std::unique_ptr<RegRpcSrvData> _data;
-    static void cleanupReservation(RegRpcSrvData &);
-    RegRpcSrvCommand(std::unique_ptr<RegRpcSrvData> data);
+    std::unique_ptr<ScriptData> _data;
+    ScriptCommand(std::unique_ptr<ScriptData> data);
 public:
-    virtual void doneHandler(OkState result);
+    const std::string &name();
+    const std::string &spec();
+
+    ScriptCommand(ScriptCommand &&);
+    ScriptCommand& operator= (ScriptCommand &&);
+    ~ScriptCommand();
+
+    static ScriptCommand makeRegRpcSrvCmd(SBEnv &env, const std::string &name, const std::string &spec, FRT_RPCRequest *req);
+    static ScriptCommand makeRemRemCmd(SBEnv &env, const std::string &name, const std::string &spec);
+
+    void doneHandler(OkState result);
     void doRequest();
-
-    RegRpcSrvCommand(RegRpcSrvCommand &&);
-    RegRpcSrvCommand & operator=(RegRpcSrvCommand &&);
-    virtual ~RegRpcSrvCommand();
-
-    static RegRpcSrvCommand makeRegRpcSrvCmd(SBEnv &env, const std::string &name, const std::string &spec, FRT_RPCRequest *req);
-    static RegRpcSrvCommand makeRemRemCmd(SBEnv &env, const std::string &name, const std::string &spec);
 };
 
-//-----------------------------------------------------------------------------
-
 } // namespace slobrok
-
