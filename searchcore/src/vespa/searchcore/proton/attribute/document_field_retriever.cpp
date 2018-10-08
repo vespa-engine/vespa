@@ -55,7 +55,8 @@ setValue(DocumentIdT lid,
         AttributeContent<T> content;
         content.fill(attr, lid);
         Field f = doc.getField(fieldName);
-        if (!doc.getValue(f) && content.size() == 0) {
+        if (content.size() == 0) {
+            doc.remove(f);
             break;
         }
         FieldValue::UP fv = f.getDataType().createFieldValue();
@@ -75,7 +76,8 @@ setValue(DocumentIdT lid,
         AttributeContent<WeightedType<T> > content;
         content.fill(attr, lid);
         Field f = doc.getField(fieldName);
-        if (!doc.getValue(f) && content.size() == 0) {
+        if (content.size() == 0) {
+            doc.remove(f);
             break;
         }
         FieldValue::UP fv = f.getDataType().createFieldValue();
