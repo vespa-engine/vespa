@@ -44,7 +44,7 @@ private:
     class WorkPackage
     {
     private:
-        class WorkItem: public FRT_IRequestWait, public FNET_Task
+        class WorkItem: public FRT_IRequestWait
         {
         private:
             WorkPackage    &_pkg;
@@ -53,28 +53,28 @@ private:
         public:
             void expedite();
             void RequestDone(FRT_RPCRequest *req) override;
-            void PerformTask() override;
             WorkItem(WorkPackage &pkg, RemoteSlobrok *rem, FRT_RPCRequest *req);
             WorkItem(const WorkItem&) = delete;
             WorkItem& operator= (const WorkItem&) = delete;
             ~WorkItem();
         };
         std::vector<std::unique_ptr<WorkItem>> _work;
-        size_t        _doneCnt;
-        size_t        _numDenied;
-        ScriptCommand _script;
+        size_t                  _doneCnt;
+        size_t                  _numDenied;
+        RegRpcSrvCommand        _donehandler;
     public:
-        ExchangeManager &_exchanger;
+        ExchangeManager        &_exchanger;
         enum op_type { OP_NOP, OP_WANTADD, OP_DOADD, OP_REMOVE };
         op_type _optype;
+        const std::string _name;
+        const std::string _spec;
         void addItem(RemoteSlobrok *partner);
         void doneItem(bool denied);
         void expedite();
         WorkPackage(const WorkPackage&) = delete;
         WorkPackage& operator= (const WorkPackage&) = delete;
-        WorkPackage(op_type op,
-                    ExchangeManager &exchanger,
-                    ScriptCommand  donehandler);
+        WorkPackage(op_type op, const std::string & name, const std::string & spec,
+                    ExchangeManager &exchanger, RegRpcSrvCommand  donehandler);
         ~WorkPackage();
     };
 
@@ -94,8 +94,8 @@ public:
 
     void forwardRemove(const std::string & name, const std::string & spec);
 
-    void wantAdd(ScriptCommand rdc);
-    void doAdd(ScriptCommand rdc);
+    void wantAdd(const std::string & name, const std::string & spec, RegRpcSrvCommand rdc);
+    void doAdd(const std::string & name, const std::string & spec, RegRpcSrvCommand rdc);
 
     RemoteSlobrok *lookupPartner(const std::string & name) const;
     void healthCheck();

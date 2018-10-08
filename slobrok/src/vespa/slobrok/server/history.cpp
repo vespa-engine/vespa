@@ -11,10 +11,10 @@ void
 History::verify() const
 {
     if (_entries.size() > 0) {
-        citer_t i = _entries.cbegin();
+        citer_t i = _entries.begin();
         vespalib::GenCnt gen = i->gen;
 
-        while (++i != _entries.cend()) {
+        while (++i != _entries.end()) {
             gen.add();
             LOG_ASSERT(gen == i->gen);
         }
@@ -24,7 +24,10 @@ History::verify() const
 void
 History::add(const std::string &name, vespalib::GenCnt gen)
 {
-    _entries.emplace_back(name, gen);
+    HistoryEntry h;
+    _entries.push_back(h);
+    _entries.back().name = name;
+    _entries.back().gen = gen;
 
     if (_entries.size() > 1500) {
         _entries.erase(_entries.begin(), _entries.begin() + 500);
@@ -51,8 +54,8 @@ History::has(vespalib::GenCnt gen) const
 std::set<std::string>
 History::since(vespalib::GenCnt gen) const
 {
-    citer_t i = _entries.cbegin();
-    citer_t end = _entries.cend();
+    citer_t i = _entries.begin();
+    citer_t end = _entries.end();
     while (i != end) {
         if (i->gen == gen) break;
         ++i;
