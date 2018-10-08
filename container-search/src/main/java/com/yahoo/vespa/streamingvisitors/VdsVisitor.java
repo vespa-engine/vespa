@@ -105,16 +105,16 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         }
     }
 
-    public VdsVisitor(Query query, String searchCluster, Route route) {
-        this.query = query;
-        visitorSessionFactory = new MessageBusVisitorSessionFactory();
-        setVisitorParameters(searchCluster, route);
+    public VdsVisitor(Query query, String searchCluster, Route route, String documentType) {
+        this(query, searchCluster, route, documentType, new MessageBusVisitorSessionFactory());
     }
 
-    public VdsVisitor(Query query, String searchCluster, Route route, VisitorSessionFactory visitorSessionFactory) {
+    public VdsVisitor(Query query, String searchCluster, Route route,
+                      String documentType, VisitorSessionFactory visitorSessionFactory)
+    {
         this.query = query;
         this.visitorSessionFactory = visitorSessionFactory;
-        setVisitorParameters(searchCluster, route);
+        setVisitorParameters(searchCluster, route, documentType);
     }
 
     private static int inferSessionTraceLevel(Query query) {
@@ -127,14 +127,28 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         return Math.max(query.getTraceLevel(), implicitLevel);
     }
 
-    private void setVisitorParameters(String searchCluster, Route route) {
-        if (query.properties().getString(streamingUserid) != null) {
-            params.setDocumentSelection("id.user==" + query.properties().getString(streamingUserid));
-        } else if (query.properties().getString(streamingGroupname) != null) {
-            params.setDocumentSelection("id.group==\"" + query.properties().getString(streamingGroupname) + "\"");
-        } else if (query.properties().getString(streamingSelection) != null) {
-            params.setDocumentSelection(query.properties().getString(streamingSelection));
+    private static String createSelectionString(String documentType, String selection) {
+        if ((selection == null) || selection.isEmpty()) return documentType;
+
+        StringBuilder sb = new StringBuilder(documentType);
+        sb.append(" and ( ").append(selection).append(" )");
+        return sb.toString();
+    }
+
+    private String createQuerySelectionString() {
+        String s = query.properties().getString(streamingUserid);
+        if (s != null) {
+            return "id.user==" + s;
         }
+        s = query.properties().getString(streamingGroupname);
+        if (s != null) {
+            return "id.group==\"" + s + "\"";
+        }
+        return query.properties().getString(streamingSelection);
+    }
+
+    private void setVisitorParameters(String searchCluster, Route route, String documentType) {
+        params.setDocumentSelection(createSelectionString(documentType, createQuerySelectionString()));
         params.setTimeoutMs(query.getTimeout()); // Per bucket visitor timeout
         params.setSessionTimeoutMs(query.getTimeout());
         params.setVisitorLibrary("searchvisitor");
