@@ -38,10 +38,6 @@ public class StorageMaintainerMock extends StorageMaintainer {
     }
 
     @Override
-    public void cleanNodeAdmin() {
-    }
-
-    @Override
     public void cleanupNodeStorage(ContainerName containerName, NodeSpec node) {
         callOrderVerifier.add("DeleteContainerStorage with " + containerName);
     }

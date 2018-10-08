@@ -354,41 +354,8 @@ public class StorageMaintainer {
     }
 
     /**
-     * Deletes old
-     *  * archived app data
-     *  * Vespa logs
-     *  * Filedistribution files
-     */
-    public void cleanNodeAdmin() {
-        if (! getMaintenanceThrottlerFor(NODE_ADMIN).shouldRemoveOldFilesNow()) return;
-
-        MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
-        maintainerExecutor.addJob("delete-directories")
-                .withArgument("basePath", environment.getPathResolver().getApplicationStoragePathForNodeAdmin())
-                .withArgument("maxAgeSeconds", Duration.ofDays(7).getSeconds())
-                .withArgument("dirNameRegex", "^" + Pattern.quote(Environment.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX));
-
-        Path nodeAdminJDiskLogsPath = environment.pathInNodeAdminFromPathInNode(
-                NODE_ADMIN, environment.pathInNodeUnderVespaHome("logs/vespa/"));
-        maintainerExecutor.addJob("delete-files")
-                .withArgument("basePath", nodeAdminJDiskLogsPath)
-                .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
-                .withArgument("recursive", false);
-
-        Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(
-                NODE_ADMIN, environment.pathInNodeUnderVespaHome("var/db/vespa/filedistribution"));
-        maintainerExecutor.addJob("delete-files")
-                .withArgument("basePath", fileDistrDir)
-                .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
-                .withArgument("recursive", true);
-
-        maintainerExecutor.execute();
-        getMaintenanceThrottlerFor(NODE_ADMIN).updateNextRemoveOldFilesTime();
-    }
-
-    /**
-     * Prepares the container-storage for the next container by deleting/archiving all the data of the current container.
-     * Removes old files, reports coredumps and archives container data, runs when container enters state "dirty"
+     * Prepares the container-storage for the next container by archiving container logs to a new directory
+     * and deleting everything else owned by this container.
      */
     public void cleanupNodeStorage(ContainerName containerName, NodeSpec node) {
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
