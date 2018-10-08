@@ -70,8 +70,8 @@ void
 JsonWriter::writeDimensions(const DimensionSet& dimensions)
 {
     for (const auto& dimension : dimensions) {
-        if (!dimension.key.empty() && !dimension.value.empty()) {
-            _stream << dimension.key << dimension.value;
+        if (!dimension.key().empty() && !dimension.value().empty()) {
+            _stream << dimension.key() << dimension.value();
         }
     }
 }

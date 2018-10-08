@@ -98,9 +98,9 @@ XmlWriter::printCommonXmlParts(const Metric& metric) const
     if (_verbosity >= 3 && tags.size() > 0) {
         std::ostringstream ost;
         // XXX print tag values as well
-        ost << tags[0].key;
+        ost << tags[0].key();
         for (uint32_t i=1; i<tags.size(); ++i) {
-            ost << "," << tags[i].key;
+            ost << "," << tags[i].key();
         }
         _xos << XmlAttribute("tags", ost.str());
     }

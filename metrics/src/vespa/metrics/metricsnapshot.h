@@ -69,7 +69,6 @@ public:
     void recreateSnapshot(const MetricSet& metrics, bool copyUnset);
 
     void addMemoryUsage(MemoryConsumption&) const;
-    void updateNames(NameHash& hash) const { _snapshot->updateNames(hash); }
 };
 
 class MetricSnapshotSet {
@@ -107,7 +106,6 @@ public:
      */
     void recreateSnapshot(const MetricSet& metrics, bool copyUnset);
     void addMemoryUsage(MemoryConsumption&) const;
-    void updateNames(NameHash& hash) const;
     void setFromTime(time_t fromTime);
 };
 

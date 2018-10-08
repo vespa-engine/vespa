@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/regexp.h>
+#include "name_repo.h"
 
 namespace metrics {
 
@@ -14,7 +15,6 @@ class MetricSet;
 class MetricSnapshot;
 class XmlWriterMetricVisitor;
 class MemoryConsumption;
-class NameHash;
 
 /** Implement class to visit metrics. */
 struct MetricVisitor {
@@ -83,8 +83,8 @@ struct MetricVisitor {
  */
 struct Tag
 {
-    vespalib::string key;
-    vespalib::string value;
+    const vespalib::string& key() const { return NameRepo::tagKey(_key); }
+    const vespalib::string& value() const { return NameRepo::tagValue(_value); }
 
     Tag(vespalib::stringref k, vespalib::stringref v);
     Tag(const Tag &);
@@ -92,6 +92,10 @@ struct Tag
     Tag(Tag &&) = default;
     Tag & operator = (Tag &&) = default;
     ~Tag();
+
+private:
+    TagKeyId _key;
+    TagValueId _value;
 };
 
 class Metric : public vespalib::Printable
@@ -120,17 +124,17 @@ public:
     Metric & operator = (Metric && rhs) = default;
     ~Metric();
 
-    const String& getName() const { return _name; }
+    const vespalib::string& getName() const { return NameRepo::metricName(_name); }
     /**
      * Get mangled name iff the metric contains any dimensions, otherwise
      * the original metric name is returned.
      */
-    const String& getMangledName() const {
-        return (_mangledName.empty() ? _name : _mangledName);
+    const vespalib::string& getMangledName() const {
+        return NameRepo::metricName(_mangledName);
     }
     vespalib::string getPath() const;
     std::vector<String> getPathVector() const;
-    const String& getDescription() const { return _description; }
+    const vespalib::string& getDescription() const { return NameRepo::description(_description); }
     const Tags& getTags() const { return _tags; }
     /** Return whether there exists a tag with a key equal to 'tag' */
     bool hasTag(const String& tag) const;
@@ -216,12 +220,15 @@ public:
 
     /** Used by sum metric to alter name of cloned metric for sum. */
     void setName(const String& name) {
-        _name = name;
+        MetricNameId newName = NameRepo::metricId(name);
+        _name = newName;
         assignMangledNameWithDimensions();
     }
 
     /** Used by sum metric to alter description of cloned metric for sum. */
-    void setDescription(const String& d) { _description = d; }
+    void setDescription(const vespalib::string& d) {
+        _description = NameRepo::descriptionId(d);
+    }
     /** Used by sum metric to alter tag of cloned metric for sum. */
     void setTags(Tags tags) {
         _tags = std::move(tags);
@@ -241,18 +248,6 @@ public:
     void setRegistered(MetricSet* owner) { _owner = owner; }
 
     virtual void addMemoryUsage(MemoryConsumption&) const;
-
-    /**
-     * Update names using the given name hash, to utilize ref counting.
-     *
-     * NOTE:
-     * This is a hack that only works on GCC until they decide to finally break
-     * ABI compatibility and remove that particular multicore-hostile feature
-     * of their std::string implementation. If we want proper string ref
-     * counting, all strings should be replaced with explicit string handles
-     * and should only be created via a shared factory.
-     */
-    virtual void updateNames(NameHash&) const;
 
     /** Print debug information of the metric tree. */
     virtual void printDebug(std::ostream&, const std::string& indent="") const;
@@ -282,7 +277,7 @@ private:
      */
     void sortTagsInDeterministicOrder();
 
-    std::string createMangledNameWithDimensions() const;
+    vespalib::string createMangledNameWithDimensions() const;
 
     void verifyConstructionParameters();
     /**
@@ -292,9 +287,9 @@ private:
     void registerWithOwnerIfRequired(MetricSet* owner);
 
 protected:
-    String _name;
-    String _mangledName;
-    String _description;
+    MetricNameId _name;
+    MetricNameId _mangledName;
+    DescriptionId _description;
     std::vector<Tag> _tags;
     MetricSet* _owner;
 

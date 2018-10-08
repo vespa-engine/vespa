@@ -48,7 +48,7 @@
 #include <vespa/metrics/config-metricsmanager.h>
 #include <vespa/metrics/metricset.h>
 #include <vespa/metrics/metricsnapshot.h>
-#include <vespa/metrics/namehash.h>
+#include <vespa/metrics/memoryconsumption.h>
 #include <vespa/metrics/valuemetric.h>
 #include <vespa/metrics/updatehook.h>
 #include <vespa/vespalib/stllike/hash_set.h>
@@ -124,10 +124,6 @@ private:
     LongAverageMetric _resetLatency;
     LongAverageMetric _snapshotLatency;
     LongAverageMetric _sleepTimes;
-
-    // Name hash trying to ensure string ref counting works as well as can be
-    // expected
-    NameHash _nameHash;
 
 public:
     MetricManager(std::unique_ptr<Timer> timer = std::unique_ptr<Timer>(new Timer));

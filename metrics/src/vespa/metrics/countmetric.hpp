@@ -160,7 +160,7 @@ CountMetric<T, SumOnAdd>::print(std::ostream& out, bool verbose,
     (void) indent;
     Values values(_values.getValues());
     if (values._value == 0 && !verbose) return;
-    out << this->_name << (SumOnAdd ? " count=" : " value=") << values._value;
+    out << this->getName() << (SumOnAdd ? " count=" : " value=") << values._value;
     if (SumOnAdd) {
         if (secondsPassed != 0) {
             double avgDiff = values._value / ((double) secondsPassed);
