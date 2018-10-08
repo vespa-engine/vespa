@@ -5,7 +5,6 @@ import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import org.junit.Test;
@@ -40,11 +39,10 @@ public class NodeAdminImplTest {
     private interface NodeAgentFactory extends Function<String, NodeAgent> {}
     private final DockerOperations dockerOperations = mock(DockerOperations.class);
     private final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
-    private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
     private final Runnable aclMaintainer = mock(Runnable.class);
     private final ManualClock clock = new ManualClock();
 
-    private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer,
+    private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, aclMaintainer,
             new MetricReceiverWrapper(MetricReceiver.nullImplementation), clock);
 
     @Test
