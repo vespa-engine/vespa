@@ -41,11 +41,10 @@ public class FileHelperTest {
     public static class GeneralLogicTests {
         @Rule
         public TemporaryFolder folder = new TemporaryFolder();
-        private final FileHelper fileHelper = new FileHelper();
 
         @Test
         public void delete_all_files_non_recursive() {
-            int numDeleted = fileHelper.streamFiles(testRoot())
+            int numDeleted = FileHelper.streamFiles(testRoot())
                     .delete();
 
             assertEquals(3, numDeleted);
@@ -54,7 +53,7 @@ public class FileHelperTest {
 
         @Test
         public void delete_all_files_recursive() {
-            int numDeleted = fileHelper.streamFiles(testRoot())
+            int numDeleted = FileHelper.streamFiles(testRoot())
                     .recursive(true)
                     .delete();
 
@@ -64,7 +63,7 @@ public class FileHelperTest {
 
         @Test
         public void delete_with_filter_recursive() {
-            int numDeleted = fileHelper.streamFiles(testRoot())
+            int numDeleted = FileHelper.streamFiles(testRoot())
                     .filterFile(FileHelper.nameEndsWith(".json"))
                     .recursive(true)
                     .delete();
@@ -75,7 +74,7 @@ public class FileHelperTest {
 
         @Test
         public void delete_directory_with_filter() {
-            int numDeleted = fileHelper.streamDirectories(testRoot())
+            int numDeleted = FileHelper.streamDirectories(testRoot())
                     .filterDirectory(FileHelper.nameStartsWith("subdir"))
                     .recursive(true)
                     .delete();
@@ -86,7 +85,7 @@ public class FileHelperTest {
 
         @Test
         public void delete_all_contents() {
-            int numDeleted = fileHelper.streamContents(testRoot())
+            int numDeleted = FileHelper.streamContents(testRoot())
                     .recursive(true)
                     .delete();
 
@@ -97,7 +96,7 @@ public class FileHelperTest {
 
         @Test
         public void delete_everything() {
-            int numDeleted = fileHelper.streamContents(testRoot())
+            int numDeleted = FileHelper.streamContents(testRoot())
                     .includeBase(true)
                     .recursive(true)
                     .delete();

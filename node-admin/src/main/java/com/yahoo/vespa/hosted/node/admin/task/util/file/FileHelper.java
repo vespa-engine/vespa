@@ -27,112 +27,112 @@ import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.u
  */
 public class FileHelper {
 
-    /**
-     * Creates a {@link FileStreamBuilder} that will by default match all files and all directories
-     * under the given basePath.
-     */
-    public FileStreamBuilder streamContents(Path basePath) {
-        return new FileStreamBuilder(basePath, true, true);
+    private final Path basePath;
+    private Predicate<FileAttributes> fileFilter;
+    private Predicate<FileAttributes> directoryFilter;
+    private boolean includeBase = false;
+    private boolean recursive = false;
+
+    public FileHelper(Path basePath, boolean includeFiles, boolean includeDirectories) {
+        this.basePath = basePath;
+        this.fileFilter = path -> includeFiles;
+        this.directoryFilter = path -> includeDirectories;
     }
 
     /**
-     * Creates a {@link FileStreamBuilder} that will by default match all files and no directories
+     * Creates a {@link FileHelper} that will by default match all files and all directories
      * under the given basePath.
      */
-    public FileStreamBuilder streamFiles(Path basePath) {
-        return new FileStreamBuilder(basePath, true, false);
+    public static FileHelper streamContents(Path basePath) {
+        return new FileHelper(basePath, true, true);
     }
 
     /**
-     * Creates a {@link FileStreamBuilder} that will by default match all directories and no files
+     * Creates a {@link FileHelper} that will by default match all files and no directories
      * under the given basePath.
      */
-    public FileStreamBuilder streamDirectories(Path basePath) {
-        return new FileStreamBuilder(basePath, false, true);
+    public static FileHelper streamFiles(Path basePath) {
+        return new FileHelper(basePath, true, false);
     }
 
-    public class FileStreamBuilder {
-        private final Path basePath;
-        private Predicate<FileAttributes> fileFilter;
-        private Predicate<FileAttributes> directoryFilter;
-        private boolean includeBase = false;
-        private boolean recursive = false;
-
-        public FileStreamBuilder(Path basePath, boolean includeFiles, boolean includeDirectories) {
-            this.basePath = basePath;
-            this.fileFilter = path -> includeFiles;
-            this.directoryFilter = path -> includeDirectories;
-        }
-
-        /**
-         * Filter that will be used to match files under the base path. Files include everything that
-         * is not a directory (such as symbolic links)
-         */
-        public FileStreamBuilder filterFile(Predicate<FileAttributes> fileFilter) {
-            this.fileFilter = fileFilter;
-            return this;
-        }
-
-        /**
-         * Filter that will be used to match directories under the base path.
-         *
-         * NOTE: When a directory is matched, all of its sub-directories and files are also matched
-         */
-        public FileStreamBuilder filterDirectory(Predicate<FileAttributes> directoryFilter) {
-            this.directoryFilter = directoryFilter;
-            return this;
-        }
-
-        /**
-         * Whether the search should be recursive.
-         *
-         * WARNING: When using {@link #delete()} and matching directories, make sure that the directories
-         * either are already empty or that recursive is set
-         */
-        public FileStreamBuilder recursive(boolean recursive) {
-            this.recursive = recursive;
-            return this;
-        }
-
-        /**
-         * Whether the base path should also be considered (i.e. checked against the correspoding filter).
-         * When using {@link #delete()} with directories, this is the difference between
-         * `rm -rf basePath` (true) and `rm -rf basePath/*` (false)
-         */
-        public FileStreamBuilder includeBase(boolean includeBase) {
-            this.includeBase = includeBase;
-            return this;
-        }
-
-        public int delete() {
-            int[] numDeletions = { 0 }; // :(
-            forEach(attributes -> {
-                if (deleteIfExists(attributes.path()))
-                    numDeletions[0]++;
-            });
-
-            return numDeletions[0];
-        }
-
-        public List<FileAttributes> list() {
-            LinkedList<FileAttributes> list = new LinkedList<>();
-            forEach(list::add);
-            return list;
-        }
-
-        public Stream<FileAttributes> stream() {
-            return list().stream();
-        }
-
-        public void forEachPath(Consumer<Path> action) {
-            forEach(attributes -> action.accept(attributes.path()));
-        }
-
-        /** Applies a given consumer to all the matching {@link FileHelper.FileAttributes} */
-        public void forEach(Consumer<FileAttributes> action) {
-            applyForEachToMatching(basePath, fileFilter, directoryFilter, recursive, includeBase, action);
-        }
+    /**
+     * Creates a {@link FileHelper} that will by default match all directories and no files
+     * under the given basePath.
+     */
+    public static FileHelper streamDirectories(Path basePath) {
+        return new FileHelper(basePath, false, true);
     }
+
+
+    /**
+     * Filter that will be used to match files under the base path. Files include everything that
+     * is not a directory (such as symbolic links)
+     */
+    public FileHelper filterFile(Predicate<FileAttributes> fileFilter) {
+        this.fileFilter = fileFilter;
+        return this;
+    }
+
+    /**
+     * Filter that will be used to match directories under the base path.
+     *
+     * NOTE: When a directory is matched, all of its sub-directories and files are also matched
+     */
+    public FileHelper filterDirectory(Predicate<FileAttributes> directoryFilter) {
+        this.directoryFilter = directoryFilter;
+        return this;
+    }
+
+    /**
+     * Whether the search should be recursive.
+     *
+     * WARNING: When using {@link #delete()} and matching directories, make sure that the directories
+     * either are already empty or that recursive is set
+     */
+    public FileHelper recursive(boolean recursive) {
+        this.recursive = recursive;
+        return this;
+    }
+
+    /**
+     * Whether the base path should also be considered (i.e. checked against the correspoding filter).
+     * When using {@link #delete()} with directories, this is the difference between
+     * `rm -rf basePath` (true) and `rm -rf basePath/*` (false)
+     */
+    public FileHelper includeBase(boolean includeBase) {
+        this.includeBase = includeBase;
+        return this;
+    }
+
+    public int delete() {
+        int[] numDeletions = { 0 }; // :(
+        forEach(attributes -> {
+            if (deleteIfExists(attributes.path()))
+                numDeletions[0]++;
+        });
+
+        return numDeletions[0];
+    }
+
+    public List<FileAttributes> list() {
+        LinkedList<FileAttributes> list = new LinkedList<>();
+        forEach(list::add);
+        return list;
+    }
+
+    public Stream<FileAttributes> stream() {
+        return list().stream();
+    }
+
+    public void forEachPath(Consumer<Path> action) {
+        forEach(attributes -> action.accept(attributes.path()));
+    }
+
+    /** Applies a given consumer to all the matching {@link FileHelper.FileAttributes} */
+    public void forEach(Consumer<FileAttributes> action) {
+        applyForEachToMatching(basePath, fileFilter, directoryFilter, recursive, includeBase, action);
+    }
+    
 
     /**
      * <p> This method walks a file tree rooted at a given starting file. The file tree traversal is
@@ -244,7 +244,7 @@ public class FileHelper {
 
 
     // Other helpful methods that no not throw checked exceptions
-    public boolean moveIfExists(Path from, Path to) {
+    public static boolean moveIfExists(Path from, Path to) {
         try {
             Files.move(from, to);
             return true;
@@ -253,11 +253,11 @@ public class FileHelper {
         }
     }
 
-    public boolean deleteIfExists(Path path) {
+    public static boolean deleteIfExists(Path path) {
         return uncheck(() -> Files.deleteIfExists(path));
     }
 
-    public Path createDirectories(Path path) {
+    public static Path createDirectories(Path path) {
         return uncheck(() -> Files.createDirectories(path));
     }
 }

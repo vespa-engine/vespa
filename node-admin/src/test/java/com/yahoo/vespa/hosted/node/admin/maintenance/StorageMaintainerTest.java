@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.FileHelper;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -36,9 +35,8 @@ public class StorageMaintainerTest {
             .build();
     private final DockerOperations docker = mock(DockerOperations.class);
     private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
-    private final FileHelper fileHelper = mock(FileHelper.class);
     private final StorageMaintainer storageMaintainer = new StorageMaintainer(docker, processExecuter,
-            environment, null, fileHelper);
+            environment, null);
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();

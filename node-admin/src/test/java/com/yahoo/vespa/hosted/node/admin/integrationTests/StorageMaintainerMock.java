@@ -7,12 +7,8 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.FileHelper;
 
-import java.time.Clock;
 import java.util.Optional;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * @author freva
@@ -20,8 +16,8 @@ import static org.mockito.Mockito.mock;
 public class StorageMaintainerMock extends StorageMaintainer {
     private final CallOrderVerifier callOrderVerifier;
 
-    public StorageMaintainerMock(DockerOperations dockerOperations, ProcessExecuter processExecuter, Environment environment, CallOrderVerifier callOrderVerifier, Clock clock) {
-        super(dockerOperations, processExecuter, environment, null, mock(FileHelper.class));
+    public StorageMaintainerMock(DockerOperations dockerOperations, ProcessExecuter processExecuter, Environment environment, CallOrderVerifier callOrderVerifier) {
+        super(dockerOperations, processExecuter, environment, null);
         this.callOrderVerifier = callOrderVerifier;
     }
 

@@ -45,15 +45,13 @@ public class StorageMaintainer {
     private final ProcessExecuter processExecuter;
     private final Environment environment;
     private final CoredumpHandler coredumpHandler;
-    private final FileHelper fileHelper;
 
     public StorageMaintainer(DockerOperations dockerOperations, ProcessExecuter processExecuter,
-                             Environment environment, CoredumpHandler coredumpHandler, FileHelper fileHelper) {
+                             Environment environment, CoredumpHandler coredumpHandler) {
         this.dockerOperations = dockerOperations;
         this.processExecuter = processExecuter;
         this.environment = environment;
         this.coredumpHandler = coredumpHandler;
-        this.fileHelper = fileHelper;
     }
 
     public void writeMetricsConfig(ContainerName containerName, NodeSpec node) {
@@ -220,7 +218,7 @@ public class StorageMaintainer {
 
         for (Path pathToClean : logPaths) {
             Path path = environment.pathInNodeAdminFromPathInNode(containerName, pathToClean);
-            fileHelper.streamFiles(path)
+            FileHelper.streamFiles(path)
                     .filterFile(FileHelper.olderThan(Duration.ofDays(3))
                             .and(FileHelper.nameMatches(Pattern.compile(".*\\.log.+"))))
                     .delete();
@@ -228,19 +226,19 @@ public class StorageMaintainer {
 
         Path qrsDir = environment.pathInNodeAdminFromPathInNode(
                 containerName, environment.pathInNodeUnderVespaHome("logs/vespa/qrs"));
-        fileHelper.streamFiles(qrsDir)
+        FileHelper.streamFiles(qrsDir)
                 .filterFile(FileHelper.olderThan(Duration.ofDays(3)))
                 .delete();
 
         Path logArchiveDir = environment.pathInNodeAdminFromPathInNode(
                 containerName, environment.pathInNodeUnderVespaHome("logs/vespa/logarchive"));
-        fileHelper.streamFiles(logArchiveDir)
+        FileHelper.streamFiles(logArchiveDir)
                 .filterFile(FileHelper.olderThan(Duration.ofDays(31)))
                 .delete();
 
         Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(
                 containerName, environment.pathInNodeUnderVespaHome("var/db/vespa/filedistribution"));
-        fileHelper.streamFiles(fileDistrDir)
+        FileHelper.streamFiles(fileDistrDir)
                 .filterFile(FileHelper.olderThan(Duration.ofDays(31)))
                 .recursive(true)
                 .delete();
@@ -286,10 +284,10 @@ public class StorageMaintainer {
         Path containerLogsInArchiveDir = environment.pathInNodeAdminToNodeCleanup(containerName).resolve(logsDirInContainer);
         Path containerLogsPathOnHost = environment.pathInNodeAdminFromPathInNode(containerName, logsDirInContainer);
 
-        fileHelper.createDirectories(containerLogsInArchiveDir.getParent());
-        fileHelper.moveIfExists(containerLogsPathOnHost, containerLogsInArchiveDir);
+        FileHelper.createDirectories(containerLogsInArchiveDir.getParent());
+        FileHelper.moveIfExists(containerLogsPathOnHost, containerLogsInArchiveDir);
 
-        fileHelper.streamContents(environment.pathInHostFromPathInNode(containerName, Paths.get("/")))
+        FileHelper.streamContents(environment.pathInHostFromPathInNode(containerName, Paths.get("/")))
                 .includeBase(true)
                 .delete();
     }
