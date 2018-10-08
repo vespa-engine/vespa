@@ -514,6 +514,20 @@ void checkStructSerialization(const StructFieldValue &value,
     EXPECT_EQUAL(60u, element2_size);
 }
 
+TEST("requireThatEmptyStructCanBeSerialized") {
+    StructDataType structType(getStructDataType());
+    StructFieldValue value(structType);
+    nbostream stream;
+    value.reset(); // Simulate the result of deserializing empty struct
+    serializeAndDeserialize(value, stream);
+    uint32_t data_size;
+    uint8_t compression_type;
+    uint8_t field_count;
+    stream >> data_size >> compression_type >> field_count;
+    EXPECT_EQUAL(0u, data_size);
+    EXPECT_EQUAL(0u, field_count);
+}
+
 TEST("requireThatUncompressedStructFieldValueCanBeSerialized") {
     StructDataType structType(getStructDataType());
     StructFieldValue value = getStructFieldValue(structType);
