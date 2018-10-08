@@ -199,4 +199,53 @@ TEST_MT_FF("require that selection sources can be added while waiting for events
     }
 }
 
+TEST_MT_FFF("require that single fd selector can wait for read events while handling wakeups correctly",
+            2, SocketPair(SocketPair::create()), SingleFdSelector(f1.a.get()), TimeBomb(60))
+{
+    if (thread_id == 0) {
+        EXPECT_EQUAL(f2.wait_readable(), false); // wakeup only
+        TEST_BARRIER(); // #1
+        EXPECT_EQUAL(f2.wait_readable(), true); // read only
+        TEST_BARRIER(); // #2
+        TEST_BARRIER(); // #3
+        EXPECT_EQUAL(f2.wait_readable(), true); // read and wakeup
+    } else {
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        f2.wakeup();
+        TEST_BARRIER(); // #1
+        vespalib::string msg("test");
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        ASSERT_EQUAL(f1.b.write(msg.data(), msg.size()), ssize_t(msg.size()));
+        TEST_BARRIER(); // #2
+        f2.wakeup();
+        TEST_BARRIER(); // #3
+    }
+}
+
+TEST_MT_FFF("require that single fd selector can wait for write events while handling wakeups correctly",
+            2, SocketPair(SocketPair::create()), SingleFdSelector(f1.a.get()), TimeBomb(60))
+{
+    if (thread_id == 0) {
+        EXPECT_EQUAL(f2.wait_writable(), true); // write only
+        TEST_BARRIER(); // #1
+        TEST_BARRIER(); // #2
+        EXPECT_EQUAL(f2.wait_writable(), true); // write and wakeup
+        size_t buffer_size = 0;
+        while (f1.a.write("x", 1) == 1) {
+            ++buffer_size;
+        }
+        EXPECT_TRUE((errno == EWOULDBLOCK) || (errno == EAGAIN));
+        fprintf(stderr, "buffer size: %zu\n", buffer_size);
+        TEST_BARRIER(); // #3
+        EXPECT_EQUAL(f2.wait_readable(), false); // wakeup only
+    } else {
+        TEST_BARRIER(); // #1
+        f2.wakeup();
+        TEST_BARRIER(); // #2
+        TEST_BARRIER(); // #3
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        f2.wakeup();
+    }
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
