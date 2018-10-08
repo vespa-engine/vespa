@@ -72,14 +72,13 @@ public class ContactInfoHandler extends LoggingRequestHandler {
 
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
-        if (!path.matches("/contactinfo/v1/tenant/{tenant}")) return getContactInfo(path.get("tenant"), request);
+        if (path.matches("/contactinfo/v1/tenant/{tenant}")) return getContactInfo(path.get("tenant"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
-        if (path.matches("/contactinfo/v1/tenant/{tenant}"))
-            return postContactInfo(path.get("tenant"), request);
+        if (path.matches("/contactinfo/v1/tenant/{tenant}")) return postContactInfo(path.get("tenant"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -96,18 +95,7 @@ public class ContactInfoHandler extends LoggingRequestHandler {
             contact = tenant.get().contact();
         }
         if (contact.isPresent()) {
-            Slime response = new Slime();
-            Cursor cursor = response.setObject();
-            cursor.setString("issueTrackerUrl", contact.get().issueTrackerUrl().toString());
-            cursor.setString("propertyUrl", contact.get().propertyUrl().toString());
-            Cursor persons = cursor.setArray("persons");
-            for (List<String> personList : contact.get().persons()) {
-                Cursor sublist = persons.addArray();
-                for(String person : personList) {
-                    sublist.addString(person);
-                }
-            }
-            return new SlimeJsonResponse(response);
+            return new SlimeJsonResponse(contact.get().toSlime());
         }
         return ErrorResponse.notFoundError("Could not find contact info for " + tenantName);
     }
@@ -147,20 +135,7 @@ public class ContactInfoHandler extends LoggingRequestHandler {
 
     private Contact getContactFromRequest(HttpRequest request) throws IOException, URISyntaxException {
         Slime slime = SlimeUtils.jsonToSlime(IOUtils.readBytes(request.getData(), 1000 * 1000));
-        Inspector inspector = slime.get();
-        URI propertyUrl = new URI(inspector.field("propertyUrl").asString());
-        URI url = new URI(inspector.field("url").asString());
-        URI issueTrackerUrl = new URI(inspector.field("issueTrackerUrl").asString());
-        Inspector personInspector = inspector.field("persons");
-        List<List<String>> personList = new ArrayList<>();
-        personInspector.traverse((ArrayTraverser) (index, entry) -> {
-                List<String> subList = new ArrayList<>();
-                entry.traverse((ArrayTraverser) (idx, subEntry) -> {
-                    subList.add(subEntry.asString());
-                });
-                personList.add(subList);
-        });
-        return new Contact(url, propertyUrl, issueTrackerUrl, personList);
+        return Contact.fromSlime(slime);
     }
 
     private Optional<Contact> findContactFromOpsDb(AthenzTenant tenant) {
