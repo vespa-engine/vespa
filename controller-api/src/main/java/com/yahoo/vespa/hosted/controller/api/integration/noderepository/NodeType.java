@@ -24,5 +24,11 @@ public enum NodeType {
     config,
 
     /** A host of a (docker) config server node */
-    confighost
+    confighost,
+
+    /** A controller */
+    controller,
+
+    /** A host of a (docker) controller node */
+    controllerhost
 }
