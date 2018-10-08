@@ -46,23 +46,11 @@ public class CoredumpHandler {
         this.doneCoredumpsPath = doneCoredumpsPath;
     }
 
-    public void processAll(Path coredumpsPath, Map<String, Object> nodeAttributes) throws IOException {
-        removeJavaCoredumps(coredumpsPath);
-        handleNewCoredumps(coredumpsPath, nodeAttributes);
-        removeOldCoredumps();
-    }
+    public void processAll(Path coredumpsPath, Map<String, Object> nodeAttributes) {
+        fileHelper.streamFiles(coredumpsPath)
+                .filterFile(FileHelper.nameMatches(JAVA_COREDUMP_PATTERN))
+                .delete();
 
-    private void removeJavaCoredumps(Path coredumpsPath) throws IOException {
-        if (! coredumpsPath.toFile().isDirectory()) return;
-        FileHelper.deleteFiles(coredumpsPath, Duration.ZERO, Optional.of("^java_pid.*\\.hprof$"), false);
-    }
-
-    private void removeOldCoredumps() throws IOException {
-        if (! doneCoredumpsPath.toFile().isDirectory()) return;
-        FileHelper.deleteDirectories(doneCoredumpsPath, Duration.ofDays(10), Optional.empty());
-    }
-
-    private void handleNewCoredumps(Path coredumpsPath, Map<String, Object> nodeAttributes) {
         enqueueCoredumps(coredumpsPath);
         processAndReportCoredumps(coredumpsPath, nodeAttributes);
     }
