@@ -148,11 +148,13 @@ public class HostResourceTest {
     }
 
     private HostResource mockHostResource() {
-        return new HostResource(new Host(new MockRoot()));
+        MockRoot mockRoot = new MockRoot();
+        return new HostResource(new Host(mockRoot));
     }
 
     private static HostResource hostResourceWithMemberships(ClusterMembership... memberships) {
-        HostResource host = new HostResource(new Host(null, "hostname"));
+        MockRoot root = new MockRoot();
+        HostResource host = new HostResource(Host.createHost(root.deployLogger(),null, "hostname"));
         Arrays.asList(memberships).forEach(host::addClusterMembership);
         return host;
     }

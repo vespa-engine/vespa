@@ -99,6 +99,10 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     }
 
     public HostResource getHost(String hostAlias) {
+        return getHost(hostAlias, deployLogger());
+    }
+
+    public HostResource getHost(String hostAlias, DeployLogger deployLogger) {
         HostSpec hostSpec = provisioner.allocateHost(hostAlias);
         for (HostResource resource : hostname2host.values()) {
             if (resource.getHostname().equals(hostSpec.hostname())) {
@@ -106,11 +110,11 @@ public class HostSystem extends AbstractConfigProducer<Host> {
                 return resource;
             }
         }
-        return addNewHost(hostSpec);
+        return addNewHost(hostSpec, deployLogger);
     }
 
-    private HostResource addNewHost(HostSpec hostSpec) {
-        Host host = new Host(this, hostSpec.hostname());
+    private HostResource addNewHost(HostSpec hostSpec, DeployLogger deployLogger) {
+        Host host = Host.createHost(deployLogger, this, hostSpec.hostname());
         HostResource hostResource = new HostResource(host, hostSpec.version());
         hostResource.setFlavor(hostSpec.flavor());
         hostSpec.membership().ifPresent(hostResource::addClusterMembership);
@@ -132,7 +136,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         Map<HostResource, ClusterMembership> retAllocatedHosts = new LinkedHashMap<>();
         for (HostSpec spec : allocatedHosts) {
             // This is needed for single node host provisioner to work in unit tests for hosted vespa applications.
-            HostResource host = getExistingHost(spec).orElseGet(() -> addNewHost(spec));
+            HostResource host = getExistingHost(spec).orElseGet(() -> addNewHost(spec, logger));
             retAllocatedHosts.put(host, spec.membership().orElse(null));
             if (! host.getFlavor().isPresent()) {
                 host.setFlavor(spec.flavor());

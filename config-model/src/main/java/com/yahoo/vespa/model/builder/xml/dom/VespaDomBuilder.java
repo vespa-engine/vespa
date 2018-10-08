@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelRepo;
@@ -172,7 +173,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
                 if (port > 0) {
                     t.setBasePort(port);
                 }
-                allocateHost(t, hostSystem, producerSpec);
+                allocateHost(t, hostSystem, producerSpec, deployState.getDeployLogger());
             }
             // This depends on which constructor in AbstractService is used, but the best way
             // is to let this method do initialize.
@@ -189,7 +190,9 @@ public class VespaDomBuilder extends VespaModelBuilder {
          * @param hostSystem a {@link HostSystem}
          * @param producerSpec xml element for the service
          */
-        private void allocateHost(final AbstractService service, HostSystem hostSystem, Element producerSpec) {
+        private void allocateHost(final AbstractService service, HostSystem hostSystem,
+                                  Element producerSpec, DeployLogger deployLogger)
+        {
             // TODO store service on something else than HostSystem, to not make that overloaded
             service.setHostResource(hostSystem.getHost(producerSpec.getAttribute("hostalias")));
         }
