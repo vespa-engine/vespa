@@ -290,6 +290,7 @@ public class StorageMaintainer {
         fileHelper.moveIfExists(containerLogsPathOnHost, containerLogsInArchiveDir);
 
         fileHelper.streamContents(environment.pathInHostFromPathInNode(containerName, Paths.get("/")))
+                .includeBase(true)
                 .delete();
     }
 

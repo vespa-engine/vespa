@@ -55,7 +55,7 @@ public class FileHelper {
         private final Path basePath;
         private Predicate<FileAttributes> fileFilter;
         private Predicate<FileAttributes> directoryFilter;
-        private boolean includeBase = true;
+        private boolean includeBase = false;
         private boolean recursive = false;
 
         public FileStreamBuilder(Path basePath, boolean includeFiles, boolean includeDirectories) {

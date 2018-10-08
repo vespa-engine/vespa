@@ -88,7 +88,6 @@ public class FileHelperTest {
         public void delete_all_contents() {
             int numDeleted = fileHelper.streamContents(testRoot())
                     .recursive(true)
-                    .includeBase(false)
                     .delete();
 
             assertEquals(9, numDeleted);
@@ -99,6 +98,7 @@ public class FileHelperTest {
         @Test
         public void delete_everything() {
             int numDeleted = fileHelper.streamContents(testRoot())
+                    .includeBase(true)
                     .recursive(true)
                     .delete();
 
