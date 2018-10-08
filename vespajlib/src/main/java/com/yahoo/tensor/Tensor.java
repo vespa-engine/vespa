@@ -86,6 +86,13 @@ public interface Tensor {
         return valueIterator().next();
     }
 
+    /**
+     * Returns this tensor with the given type if types are compatible
+     *
+     * @throws IllegalArgumentException if types are not compatible
+     */
+    Tensor withType(TensorType type);
+
     // ----------------- Primitive tensor functions
 
     default Tensor map(DoubleUnaryOperator mapper) {

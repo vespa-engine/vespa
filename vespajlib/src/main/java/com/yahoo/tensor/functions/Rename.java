@@ -95,6 +95,11 @@ public class Rename extends PrimitiveTensorFunction {
             toIndexes[i] = renamedType.indexOfDimension(newDimensionName).get();
         }
 
+        // avoid building a new tensor if dimensions can simply be renamed
+        if (simpleRenameIsPossible(toIndexes)) {
+            return tensor.withType(renamedType);
+        }
+
         Tensor.Builder builder = Tensor.Builder.of(renamedType);
         for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> cell = i.next();
@@ -102,6 +107,18 @@ public class Rename extends PrimitiveTensorFunction {
             builder.cell(renamedAddress, cell.getValue());
         }
         return builder.build();
+    }
+
+    /**
+     * If none of the dimensions change order after rename we can do a simple rename.
+     */
+    private boolean simpleRenameIsPossible(int[] toIndexes) {
+        for (int i = 0; i < toIndexes.length; ++i) {
+            if (toIndexes[i] != i) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private TensorAddress rename(TensorAddress address, int[] toIndexes) {

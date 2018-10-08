@@ -42,6 +42,15 @@ public class MappedTensor implements Tensor {
     public Map<TensorAddress, Double> cells() { return cells; }
 
     @Override
+    public Tensor withType(TensorType other) {
+        if (!this.type.isRenamableTo(type)) {
+            throw new IllegalArgumentException("MappedTensor.withType: types are not compatible. Current type: '" +
+                    this.type.toString() + "', requested type: '" + type.toString() + "'");
+        }
+        return new MappedTensor(other, cells);
+    }
+
+    @Override
     public int hashCode() { return cells.hashCode(); }
 
     @Override
