@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
@@ -41,6 +42,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
+    private final StorageMaintainer storageMaintainer;
     private final Runnable aclMaintainer;
 
     private final Clock clock;
@@ -55,11 +57,13 @@ public class NodeAdminImpl implements NodeAdmin {
 
     public NodeAdminImpl(DockerOperations dockerOperations,
                          Function<String, NodeAgent> nodeAgentFactory,
+                         StorageMaintainer storageMaintainer,
                          Runnable aclMaintainer,
                          MetricReceiverWrapper metricReceiver,
                          Clock clock) {
         this.dockerOperations = dockerOperations;
         this.nodeAgentFactory = nodeAgentFactory;
+        this.storageMaintainer = storageMaintainer;
         this.aclMaintainer = aclMaintainer;
 
         this.clock = clock;
@@ -78,6 +82,7 @@ public class NodeAdminImpl implements NodeAdmin {
                 .map(NodeSpec::getHostname)
                 .collect(Collectors.toSet());
 
+        storageMaintainer.cleanNodeAdmin();
         synchronizeNodesToNodeAgents(hostnamesOfContainersToRun);
 
         updateNodeAgentMetrics();
