@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
 import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -72,6 +73,7 @@ public class JobRunnerTest {
                                                           Optional.empty(),
                                                           Optional.empty());
 
+    @Ignore
     @Test
     public void multiThreadedExecutionFinishes() throws InterruptedException {
         DeploymentTester tester = new DeploymentTester();
