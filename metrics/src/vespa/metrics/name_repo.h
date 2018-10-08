@@ -16,7 +16,7 @@ using DescriptionId = vespalib::metrics::Handle<DescriptionIdTag>;
 using TagKeyId = vespalib::metrics::Handle<TagKeyIdTag>;
 using TagValueId = vespalib::metrics::Handle<TagValueIdTag>;
 
-struct Repo {
+struct NameRepo {
     static MetricNameId metricId(const vespalib::string &name);
     static DescriptionId descriptionId(const vespalib::string &name);
     static TagKeyId tagKeyId(const vespalib::string &name);

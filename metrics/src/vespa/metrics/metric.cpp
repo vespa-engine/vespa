@@ -52,8 +52,8 @@ namespace {
 vespalib::Regexp Metric::_namePattern(namePattern);
 
 Tag::Tag(vespalib::stringref k, vespalib::stringref v)
-    : _key(Repo::tagKeyId(k)),
-      _value(Repo::tagValueId(v))
+    : _key(NameRepo::tagKeyId(k)),
+      _value(NameRepo::tagValueId(v))
 { }
 
 Tag::Tag(const Tag &) = default;
@@ -64,9 +64,9 @@ Metric::Metric(const String& name,
                const String& tags,
                const String& description,
                MetricSet* owner)
-    : _name(Repo::metricId(name)),
+    : _name(NameRepo::metricId(name)),
       _mangledName(_name),
-      _description(Repo::descriptionId(description)),
+      _description(NameRepo::descriptionId(description)),
       _tags(legacyTagStringToKeyedTags(tags)),
       _owner(nullptr) // Set later by registry
 {
@@ -79,9 +79,9 @@ Metric::Metric(const String& name,
                Tags dimensions,
                const String& description,
                MetricSet* owner)
-    : _name(Repo::metricId(name)),
+    : _name(NameRepo::metricId(name)),
       _mangledName(_name),
-      _description(Repo::descriptionId(description)),
+      _description(NameRepo::descriptionId(description)),
       _tags(std::move(dimensions)),
       _owner(nullptr)
 {
@@ -124,7 +124,7 @@ Metric::assignMangledNameWithDimensions()
     }
     sortTagsInDeterministicOrder();
     vespalib::string mangled = createMangledNameWithDimensions();
-    _mangledName = Repo::metricId(mangled);
+    _mangledName = NameRepo::metricId(mangled);
 }
 
 void

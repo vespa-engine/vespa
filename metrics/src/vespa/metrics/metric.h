@@ -4,7 +4,7 @@
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/regexp.h>
-#include "repo.h"
+#include "name_repo.h"
 
 namespace metrics {
 
@@ -83,8 +83,8 @@ struct MetricVisitor {
  */
 struct Tag
 {
-    const vespalib::string& key() const { return Repo::tagKey(_key); }
-    const vespalib::string& value() const { return Repo::tagValue(_value); }
+    const vespalib::string& key() const { return NameRepo::tagKey(_key); }
+    const vespalib::string& value() const { return NameRepo::tagValue(_value); }
 
     Tag(vespalib::stringref k, vespalib::stringref v);
     Tag(const Tag &);
@@ -124,17 +124,17 @@ public:
     Metric & operator = (Metric && rhs) = default;
     ~Metric();
 
-    const vespalib::string& getName() const { return Repo::metricName(_name); }
+    const vespalib::string& getName() const { return NameRepo::metricName(_name); }
     /**
      * Get mangled name iff the metric contains any dimensions, otherwise
      * the original metric name is returned.
      */
     const vespalib::string& getMangledName() const {
-        return Repo::metricName(_mangledName);
+        return NameRepo::metricName(_mangledName);
     }
     vespalib::string getPath() const;
     std::vector<String> getPathVector() const;
-    const vespalib::string& getDescription() const { return Repo::description(_description); }
+    const vespalib::string& getDescription() const { return NameRepo::description(_description); }
     const Tags& getTags() const { return _tags; }
     /** Return whether there exists a tag with a key equal to 'tag' */
     bool hasTag(const String& tag) const;
@@ -220,14 +220,14 @@ public:
 
     /** Used by sum metric to alter name of cloned metric for sum. */
     void setName(const String& name) {
-        MetricNameId newName = Repo::metricId(name);
+        MetricNameId newName = NameRepo::metricId(name);
         _name = newName;
         assignMangledNameWithDimensions();
     }
 
     /** Used by sum metric to alter description of cloned metric for sum. */
     void setDescription(const vespalib::string& d) {
-        _description = Repo::descriptionId(d);
+        _description = NameRepo::descriptionId(d);
     }
     /** Used by sum metric to alter tag of cloned metric for sum. */
     void setTags(Tags tags) {

@@ -14,7 +14,7 @@ vespa_add_library(metrics
     metricvalueset.cpp
     namehash.cpp
     printutils.cpp
-    repo.cpp
+    name_repo.cpp
     state_api_adapter.cpp
     summetric.cpp
     textwriter.cpp
