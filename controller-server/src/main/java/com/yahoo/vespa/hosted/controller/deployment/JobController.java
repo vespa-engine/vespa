@@ -25,10 +25,12 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -55,6 +57,8 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
  */
 public class JobController {
 
+    private static final int historyLength = 256;
+
     private final Controller controller;
     private final CuratorDb curator;
     private final BufferedLogStore logs;
@@ -67,15 +71,14 @@ public class JobController {
         this.cloud = testerCloud;
     }
 
-    public TesterCloud cloud() {
-        return cloud;
-    }
+    public TesterCloud cloud() { return cloud; }
+    public int historyLength() { return historyLength; }
 
     /** Rewrite all job data with the newest format. */
     public void updateStorage() {
         for (ApplicationId id : applications())
             for (JobType type : jobs(id)) {
-                locked(id, type, runs -> { // runs is unmodified, and written back as such.
+                locked(id, type, runs -> { // runs is not modified here, and is written as it was.
                     curator.readLastRun(id, type).ifPresent(curator::writeLastRun);
                 });
             }
@@ -110,23 +113,21 @@ public class JobController {
 
     /** Fetches any new test log entries, and records the id of the last of these, for continuation. */
     public void updateTestLog(RunId id) {
-        try (Lock __ = curator.lock(id.application(), id.type())) {
-            active(id).ifPresent(run -> {
+            locked(id, run -> {
                 if ( ! run.readySteps().contains(endTests))
-                    return;
+                    return run;
 
                 Optional<URI> testerEndpoint = testerEndpoint(id);
                 if ( ! testerEndpoint.isPresent())
-                    return;
+                    return run;
 
                 List<LogEntry> entries = cloud.getLog(testerEndpoint.get(), run.lastTestLogEntry());
                 if (entries.isEmpty())
-                    return;
+                    return run;
 
                 logs.append(id.application(), id.type(), endTests, entries);
-                curator.writeLastRun(run.with(entries.stream().mapToLong(LogEntry::id).max().getAsLong()));
+                return run.with(entries.stream().mapToLong(LogEntry::id).max().getAsLong());
             });
-        }
     }
 
     /** Returns a list of all application which have registered. */
@@ -187,9 +188,17 @@ public class JobController {
 
     /** Changes the status of the given run to inactive, and stores it as a historic run. */
     public void finish(RunId id) {
-        locked(id, run -> { // Store the modified run after it has been written to the collection, in case the latter fails.
+        locked(id, run -> { // Store the modified run after it has been written to history, in case the latter fails.
             Run finishedRun = run.finished(controller.clock().instant());
-            locked(id.application(), id.type(), runs -> runs.put(run.id(), finishedRun));
+            locked(id.application(), id.type(), runs -> {
+                runs.put(run.id(), finishedRun);
+                long last = id.number();
+                Iterator<RunId> ids = runs.keySet().iterator();
+                for (RunId old = ids.next(); old.number() <= last - historyLength; old = ids.next()) {
+                    logs.delete(old);
+                    ids.remove();
+                }
+            });
             logs.flush(id);
             return finishedRun;
         });
@@ -256,11 +265,7 @@ public class JobController {
     public void unregister(ApplicationId id) {
         controller.applications().lockIfPresent(id, application -> {
             controller.applications().store(application.withBuiltInternally(false));
-            jobs(id).forEach(type -> {
-                try (Lock __ = curator.lock(id, type)) {
-                    last(id, type).ifPresent(last -> active(last.id()).ifPresent(active -> abort(active.id())));
-                }
-            });
+            jobs(id).forEach(type -> last(id, type).ifPresent(last -> abort(last.id())));
         });
     }
 
@@ -336,9 +341,9 @@ public class JobController {
     }
 
     /** Locks and modifies the list of historic runs for the given application and job type. */
-    private void locked(ApplicationId id, JobType type, Consumer<Map<RunId, Run>> modifications) {
+    private void locked(ApplicationId id, JobType type, Consumer<SortedMap<RunId, Run>> modifications) {
         try (Lock __ = curator.lock(id, type)) {
-            Map<RunId, Run> runs = curator.readHistoricRuns(id, type);
+            SortedMap<RunId, Run> runs = curator.readHistoricRuns(id, type);
             modifications.accept(runs);
             curator.writeHistoricRuns(id, type, runs.values());
         }
@@ -347,9 +352,10 @@ public class JobController {
     /** Locks and modifies the run with the given id, provided it is still active. */
     private void locked(RunId id, UnaryOperator<Run> modifications) {
         try (Lock __ = curator.lock(id.application(), id.type())) {
-            Run run = active(id).orElseThrow(() -> new IllegalArgumentException(id + " is not an active run!"));
-            run = modifications.apply(run);
-            curator.writeLastRun(run);
+            active(id).ifPresent(run -> {
+                run = modifications.apply(run);
+                curator.writeLastRun(run);
+            });
         }
     }
 

@@ -18,6 +18,7 @@ vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     metrics_manager.cpp
     metric_types.cpp
     name_collection.cpp
+    name_repo.cpp
     point_builder.cpp
     point.cpp
     point_map_collection.cpp

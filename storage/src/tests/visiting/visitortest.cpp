@@ -119,6 +119,8 @@ public:
         }
     };
 
+    constexpr static api::StorageMessage::Priority DefaultPriority = 123;
+
     std::shared_ptr<api::CreateVisitorCommand> makeCreateVisitor(
             const VisitorOptions& options = VisitorOptions());
     void tearDown() override;
@@ -495,6 +497,7 @@ VisitorTest::makeCreateVisitor(const VisitorOptions& options)
     cmd->setAddress(address);
     cmd->setMaximumPendingReplyCount(UINT32_MAX);
     cmd->setControlDestination("foo/bar");
+    cmd->setPriority(DefaultPriority);
     return cmd;
 }
 
@@ -519,7 +522,8 @@ VisitorTest::testNormalUsage()
 
     CreateIteratorCommand::SP createCmd(
             fetchSingleCommand<CreateIteratorCommand>(*_bottom));
-    CPPUNIT_ASSERT_EQUAL(uint8_t(0), createCmd->getPriority()); // Highest pri
+    CPPUNIT_ASSERT_EQUAL(static_cast<int>(DefaultPriority),
+                         static_cast<int>(createCmd->getPriority())); // Inherit pri
     spi::IteratorId id(1234);
     api::StorageReply::SP reply(
             new CreateIteratorReply(*createCmd, id));

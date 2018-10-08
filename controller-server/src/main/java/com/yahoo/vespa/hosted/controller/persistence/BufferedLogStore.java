@@ -77,6 +77,11 @@ public class BufferedLogStore {
         buffer.deleteLog(id.application(), id.type());
     }
 
+    /** Deletes the logs for the given run, if already moved to storage. */
+    public void delete(RunId id) {
+        store.delete(id);
+    }
+
     /** Deletes all logs for the given application. */
     public void delete(ApplicationId id) {
         for (JobType type : JobType.values())

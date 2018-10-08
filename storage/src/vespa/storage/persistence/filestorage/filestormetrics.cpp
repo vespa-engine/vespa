@@ -10,7 +10,7 @@ using metrics::MetricSet;
 using metrics::LoadTypeSet;
 
 FileStorThreadMetrics::Op::Op(const std::string& id, const std::string& name, MetricSet* owner)
-    : MetricSet(id, id, name + " load in filestor thread", owner, "operationtype"),
+    : MetricSet(id, "", name + " load in filestor thread", owner),
       _name(name),
       count("count", "yamasdefault", "Number of requests processed.", this),
       latency("latency", "yamasdefault", "Latency of successful requests.", this),
@@ -118,7 +118,7 @@ FileStorThreadMetrics::Visitor::clone(std::vector<Metric::UP>& ownerList,
 }
 
 FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std::string& desc, const LoadTypeSet& lt)
-    : MetricSet(name, "filestor partofsum thread", desc, nullptr, "thread"),
+    : MetricSet(name, "filestor partofsum", desc),
       operations("operations", "", "Number of operations processed.", this),
       failedOperations("failedoperations", "", "Number of operations throwing exceptions.", this),
       put(lt, OpWithRequestSize<Op>("put", "Put"), this),
@@ -176,7 +176,7 @@ FileStorThreadMetrics::~FileStorThreadMetrics() = default;
 
 FileStorStripeMetrics::FileStorStripeMetrics(const std::string& name, const std::string& description,
                                              const LoadTypeSet& loadTypes)
-    : MetricSet(name, "partofsum stripe", description, nullptr, "stripe"),
+    : MetricSet(name, "partofsum", description),
       averageQueueWaitingTime(loadTypes,
                               metrics::DoubleAverageMetric("averagequeuewait", "",
                                                            "Average time an operation spends in input queue."),
@@ -188,7 +188,7 @@ FileStorStripeMetrics::~FileStorStripeMetrics() = default;
 
 FileStorDiskMetrics::FileStorDiskMetrics(const std::string& name, const std::string& description,
                                          const metrics::LoadTypeSet& loadTypes, MetricSet* owner)
-    : MetricSet(name, "partofsum disk", description, owner, "disk"),
+    : MetricSet(name, "partofsum", description, owner),
       sumThreads("allthreads", "sum", "", this),
       sumStripes("allstripes", "sum", "", this),
       averageQueueWaitingTime(loadTypes,

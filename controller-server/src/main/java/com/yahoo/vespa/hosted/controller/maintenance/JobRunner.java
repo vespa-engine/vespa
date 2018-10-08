@@ -75,7 +75,7 @@ public class JobRunner extends Maintainer {
             advance(jobs.run(run.id()).get());
         }
         else if (run.readySteps().isEmpty())
-            jobs.finish(run.id());
+            executors.execute(() -> jobs.finish(run.id()));
         else
             run.readySteps().forEach(step -> executors.execute(() -> advance(run.id(), step)));
     }

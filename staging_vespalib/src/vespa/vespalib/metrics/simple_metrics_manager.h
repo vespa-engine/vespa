@@ -6,13 +6,12 @@
 #include <memory>
 #include <thread>
 #include <vespa/vespalib/stllike/string.h>
-#include "name_collection.h"
+#include "name_repo.h"
 #include "current_samples.h"
 #include "snapshots.h"
 #include "metrics_manager.h"
 #include "metric_types.h"
 #include "clock.h"
-#include "point_map_collection.h"
 #include "bucket.h"
 
 namespace vespalib {
@@ -35,14 +34,14 @@ struct SimpleManagerConfig {
 class SimpleMetricsManager : public MetricsManager
 {
 private:
-    NameCollection _metricNames;
     MetricTypes _metricTypes;
-    NameCollection _dimensionNames;
-    NameCollection _labelValues;
-    PointMapCollection _pointMaps;
 
-    const vespalib::string& nameFor(Dimension dimension) { return _dimensionNames.lookup(dimension.id()); }
-    const vespalib::string& valueFor(Label label) { return _labelValues.lookup(label.id()); }
+    const vespalib::string& nameFor(Dimension dimension) {
+        return NameRepo::instance.dimensionName(dimension);
+    }
+    const vespalib::string& valueFor(Label label) {
+        return NameRepo::instance.labelValue(label);
+    }
 
     CurrentSamples _currentSamples;
 

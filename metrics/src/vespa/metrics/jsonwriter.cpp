@@ -41,26 +41,10 @@ JsonWriter::doneVisitingSnapshot(const MetricSnapshot&)
     _period = 0;
 }
 
-void
-JsonWriter::pushLegacyDimensionFromSet(const MetricSet& ms)
-{
-    _dimensionStack.push_back({{ms.getDimensionKey(), ms.getName()}});
-}
-
-void
-JsonWriter::pushAllDimensionsFromSet(const MetricSet& ms)
-{
-    _dimensionStack.push_back(ms.getTags());
-}
-
 bool
 JsonWriter::visitMetricSet(const MetricSet& set, bool)
 {
-    if (!set.getDimensionKey().empty()) {
-        pushLegacyDimensionFromSet(set);
-    } else {
-        pushAllDimensionsFromSet(set);
-    }
+    _dimensionStack.push_back(set.getTags());
     return true;
 }
 

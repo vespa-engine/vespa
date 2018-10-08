@@ -12,11 +12,7 @@ using Guard = std::lock_guard<std::mutex>;
 
 SimpleMetricsManager::SimpleMetricsManager(const SimpleManagerConfig &config,
                                            Tick::UP tick_supplier)
-    : _metricNames(),
-      _dimensionNames(),
-      _labelValues(),
-      _pointMaps(),
-      _currentSamples(),
+    : _currentSamples(),
       _tickSupplier(std::move(tick_supplier)),
       _startTime(_tickSupplier->first()),
       _curTime(_startTime),
@@ -55,19 +51,19 @@ SimpleMetricsManager::createForTest(const SimpleManagerConfig &config,
 Counter
 SimpleMetricsManager::counter(const vespalib::string &name, const vespalib::string &)
 {
-    size_t id = _metricNames.resolve(name);
-    _metricTypes.check(id, name, MetricTypes::MetricType::COUNTER);
-    LOG(debug, "counter with metric name %s -> %zu", name.c_str(), id);
-    return Counter(shared_from_this(), MetricName(id));
+    MetricName mn = NameRepo::instance.metric(name);
+    _metricTypes.check(mn.id(), name, MetricTypes::MetricType::COUNTER);
+    LOG(debug, "counter with metric name %s -> %zu", name.c_str(), mn.id());
+    return Counter(shared_from_this(), mn);
 }
 
 Gauge
 SimpleMetricsManager::gauge(const vespalib::string &name, const vespalib::string &)
 {
-    size_t id = _metricNames.resolve(name);
-    _metricTypes.check(id, name, MetricTypes::MetricType::GAUGE);
-    LOG(debug, "gauge with metric name %s -> %zu", name.c_str(), id);
-    return Gauge(shared_from_this(), MetricName(id));
+    MetricName mn = NameRepo::instance.metric(name);
+    _metricTypes.check(mn.id(), name, MetricTypes::MetricType::GAUGE);
+    LOG(debug, "gauge with metric name %s -> %zu", name.c_str(), mn.id());
+    return Gauge(shared_from_this(), mn);
 }
 
 Bucket
@@ -102,10 +98,18 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
 
     double s = bucket.startTime.count();
     double e = bucket.endTime.count();
+
+    size_t max_point_id = 0;
+    for (const CounterAggregator& entry : bucket.counters) {
+        max_point_id = std::max(max_point_id, entry.idx.point().id());
+    }
+    for (const GaugeAggregator& entry : bucket.gauges) {
+        max_point_id = std::max(max_point_id, entry.idx.point().id());
+    }
     Snapshot snap(s, e);
     {
-        for (size_t i = 0; i < _pointMaps.size(); ++i) {
-            const PointMap::BackingMap &map = _pointMaps.lookup(i).backingMap();
+        for (size_t point_id = 0; point_id <= max_point_id; ++point_id) {
+            const PointMap::BackingMap &map = NameRepo::instance.pointMap(Point(point_id));
             PointSnapshot point;
             for (const PointMap::BackingMap::value_type &kv : map) {
                 point.dimensions.emplace_back(nameFor(kv.first), valueFor(kv.second));
@@ -114,16 +118,16 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
         }
     }
     for (const CounterAggregator& entry : bucket.counters) {
-        size_t ni = entry.idx.name().id();
+        MetricName mn = entry.idx.name();
         size_t pi = entry.idx.point().id();
-        const vespalib::string &name = _metricNames.lookup(ni);
+        const vespalib::string &name = NameRepo::instance.metricName(mn);
         CounterSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
     for (const GaugeAggregator& entry : bucket.gauges) {
-        size_t ni = entry.idx.name().id();
+        MetricName mn = entry.idx.name();
         size_t pi = entry.idx.point().id();
-        const vespalib::string &name = _metricNames.lookup(ni);
+        const vespalib::string &name = NameRepo::instance.metricName(mn);
         GaugeSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
@@ -166,31 +170,30 @@ SimpleMetricsManager::collectCurrentSamples(TimeStamp prev,
 Dimension
 SimpleMetricsManager::dimension(const vespalib::string &name)
 {
-    size_t id = _dimensionNames.resolve(name);
-    LOG(debug, "dimension name %s -> %zu", name.c_str(), id);
-    return Dimension(id);
+    Dimension dim = NameRepo::instance.dimension(name);
+    LOG(debug, "dimension name %s -> %zu", name.c_str(), dim.id());
+    return dim;
 }
 
 Label
 SimpleMetricsManager::label(const vespalib::string &value)
 {
-    size_t id = _labelValues.resolve(value);
-    LOG(debug, "label value %s -> %zu", value.c_str(), id);
-    return Label(id);
+    Label l = NameRepo::instance.label(value);
+    LOG(debug, "label value %s -> %zu", value.c_str(), l.id());
+    return l;
 }
 
 PointBuilder
 SimpleMetricsManager::pointBuilder(Point from)
 {
-    const PointMap &map = _pointMaps.lookup(from.id());
-    return PointBuilder(shared_from_this(), map.backingMap());
+    const PointMap::BackingMap &map = NameRepo::instance.pointMap(from);
+    return PointBuilder(shared_from_this(), map);
 }
 
 Point
 SimpleMetricsManager::pointFrom(PointMap::BackingMap map)
 {
-    size_t id = _pointMaps.resolve(PointMap(std::move(map)));
-    return Point(id);
+    return NameRepo::instance.pointFrom(std::move(map));
 }
 
 

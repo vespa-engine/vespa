@@ -1257,7 +1257,7 @@ Visitor::getIterators()
 
         cmd->setLoadType(_initiatingCmd->getLoadType());
         cmd->getTrace().setLevel(_traceLevel);
-        cmd->setPriority(0);
+        cmd->setPriority(_initiatingCmd->getPriority());
         cmd->setReadConsistency(getRequiredReadConsistency());
         _bucketStates.push_back(newBucketState.release());
         _messageHandler->send(cmd, *this);

@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zts;
 
-import com.yahoo.athenz.zts.TenantDomains;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
@@ -84,27 +83,20 @@ public interface ZtsClient extends AutoCloseable {
      * Fetch role certificate for the target domain and role
      *
      * @param role Target role
+     * @param csr Certificate signing request matching role
      * @param expiry Certificate expiry
-     * @param keyPair Key pair which will be used to generate CSR (certificate signing request)
-     * @param cloud The cloud suffix used in DNS SAN entries
      * @return A role certificate
      */
-    X509Certificate getRoleCertificate(AthenzRole role,
-                                       Duration expiry,
-                                       KeyPair keyPair,
-                                       String cloud);
+    X509Certificate getRoleCertificate(AthenzRole role, Pkcs10Csr csr, Duration expiry);
 
     /**
      * Fetch role certificate for the target domain and role
      *
      * @param role Target role
-     * @param keyPair Key pair which will be used to generate CSR (certificate signing request)
-     * @param cloud The cloud suffix used in DNS SAN entries
+     * @param csr Certificate signing request matching role
      * @return A role certificate
      */
-    X509Certificate getRoleCertificate(AthenzRole role,
-                                       KeyPair keyPair,
-                                       String cloud);
+    X509Certificate getRoleCertificate(AthenzRole role, Pkcs10Csr csr);
 
     /**
      * For a given provider, get a list of tenant domains that the user is a member of

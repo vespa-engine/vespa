@@ -33,8 +33,6 @@ private:
     void writeCommonPrefix(const Metric& m);
     void writeCommonPostfix(const Metric& m);
 
-    void pushLegacyDimensionFromSet(const MetricSet&);
-    void pushAllDimensionsFromSet(const MetricSet&);
     void writeDimensions(const DimensionSet&);
     void writeInheritedDimensions();
     void writeMetricSpecificDimensions(const Metric&);
