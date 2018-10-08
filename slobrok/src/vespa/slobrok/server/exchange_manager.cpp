@@ -69,8 +69,8 @@ ExchangeManager::getPartnerList()
 void
 ExchangeManager::forwardRemove(const std::string & name, const std::string & spec)
 {
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, *this,
-                                           ScriptCommand::makeRemRemCmd(_env, name, spec));
+    WorkPackage *package = new WorkPackage(WorkPackage::OP_REMOVE, name, spec, *this,
+                                           RegRpcSrvCommand::makeRemRemCmd(_env, name, spec));
     for (const auto & entry : _partners) {
         package->addItem(entry.second.get());
     }
@@ -78,9 +78,9 @@ ExchangeManager::forwardRemove(const std::string & name, const std::string & spe
 }
 
 void
-ExchangeManager::doAdd(ScriptCommand rdc)
+ExchangeManager::doAdd(const std::string &name, const std::string &spec, RegRpcSrvCommand rdc)
 {
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_DOADD, *this, std::move(rdc));
+    WorkPackage *package = new WorkPackage(WorkPackage::OP_DOADD, name, spec, *this, std::move(rdc));
 
     for (const auto & entry : _partners) {
         package->addItem(entry.second.get());
@@ -90,9 +90,9 @@ ExchangeManager::doAdd(ScriptCommand rdc)
 
 
 void
-ExchangeManager::wantAdd(ScriptCommand rdc)
+ExchangeManager::wantAdd(const std::string &name, const std::string &spec, RegRpcSrvCommand rdc)
 {
-    WorkPackage *package = new WorkPackage(WorkPackage::OP_WANTADD, *this, std::move(rdc));
+    WorkPackage *package = new WorkPackage(WorkPackage::OP_WANTADD, name, spec, *this, std::move(rdc));
     for (const auto & entry : _partners) {
         package->addItem(entry.second.get());
     }
@@ -120,29 +120,15 @@ ExchangeManager::healthCheck()
 ExchangeManager::WorkPackage::WorkItem::WorkItem(WorkPackage &pkg,
                                                  RemoteSlobrok *rem,
                                                  FRT_RPCRequest *req)
-    : FNET_Task(pkg._exchanger._env.getScheduler()),
-      _pkg(pkg), _pendingReq(req), _remslob(rem)
+    : _pkg(pkg), _pendingReq(req), _remslob(rem)
 {
 }
 
 void
 ExchangeManager::WorkPackage::WorkItem::RequestDone(FRT_RPCRequest *req)
 {
-    LOG_ASSERT(req == _pendingReq);
-    if (req->GetErrorCode() == FRTE_RPC_ABORT) {
-        LOG(debug, "WorkItem aborted");
-        req->SubRef();
-        _pendingReq = nullptr;
-    } else {
-        ScheduleNow();
-    }
-}
-
-void
-ExchangeManager::WorkPackage::WorkItem::PerformTask()
-{
     bool denied = false;
-    FRT_RPCRequest *req = _pendingReq;
+    LOG_ASSERT(req == _pendingReq);
     FRT_Values &answer = *(req->GetReturn());
 
     if (!req->IsError() && strcmp(answer.GetTypeString(), "is") == 0) {
@@ -171,21 +157,21 @@ ExchangeManager::WorkPackage::WorkItem::~WorkItem()
 {
     if (_pendingReq != nullptr) {
         _pendingReq->Abort();
-        // _pendingReq cleared by RequestDone Method
         LOG_ASSERT(_pendingReq == nullptr);
     }
 }
 
 
-ExchangeManager::WorkPackage::WorkPackage(op_type op,
-                                          ExchangeManager &exchanger,
-                                          ScriptCommand script)
+ExchangeManager::WorkPackage::WorkPackage(op_type op, const std::string & name, const std::string & spec,
+                                          ExchangeManager &exchanger, RegRpcSrvCommand donehandler)
     : _work(),
       _doneCnt(0),
       _numDenied(0),
-      _script(std::move(script)),
+      _donehandler(std::move(donehandler)),
       _exchanger(exchanger),
-      _optype(op)
+      _optype(op),
+      _name(name),
+      _spec(spec)
 {
 }
 
@@ -202,9 +188,9 @@ ExchangeManager::WorkPackage::doneItem(bool denied)
         (int)_doneCnt, (int)_work.size(), (int)_numDenied);
     if (_doneCnt == _work.size()) {
         if (_numDenied > 0) {
-            _script.doneHandler(OkState(_numDenied, "denied by remote"));
+            _donehandler.doneHandler(OkState(_numDenied, "denied by remote"));
         } else {
-            _script.doneHandler(OkState());
+            _donehandler.doneHandler(OkState());
         }
         delete this;
     }
@@ -217,9 +203,6 @@ ExchangeManager::WorkPackage::addItem(RemoteSlobrok *partner)
     if (! partner->isConnected()) {
         return;
     }
-    const char *name_p = _script.name().c_str();
-    const char *spec_p = _script.spec().c_str();
-
     FRT_RPCRequest *r = _exchanger._env.getSupervisor()->AllocRPCRequest();
     // XXX should recheck rpcsrvmap again
     if (_optype == OP_REMOVE) {
@@ -230,13 +213,13 @@ ExchangeManager::WorkPackage::addItem(RemoteSlobrok *partner)
         r->SetMethodName("slobrok.internal.doAdd");
     }
     r->GetParams()->AddString(_exchanger._env.mySpec().c_str());
-    r->GetParams()->AddString(name_p);
-    r->GetParams()->AddString(spec_p);
+    r->GetParams()->AddString(_name.c_str());
+    r->GetParams()->AddString(_spec.c_str());
 
     _work.push_back(std::make_unique<WorkItem>(*this, partner, r));
     LOG(spam, "added %s(%s,%s,%s) for %s to workpackage",
         r->GetMethodName(), _exchanger._env.mySpec().c_str(),
-        name_p, spec_p, partner->getName().c_str());
+        _name.c_str(), _spec.c_str(), partner->getName().c_str());
 }
 
 
@@ -246,7 +229,7 @@ ExchangeManager::WorkPackage::expedite()
     size_t sz = _work.size();
     if (sz == 0) {
         // no remotes need doing.
-        _script.doneHandler(OkState());
+        _donehandler.doneHandler(OkState());
         delete this;
         return;
     }

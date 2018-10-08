@@ -32,7 +32,7 @@ ${SLOBROK} -p 18484 &
 sleep 1
 
 ./slobrok_rpc_info_app \
-	tcp/localhost:18481 verbose > rpc-method-list
+	tcp/`hostname`:18481 verbose > rpc-method-list
 
 echo port 18481:
 ${SBCMD} 18481 slobrok.callback.listNamesServed
@@ -52,13 +52,13 @@ listall
 
 listall
 
-add=tcp/localhost:18482
+add=tcp/`hostname`:18482
 ${SBCMD} 18481 slobrok.admin.addPeer $add $add
-add=tcp/localhost:18483
+add=tcp/`hostname`:18483
 ${SBCMD} 18481 slobrok.admin.addPeer $add $add
-add=tcp/localhost:18484
+add=tcp/`hostname`:18484
 ${SBCMD} 18481 slobrok.admin.addPeer $add $add
-add=tcp/localhost:18481
+add=tcp/`hostname`:18481
 ${SBCMD} 18484 slobrok.admin.addPeer $add $add
 
 listall
@@ -67,7 +67,7 @@ listall
 
 listall
 
-rem=tcp/localhost:18482
+rem=tcp/`hostname`:18482
 ${SBCMD} 18481 slobrok.admin.removePeer $rem $rem
 
 ./slobrok_tstdst_app -s 18482 -p 18490 -n testrpcsrv/19 &
