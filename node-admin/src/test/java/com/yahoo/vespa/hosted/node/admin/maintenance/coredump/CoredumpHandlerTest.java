@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
+import com.yahoo.vespa.hosted.node.admin.task.util.file.FileHelper;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -57,6 +58,7 @@ public class CoredumpHandlerTest {
 
     private final CoreCollector coreCollector = mock(CoreCollector.class);
     private final CoredumpReporter coredumpReporter = mock(CoredumpReporter.class);
+    private final FileHelper fileHelper = new FileHelper();
     private CoredumpHandler coredumpHandler;
     private Path crashPath;
     private Path donePath;
@@ -68,7 +70,7 @@ public class CoredumpHandlerTest {
         donePath = folder.newFolder("done").toPath();
         processingPath = CoredumpHandler.getProcessingCoredumpsPath(crashPath);
 
-        coredumpHandler = new CoredumpHandler(coreCollector, coredumpReporter, donePath);
+        coredumpHandler = new CoredumpHandler(coreCollector, fileHelper, coredumpReporter, donePath);
     }
 
     @Test

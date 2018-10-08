@@ -3,19 +3,18 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.system.ProcessExecuter;
-import com.yahoo.vespa.hosted.node.admin.maintenance.FileHelper;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.FileHelper;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Finds coredumps, collects metadata and reports them
@@ -24,6 +23,7 @@ import java.util.logging.Logger;
  */
 public class CoredumpHandler {
 
+    private static final Pattern JAVA_COREDUMP_PATTERN = Pattern.compile("java_pid.*\\.hprof");
     private static final String PROCESSING_DIRECTORY_NAME = "processing";
     static final String METADATA_FILE_NAME = "metadata.json";
 
@@ -31,14 +31,16 @@ public class CoredumpHandler {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final CoreCollector coreCollector;
+    private final FileHelper fileHelper;
     private final Path doneCoredumpsPath;
     private final CoredumpReporter coredumpReporter;
 
     public CoredumpHandler(CoredumpReporter coredumpReporter, Path doneCoredumpsPath) {
-        this(new CoreCollector(new ProcessExecuter()), coredumpReporter, doneCoredumpsPath);
+        this(new CoreCollector(new ProcessExecuter()), new FileHelper(), coredumpReporter, doneCoredumpsPath);
     }
 
-    CoredumpHandler(CoreCollector coreCollector, CoredumpReporter coredumpReporter, Path doneCoredumpsPath) {
+    CoredumpHandler(CoreCollector coreCollector, FileHelper fileHelper, CoredumpReporter coredumpReporter, Path doneCoredumpsPath) {
+        this.fileHelper = fileHelper;
         this.coreCollector = coreCollector;
         this.coredumpReporter = coredumpReporter;
         this.doneCoredumpsPath = doneCoredumpsPath;
@@ -72,12 +74,14 @@ public class CoredumpHandler {
      */
     void enqueueCoredumps(Path coredumpsPath) {
         Path processingCoredumpsPath = getProcessingCoredumpsPath(coredumpsPath);
-        processingCoredumpsPath.toFile().mkdirs();
-        if (!FileHelper.listContentsOfDirectory(processingCoredumpsPath).isEmpty()) return;
+        fileHelper.createDirectories(processingCoredumpsPath);
+        if (!fileHelper.streamDirectories(processingCoredumpsPath).list().isEmpty()) return;
 
-        FileHelper.listContentsOfDirectory(coredumpsPath).stream()
-                .filter(path -> path.toFile().isFile() && ! path.getFileName().toString().startsWith("."))
-                .min((Comparator.comparingLong(o -> o.toFile().lastModified())))
+        fileHelper.streamFiles(coredumpsPath)
+                .filterFile(FileHelper.nameStartsWith(".").negate())
+                .stream()
+                .min(Comparator.comparing(FileHelper.FileAttributes::lastModifiedTime))
+                .map(FileHelper.FileAttributes::path)
                 .ifPresent(coredumpPath -> {
                     try {
                         enqueueCoredumpForProcessing(coredumpPath, processingCoredumpsPath);
@@ -89,11 +93,10 @@ public class CoredumpHandler {
 
     void processAndReportCoredumps(Path coredumpsPath, Map<String, Object> nodeAttributes) {
         Path processingCoredumpsPath = getProcessingCoredumpsPath(coredumpsPath);
-        doneCoredumpsPath.toFile().mkdirs();
+        fileHelper.createDirectories(doneCoredumpsPath);
 
-        FileHelper.listContentsOfDirectory(processingCoredumpsPath).stream()
-                .filter(path -> path.toFile().isDirectory())
-                .forEach(coredumpDirectory -> processAndReportSingleCoredump(coredumpDirectory, nodeAttributes));
+        fileHelper.streamDirectories(processingCoredumpsPath)
+                .forEachPath(coredumpDirectory -> processAndReportSingleCoredump(coredumpDirectory, nodeAttributes));
     }
 
     private void processAndReportSingleCoredump(Path coredumpDirectory, Map<String, Object> nodeAttributes) {
@@ -109,19 +112,19 @@ public class CoredumpHandler {
     }
 
     private void enqueueCoredumpForProcessing(Path coredumpPath, Path processingCoredumpsPath) throws IOException {
-        // Make coredump readable
-        coredumpPath.toFile().setReadable(true, false);
-
         // Create new directory for this coredump and move it into it
         Path folder = processingCoredumpsPath.resolve(UUID.randomUUID().toString());
-        folder.toFile().mkdirs();
+        fileHelper.createDirectories(folder);
         Files.move(coredumpPath, folder.resolve(coredumpPath.getFileName()));
     }
 
     String collectMetadata(Path coredumpDirectory, Map<String, Object> nodeAttributes) throws IOException {
         Path metadataPath = coredumpDirectory.resolve(METADATA_FILE_NAME);
         if (!Files.exists(metadataPath)) {
-            Path coredumpPath = FileHelper.listContentsOfDirectory(coredumpDirectory).stream().findFirst()
+            Path coredumpPath = fileHelper.streamFiles(coredumpDirectory)
+                    .stream()
+                    .map(FileHelper.FileAttributes::path)
+                    .findFirst()
                     .orElseThrow(() -> new RuntimeException("No coredump file found in processing directory " + coredumpDirectory));
             Map<String, Object> metadata = coreCollector.collect(coredumpPath);
             metadata.putAll(nodeAttributes);
