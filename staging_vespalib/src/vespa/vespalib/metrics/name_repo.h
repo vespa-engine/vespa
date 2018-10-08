@@ -4,7 +4,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "dimension.h"
 #include "label.h"
-#include "metric_name.h"
+#include "metric_id.h"
 #include "point.h"
 
 #include "name_collection.h"
@@ -28,16 +28,16 @@ private:
     ~NameRepo() = default;
 public:
 
-    MetricName metric(const vespalib::string &name);
+    MetricId metric(const vespalib::string &name);
     Dimension dimension(const vespalib::string &name);
     Label label(const vespalib::string &value);
 
-    const vespalib::string& metricName(MetricName metric);
-    const vespalib::string& dimensionName(Dimension dim);
-    const vespalib::string& labelValue(Label l);
+    const vespalib::string& metricName(MetricId metric) const;
+    const vespalib::string& dimensionName(Dimension dim) const;
+    const vespalib::string& labelValue(Label l) const;
 
-    const PointMap::BackingMap& pointMap(Point from);
-    Point pointFrom(PointMap::BackingMap map);
+    const PointMap& pointMap(Point from) const;
+    Point pointFrom(PointMap map);
 
     static NameRepo instance;
 };

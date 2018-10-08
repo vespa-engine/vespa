@@ -30,10 +30,10 @@ public:
     }
 
     Counter counter(const vespalib::string &, const vespalib::string &) override {
-        return Counter(shared_from_this(), MetricName(0));
+        return Counter(shared_from_this(), MetricId(0));
     }
     Gauge gauge(const vespalib::string &, const vespalib::string &) override {
-        return Gauge(shared_from_this(), MetricName(0));
+        return Gauge(shared_from_this(), MetricId(0));
     }
 
     Dimension dimension(const vespalib::string &) override {
@@ -45,7 +45,7 @@ public:
     PointBuilder pointBuilder(Point) override {
         return PointBuilder(shared_from_this());
     }
-    Point pointFrom(PointMap::BackingMap) override {
+    Point pointFrom(PointMap) override {
         return Point(0);
     }
 

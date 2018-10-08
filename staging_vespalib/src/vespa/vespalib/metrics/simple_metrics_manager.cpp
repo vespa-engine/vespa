@@ -24,7 +24,7 @@ SimpleMetricsManager::SimpleMetricsManager(const SimpleManagerConfig &config,
       _thread(&SimpleMetricsManager::tickerLoop, this)
 {
     if (_maxBuckets < 1) _maxBuckets = 1;
-    Point empty = pointFrom(PointMap::BackingMap());
+    Point empty = pointFrom(PointMap());
     assert(empty.id() == 0);
 }
 
@@ -51,7 +51,7 @@ SimpleMetricsManager::createForTest(const SimpleManagerConfig &config,
 Counter
 SimpleMetricsManager::counter(const vespalib::string &name, const vespalib::string &)
 {
-    MetricName mn = NameRepo::instance.metric(name);
+    MetricId mn = MetricId::from_name(name);
     _metricTypes.check(mn.id(), name, MetricTypes::MetricType::COUNTER);
     LOG(debug, "counter with metric name %s -> %zu", name.c_str(), mn.id());
     return Counter(shared_from_this(), mn);
@@ -60,7 +60,7 @@ SimpleMetricsManager::counter(const vespalib::string &name, const vespalib::stri
 Gauge
 SimpleMetricsManager::gauge(const vespalib::string &name, const vespalib::string &)
 {
-    MetricName mn = NameRepo::instance.metric(name);
+    MetricId mn = MetricId::from_name(name);
     _metricTypes.check(mn.id(), name, MetricTypes::MetricType::GAUGE);
     LOG(debug, "gauge with metric name %s -> %zu", name.c_str(), mn.id());
     return Gauge(shared_from_this(), mn);
@@ -109,25 +109,25 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
     Snapshot snap(s, e);
     {
         for (size_t point_id = 0; point_id <= max_point_id; ++point_id) {
-            const PointMap::BackingMap &map = NameRepo::instance.pointMap(Point(point_id));
+            const PointMap &map = Point(point_id).as_map();
             PointSnapshot point;
-            for (const PointMap::BackingMap::value_type &kv : map) {
-                point.dimensions.emplace_back(nameFor(kv.first), valueFor(kv.second));
+            for (const PointMap::value_type &kv : map) {
+                point.dimensions.emplace_back(kv.first.as_name(), kv.second.as_value());
             }
             snap.add(point);
         }
     }
     for (const CounterAggregator& entry : bucket.counters) {
-        MetricName mn = entry.idx.name();
+        MetricId mn = entry.idx.name();
         size_t pi = entry.idx.point().id();
-        const vespalib::string &name = NameRepo::instance.metricName(mn);
+        const vespalib::string &name = mn.as_name();
         CounterSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
     for (const GaugeAggregator& entry : bucket.gauges) {
-        MetricName mn = entry.idx.name();
+        MetricId mn = entry.idx.name();
         size_t pi = entry.idx.point().id();
-        const vespalib::string &name = NameRepo::instance.metricName(mn);
+        const vespalib::string &name = mn.as_name();
         GaugeSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
@@ -170,7 +170,7 @@ SimpleMetricsManager::collectCurrentSamples(TimeStamp prev,
 Dimension
 SimpleMetricsManager::dimension(const vespalib::string &name)
 {
-    Dimension dim = NameRepo::instance.dimension(name);
+    Dimension dim = Dimension::from_name(name);
     LOG(debug, "dimension name %s -> %zu", name.c_str(), dim.id());
     return dim;
 }
@@ -178,7 +178,7 @@ SimpleMetricsManager::dimension(const vespalib::string &name)
 Label
 SimpleMetricsManager::label(const vespalib::string &value)
 {
-    Label l = NameRepo::instance.label(value);
+    Label l = Label::from_value(value);
     LOG(debug, "label value %s -> %zu", value.c_str(), l.id());
     return l;
 }
@@ -186,16 +186,15 @@ SimpleMetricsManager::label(const vespalib::string &value)
 PointBuilder
 SimpleMetricsManager::pointBuilder(Point from)
 {
-    const PointMap::BackingMap &map = NameRepo::instance.pointMap(from);
+    const PointMap &map = from.as_map();
     return PointBuilder(shared_from_this(), map);
 }
 
 Point
-SimpleMetricsManager::pointFrom(PointMap::BackingMap map)
+SimpleMetricsManager::pointFrom(PointMap map)
 {
-    return NameRepo::instance.pointFrom(std::move(map));
+    return Point::from_map(std::move(map));
 }
-
 
 void
 SimpleMetricsManager::tickerLoop()

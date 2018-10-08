@@ -9,7 +9,7 @@ void
 Gauge::sample(double value, Point point) const
 {
     if (_manager) {
-        MetricIdentifier fullId(_id, point);
+        MetricPointId fullId(_id, point);
         _manager->sample(Measurement(fullId, value));
     }
 }

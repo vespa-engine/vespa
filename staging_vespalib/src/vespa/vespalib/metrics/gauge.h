@@ -2,7 +2,7 @@
 #pragma once
 
 #include <memory>
-#include "metric_identifier.h"
+#include "metric_point_id.h"
 #include "point.h"
 
 namespace vespalib {
@@ -17,9 +17,9 @@ class GaugeAggregator;
 class Gauge {
 private:
     std::shared_ptr<MetricsManager> _manager;
-    MetricName _id;
+    MetricId _id;
 public:
-    Gauge(std::shared_ptr<MetricsManager> m, MetricName id)
+    Gauge(std::shared_ptr<MetricsManager> m, MetricId id)
         : _manager(std::move(m)), _id(id)
     {}
 
@@ -32,10 +32,10 @@ public:
 
     // internal
     struct Measurement {
-        MetricIdentifier idx;
+        MetricPointId idx;
         double value;
         Measurement() = delete;
-        Measurement(MetricIdentifier id, double v) : idx(id), value(v) {}
+        Measurement(MetricPointId id, double v) : idx(id), value(v) {}
     };
 
     typedef GaugeAggregator aggregator_type;

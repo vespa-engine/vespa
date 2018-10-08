@@ -10,7 +10,7 @@ PointBuilder::PointBuilder(std::shared_ptr<MetricsManager> m)
 {}
 
 PointBuilder::PointBuilder(std::shared_ptr<MetricsManager> m,
-                           const PointMap::BackingMap &copyFrom)
+                           const PointMap &copyFrom)
     : _owner(std::move(m)), _map(copyFrom)
 {}
 
@@ -60,7 +60,7 @@ PointBuilder::bind(DimensionName dimension, LabelValue label) &&
 Point
 PointBuilder::build()
 {
-    return _owner->pointFrom(PointMap::BackingMap(_map));
+    return _owner->pointFrom(_map);
 }
 
 PointBuilder::operator Point() &&

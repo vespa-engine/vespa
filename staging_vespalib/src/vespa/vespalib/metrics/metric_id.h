@@ -2,14 +2,20 @@
 #pragma once
 
 #include "handle.h"
+#include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib::metrics {
 
-struct MetricNameTag {};
+struct MetricIdTag {};
 
 /**
  * Opaque handle representing an uniquely named metric.
  **/
-using MetricName = Handle<MetricNameTag>;
+struct MetricId : Handle<MetricIdTag>
+{
+    explicit MetricId(size_t id) : Handle(id) {}
+    static MetricId from_name(const vespalib::string& name);
+    const vespalib::string& as_name() const;
+};
 
 } // namespace vespalib::metrics

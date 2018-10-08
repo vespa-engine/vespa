@@ -7,12 +7,12 @@ LOG_SETUP(".vespalib.metrics.name_repo");
 namespace vespalib {
 namespace metrics {
 
-MetricName
+MetricId
 NameRepo::metric(const vespalib::string &name)
 {
     size_t id = _metricNames.resolve(name);
     LOG(debug, "metric name %s -> %zu", name.c_str(), id);
-    return MetricName(id);
+    return MetricId(id);
 }
 
 Dimension
@@ -32,35 +32,34 @@ NameRepo::label(const vespalib::string &value)
 }
 
 const vespalib::string&
-NameRepo::metricName(MetricName metric)
+NameRepo::metricName(MetricId metric) const
 {
     return _metricNames.lookup(metric.id());
 }
 
 const vespalib::string&
-NameRepo::dimensionName(Dimension dim)
+NameRepo::dimensionName(Dimension dim) const
 {
     return _dimensionNames.lookup(dim.id());
 }
 
 const vespalib::string&
-NameRepo::labelValue(Label l)
+NameRepo::labelValue(Label l) const
 {
     return _labelValues.lookup(l.id());
 }
 
 
-const PointMap::BackingMap&
-NameRepo::pointMap(Point from)
+const PointMap&
+NameRepo::pointMap(Point from) const
 {
-    const PointMap &map = _pointMaps.lookup(from.id());
-    return map.backingMap();
+    return _pointMaps.lookup(from.id());
 }
 
 Point
-NameRepo::pointFrom(PointMap::BackingMap map)
+NameRepo::pointFrom(PointMap map)
 {
-    size_t id = _pointMaps.resolve(PointMap(std::move(map)));
+    size_t id = _pointMaps.resolve(std::move(map));
     return Point(id);
 }
 

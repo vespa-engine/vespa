@@ -8,20 +8,7 @@
 namespace vespalib {
 namespace metrics {
 
-// internal
-class PointMap {
-public:
-    using BackingMap = std::map<Dimension, Label>;
-private:
-    const PointMap::BackingMap _map;
-    size_t _hash;
-public:
-    PointMap() : _map(), _hash(0) {}
-    PointMap(BackingMap &&from);
-    bool operator< (const PointMap &other) const;
-
-    const BackingMap &backingMap() const { return _map; }
-};
+using PointMap = std::map<Dimension, Label>;
 
 } // namespace vespalib::metrics
 } // namespace vespalib
