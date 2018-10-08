@@ -162,6 +162,15 @@ public class IndexedTensor implements Tensor {
     @Override
     public TensorType type() { return type; }
 
+    @Override
+    public IndexedTensor withType(TensorType type) {
+        if (!this.type.isRenamableTo(type)) {
+            throw new IllegalArgumentException("IndexedTensor.withType: types are not compatible. Current type: '" +
+                    this.type.toString() + "', requested type: '" + type.toString() + "'");
+        }
+        return new IndexedTensor(type, dimensionSizes, values);
+    }
+
     public DimensionSizes dimensionSizes() {
         return dimensionSizes;
     }
