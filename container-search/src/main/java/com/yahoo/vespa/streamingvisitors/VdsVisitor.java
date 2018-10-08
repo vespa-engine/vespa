@@ -132,7 +132,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         if (selection.isEmpty()) return documentType;
 
         StringBuilder sb = new StringBuilder(documentType);
-        sb.append(" and ").append(selection);
+        sb.append(" and ( ").append(selection).append(" )");
         return sb.toString();
     }
 

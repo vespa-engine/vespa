@@ -228,14 +228,14 @@ public class VdsVisitorTestCase {
         //System.out.println("params="+params);
         // Verify parameters based on properties
         if (qa.userId != null) {
-            assertEquals(docType + " and id.user=="+qa.userId, params.getDocumentSelection());
+            assertEquals(docType + " and ( id.user=="+qa.userId + " )", params.getDocumentSelection());
         } else if (qa.groupName != null) {
-            assertEquals(docType + " and id.group==\""+qa.groupName+"\"", params.getDocumentSelection());
+            assertEquals(docType + " and ( id.group==\""+qa.groupName+"\" )", params.getDocumentSelection());
         } else if (qa.selection != null) {
             if (qa.selection.isEmpty()) {
                 assertEquals(docType, params.getDocumentSelection());
             } else {
-                assertEquals(docType + " and " + qa.selection, params.getDocumentSelection());
+                assertEquals(docType + " and ( " + qa.selection + " )", params.getDocumentSelection());
             }
         } else {
             assertEquals("", params.getDocumentSelection());
