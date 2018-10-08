@@ -2,7 +2,7 @@
 #pragma once
 
 #include <memory>
-#include "metric_point_id.h"
+#include "metric_id.h"
 #include "point.h"
 
 namespace vespalib {
@@ -32,10 +32,11 @@ public:
 
     // internal
     struct Measurement {
-        MetricPointId idx;
+        using Key = std::pair<MetricId, Point>;
+        Key idx;
         double value;
         Measurement() = delete;
-        Measurement(MetricPointId id, double v) : idx(id), value(v) {}
+        Measurement(Key k, double v) : idx(k), value(v) {}
     };
 
     typedef GaugeAggregator aggregator_type;

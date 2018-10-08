@@ -14,12 +14,13 @@ mergeFromSamples(const StableStore<typename T::sample_type> &source)
 {
     using Aggregator = typename T::aggregator_type;
     using Sample = typename T::sample_type;
-    using Map = std::map<MetricPointId, Aggregator>;
+    using Key = std::pair<MetricId, Point>;
+    using Map = std::map<Key, Aggregator>;
     using MapValue = typename Map::value_type;
 
     Map map;
     source.for_each([&map] (const Sample &sample) {
-        MetricPointId id = sample.idx;
+        Key id = sample.idx;
         auto iter_check = map.emplace(id, sample);
         if (!iter_check.second) {
             iter_check.first->second.merge(sample);
