@@ -153,8 +153,8 @@ void VespaDocumentSerializer::write(const Document &value,
 
 void VespaDocumentSerializer::visit(const StructFieldValue &value)
 {
-    if (!structNeedsReserialization(value)) {
-        const StructFieldValue::Chunks & chunks = value.getChunks();
+    const StructFieldValue::Chunks & chunks = value.getChunks();
+    if (!structNeedsReserialization(value) && chunks.size() > 0) {
         assert(chunks.size() == 1);
         writeUnchanged(chunks[0]);
     } else {
