@@ -558,8 +558,12 @@ function(install_fat_java_artifact NAME)
     install(FILES "target/${NAME}-jar-with-dependencies.jar" DESTINATION lib/jars/)
 endfunction()
 
+function(install_absolute_symlink TARGET LINK)
+    install(CODE "execute_process(COMMAND ln -sf ${TARGET} \$ENV{DESTDIR}/${CMAKE_INSTALL_PREFIX}/${LINK})")
+endfunction(install_absolute_symlink)
+
 function(install_symlink TARGET LINK)
-    install(CODE "execute_process(COMMAND ln -sf ${CMAKE_INSTALL_PREFIX}/${TARGET} \$ENV{DESTDIR}/${CMAKE_INSTALL_PREFIX}/${LINK})")
+    install_absolute_symlink(${CMAKE_INSTALL_PREFIX}/${TARGET} ${LINK})
 endfunction(install_symlink)
 
 function(add_extra_projects)
