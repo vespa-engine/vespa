@@ -79,7 +79,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                                  ConfigModelRegistry configModelRegistry) throws IOException, SAXException {
         Element userServicesElement = getServicesFromApp(deployState.getApplicationPackage());
         readConfigModels(root, userServicesElement, deployState, vespaModel, configModelRegistry);
-        builder.postProc(root, this);
+        builder.postProc(deployState.getDeployLogger(), root, this);
     }
 
     private Element getServicesFromApp(ApplicationPackage applicationPackage) throws IOException, SAXException {

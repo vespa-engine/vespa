@@ -5,6 +5,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
@@ -79,7 +80,7 @@ public class Content extends ConfigModel {
      */
     public Optional<ContainerCluster> ownedIndexingCluster() { return ownedIndexingCluster; }
 
-    public void createTlds(ConfigModelRepo modelRepo) {
+    public void createTlds(DeployLogger deployLogger, ConfigModelRepo modelRepo) {
         IndexedSearchCluster indexedCluster = cluster.getSearch().getIndexed();
         if (indexedCluster == null) return;
 
@@ -91,9 +92,9 @@ public class Content extends ConfigModel {
             if (containerCluster.getSearch() == null) continue; // this is not a qrs cluster
 
             log.log(LogLevel.DEBUG, "Adding tlds for indexed cluster " + indexedCluster.getClusterName() + ", container cluster " + containerCluster.getName());
-            indexedCluster.addTldsWithSameIdsAsContainers(tldParent, containerCluster);
+            indexedCluster.addTldsWithSameIdsAsContainers(deployLogger, tldParent, containerCluster);
         }
-        indexedCluster.setupDispatchGroups();
+        indexedCluster.setupDispatchGroups(deployLogger);
     }
 
     private static boolean containsIndexingChain(ComponentRegistry<DocprocChain> allChains, ChainSpecification chainSpec) {
@@ -329,7 +330,7 @@ public class Content extends ConfigModel {
                     index++;
                     docprocService.setBasePort(host.nextAvailableBaseport(docprocService.getPortCount()));
                     docprocService.setHostResource(host);
-                    docprocService.initService();
+                    docprocService.initService(modelContext.getDeployLogger());
                     nodes.add(docprocService);
                     processedHosts.add(host);
                 }

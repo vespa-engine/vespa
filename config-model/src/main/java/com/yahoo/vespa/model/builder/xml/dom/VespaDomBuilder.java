@@ -178,7 +178,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
             // This depends on which constructor in AbstractService is used, but the best way
             // is to let this method do initialize.
             if (!t.isInitialized()) {
-                t.initService();
+                t.initService(deployState.getDeployLogger());
             }
         }
 
@@ -233,7 +233,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
                     deployState.getDocumentModel(),
                     deployState.getProperties().vespaVersion(),
                     deployState.getProperties().applicationId());
-            root.setHostSystem(new HostSystem(root, "hosts", deployState.getProvisioner()));
+            root.setHostSystem(new HostSystem(root, "hosts", deployState.getProvisioner(), deployState.getDeployLogger()));
             new Client(root);
             return root;
         }
@@ -277,8 +277,8 @@ public class VespaDomBuilder extends VespaModelBuilder {
      * @param root root config producer
      * @param configModelRepo a {@link ConfigModelRepo}
      */
-    public void postProc(AbstractConfigProducer root, ConfigModelRepo configModelRepo) {
-        createTlds(configModelRepo);
+    public void postProc(DeployLogger deployLogger, AbstractConfigProducer root, ConfigModelRepo configModelRepo) {
+        createTlds(deployLogger, configModelRepo);
         setContentSearchClusterIndexes(configModelRepo);
         createDocprocMBusServersAndClients(configModelRepo);
     }
@@ -294,10 +294,10 @@ public class VespaDomBuilder extends VespaModelBuilder {
             docproc.getChains().addServersAndClientsForChains();
     }
 
-    private void createTlds(ConfigModelRepo pc) {
+    private void createTlds(DeployLogger deployLogger, ConfigModelRepo pc) {
          for (ConfigModel p : pc.asMap().values()) {
             if (p instanceof Content) {
-                ((Content)p).createTlds(pc);
+                ((Content)p).createTlds(deployLogger, pc);
             }
         }
     }

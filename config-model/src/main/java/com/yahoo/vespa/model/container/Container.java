@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.container;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
@@ -151,11 +152,11 @@ public class Container extends AbstractService implements
     public void addBuiltinHandlers() { }
 
     @Override
-    public void initService() {
+    public void initService(DeployLogger deployLogger) {
         if (isInitialized()) return;
 
         // XXX: Must be called first, to set the baseport
-        super.initService();
+        super.initService(deployLogger);
 
         if (getHttp() == null) {
             initDefaultJettyConnector();

@@ -36,7 +36,8 @@ import static org.junit.Assert.assertTrue;
 public class IndexedHierarchicDistributionTest {
 
     private ContentCluster addDispatcher(ContentCluster c) {
-        c.getSearch().getIndexed().addTld(new SimpleConfigProducer(new MockRoot(""), ""), new HostResource(new Host(new MockRoot(""), "mockhost")));
+        MockRoot root = new MockRoot("");
+        c.getSearch().getIndexed().addTld(root.deployLogger(), new SimpleConfigProducer(root, ""), new HostResource(new Host(root, "mockhost")));
         return c;
     }
 

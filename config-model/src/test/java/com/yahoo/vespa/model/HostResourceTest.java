@@ -28,20 +28,23 @@ public class HostResourceTest {
 
     @Test
     public void next_available_baseport_is_BASE_PORT_when_no_ports_have_been_reserved() {
-        HostResource host = mockHostResource();
+        MockRoot root = new MockRoot();
+        HostResource host = mockHostResource(root);
         assertThat(host.nextAvailableBaseport(1), is(HostResource.BASE_PORT));
     }
 
     @Test
     public void next_available_baseport_is_BASE_PORT_plus_one_when_one_port_has_been_reserved() {
-        HostResource host = mockHostResource();
+        MockRoot root = new MockRoot();
+        HostResource host = mockHostResource(root);
         host.reservePort(new TestService(1), HostResource.BASE_PORT);
         assertThat(host.nextAvailableBaseport(1), is(HostResource.BASE_PORT + 1));
     }
 
     @Test
     public void no_available_baseport_when_service_requires_more_consecutive_ports_than_available() {
-        HostResource host = mockHostResource();
+        MockRoot root = new MockRoot();
+        HostResource host = mockHostResource(root);
 
         for (int p = HostResource.BASE_PORT; p < HostResource.BASE_PORT + HostResource.MAX_PORTS; p += 2) {
             host.reservePort(new TestService(1), p);
@@ -58,8 +61,10 @@ public class HostResourceTest {
     @Test
     public void require_exception_when_no_matching_hostalias() {
         TestService service = new TestService(1);
+        MockRoot root = new MockRoot();
+
         try {
-            service.initService();
+            service.initService(root.deployLogger());
         } catch (RuntimeException e) {
             assertThat(e.getMessage(), endsWith("No host found for service 'hostresourcetest$testservice0'. " +
                     "The hostalias is probably missing from hosts.xml."));
@@ -68,28 +73,32 @@ public class HostResourceTest {
 
     @Test
     public void port_above_vespas_port_range_can_be_reserved() {
-        HostResource host = mockHostResource();
-        host.allocateService(new TestService(1), HostResource.BASE_PORT + HostResource.MAX_PORTS + 1);
+        MockRoot root = new MockRoot();
+        HostResource host = mockHostResource(root);
+
+        host.allocateService(root.deployLogger(), new TestService(1), HostResource.BASE_PORT + HostResource.MAX_PORTS + 1);
     }
 
     @Test(expected = RuntimeException.class)
     public void allocating_same_port_throws_exception() {
-        HostResource host = mockHostResource();
+        MockRoot root = new MockRoot();
+        HostResource host = mockHostResource(root);
         TestService service1 = new TestService(1);
         TestService service2 = new TestService(1);
 
-        host.allocateService(service1, HostResource.BASE_PORT);
-        host.allocateService(service2, HostResource.BASE_PORT);
+        host.allocateService(root.deployLogger(), service1, HostResource.BASE_PORT);
+        host.allocateService(root.deployLogger(), service2, HostResource.BASE_PORT);
     }
 
     @Test(expected = RuntimeException.class)
     public void allocating_overlapping_ports_throws_exception() {
-        HostResource host = mockHostResource();
+        MockRoot root = new MockRoot();
+        HostResource host = mockHostResource(root);
         TestService service2 = new TestService(2);
         TestService service1 = new TestService(1);
 
-        host.allocateService(service2, HostResource.BASE_PORT);
-        host.allocateService(service1, HostResource.BASE_PORT + 1);
+        host.allocateService(root.deployLogger(), service2, HostResource.BASE_PORT);
+        host.allocateService(root.deployLogger(), service1, HostResource.BASE_PORT + 1);
     }
 
     @Test
@@ -147,14 +156,12 @@ public class HostResourceTest {
         return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(0), Version.fromString("6.42"), false);
     }
 
-    private HostResource mockHostResource() {
-        MockRoot mockRoot = new MockRoot();
-        return new HostResource(new Host(mockRoot));
+    private HostResource mockHostResource(MockRoot root) {
+        return new HostResource(new Host(root));
     }
 
     private static HostResource hostResourceWithMemberships(ClusterMembership... memberships) {
-        MockRoot root = new MockRoot();
-        HostResource host = new HostResource(Host.createHost(root.deployLogger(),null, "hostname"));
+        HostResource host = new HostResource(Host.createHost(null, "hostname"));
         Arrays.asList(memberships).forEach(host::addClusterMembership);
         return host;
     }

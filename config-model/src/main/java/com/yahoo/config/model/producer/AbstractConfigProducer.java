@@ -431,11 +431,6 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         }
     }
 
-    /** Returns a logger to be used for warnings and messages during initialization, never null */
-    public DeployLogger deployLogger() {
-        return parent.deployLogger();
-    }
-
     // TODO: Make producers depend on AdminModel instead
     /** Returns a monitoring service if configured, null otherwise */
     protected Monitoring getMonitoringService() {

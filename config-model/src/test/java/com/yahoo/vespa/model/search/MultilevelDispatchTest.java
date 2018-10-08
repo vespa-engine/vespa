@@ -92,8 +92,8 @@ public class MultilevelDispatchTest {
         AbstractConfigProducer<Dispatch> dispatchParent = new SimpleConfigProducer<>(root, "tlds");
         HostResource hostResource = new HostResource(new Host(root, "mockhost"));
         IndexedSearchCluster index = cluster.getSearch().getIndexed();
-        index.addTld(dispatchParent, hostResource);
-        index.setupDispatchGroups();
+        index.addTld(root.deployLogger(), dispatchParent, hostResource);
+        index.setupDispatchGroups(root.deployLogger());
 
         root.freezeModelTopology();
         cluster.validate();

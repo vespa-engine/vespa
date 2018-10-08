@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
@@ -59,18 +60,18 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         Optional<NodesSpecification> requestedLogservers = 
                 NodesSpecification.optionalDedicatedFromParent(adminElement.getChild("logservers"), context);
 
-        assignSlobroks(requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
+        assignSlobroks(deployState.getDeployLogger(), requestedSlobroks.orElse(NodesSpecification.nonDedicated(3, context)), admin);
         assignLogserver(deployState, requestedLogservers.orElse(createNodesSpecificationForLogserver()), admin);
 
         addLogForwarders(adminElement.getChild("logforwarding"), admin);
     }
 
-    private void assignSlobroks(NodesSpecification nodesSpecification, Admin admin) {
+    private void assignSlobroks(DeployLogger deployLogger, NodesSpecification nodesSpecification, Admin admin) {
         if (nodesSpecification.isDedicated()) {
-            createSlobroks(admin, allocateHosts(admin.getHostSystem(), "slobroks", nodesSpecification));
+            createSlobroks(deployLogger, admin, allocateHosts(admin.getHostSystem(), "slobroks", nodesSpecification));
         }
         else {
-            createSlobroks(admin, pickContainerHostsForSlobrok(nodesSpecification.count(), 2));
+            createSlobroks(deployLogger, admin, pickContainerHostsForSlobrok(nodesSpecification.count(), 2));
         }
     }
 
@@ -81,13 +82,13 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
             Collection<HostResource> hosts = allocateHosts(admin.getHostSystem(), "logserver", nodesSpecification);
             if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
 
-            Logserver logserver = createLogserver(admin, hosts);
+            Logserver logserver = createLogserver(deployState.getDeployLogger(), admin, hosts);
             createAdditionalContainerOnLogserverHost(deployState, admin, logserver.getHostResource());
         } else if (containerModels.iterator().hasNext()) {
             List<HostResource> hosts = sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.count(), false);
             if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
 
-            createLogserver(admin, hosts);
+            createLogserver(deployState.getDeployLogger(), admin, hosts);
         } else {
             context.getDeployLogger().log(LogLevel.INFO, "No container host available to use for running logserver");
         }
@@ -124,9 +125,9 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
         Container container = new Container(logServerCluster, "" + 0, 0, deployState.isHosted());
         container.setHostResource(hostResource);
-        container.initService();
+        container.initService(deployState.getDeployLogger());
         logServerCluster.addContainer(container);
-        admin.addAndInitializeService(hostResource, container);
+        admin.addAndInitializeService(deployState.getDeployLogger(), hostResource, container);
         admin.setLogserverContainerCluster(logServerCluster);
     }
 
@@ -203,15 +204,15 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
         return HostResource.pickHosts(hosts, count, 1);
     }
 
-    private Logserver createLogserver(Admin admin, Collection<HostResource> hosts) {
+    private Logserver createLogserver(DeployLogger deployLogger, Admin admin, Collection<HostResource> hosts) {
         Logserver logserver = new Logserver(admin);
         logserver.setHostResource(hosts.iterator().next());
         admin.setLogserver(logserver);
-        logserver.initService();
+        logserver.initService(deployLogger);
         return logserver;
     }
 
-    private void createSlobroks(Admin admin, Collection<HostResource> hosts) {
+    private void createSlobroks(DeployLogger deployLogger, Admin admin, Collection<HostResource> hosts) {
         if (hosts.isEmpty()) return; // No slobroks can be created (and none are needed)
         List<Slobrok> slobroks = new ArrayList<>();
         int index = 0;
@@ -219,7 +220,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
             Slobrok slobrok = new Slobrok(admin, index++);
             slobrok.setHostResource(host);
             slobroks.add(slobrok);
-            slobrok.initService();
+            slobrok.initService(deployLogger);
         }
         admin.addSlobroks(slobroks);
     }

@@ -39,11 +39,11 @@ public class SearchNodeTest {
         TransactionLogServer tls = new TransactionLogServer(root, "mycluster");
         tls.setHostResource(new HostResource(host));
         tls.setBasePort(100);
-        tls.initService();
+        tls.initService(root.deployLogger());
         node.setTls(tls);
         node.setHostResource(new HostResource(host));
         node.setBasePort(200);
-        node.initService();
+        node.initService(root.deployLogger());
         root.freezeModelTopology();
     }
 
@@ -65,7 +65,7 @@ public class SearchNodeTest {
         MockRoot root = new MockRoot("");
         SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted());
         node.setHostResource(new HostResource(new Host(node, "mynbode")));
-        node.initService();
+        node.initService(root.deployLogger());
         assertFalse(node.getPreShutdownCommand().isPresent());
     }
 
@@ -74,7 +74,7 @@ public class SearchNodeTest {
         MockRoot root = new MockRoot("");
         SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, root.getDeployState().isHosted());
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
-        node.initService();
+        node.initService(root.deployLogger());
         assertTrue(node.getPreShutdownCommand().isPresent());
         Assert.assertThat(node.getPreShutdownCommand().get(),
                 CoreMatchers.containsString("vespa-proton-cmd " + node.getRpcPort() + " prepareRestart"));

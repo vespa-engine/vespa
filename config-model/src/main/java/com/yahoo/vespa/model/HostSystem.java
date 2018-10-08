@@ -38,10 +38,25 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     private final Map<String, HostResource> hostname2host = new LinkedHashMap<>();
     private final HostProvisioner provisioner;
+    private final DeployLogger deployLogger;
 
-    public HostSystem(AbstractConfigProducer parent, String name, HostProvisioner provisioner) {
+    public HostSystem(AbstractConfigProducer parent, String name, HostProvisioner provisioner, DeployLogger deployLogger) {
         super(parent, name);
         this.provisioner = provisioner;
+        this.deployLogger = deployLogger;
+    }
+
+    void checkName(String hostname) {
+        // Give a warning if the host does not exist
+        try {
+            Object address = java.net.InetAddress.getByName(hostname);
+        } catch (UnknownHostException e) {
+            deployLogger.log(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
+        }
+        if (! hostname.contains(".")) {
+            deployLogger.log(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
+                    "since it is not a canonical hostname");
+        }
     }
 
     /**
@@ -99,10 +114,6 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     }
 
     public HostResource getHost(String hostAlias) {
-        return getHost(hostAlias, deployLogger());
-    }
-
-    public HostResource getHost(String hostAlias, DeployLogger deployLogger) {
         HostSpec hostSpec = provisioner.allocateHost(hostAlias);
         for (HostResource resource : hostname2host.values()) {
             if (resource.getHostname().equals(hostSpec.hostname())) {
@@ -110,11 +121,11 @@ public class HostSystem extends AbstractConfigProducer<Host> {
                 return resource;
             }
         }
-        return addNewHost(hostSpec, deployLogger);
+        return addNewHost(hostSpec);
     }
 
-    private HostResource addNewHost(HostSpec hostSpec, DeployLogger deployLogger) {
-        Host host = Host.createHost(deployLogger, this, hostSpec.hostname());
+    private HostResource addNewHost(HostSpec hostSpec) {
+        Host host = Host.createHost(this, hostSpec.hostname());
         HostResource hostResource = new HostResource(host, hostSpec.version());
         hostResource.setFlavor(hostSpec.flavor());
         hostSpec.membership().ifPresent(hostResource::addClusterMembership);
@@ -136,7 +147,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         Map<HostResource, ClusterMembership> retAllocatedHosts = new LinkedHashMap<>();
         for (HostSpec spec : allocatedHosts) {
             // This is needed for single node host provisioner to work in unit tests for hosted vespa applications.
-            HostResource host = getExistingHost(spec).orElseGet(() -> addNewHost(spec, logger));
+            HostResource host = getExistingHost(spec).orElseGet(() -> addNewHost(spec));
             retAllocatedHosts.put(host, spec.membership().orElse(null));
             if (! host.getFlavor().isPresent()) {
                 host.setFlavor(spec.flavor());

@@ -60,7 +60,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
 
     public MockRoot(String rootConfigId, DeployState deployState) {
         super(rootConfigId);
-        hostSystem = new HostSystem(this, "hostsystem", deployState.getProvisioner());
+        hostSystem = new HostSystem(this, "hostsystem", deployState.getProvisioner(), deployState.getDeployLogger());
         this.deployState = deployState;
         fileDistributor = new FileDistributor(deployState.getFileRegistry(), null);
     }
@@ -162,9 +162,8 @@ public class MockRoot extends AbstractConfigProducerRoot {
         return admin;
     }
 
-    @Override
     public DeployLogger deployLogger() {
-        return new BaseDeployLogger();
+        return deployState.getDeployLogger();
     }
     
 }

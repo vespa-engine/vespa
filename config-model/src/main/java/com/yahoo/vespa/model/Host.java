@@ -3,11 +3,9 @@ package com.yahoo.vespa.model;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.UnknownHostException;
-import java.util.*;
-import java.util.logging.Level;
+import java.util.Objects;
+
 import com.yahoo.cloud.config.SentinelConfig;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 
 /**
@@ -29,36 +27,23 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
      * @param hostname hostname for this host.
      */
     public Host(AbstractConfigProducer parent, String hostname) {
-        this(parent, hostname, false, parent.deployLogger());
+        this(parent, hostname, false);
     }
 
-    private Host(AbstractConfigProducer parent, String hostname, boolean runsConfigServer, DeployLogger deployLogger) {
+    private Host(AbstractConfigProducer parent, String hostname, boolean runsConfigServer) {
         super(parent, hostname);
         Objects.requireNonNull(hostname, "The host name of a host cannot be null");
         this.runsConfigServer = runsConfigServer;
         this.hostname = hostname;
         if (parent instanceof HostSystem)
-            checkName(hostname, deployLogger);
+            ((HostSystem)parent).checkName(hostname);
     }
 
-    private void checkName(String hostname, DeployLogger deployLogger) {
-        // Give a warning if the host does not exist
-        try {
-            Object address = java.net.InetAddress.getByName(hostname);
-        } catch (UnknownHostException e) {
-            deployLogger.log(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
-        }
-        if (! hostname.contains(".")) {
-            deployLogger.log(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
-                                              "since it is not a canonical hostname");
-        }
+    public static Host createConfigServerHost(AbstractConfigProducer parent, String hostname) {
+        return new Host(parent, hostname, true);
     }
-
-    public static Host createConfigServerHost(DeployLogger deployLogger, AbstractConfigProducer parent, String hostname) {
-        return new Host(parent, hostname, true, deployLogger);
-    }
-    public static Host createHost(DeployLogger deployLogger, AbstractConfigProducer parent, String hostname) {
-        return new Host(parent, hostname, false, deployLogger);
+    public static Host createHost(AbstractConfigProducer parent, String hostname) {
+        return new Host(parent, hostname, false);
     }
 
     // For testing

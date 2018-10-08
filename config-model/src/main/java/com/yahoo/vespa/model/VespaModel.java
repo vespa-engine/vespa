@@ -599,10 +599,5 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     public ConfigModelRepo configModelRepo() {
         return configModelRepo;
     }
-
-    @Override
-    public DeployLogger deployLogger() {
-        return deployLogger;
-    }
     
 }
