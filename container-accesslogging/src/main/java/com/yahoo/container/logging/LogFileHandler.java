@@ -277,7 +277,7 @@ public class LogFileHandler extends StreamHandler {
         }
     }
 
-    private void triggerCompression(File oldFile) {
+    private void triggerCompression(File oldFile) throws InterruptedException {
         try {
             String oldFileName = oldFile.getPath();
             String gzippedFileName = oldFileName + ".gz";
@@ -285,12 +285,17 @@ public class LogFileHandler extends StreamHandler {
             StringBuilder cmd = new StringBuilder("gzip");
             cmd.append(" < "). append(oldFileName).append(" > ").append(gzippedFileName);
             Process p = r.exec(cmd.toString());
-            NativeIO nativeIO = new NativeIO();
-            nativeIO.dropFileFromCache(oldFile); // Drop from cache in case somebody else has a reference to it preventing from dying quickly.
-            oldFile.delete();
-            nativeIO.dropFileFromCache(new File(gzippedFileName));
             // Detonator pattern: Think of all the fun we can have if gzip isn't what we
             // think it is, if it doesn't return, etc, etc
+
+            int retval = p.waitFor();
+            NativeIO nativeIO = new NativeIO();
+            nativeIO.dropFileFromCache(oldFile); // Drop from cache in case somebody else has a reference to it preventing from dying quickly.
+            if (retval == 0) {
+                oldFile.delete();
+                nativeIO.dropFileFromCache(new File(gzippedFileName));
+            }
+
         } catch (IOException e) {
             // little we can do...
         }
