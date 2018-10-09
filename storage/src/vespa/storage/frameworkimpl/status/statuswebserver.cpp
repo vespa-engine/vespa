@@ -258,10 +258,6 @@ StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, std::ostream&
                 HttpErrorWriter writer(out, "500 Internal Server Error");
                 writer << "<pre>" << e.what() << "</pre>";
                 pageExisted = true;
-            } catch (...) {
-                HttpErrorWriter writer(out, "500 Internal Server Error");
-                writer << "Unknown exception";
-                pageExisted = true;
             }
             if (pageExisted) {
                 LOG(spam, "Status finished request");

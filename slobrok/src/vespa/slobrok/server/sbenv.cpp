@@ -190,9 +190,9 @@ SBEnv::MainLoop()
         LOG(error, "invalid config: %s", e.what());
         EV_STOPPING("slobrok", "invalid config");
         return 1;
-    } catch (...) {
-        LOG(error, "unknown exception while configuring");
-        EV_STOPPING("slobrok", "unknown config exception");
+    } catch (std::exception &e) {
+        LOG(error, "Unexpected std::exception : %s", e.what());
+        EV_STOPPING("slobrok", "Unexpected std::exception");
         return 1;
     }
     EV_STOPPING("slobrok", "clean shutdown");

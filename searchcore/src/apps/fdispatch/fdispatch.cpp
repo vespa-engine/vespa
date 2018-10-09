@@ -113,9 +113,6 @@ FastS_FDispatchApp::Main()
     } catch (std::exception &e) {
         LOG(error, "got exception during init: %s", e.what());
         exitCode = 1;
-    } catch (...) {
-        LOG(error, "got exception during init");
-        exitCode = 1;
     }
 
     LOG(debug, "Deleting fdispatch");

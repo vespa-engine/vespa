@@ -481,9 +481,6 @@ CommunicationManager::process(const std::shared_ptr<api::StorageMessage>& msg)
         LOGBP(error, "When running command %s, caught exception %s. Discarding message",
               msg->toString().c_str(), e.what());
         _metrics.exceptionMessageProcessTime[msg->getLoadType()].addValue(startTime.getElapsedTimeAsDouble());
-    } catch (...) {
-        LOG(fatal, "Caught fatal exception in communication manager");
-        throw;
     }
 }
 

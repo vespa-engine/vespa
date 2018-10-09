@@ -1361,11 +1361,8 @@ MergeHandler::handleGetBucketDiffReply(api::GetBucketDiffReply& reply,
     } catch (std::exception& e) {
         _env._fileStorHandler.clearMergeStatus(
                 bucket.getBucket(),
-                api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE,
-                                e.what()));
+                api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, e.what()));
         throw;
-    } catch (...) {
-        assert(false);
     }
 
     if (clearState) {
@@ -1586,8 +1583,6 @@ MergeHandler::handleApplyBucketDiffReply(api::ApplyBucketDiffReply& reply,
                 api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE,
                                 e.what()));
         throw;
-    } catch (...) {
-        assert(false);
     }
 
     if (clearState) {
