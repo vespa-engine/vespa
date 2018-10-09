@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -18,6 +19,7 @@ import java.nio.file.attribute.FileTime;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,6 +28,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.google.common.collect.ImmutableSet.of;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -43,65 +46,70 @@ public class FileHelperTest {
         public TemporaryFolder folder = new TemporaryFolder();
 
         @Test
-        public void delete_all_files_non_recursive() {
-            int numDeleted = FileHelper.streamFiles(testRoot())
-                    .delete();
+        public void all_files_non_recursive() {
+            assertFileHelper(FileHelper.from(testRoot())
+                            .filterFile(FileHelper.all()),
 
-            assertEquals(3, numDeleted);
-            assertRecursiveContents("test", "test/file.txt", "test/data.json", "test/subdir-1", "test/subdir-1/file", "test/subdir-2");
+                    of("file-1.json", "test.json", "test.txt"),
+                    of("test", "test/file.txt", "test/data.json", "test/subdir-1", "test/subdir-1/file", "test/subdir-2"));
         }
 
         @Test
-        public void delete_all_files_recursive() {
-            int numDeleted = FileHelper.streamFiles(testRoot())
-                    .recursive(true)
-                    .delete();
+        public void all_files_recursive() {
+            assertFileHelper(FileHelper.from(testRoot())
+                            .filterFile(FileHelper.all())
+                            .maxDepth(3),
 
-            assertEquals(6, numDeleted);
-            assertRecursiveContents("test", "test/subdir-1", "test/subdir-2");
+                    of("file-1.json", "test.json", "test.txt", "test/file.txt", "test/data.json", "test/subdir-1/file"),
+                    of("test", "test/subdir-1", "test/subdir-2"));
         }
 
         @Test
-        public void delete_with_filter_recursive() {
-            int numDeleted = FileHelper.streamFiles(testRoot())
-                    .filterFile(FileHelper.nameEndsWith(".json"))
-                    .recursive(true)
-                    .delete();
+        public void with_file_filter_recursive() {
+            assertFileHelper(FileHelper.from(testRoot())
+                            .filterFile(FileHelper.nameEndsWith(".json"))
+                            .maxDepth(3),
 
-            assertEquals(3, numDeleted);
-            assertRecursiveContents("test.txt", "test", "test/file.txt", "test/subdir-1", "test/subdir-1/file", "test/subdir-2");
+                    of("file-1.json", "test.json", "test/data.json"),
+                    of("test.txt", "test", "test/file.txt", "test/subdir-1", "test/subdir-1/file", "test/subdir-2"));
         }
 
         @Test
-        public void delete_directory_with_filter() {
-            int numDeleted = FileHelper.streamDirectories(testRoot())
-                    .filterDirectory(FileHelper.nameStartsWith("subdir"))
-                    .recursive(true)
-                    .delete();
+        public void all_files_limited_depth() {
+            assertFileHelper(FileHelper.from(testRoot())
+                            .filterFile(FileHelper.all())
+                            .maxDepth(2),
 
-            assertEquals(3, numDeleted);
-            assertRecursiveContents("file-1.json", "test.json", "test.txt", "test", "test/file.txt", "test/data.json");
+                    of("test.txt", "file-1.json", "test.json", "test/file.txt", "test/data.json"),
+                    of("test", "test/subdir-1", "test/subdir-1/file", "test/subdir-2"));
         }
 
         @Test
-        public void delete_all_contents() {
-            int numDeleted = FileHelper.streamContents(testRoot())
-                    .recursive(true)
-                    .delete();
+        public void directory_with_filter() {
+            assertFileHelper(FileHelper.from(testRoot())
+                            .filterDirectory(FileHelper.nameStartsWith("subdir"))
+                            .maxDepth(2),
 
-            assertEquals(9, numDeleted);
+                    of("test/subdir-1", "test/subdir-2"),
+                    of("file-1.json", "test.json", "test.txt", "test", "test/file.txt", "test/data.json"));
+        }
+
+        @Test
+        public void all_contents() {
+            assertFileHelper(FileHelper.from(testRoot())
+                            .filterDirectory(FileHelper.all())
+                            .filterFile(FileHelper.all()),
+
+                    of("file-1.json", "test.json", "test.txt", "test"),
+                    of());
+
             assertTrue(Files.exists(testRoot()));
-            assertRecursiveContents();
         }
 
         @Test
-        public void delete_everything() {
-            int numDeleted = FileHelper.streamContents(testRoot())
-                    .includeBase(true)
-                    .recursive(true)
-                    .delete();
+        public void everything() {
+            FileHelper.from(testRoot()).delete(true);
 
-            assertEquals(10, numDeleted);
             assertFalse(Files.exists(testRoot()));
         }
 
@@ -127,14 +135,20 @@ public class FileHelperTest {
             return folder.getRoot().toPath();
         }
 
-        private void assertRecursiveContents(String... relativePaths) {
-            Set<String> expectedPaths = new HashSet<>(Arrays.asList(relativePaths));
-            Set<String> actualPaths = recursivelyListContents(testRoot()).stream()
+        private void assertFileHelper(FileHelper fileHelper, Set<String> expectedList, Set<String> expectedContentsAfterDelete) {
+            Set<String> actualList = fileHelper.stream()
+                    .map(FileHelper.FileAttributes::path)
                     .map(testRoot()::relativize)
                     .map(Path::toString)
                     .collect(Collectors.toSet());
+            assertEquals(expectedList, actualList);
 
-            assertEquals(expectedPaths, actualPaths);
+            fileHelper.delete();
+            Set<String> actualContentsAfterDelete = recursivelyListContents(testRoot()).stream()
+                    .map(testRoot()::relativize)
+                    .map(Path::toString)
+                    .collect(Collectors.toSet());
+            assertEquals(expectedContentsAfterDelete, actualContentsAfterDelete);
         }
 
         private List<Path> recursivelyListContents(Path basePath) {
@@ -146,6 +160,8 @@ public class FileHelperTest {
                         paths.addAll(recursivelyListContents(path));
                 });
                 return paths;
+            } catch (NoSuchFileException e) {
+                return Collections.emptyList();
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
