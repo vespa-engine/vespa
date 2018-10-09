@@ -4,10 +4,10 @@ package com.yahoo.document.restapi;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentRemove;
+import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.json.JsonWriter;
 import com.yahoo.document.DocumentPut;
-import com.yahoo.document.restapi.resource.RestApi;
 import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.DocumentAccessException;
 import com.yahoo.documentapi.SyncParameters;
@@ -142,7 +142,7 @@ public class OperationHandlerImpl implements OperationHandler {
                     restUri, RestUri.apiErrorCodes.DOCUMENT_CONDITION_NOT_MET);
         }
         return Response.createErrorResponse(getHTTPStatusCode(documentException.getErrorCodes()), documentException.getMessage(), restUri,
-                RestUri.apiErrorCodes.DOCUMENT_EXCPETION);
+                RestUri.apiErrorCodes.DOCUMENT_EXCEPTION);
     }
 
     @Override
@@ -282,7 +282,7 @@ public class OperationHandlerImpl implements OperationHandler {
                 response = Response.createErrorResponse(412, "Condition not met: " + documentException.getMessage(),
                         restUri, RestUri.apiErrorCodes.DOCUMENT_CONDITION_NOT_MET);
             } else {
-                response = Response.createErrorResponse(400, documentException.getMessage(), restUri, RestUri.apiErrorCodes.DOCUMENT_EXCPETION);
+                response = Response.createErrorResponse(400, documentException.getMessage(), restUri, RestUri.apiErrorCodes.DOCUMENT_EXCEPTION);
             }
         } catch (Exception e) {
             response = Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.UNSPECIFIED);
@@ -321,16 +321,40 @@ public class OperationHandlerImpl implements OperationHandler {
         return get(restUri, Optional.empty());
     }
 
-    protected BucketSpaceRoute resolveBucketSpaceRoute(Optional<String> wantedCluster, String docType) throws RestApiException {
+    private static boolean isValidBucketSpace(String spaceName) {
+        // TODO need bucket space repo in Java as well
+        return (FixedBucketSpaces.defaultSpace().equals(spaceName)
+                || FixedBucketSpaces.globalSpace().equals(spaceName));
+    }
+
+    protected BucketSpaceRoute resolveBucketSpaceRoute(Optional<String> wantedCluster,
+                                                       Optional<String> wantedBucketSpace,
+                                                       RestUri restUri) throws RestApiException {
         final List<ClusterDef> clusters = clusterEnumerator.enumerateClusters();
         ClusterDef clusterDef = resolveClusterDef(wantedCluster, clusters);
-        Optional<String> targetBucketSpace = bucketSpaceResolver.clusterBucketSpaceFromDocumentType(clusterDef.getConfigId(), docType);
-        if (!targetBucketSpace.isPresent()) {
-            throw new RestApiException(Response.createErrorResponse(400, String.format(
-                    "Document type '%s' in cluster '%s' is not mapped to a known bucket space", docType, clusterDef.getName()),
-                    RestUri.apiErrorCodes.UNKNOWN_BUCKET_SPACE));
+
+        String targetBucketSpace;
+        if (!restUri.isRootOnly()) {
+            String docType = restUri.getDocumentType();
+            Optional<String> resolvedSpace = bucketSpaceResolver.clusterBucketSpaceFromDocumentType(clusterDef.getConfigId(), docType);
+            if (!resolvedSpace.isPresent()) {
+                throw new RestApiException(Response.createErrorResponse(400, String.format(
+                        "Document type '%s' in cluster '%s' is not mapped to a known bucket space", docType, clusterDef.getName()),
+                        RestUri.apiErrorCodes.UNKNOWN_BUCKET_SPACE));
+            }
+            targetBucketSpace = resolvedSpace.get();
+        } else {
+            if (wantedBucketSpace.isPresent() && !isValidBucketSpace(wantedBucketSpace.get())) {
+                // TODO enumerate known bucket spaces from a repo instead of having a fixed set
+                throw new RestApiException(Response.createErrorResponse(400, String.format(
+                        "Bucket space '%s' is not a known bucket space (expected '%s' or '%s')",
+                        wantedBucketSpace.get(), FixedBucketSpaces.defaultSpace(), FixedBucketSpaces.globalSpace()),
+                        RestUri.apiErrorCodes.UNKNOWN_BUCKET_SPACE));
+            }
+            targetBucketSpace = wantedBucketSpace.orElse(FixedBucketSpaces.defaultSpace());
         }
-        return new BucketSpaceRoute(clusterDefToRoute(clusterDef), targetBucketSpace.get());
+
+        return new BucketSpaceRoute(clusterDefToRoute(clusterDef), targetBucketSpace);
     }
 
     protected static ClusterDef resolveClusterDef(Optional<String> wantedCluster, List<ClusterDef> clusters) throws RestApiException {
@@ -365,26 +389,41 @@ public class OperationHandlerImpl implements OperationHandler {
         return clusterListString.toString();
     }
 
+    private static String buildAugmentedDocumentSelection(RestUri restUri, String  documentSelection) {
+        if (restUri.isRootOnly()) {
+            return documentSelection; // May be empty, that's fine.
+        }
+        StringBuilder selection = new StringBuilder();
+        if (! documentSelection.isEmpty()) {
+            selection.append("((").append(documentSelection).append(") and ");
+        }
+        selection.append(restUri.getDocumentType()).append(" and (id.namespace=='").append(restUri.getNamespace()).append("')");
+        if (! documentSelection.isEmpty()) {
+            selection.append(")");
+        }
+        return selection.toString();
+    }
+
     private VisitorParameters createVisitorParameters(
             RestUri restUri,
             String documentSelection,
             VisitOptions options)
             throws RestApiException {
 
-        StringBuilder selection = new StringBuilder();
-
-        if (! documentSelection.isEmpty()) {
-            // TODO shouldn't selection be wrapped in () itself ?
-            selection.append("(").append(documentSelection).append(" and ");
-        }
-        selection.append(restUri.getDocumentType()).append(" and (id.namespace=='").append(restUri.getNamespace()).append("')");
-        if (! documentSelection.isEmpty()) {
-            selection.append(")");
+        if (restUri.isRootOnly() && !options.cluster.isPresent()) {
+            throw new RestApiException(Response.createErrorResponse(400,
+                    "Must set 'cluster' parameter to a valid content cluster id when visiting at a root /document/v1/ level",
+                    RestUri.apiErrorCodes.MISSING_CLUSTER));
         }
 
-        VisitorParameters params = new VisitorParameters(selection.toString());
-        // Only return fieldset that is part of the document.
-        params.fieldSet(options.fieldSet.orElse(restUri.getDocumentType() + ":[document]"));
+        String augmentedSelection = buildAugmentedDocumentSelection(restUri, documentSelection);
+
+        VisitorParameters params = new VisitorParameters(augmentedSelection);
+        // Only return fieldset that is part of the document, unless we're visiting across all
+        // document types in which case we can't explicitly state a single document type.
+        // This matches legacy /visit API and vespa-visit tool behavior.
+        params.fieldSet(options.fieldSet.orElse(
+                restUri.isRootOnly() ? "[all]" : restUri.getDocumentType() + ":[document]"));
         params.setMaxBucketsPerVisitor(1);
         params.setMaxPending(32);
         params.setMaxFirstPassHits(1);
@@ -399,7 +438,7 @@ public class OperationHandlerImpl implements OperationHandler {
         params.visitInconsistentBuckets(true); // TODO document this as part of consistency doc
         params.setVisitorOrdering(VisitorOrdering.ASCENDING);
 
-        BucketSpaceRoute bucketSpaceRoute = resolveBucketSpaceRoute(options.cluster, restUri.getDocumentType());
+        BucketSpaceRoute bucketSpaceRoute = resolveBucketSpaceRoute(options.cluster, options.bucketSpace, restUri);
         params.setRoute(bucketSpaceRoute.getClusterRoute());
         params.setBucketSpace(bucketSpaceRoute.getBucketSpace());
 
