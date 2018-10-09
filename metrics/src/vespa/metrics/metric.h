@@ -94,7 +94,7 @@ struct Tag
     Tag & operator = (Tag &&) = default;
     ~Tag();
 
-    bool hasValue() const { return _value.id() != 0; }
+    bool hasValue() const { return (_value != TagValueId::empty_handle); }
 
 private:
     TagKeyId _key;

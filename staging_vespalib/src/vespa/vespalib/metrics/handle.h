@@ -15,9 +15,12 @@ template <typename T>
 class Handle {
 private:
     size_t _id;
+    constexpr Handle() : _id(0) {}
 public:
     explicit Handle(size_t id) : _id(id) {}
     size_t id() const { return _id; }
+
+    static constexpr Handle empty_handle = Handle();
 };
 
 template <typename T>
