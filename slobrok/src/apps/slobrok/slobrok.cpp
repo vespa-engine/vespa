@@ -94,10 +94,6 @@ App::Main()
         LOG(error, "unknown exception during construction : %s", e.what());
         EV_STOPPING("slobrok", "unknown exception during construction");
         return 2;
-    } catch (...) {
-        LOG(error, "unknown exception during construction");
-        EV_STOPPING("slobrok", "unknown exception during construction");
-        return 3;
     }
     mainobj.reset();
     return res;

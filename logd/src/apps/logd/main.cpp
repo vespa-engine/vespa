@@ -83,8 +83,8 @@ int main(int, char**)
         LOG(error, "stopping on error: %s", ex.what());
         EV_STOPPING("logdemon", "fatal error");
         return 1;
-    } catch (...) {
-        LOG(error, "unknown exception");
+    } catch (std::exception & ex) {
+        LOG(error, "unknown exception: %s", ex.what());
         EV_STOPPING("logdemon", "unknown error");
         return 1;
     }
