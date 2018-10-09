@@ -37,11 +37,20 @@ public class FileHelper {
         this.basePath = basePath;
     }
 
-    /**
-     * Creates a {@link FileHelper} at the given basePath
-     */
+    /** Creates a FileHelper at the given basePath  */
     public static FileHelper from(Path basePath) {
         return new FileHelper(basePath);
+    }
+
+    /** Creates a FileHelper at give basePath that will match all files */
+    public static FileHelper streamFiles(Path basePath) {
+        return from(basePath).filterFile(attr -> true);
+    }
+
+
+    /** Creates a FileHelper at give basePath that will match all directories */
+    public static FileHelper streamDirectories(Path basePath) {
+        return from(basePath).filterDirectory(attr -> true);
     }
 
 
