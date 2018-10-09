@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
@@ -47,7 +46,6 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  * @author freva
  */
 public class StorageMaintainer {
-    private static final ContainerName NODE_ADMIN = new ContainerName("node-admin");
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private final DockerOperations dockerOperations;
@@ -65,7 +63,7 @@ public class StorageMaintainer {
     }
 
     public StorageMaintainer(DockerOperations dockerOperations, ProcessExecuter processExecuter,
-                             Environment environment, CoredumpHandler coredumpHandler) {
+                             Environment environment, CoredumpHandler coredumpHandler, Path pathToContainerArchive) {
         this(dockerOperations, processExecuter, environment, coredumpHandler, Clock.systemUTC());
     }
 
@@ -325,39 +323,6 @@ public class StorageMaintainer {
             attributes.put("instance", owner.getInstance());
         });
         return Collections.unmodifiableMap(attributes);
-    }
-
-    /**
-     * Deletes old
-     *  * archived app data
-     *  * Vespa logs
-     *  * Filedistribution files
-     */
-    public void cleanNodeAdmin() {
-        if (! getMaintenanceThrottlerFor(NODE_ADMIN).shouldRemoveOldFilesNow()) return;
-
-        MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
-        maintainerExecutor.addJob("delete-directories")
-                .withArgument("basePath", environment.getPathResolver().getApplicationStoragePathForNodeAdmin())
-                .withArgument("maxAgeSeconds", Duration.ofDays(7).getSeconds())
-                .withArgument("dirNameRegex", "^" + Pattern.quote(Environment.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX));
-
-        Path nodeAdminJDiskLogsPath = environment.pathInNodeAdminFromPathInNode(
-                NODE_ADMIN, environment.pathInNodeUnderVespaHome("logs/vespa/"));
-        maintainerExecutor.addJob("delete-files")
-                .withArgument("basePath", nodeAdminJDiskLogsPath)
-                .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
-                .withArgument("recursive", false);
-
-        Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(
-                NODE_ADMIN, environment.pathInNodeUnderVespaHome("var/db/vespa/filedistribution"));
-        maintainerExecutor.addJob("delete-files")
-                .withArgument("basePath", fileDistrDir)
-                .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
-                .withArgument("recursive", true);
-
-        maintainerExecutor.execute();
-        getMaintenanceThrottlerFor(NODE_ADMIN).updateNextRemoveOldFilesTime();
     }
 
     /**
