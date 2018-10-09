@@ -51,19 +51,19 @@ SimpleMetricsManager::createForTest(const SimpleManagerConfig &config,
 Counter
 SimpleMetricsManager::counter(const vespalib::string &name, const vespalib::string &)
 {
-    MetricId mn = MetricId::from_name(name);
-    _metricTypes.check(mn.id(), name, MetricTypes::MetricType::COUNTER);
-    LOG(debug, "counter with metric name %s -> %zu", name.c_str(), mn.id());
-    return Counter(shared_from_this(), mn);
+    MetricId mi = MetricId::from_name(name);
+    _metricTypes.check(mi.id(), name, MetricTypes::MetricType::COUNTER);
+    LOG(debug, "counter with metric name %s -> %zu", name.c_str(), mi.id());
+    return Counter(shared_from_this(), mi);
 }
 
 Gauge
 SimpleMetricsManager::gauge(const vespalib::string &name, const vespalib::string &)
 {
-    MetricId mn = MetricId::from_name(name);
-    _metricTypes.check(mn.id(), name, MetricTypes::MetricType::GAUGE);
-    LOG(debug, "gauge with metric name %s -> %zu", name.c_str(), mn.id());
-    return Gauge(shared_from_this(), mn);
+    MetricId mi = MetricId::from_name(name);
+    _metricTypes.check(mi.id(), name, MetricTypes::MetricType::GAUGE);
+    LOG(debug, "gauge with metric name %s -> %zu", name.c_str(), mi.id());
+    return Gauge(shared_from_this(), mi);
 }
 
 Bucket
@@ -101,10 +101,12 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
 
     size_t max_point_id = 0;
     for (const CounterAggregator& entry : bucket.counters) {
-        max_point_id = std::max(max_point_id, entry.idx.point().id());
+        Point p = entry.idx.second;
+        max_point_id = std::max(max_point_id, p.id());
     }
     for (const GaugeAggregator& entry : bucket.gauges) {
-        max_point_id = std::max(max_point_id, entry.idx.point().id());
+        Point p = entry.idx.second;
+        max_point_id = std::max(max_point_id, p.id());
     }
     Snapshot snap(s, e);
     {
@@ -118,16 +120,18 @@ SimpleMetricsManager::snapshotFrom(const Bucket &bucket)
         }
     }
     for (const CounterAggregator& entry : bucket.counters) {
-        MetricId mn = entry.idx.name();
-        size_t pi = entry.idx.point().id();
-        const vespalib::string &name = mn.as_name();
+        MetricId mi = entry.idx.first;
+        Point p = entry.idx.second;
+        size_t pi = p.id();
+        const vespalib::string &name = mi.as_name();
         CounterSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }
     for (const GaugeAggregator& entry : bucket.gauges) {
-        MetricId mn = entry.idx.name();
-        size_t pi = entry.idx.point().id();
-        const vespalib::string &name = mn.as_name();
+        MetricId mi = entry.idx.first;
+        Point p = entry.idx.second;
+        size_t pi = p.id();
+        const vespalib::string &name = mi.as_name();
         GaugeSnapshot val(name, snap.points()[pi], entry);
         snap.add(val);
     }

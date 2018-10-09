@@ -15,7 +15,7 @@ using namespace vespalib::metrics;
 
 TEST("require that simple metrics gauge merge works")
 {
-    MetricPointId id(MetricId(42), Point(17));
+    std::pair<MetricId, Point> id(MetricId(42), Point(17));
     Gauge::Measurement a1(id, 0.0);
     Gauge::Measurement b1(id, 7.0);
     Gauge::Measurement b2(id, 9.0);

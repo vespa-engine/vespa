@@ -3,7 +3,8 @@
 
 #include <mutex>
 #include "stable_store.h"
-#include "metric_point_id.h"
+#include "metric_id.h"
+#include "point.h"
 #include "counter.h"
 #include "gauge.h"
 #include "clock.h"
