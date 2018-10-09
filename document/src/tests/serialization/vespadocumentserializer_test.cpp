@@ -179,6 +179,11 @@ void serializeAndDeserialize(const T& value, nbostream &stream,
         EXPECT_EQUAL(value, read_value);
     }
     stream.adjustReadPos(-serialized_size);
+    nbostream stream2;
+    VespaDocumentSerializer serializer2(stream2);
+    serializer2.write(read_value);
+    EXPECT_EQUAL(serialized_size, stream2.size());
+    EXPECT_EQUAL(0, memcmp(stream.peek() + start_size, stream2.peek(), serialized_size));
 }
 
 template<typename T>
@@ -518,7 +523,6 @@ TEST("requireThatEmptyStructCanBeSerialized") {
     StructDataType structType(getStructDataType());
     StructFieldValue value(structType);
     nbostream stream;
-    value.reset(); // Simulate the result of deserializing empty struct
     serializeAndDeserialize(value, stream);
     uint32_t data_size;
     uint8_t compression_type;
