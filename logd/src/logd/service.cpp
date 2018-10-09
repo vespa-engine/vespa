@@ -15,7 +15,7 @@ unsigned long Component::defFwd = (unsigned long)-1;
 Component::Component(const std::string & servicename, const std::string & name)
     : _isforwarding(defFwd), _lastseen(0.0), _lastpid(0),
       _myservice(servicename), _myname(name),
-      _logctlname(name.substr(name.find('.')))
+      _logctlname(name.substr(std::min(name.size(), name.find('.'))))
 {
     assert(ns_log::Logger::NUM_LOGLEVELS < 32);
 }
