@@ -245,7 +245,7 @@ public class RunInContainerTest {
         private final Function<String, NodeAgent> nodeAgentFactory =
                 (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock, orchestratorMock, dockerOperationsMock,
                         storageMaintainer, aclMaintainer, environment, Clock.systemUTC(), NODE_AGENT_SCAN_INTERVAL, athenzCredentialsMaintainer);
-        private final NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperationsMock, nodeAgentFactory, aclMaintainer, mr, Clock.systemUTC());
+        private final NodeAdmin nodeAdmin = new NodeAdminImpl(dockerOperationsMock, nodeAgentFactory, storageMaintainer, aclMaintainer, mr, Clock.systemUTC());
         private final NodeAdminStateUpdaterImpl nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(nodeRepositoryMock,
                 orchestratorMock, storageMaintainer, nodeAdmin, "localhost.test.yahoo.com",
                 Clock.systemUTC(), NODE_ADMIN_CONVERGE_STATE_INTERVAL, Optional.of(new ClassLocking()));
