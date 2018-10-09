@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Organization;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -84,7 +83,7 @@ public class Controller extends AbstractComponent {
      */
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
-                      GitHub gitHub, EntityService entityService, Organization organization,
+                      GitHub gitHub, EntityService entityService,
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, AthenzClientFactory athenzClientFactory,
