@@ -59,6 +59,7 @@ vespa_define_module(
     src/tests/net/send_fd
     src/tests/net/socket
     src/tests/net/socket_spec
+    src/tests/net/sync_crypto_socket
     src/tests/net/tls/direct_buffer_bio
     src/tests/net/tls/openssl_impl
     src/tests/net/tls/protocol_snooping
