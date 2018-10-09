@@ -44,7 +44,7 @@ vespalib::Regexp Metric::_namePattern(namePattern);
 
 Tag::Tag(vespalib::stringref k)
     : _key(NameRepo::tagKeyId(k)),
-      _value(0)
+      _value(TagValueId::empty_handle)
 { }
 Tag::Tag(vespalib::stringref k, vespalib::stringref v)
     : _key(NameRepo::tagKeyId(k)),
