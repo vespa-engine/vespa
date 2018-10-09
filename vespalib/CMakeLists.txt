@@ -54,6 +54,7 @@ vespa_define_module(
     src/tests/make_fixture_macros
     src/tests/memory
     src/tests/net/async_resolver
+    src/tests/net/crypto_socket
     src/tests/net/selector
     src/tests/net/send_fd
     src/tests/net/socket
