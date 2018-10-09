@@ -277,7 +277,7 @@ public class LogFileHandler extends StreamHandler {
         }
     }
 
-    private void triggerCompression(File oldFile) {
+    private void triggerCompression(File oldFile) throws InterruptedException {
         try {
             String oldFileName = oldFile.getPath();
             String gzippedFileName = oldFileName + ".gz";
@@ -285,6 +285,7 @@ public class LogFileHandler extends StreamHandler {
             StringBuilder cmd = new StringBuilder("gzip");
             cmd.append(" < "). append(oldFileName).append(" > ").append(gzippedFileName);
             Process p = r.exec(cmd.toString());
+            p.waitFor();
             NativeIO nativeIO = new NativeIO();
             nativeIO.dropFileFromCache(oldFile); // Drop from cache in case somebody else has a reference to it preventing from dying quickly.
             oldFile.delete();
