@@ -114,10 +114,23 @@ const int64_t static_zcurve_value = 1118035438880ll;
 const int64_t dynamic_zcurve_value = 6145423666930817152ll;
 
 struct MyDocumentStore : proton::test::DummyDocumentStore {
+    mutable std::unique_ptr<Document> _testDoc;
+
+    MyDocumentStore()
+        : proton::test::DummyDocumentStore(),
+          _testDoc()
+    {
+    }
+
+    ~MyDocumentStore() override;
+    
     virtual Document::UP read(DocumentIdT lid,
                               const DocumentTypeRepo &r) const override {
         if (lid == 0) {
             return Document::UP();
+        }
+        if (_testDoc) {
+            return std::move(_testDoc);
         }
         const DocumentType *doc_type = r.getDocumentType(doc_type_name);
         Document::UP doc(new Document(*doc_type, doc_id));
@@ -144,6 +157,8 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         return syncToken;
     }
 };
+
+MyDocumentStore::~MyDocumentStore() = default;
 
 document::DocumenttypesConfig getRepoConfig() {
     const int32_t doc_type_id = 787121340;
@@ -317,6 +332,14 @@ struct Fixture {
                 dyn_wset_field_n, DataType::FLOAT, ct);
         _retriever = std::make_unique<DocumentRetriever>(_dtName, repo, schema, meta_store, attr_manager, doc_store);
     }
+
+    void clearAttributes(std::vector<vespalib::string> names) {
+        for (const auto &name : names) {
+            auto guard = *attr_manager.getAttribute(name);
+            guard->clearDoc(lid);
+            guard->commit();
+        }
+    }
 };
 
 TEST_F("require that document retriever can retrieve document meta data",
@@ -451,6 +474,21 @@ TEST_F("require that predicate attributes can be retrieved", Fixture) {
     ASSERT_TRUE(predicate_value);
 }
 
+TEST_F("require that zero values in multivalue attribute removes fields", Fixture)
+{
+    auto meta_data = f._retriever->getDocumentMetaData(doc_id);
+    auto doc = f._retriever->getDocument(meta_data.lid);
+    ASSERT_TRUE(doc);
+    const Document *docPtr = doc.get();
+    ASSERT_TRUE(doc->hasValue(dyn_arr_field_i));
+    ASSERT_TRUE(doc->hasValue(dyn_wset_field_i));
+    f.doc_store._testDoc = std::move(doc);
+    f.clearAttributes({ dyn_arr_field_i, dyn_wset_field_i });
+    doc = f._retriever->getDocument(meta_data.lid);
+    EXPECT_EQUAL(docPtr, doc.get());
+    ASSERT_FALSE(doc->hasValue(dyn_arr_field_i));
+    ASSERT_FALSE(doc->hasValue(dyn_wset_field_i));
+}
 
 }  // namespace
 
