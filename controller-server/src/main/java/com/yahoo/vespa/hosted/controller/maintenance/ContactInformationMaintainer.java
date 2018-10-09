@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Organization;
@@ -11,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,7 +31,7 @@ public class ContactInformationMaintainer extends Maintainer {
     private final Organization organization;
 
     public ContactInformationMaintainer(Controller controller, Duration interval, JobControl jobControl, Organization organization) {
-        super(controller, interval, jobControl);
+        super(controller, interval, jobControl, EnumSet.of(SystemName.cd, SystemName.main));
         this.organization = Objects.requireNonNull(organization, "organization must be non-null");
     }
 
