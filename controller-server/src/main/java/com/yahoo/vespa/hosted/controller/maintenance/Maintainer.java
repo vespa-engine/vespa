@@ -7,8 +7,8 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -30,23 +30,26 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     private final JobControl jobControl;
     private final ScheduledExecutorService service;
     private final String name;
-    private List<SystemName> systemNames;
+    private final Set<SystemName> systemNames;
 
     public Maintainer(Controller controller, Duration interval, JobControl jobControl) {
-        this(controller, interval, jobControl, null);
-    }
-
-    public Maintainer(List<SystemName> systemNames, Controller controller, Duration interval, JobControl jobControl) {
-        this(controller, interval, jobControl, null);
-        this.systemNames = systemNames;
+        this(controller, interval, jobControl, null, EnumSet.allOf(SystemName.class));
     }
 
     public Maintainer(Controller controller, Duration interval, JobControl jobControl, String name) {
+        this(controller, interval, jobControl, name, EnumSet.allOf(SystemName.class));
+    }
+
+    public Maintainer(Controller controller, Duration interval, JobControl jobControl, Set<SystemName> systemNames) {
+        this(controller, interval, jobControl, null, systemNames);
+    }
+
+    public Maintainer(Controller controller, Duration interval, JobControl jobControl, String name, Set<SystemName> systemNames) {
         this.controller = controller;
         this.maintenanceInterval = interval;
         this.jobControl = jobControl;
         this.name = name;
-        this.systemNames = new ArrayList<>();
+        this.systemNames = systemNames;
 
         service = new ScheduledThreadPoolExecutor(1);
         service.scheduleAtFixedRate(this, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
@@ -58,8 +61,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     @Override
     public void run() {
         try {
-            boolean correctSystem = systemNames.isEmpty() || systemNames.contains(controller.system());
-            if (jobControl.isActive(name()) && correctSystem) {
+            if (jobControl.isActive(name()) && systemNames.contains(controller.system())) {
                 try (Lock lock = jobControl.curator().lockMaintenanceJob(name())) {
                     maintain();
                 }

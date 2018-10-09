@@ -36,17 +36,18 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
+ * This implements the contactinfo/v1 API which allows getting and feeding
+ * contact information for a given tenant.
+ *
  * @author olaa
  */
 public class ContactInfoHandler extends LoggingRequestHandler {
 
     private final Controller controller;
-    private final Organization organization;
 
-    public ContactInfoHandler(Context ctx, Controller controller, Organization organization) {
+    public ContactInfoHandler(Context ctx, Controller controller) {
         super(ctx);
         this.controller = controller;
-        this.organization = organization;
     }
 
     @Override
@@ -72,7 +73,7 @@ public class ContactInfoHandler extends LoggingRequestHandler {
 
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
-        if (path.matches("/contactinfo/v1/tenant/{tenant}")) return getContactInfo(path.get("tenant"), request);
+        if (path.matches("/contactinfo/v1/tenant/{tenant}")) return getContactInfo(path.get("tenant"));
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -82,20 +83,14 @@ public class ContactInfoHandler extends LoggingRequestHandler {
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse getContactInfo(String tenantName, HttpRequest request) {
+    private HttpResponse getContactInfo(String tenantName) {
         Optional<AthenzTenant> tenant = controller.tenants().athenzTenant(TenantName.from(tenantName));
-        if (! tenant.isPresent()) {
+        if (!tenant.isPresent()) {
             return ErrorResponse.notFoundError("Invalid tenant " + tenantName);
         }
-        boolean useOpsDb = getUseOpsDbFromRequest(request);
-        Optional<Contact> contact = Optional.empty();
-        if (useOpsDb) {
-            contact = findContactFromOpsDb(tenant.get());
-        } else  {
-            contact = tenant.get().contact();
-        }
+        Optional<Contact> contact = tenant.get().contact();
         if (contact.isPresent()) {
-            return new SlimeJsonResponse(contact.get().toSlime());
+            return new SlimeJsonResponse(contactToSlime(contact.get()));
         }
         return ErrorResponse.notFoundError("Could not find contact info for " + tenantName);
     }
@@ -107,51 +102,47 @@ public class ContactInfoHandler extends LoggingRequestHandler {
                     lockedTenant -> controller.tenants().store(lockedTenant.with(contact)));
             return new StringResponse("Added contact info for " + tenantName + " - " + contact.toString());
         }
-        catch (URISyntaxException | IOException e) {
+        catch (IOException e) {
             return ErrorResponse.notFoundError("Unable to create Contact object from request data");
         }
     }
 
-    private boolean getUseOpsDbFromRequest(HttpRequest request) {
-        String query = request.getUri().getQuery();
-        if (query == null) {
-            return false;
-        }
-        
-        HashMap<String, String> keyValPair = new HashMap<>();
-        Arrays.stream(query.split("&")).forEach(pair -> {
-            String[] splitPair = pair.split("=");
-            keyValPair.put(splitPair[0], splitPair[1]);
-        });
-
-        if (keyValPair.containsKey("useOpsDb")) {
-            return Boolean.valueOf(keyValPair.get("useOpsDb"));
-        }
-        return false;
-    }
-    private PropertyId getPropertyIdFromRequest(HttpRequest request) {
-        return new PropertyId(request.getProperty("propertyId"));
-    }
-
-    private Contact getContactFromRequest(HttpRequest request) throws IOException, URISyntaxException {
+    private Contact getContactFromRequest(HttpRequest request) throws IOException {
         Slime slime = SlimeUtils.jsonToSlime(IOUtils.readBytes(request.getData(), 1000 * 1000));
-        return Contact.fromSlime(slime);
+        return contactFromSlime(slime);
     }
 
-    private Optional<Contact> findContactFromOpsDb(AthenzTenant tenant) {
-        if (!tenant.propertyId().isPresent()) {
-            return Optional.empty();
+    protected static Slime contactToSlime(Contact contact) {
+        Slime slime = new Slime();
+        Cursor cursor = slime.setObject();
+        cursor.setString("url", contact.url().toString());
+        cursor.setString("issueTrackerUrl", contact.issueTrackerUrl().toString());
+        cursor.setString("propertyUrl", contact.propertyUrl().toString());
+        Cursor personsCursor = cursor.setArray("persons");
+        for (List<String> personList : contact.persons()) {
+            Cursor sublist = personsCursor.addArray();
+            for(String person : personList) {
+                sublist.addString(person);
+            }
         }
-        List<List<String>> persons = organization.contactsFor(tenant.propertyId().get())
-                .stream()
-                .map(personList -> personList.stream()
-                        .map(User::displayName)
-                        .collect(Collectors.toList()))
-                .collect(Collectors.toList());
-        return Optional.of(new Contact(organization.contactsUri(tenant.propertyId().get()),
-                organization.propertyUri(tenant.propertyId().get()),
-                organization.issueCreationUri(tenant.propertyId().get()),
-                persons));
+        return slime;
+    }
+
+    protected static Contact contactFromSlime(Slime slime) {
+        Inspector inspector = slime.get();
+        URI propertyUrl = URI.create(inspector.field("propertyUrl").asString());
+        URI url = URI.create(inspector.field("url").asString());
+        URI issueTrackerUrl = URI.create(inspector.field("issueTrackerUrl").asString());
+        Inspector personInspector = inspector.field("persons");
+        List<List<String>> personList = new ArrayList<>();
+        personInspector.traverse((ArrayTraverser) (index, entry) -> {
+            List<String> subList = new ArrayList<>();
+            entry.traverse((ArrayTraverser) (idx, subEntry) -> {
+                subList.add(subEntry.asString());
+            });
+            personList.add(subList);
+        });
+        return new Contact(url, propertyUrl, issueTrackerUrl, personList);
     }
 
 }

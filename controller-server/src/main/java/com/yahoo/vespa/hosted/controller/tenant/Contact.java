@@ -51,39 +51,6 @@ public class Contact {
         return persons;
     }
 
-    public Slime toSlime() {
-        Slime slime = new Slime();
-        Cursor cursor = slime.setObject();
-        cursor.setString("url", url.toString());
-        cursor.setString("issueTrackerUrl", issueTrackerUrl.toString());
-        cursor.setString("propertyUrl", propertyUrl.toString());
-        Cursor personsCursor = cursor.setArray("persons");
-        for (List<String> personList : persons) {
-            Cursor sublist = personsCursor.addArray();
-            for(String person : personList) {
-                sublist.addString(person);
-            }
-        }
-        return slime;
-    }
-
-    public static Contact fromSlime(Slime slime) {
-        Inspector inspector = slime.get();
-        URI propertyUrl = URI.create(inspector.field("propertyUrl").asString());
-        URI url = URI.create(inspector.field("url").asString());
-        URI issueTrackerUrl = URI.create(inspector.field("issueTrackerUrl").asString());
-        Inspector personInspector = inspector.field("persons");
-        List<List<String>> personList = new ArrayList<>();
-        personInspector.traverse((ArrayTraverser) (index, entry) -> {
-            List<String> subList = new ArrayList<>();
-            entry.traverse((ArrayTraverser) (idx, subEntry) -> {
-                subList.add(subEntry.asString());
-            });
-            personList.add(subList);
-        });
-        return new Contact(url, propertyUrl, issueTrackerUrl, personList);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

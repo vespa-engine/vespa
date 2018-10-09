@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,7 +31,7 @@ public class ContactInformationMaintainer extends Maintainer {
     private final Organization organization;
 
     public ContactInformationMaintainer(Controller controller, Duration interval, JobControl jobControl, Organization organization) {
-        super(Arrays.asList(SystemName.main, SystemName.cd), controller, interval, jobControl);
+        super(controller, interval, jobControl, EnumSet.of(SystemName.cd, SystemName.main));
         this.organization = Objects.requireNonNull(organization, "organization must be non-null");
     }
 
