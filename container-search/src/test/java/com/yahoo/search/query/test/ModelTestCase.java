@@ -41,7 +41,7 @@ public class ModelTestCase {
 
     @Test
     public void testCopyParameters() {
-        Query q1 = new Query("?query=test1&filter=test2&defidx=content&default-index=lala&encoding=iso8859-1");
+        Query q1 = new Query("?query=test1&filter=test2&default-index=content&default-index=lala&encoding=iso8859-1");
         Query q2 = q1.clone();
         Model r1 = q1.getModel();
         Model r2 = q2.getModel();
