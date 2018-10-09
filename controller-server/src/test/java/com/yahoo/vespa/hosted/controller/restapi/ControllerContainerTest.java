@@ -90,7 +90,7 @@ public class ControllerContainerTest {
             "    <binding>http://*/application/v4/*</binding>\n" +
             "  </handler>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.contactinfo.ContactInfoHandler'>\n" +
-            "    <binding>https://*/contactinfo/v1/*</binding>\n" +
+            "    <binding>http://*/contactinfo/v1/*</binding>\n" +
             "  </handler>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +
             "    <binding>http://*/deployment/v1/*</binding>\n" +

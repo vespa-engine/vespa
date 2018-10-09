@@ -2,13 +2,8 @@
 package com.yahoo.vespa.hosted.controller.tenant;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.slime.ArrayTraverser;
-import com.yahoo.slime.Cursor;
-import com.yahoo.slime.Inspector;
-import com.yahoo.slime.Slime;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 

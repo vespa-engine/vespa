@@ -30,19 +30,17 @@ public class ContactInfoHandlerTest extends ControllerContainerTest {
 
         // No contact information available yet
         String notFoundMessage = "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not find contact info for tenant1\"}";
-        assertResponse(new Request("https://localhost:8080/contactinfo/v1/tenant/tenant1"), 404, notFoundMessage);
+        assertResponse(new Request("http://localhost:8080/contactinfo/v1/tenant/tenant1"), 404, notFoundMessage);
 
         // Feed contact information for tenant1
-        Contact contact = new Contact(URI.create("https://localhost:4444/"), URI.create("https://localhost:4444/"), URI.create("https://localhost:4444/"), Arrays.asList(Arrays.asList("foo", "bar")));
-        Slime contactSlime = ContactInfoHandler.contactToSlime(contact);
-        byte[] body = SlimeUtils.toJsonBytes(contactSlime);
-        String expectedResponseMessage = "Added contact info for tenant1 - Contact{url=https://localhost:4444/, propertyUrl=https://localhost:4444/, issueTrackerUrl=https://localhost:4444/, persons=[[foo, bar]]}";
-        assertResponse(new Request("https://localhost:8080/contactinfo/v1/tenant/tenant1", body, Request.Method.POST), 200, expectedResponseMessage);
+        String contactInfo = "{\"url\":\"https://url:4444/\",\"issueTrackerUrl\":\"https://issueTrackerUrl:4444/\",\"propertyUrl\":\"https://propertyUrl:4444/\",\"persons\":[[\"foo\",\"bar\"]]}";
+        String expectedResponseMessage = "Added contact info for tenant1 - Contact{url=https://url:4444/, propertyUrl=https://propertyUrl:4444/, issueTrackerUrl=https://issueTrackerUrl:4444/, persons=[[foo, bar]]}";
+        assertResponse(new Request("http://localhost:8080/contactinfo/v1/tenant/tenant1", contactInfo, Request.Method.POST), 200, expectedResponseMessage);
 
         // Get contact information for tenant1
-        Response response = container.handleRequest(new Request("https://localhost:8080/contactinfo/v1/tenant/tenant1"));
-        Contact actualContact = ContactInfoHandler.contactFromSlime(SlimeUtils.jsonToSlime(response.getBody()));
-        assertEquals(contact, actualContact);
+        Response response = container.handleRequest(new Request("http://localhost:8080/contactinfo/v1/tenant/tenant1"));
+        String actualContactInfo = new String(response.getBody());
+        assertEquals(contactInfo, actualContactInfo);
     }
 
 }
