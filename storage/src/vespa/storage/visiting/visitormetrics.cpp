@@ -7,26 +7,26 @@
 namespace storage {
 
 VisitorMetrics::VisitorMetrics()
-    : metrics::MetricSet("visitor", "visitor", ""),
-      queueSize("cv_queuesize", "", "Size of create visitor queue", this),
-      queueSkips("cv_skipqueue", "",
+    : metrics::MetricSet("visitor", {{"visitor"}}, ""),
+      queueSize("cv_queuesize", {}, "Size of create visitor queue", this),
+      queueSkips("cv_skipqueue", {},
               "Number of times we could skip queue as we had free visitor "
               "spots", this),
-      queueFull("cv_queuefull", "",
+      queueFull("cv_queuefull", {},
               "Number of create visitor messages failed as queue is full",
               this),
-      queueWaitTime("cv_queuewaittime", "",
+      queueWaitTime("cv_queuewaittime", {},
               "Milliseconds waiting in create visitor queue, for visitors "
               "that was added to visitor queue but scheduled later", this),
-      queueTimeoutWaitTime("cv_queuetimeoutwaittime", "",
+      queueTimeoutWaitTime("cv_queuetimeoutwaittime", {},
               "Milliseconds waiting in create visitor queue, for visitors "
               "that timed out while in the visitor quueue", this),
-      queueEvictedWaitTime("cv_queueevictedwaittime", "",
+      queueEvictedWaitTime("cv_queueevictedwaittime", {},
               "Milliseconds waiting in create visitor queue, for visitors "
               "that was evicted from queue due to higher priority visitors "
               "coming", this),
       threads(),
-      sum("allthreads", "sum", "", this)
+      sum("allthreads", {{"sum"}}, "", this)
 {
     queueSize.unsetOnZeroValue();
 }

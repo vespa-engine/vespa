@@ -11,9 +11,9 @@ TransLogServerMetrics::DomainMetrics::DomainMetrics(metrics::MetricSet *parent,
                                                     const vespalib::string &documentType)
     : metrics::MetricSet("transactionlog", {{"documenttype", documentType}},
             "Transaction log metrics for a document type", parent),
-      entries("entries", "", "The current number of entries in the transaction log", this),
-      diskUsage("disk_usage", "", "The disk usage (in bytes) of the transaction log", this),
-      replayTime("replay_time", "", "The replay time (in seconds) of the transaction log during start-up", this)
+      entries("entries", {}, "The current number of entries in the transaction log", this),
+      diskUsage("disk_usage", {}, "The disk usage (in bytes) of the transaction log", this),
+      replayTime("replay_time", {}, "The replay time (in seconds) of the transaction log during start-up", this)
 {
 }
 

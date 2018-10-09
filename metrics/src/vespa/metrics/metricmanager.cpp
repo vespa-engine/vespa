@@ -75,12 +75,12 @@ MetricManager::MetricManager(std::unique_ptr<Timer> timer)
       _forceEventLogging(false),
       _snapshotUnsetMetrics(false),
       _consumerConfigChanged(false),
-      _metricManagerMetrics("metricmanager", "", "Metrics for the metric manager upkeep tasks"),
-      _periodicHookLatency("periodichooklatency", "", "Time in ms used to update a single periodic hook", &_metricManagerMetrics),
-      _snapshotHookLatency("snapshothooklatency", "", "Time in ms used to update a single snapshot hook", &_metricManagerMetrics),
-      _resetLatency("resetlatency", "", "Time in ms used to reset all metrics.", &_metricManagerMetrics),
-      _snapshotLatency("snapshotlatency", "", "Time in ms used to take a snapshot", &_metricManagerMetrics),
-      _sleepTimes("sleeptime", "", "Time in ms worker thread is sleeping", &_metricManagerMetrics)
+      _metricManagerMetrics("metricmanager", {}, "Metrics for the metric manager upkeep tasks"),
+      _periodicHookLatency("periodichooklatency", {}, "Time in ms used to update a single periodic hook", &_metricManagerMetrics),
+      _snapshotHookLatency("snapshothooklatency", {}, "Time in ms used to update a single snapshot hook", &_metricManagerMetrics),
+      _resetLatency("resetlatency", {}, "Time in ms used to reset all metrics.", &_metricManagerMetrics),
+      _snapshotLatency("snapshotlatency", {}, "Time in ms used to take a snapshot", &_metricManagerMetrics),
+      _sleepTimes("sleeptime", {}, "Time in ms worker thread is sleeping", &_metricManagerMetrics)
 {
     registerMetric(getMetricLock(), _metricManagerMetrics);
 }

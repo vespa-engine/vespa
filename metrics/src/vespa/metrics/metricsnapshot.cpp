@@ -12,7 +12,7 @@ MetricSnapshot::MetricSnapshot(const Metric::String& name)
       _period(0),
       _fromTime(0),
       _toTime(0),
-      _snapshot(new MetricSet("top", "", "")),
+      _snapshot(new MetricSet("top", {}, "")),
       _metrics()
 {
 }

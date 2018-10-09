@@ -5,8 +5,8 @@
 namespace storage {
 
 BouncerMetrics::BouncerMetrics()
-    : MetricSet("bouncer", "", "Metrics for Bouncer component", nullptr),
-      clock_skew_aborts("clock_skew_aborts", "", "Number of client operations that were aborted due to "
+    : MetricSet("bouncer", {}, "Metrics for Bouncer component", nullptr),
+      clock_skew_aborts("clock_skew_aborts", {}, "Number of client operations that were aborted due to "
                         "clock skew between sender and receiver exceeding acceptable range", this)
 {
 }

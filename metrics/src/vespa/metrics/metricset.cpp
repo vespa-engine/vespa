@@ -14,14 +14,6 @@ LOG_SETUP(".metrics.metricsset");
 
 namespace metrics {
 
-MetricSet::MetricSet(const String& name, const String& tags,
-                     const String& description, MetricSet* owner)
-    : Metric(name, tags, description, owner),
-      _metricOrder(),
-      _registrationAltered(false)
-{
-}
-
 MetricSet::MetricSet(const String& name, Tags dimensions,
                      const String& description, MetricSet* owner)
     : Metric(name, std::move(dimensions), description, owner),

@@ -13,10 +13,10 @@ ExecutorMetrics::update(const vespalib::ThreadStackExecutorBase::Stats &stats)
 }
 
 ExecutorMetrics::ExecutorMetrics(const std::string &name, metrics::MetricSet *parent)
-    : metrics::MetricSet(name, "", "Instance specific thread executor metrics", parent),
-      maxPending("maxpending", "", "Maximum number of pending (active + queued) tasks", this),
-      accepted("accepted", "", "Number of accepted tasks", this),
-      rejected("rejected", "", "Number of rejected tasks", this)
+    : metrics::MetricSet(name, {}, "Instance specific thread executor metrics", parent),
+      maxPending("maxpending", {}, "Maximum number of pending (active + queued) tasks", this),
+      accepted("accepted", {}, "Number of accepted tasks", this),
+      rejected("rejected", {}, "Number of rejected tasks", this)
 {
 }
 

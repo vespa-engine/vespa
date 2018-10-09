@@ -37,20 +37,15 @@ MetricVisitor::visitMetric(const Metric&, bool)
 }
 
 namespace {
-    Metric::Tags legacyTagStringToKeyedTags(const std::string& tagStr) {
-        vespalib::StringTokenizer tokenizer(tagStr, " \t\r\f");
-        Metric::Tags tags;
-        std::transform(tokenizer.getTokens().begin(),
-                       tokenizer.getTokens().end(),
-                       std::back_inserter(tags),
-                       [](const std::string& s) { return Tag(s, ""); });
-        return tags;
-    }
     std::string namePattern = "[a-zA-Z][_a-zA-Z0-9]*";
 }
 
 vespalib::Regexp Metric::_namePattern(namePattern);
 
+Tag::Tag(vespalib::stringref k)
+    : _key(NameRepo::tagKeyId(k)),
+      _value(0)
+{ }
 Tag::Tag(vespalib::stringref k, vespalib::stringref v)
     : _key(NameRepo::tagKeyId(k)),
       _value(NameRepo::tagValueId(v))
@@ -59,21 +54,6 @@ Tag::Tag(vespalib::stringref k, vespalib::stringref v)
 Tag::Tag(const Tag &) = default;
 Tag & Tag::operator = (const Tag &) = default;
 Tag::~Tag() {}
-
-Metric::Metric(const String& name,
-               const String& tags,
-               const String& description,
-               MetricSet* owner)
-    : _name(NameRepo::metricId(name)),
-      _mangledName(_name),
-      _description(NameRepo::descriptionId(description)),
-      _tags(legacyTagStringToKeyedTags(tags)),
-      _owner(nullptr) // Set later by registry
-{
-    verifyConstructionParameters();
-    assignMangledNameWithDimensions();
-    registerWithOwnerIfRequired(owner);
-}
 
 Metric::Metric(const String& name,
                Tags dimensions,
@@ -111,7 +91,7 @@ Metric::~Metric() { }
 bool
 Metric::tagsSpecifyAtLeastOneDimension(const Tags& tags) const
 {
-    auto hasNonEmptyTagValue = [](const Tag& t) { return !t.value().empty(); };
+    auto hasNonEmptyTagValue = [](const Tag& t) { return t.hasValue(); };
     return std::any_of(tags.begin(), tags.end(), hasNonEmptyTagValue);
 }
 

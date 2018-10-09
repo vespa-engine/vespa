@@ -10,7 +10,7 @@ namespace storage::framework::defaultimplementation {
 ComponentRegisterImpl::ComponentRegisterImpl()
     : _componentLock(),
       _components(),
-      _topMetricSet("vds", "", ""),
+      _topMetricSet("vds", {}, ""),
       _hooks(),
       _metricManager(nullptr),
       _clock(nullptr),

@@ -6,11 +6,11 @@
 namespace proton {
 
 MemoryUsageMetrics::MemoryUsageMetrics(metrics::MetricSet *parent)
-    : metrics::MetricSet("memory_usage", "", "The memory usage for a given component", parent),
-      _allocatedBytes("allocated_bytes", "", "The number of allocated bytes", this),
-      _usedBytes("used_bytes", "", "The number of used bytes (<= allocatedbytes)", this),
-      _deadBytes("dead_bytes", "", "The number of dead bytes (<= usedbytes)", this),
-      _onHoldBytes("onhold_bytes", "", "The number of bytes on hold", this)
+    : metrics::MetricSet("memory_usage", {}, "The memory usage for a given component", parent),
+      _allocatedBytes("allocated_bytes", {}, "The number of allocated bytes", this),
+      _usedBytes("used_bytes", {}, "The number of used bytes (<= allocatedbytes)", this),
+      _deadBytes("dead_bytes", {}, "The number of dead bytes (<= usedbytes)", this),
+      _onHoldBytes("onhold_bytes", {}, "The number of bytes on hold", this)
 {
 }
 

@@ -27,7 +27,7 @@ using namespace std::literals::chrono_literals;
 template <typename MetricType>
 void MetricTimerTest::do_test_metric_timer_for_metric_type() {
     MetricTimer timer;
-    MetricType metric("foo", "", "");
+    MetricType metric("foo", {}, "");
     std::this_thread::sleep_for(5ms); // Guaranteed to be monotonic time
     timer.stop(metric);
     // getDoubleValue() is present for both long and double metric types

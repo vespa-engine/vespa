@@ -25,11 +25,11 @@ CPPUNIT_TEST_SUITE_REGISTRATION(SumMetricTest);
 void
 SumMetricTest::testLongCountMetric()
 {
-    MetricSet parent("parent", "", "");
-    SumMetric<LongCountMetric> sum("foo", "", "foodesc", &parent);
+    MetricSet parent("parent", {}, "");
+    SumMetric<LongCountMetric> sum("foo", {}, "foodesc", &parent);
 
-    LongCountMetric v1("ff", "", "", &parent);
-    LongCountMetric v2("aa", "", "", &parent);
+    LongCountMetric v1("ff", {}, "", &parent);
+    LongCountMetric v2("aa", {}, "", &parent);
 
     sum.addMetricToSum(v1);
     sum.addMetricToSum(v2);
@@ -46,11 +46,11 @@ SumMetricTest::testLongCountMetric()
 
 void
 SumMetricTest::testAverageMetric() {
-    MetricSet parent("parent", "", "");
-    SumMetric<LongAverageMetric> sum("foo", "", "foodesc", &parent);
+    MetricSet parent("parent", {}, "");
+    SumMetric<LongAverageMetric> sum("foo", {}, "foodesc", &parent);
 
-    LongAverageMetric v1("ff", "", "", &parent);
-    LongAverageMetric v2("aa", "", "", &parent);
+    LongAverageMetric v1("ff", {}, "", &parent);
+    LongAverageMetric v2("aa", {}, "", &parent);
 
     sum.addMetricToSum(v1);
     sum.addMetricToSum(v2);
@@ -69,15 +69,15 @@ SumMetricTest::testAverageMetric() {
 
 void
 SumMetricTest::testMetricSet() {
-    MetricSet parent("parent", "", "");
-    SumMetric<MetricSet> sum("foo", "", "bar", &parent);
+    MetricSet parent("parent", {}, "");
+    SumMetric<MetricSet> sum("foo", {}, "bar", &parent);
 
-    MetricSet set1("a", "", "", &parent);
-    MetricSet set2("b", "", "", &parent);
-    LongValueMetric v1("c", "", "", &set1);
-    LongValueMetric v2("d", "", "", &set2);
-    LongCountMetric v3("e", "", "", &set1);
-    LongCountMetric v4("f", "", "", &set2);
+    MetricSet set1("a", {}, "", &parent);
+    MetricSet set2("b", {}, "", &parent);
+    LongValueMetric v1("c", {}, "", &set1);
+    LongValueMetric v2("d", {}, "", &set2);
+    LongCountMetric v3("e", {}, "", &set1);
+    LongCountMetric v4("f", {}, "", &set2);
 
     sum.addMetricToSum(set1);
     sum.addMetricToSum(set2);
@@ -100,12 +100,12 @@ SumMetricTest::testMetricSet() {
 void
 SumMetricTest::testRemove()
 {
-    MetricSet parent("parent", "", "");
-    SumMetric<LongCountMetric> sum("foo", "", "foodesc", &parent);
+    MetricSet parent("parent", {}, "");
+    SumMetric<LongCountMetric> sum("foo", {}, "foodesc", &parent);
 
-    LongCountMetric v1("ff", "", "", &parent);
-    LongCountMetric v2("aa", "", "", &parent);
-    LongCountMetric v3("zz", "", "", &parent);
+    LongCountMetric v1("ff", {}, "", &parent);
+    LongCountMetric v2("aa", {}, "", &parent);
+    LongCountMetric v3("zz", {}, "", &parent);
 
     sum.addMetricToSum(v1);
     sum.addMetricToSum(v2);
@@ -125,9 +125,9 @@ void
 SumMetricTest::testStartValue()
 {
     MetricSnapshot snapshot("active");
-    SumMetric<LongValueMetric> sum("foo", "", "foodesc",
+    SumMetric<LongValueMetric> sum("foo", {}, "foodesc",
                                    &snapshot.getMetrics());
-    LongValueMetric start("start", "", "", 0);
+    LongValueMetric start("start", {}, "", 0);
     start.set(50);
     sum.setStartValue(start);
 
@@ -138,7 +138,7 @@ SumMetricTest::testStartValue()
     copy.recreateSnapshot(snapshot.getMetrics(), true);
     snapshot.addToSnapshot(copy, 100);
 
-    LongValueMetric value("value", "", "", &snapshot.getMetrics());
+    LongValueMetric value("value", {}, "", &snapshot.getMetrics());
     sum.addMetricToSum(value);
     value.set(10);
 

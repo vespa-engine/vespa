@@ -10,24 +10,24 @@ namespace storage {
 using metrics::MetricSet;
 
 PersistenceFailuresMetricSet::PersistenceFailuresMetricSet(MetricSet* owner)
-    : MetricSet("failures", "", "Detailed failure statistics", owner),
-      sum("total", "logdefault yamasdefault", "Sum of all failures", this),
-      notready("notready", "", "The number of operations discarded because distributor was not ready", this),
-      notconnected("notconnected", "", "The number of operations discarded because there were no available storage nodes to send to", this),
-      wrongdistributor("wrongdistributor", "", "The number of operations discarded because they were sent to the wrong distributor", this),
-      safe_time_not_reached("safe_time_not_reached", "",
+    : MetricSet("failures", {}, "Detailed failure statistics", owner),
+      sum("total", {{"logdefault"},{"yamasdefault"}}, "Sum of all failures", this),
+      notready("notready", {}, "The number of operations discarded because distributor was not ready", this),
+      notconnected("notconnected", {}, "The number of operations discarded because there were no available storage nodes to send to", this),
+      wrongdistributor("wrongdistributor", {}, "The number of operations discarded because they were sent to the wrong distributor", this),
+      safe_time_not_reached("safe_time_not_reached", {},
                             "The number of operations that were transiently"
                             " failed due to them arriving before the safe "
                             "time point for bucket ownership handovers has "
                             "passed", this),
-      storagefailure("storagefailure", "", "The number of operations that failed in storage", this),
-      timeout("timeout", "", "The number of operations that failed because the operation timed out towards storage", this),
-      busy("busy", "", "The number of messages from storage that failed because the storage node was busy", this),
-      inconsistent_bucket("inconsistent_bucket", "",
+      storagefailure("storagefailure", {}, "The number of operations that failed in storage", this),
+      timeout("timeout", {}, "The number of operations that failed because the operation timed out towards storage", this),
+      busy("busy", {}, "The number of messages from storage that failed because the storage node was busy", this),
+      inconsistent_bucket("inconsistent_bucket", {},
                           "The number of operations failed due to buckets "
                           "being in an inconsistent state or not found", this),
-      notfound("notfound", "", "The number of operations that failed because the document did not exist", this),
-      concurrent_mutations("concurrent_mutations", "", "The number of operations that were transiently failed due "
+      notfound("notfound", {}, "The number of operations that failed because the document did not exist", this),
+      concurrent_mutations("concurrent_mutations", {}, "The number of operations that were transiently failed due "
                            "to a mutating operation already being in progress for its document ID", this)
 {
     sum.addMetricToSum(notready);
@@ -55,9 +55,9 @@ PersistenceFailuresMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType
 }
 
 PersistenceOperationMetricSet::PersistenceOperationMetricSet(const std::string& name, MetricSet* owner)
-    : MetricSet(name, "", vespalib::make_string("Statistics for the %s command", name.c_str()), owner),
-      latency("latency", "yamasdefault", vespalib::make_string("The average latency of %s operations", name.c_str()), this),
-      ok("ok", "logdefault yamasdefault", vespalib::make_string("The number of successful %s operations performed", name.c_str()), this),
+    : MetricSet(name, {}, vespalib::make_string("Statistics for the %s command", name.c_str()), owner),
+      latency("latency", {{"yamasdefault"}}, vespalib::make_string("The average latency of %s operations", name.c_str()), this),
+      ok("ok", {{"logdefault"},{"yamasdefault"}}, vespalib::make_string("The number of successful %s operations performed", name.c_str()), this),
       failures(this)
 { }
 

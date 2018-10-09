@@ -22,9 +22,6 @@ class MetricSet : public Metric
                                // it was reset
 
 public:
-    MetricSet(const String& name, const String& tags,
-              const String& description, MetricSet* owner = 0);
-
     MetricSet(const String& name, Tags dimensions,
               const String& description, MetricSet* owner = 0);
 

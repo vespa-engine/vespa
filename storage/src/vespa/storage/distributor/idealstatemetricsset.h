@@ -15,7 +15,7 @@ public:
     metrics::LongCountMetric ok;
     metrics::LongCountMetric failed;
 
-    OperationMetricSet(const std::string& name, const std::string& tags, const std::string& description, MetricSet* owner);
+    OperationMetricSet(const std::string& name, metrics::Metric::Tags tags, const std::string& description, MetricSet* owner);
     ~OperationMetricSet();
 };
 

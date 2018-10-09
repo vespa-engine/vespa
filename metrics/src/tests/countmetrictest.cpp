@@ -20,7 +20,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION(CountMetricTest);
 
 void CountMetricTest::testLongCountMetric()
 {
-    LongCountMetric m("test", "tag", "description");
+    LongCountMetric m("test", {{"tag"}}, "description");
     m.set(100);
     CPPUNIT_ASSERT_EQUAL(uint64_t(100), m.getValue());
     m.inc(5);
@@ -32,7 +32,7 @@ void CountMetricTest::testLongCountMetric()
     m.reset();
     CPPUNIT_ASSERT_EQUAL(uint64_t(0), m.getValue());
 
-    LongCountMetric n("m2", "", "desc");
+    LongCountMetric n("m2", {}, "desc");
     n.set(6);
     CPPUNIT_ASSERT_EQUAL(uint64_t(6), n.getValue());
 

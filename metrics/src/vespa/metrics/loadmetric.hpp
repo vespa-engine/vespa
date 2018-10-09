@@ -10,9 +10,9 @@ namespace metrics {
 
 template<typename MetricType>
 LoadMetric<MetricType>::LoadMetric(const LoadTypeSet& loadTypes, const MetricType& metric, MetricSet* owner)
-    : MetricSet(metric.getName(), "", metric.getDescription(), owner),
+    : MetricSet(metric.getName(), {}, metric.getDescription(), owner),
       _metrics(),
-      _sum("sum", "loadsum sum", "Sum of all load metrics", this)
+      _sum("sum", {{"loadsum"},{"sum"}}, "Sum of all load metrics", this)
 {
     _metrics.resize(loadTypes.size());
         // Currently, we only set tags and description on the metric set
@@ -35,9 +35,9 @@ LoadMetric<MetricType>::LoadMetric(const LoadTypeSet& loadTypes, const MetricTyp
 
 template<typename MetricType>
 LoadMetric<MetricType>::LoadMetric(const LoadMetric<MetricType>& other, MetricSet* owner)
-    : MetricSet(other.getName(), "", other.getDescription(), owner),
+    : MetricSet(other.getName(), {}, other.getDescription(), owner),
       _metrics(),
-      _sum("sum", "loadsum sum", "Sum of all load metrics", this)
+      _sum("sum", {{"loadsum"},{"sum"}}, "Sum of all load metrics", this)
 {
     _metrics.resize(2 * other._metrics.size());
     setTags(other.getTags());

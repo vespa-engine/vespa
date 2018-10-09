@@ -16,7 +16,7 @@ LOG_SETUP("metrics_engine_test");
 using namespace proton;
 
 struct DummyMetricSet : public metrics::MetricSet {
-    DummyMetricSet(const vespalib::string &name) : metrics::MetricSet(name, "", "", nullptr) {}
+    DummyMetricSet(const vespalib::string &name) : metrics::MetricSet(name, {}, "", nullptr) {}
 };
 
 struct AttributeMetricsFixture {

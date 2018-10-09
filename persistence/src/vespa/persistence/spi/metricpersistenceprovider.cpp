@@ -33,21 +33,22 @@ using std::make_unique;
 Impl::ResultMetrics::~ResultMetrics() { }
 
 Impl::ResultMetrics::ResultMetrics(const char* opName)
-    : metrics::MetricSet(opName, "", ""),
+    : metrics::MetricSet(opName, {}, ""),
       _metric(Result::ERROR_COUNT)
 {
-    _metric[Result::NONE] = make_unique<DoubleAverageMetric>("success", "", "", this);
-    _metric[Result::TRANSIENT_ERROR] = make_unique<DoubleAverageMetric>("transient_error", "", "", this);
-    _metric[Result::PERMANENT_ERROR] = make_unique<DoubleAverageMetric>("permanent_error", "", "", this);
-    _metric[Result::TIMESTAMP_EXISTS] = make_unique<DoubleAverageMetric>("timestamp_exists", "", "", this);
-    _metric[Result::FATAL_ERROR] = make_unique<DoubleAverageMetric>("fatal_error", "", "", this);
-    _metric[Result::RESOURCE_EXHAUSTED] = make_unique<DoubleAverageMetric>("resource_exhausted", "", "", this);
+    metrics::Metric::Tags noTags;
+    _metric[Result::NONE] = make_unique<DoubleAverageMetric>("success", noTags, "", this);
+    _metric[Result::TRANSIENT_ERROR] = make_unique<DoubleAverageMetric>("transient_error", noTags, "", this);
+    _metric[Result::PERMANENT_ERROR] = make_unique<DoubleAverageMetric>("permanent_error", noTags, "", this);
+    _metric[Result::TIMESTAMP_EXISTS] = make_unique<DoubleAverageMetric>("timestamp_exists", noTags, "", this);
+    _metric[Result::FATAL_ERROR] = make_unique<DoubleAverageMetric>("fatal_error", noTags, "", this);
+    _metric[Result::RESOURCE_EXHAUSTED] = make_unique<DoubleAverageMetric>("resource_exhausted", noTags, "", this);
     // Assert that the above initialized all entries in vector
     for (size_t i=0; i<_metric.size(); ++i) assert(_metric[i].get());
 }
 
 Impl::MetricPersistenceProvider(PersistenceProvider& next)
-    : metrics::MetricSet("spi", "", ""),
+    : metrics::MetricSet("spi", {}, ""),
       _next(&next),
       _functionMetrics(23)
 {

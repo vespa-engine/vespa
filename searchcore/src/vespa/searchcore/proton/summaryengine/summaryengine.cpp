@@ -47,10 +47,10 @@ uint32_t getNumDocs(const DocsumReply &reply) {
 namespace proton {
 
 SummaryEngine::DocsumMetrics::DocsumMetrics()
-    : metrics::MetricSet("docsum", "", "Docsum metrics", nullptr),
-      count("count", "logdefault", "Docsum requests handled", this),
-      docs("docs", "logdefault", "Total docsums returned", this),
-      latency("latency", "logdefault", "Docsum request latency", this)
+    : metrics::MetricSet("docsum", {}, "Docsum metrics", nullptr),
+      count("count", {{"logdefault"}}, "Docsum requests handled", this),
+      docs("docs", {{"logdefault"}}, "Total docsums returned", this),
+      latency("latency", {{"logdefault"}}, "Docsum request latency", this)
 {
 }
 

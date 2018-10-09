@@ -88,7 +88,7 @@ void StateReporterTest::setUp() {
     _metricManager.reset(new metrics::MetricManager(
             std::unique_ptr<metrics::MetricManager::Timer>(
                 new MetricClock(*_clock))));
-    _topSet.reset(new metrics::MetricSet("vds", "", ""));
+    _topSet.reset(new metrics::MetricSet("vds", {}, ""));
     {
         metrics::MetricLockGuard guard(_metricManager->getMetricLock());
         _metricManager->registerMetric(guard, *_topSet);
