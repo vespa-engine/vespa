@@ -110,10 +110,8 @@ public class BundleMapper {
         bundleFromClass.put("com.yahoo.search.query.rewrite.rewriters.NameRewriter", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.querytransform.AllLowercasingSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.querytransform.DefaultPositionSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.querytransform.LegacyCombinator", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.querytransform.LowercasingSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.querytransform.NGramSearcher", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.querytransform.QueryCombinator", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.querytransform.VespaLowercasingSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.rendering.Renderer", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.rendering.SectionedRenderer", searchAndDocprocBundle);
