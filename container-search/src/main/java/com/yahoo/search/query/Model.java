@@ -59,7 +59,7 @@ public class Model implements Cloneable {
         argumentType.addField(new FieldDescription(QUERY_STRING, "string", "query"));
         argumentType.addField(new FieldDescription(TYPE, "string", "type"));
         argumentType.addField(new FieldDescription(FILTER, "string","filter"));
-        argumentType.addField(new FieldDescription(DEFAULT_INDEX, "string", "default-index def-idx defidx"));
+        argumentType.addField(new FieldDescription(DEFAULT_INDEX, "string", "default-index"));
         argumentType.addField(new FieldDescription(LANGUAGE, "string", "language lang"));
         argumentType.addField(new FieldDescription(ENCODING, "string", "encoding"));
         argumentType.addField(new FieldDescription(SOURCES, "string", "sources search"));
