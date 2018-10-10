@@ -42,15 +42,6 @@ public interface Linguistics {
     }
 
     /**
-     * The same as new com.yahoo.language.simple.SimpleLinguistics(). Prefer using that directly.
-     *
-     * @deprecated use new com.yahoo.language.simple.SimpleLinguistics()
-     */
-    @Deprecated // OK
-    // TODO: Remove this field on Vespa 7
-    Linguistics SIMPLE = new SimpleLinguistics();
-
-    /**
      * Returns a thread-unsafe stemmer or lemmatizer.
      * This is used at query time to do stemming of search terms to indexes which contains text tokenized
      * with stemming turned on
