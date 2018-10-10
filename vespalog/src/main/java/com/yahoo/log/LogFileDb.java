@@ -4,6 +4,7 @@ package com.yahoo.log;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.*;
 
+import java.io.File;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,12 +29,18 @@ public class LogFileDb {
     }
 
     private static OutputStream metaFile() throws java.io.IOException {
-        String fn = getDefaults().underVespaHome(DBDIR + "logfiles." + dayStamp());
+        File dir = new File(getDefaults().underVespaHome(DBDIR));
+        if (!dir.exists()) {
+            if (!dir.mkdirs()) {
+                System.err.println("Failed creating logfiledb directory '" + dir.getPath() + "'.");
+            }
+        }
+        String fn = dir + "logfiles." + dayStamp();
         Path path = Paths.get(fn);
         return Files.newOutputStream(path, CREATE, APPEND);
     }
 
-    public static void nowLoggingTo(String filename) {
+    public static boolean nowLoggingTo(String filename) {
         if (filename.contains("\n")) {
             throw new IllegalArgumentException("Cannot use filename with newline: "+filename);
         }
@@ -44,7 +51,8 @@ public class LogFileDb {
             out.write(data);
         } catch (java.io.IOException e) {
             System.err.println("Saving meta-data about logfile "+filename+" failed: "+e);
-            // ignore
+            return false;
         }
+        return true;
     }
 }
