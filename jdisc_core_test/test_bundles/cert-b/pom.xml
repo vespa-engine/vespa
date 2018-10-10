@@ -21,7 +21,6 @@
                 <artifactId>bundle-plugin</artifactId>
                 <extensions>true</extensions>
                 <configuration>
-                    <!-- The Vespa bundle-plugin doesn't include groupId. TODO Vespa 7: remove if that is fixed. -->
                     <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
                 </configuration>
             </plugin>
