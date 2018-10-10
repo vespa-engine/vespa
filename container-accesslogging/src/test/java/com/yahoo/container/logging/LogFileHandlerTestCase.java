@@ -190,11 +190,11 @@ public class LogFileHandlerTestCase {
             LogRecord lr = new LogRecord(Level.INFO, "test");
             h.publish(lr);
         }
+        h.waitDrained();
         String f1 = h.getFileName();
         assertTrue(f1.startsWith("./testcompression/logfilehandlertest."));
         File uncompressed = new File(f1);
         File compressed = new File(f1 + ".gz");
-        h.waitDrained();
         assertTrue(uncompressed.exists());
         assertFalse(compressed.exists());
         String content = IOUtils.readFile(uncompressed);
