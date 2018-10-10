@@ -14,7 +14,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -51,7 +51,7 @@ public class LogFileHandler extends StreamHandler {
     private String symlinkName = null;
     private ArrayBlockingQueue<LogRecord> logQueue = new ArrayBlockingQueue<>(100000);
     private LogRecord rotateCmd = new LogRecord(Level.SEVERE, "rotateNow");
-    private Executor executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("logfilehandler.compression"));
+    private ExecutorService executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("logfilehandler.compression"));
 
     static private class LogThread extends Thread {
         LogFileHandler logFileHandler;
@@ -412,7 +412,8 @@ public class LogFileHandler extends StreamHandler {
         logThread.interrupt();
         try {
             logThread.join();
-            executor.
+            executor.shutdown();
+            executor.awaitTermination(600, TimeUnit.SECONDS);
         }
         catch (InterruptedException e) {
         }
