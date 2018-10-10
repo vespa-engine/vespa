@@ -28,29 +28,16 @@ import com.yahoo.log.LogLevel;
 public class SimpleDocumentProcessor extends DocumentProcessor {
 
     /**
-     * Override this to process the Document inside a DocumentPut.
-     * @deprecated use process(DocumentPut)
-     *
-     * @param document the Document to process.
-     */
-    @Deprecated
-    // TODO: Remove on Vespa 7
-    public void process(Document document) {
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Ignored " + document);
-        }
-    }
-
-    /**
      * Override this to process DocumentPuts. If this method is not overridden, the implementation in this class
      * will ignore DocumentPuts (passing them through un-processed). If processing of this DocumentPut fails, the
      * implementation must throw a {@link RuntimeException}.
      *
      * @param put the DocumentPut to process.
      */
-    @SuppressWarnings("deprecation")
     public void process(DocumentPut put) {
-        process(put.getDocument());
+        if (log.isLoggable(LogLevel.DEBUG)) {
+            log.log(LogLevel.DEBUG, "Ignored " + put);
+        }
     }
 
     /**
