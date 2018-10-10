@@ -65,7 +65,7 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
     @Parameter(alias = "Bundle-Version", defaultValue = "${project.version}")
     private String bundleVersion = null;
 
-    // TODO Vespa 7: default should be ${project.groupId}.${project.artifactId}
+    // TODO: default should include groupId, but that will require a lot of changes both by us and users.
     @Parameter(alias = "Bundle-SymbolicName", defaultValue = "${project.artifactId}")
     private String bundleSymbolicName = null;
 
