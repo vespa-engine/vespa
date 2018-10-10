@@ -24,16 +24,6 @@ public abstract class CharacterUtils {
   public static CharacterUtils getInstance() {
     return JAVA_5;
   }
-  
-  /** 
-   * explicitly returns a version matching java 4 semantics 
-   * @deprecated Only for n-gram backwards compat
-   */
-  // TODO: Remove on Vespa 7
-  @Deprecated // OK
-  public static CharacterUtils getJava4Instance() {
-    return JAVA_4;
-  }
 
   /**
    * Returns the code point at the given index of the {@link CharSequence}.
