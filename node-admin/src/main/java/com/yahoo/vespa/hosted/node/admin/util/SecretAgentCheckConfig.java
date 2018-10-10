@@ -46,10 +46,9 @@ public class SecretAgentCheckConfig {
     }
 
     public void writeTo(Path yamasAgentDirectory) throws IOException {
-        if (! Files.exists(yamasAgentDirectory)) yamasAgentDirectory.toFile().mkdirs();
+        Files.createDirectories(yamasAgentDirectory);
         Path scheduleFilePath = yamasAgentDirectory.resolve(id + ".yaml");
         Files.write(scheduleFilePath, render().getBytes());
-        scheduleFilePath.toFile().setReadable(true, false); // Give everyone read access to the schedule file
     }
 
     public FileWriter getFileWriterTo(Path destinationPath) {
