@@ -286,6 +286,7 @@ TOKEN :
 | < SOURCE: "source" >
 | < TO: "to" >
 | < DIRECT: "direct" >
+| < FROMDISK: "from-disk" >
 | < ALWAYS: "always" >
 | < ONDEMAND: "on-demand" >
 | < NEVER: "never" >
@@ -1715,9 +1716,16 @@ Object documentSummary(Search search) :
 }
 {
     ( ( <DOCUMENTSUMMARY> |
-        <SUMMARY> { deployLogger.log(Level.WARNING, "Directive 'summary' is deprecated, use 'document-summary' instead."); } )
+        <SUMMARY> { deployLogger.log(Level.WARNING, "Directive 'summary' is deprecated, use 'document-summary' instead."); } ) // TODO: Remove on Vespa 7
       name = identifier() { search.addSummary(summary = new DocumentSummary(name)); }
-      lbrace() (documentSummaryItem(summary) (<NL>)*)* <RBRACE> )
+      lbrace()
+         (
+           <FROMDISK> { summary.setFromDisk(true); } |
+           documentSummaryItem(summary) |
+           <NL>
+         )*
+      <RBRACE>
+      )
     { return null; }
 }
 

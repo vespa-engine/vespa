@@ -98,7 +98,7 @@ public class ImplicitSummaries extends Processor {
         }
 
         // Explicits
-        for (SummaryField summaryField : field.getSummaryFields()) {
+        for (SummaryField summaryField : field.getSummaryFields().values()) {
             // Make sure we fetch from attribute here too
             Attribute attribute = field.getAttributes().get(fieldName);
             if (attribute != null && summaryField.getTransform() == SummaryTransform.NONE) {
