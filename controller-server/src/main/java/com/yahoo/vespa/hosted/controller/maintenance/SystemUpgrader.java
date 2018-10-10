@@ -31,8 +31,8 @@ public class SystemUpgrader extends InfrastructureUpgrader {
 
     @Override
     protected void upgrade(Version target, SystemApplication application, ZoneId zone) {
-        if (wantedVersion(zone, application, target).equals(target)) {
-            return;
+        if (!target.isAfter(wantedVersion(zone, application, target))) {
+            return; // Wanted version is already equal or higher than target
         }
         log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone));
         controller().applications().deploy(application, zone, target);

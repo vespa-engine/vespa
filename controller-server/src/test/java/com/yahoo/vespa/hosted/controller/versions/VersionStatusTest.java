@@ -57,16 +57,18 @@ public class VersionStatusTest {
     @Test
     public void testSystemVersionIsVersionOfOldestConfigServer() {
         ControllerTester tester = new ControllerTester();
-        Version oldest = new Version(5);
+        Version version0 = Version.fromString("6.1");
+        Version version1 = Version.fromString("6.5");
+        // Upgrade some config servers
         for (ZoneId zone : tester.zoneRegistry().zones().all().ids()) {
             for (Node node : tester.configServer().nodeRepository().list(zone, SystemApplication.configServer.id())) {
                 tester.configServer().nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(),
-                                                                                    node.owner(), oldest, node.wantedVersion()));
+                                                                                    node.owner(), version1, node.wantedVersion()));
                 break;
             }
         }
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
-        assertEquals(oldest, versionStatus.systemVersion().get().versionNumber());
+        assertEquals(version0, versionStatus.systemVersion().get().versionNumber());
     }
 
     @Test
@@ -94,6 +96,28 @@ public class VersionStatusTest {
     }
 
     @Test
+    public void testSystemVersionNeverShrinks() {
+        DeploymentTester tester = new DeploymentTester();
+
+        Version version0 = Version.fromString("6.2");
+        tester.upgradeSystem(version0);
+        assertEquals(version0, tester.controller().systemVersion());
+
+        // Downgrade one config server in each zone
+        Version ancientVersion = Version.fromString("5.1");
+        for (ZoneId zone : tester.controller().zoneRegistry().zones().all().ids()) {
+            for (Node node : tester.configServer().nodeRepository().list(zone, SystemApplication.configServer.id())) {
+                tester.configServer().nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(),
+                                                                                    node.owner(), ancientVersion, node.wantedVersion()));
+                break;
+            }
+        }
+
+        tester.computeVersionStatus();
+        assertEquals(version0, tester.controller().systemVersion());
+    }
+
+    @Test
     public void testVersionStatusAfterApplicationUpdates() {
         DeploymentTester tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -103,8 +127,8 @@ public class VersionStatusTest {
                 .region("us-east-3")
                 .build();
 
-        Version version1 = new Version("5.1");
-        Version version2 = new Version("5.2");
+        Version version1 = new Version("6.2");
+        Version version2 = new Version("6.3");
         tester.upgradeSystem(version1);
 
         // Setup applications
@@ -145,7 +169,7 @@ public class VersionStatusTest {
     public void testVersionConfidence() {
         DeploymentTester tester = new DeploymentTester();
 
-        Version version0 = new Version("5.0");
+        Version version0 = new Version("6.2");
         tester.upgradeSystem(version0);
 
         // Setup applications - all running on version0
@@ -173,7 +197,7 @@ public class VersionStatusTest {
                      Confidence.high, confidence(tester.controller(), version0));
 
         // New version is released
-        Version version1 = new Version("5.1");
+        Version version1 = new Version("6.3");
         tester.upgradeSystem(version1);
         tester.triggerUntilQuiescence();
 
@@ -185,7 +209,7 @@ public class VersionStatusTest {
                      Confidence.broken, confidence(tester.controller(), version1));
 
         // New version is released
-        Version version2 = new Version("5.2");
+        Version version2 = new Version("6.4");
         tester.upgradeSystem(version2);
         tester.triggerUntilQuiescence();
         assertEquals("Confidence defaults to low for version with no applications",
@@ -243,7 +267,7 @@ public class VersionStatusTest {
 
         // A new version is released, all canaries upgrade successfully, but enough "default" apps fail to mark version
         // as broken
-        Version version3 = new Version("5.3");
+        Version version3 = new Version("6.5");
         tester.upgradeSystem(version3);
         tester.triggerUntilQuiescence();
         tester.completeUpgrade(canary0, version3, "canary");
@@ -267,15 +291,15 @@ public class VersionStatusTest {
         // Test version order
         List<VespaVersion> versions = tester.controller().versionStatus().versions();
         assertEquals(3, versions.size());
-        assertEquals("5", versions.get(0).versionNumber().toString());
-        assertEquals("5.2", versions.get(1).versionNumber().toString());
-        assertEquals("5.3", versions.get(2).versionNumber().toString());
+        assertEquals("6.2", versions.get(0).versionNumber().toString());
+        assertEquals("6.4", versions.get(1).versionNumber().toString());
+        assertEquals("6.5", versions.get(2).versionNumber().toString());
     }
 
     @Test
     public void testConfidenceOverride() {
         DeploymentTester tester = new DeploymentTester();
-        Version version0 = new Version("5.0");
+        Version version0 = new Version("6.2");
         tester.upgradeSystem(version0);
 
         // Create and deploy application on current version
@@ -289,7 +313,7 @@ public class VersionStatusTest {
         assertEquals(Confidence.broken, confidence(tester.controller(), version0));
 
         // New version is released and application upgrades
-        Version version1 = new Version("5.1");
+        Version version1 = new Version("6.3");
         tester.upgradeSystem(version1);
         tester.completeUpgrade(app, version1, "canary");
         tester.computeVersionStatus();

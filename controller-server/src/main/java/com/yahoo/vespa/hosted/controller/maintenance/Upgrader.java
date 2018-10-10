@@ -49,7 +49,7 @@ public class Upgrader extends Maintainer {
         Optional<Version> defaultTarget = newestVersionWithConfidence(Confidence.normal);
         Optional<Version> conservativeTarget = newestVersionWithConfidence(Confidence.high);
 
-        // Cancel upgrades to broken targets (let other ongoing upgrades complete to avoid starvation
+        // Cancel upgrades to broken targets (let other ongoing upgrades complete to avoid starvation)
         for (VespaVersion version : controller().versionStatus().versions()) {
             if (version.confidence() == Confidence.broken)
                 cancelUpgradesOf(applications().without(UpgradePolicy.canary).upgradingTo(version.versionNumber()),

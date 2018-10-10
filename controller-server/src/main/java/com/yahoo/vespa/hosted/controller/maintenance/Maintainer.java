@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.curator.Lock;
@@ -30,26 +31,18 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     private final JobControl jobControl;
     private final ScheduledExecutorService service;
     private final String name;
-    private final Set<SystemName> systemNames;
+    private final Set<SystemName> permittedSystems;
 
     public Maintainer(Controller controller, Duration interval, JobControl jobControl) {
         this(controller, interval, jobControl, null, EnumSet.allOf(SystemName.class));
     }
 
-    public Maintainer(Controller controller, Duration interval, JobControl jobControl, String name) {
-        this(controller, interval, jobControl, name, EnumSet.allOf(SystemName.class));
-    }
-
-    public Maintainer(Controller controller, Duration interval, JobControl jobControl, Set<SystemName> systemNames) {
-        this(controller, interval, jobControl, null, systemNames);
-    }
-
-    public Maintainer(Controller controller, Duration interval, JobControl jobControl, String name, Set<SystemName> systemNames) {
+    public Maintainer(Controller controller, Duration interval, JobControl jobControl, String name, Set<SystemName> permittedSystems) {
         this.controller = controller;
         this.maintenanceInterval = interval;
         this.jobControl = jobControl;
         this.name = name;
-        this.systemNames = systemNames;
+        this.permittedSystems = ImmutableSet.copyOf(permittedSystems);
 
         service = new ScheduledThreadPoolExecutor(1);
         service.scheduleAtFixedRate(this, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
@@ -61,7 +54,10 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     @Override
     public void run() {
         try {
-            if (jobControl.isActive(name()) && systemNames.contains(controller.system())) {
+            if (!permittedSystems.contains(controller.system())) {
+                return;
+            }
+            if (jobControl.isActive(name())) {
                 try (Lock lock = jobControl.curator().lockMaintenanceJob(name())) {
                     maintain();
                 }
