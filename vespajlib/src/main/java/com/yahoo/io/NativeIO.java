@@ -76,7 +76,7 @@ public class NativeIO {
         try {
             dropFileFromCache(new FileInputStream(file).getFD());
         } catch (FileNotFoundException e) {
-            logger.warning("No point in dropping a non-existing file from the buffer cache: " + e.getMessage());
+            logger.fine("No point in dropping a non-existing file from the buffer cache: " + e.getMessage());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
