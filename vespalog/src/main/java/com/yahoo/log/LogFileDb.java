@@ -2,7 +2,8 @@
 package com.yahoo.log;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.StandardOpenOption.*;
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 
 import java.io.File;
 import java.io.OutputStream;
