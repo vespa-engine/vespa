@@ -1,23 +1,29 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.core.AccessLogConfig;
 import com.yahoo.io.NativeIO;
 import com.yahoo.log.LogFileDb;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.logging.StreamHandler;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPOutputStream;
 
 
 /**
@@ -31,6 +37,7 @@ import java.util.regex.Pattern;
  */
 public class LogFileHandler extends StreamHandler {
 
+    private final static Logger logger = Logger.getLogger(LogFileHandler.class.getName());
     /** True to use the sequence file name scheme, false (default) to use the date scheme */
     private final boolean useSequenceNameScheme;
     private final boolean compressOnRotation;
@@ -43,12 +50,13 @@ public class LogFileHandler extends StreamHandler {
     private String fileName;
     private String symlinkName = null;
     private ArrayBlockingQueue<LogRecord> logQueue = new ArrayBlockingQueue<>(100000);
-    LogRecord rotateCmd = new LogRecord(Level.SEVERE, "rotateNow");
+    private LogRecord rotateCmd = new LogRecord(Level.SEVERE, "rotateNow");
+    private ExecutorService executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("logfilehandler.compression"));
 
     static private class LogThread extends Thread {
         LogFileHandler logFileHandler;
         long lastFlush = 0;
-        public LogThread(LogFileHandler logFile) {
+        LogThread(LogFileHandler logFile) {
             super("Logger");
             setDaemon(true);
             logFileHandler = logFile;
@@ -90,46 +98,21 @@ public class LogFileHandler extends StreamHandler {
             }
         }
     }
-    LogThread logThread = null;
+    private final LogThread logThread;
 
-    public LogFileHandler() {
+    LogFileHandler() {
         this(AccessLogConfig.FileHandler.RotateScheme.Enum.DATE, false);
     }
 
-    public LogFileHandler(boolean compressOnRotation) {
+    LogFileHandler(boolean compressOnRotation) {
         this(AccessLogConfig.FileHandler.RotateScheme.Enum.DATE, compressOnRotation);
     }
 
-    public LogFileHandler(AccessLogConfig.FileHandler.RotateScheme.Enum rotateScheme) {
-        this(rotateScheme, false);
-    }
-
-    public LogFileHandler(AccessLogConfig.FileHandler.RotateScheme.Enum rotateScheme,
-                          boolean compressOnRotation)
+    LogFileHandler(AccessLogConfig.FileHandler.RotateScheme.Enum rotateScheme, boolean compressOnRotation)
     {
         super();
         this.useSequenceNameScheme = (rotateScheme == AccessLogConfig.FileHandler.RotateScheme.Enum.SEQUENCE);
         this.compressOnRotation = compressOnRotation;
-        init();
-    }
-
-    /**
-     * Constructs a log handler
-     *
-     * @param useSequenceNameScheme True to use the sequence file name scheme, false (default) to use the date scheme
-     */
-    public LogFileHandler(OutputStream out, Formatter formatter, boolean useSequenceNameScheme) {
-        this(out, formatter, useSequenceNameScheme, false);
-    }
-
-    public LogFileHandler(OutputStream out, Formatter formatter, boolean useSequenceNameScheme, boolean compressOnRotation) {
-        super(out, formatter);
-        this.useSequenceNameScheme = useSequenceNameScheme;
-        this.compressOnRotation = compressOnRotation;
-        init();
-    }
-
-    private void init() {
         logThread = new LogThread(this);
         logThread.start();
     }
@@ -167,7 +150,7 @@ public class LogFileHandler extends StreamHandler {
      *
      * @param pattern See LogFormatter for definition
      */
-    public void setFilePattern ( String pattern ) {
+    void setFilePattern ( String pattern ) {
         filePattern = pattern;
     }
 
@@ -177,7 +160,7 @@ public class LogFileHandler extends StreamHandler {
      * @param timesOfDay in millis, from midnight
      *
      */
-    public void setRotationTimes ( long[] timesOfDay ) {
+    void setRotationTimes ( long[] timesOfDay ) {
         rotationTimes = timesOfDay;
     }
 
@@ -185,7 +168,7 @@ public class LogFileHandler extends StreamHandler {
      *
      * @param prescription string form of times, in minutes
      */
-    public void setRotationTimes ( String prescription ) {
+    void setRotationTimes ( String prescription ) {
         setRotationTimes(calcTimesMinutes(prescription));
     }
 
@@ -195,7 +178,7 @@ public class LogFileHandler extends StreamHandler {
      * @param now the specified time; if zero, current time is used.
      * @return the next rotation time
      */
-    public long getNextRotationTime (long now) {
+    long getNextRotationTime (long now) {
         if (now <= 0) {
             now = System.currentTimeMillis();
         }
@@ -214,7 +197,17 @@ public class LogFileHandler extends StreamHandler {
         return next;
     }
 
-    private void checkAndCreateDir(String pathname) throws IOException {
+    void waitDrained() {
+        while(! logQueue.isEmpty()) {
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+            }
+        }
+        super.flush();
+    }
+
+    private void checkAndCreateDir(String pathname) {
       int lastSlash = pathname.lastIndexOf("/");
       if (lastSlash > -1) {
           String pathExcludingFilename = pathname.substring(0, lastSlash);
@@ -228,7 +221,7 @@ public class LogFileHandler extends StreamHandler {
     /**
      * Force file rotation now, independent of schedule.
      */
-    public void rotateNow () {
+    void rotateNow () {
         publish(rotateCmd);
     }
 
@@ -268,7 +261,7 @@ public class LogFileHandler extends StreamHandler {
             File oldFile = new File(oldFileName);
             if (oldFile.exists()) {
                 if (compressOnRotation) {
-                    triggerCompression(oldFile);
+                    executor.execute(() -> runCompression(oldFile));
                 } else {
                     NativeIO nativeIO = new NativeIO();
                     nativeIO.dropFileFromCache(oldFile);
@@ -277,27 +270,27 @@ public class LogFileHandler extends StreamHandler {
         }
     }
 
-    private void triggerCompression(File oldFile) throws InterruptedException {
+    private void runCompression(File oldFile) {
+        File gzippedFile = new File(oldFile.getPath() + ".gz");
         try {
-            String oldFileName = oldFile.getPath();
-            String gzippedFileName = oldFileName + ".gz";
-            Runtime r = Runtime.getRuntime();
-            StringBuilder cmd = new StringBuilder("gzip");
-            cmd.append(" < "). append(oldFileName).append(" > ").append(gzippedFileName);
-            Process p = r.exec(cmd.toString());
-            // Detonator pattern: Think of all the fun we can have if gzip isn't what we
-            // think it is, if it doesn't return, etc, etc
+            GZIPOutputStream compressor = new GZIPOutputStream(new FileOutputStream(gzippedFile), 0x100000);
+            FileInputStream inputStream = new FileInputStream(oldFile);
+            byte [] buffer = new byte[0x100000];
 
-            int retval = p.waitFor();
+            for (int read = inputStream.read(buffer); read > 0; read = inputStream.read(buffer)) {
+                compressor.write(buffer, 0, read);
+            }
+            inputStream.close();
+            compressor.finish();
+            compressor.flush();
+            compressor.close();
+
             NativeIO nativeIO = new NativeIO();
             nativeIO.dropFileFromCache(oldFile); // Drop from cache in case somebody else has a reference to it preventing from dying quickly.
-            if (retval == 0) {
-                oldFile.delete();
-                nativeIO.dropFileFromCache(new File(gzippedFileName));
-            }
-
+            oldFile.delete();
+            nativeIO.dropFileFromCache(gzippedFile);
         } catch (IOException e) {
-            // little we can do...
+            logger.warning("Got '" + e + "' while compressing '" + oldFile.getPath() + "'.");
         }
     }
 
@@ -306,14 +299,25 @@ public class LogFileHandler extends StreamHandler {
         if (symlinkName == null) return;
         File f = new File(fileName);
         File f2 = new File(f.getParent(), symlinkName);
+        String canonicalPath;
+        try {
+            canonicalPath = f.getCanonicalPath();
+        } catch (IOException e) {
+            logger.warning("Got '" + e + "' while doing f.getCanonicalPath() on file '" + f.getPath() + "'.");
+            return;
+        }
+        String [] cmd = new String[]{"/bin/ln", "-sf", canonicalPath, f2.getPath()};
         try {
             Runtime r = Runtime.getRuntime();
-            Process p = r.exec(new String[] { "/bin/ln", "-sf", f.getCanonicalPath(), f2.getPath() });
+            Process p = r.exec(cmd);
             // Detonator pattern: Think of all the fun we can have if ln isn't what we
             // think it is, if it doesn't return, etc, etc
-            p.waitFor();
+            int retval = p.waitFor();
+            if (retval != 0) {
+                logger.warning("Command '" + Arrays.toString(cmd) + "' + failed with exitcode=" + retval);
+            }
         } catch (IOException e) {
-            // little we can do...
+            logger.warning("Got '" + e + "' while doing'" + Arrays.toString(cmd) + "'.");
         }
     }
 
@@ -340,24 +344,10 @@ public class LogFileHandler extends StreamHandler {
     }
 
     /**
-     * @return last time file rotation occurred for this output file
-     */
-    public long getLastRotationTime () {
-        return lastRotationTime;
-    }
-
-    /**
-     * @return number of records written to this file since last rotation
-     */
-    public long getNumberRecords () {
-        return numberOfRecords;
-    }
-
-    /**
      * Calculate rotation times array, given times in minutes, as "0 60 ..."
      *
      */
-    public static long[] calcTimesMinutes(String times) {
+    private static long[] calcTimesMinutes(String times) {
         ArrayList<Long> list = new ArrayList<>(50);
         int i = 0;
         boolean etc = false;
@@ -377,7 +367,7 @@ public class LogFileHandler extends StreamHandler {
         int size = list.size();
         long[] longtimes = new long[size];
         for (i = 0; i<size; i++) {
-            longtimes[i] = list.get(i).longValue()   // pick up value in minutes past midnight
+            longtimes[i] = list.get(i)   // pick up value in minutes past midnight
                            * 60000;                          // and multiply to get millis
         }
 
@@ -406,11 +396,11 @@ public class LogFileHandler extends StreamHandler {
     // Support staff :-)
     private static final long lengthOfDayMillis = 24*60*60*1000;  // ? is this close enough ?
 
-    private static final long timeOfDayMillis ( long time ) {
+    private static long timeOfDayMillis ( long time ) {
         return time % lengthOfDayMillis;
     }
 
-    public void setSymlinkName(String symlinkName) {
+    void setSymlinkName(String symlinkName) {
         this.symlinkName = symlinkName;
     }
 
@@ -422,6 +412,8 @@ public class LogFileHandler extends StreamHandler {
         logThread.interrupt();
         try {
             logThread.join();
+            executor.shutdown();
+            executor.awaitTermination(600, TimeUnit.SECONDS);
         }
         catch (InterruptedException e) {
         }

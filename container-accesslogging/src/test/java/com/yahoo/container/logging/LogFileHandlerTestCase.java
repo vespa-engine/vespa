@@ -1,11 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.container.logging.test;
+package com.yahoo.container.logging;
 
-import com.yahoo.container.logging.LogFileHandler;
 import com.yahoo.io.IOUtils;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -13,8 +15,11 @@ import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
+import java.util.zip.GZIPInputStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:travisb@yahoo-inc.com">Bob Travis</a>
@@ -167,6 +172,42 @@ public class LogFileHandlerTestCase {
         deleteOnExit(f1);
         if (f2 != null)
             deleteOnExit(f2);
+    }
+
+    @Test
+    public void testcompression() throws InterruptedException, IOException {
+        IOUtils.recursiveDeleteDir(new File("./testcompression"));
+        LogFileHandler h = new LogFileHandler(true);
+        h.setFilePattern("./testcompression/logfilehandlertest.%Y%m%d%H%M%S%s");
+        h.setFormatter(new Formatter() {
+            public String format(LogRecord r) {
+                DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS");
+                String timeStamp = df.format(new Date(r.getMillis()));
+                return ("["+timeStamp+"]" + " " + formatMessage(r) + "\n");
+            }
+        } );
+        for (int i=0; i < 10000; i++) {
+            LogRecord lr = new LogRecord(Level.INFO, "test");
+            h.publish(lr);
+        }
+        h.waitDrained();
+        String f1 = h.getFileName();
+        assertTrue(f1.startsWith("./testcompression/logfilehandlertest."));
+        File uncompressed = new File(f1);
+        File compressed = new File(f1 + ".gz");
+        assertTrue(uncompressed.exists());
+        assertFalse(compressed.exists());
+        String content = IOUtils.readFile(uncompressed);
+        assertEquals(310000, content.length());
+        h.rotateNow();
+        while (uncompressed.exists()) {
+            Thread.sleep(10);
+        }
+        assertTrue(compressed.exists());
+        String unzipped = IOUtils.readAll(new InputStreamReader(new GZIPInputStream(new FileInputStream(compressed))));
+        assertEquals(content, unzipped);
+
+        IOUtils.recursiveDeleteDir(new File("./testcompression"));
     }
 
 }
