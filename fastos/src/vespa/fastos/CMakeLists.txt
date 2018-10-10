@@ -30,14 +30,5 @@ vespa_add_library(fastos
     ${CMAKE_DL_LIBS}
 )
   
-vespa_add_library(fastos_static STATIC
-    SOURCES
-    $<TARGET_OBJECTS:fastos_objects>
-    INSTALL lib64
-    DEPENDS
-    ${CMAKE_DL_LIBS}
-)
-  
 find_package(Threads REQUIRED)
 target_link_libraries(fastos PUBLIC ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(fastos_static PUBLIC ${CMAKE_THREAD_LIBS_INIT})
