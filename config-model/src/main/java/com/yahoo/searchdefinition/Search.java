@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.document.Field;
+import com.yahoo.searchdefinition.derived.SummaryClass;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableImportedSDField;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
@@ -46,12 +47,10 @@ public class Search implements Serializable, ImmutableSearch {
     private static final Logger log = Logger.getLogger(Search.class.getName());
     private static final String SD_DOC_FIELD_NAME = "sddocname";
     private static final List<String> RESERVED_NAMES = Arrays.asList(
-            "index", "index_url", "summary", "attribute", "select_input", "host", "documentid",
+            "index", "index_url", "summary", "attribute", "select_input", "host", SummaryClass.DOCUMENT_ID_FIELD,
             "position", "split_foreach", "tokenize", "if", "else", "switch", "case", SD_DOC_FIELD_NAME, "relevancy");
 
-    /**
-     * @return True if the given field name is a reserved name.
-     */
+    /** Returns true if the given field name is a reserved name */
     public static boolean isReservedName(String name) {
         return RESERVED_NAMES.contains(name);
     }
@@ -99,6 +98,7 @@ public class Search implements Serializable, ImmutableSearch {
 
     /**
      * Creates a proper search definition
+     *
      * @param name of the the searchdefinition
      * @param applicationPackage the application containing this
      */

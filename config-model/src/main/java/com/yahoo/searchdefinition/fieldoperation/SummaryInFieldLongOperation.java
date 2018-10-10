@@ -11,9 +11,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class SummaryInFieldLongOperation extends SummaryInFieldOperation {
+
     private DataType type;
     private Boolean bold;
     private Set<String> destinations = new java.util.LinkedHashSet<>();

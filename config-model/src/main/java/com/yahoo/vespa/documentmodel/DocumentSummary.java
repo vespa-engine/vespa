@@ -15,6 +15,8 @@ import java.util.List;
  */
 public class DocumentSummary extends FieldView {
 
+    private boolean fromDisk = false;
+
     /**
      * Creates a DocumentSummary with the given name.
      * 
@@ -23,6 +25,11 @@ public class DocumentSummary extends FieldView {
     public DocumentSummary(String name) {
         super(name);
     }
+
+    public void setFromDisk(boolean fromDisk) { this.fromDisk = fromDisk; }
+
+    /** Returns whether the user has noted explicitly that this summary accesses disk */
+    public boolean isFromDisk() { return fromDisk; }
 
     /**
      * The model is constrained to ensure that summary fields of the same name

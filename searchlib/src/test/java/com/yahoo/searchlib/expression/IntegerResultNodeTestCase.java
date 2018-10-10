@@ -5,6 +5,7 @@ import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.ObjectDumper;
 import org.junit.Test;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -107,10 +108,10 @@ public class IntegerResultNodeTestCase extends ResultNodeTest {
     }
 
     @Test
-    public void testSerialization() throws IllegalAccessException, InstantiationException {
+    public void testSerialization() throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         for (NumericResultNode node : getResultNodes(8)) {
-            assertThat(node.getInteger(), is(8l));
-            NumericResultNode out = node.getClass().newInstance();
+            assertThat(node.getInteger(), is(8L));
+            NumericResultNode out = node.getClass().getConstructor().newInstance();
             assertCorrectSerialization(node, out);
             assertThat(out.getInteger(), is(node.getInteger()));
         }

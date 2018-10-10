@@ -78,10 +78,10 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     private List<String> queryCommands=new java.util.ArrayList<>(0);
 
     /** Summary fields defined in this field */
-    private Map<String,SummaryField> summaryFields = new java.util.LinkedHashMap<>(0);
+    private Map<String, SummaryField> summaryFields = new java.util.LinkedHashMap<>(0);
 
     /** The explicitly index settings on this field */
-    private Map<String, Index> indices=new java.util.LinkedHashMap<>();
+    private Map<String, Index> indices = new java.util.LinkedHashMap<>();
 
     /** True if body or header is set explicitly for this field */
     private boolean headerOrBodyDefined = false;
@@ -254,7 +254,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
              * to the main summary-field for the struct field.
              */
             for (SDField structField : getStructFields()) {
-                for (SummaryField sumF : structField.getSummaryFields()) {
+                for (SummaryField sumF : structField.getSummaryFields().values()) {
                     for (String dest : sumF.getDestinations()) {
                         summaryField.addDestination(dest);
                     }
@@ -672,15 +672,17 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         this.stemming=stemming;
     }
 
-    /**
-     * List of static summary fields
-     * @return list of static summary fields
-     */
-    public Collection<SummaryField> getSummaryFields() { return summaryFields.values(); }
+    /** Returns an unmodifiable map of the summary fields defined in this */
+    @Override
+    public Map<String, SummaryField> getSummaryFields() {
+        return Collections.unmodifiableMap(summaryFields);
+    }
 
-    /**
-     * Add summary field
-     */
+    public void removeSummaryFields() {
+        summaryFields.clear();
+    }
+
+    /** Adds a summary field */
     public void addSummaryField(SummaryField summaryField) {
         summaryFields.put(summaryField.getName(),summaryField);
     }

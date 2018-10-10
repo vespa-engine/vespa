@@ -7,9 +7,10 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 import java.util.Set;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public abstract class SummaryInFieldOperation implements FieldOperation {
+
     protected String name;
     protected SummaryTransform transform;
     protected Set<SummaryField.Source> sources = new java.util.LinkedHashSet<>();
@@ -41,4 +42,5 @@ public abstract class SummaryInFieldOperation implements FieldOperation {
     public void addSource(SummaryField.Source source) {
         sources.add(source);
     }
+
 }

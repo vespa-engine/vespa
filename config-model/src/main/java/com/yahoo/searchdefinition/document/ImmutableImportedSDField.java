@@ -5,6 +5,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 
@@ -147,6 +148,11 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     @Override
     public Ranking getRanking() {
         throw createUnsupportedException("ranking");
+    }
+
+    @Override
+    public Map<String, SummaryField> getSummaryFields() {
+        throw createUnsupportedException("summary fields");
     }
 
     @Override

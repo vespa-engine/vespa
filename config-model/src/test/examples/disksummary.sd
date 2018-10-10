@@ -1,0 +1,14 @@
+search disksummary {
+
+  document disksummary {
+
+      field inmemory type string {
+          indexing: attribute | summary
+      }
+      field ondisk type string {
+          indexing: index | summary
+      }
+
+  }
+
+}
