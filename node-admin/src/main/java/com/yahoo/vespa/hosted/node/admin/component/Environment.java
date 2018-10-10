@@ -147,8 +147,8 @@ public class Environment {
      */
     public Path pathInNodeAdminToNodeCleanup(ContainerName containerName) {
         return pathResolver.getApplicationStoragePathForNodeAdmin()
-                .resolve(APPLICATION_STORAGE_CLEANUP_PATH_PREFIX + containerName.asString() +
-                        "_" + filenameFormatter.format(Instant.now()));
+                .resolve("archive")
+                .resolve(containerName.asString() + "_" + filenameFormatter.format(Instant.now()));
     }
 
     /**

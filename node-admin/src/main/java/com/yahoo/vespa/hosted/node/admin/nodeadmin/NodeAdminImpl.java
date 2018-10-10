@@ -42,7 +42,6 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
-    private final StorageMaintainer storageMaintainer;
     private final Runnable aclMaintainer;
 
     private final Clock clock;
@@ -61,9 +60,16 @@ public class NodeAdminImpl implements NodeAdmin {
                          Runnable aclMaintainer,
                          MetricReceiverWrapper metricReceiver,
                          Clock clock) {
+        this(dockerOperations, nodeAgentFactory, aclMaintainer, metricReceiver, clock);
+    }
+
+    public NodeAdminImpl(DockerOperations dockerOperations,
+                         Function<String, NodeAgent> nodeAgentFactory,
+                         Runnable aclMaintainer,
+                         MetricReceiverWrapper metricReceiver,
+                         Clock clock) {
         this.dockerOperations = dockerOperations;
         this.nodeAgentFactory = nodeAgentFactory;
-        this.storageMaintainer = storageMaintainer;
         this.aclMaintainer = aclMaintainer;
 
         this.clock = clock;
@@ -82,7 +88,6 @@ public class NodeAdminImpl implements NodeAdmin {
                 .map(NodeSpec::getHostname)
                 .collect(Collectors.toSet());
 
-        storageMaintainer.cleanNodeAdmin();
         synchronizeNodesToNodeAgents(hostnamesOfContainersToRun);
 
         updateNodeAgentMetrics();
