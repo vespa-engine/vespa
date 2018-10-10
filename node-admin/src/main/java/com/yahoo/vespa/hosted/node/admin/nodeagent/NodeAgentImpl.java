@@ -264,7 +264,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void startContainer(NodeSpec node) {
-        ContainerData containerData = createContainerData(environment, node);
+        ContainerData containerData = createContainerData(context, node);
         dockerOperations.createContainer(context.containerName(), node, containerData);
         dockerOperations.startContainer(context.containerName());
         lastCpuMetric = new CpuUsageReporter();
@@ -749,7 +749,7 @@ public class NodeAgentImpl implements NodeAgent {
         orchestrator.suspend(context.hostname().value());
     }
 
-    protected ContainerData createContainerData(Environment environment, NodeSpec node) {
+    protected ContainerData createContainerData(NodeAgentContext context, NodeSpec node) {
         return (pathInContainer, data) -> {
             throw new UnsupportedOperationException("addFile not implemented");
         };
