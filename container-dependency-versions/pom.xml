@@ -463,7 +463,7 @@
         <bouncycastle.version>1.58</bouncycastle.version>
         <felix.version>6.0.1</felix.version>
         <findbugs.version>1.3.9</findbugs.version>
-        <guava.version>18.0</guava.version>
+        <guava.version>20.0</guava.version>
         <guice.version>3.0</guice.version>
         <jaxb.version>2.3.0</jaxb.version>
         <jetty.version>9.4.14.v20181114</jetty.version>
