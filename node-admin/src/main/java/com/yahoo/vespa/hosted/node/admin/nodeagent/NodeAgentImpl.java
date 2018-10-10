@@ -690,11 +690,6 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     @Override
-    public String getHostname() {
-        return hostname;
-    }
-
-    @Override
     public boolean isDownloadingImage() {
         return imageBeingDownloaded != null;
     }
