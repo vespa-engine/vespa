@@ -227,8 +227,8 @@ public class NodeAgentImpl implements NodeAgent {
     void resumeNodeIfNeeded(NodeSpec node) {
         if (!hasResumedNode) {
             if (!currentFilebeatRestarter.isPresent()) {
-                storageMaintainer.writeMetricsConfig(context.containerName(), node);
-                storageMaintainer.writeFilebeatConfig(context.containerName(), node);
+                storageMaintainer.writeMetricsConfig(context, node);
+                storageMaintainer.writeFilebeatConfig(context, node);
                 currentFilebeatRestarter = Optional.of(filebeatRestarter.scheduleWithFixedDelay(
                         () -> serviceRestarter.accept("filebeat"), 1, 1, TimeUnit.DAYS));
             }
@@ -475,7 +475,7 @@ public class NodeAgentImpl implements NodeAgent {
             // Every time the node spec changes, we should clear the metrics for this container as the dimensions
             // will change and we will be reporting duplicate metrics.
             if (container.map(c -> c.state.isRunning()).orElse(false)) {
-                storageMaintainer.writeMetricsConfig(context.containerName(), node);
+                storageMaintainer.writeMetricsConfig(context, node);
             }
 
             context.log(logger, LogLevel.DEBUG, "Loading new node spec: " + node.toString());
@@ -491,12 +491,12 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(node);
                 break;
             case active:
-                storageMaintainer.handleCoreDumpsForContainer(context.containerName(), node);
+                storageMaintainer.handleCoreDumpsForContainer(context, node);
 
-                storageMaintainer.getDiskUsageFor(context.containerName())
+                storageMaintainer.getDiskUsageFor(context)
                         .map(diskUsage -> (double) diskUsage / BYTES_IN_GB / node.getMinDiskAvailableGb())
                         .filter(diskUtil -> diskUtil >= 0.8)
-                        .ifPresent(diskUtil -> storageMaintainer.removeOldFilesFromNode(context.containerName()));
+                        .ifPresent(diskUtil -> storageMaintainer.removeOldFilesFromNode(context));
 
                 scheduleDownLoadIfNeeded(node);
                 if (isDownloadingImage()) {
@@ -544,7 +544,7 @@ public class NodeAgentImpl implements NodeAgent {
                 removeContainerIfNeededUpdateContainerState(node, container);
                 context.log(logger, "State is " + node.getState() + ", will delete application storage and mark node as ready");
                 athenzCredentialsMaintainer.clearCredentials();
-                storageMaintainer.cleanupNodeStorage(context.containerName(), node);
+                storageMaintainer.archiveNodeStorage(context);
                 updateNodeRepoWithCurrentAttributes(node);
                 nodeRepository.setNodeState(context.hostname().value(), Node.State.ready);
                 expectNodeNotInNodeRepo = true;
@@ -621,7 +621,7 @@ public class NodeAgentImpl implements NodeAgent {
         final long memoryTotalBytesUsage = ((Number) stats.getMemoryStats().get("usage")).longValue();
         final long memoryTotalBytesCache = ((Number) ((Map) stats.getMemoryStats().get("stats")).get("cache")).longValue();
         final long diskTotalBytes = (long) (node.getMinDiskAvailableGb() * BYTES_IN_GB);
-        final Optional<Long> diskTotalBytesUsed = storageMaintainer.getDiskUsageFor(context.containerName());
+        final Optional<Long> diskTotalBytesUsed = storageMaintainer.getDiskUsageFor(context);
 
         lastCpuMetric.updateCpuDeltas(cpuSystemTotalTime, cpuContainerTotalTime, cpuContainerKernelTime);
 
