@@ -19,16 +19,46 @@ import static org.junit.Assert.assertTrue;
 public class SummaryTestCase {
 
     @Test
-    public void testMemorySummary() throws IOException, ParseException {
+    public void testMemorySummary() throws ParseException {
+        String sd =
+                "search memorysummary {\n" +
+                "\n" +
+                "  document memorysummary {\n" +
+                "\n" +
+                "      field inmemory type string {\n" +
+                "          indexing: attribute | summary\n" +
+                "      }\n" +
+                "      field ondisk type string {\n" +
+                "          indexing: index # no summary, so ignored\n" +
+                "      }\n" +
+                "\n" +
+                "  }\n" +
+                "\n" +
+                "}";
         DeployLoggerStub logger = new DeployLoggerStub();
-        SearchBuilder.createFromFile("src/test/examples/memorysummary.sd", logger);
+        SearchBuilder.createFromString(sd, logger);
         assertTrue(logger.entries.isEmpty());
     }
 
     @Test
-    public void testDiskSummary() throws IOException, ParseException {
+    public void testDiskSummary() throws ParseException {
+        String sd =
+                "search disksummary {\n" +
+                "\n" +
+                "  document disksummary {\n" +
+                "\n" +
+                "      field inmemory type string {\n" +
+                "          indexing: attribute | summary\n" +
+                "      }\n" +
+                "      field ondisk type string {\n" +
+                "          indexing: index | summary\n" +
+                "      }\n" +
+                "\n" +
+                "  }\n" +
+                "\n" +
+                "}";
         DeployLoggerStub logger = new DeployLoggerStub();
-        SearchBuilder.createFromFile("src/test/examples/disksummary.sd", logger);
+        SearchBuilder.createFromString(sd, logger);
         assertEquals(1, logger.entries.size());
         assertEquals(Level.FINE, logger.entries.get(0).level);
         assertEquals("summary field 'ondisk' in document summary 'default' references source field 'ondisk', " +
@@ -38,9 +68,28 @@ public class SummaryTestCase {
     }
 
     @Test
-    public void testDiskSummaryExplicit() throws IOException, ParseException {
+    public void testDiskSummaryExplicit() throws ParseException {
+        String sd =
+                "search disksummary {\n" +
+                "\n" +
+                "  document disksummary {\n" +
+                "\n" +
+                "      field inmemory type string {\n" +
+                "          indexing: attribute | summary\n" +
+                "      }\n" +
+                "      field ondisk type string {\n" +
+                "          indexing: index | summary\n" +
+                "      }\n" +
+                "\n" +
+                "  }\n" +
+                "\n" +
+                "  document-summary default {\n" +
+                "      from-disk\n" +
+                "  }\n" +
+                "\n" +
+                "}";
         DeployLoggerStub logger = new DeployLoggerStub();
-        SearchBuilder.createFromFile("src/test/examples/disksummaryexplicit.sd", logger);
+        SearchBuilder.createFromString(sd, logger);
         assertTrue(logger.entries.isEmpty());
     }
 
