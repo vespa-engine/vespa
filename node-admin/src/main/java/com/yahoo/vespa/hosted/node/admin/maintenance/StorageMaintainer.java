@@ -178,7 +178,7 @@ public class StorageMaintainer {
     }
 
     public Optional<Long> getDiskUsageFor(NodeAgentContext context) {
-        Path containerDir = context.pathOnHostFromPathInNode("/home");
+        Path containerDir = context.pathOnHostFromPathInNode("/");
         try {
             return Optional.of(getDiskUsedInBytes(containerDir));
         } catch (Throwable e) {
