@@ -133,12 +133,12 @@ public class CommandLineOptions {
 
         options.addOption(Option.builder("j")
                 .hasArg(false)
-                .desc("JSON output")
+                .desc("JSON output (default format)")
                 .longOpt(JSONOUTPUT_OPTION).build());
 
         options.addOption(Option.builder("x")
                 .hasArg(false)
-                .desc("XML output (default format)")
+                .desc("XML output")
                 .longOpt(XMLOUTPUT_OPTION).build());
 
         return options;
@@ -226,7 +226,7 @@ public class CommandLineOptions {
                     .setTraceLevel(trace)
                     .setPriority(priority)
                     .setTimeout(timeout)
-                    .setJsonOutput((!jsonOutput && !xmlOutput) ? false : jsonOutput) // TODO Vespa 7 Change default to JSON
+                    .setJsonOutput(!xmlOutput)
                     .build();
         } catch (ParseException pe) {
             throw new IllegalArgumentException(pe.getMessage());
