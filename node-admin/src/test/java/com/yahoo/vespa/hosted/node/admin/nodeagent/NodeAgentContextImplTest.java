@@ -58,9 +58,9 @@ public class NodeAgentContextImplTest {
 
     public static NodeAgentContext nodeAgentFromHostname(FileSystem fileSystem, String hostname) {
         final Path vespaHomeInContainer = Paths.get("/opt/vespa");
-        final Path containerStoragePath = Paths.get("/home/docker");
+        final Path containerStoragePath = fileSystem.getPath("/home/docker");
 
-        return new NodeAgentContextImpl(fileSystem, hostname, NodeType.tenant, new AthenzService("domain", "service"),
+        return new NodeAgentContextImpl(hostname, NodeType.tenant, new AthenzService("domain", "service"),
                 containerStoragePath, vespaHomeInContainer);
     }
 }

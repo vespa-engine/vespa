@@ -5,7 +5,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 
-import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -18,7 +17,6 @@ import java.util.logging.Logger;
 public class NodeAgentContextImpl implements NodeAgentContext {
     private static final Path ROOT = Paths.get("/");
 
-    private final FileSystem fileSystem;
     private final String logPrefix;
     private final ContainerName containerName;
     private final HostName hostName;
@@ -27,9 +25,8 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final Path pathToNodeRootOnHost;
     private final Path pathToVespaHome;
 
-    public NodeAgentContextImpl(FileSystem fileSystem, String hostname, NodeType nodeType, AthenzService identity,
+    public NodeAgentContextImpl(String hostname, NodeType nodeType, AthenzService identity,
                                 Path pathToContainerStorage, Path pathToVespaHome) {
-        this.fileSystem = Objects.requireNonNull(fileSystem);
         this.hostName = HostName.from(Objects.requireNonNull(hostname));
         this.containerName = ContainerName.fromHostname(hostname);
         this.nodeType = Objects.requireNonNull(nodeType);
@@ -64,7 +61,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         if (! pathInNode.isAbsolute())
             throw new IllegalArgumentException("Expected an absolute path in container, got: " + pathInNode);
 
-        return fileSystem.getPath(pathToNodeRootOnHost.resolve(ROOT.relativize(pathInNode)).toString());
+        return pathToNodeRootOnHost.resolve(ROOT.relativize(pathInNode).toString());
     }
 
     @Override
