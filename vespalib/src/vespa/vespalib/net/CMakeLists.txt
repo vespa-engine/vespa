@@ -11,5 +11,6 @@ vespa_add_library(vespalib_vespalib_net OBJECT
     socket_handle.cpp
     socket_options.cpp
     socket_spec.cpp
+    sync_crypto_socket.cpp
     DEPENDS
 )

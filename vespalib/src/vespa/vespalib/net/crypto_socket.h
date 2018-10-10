@@ -13,9 +13,10 @@ namespace vespalib {
  * buffers that may mask io events and pending work. The interface is
  * simplified by assuming there will be no mid-stream re-negotiation
  * (no read/write cross-dependencies). Handshaking is explicit and
- * up-front. This interface is initially designed for persistent
- * transport connections where closing the connection has no
- * application-level semantics.
+ * up-front. Note that in order to ensure the correct behaviour of the
+ * SyncCryptoSocket wrapper, the read function must not call a
+ * low-level function that might produce the EWOULDBLOCK/EAGAIN
+ * 'error' after any application-level data has been obtained.
  **/
 struct CryptoSocket {
     using UP = std::unique_ptr<CryptoSocket>;

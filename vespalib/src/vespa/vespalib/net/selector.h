@@ -108,4 +108,31 @@ public:
 
 //-----------------------------------------------------------------------------
 
+/**
+ * Selector used to wait for events on a single file
+ * descriptor. Useful for testing or sync wrappers. Note: do not use
+ * for performance-critical code.
+ **/
+class SingleFdSelector
+{
+private:
+    int _fd;
+    Selector<int> _selector;
+
+public:
+    SingleFdSelector(int fd);
+    ~SingleFdSelector();
+
+    // returns true when readable or false on wakeup
+    bool wait_readable();
+
+    // returns true when writable or false on wakeup
+    bool wait_writable();
+
+    // make wait_readable/wait_writable return false immediately
+    void wakeup();
+};
+
+//-----------------------------------------------------------------------------
+
 } // namespace vespalib

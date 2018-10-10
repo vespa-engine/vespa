@@ -130,4 +130,10 @@ TEST("require that buffer can be compacted") {
     EXPECT_EQUAL(buf.reserve(0).size, 10u);
 }
 
+TEST("require that a completely empty buffer can be created") {
+    SmartBuffer buf(0);
+    EXPECT_EQUAL(buf.capacity(), 0u);
+    EXPECT_TRUE(buf.obtain().data == nullptr);
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
