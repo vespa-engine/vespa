@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.derived.SummaryClass;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -13,7 +14,6 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  * Verifies that the source fields actually refers to a valid field.
  *
  * @author baldersheim
- *
  */
 public class SummaryFieldsMustHaveValidSource extends Processor {
 
@@ -51,7 +51,7 @@ public class SummaryFieldsMustHaveValidSource extends Processor {
         return  isDocumentField(source) ||
                 (isNotInThisSummaryClass(summary, source) && isSummaryField(source)) ||
                 (isInThisSummaryClass(summary, source) && !source.equals(summaryField.getName())) ||
-                ("documentid".equals(source));
+                (SummaryClass.DOCUMENT_ID_FIELD.equals(source));
     }
 
     private void verifySource(String source, SummaryField summaryField, DocumentSummary summary) {
