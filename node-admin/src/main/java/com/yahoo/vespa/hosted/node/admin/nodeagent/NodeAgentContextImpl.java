@@ -28,13 +28,13 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final Path pathToVespaHome;
 
     public NodeAgentContextImpl(FileSystem fileSystem, String hostname, NodeType nodeType, AthenzService identity,
-                                Path pathToNodeRootOnHost, Path pathToVespaHome) {
+                                Path pathToContainerStorage, Path pathToVespaHome) {
         this.fileSystem = Objects.requireNonNull(fileSystem);
         this.hostName = HostName.from(Objects.requireNonNull(hostname));
         this.containerName = ContainerName.fromHostname(hostname);
         this.nodeType = Objects.requireNonNull(nodeType);
         this.identity = Objects.requireNonNull(identity);
-        this.pathToNodeRootOnHost = Objects.requireNonNull(pathToNodeRootOnHost);
+        this.pathToNodeRootOnHost = Objects.requireNonNull(pathToContainerStorage).resolve(containerName.asString());
         this.pathToVespaHome = Objects.requireNonNull(pathToVespaHome);
         this.logPrefix = containerName.asString() + ": ";
     }

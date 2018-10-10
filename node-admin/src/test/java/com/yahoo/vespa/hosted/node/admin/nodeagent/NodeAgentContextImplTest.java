@@ -2,7 +2,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
@@ -59,9 +58,9 @@ public class NodeAgentContextImplTest {
 
     public static NodeAgentContext nodeAgentFromHostname(FileSystem fileSystem, String hostname) {
         final Path vespaHomeInContainer = Paths.get("/opt/vespa");
-        Path pathOnHostToContainerRoot = Paths.get("/home/docker").resolve(ContainerName.fromHostname(hostname).asString());
+        final Path containerStoragePath = Paths.get("/home/docker");
 
         return new NodeAgentContextImpl(fileSystem, hostname, NodeType.tenant, new AthenzService("domain", "service"),
-                pathOnHostToContainerRoot, vespaHomeInContainer);
+                containerStoragePath, vespaHomeInContainer);
     }
 }
