@@ -322,6 +322,7 @@ public class DockerOperationsImpl implements DockerOperations {
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/jdisc_container"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/jdisc_core"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/maven"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/mediasearch"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/run"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/scoreboards"), true);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/service"), false);
