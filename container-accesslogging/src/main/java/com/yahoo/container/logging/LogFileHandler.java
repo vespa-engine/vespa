@@ -1,17 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.logging;
 
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.core.AccessLogConfig;
 import com.yahoo.io.NativeIO;
 import com.yahoo.log.LogFileDb;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -19,6 +23,7 @@ import java.util.logging.Logger;
 import java.util.logging.StreamHandler;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPOutputStream;
 
 
 /**
@@ -46,6 +51,7 @@ public class LogFileHandler extends StreamHandler {
     private String symlinkName = null;
     private ArrayBlockingQueue<LogRecord> logQueue = new ArrayBlockingQueue<>(100000);
     private LogRecord rotateCmd = new LogRecord(Level.SEVERE, "rotateNow");
+    private Executor executor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("logfilehandler.compression"));
 
     static private class LogThread extends Thread {
         LogFileHandler logFileHandler;
@@ -255,7 +261,7 @@ public class LogFileHandler extends StreamHandler {
             File oldFile = new File(oldFileName);
             if (oldFile.exists()) {
                 if (compressOnRotation) {
-                    triggerCompression(oldFile);
+                    executor.execute(() -> runCompression(oldFile));
                 } else {
                     NativeIO nativeIO = new NativeIO();
                     nativeIO.dropFileFromCache(oldFile);
@@ -264,28 +270,27 @@ public class LogFileHandler extends StreamHandler {
         }
     }
 
-    private void triggerCompression(File oldFile) throws InterruptedException {
-        String oldFileName = oldFile.getPath();
-        String gzippedFileName = oldFileName + ".gz";
-        StringBuilder cmd = new StringBuilder("gzip");
-        cmd.append(" < "). append(oldFileName).append(" > ").append(gzippedFileName);
-        Runtime r = Runtime.getRuntime();
+    private void runCompression(File oldFile) {
+        File gzippedFile = new File(oldFile.getPath() + ".gz");
         try {
-            Process p = r.exec(cmd.toString());
-            // Detonator pattern: Think of all the fun we can have if gzip isn't what we
-            // think it is, if it doesn't return, etc, etc
+            GZIPOutputStream compressor = new GZIPOutputStream(new FileOutputStream(gzippedFile), 0x100000);
+            FileInputStream inputStream = new FileInputStream(oldFile);
+            byte [] buffer = new byte[0x100000];
 
-            int retval = p.waitFor();
+            for (int read = inputStream.read(buffer); read > 0; read = inputStream.read(buffer)) {
+                compressor.write(buffer, 0, read);
+            }
+            inputStream.close();
+            compressor.finish();
+            compressor.flush();
+            compressor.close();
+
             NativeIO nativeIO = new NativeIO();
             nativeIO.dropFileFromCache(oldFile); // Drop from cache in case somebody else has a reference to it preventing from dying quickly.
-            if (retval == 0) {
-                oldFile.delete();
-                nativeIO.dropFileFromCache(new File(gzippedFileName));
-            } else {
-                logger.warning("Command '" + cmd.toString() + "' + failed with exitcode=" + retval);
-            }
+            oldFile.delete();
+            nativeIO.dropFileFromCache(gzippedFile);
         } catch (IOException e) {
-            logger.warning("Got '" + e + "' while doing'" + cmd + "'.");
+            logger.warning("Got '" + e + "' while compressing '" + oldFile.getPath() + "'.");
         }
     }
 
@@ -407,6 +412,7 @@ public class LogFileHandler extends StreamHandler {
         logThread.interrupt();
         try {
             logThread.join();
+            executor.
         }
         catch (InterruptedException e) {
         }
