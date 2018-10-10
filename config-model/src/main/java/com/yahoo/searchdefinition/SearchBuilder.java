@@ -319,9 +319,13 @@ public class SearchBuilder {
      * @throws ParseException Thrown if there was a problem parsing the string.
      */
     public static SearchBuilder createFromString(String sd) throws ParseException {
+        return createFromString(sd, new BaseDeployLogger());
+    }
+
+    public static SearchBuilder createFromString(String sd, DeployLogger logger) throws ParseException {
         SearchBuilder builder = new SearchBuilder(MockApplicationPackage.createEmpty());
-        builder.importString(sd);
-        builder.build();
+        builder.importString(sd, logger);
+        builder.build(true, logger);
         return builder;
     }
 
