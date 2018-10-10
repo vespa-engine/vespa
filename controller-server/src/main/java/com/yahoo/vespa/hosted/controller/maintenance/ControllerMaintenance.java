@@ -53,7 +53,7 @@ public class ControllerMaintenance extends AbstractComponent {
                                  JobControl jobControl, Metric metric, Chef chefClient,
                                  DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues,
                                  NameService nameService, NodeRepositoryClientInterface nodeRepositoryClient,
-                                 Organization organization) {
+                                 Organization organization, String apiName) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
         deploymentExpirer = new DeploymentExpirer(controller, maintenanceInterval, jobControl);
@@ -72,7 +72,7 @@ public class ControllerMaintenance extends AbstractComponent {
         jobRunner = new JobRunner(controller, Duration.ofSeconds(30), jobControl);
         osUpgraders = osUpgraders(controller, jobControl);
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
-        contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, organization);
+        contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, organization, apiName);
     }
 
     public Upgrader upgrader() { return upgrader; }
