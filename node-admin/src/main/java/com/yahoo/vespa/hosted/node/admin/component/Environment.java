@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.component;
 
-import com.google.common.base.Strings;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
@@ -40,14 +39,12 @@ public class Environment {
     private final IPAddresses ipAddresses;
     private final PathResolver pathResolver;
     private final List<String> logstashNodes;
-    private final Optional<String> coredumpFeedEndpoint;
     private final NodeType nodeType;
     private final ContainerEnvironmentResolver containerEnvironmentResolver;
     private final String certificateDnsSuffix;
     private final URI ztsUri;
     private final AthenzService nodeAthenzIdentity;
     private final boolean nodeAgentCertEnabled;
-    private final boolean isRunningOnHost;
     private final Path trustStorePath;
     private final DockerNetworking dockerNetworking;
 
@@ -61,14 +58,12 @@ public class Environment {
                         IPAddresses ipAddresses,
                         PathResolver pathResolver,
                         List<String> logstashNodes,
-                        Optional<String> coreDumpFeedEndpoint,
                         NodeType nodeType,
                         ContainerEnvironmentResolver containerEnvironmentResolver,
                         String certificateDnsSuffix,
                         URI ztsUri,
                         AthenzService nodeAthenzIdentity,
                         boolean nodeAgentCertEnabled,
-                        boolean isRunningOnHost,
                         DockerNetworking dockerNetworking) {
         Objects.requireNonNull(configServerConfig, "configServerConfig cannot be null");
 
@@ -81,14 +76,12 @@ public class Environment {
         this.ipAddresses = ipAddresses;
         this.pathResolver = pathResolver;
         this.logstashNodes = logstashNodes;
-        this.coredumpFeedEndpoint = coreDumpFeedEndpoint;
         this.nodeType = nodeType;
         this.containerEnvironmentResolver = containerEnvironmentResolver;
         this.certificateDnsSuffix = certificateDnsSuffix;
         this.ztsUri = ztsUri;
         this.nodeAthenzIdentity = nodeAthenzIdentity;
         this.nodeAgentCertEnabled = nodeAgentCertEnabled;
-        this.isRunningOnHost = isRunningOnHost;
         this.trustStorePath = trustStorePath;
         this.dockerNetworking = Objects.requireNonNull(dockerNetworking, "dockerNetworking cannot be null");
     }
@@ -111,14 +104,6 @@ public class Environment {
         return parentHostHostname;
     }
 
-    private static String getEnvironmentVariable(String name) {
-        final String value = System.getenv(name);
-        if (Strings.isNullOrEmpty(value)) {
-            throw new IllegalStateException(String.format("Environment variable %s not set", name));
-        }
-        return value;
-    }
-
     public String getZone() {
         return getEnvironment() + "." + getRegion();
     }
@@ -129,10 +114,6 @@ public class Environment {
 
     public PathResolver getPathResolver() {
         return pathResolver;
-    }
-
-    public Optional<String> getCoredumpFeedEndpoint() {
-        return coredumpFeedEndpoint;
     }
 
     /**
@@ -226,10 +207,6 @@ public class Environment {
         return nodeAgentCertEnabled;
     }
 
-    public boolean isRunningOnHost() {
-        return isRunningOnHost;
-    }
-
     public DockerNetworking getDockerNetworking() {
         return dockerNetworking;
     }
@@ -244,14 +221,12 @@ public class Environment {
         private IPAddresses ipAddresses;
         private PathResolver pathResolver;
         private List<String> logstashNodes = Collections.emptyList();
-        private Optional<String> coredumpFeedEndpoint = Optional.empty();
         private NodeType nodeType = NodeType.tenant;
         private ContainerEnvironmentResolver containerEnvironmentResolver;
         private String certificateDnsSuffix;
         private URI ztsUri;
         private AthenzService nodeAthenzIdentity;
         private boolean nodeAgentCertEnabled;
-        private boolean isRunningOnHost;
         private Path trustStorePath;
         private DockerNetworking dockerNetworking;
 
@@ -305,11 +280,6 @@ public class Environment {
             return this;
         }
 
-        public Builder coredumpFeedEndpoint(String coredumpFeedEndpoint) {
-            this.coredumpFeedEndpoint = Optional.of(coredumpFeedEndpoint);
-            return this;
-        }
-
         public Builder nodeType(NodeType nodeType) {
             this.nodeType = nodeType;
             return this;
@@ -335,11 +305,6 @@ public class Environment {
             return this;
         }
 
-        public Builder isRunningOnHost(boolean isRunningOnHost) {
-            this.isRunningOnHost = isRunningOnHost;
-            return this;
-        }
-
         public Builder trustStorePath(Path trustStorePath) {
             this.trustStorePath = trustStorePath;
             return this;
@@ -361,14 +326,12 @@ public class Environment {
                                    Optional.ofNullable(ipAddresses).orElseGet(IPAddressesImpl::new),
                                    Optional.ofNullable(pathResolver).orElseGet(PathResolver::new),
                                    logstashNodes,
-                                   coredumpFeedEndpoint,
                                    nodeType,
                                    Optional.ofNullable(containerEnvironmentResolver).orElseGet(DefaultContainerEnvironmentResolver::new),
                                    certificateDnsSuffix,
                                    ztsUri,
                                    nodeAthenzIdentity,
                                    nodeAgentCertEnabled,
-                                   isRunningOnHost,
                                    dockerNetworking);
         }
     }
