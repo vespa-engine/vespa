@@ -9,9 +9,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.io.IOUtils;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
-import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
-import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
@@ -41,7 +38,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
@@ -50,41 +46,35 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  * @author freva
  */
 public class StorageMaintainer {
-    private static final ContainerName NODE_ADMIN = new ContainerName("node-admin");
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final GaugeWrapper numberOfCoredumpsOnHost;
-    private final CounterWrapper numberOfNodeAdminMaintenanceFails;
     private final DockerOperations dockerOperations;
     private final ProcessExecuter processExecuter;
     private final Environment environment;
-    private final Optional<CoredumpHandler> coredumpHandler;
+    private final CoredumpHandler coredumpHandler;
     private final Clock clock;
 
     private final Map<ContainerName, MaintenanceThrottler> maintenanceThrottlerByContainerName = new ConcurrentHashMap<>();
 
     public StorageMaintainer(DockerOperations dockerOperations, ProcessExecuter processExecuter,
-                             MetricReceiverWrapper metricReceiver, Environment environment, Clock clock) {
-        this(dockerOperations, processExecuter, metricReceiver, environment, null, clock);
+                             MetricReceiverWrapper metricReceiver, Environment environment,
+                             CoredumpHandler coredumpHandler, Clock clock) {
+        this(dockerOperations, processExecuter, environment, coredumpHandler, clock);
     }
 
     public StorageMaintainer(DockerOperations dockerOperations, ProcessExecuter processExecuter,
-                             MetricReceiverWrapper metricReceiver, Environment environment,
+                             Environment environment, CoredumpHandler coredumpHandler, Path pathToContainerArchive) {
+        this(dockerOperations, processExecuter, environment, coredumpHandler, Clock.systemUTC());
+    }
+
+    public StorageMaintainer(DockerOperations dockerOperations, ProcessExecuter processExecuter,
+                             Environment environment,
                              CoredumpHandler coredumpHandler, Clock clock) {
         this.dockerOperations = dockerOperations;
         this.processExecuter = processExecuter;
         this.environment = environment;
-        this.coredumpHandler = Optional.ofNullable(coredumpHandler);
+        this.coredumpHandler = coredumpHandler;
         this.clock = clock;
-
-        Dimensions dimensions = new Dimensions.Builder()
-                .add("role", SecretAgentCheckConfig.nodeTypeToRole(environment.getNodeType()))
-                .build();
-        numberOfNodeAdminMaintenanceFails = metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.maintenance.fails");
-        numberOfCoredumpsOnHost = metricReceiver.declareGauge(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.coredumps");
-
-        metricReceiver.declareCounter(MetricReceiverWrapper.APPLICATION_DOCKER, dimensions, "nodes.running_on_host")
-                .add(environment.isRunningOnHost() ? 1 : 0);
     }
 
     public void writeMetricsConfig(ContainerName containerName, NodeSpec node) {
@@ -296,13 +286,6 @@ public class StorageMaintainer {
      * Checks if container has any new coredumps, reports and archives them if so
      */
     public void handleCoreDumpsForContainer(ContainerName containerName, NodeSpec node) {
-        // Sample number of coredumps on the host
-        try (Stream<Path> files = Files.list(environment.pathInNodeAdminToDoneCoredumps())) {
-            numberOfCoredumpsOnHost.sample(files.count());
-        } catch (IOException e) {
-            // Ignore for now - this is either test or a misconfiguration
-        }
-
         MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
         addHandleCoredumpsCommand(maintainerExecutor, containerName, node);
         maintainerExecutor.execute();
@@ -316,21 +299,10 @@ public class StorageMaintainer {
         final Path coredumpsPath = environment.pathInNodeAdminFromPathInNode(
                 containerName, environment.pathInNodeUnderVespaHome("var/crash"));
         final Map<String, Object> nodeAttributes = getCoredumpNodeAttributes(node);
-        if (coredumpHandler.isPresent()) {
-            try {
-                coredumpHandler.get().processAll(coredumpsPath, nodeAttributes);
-            } catch (IOException e) {
-                throw new UncheckedIOException("Failed to process coredumps", e);
-            }
-        } else {
-            // Core dump handling is disabled.
-            if (!environment.getCoredumpFeedEndpoint().isPresent()) return;
-
-            maintainerExecutor.addJob("handle-core-dumps")
-                    .withArgument("coredumpsPath", coredumpsPath)
-                    .withArgument("doneCoredumpsPath", environment.pathInNodeAdminToDoneCoredumps())
-                    .withArgument("attributes", nodeAttributes)
-                    .withArgument("feedEndpoint", environment.getCoredumpFeedEndpoint().get());
+        try {
+            coredumpHandler.processAll(coredumpsPath, nodeAttributes);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to process coredumps", e);
         }
     }
 
@@ -351,39 +323,6 @@ public class StorageMaintainer {
             attributes.put("instance", owner.getInstance());
         });
         return Collections.unmodifiableMap(attributes);
-    }
-
-    /**
-     * Deletes old
-     *  * archived app data
-     *  * Vespa logs
-     *  * Filedistribution files
-     */
-    public void cleanNodeAdmin() {
-        if (! getMaintenanceThrottlerFor(NODE_ADMIN).shouldRemoveOldFilesNow()) return;
-
-        MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
-        maintainerExecutor.addJob("delete-directories")
-                .withArgument("basePath", environment.getPathResolver().getApplicationStoragePathForNodeAdmin())
-                .withArgument("maxAgeSeconds", Duration.ofDays(7).getSeconds())
-                .withArgument("dirNameRegex", "^" + Pattern.quote(Environment.APPLICATION_STORAGE_CLEANUP_PATH_PREFIX));
-
-        Path nodeAdminJDiskLogsPath = environment.pathInNodeAdminFromPathInNode(
-                NODE_ADMIN, environment.pathInNodeUnderVespaHome("logs/vespa/"));
-        maintainerExecutor.addJob("delete-files")
-                .withArgument("basePath", nodeAdminJDiskLogsPath)
-                .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
-                .withArgument("recursive", false);
-
-        Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(
-                NODE_ADMIN, environment.pathInNodeUnderVespaHome("var/db/vespa/filedistribution"));
-        maintainerExecutor.addJob("delete-files")
-                .withArgument("basePath", fileDistrDir)
-                .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
-                .withArgument("recursive", true);
-
-        maintainerExecutor.execute();
-        getMaintenanceThrottlerFor(NODE_ADMIN).updateNextRemoveOldFilesTime();
     }
 
     /**
@@ -452,7 +391,6 @@ public class StorageMaintainer {
             Pair<Integer, String> result = processExecuter.exec(command);
 
             if (result.getFirst() != 0) {
-                numberOfNodeAdminMaintenanceFails.add();
                 throw new RuntimeException(
                         String.format("Maintainer failed to execute command: %s, Exit code: %d, Stdout/stderr: %s",
                                 Arrays.toString(command), result.getFirst(), result.getSecond()));

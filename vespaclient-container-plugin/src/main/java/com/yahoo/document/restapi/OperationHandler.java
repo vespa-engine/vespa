@@ -29,6 +29,7 @@ public interface OperationHandler {
         public final Optional<Integer> wantedDocumentCount;
         public final Optional<String> fieldSet;
         public final Optional<Integer> concurrency;
+        public final Optional<String> bucketSpace;
 
         /** @deprecated Use a VisitOptions.Builder instead */
         @Deprecated
@@ -38,6 +39,7 @@ public interface OperationHandler {
             this.wantedDocumentCount = wantedDocumentCount;
             this.fieldSet = Optional.empty();
             this.concurrency = Optional.empty();
+            this.bucketSpace = Optional.empty();
         }
 
         private VisitOptions(Builder builder) {
@@ -46,6 +48,7 @@ public interface OperationHandler {
             this.wantedDocumentCount = Optional.ofNullable(builder.wantedDocumentCount);
             this.fieldSet = Optional.ofNullable(builder.fieldSet);
             this.concurrency = Optional.ofNullable(builder.concurrency);
+            this.bucketSpace = Optional.ofNullable(builder.bucketSpace);
         }
 
         public static class Builder {
@@ -54,6 +57,7 @@ public interface OperationHandler {
             Integer wantedDocumentCount;
             String fieldSet;
             Integer concurrency;
+            String bucketSpace;
 
             public Builder cluster(String cluster) {
                 this.cluster = cluster;
@@ -77,6 +81,11 @@ public interface OperationHandler {
 
             public Builder concurrency(Integer concurrency) {
                 this.concurrency = concurrency;
+                return this;
+            }
+
+            public Builder bucketSpace(String bucketSpace) {
+                this.bucketSpace = bucketSpace;
                 return this;
             }
 

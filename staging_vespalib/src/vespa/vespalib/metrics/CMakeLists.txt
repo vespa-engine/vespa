@@ -13,8 +13,7 @@ vespa_add_library(staging_vespalib_vespalib_metrics OBJECT
     handle.cpp
     json_formatter.cpp
     label.cpp
-    metric_identifier.cpp
-    metric_name.cpp
+    metric_id.cpp
     metrics_manager.cpp
     metric_types.cpp
     name_collection.cpp

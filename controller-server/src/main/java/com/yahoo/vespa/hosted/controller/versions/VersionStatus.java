@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError.outOfCapacity;
 
@@ -99,8 +100,25 @@ public class VersionStatus {
         // The controller version is the lowest controller version of all controllers
         Version controllerVersion = controllerVersions.keySet().stream().min(Comparator.naturalOrder()).get();
 
-        // The system version is the oldest infrastructure version
-        Version systemVersion = infrastructureVersions.stream().min(Comparator.naturalOrder()).get();
+        // The system version is the oldest infrastructure version, if that version is newer than the current system
+        // version
+        Version newSystemVersion = infrastructureVersions.stream().min(Comparator.naturalOrder()).get();
+        Version systemVersion = controller.versionStatus().systemVersion()
+                                          .map(VespaVersion::versionNumber)
+                                          .orElse(newSystemVersion);
+        if (newSystemVersion.isBefore(systemVersion)) {
+            log.warning("Refusing to lower system version from " +
+                        controller.systemVersion() +
+                        " to " +
+                        newSystemVersion +
+                        ", nodes on " + newSystemVersion + ": " +
+                        Stream.concat(systemApplicationVersions.get(newSystemVersion).stream(),
+                                      controllerVersions.get(newSystemVersion).stream())
+                              .map(HostName::value)
+                              .collect(Collectors.joining(", ")));
+        } else {
+            systemVersion = newSystemVersion;
+        }
 
         Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions,
                                                                                             controller.applications().asList());

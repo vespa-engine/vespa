@@ -14,14 +14,6 @@ LOG_SETUP(".metrics.metricsset");
 
 namespace metrics {
 
-MetricSet::MetricSet(const String& name, const String& tags,
-                     const String& description, MetricSet* owner)
-    : Metric(name, tags, description, owner),
-      _metricOrder(),
-      _registrationAltered(false)
-{
-}
-
 MetricSet::MetricSet(const String& name, Tags dimensions,
                      const String& description, MetricSet* owner)
     : Metric(name, std::move(dimensions), description, owner),
@@ -262,7 +254,7 @@ MetricSet::addTo(Metric& other, std::vector<Metric::UP> *ownerList) const
         std::vector<Metric*> newOrder;
         newOrder.reserve(o._metricOrder.size() + newMetrics.size());
         for (const Metric* metric : _metricOrder) {
-            TmpString v(metric->getMangledName());
+            TmpString v = metric->getMangledName();
             target = std::lower_bound(map2.begin(), map2.end(), v);
             if ((target != map2.end()) && (target->first == v)) {
                 newOrder.push_back(target->second);
@@ -275,7 +267,7 @@ MetricSet::addTo(Metric& other, std::vector<Metric::UP> *ownerList) const
         }
         // If target had unique metrics, add them at the end
         for (Metric* metric : o._metricOrder) {
-            TmpString v(metric->getMangledName());
+            TmpString v = metric->getMangledName();
             if ( ! std::binary_search(map1.begin(), map1.end(), v) ) {
                 LOG(debug, "Metric %s exist in one snapshot but not other."
                            "Order will be messed up. Adding target unique "
@@ -321,7 +313,7 @@ void
 MetricSet::print(std::ostream& out, bool verbose,
                  const std::string& indent, uint64_t secondsPassed) const
 {
-    out << _name << ":";
+    out << getName() << ":";
     for (const Metric* metric : _metricOrder) {
         out << "\n" << indent << "  ";
         metric->print(out, verbose, indent + "  ", secondsPassed);
@@ -346,15 +338,6 @@ MetricSet::addMemoryUsage(MemoryConsumption& mc) const
     mc._metricSetOrder += _metricOrder.size() * 3 * sizeof(void*);
     for (const Metric* metric : _metricOrder) {
         metric->addMemoryUsage(mc);
-    }
-}
-
-void
-MetricSet::updateNames(NameHash& hash) const
-{
-    Metric::updateNames(hash);
-    for (const Metric* metric : _metricOrder) {
-        metric->updateNames(hash);
     }
 }
 

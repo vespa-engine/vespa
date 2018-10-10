@@ -2,7 +2,7 @@
 #pragma once
 
 #include <memory>
-#include "metric_identifier.h"
+#include "metric_id.h"
 #include "point.h"
 
 namespace vespalib {
@@ -17,14 +17,14 @@ class CounterAggregator;
  **/
 class Counter {
     std::shared_ptr<MetricsManager> _manager;
-    MetricName _id;
+    MetricId _id;
 public:
     Counter() : _manager(), _id(0) {}
     Counter(const Counter&) = delete;
     Counter(Counter &&other) = default;
     Counter& operator= (const Counter &) = delete;
     Counter& operator= (Counter &&other) = default;
-    Counter(std::shared_ptr<MetricsManager> m, MetricName id)
+    Counter(std::shared_ptr<MetricsManager> m, MetricId id)
         : _manager(std::move(m)), _id(id)
     {}
 
@@ -42,10 +42,11 @@ public:
 
     // internal
     struct Increment {
-        MetricIdentifier idx;
+        using Key = std::pair<MetricId, Point>;
+        Key idx;
         size_t value;
         Increment() = delete;
-        Increment(MetricIdentifier id, size_t v) : idx(id), value(v) {}
+        Increment(Key k, size_t v) : idx(k), value(v) {}
     };
 
     typedef CounterAggregator aggregator_type;

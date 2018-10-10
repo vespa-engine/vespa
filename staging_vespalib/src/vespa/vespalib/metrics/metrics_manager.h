@@ -78,7 +78,7 @@ public:
     virtual Snapshot totalSnapshot() = 0;
 
     // for use from PointBuilder only
-    virtual Point pointFrom(PointMap::BackingMap map) = 0;
+    virtual Point pointFrom(PointMap map) = 0;
 
     // for use from Counter only
     virtual void add(Counter::Increment inc) = 0;

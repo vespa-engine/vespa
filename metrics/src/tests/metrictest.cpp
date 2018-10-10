@@ -41,7 +41,7 @@ void
 MetricTest::testMetricsGetDimensionsAsPartOfMangledNameImpl()
 {
     MetricImpl m("test", {{"foo", "bar"}}, "description goes here");
-    CPPUNIT_ASSERT_EQUAL(std::string("test{foo:bar}"), m.getMangledName());
+    CPPUNIT_ASSERT_EQUAL(vespalib::string("test{foo:bar}"), m.getMangledName());
 }
 
 template <typename MetricImpl>
@@ -51,7 +51,7 @@ MetricTest::testMangledNameMayContainMultipleDimensionsImpl()
     MetricImpl m("test",
                 {{"flarn", "yarn"}, {"foo", "bar"}},
                 "description goes here");
-    CPPUNIT_ASSERT_EQUAL(std::string("test{flarn:yarn,foo:bar}"),
+    CPPUNIT_ASSERT_EQUAL(vespalib::string("test{flarn:yarn,foo:bar}"),
                          m.getMangledName());
 }
 
@@ -88,7 +88,7 @@ MetricTest::mangledNameListsDimensionsInLexicographicOrder()
     LongValueMetric m("test",
                       {{"xyz", "bar"}, {"abc", "foo"}, {"def", "baz"}},
                       "");
-    CPPUNIT_ASSERT_EQUAL(std::string("test{abc:foo,def:baz,xyz:bar}"),
+    CPPUNIT_ASSERT_EQUAL(vespalib::string("test{abc:foo,def:baz,xyz:bar}"),
                          m.getMangledName());
 }
 
@@ -96,15 +96,15 @@ void
 MetricTest::manglingDoesNotChangeOriginalMetricName()
 {
     LongValueMetric m("test", {{"foo", "bar"}}, "");
-    CPPUNIT_ASSERT_EQUAL(std::string("test"), m.getName());
+    CPPUNIT_ASSERT_EQUAL(vespalib::string("test"), m.getName());
 }
 
 void
 MetricTest::legacyTagsDoNotCreateMangledName()
 {
-    LongValueMetric m("test", "foo bar", "");
-    CPPUNIT_ASSERT_EQUAL(std::string("test"), m.getName());
-    CPPUNIT_ASSERT_EQUAL(std::string("test"), m.getMangledName());
+    LongValueMetric m("test", {{"foo"},{"bar"}}, "");
+    CPPUNIT_ASSERT_EQUAL(vespalib::string("test"), m.getName());
+    CPPUNIT_ASSERT_EQUAL(vespalib::string("test"), m.getMangledName());
 }
 
 } // metrics

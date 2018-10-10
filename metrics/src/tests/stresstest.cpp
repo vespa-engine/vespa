@@ -38,13 +38,13 @@ struct InnerMetricSet : public MetricSet {
 };
 
 InnerMetricSet::InnerMetricSet(const char* name, const LoadTypeSet& lt, MetricSet* owner)
-    : MetricSet(name, "", "", owner),
+    : MetricSet(name, {}, "", owner),
       _loadTypes(lt),
-      _count("count", "", "", this),
-      _value1("value1", "", "", this),
-      _value2("value2", "", "", this),
-      _valueSum("valuesum", "", "", this),
-      _load(lt, LongAverageMetric("load", "", ""), this)
+      _count("count", {}, "", this),
+      _value1("value1", {}, "", this),
+      _value2("value2", {}, "", this),
+      _valueSum("valuesum", {}, "", this),
+      _load(lt, LongAverageMetric("load", {}, ""), this)
 {
     _valueSum.addMetricToSum(_value1);
     _valueSum.addMetricToSum(_value2);
@@ -75,10 +75,10 @@ struct OuterMetricSet : public MetricSet {
 };
 
 OuterMetricSet::OuterMetricSet(const LoadTypeSet& lt, MetricSet* owner)
-        : MetricSet("outer", "", "", owner),
+        : MetricSet("outer", {}, "", owner),
           _inner1("inner1", lt, this),
           _inner2("inner2", lt, this),
-          _innerSum("innersum", "", "", this),
+          _innerSum("innersum", {}, "", this),
           _tmp("innertmp", lt, 0),
           _load(lt, _tmp, this)
 {

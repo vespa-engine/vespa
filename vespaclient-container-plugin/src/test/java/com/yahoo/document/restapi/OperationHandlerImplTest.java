@@ -145,6 +145,10 @@ public class OperationHandlerImplTest {
         return new RestUri(new URI("http://localhost/document/v1/namespace/document-type/docid/"));
     }
 
+    private static RestUri apiRootVisitUri() throws Exception {
+        return new RestUri(new URI("http://localhost/document/v1/"));
+    }
+
     private static RestUri dummyGetUri() throws Exception {
         return new RestUri(new URI("http://localhost/document/v1/namespace/document-type/docid/foo"));
     }
@@ -166,6 +170,7 @@ public class OperationHandlerImplTest {
         try {
             OperationHandlerImpl handler = fixture.createHandler();
             handler.visit(dummyVisitUri(), "", emptyVisitOptions());
+            fail("Exception expected");
         } catch (RestApiException e) {
             assertThat(e.getResponse().getStatus(), is(500));
             assertThat(renderRestApiExceptionAsString(e), containsString("Timed out"));
@@ -192,12 +197,17 @@ public class OperationHandlerImplTest {
         assertThat(fixture.assignedParameters.get().getSessionTimeoutMs(), is((long)OperationHandlerImpl.VISIT_TIMEOUT_MS));
     }
 
-    private static VisitorParameters generatedParametersFromVisitOptions(OperationHandler.VisitOptions options) throws Exception {
+    private static VisitorParameters generatedVisitParametersFrom(RestUri restUri, String documentSelection,
+                                                                  OperationHandler.VisitOptions options) throws Exception {
         OperationHandlerImplFixture fixture = new OperationHandlerImplFixture();
         OperationHandlerImpl handler = fixture.createHandler();
 
-        handler.visit(dummyVisitUri(), "", options);
+        handler.visit(restUri, documentSelection, options);
         return fixture.assignedParameters.get();
+    }
+
+    private static VisitorParameters generatedParametersFromVisitOptions(OperationHandler.VisitOptions options) throws Exception {
+        return generatedVisitParametersFrom(dummyVisitUri(), "", options);
     }
 
     @Test
@@ -218,6 +228,7 @@ public class OperationHandlerImplTest {
         try {
             OperationHandlerImpl handler = fixture.createHandler();
             handler.visit(dummyVisitUri(), "", emptyVisitOptions());
+            fail("Exception expected");
         } catch (RestApiException e) {
             assertThat(e.getResponse().getStatus(), is(400));
             String errorMsg = renderRestApiExceptionAsString(e);
@@ -302,6 +313,91 @@ public class OperationHandlerImplTest {
         handler.get(dummyGetUri(), Optional.of("donald,duck"));
 
         verify(fixture.mockSyncSession).get(any(), eq("donald,duck"), any());
+    }
+
+    @Test
+    public void api_root_visit_uri_requires_cluster_set() throws Exception {
+        OperationHandlerImplFixture fixture = new OperationHandlerImplFixture();
+        OperationHandlerImpl handler = fixture.createHandler();
+        try {
+            handler.visit(apiRootVisitUri(), "", emptyVisitOptions());
+            fail("Exception expected");
+        } catch (RestApiException e) {
+            assertThat(e.getResponse().getStatus(), is(400));
+            assertThat(renderRestApiExceptionAsString(e), containsString(
+                    "MISSING_CLUSTER Must set 'cluster' parameter to a valid content cluster id " +
+                            "when visiting at a root /document/v1/ level"));
+        }
+    }
+
+    @Test
+    public void api_root_visiting_propagates_request_route() throws Exception {
+        VisitorParameters parameters = generatedVisitParametersFrom(apiRootVisitUri(), "", optionsBuilder().cluster("foo").build());
+        assertEquals("[Storage:cluster=foo;clusterconfigid=configId]", parameters.getRoute().toString());
+    }
+
+    @Test
+    public void api_root_visiting_targets_default_bucket_space_by_default() throws Exception {
+        VisitorParameters parameters = generatedVisitParametersFrom(apiRootVisitUri(), "", optionsBuilder().cluster("foo").build());
+        assertEquals("default", parameters.getBucketSpace());
+    }
+
+    @Test
+    public void api_root_visiting_can_explicitly_specify_bucket_space() throws Exception {
+        VisitorParameters parameters = generatedVisitParametersFrom(apiRootVisitUri(), "",
+                optionsBuilder().cluster("foo").bucketSpace("global").build());
+        assertEquals("global", parameters.getBucketSpace());
+    }
+
+    @Test
+    public void api_root_visiting_throws_exception_on_unknown_bucket_space_name() throws Exception {
+        try {
+            VisitorParameters parameters = generatedVisitParametersFrom(apiRootVisitUri(), "",
+                    optionsBuilder().cluster("foo").bucketSpace("langbein").build());
+        } catch (RestApiException e) {
+            assertThat(e.getResponse().getStatus(), is(400));
+            assertThat(renderRestApiExceptionAsString(e), containsString(
+                    "UNKNOWN_BUCKET_SPACE Bucket space 'langbein' is not a known bucket space " +
+                            "(expected 'default' or 'global')"));
+        }
+    }
+
+    @Test
+    public void api_root_visiting_has_empty_document_selection_by_default() throws Exception {
+        VisitorParameters parameters = generatedVisitParametersFrom(apiRootVisitUri(), "", optionsBuilder().cluster("foo").build());
+        assertEquals("", parameters.getDocumentSelection());
+    }
+
+    @Test
+    public void api_root_visiting_propagates_provided_document_selection() throws Exception {
+        VisitorParameters parameters = generatedVisitParametersFrom(apiRootVisitUri(), "baz.blarg", optionsBuilder().cluster("foo").build());
+        // Note: syntax correctness of selection is checked and enforced by RestApi
+        assertEquals("baz.blarg", parameters.getDocumentSelection());
+    }
+
+    @Test
+    public void api_root_visiting_uses_all_fieldset_by_default() throws Exception {
+        VisitorParameters parameters = generatedVisitParametersFrom(apiRootVisitUri(), "", optionsBuilder().cluster("foo").build());
+        assertEquals("[all]", parameters.getFieldSet());
+    }
+
+    @Test
+    public void api_root_visiting_propagates_provided_fieldset() throws Exception {
+        VisitorParameters parameters = generatedVisitParametersFrom(apiRootVisitUri(), "",
+                optionsBuilder().cluster("foo").fieldSet("zoidberg:[document]").build());
+        assertEquals("zoidberg:[document]", parameters.getFieldSet());
+    }
+
+    @Test
+    public void namespace_and_doctype_augmented_selection_has_parenthesized_selection_sub_expression() throws Exception {
+        VisitorParameters parameters = generatedVisitParametersFrom(dummyVisitUri(), "1 != 2", optionsBuilder().cluster("foo").build());
+        assertEquals("((1 != 2) and document-type and (id.namespace=='namespace'))", parameters.getDocumentSelection());
+    }
+
+    @Test
+    public void namespace_and_doctype_visit_without_selection_does_not_contain_selection_sub_expression() throws Exception {
+        VisitorParameters parameters = generatedVisitParametersFrom(dummyVisitUri(), "", optionsBuilder().cluster("foo").build());
+        assertEquals("document-type and (id.namespace=='namespace')", parameters.getDocumentSelection());
     }
 
 }

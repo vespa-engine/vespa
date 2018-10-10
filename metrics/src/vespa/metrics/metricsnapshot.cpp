@@ -12,7 +12,7 @@ MetricSnapshot::MetricSnapshot(const Metric::String& name)
       _period(0),
       _fromTime(0),
       _toTime(0),
-      _snapshot(new MetricSet("top", "", "")),
+      _snapshot(new MetricSet("top", {}, "")),
       _metrics()
 {
 }
@@ -145,13 +145,6 @@ MetricSnapshotSet::addMemoryUsage(MemoryConsumption& mc) const
     mc._snapshotSetMeta += sizeof(MetricSnapshotSet);
     if (_count != 1) _building->addMemoryUsage(mc);
     _current->addMemoryUsage(mc);
-}
-
-void
-MetricSnapshotSet::updateNames(NameHash& hash) const
-{
-    if (_count != 1) _building->updateNames(hash);
-    _current->updateNames(hash);
 }
 
 void

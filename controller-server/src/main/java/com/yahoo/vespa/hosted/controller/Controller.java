@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Organization;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -84,7 +83,7 @@ public class Controller extends AbstractComponent {
      */
     @Inject
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
-                      GitHub gitHub, EntityService entityService, Organization organization,
+                      GitHub gitHub, EntityService entityService,
                       ZoneRegistry zoneRegistry, ConfigServer configServer,
                       MetricsService metricsService, NameService nameService,
                       RoutingGenerator routingGenerator, Chef chef, AthenzClientFactory athenzClientFactory,
@@ -203,8 +202,8 @@ public class Controller extends AbstractComponent {
     /** Returns the current system version: The controller should drive towards running all applications on this version */
     public Version systemVersion() {
         return versionStatus().systemVersion()
-                .map(VespaVersion::versionNumber)
-                .orElse(Vtag.currentVersion);
+                              .map(VespaVersion::versionNumber)
+                              .orElse(Vtag.currentVersion);
     }
 
     /** Returns the target OS version for infrastructure in this system. The controller will drive infrastructure OS
@@ -281,7 +280,7 @@ public class Controller extends AbstractComponent {
     }
 
     private static String printableVersion(Optional<VespaVersion> vespaVersion) {
-        return vespaVersion.map(v -> v.versionNumber().toFullString()).orElse("Unknown");
+        return vespaVersion.map(v -> v.versionNumber().toFullString()).orElse("unknown");
     }
 
 }

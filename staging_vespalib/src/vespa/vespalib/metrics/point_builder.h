@@ -18,12 +18,12 @@ class MetricsManager;
 class PointBuilder {
 private:
     std::shared_ptr<MetricsManager> _owner;
-    PointMap::BackingMap _map;
+    PointMap _map;
 
 public:
     // for use from MetricsManager
     PointBuilder(std::shared_ptr<MetricsManager> m);
-    PointBuilder(std::shared_ptr<MetricsManager> m, const PointMap::BackingMap &from);
+    PointBuilder(std::shared_ptr<MetricsManager> m, const PointMap &from);
     ~PointBuilder() {}
 
     /**

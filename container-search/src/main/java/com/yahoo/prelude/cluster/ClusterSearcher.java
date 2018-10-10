@@ -216,11 +216,16 @@ public class ClusterSearcher extends Searcher {
                                                    CacheParams cacheParams,
                                                    LegacyEmulationConfig emulConfig,
                                                    SummaryParameters docSumParams,
-                                                   DocumentdbInfoConfig documentdbInfoConfig) {
+                                                   DocumentdbInfoConfig documentdbInfoConfig)
+    {
+        if (searchClusterConfig.searchdef().size() != 1) {
+            throw new IllegalArgumentException("Search clusters in streaming search shall only contain a single searchdefinition : " + searchClusterConfig.searchdef());
+        }
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex, emulConfig, 0);
         VdsStreamingSearcher searcher = (VdsStreamingSearcher) VespaBackEndSearcher
                 .getSearcher("com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher");
         searcher.setSearchClusterConfigId(searchClusterConfig.rankprofiles().configid());
+        searcher.setDocumentType(searchClusterConfig.searchdef(0));
         searcher.setStorageClusterRouteSpec(searchClusterConfig.storagecluster().routespec());
         searcher.init(docSumParams, clusterParams, cacheParams, documentdbInfoConfig);
         return searcher;

@@ -8,7 +8,7 @@ namespace storage {
 using metrics::MetricSet;
 
 DistributorMetricSet::DistributorMetricSet(const metrics::LoadTypeSet& lt)
-    : MetricSet("distributor", "distributor", ""),
+    : MetricSet("distributor", {{"distributor"}}, ""),
       puts(lt, PersistenceOperationMetricSet("puts"), this),
       updates(lt, PersistenceOperationMetricSet("updates"), this),
       update_puts(lt, PersistenceOperationMetricSet("update_puts"), this),
@@ -19,18 +19,20 @@ DistributorMetricSet::DistributorMetricSet(const metrics::LoadTypeSet& lt)
       stats(lt, PersistenceOperationMetricSet("stats"), this),
       multioperations(lt, PersistenceOperationMetricSet("multioperations"), this),
       visits(lt, VisitorMetricSet(), this),
-      stateTransitionTime("state_transition_time", "",
+      stateTransitionTime("state_transition_time", {},
               "Time it takes to complete a cluster state transition. If a "
               "state transition is preempted before completing, its elapsed "
               "time is counted as part of the total time spent for the final, "
               "completed state transition", this),
-      recoveryModeTime("recoverymodeschedulingtime", "",
+      recoveryModeTime("recoverymodeschedulingtime", {},
               "Time spent scheduling operations in recovery mode "
               "after receiving new cluster state", this),
-      docsStored("docsstored", "logdefault yamasdefault",
+      docsStored("docsstored",
+              {{"logdefault"},{"yamasdefault"}},
               "Number of documents stored in all buckets controlled by "
               "this distributor", this),
-      bytesStored("bytesstored", "logdefault yamasdefault",
+      bytesStored("bytesstored",
+              {{"logdefault"},{"yamasdefault"}},
               "Number of bytes stored in all buckets controlled by "
               "this distributor", this)
 {

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class TestTaskContext implements TaskContext {
@@ -15,7 +16,14 @@ public class TestTaskContext implements TaskContext {
     }
 
     @Override
-    public void log(Logger logger, String message) { }
+    public void log(Logger logger, Level level, String message) {
+        logger.log(level, message);
+    }
+
+    @Override
+    public void log(Logger logger, Level level, String message, Throwable throwable) {
+        logger.log(level, message, throwable);
+    }
 
     public List<String> getSystemModificationLog() {
         return systemModifications;

@@ -13,6 +13,11 @@ struct DimensionTag {};
 /**
  * Opaque handle representing an uniquely named dimension.
  **/
-using Dimension = Handle<DimensionTag>;
+struct Dimension : Handle<DimensionTag>
+{
+    explicit Dimension(size_t id) : Handle(id) {}
+    static Dimension from_name(const vespalib::string& name);
+    const vespalib::string& as_name() const;
+};
 
 } // namespace vespalib::metrics

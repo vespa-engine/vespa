@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
@@ -11,6 +12,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -29,7 +31,7 @@ public abstract class InfrastructureUpgrader extends Maintainer {
 
     public InfrastructureUpgrader(Controller controller, Duration interval, JobControl jobControl,
                                   UpgradePolicy upgradePolicy, String name) {
-        super(controller, interval, jobControl, name);
+        super(controller, interval, jobControl, name, EnumSet.allOf(SystemName.class));
         this.upgradePolicy = upgradePolicy;
     }
 

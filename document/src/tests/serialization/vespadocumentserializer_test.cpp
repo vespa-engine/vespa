@@ -179,6 +179,11 @@ void serializeAndDeserialize(const T& value, nbostream &stream,
         EXPECT_EQUAL(value, read_value);
     }
     stream.adjustReadPos(-serialized_size);
+    nbostream stream2;
+    VespaDocumentSerializer serializer2(stream2);
+    serializer2.write(read_value);
+    EXPECT_EQUAL(serialized_size, stream2.size());
+    EXPECT_EQUAL(0, memcmp(stream.peek() + start_size, stream2.peek(), serialized_size));
 }
 
 template<typename T>
@@ -512,6 +517,19 @@ void checkStructSerialization(const StructFieldValue &value,
     EXPECT_EQUAL(4u, element1_size);
     EXPECT_EQUAL(field2.getId(), element2_id & 0x7fffffff);
     EXPECT_EQUAL(60u, element2_size);
+}
+
+TEST("requireThatEmptyStructCanBeSerialized") {
+    StructDataType structType(getStructDataType());
+    StructFieldValue value(structType);
+    nbostream stream;
+    serializeAndDeserialize(value, stream);
+    uint32_t data_size;
+    uint8_t compression_type;
+    uint8_t field_count;
+    stream >> data_size >> compression_type >> field_count;
+    EXPECT_EQUAL(0u, data_size);
+    EXPECT_EQUAL(0u, field_count);
 }
 
 TEST("requireThatUncompressedStructFieldValueCanBeSerialized") {

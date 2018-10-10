@@ -52,8 +52,6 @@ public interface NodeAgent {
      */
     void updateContainerNodeMetrics();
 
-    String getHostname();
-
     /**
      * Returns true if NodeAgent is waiting for an image download to finish
      */

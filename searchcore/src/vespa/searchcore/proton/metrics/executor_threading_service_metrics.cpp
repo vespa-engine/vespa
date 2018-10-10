@@ -6,7 +6,7 @@
 namespace proton {
 
 ExecutorThreadingServiceMetrics::ExecutorThreadingServiceMetrics(const std::string &name, metrics::MetricSet *parent)
-    : metrics::MetricSet(name, "", "Instance specific threading service metrics", parent),
+    : metrics::MetricSet(name, {}, "Instance specific threading service metrics", parent),
       master("master", this),
       index("index", this),
       summary("summary", this),

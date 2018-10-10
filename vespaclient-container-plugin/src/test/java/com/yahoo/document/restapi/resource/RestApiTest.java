@@ -28,6 +28,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
@@ -288,19 +290,47 @@ public class RestApiTest {
         }
     }
 
-    private String performV1RestCall(String pathSuffix) {
+    private static String defaultPathPrefix() {
+        return "namespace/document-type/";
+    }
+
+    private String performV1RestCall(String pathPrefix, String pathSuffix, Function<Request, HttpRequestBase> methodOp) {
         try {
-            Request request = new Request(String.format("http://localhost:%s/document/v1/namespace/document-type/%s",
-                    getFirstListenPort(), pathSuffix));
-            HttpGet get = new HttpGet(request.getUri());
-            return doRest(get);
+            Request request = new Request(String.format("http://localhost:%s/document/v1/%s%s",
+                    getFirstListenPort(), pathPrefix, pathSuffix));
+            HttpRequestBase restOp = methodOp.apply(request);
+            return doRest(restOp);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
+    private String performV1GetRestCall(String pathSuffix) {
+        return performV1RestCall(defaultPathPrefix(), pathSuffix, (request) -> new HttpGet(request.getUri()));
+    }
+
+    private void doTestRootPathNotAccepted(Function<Request, HttpRequestBase> methodOpFactory) {
+        String output = performV1RestCall("", "", methodOpFactory);
+        assertThat(output, containsString("Root /document/v1/ requests only supported for HTTP GET"));
+    }
+
+    @Test
+    public void root_api_path_not_accepted_for_http_put() {
+        doTestRootPathNotAccepted((request) -> new HttpPut(request.getUri()));
+    }
+
+    @Test
+    public void root_api_path_not_accepted_for_http_post() {
+        doTestRootPathNotAccepted((request) -> new HttpPost(request.getUri()));
+    }
+
+    @Test
+    public void root_api_path_not_accepted_for_http_delete() {
+        doTestRootPathNotAccepted((request) -> new HttpDelete(request.getUri()));
+    }
+
     private void assertResultingDocumentSelection(String suffix, String expected) {
-        String output = performV1RestCall(suffix);
+        String output = performV1GetRestCall(suffix);
         assertThat(output, containsString(String.format("doc selection: '%s'", expected)));
     }
 
@@ -321,7 +351,7 @@ public class RestApiTest {
     }
 
     private void assertNumericIdFailsParsing(String id) {
-        String output = performV1RestCall(String.format("number/%s", encoded(id)));
+        String output = performV1GetRestCall(String.format("number/%s", encoded(id)));
         assertThat(output, containsString("Failed to parse numeric part of selection URI"));
     }
 
@@ -335,7 +365,7 @@ public class RestApiTest {
 
     @Test
     public void non_text_group_string_character_returns_error() {
-        String output = performV1RestCall(String.format("group/%s", encoded("\u001f")));
+        String output = performV1GetRestCall(String.format("group/%s", encoded("\u001f")));
         assertThat(output, containsString("Failed to parse group part of selection URI; contains invalid text code point U001F"));
     }
 
@@ -362,7 +392,7 @@ public class RestApiTest {
     }
 
     private void assertDocumentSelectionFailsParsing(String expression) {
-        String output = performV1RestCall(String.format("number/1234?selection=%s", encoded(expression)));
+        String output = performV1GetRestCall(String.format("number/1234?selection=%s", encoded(expression)));
         assertThat(output, containsString("Failed to parse expression given in 'selection' parameter. Must be a complete and valid sub-expression."));
     }
 
@@ -413,6 +443,30 @@ public class RestApiTest {
         HttpGet get = new HttpGet(request.getUri());
         String rest = doRest(get);
         assertThat(rest, containsString("concurrency: 42"));
+    }
+
+    @Test
+    public void root_api_visit_cluster_parameter_is_propagated() throws IOException {
+        Request request = new Request(String.format("http://localhost:%s/document/v1/?cluster=vaffel", getFirstListenPort()));
+        HttpGet get = new HttpGet(request.getUri());
+        String rest = doRest(get);
+        assertThat(rest, containsString("cluster: 'vaffel'"));
+    }
+
+    @Test
+    public void root_api_visit_selection_parameter_is_propagated() throws IOException {
+        Request request = new Request(String.format("http://localhost:%s/document/v1/?cluster=foo&selection=yoshi", getFirstListenPort()));
+        HttpGet get = new HttpGet(request.getUri());
+        String rest = doRest(get);
+        assertThat(rest, containsString("doc selection: 'yoshi'"));
+    }
+
+    @Test
+    public void root_api_visit_bucket_space_parameter_is_propagated() throws IOException {
+        Request request = new Request(String.format("http://localhost:%s/document/v1/?cluster=foo&bucketSpace=global", getFirstListenPort()));
+        HttpGet get = new HttpGet(request.getUri());
+        String rest = doRest(get);
+        assertThat(rest, containsString("bucket space: 'global'"));
     }
 
     @Test

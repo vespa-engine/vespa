@@ -22,24 +22,4 @@ public enum StemMode {
         this.value = value;
     }
 
-    /**
-     * Returns the stem mode as an int
-     *
-     * @deprecated do not use
-     */
-    @Deprecated
-    public int getValue() {
-        return value;
-    }
-
-    @Deprecated
-    public static StemMode valueOf(int value) {
-        for (StemMode mode : values()) {
-            if (mode.value == value) {
-                return mode;
-            }
-        }
-        return NONE;
-    }
-
 }

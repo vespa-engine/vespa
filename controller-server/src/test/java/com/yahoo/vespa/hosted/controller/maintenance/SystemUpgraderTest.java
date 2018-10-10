@@ -2,12 +2,12 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.UpgradePolicy;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -235,7 +235,7 @@ public class SystemUpgraderTest {
     }
 
     @Test
-    public void never_downgrades_system() {
+    public void downgrading_controller_never_downgrades_system() {
         SystemUpgrader systemUpgrader = systemUpgrader(UpgradePolicy.create().upgrade(zone1));
 
         Version version = Version.fromString("6.5");

@@ -6,7 +6,6 @@
 #include <memory>
 #include <thread>
 #include <vespa/vespalib/stllike/string.h>
-#include "name_repo.h"
 #include "current_samples.h"
 #include "snapshots.h"
 #include "metrics_manager.h"
@@ -35,13 +34,6 @@ class SimpleMetricsManager : public MetricsManager
 {
 private:
     MetricTypes _metricTypes;
-
-    const vespalib::string& nameFor(Dimension dimension) {
-        return NameRepo::instance.dimensionName(dimension);
-    }
-    const vespalib::string& valueFor(Label label) {
-        return NameRepo::instance.labelValue(label);
-    }
 
     CurrentSamples _currentSamples;
 
@@ -78,7 +70,7 @@ public:
     Dimension dimension(const vespalib::string &name) override;
     Label label(const vespalib::string &value) override;
     PointBuilder pointBuilder(Point from) override;
-    Point pointFrom(PointMap::BackingMap map) override;
+    Point pointFrom(PointMap map) override;
     Snapshot snapshot() override;
     Snapshot totalSnapshot() override;
 

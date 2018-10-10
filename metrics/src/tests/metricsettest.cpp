@@ -47,12 +47,12 @@ void
 MetricSetTest::testNormalUsage()
 {
         // Set up some metrics to test..
-    MetricSet set("a", "foo", "");
-    DoubleValueMetric v1("c", "foo", "", &set);
-    LongAverageMetric v2("b", "", "", &set);
-    LongCountMetric v3("d", "bar", "", &set);
-    MetricSet set2("e", "bar", "", &set);
-    LongCountMetric v4("f", "foo", "", &set2);
+    MetricSet set("a", {{"foo"}}, "");
+    DoubleValueMetric v1("c", {{"foo"}}, "", &set);
+    LongAverageMetric v2("b", {}, "", &set);
+    LongCountMetric v3("d", {{"bar"}}, "", &set);
+    MetricSet set2("e", {{"bar"}}, "", &set);
+    LongCountMetric v4("f", {{"foo"}}, "", &set2);
 
         // Give them some values
     v1.addValue(4.2);
@@ -61,7 +61,7 @@ MetricSetTest::testNormalUsage()
     v4.inc(3);
 
         // Check that we can register through registerMetric function too.
-    LongCountMetric v5("g", "", "");
+    LongCountMetric v5("g", {}, "");
     set.registerMetric(v5);
     v5.inc(3);
     v5.dec();
@@ -77,7 +77,7 @@ MetricSetTest::testNormalUsage()
     CPPUNIT_ASSERT(nonExistingCopy == 0);
 
         // Check that paths are set
-    MetricSet topSet("top", "", "");
+    MetricSet topSet("top", {}, "");
     topSet.registerMetric(set);
     CPPUNIT_ASSERT_EQUAL(vespalib::string("a"), set.getPath());
     CPPUNIT_ASSERT_EQUAL(vespalib::string("a.c"), v1.getPath());
@@ -136,10 +136,10 @@ MetricSetTest::supportMultipleMetricsWithSameNameDifferentDimensions()
 void
 MetricSetTest::uniqueTargetMetricsAreAddedToMetricSet()
 {
-    MetricSet set1("a", "foo", "");
-    LongCountMetric v1("wow", "foo", "", &set1);
-    MetricSet set2("e", "bar", "");
-    LongCountMetric v2("doge", "foo", "", &set2);
+    MetricSet set1("a", {{"foo"}}, "");
+    LongCountMetric v1("wow", {{"foo"}}, "", &set1);
+    MetricSet set2("e", {{"bar"}}, "");
+    LongCountMetric v2("doge", {{"foo"}}, "", &set2);
 
     // Have to actually assign a value to metrics or they won't be carried over.
     v1.inc();

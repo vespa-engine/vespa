@@ -36,6 +36,7 @@ public:
     void remember(double t, int p) { _lastseen = t; _lastpid = p; }
     double lastSeen() const { return _lastseen; }
     double lastPid() const  { return _lastpid; }
+    const std::string & getLogCtlName() const { return _logctlname; }
 };
 
 class Service

@@ -45,21 +45,21 @@ struct SubSubMetricSet : public MetricSet {
 };
 
 SubSubMetricSet::SubSubMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_, MetricSet* owner)
-    : MetricSet(name, "", "", owner),
+    : MetricSet(name, {}, "", owner),
       loadTypes(loadTypes_),
       incVal(1),
-      count1("count1", "", "", this),
-      count2("count2", "", "", this),
-      loadCount(loadTypes, LongCountMetric("loadCount", "", ""), this),
-      countSum("countSum", "", "", this),
-      value1("value1", "", "", this),
-      value2("value2", "", "", this),
-      loadValue(loadTypes, DoubleValueMetric("loadValue", "", ""), this),
-      valueSum("valueSum", "", "", this),
-      average1("average1", "", "", this),
-      average2("average2", "", "", this),
-      loadAverage(loadTypes, DoubleAverageMetric("loadAverage", "", ""), this),
-      averageSum("averageSum", "", "", this)
+      count1("count1", {}, "", this),
+      count2("count2", {}, "", this),
+      loadCount(loadTypes, LongCountMetric("loadCount", {}, ""), this),
+      countSum("countSum", {}, "", this),
+      value1("value1", {}, "", this),
+      value2("value2", {}, "", this),
+      loadValue(loadTypes, DoubleValueMetric("loadValue", {}, ""), this),
+      valueSum("valueSum", {}, "", this),
+      average1("average1", {}, "", this),
+      average2("average2", {}, "", this),
+      loadAverage(loadTypes, DoubleAverageMetric("loadAverage", {}, ""), this),
+      averageSum("averageSum", {}, "", this)
 {
     countSum.addMetricToSum(count1);
     countSum.addMetricToSum(count2);
@@ -120,12 +120,12 @@ struct SubMetricSet : public MetricSet {
 };
 
 SubMetricSet::SubMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_, MetricSet* owner)
-    : MetricSet(name, "", "", owner),
+    : MetricSet(name, {}, "", owner),
       loadTypes(loadTypes_),
       set1("set1", loadTypes, this),
       set2("set2", loadTypes, this),
       loadSet(loadTypes, *std::unique_ptr<SubSubMetricSet>(new SubSubMetricSet("loadSet", loadTypes)), this),
-      setSum("setSum", "", "", this)
+      setSum("setSum", {}, "", this)
 {
     setSum.addMetricToSum(set1);
     setSum.addMetricToSum(set2);
@@ -167,12 +167,12 @@ struct TestMetricSet : public MetricSet {
 
 
 TestMetricSet::TestMetricSet(vespalib::stringref name, const LoadTypeSet& loadTypes_, MetricSet* owner)
-    : MetricSet(name, "", "", owner),
+    : MetricSet(name, {}, "", owner),
       loadTypes(loadTypes_),
       set1("set1", loadTypes, this),
       set2("set2", loadTypes, this),
       loadSet(loadTypes, *std::unique_ptr<SubMetricSet>(new SubMetricSet("loadSet", loadTypes)), this),
-      setSum("setSum", "", "", this)
+      setSum("setSum", {}, "", this)
 {
     setSum.addMetricToSum(set1);
     setSum.addMetricToSum(set2);

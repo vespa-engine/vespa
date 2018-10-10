@@ -68,10 +68,10 @@ struct SubMetricSet : public MetricSet
 
 
 SubMetricSet::SubMetricSet(const Metric::String & name, MetricSet* owner)
-    : MetricSet(name, "sub", "sub desc", owner),
-      val1("val1", "tag4 snaptest", "val1 desc", this),
-      val2("val2", "tag5", "val2 desc", this),
-      valsum("valsum", "tag4 snaptest", "valsum desc", this)
+    : MetricSet(name, {{"sub"}}, "sub desc", owner),
+      val1("val1", {{"tag4"},{"snaptest"}}, "val1 desc", this),
+      val2("val2", {{"tag5"}}, "val2 desc", this),
+      valsum("valsum", {{"tag4"},{"snaptest"}}, "valsum desc", this)
 {
     valsum.addMetricToSum(val1);
     valsum.addMetricToSum(val2);
@@ -91,16 +91,17 @@ struct MultiSubMetricSet
 };
 
 MultiSubMetricSet::MultiSubMetricSet(MetricSet* owner)
-    : set("multisub", "multisub", "", owner),
-    count("count", "snaptest", "counter", &set),
-    a("a", &set),
-    b("b", &set),
-    sum("sum", "snaptest", "", &set)
+    : set("multisub", {{"multisub"}}, "", owner),
+      count("count", {{"snaptest"}}, "counter", &set),
+      a("a", &set),
+      b("b", &set),
+      sum("sum", {{"snaptest"}}, "", &set)
 {
     sum.addMetricToSum(a);
     sum.addMetricToSum(b);
 }
-    MultiSubMetricSet::~MultiSubMetricSet() { }
+
+MultiSubMetricSet::~MultiSubMetricSet() { }
 
 struct TestMetricSet {
     MetricSet set;
@@ -120,15 +121,15 @@ struct TestMetricSet {
 };
 
 TestMetricSet::TestMetricSet()
-    : set("temp", "test", "desc of test set"),
-      val1("val1", "tag1", "val1 desc", &set),
-      val2("val2", "tag1 tag2", "val2 desc", &set),
-      val3("val3", "tag2 tag3", "val3 desc", &set),
-      val4("val4", "tag3", "val4 desc", &set),
-      val5("val5", "tag2", "val5 desc", &set),
-      val6("val6", "tag4 snaptest", "val6 desc", &set),
-      val7("val7", "", "val7 desc", &set),
-      val8("val8", "tag6", "val8 desc", &set),
+    : set("temp", {{"test"}}, "desc of test set"),
+      val1("val1", {{"tag1"}}, "val1 desc", &set),
+      val2("val2", {{"tag1"},{"tag2"}}, "val2 desc", &set),
+      val3("val3", {{"tag2"},{"tag3"}}, "val3 desc", &set),
+      val4("val4", {{"tag3"}}, "val4 desc", &set),
+      val5("val5", {{"tag2"}}, "val5 desc", &set),
+      val6("val6", {{"tag4"},{"snaptest"}}, "val6 desc", &set),
+      val7("val7", {}, "val7 desc", &set),
+      val8("val8", {{"tag6"}}, "val8 desc", &set),
       val9("sub", &set),
       val10(&set)
 { }
@@ -943,8 +944,8 @@ public:
         CPPUNIT_ASSERT_EQUAL_MSG(_jsonText, dimensions.size(),
                                  nthMetricDimensionCount(metricIndex));
         for (auto& dim : dimensions) {
-            CPPUNIT_ASSERT_EQUAL_MSG(_jsonText, std::string(dim.value),
-                                     nthMetricDimension(metricIndex, dim.key));
+            CPPUNIT_ASSERT_EQUAL_MSG(_jsonText, std::string(dim.value()),
+                                     nthMetricDimension(metricIndex, dim.key()));
         }
     }
 };
@@ -967,7 +968,7 @@ struct DimensionTestMetricSet : MetricSet
 
 DimensionTestMetricSet::DimensionTestMetricSet(MetricSet* owner)
     : MetricSet("temp", {{"foo", "megafoo"}, {"bar", "hyperbar"}}, "", owner),
-      val1("val1", "tag1", "val1 desc", this),
+      val1("val1", {{"tag1"}}, "val1 desc", this),
       val2("val2", {{"baz", "superbaz"}}, "val2 desc", this)
 { }
 DimensionTestMetricSet::~DimensionTestMetricSet() { }
@@ -1039,7 +1040,7 @@ struct DimensionOverridableTestMetricSet : MetricSet
     DimensionOverridableTestMetricSet(const std::string& dimValue,
                                 MetricSet* owner = nullptr)
         : MetricSet("temp", {{"foo", dimValue}}, "", owner),
-          val("val", "", "val desc", this)
+          val("val", {}, "val desc", this)
     { }
 };
 

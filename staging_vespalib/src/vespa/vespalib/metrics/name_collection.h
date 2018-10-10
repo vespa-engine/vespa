@@ -23,6 +23,8 @@ public:
 
     NameCollection();
     ~NameCollection() {}
+
+    static constexpr size_t empty_id = 0;
 };
 
 } // namespace vespalib::metrics

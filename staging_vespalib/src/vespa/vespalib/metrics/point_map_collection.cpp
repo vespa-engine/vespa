@@ -5,15 +5,39 @@
 namespace vespalib {
 namespace metrics {
 
+HashedPointMap::HashedPointMap(PointMap &&from)
+    : _map(std::move(from)),
+      _hash(0)
+{
+    for (const PointMap::value_type &entry : _map) {
+        _hash = (_hash << 7) + (_hash >> 31) + entry.first.id();
+        _hash = (_hash << 7) + (_hash >> 31) + entry.second.id();
+    }
+}
+
+bool
+HashedPointMap::operator< (const HashedPointMap &other) const
+{
+    // cheap comparison first
+    if (_hash != other._hash) {
+        return _hash < other._hash;
+    }
+    if (_map.size() != other._map.size()) {
+        return _map.size() < other._map.size();
+    }
+    // sizes equal, fall back to std::map::operator<
+    return _map < other._map; 
+}
+
 using Guard = std::lock_guard<std::mutex>;
 
 const PointMap &
-PointMapCollection::lookup(size_t id)
+PointMapCollection::lookup(size_t id) const
 {
     Guard guard(_lock);
     assert(id < _vec.size());
     PointMapMap::const_iterator iter = _vec[id];
-    return iter->first;
+    return iter->first.backingMap();
 }
 
 size_t

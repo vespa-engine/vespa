@@ -18,12 +18,15 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsM
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImplTest;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.test.file.TestFileSystem;
 
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
@@ -53,6 +56,7 @@ public class DockerTester implements AutoCloseable {
     final NodeAdminStateUpdaterImpl nodeAdminStateUpdater;
     final NodeAdminImpl nodeAdmin;
     private final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
+    private final FileSystem fileSystem = TestFileSystem.create();
 
 
     DockerTester() {
@@ -93,7 +97,8 @@ public class DockerTester implements AutoCloseable {
 
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
-        Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(hostName, nodeRepositoryMock,
+        Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(
+                NodeAgentContextImplTest.nodeAgentFromHostname(fileSystem, hostName), nodeRepositoryMock,
                 orchestratorMock, dockerOperations, storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL, athenzCredentialsMaintainer);
         nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer, mr, Clock.systemUTC());
         nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(nodeRepositoryMock, orchestratorMock, storageMaintainer,

@@ -99,6 +99,15 @@ public class MixedTensor implements Tensor {
     }
 
     @Override
+    public Tensor withType(TensorType other) {
+        if (!this.type.isRenamableTo(type)) {
+            throw new IllegalArgumentException("MixedTensor.withType: types are not compatible. Current type: '" +
+                    this.type.toString() + "', requested type: '" + type.toString() + "'");
+        }
+        return new MixedTensor(other, cells, index);
+    }
+
+    @Override
     public int hashCode() { return cells.hashCode(); }
 
     @Override

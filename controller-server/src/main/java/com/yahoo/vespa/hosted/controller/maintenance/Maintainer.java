@@ -1,11 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 
 import java.time.Duration;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -27,16 +31,18 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     private final JobControl jobControl;
     private final ScheduledExecutorService service;
     private final String name;
+    private final Set<SystemName> permittedSystems;
 
     public Maintainer(Controller controller, Duration interval, JobControl jobControl) {
-        this(controller, interval, jobControl, null);
+        this(controller, interval, jobControl, null, EnumSet.allOf(SystemName.class));
     }
 
-    public Maintainer(Controller controller, Duration interval, JobControl jobControl, String name) {
+    public Maintainer(Controller controller, Duration interval, JobControl jobControl, String name, Set<SystemName> permittedSystems) {
         this.controller = controller;
         this.maintenanceInterval = interval;
         this.jobControl = jobControl;
         this.name = name;
+        this.permittedSystems = ImmutableSet.copyOf(permittedSystems);
 
         service = new ScheduledThreadPoolExecutor(1);
         service.scheduleAtFixedRate(this, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
@@ -48,6 +54,9 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     @Override
     public void run() {
         try {
+            if (!permittedSystems.contains(controller.system())) {
+                return;
+            }
             if (jobControl.isActive(name())) {
                 try (Lock lock = jobControl.curator().lockMaintenanceJob(name())) {
                     maintain();

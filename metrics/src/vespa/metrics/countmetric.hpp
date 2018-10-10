@@ -8,15 +8,6 @@
 namespace metrics {
 
 template <typename T, bool SumOnAdd>
-CountMetric<T, SumOnAdd>::CountMetric(const String& name, const String& tags,
-                                      const String& desc, MetricSet* owner)
-    : AbstractCountMetric(name, tags, desc, owner),
-      _values()
-{
-    _values.setFlag(LOG_IF_UNSET);
-}
-
-template <typename T, bool SumOnAdd>
 CountMetric<T, SumOnAdd>::CountMetric(const String& name, Tags dimensions,
                                       const String& desc, MetricSet* owner)
     : AbstractCountMetric(name, std::move(dimensions), desc, owner),
@@ -160,7 +151,7 @@ CountMetric<T, SumOnAdd>::print(std::ostream& out, bool verbose,
     (void) indent;
     Values values(_values.getValues());
     if (values._value == 0 && !verbose) return;
-    out << this->_name << (SumOnAdd ? " count=" : " value=") << values._value;
+    out << this->getName() << (SumOnAdd ? " count=" : " value=") << values._value;
     if (SumOnAdd) {
         if (secondsPassed != 0) {
             double avgDiff = values._value / ((double) secondsPassed);

@@ -3,7 +3,11 @@ package com.yahoo.log;
 
 import java.io.File;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+
+import com.yahoo.io.IOUtils;
 import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author arnej
@@ -14,16 +18,13 @@ public class LogFileDbTest {
     public void canSave() {
         System.err.println("VH: "+System.getenv("VESPA_HOME"));
         File dir = new File(getDefaults().underVespaHome(LogFileDb.DBDIR));
-        dir.mkdirs();
-        if (dir.isDirectory()) {
-            System.err.println("using directory: "+dir);
-            new File(getDefaults().underVespaHome("logs/extra")).mkdirs();
-            String fn = getDefaults().underVespaHome("logs/extra/foo-bar.log");
-            LogFileDb.nowLoggingTo(fn);
-            fn = getDefaults().underVespaHome("logs/extra/stamped-1.log");
-            LogFileDb.nowLoggingTo(fn);
-        } else {
-            System.err.println("cannot create directory: "+dir);
-        }
+        assertTrue(!dir.exists() || IOUtils.recursiveDeleteDir(dir));
+        System.err.println("using directory: "+dir);
+        File extraDir = new File(getDefaults().underVespaHome("logs/extra"));
+        assertTrue(!extraDir.exists() || IOUtils.recursiveDeleteDir(extraDir));
+        String fn = getDefaults().underVespaHome("logs/extra/foo-bar.log");
+        assertTrue(LogFileDb.nowLoggingTo(fn));
+        fn = getDefaults().underVespaHome("logs/extra/stamped-1.log");
+        assertTrue(LogFileDb.nowLoggingTo(fn));
     }
 }

@@ -68,7 +68,7 @@ public class DeploymentIssueReporterTest {
         Long propertyId2 = 2L;
         Long propertyId3 = 3L;
 
-        tester.upgradeSystem(Version.fromString("5.1"));
+        tester.upgradeSystem(Version.fromString("6.2"));
 
         // Create and deploy one application for each of three tenants.
         Application app1 = tester.createApplication("application1", "tenant1", projectId1, propertyId1);
@@ -143,8 +143,8 @@ public class DeploymentIssueReporterTest {
         assertTrue("A new issue is filed for app3.", issues.isOpenFor(app3.id()));
 
 
-        // Bump system version to 5.2 to upgrade canary app2.
-        Version version = Version.fromString("5.2");
+        // Bump system version to upgrade canary app2.
+        Version version = Version.fromString("6.3");
         tester.upgradeSystem(version);
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 

@@ -10,8 +10,7 @@ void
 Counter::add(size_t count, Point point) const
 {
     if (_manager) {
-        MetricIdentifier fullId(_id, point);
-        _manager->add(Increment(fullId, count));
+        _manager->add(Increment(std::make_pair(_id, point), count));
     }
 }
 

@@ -28,12 +28,6 @@ struct AbstractCountMetric : public Metric {
     virtual bool inUse(const MetricValueClass& v) const = 0;
 
 protected:
-    AbstractCountMetric(const String& name, const String& tags,
-                        const String& description, MetricSet* owner = 0)
-        : Metric(name, tags, description, owner)
-    {
-    }
-
     AbstractCountMetric(const String& name, Tags dimensions,
                         const String& description, MetricSet* owner = 0)
         : Metric(name, std::move(dimensions), description, owner)
@@ -60,9 +54,6 @@ class CountMetric : public AbstractCountMetric
     bool logIfUnset() const { return _values.hasFlag(LOG_IF_UNSET); }
 
 public:
-    CountMetric(const String& name, const String& tags,
-                const String& description, MetricSet* owner = 0);
-
     CountMetric(const String& name, Tags dimensions,
                 const String& description, MetricSet* owner = 0);
 

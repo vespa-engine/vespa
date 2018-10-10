@@ -1,8 +1,11 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,8 +18,12 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.attribute.UserPrincipalLookupService;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
 
@@ -126,6 +133,53 @@ public class UnixPath {
 
     public void createDirectory() {
         uncheck(() -> Files.createDirectory(path));
+    }
+
+    public boolean isDirectory() {
+        return uncheck(() -> Files.isDirectory(path));
+    }
+
+    /**
+     * Similar to rm -rf file:
+     * - It's not an error if file doesn't exist
+     * - If file is a directory, it and all content is removed
+     * - For symlinks: Only the symlink is removed, not what the symlink points to
+     */
+    public boolean deleteRecursively() {
+        if (isDirectory()) {
+            for (UnixPath path : listContentsOfDirectory()) {
+                path.deleteRecursively();
+            }
+        }
+
+        return deleteIfExists();
+    }
+
+    public boolean deleteIfExists() {
+        return uncheck(() -> Files.deleteIfExists(path));
+    }
+
+    public List<UnixPath> listContentsOfDirectory() {
+        try (Stream<Path> stream = Files.list(path)){
+            return stream
+                    .map(UnixPath::new)
+                    .collect(Collectors.toList());
+        } catch (NoSuchFileException ignored) {
+            return Collections.emptyList();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to list contents of directory " + path.toAbsolutePath(), e);
+        }
+    }
+
+    public boolean moveIfExists(Path to) {
+        try {
+            Files.move(path, to);
+            return true;
+        } catch (NoSuchFileException ignored) {
+            return false;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override

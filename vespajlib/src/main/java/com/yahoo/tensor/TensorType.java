@@ -87,7 +87,7 @@ public class TensorType {
      * i.e if the given type is a generalization of this type.
      */
     public boolean isAssignableTo(TensorType generalization) {
-        return isConvertibleOrAssignableTo(generalization, false);
+        return isConvertibleOrAssignableTo(generalization, false, true);
     }
 
     /**
@@ -98,16 +98,25 @@ public class TensorType {
      * converted to the given type by zero padding.
      */
     public boolean isConvertibleTo(TensorType generalization) {
-        return isConvertibleOrAssignableTo(generalization, true);
+        return isConvertibleOrAssignableTo(generalization, true, true);
     }
 
-    private boolean isConvertibleOrAssignableTo(TensorType generalization, boolean convertible) {
+    /**
+     * Returns whether or not this type can simply be renamed to
+     * the given type. This is the same as being assignable, but disregarding
+     * dimension names.
+     */
+    public boolean isRenamableTo(TensorType other) {
+        return isConvertibleOrAssignableTo(other, false, false);
+    }
+
+    private boolean isConvertibleOrAssignableTo(TensorType generalization, boolean convertible, boolean considerName) {
         if (generalization.dimensions().size() != this.dimensions().size()) return false;
         for (int i = 0; i < generalization.dimensions().size(); i++) {
             Dimension thisDimension = this.dimensions().get(i);
             Dimension generalizationDimension = generalization.dimensions().get(i);
             if (thisDimension.isIndexed() != generalizationDimension.isIndexed()) return false;
-            if ( ! thisDimension.name().equals(generalizationDimension.name())) return false;
+            if (considerName && ! thisDimension.name().equals(generalizationDimension.name())) return false;
             if (generalizationDimension.size().isPresent()) {
                 if ( ! thisDimension.size().isPresent()) return false;
                 if (convertible) {
