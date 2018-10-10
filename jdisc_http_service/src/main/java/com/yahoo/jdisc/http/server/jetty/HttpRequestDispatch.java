@@ -131,7 +131,9 @@ class HttpRequestDispatch {
                             error,
                             () -> "Network connection was unexpectedly terminated: " + parent.jettyRequest.getRequestURI());
                     parent.metricReporter.prematurelyClosed();
-                } else if (!(error instanceof OverloadException || error instanceof BindingNotFoundException)) {
+                } else if (!(error instanceof CompletionException && error.getCause() instanceof OverloadException
+                        || error instanceof OverloadException
+                        || error instanceof BindingNotFoundException)) {
                     log.log(Level.WARNING, "Request failed: " + parent.jettyRequest.getRequestURI(), error);
                 }
                 reportedError = true;
