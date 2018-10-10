@@ -131,7 +131,7 @@ public class DeploymentTester {
         return configServer().initialVersion();
     }
 
-    public Application createApplication(String applicationName, String tenantName, long projectId, Long propertyId) {
+    public Application createApplication(String applicationName, String tenantName, long projectId, long propertyId) {
         TenantName tenant = tester.createTenant(tenantName, UUID.randomUUID().toString(), propertyId);
         return tester.createApplication(tenant, applicationName, "default", projectId);
     }

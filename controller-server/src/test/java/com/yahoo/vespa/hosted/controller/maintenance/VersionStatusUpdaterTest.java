@@ -25,7 +25,7 @@ public class VersionStatusUpdaterTest {
         tester.controller().updateVersionStatus(new VersionStatus(Collections.emptyList()));
         assertFalse(tester.controller().versionStatus().systemVersion().isPresent());
 
-        VersionStatusUpdater updater = new VersionStatusUpdater(tester.controller(), Duration.ofMinutes(3), 
+        VersionStatusUpdater updater = new VersionStatusUpdater(tester.controller(), Duration.ofDays(1),
                                                                 new JobControl(new MockCuratorDb()));
         updater.maintain();
         assertTrue(tester.controller().versionStatus().systemVersion().isPresent());

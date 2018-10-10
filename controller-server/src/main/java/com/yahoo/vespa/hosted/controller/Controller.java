@@ -202,8 +202,8 @@ public class Controller extends AbstractComponent {
     /** Returns the current system version: The controller should drive towards running all applications on this version */
     public Version systemVersion() {
         return versionStatus().systemVersion()
-                .map(VespaVersion::versionNumber)
-                .orElse(Vtag.currentVersion);
+                              .map(VespaVersion::versionNumber)
+                              .orElse(Vtag.currentVersion);
     }
 
     /** Returns the target OS version for infrastructure in this system. The controller will drive infrastructure OS
@@ -280,7 +280,7 @@ public class Controller extends AbstractComponent {
     }
 
     private static String printableVersion(Optional<VespaVersion> vespaVersion) {
-        return vespaVersion.map(v -> v.versionNumber().toFullString()).orElse("Unknown");
+        return vespaVersion.map(v -> v.versionNumber().toFullString()).orElse("unknown");
     }
 
 }
