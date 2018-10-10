@@ -65,8 +65,8 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
-    public Path pathInNodeUnderVespaHome(String relativePath) {
-        if (Paths.get(relativePath).isAbsolute())
+    public Path pathInNodeUnderVespaHome(Path relativePath) {
+        if (relativePath.isAbsolute())
             throw new IllegalArgumentException("Expected a relative path to Vespa home, got: " + relativePath);
 
         return pathToVespaHome.resolve(relativePath);
