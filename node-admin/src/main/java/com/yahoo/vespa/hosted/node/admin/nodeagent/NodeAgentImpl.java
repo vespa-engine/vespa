@@ -3,8 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
@@ -24,7 +24,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer;
-import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.time.Clock;
@@ -41,6 +40,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.STARTING;
@@ -54,6 +54,8 @@ public class NodeAgentImpl implements NodeAgent {
     // This is used as a definition of 1 GB when comparing flavor specs in node-repo
     private static final long BYTES_IN_GB = 1_000_000_000L;
 
+    private static final Logger logger = Logger.getLogger(NodeAgentImpl.class.getName());
+
 
     private final AtomicBoolean terminated = new AtomicBoolean(false);
     private boolean isFrozen = true;
@@ -63,11 +65,9 @@ public class NodeAgentImpl implements NodeAgent {
 
     private final Object monitor = new Object();
 
-    private final PrefixLogger logger;
     private DockerImage imageBeingDownloaded = null;
 
-    private final ContainerName containerName;
-    private final String hostname;
+    private final NodeAgentContext context;
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final DockerOperations dockerOperations;
@@ -111,7 +111,7 @@ public class NodeAgentImpl implements NodeAgent {
     private CpuUsageReporter lastCpuMetric = new CpuUsageReporter();
 
     public NodeAgentImpl(
-            final String hostName,
+            final NodeAgentContext context,
             final NodeRepository nodeRepository,
             final Orchestrator orchestrator,
             final DockerOperations dockerOperations,
@@ -121,9 +121,7 @@ public class NodeAgentImpl implements NodeAgent {
             final Clock clock,
             final Duration timeBetweenEachConverge,
             final AthenzCredentialsMaintainer athenzCredentialsMaintainer) {
-        this.containerName = ContainerName.fromHostname(hostName);
-        this.logger = PrefixLogger.getNodeAgentLogger(NodeAgentImpl.class, containerName);
-        this.hostname = hostName;
+        this.context = context;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.dockerOperations = dockerOperations;
@@ -139,11 +137,11 @@ public class NodeAgentImpl implements NodeAgent {
             try {
                 while (!terminated.get()) tick();
             } catch (Throwable t) {
-                logger.error("Unhandled throwable, taking down system.", t);
+                context.log(logger, LogLevel.ERROR, "Unhandled throwable, taking down system.", t);
                 System.exit(234);
             }
         });
-        this.loopThread.setName("tick-" + hostname);
+        this.loopThread.setName("tick-" + context.hostname());
     }
 
     @Override
@@ -151,7 +149,7 @@ public class NodeAgentImpl implements NodeAgent {
         synchronized (monitor) {
             if (wantFrozen != frozen) {
                 wantFrozen = frozen;
-                logger.debug(wantFrozen ? "Freezing" : "Unfreezing");
+                context.log(logger, LogLevel.DEBUG, wantFrozen ? "Freezing" : "Unfreezing");
                 signalWorkToBeDone();
             }
 
@@ -162,7 +160,7 @@ public class NodeAgentImpl implements NodeAgent {
     @Override
     public Map<String, Object> debugInfo() {
         Map<String, Object> debug = new LinkedHashMap<>();
-        debug.put("hostname", hostname);
+        debug.put("hostname", context.hostname());
         debug.put("isFrozen", isFrozen);
         debug.put("wantFrozen", wantFrozen);
         debug.put("terminated", terminated);
@@ -173,20 +171,20 @@ public class NodeAgentImpl implements NodeAgent {
 
     @Override
     public void start() {
-        logger.info("Starting with interval " + timeBetweenEachConverge.toMillis() + " ms");
+        context.log(logger, "Starting with interval " + timeBetweenEachConverge.toMillis() + " ms");
 
         loopThread.start();
 
         serviceRestarter = service -> {
             try {
                 ProcessResult processResult = dockerOperations.executeCommandInContainerAsRoot(
-                        containerName, "service", service, "restart");
+                        context.containerName(), "service", service, "restart");
 
                 if (!processResult.isSuccess()) {
-                    logger.error("Failed to restart service " + service + ": " + processResult);
+                    context.log(logger, LogLevel.ERROR, "Failed to restart service " + service + ": " + processResult);
                 }
             } catch (Exception e) {
-                logger.error("Failed to restart service " + service, e);
+                context.log(logger, LogLevel.ERROR, "Failed to restart service " + service, e);
             }
         };
     }
@@ -204,11 +202,12 @@ public class NodeAgentImpl implements NodeAgent {
                 loopThread.join();
                 filebeatRestarter.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
             } catch (InterruptedException e) {
-                logger.error("Interrupted while waiting for converge thread and filebeatRestarter scheduler to shutdown");
+                context.log(logger, LogLevel.ERROR,
+                        "Interrupted while waiting for converge thread and filebeatRestarter scheduler to shutdown");
             }
         } while (loopThread.isAlive() || !filebeatRestarter.isTerminated());
 
-        logger.info("Stopped");
+        context.log(logger, "Stopped");
     }
 
     /**
@@ -219,8 +218,8 @@ public class NodeAgentImpl implements NodeAgent {
 
     void startServicesIfNeeded() {
         if (!hasStartedServices) {
-            logger.info("Starting services");
-            dockerOperations.startServices(containerName);
+            context.log(logger, "Starting services");
+            dockerOperations.startServices(context.containerName());
             hasStartedServices = true;
         }
     }
@@ -228,14 +227,14 @@ public class NodeAgentImpl implements NodeAgent {
     void resumeNodeIfNeeded(NodeSpec node) {
         if (!hasResumedNode) {
             if (!currentFilebeatRestarter.isPresent()) {
-                storageMaintainer.writeMetricsConfig(containerName, node);
-                storageMaintainer.writeFilebeatConfig(containerName, node);
+                storageMaintainer.writeMetricsConfig(context.containerName(), node);
+                storageMaintainer.writeFilebeatConfig(context.containerName(), node);
                 currentFilebeatRestarter = Optional.of(filebeatRestarter.scheduleWithFixedDelay(
                         () -> serviceRestarter.accept("filebeat"), 1, 1, TimeUnit.DAYS));
             }
 
-            logger.debug("Starting optional node program resume command");
-            dockerOperations.resumeNode(containerName);
+            context.log(logger, LogLevel.DEBUG, "Starting optional node program resume command");
+            dockerOperations.resumeNode(context.containerName());
             hasResumedNode = true;
         }
     }
@@ -258,21 +257,21 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void publishStateToNodeRepoIfChanged(NodeAttributes currentAttributes, NodeAttributes wantedAttributes) {
         if (!currentAttributes.equals(wantedAttributes)) {
-            logger.info("Publishing new set of attributes to node repo: "
-                    + currentAttributes + " -> " + wantedAttributes);
-            nodeRepository.updateNodeAttributes(hostname, wantedAttributes);
+            context.log(logger, "Publishing new set of attributes to node repo: %s -> %s",
+                    currentAttributes, wantedAttributes);
+            nodeRepository.updateNodeAttributes(context.hostname().value(), wantedAttributes);
         }
     }
 
     private void startContainer(NodeSpec node) {
         ContainerData containerData = createContainerData(environment, node);
-        dockerOperations.createContainer(containerName, node, containerData);
-        dockerOperations.startContainer(containerName);
+        dockerOperations.createContainer(context.containerName(), node, containerData);
+        dockerOperations.startContainer(context.containerName());
         lastCpuMetric = new CpuUsageReporter();
 
         hasStartedServices = true; // Automatically started with the container
         hasResumedNode = false;
-        logger.info("Container successfully started, new containerState is " + containerState);
+        context.log(logger, "Container successfully started, new containerState is " + containerState);
     }
 
     private Optional<Container> removeContainerIfNeededUpdateContainerState(NodeSpec node, Optional<Container> existingContainer) {
@@ -280,7 +279,7 @@ public class NodeAgentImpl implements NodeAgent {
                 .flatMap(container -> removeContainerIfNeeded(node, container))
                 .map(container -> {
                         shouldRestartServices(node).ifPresent(restartReason -> {
-                            logger.info("Will restart services: " + restartReason);
+                            context.log(logger, "Will restart services: " + restartReason);
                             restartServices(node, container);
                         });
                         return container;
@@ -300,21 +299,20 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void restartServices(NodeSpec node, Container existingContainer) {
         if (existingContainer.state.isRunning() && node.getState() == Node.State.active) {
-            ContainerName containerName = existingContainer.name;
-            logger.info("Restarting services");
+            context.log(logger, "Restarting services");
             // Since we are restarting the services we need to suspend the node.
             orchestratorSuspendNode();
-            dockerOperations.restartVespa(containerName);
+            dockerOperations.restartVespa(context.containerName());
         }
     }
 
     @Override
     public void stopServices() {
-        logger.info("Stopping services");
+        context.log(logger, "Stopping services");
         if (containerState == ABSENT) return;
         try {
             hasStartedServices = hasResumedNode = false;
-            dockerOperations.stopServices(containerName);
+            dockerOperations.stopServices(context.containerName());
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
         }
@@ -322,17 +320,17 @@ public class NodeAgentImpl implements NodeAgent {
 
     @Override
     public void suspend() {
-        logger.info("Suspending services on node");
+        context.log(logger, "Suspending services on node");
         if (containerState == ABSENT) return;
         try {
             hasResumedNode = false;
-            dockerOperations.suspendNode(containerName);
+            dockerOperations.suspendNode(context.containerName());
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
         } catch (RuntimeException e) {
             // It's bad to continue as-if nothing happened, but on the other hand if we do not proceed to
             // remove container, we will not be able to upgrade to fix any problems in the suspend logic!
-            logger.warning("Failed trying to suspend container " + containerName.asString(), e);
+            context.log(logger, LogLevel.WARNING, "Failed trying to suspend container", e);
         }
     }
 
@@ -363,7 +361,7 @@ public class NodeAgentImpl implements NodeAgent {
     private Optional<Container> removeContainerIfNeeded(NodeSpec node, Container existingContainer) {
         Optional<String> removeReason = shouldRemoveContainer(node, existingContainer);
         if (removeReason.isPresent()) {
-            logger.info("Will remove container: " + removeReason.get());
+            context.log(logger, "Will remove container: " + removeReason.get());
 
             if (existingContainer.state.isRunning()) {
                 if (node.getState() == Node.State.active) {
@@ -376,13 +374,13 @@ public class NodeAgentImpl implements NodeAgent {
                     }
                     stopServices();
                 } catch (Exception e) {
-                    logger.info("Failed stopping services, ignoring", e);
+                    context.log(logger, LogLevel.WARNING, "Failed stopping services, ignoring", e);
                 }
             }
             stopFilebeatSchedulerIfNeeded();
             dockerOperations.removeContainer(existingContainer);
             containerState = ABSENT;
-            logger.info("Container successfully removed, new containerState is " + containerState);
+            context.log(logger, "Container successfully removed, new containerState is " + containerState);
             return Optional.empty();
         }
         return Optional.of(existingContainer);
@@ -403,7 +401,7 @@ public class NodeAgentImpl implements NodeAgent {
         synchronized (monitor) {
             if (!workToDoNow) {
                 workToDoNow = true;
-                logger.debug("Signaling work to be done");
+                context.log(logger, LogLevel.DEBUG, "Signaling work to be done");
                 monitor.notifyAll();
             }
         }
@@ -420,7 +418,7 @@ public class NodeAgentImpl implements NodeAgent {
                     try {
                         monitor.wait(remainder);
                     } catch (InterruptedException e) {
-                        logger.error("Interrupted while sleeping before tick, ignoring");
+                        context.log(logger, LogLevel.ERROR, "Interrupted while sleeping before tick, ignoring");
                     }
                 } else break;
             }
@@ -429,7 +427,7 @@ public class NodeAgentImpl implements NodeAgent {
 
             if (isFrozen != wantFrozen) {
                 isFrozen = wantFrozen;
-                logger.info("Updated NodeAgent's frozen state, new value: isFrozen: " + isFrozen);
+                context.log(logger, "Updated NodeAgent's frozen state, new value: isFrozen: " + isFrozen);
             }
             isFrozenCopy = isFrozen;
         }
@@ -438,22 +436,22 @@ public class NodeAgentImpl implements NodeAgent {
         boolean converged = false;
 
         if (isFrozenCopy) {
-            logger.debug("tick: isFrozen");
+            context.log(logger, LogLevel.DEBUG, "tick: isFrozen");
         } else {
             try {
                 converge();
                 converged = true;
             } catch (OrchestratorException e) {
-                logger.info(e.getMessage());
+                context.log(logger, e.getMessage());
             } catch (ContainerNotFoundException e) {
                 containerState = ABSENT;
-                logger.warning("Container unexpectedly gone, resetting containerState to " + containerState);
+                context.log(logger, LogLevel.WARNING, "Container unexpectedly gone, resetting containerState to " + containerState);
             } catch (DockerException e) {
                 numberOfUnhandledException++;
-                logger.error("Caught a DockerException", e);
+                context.log(logger, LogLevel.ERROR, "Caught a DockerException", e);
             } catch (Exception e) {
                 numberOfUnhandledException++;
-                logger.error("Unhandled exception, ignoring.", e);
+                context.log(logger, LogLevel.ERROR, "Unhandled exception, ignoring.", e);
             }
         }
 
@@ -462,13 +460,13 @@ public class NodeAgentImpl implements NodeAgent {
 
     // Public for testing
     void converge() {
-        final Optional<NodeSpec> optionalNode = nodeRepository.getOptionalNode(hostname);
+        final Optional<NodeSpec> optionalNode = nodeRepository.getOptionalNode(context.hostname().value());
 
         // We just removed the node from node repo, so this is expected until NodeAdmin stop this NodeAgent
         if (!optionalNode.isPresent() && expectNodeNotInNodeRepo) return;
 
         final NodeSpec node = optionalNode.orElseThrow(() ->
-                new IllegalStateException(String.format("Node '%s' missing from node repository.", hostname)));
+                new IllegalStateException(String.format("Node '%s' missing from node repository", context.hostname())));
         expectNodeNotInNodeRepo = false;
 
 
@@ -477,10 +475,10 @@ public class NodeAgentImpl implements NodeAgent {
             // Every time the node spec changes, we should clear the metrics for this container as the dimensions
             // will change and we will be reporting duplicate metrics.
             if (container.map(c -> c.state.isRunning()).orElse(false)) {
-                storageMaintainer.writeMetricsConfig(containerName, node);
+                storageMaintainer.writeMetricsConfig(context.containerName(), node);
             }
 
-            logger.debug("Loading new node spec: " + node.toString());
+            context.log(logger, LogLevel.DEBUG, "Loading new node spec: " + node.toString());
             lastNode = node;
         }
 
@@ -493,16 +491,16 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(node);
                 break;
             case active:
-                storageMaintainer.handleCoreDumpsForContainer(containerName, node);
+                storageMaintainer.handleCoreDumpsForContainer(context.containerName(), node);
 
-                storageMaintainer.getDiskUsageFor(containerName)
+                storageMaintainer.getDiskUsageFor(context.containerName())
                         .map(diskUsage -> (double) diskUsage / BYTES_IN_GB / node.getMinDiskAvailableGb())
                         .filter(diskUtil -> diskUtil >= 0.8)
-                        .ifPresent(diskUtil -> storageMaintainer.removeOldFilesFromNode(containerName));
+                        .ifPresent(diskUtil -> storageMaintainer.removeOldFilesFromNode(context.containerName()));
 
                 scheduleDownLoadIfNeeded(node);
                 if (isDownloadingImage()) {
-                    logger.debug("Waiting for image to download " + imageBeingDownloaded.asString());
+                    context.log(logger, LogLevel.DEBUG, "Waiting for image to download " + imageBeingDownloaded.asString());
                     return;
                 }
                 container = removeContainerIfNeededUpdateContainerState(node, container);
@@ -532,23 +530,23 @@ public class NodeAgentImpl implements NodeAgent {
                 //  - Slobrok and internal orchestrator state is used to determine whether
                 //    to allow upgrade (suspend).
                 updateNodeRepoWithCurrentAttributes(node);
-                logger.info("Call resume against Orchestrator");
-                orchestrator.resume(hostname);
+                context.log(logger, "Call resume against Orchestrator");
+                orchestrator.resume(context.hostname().value());
                 break;
             case inactive:
                 removeContainerIfNeededUpdateContainerState(node, container);
                 updateNodeRepoWithCurrentAttributes(node);
                 break;
             case provisioned:
-                nodeRepository.setNodeState(hostname, Node.State.dirty);
+                nodeRepository.setNodeState(context.hostname().value(), Node.State.dirty);
                 break;
             case dirty:
                 removeContainerIfNeededUpdateContainerState(node, container);
-                logger.info("State is " + node.getState() + ", will delete application storage and mark node as ready");
+                context.log(logger, "State is " + node.getState() + ", will delete application storage and mark node as ready");
                 athenzCredentialsMaintainer.clearCredentials();
-                storageMaintainer.cleanupNodeStorage(containerName, node);
+                storageMaintainer.cleanupNodeStorage(context.containerName(), node);
                 updateNodeRepoWithCurrentAttributes(node);
-                nodeRepository.setNodeState(hostname, Node.State.ready);
+                nodeRepository.setNodeState(context.hostname().value(), Node.State.ready);
                 expectNodeNotInNodeRepo = true;
                 break;
             default:
@@ -601,11 +599,11 @@ public class NodeAgentImpl implements NodeAgent {
         final NodeSpec node = lastNode;
         if (node == null || containerState != UNKNOWN) return;
 
-        Optional<ContainerStats> containerStats = dockerOperations.getContainerStats(containerName);
+        Optional<ContainerStats> containerStats = dockerOperations.getContainerStats(context.containerName());
         if (!containerStats.isPresent()) return;
 
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
-                .add("host", hostname)
+                .add("host", context.hostname().value())
                 .add("role", "tenants")
                 .add("state", node.getState().toString())
                 .add("parentHostname", environment.getParentHostHostname());
@@ -623,7 +621,7 @@ public class NodeAgentImpl implements NodeAgent {
         final long memoryTotalBytesUsage = ((Number) stats.getMemoryStats().get("usage")).longValue();
         final long memoryTotalBytesCache = ((Number) ((Map) stats.getMemoryStats().get("stats")).get("cache")).longValue();
         final long diskTotalBytes = (long) (node.getMinDiskAvailableGb() * BYTES_IN_GB);
-        final Optional<Long> diskTotalBytesUsed = storageMaintainer.getDiskUsageFor(containerName);
+        final Optional<Long> diskTotalBytesUsed = storageMaintainer.getDiskUsageFor(context.containerName());
 
         lastCpuMetric.updateCpuDeltas(cpuSystemTotalTime, cpuContainerTotalTime, cpuContainerKernelTime);
 
@@ -676,15 +674,15 @@ public class NodeAgentImpl implements NodeAgent {
 
             // Push metrics to the metrics proxy in each container - give it maximum 1 seconds to complete
             String[] command = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:19091",  "setExtraMetrics", wrappedMetrics};
-            dockerOperations.executeCommandInContainerAsRoot(containerName, 5L, command);
+            dockerOperations.executeCommandInContainerAsRoot(context.containerName(), 5L, command);
         } catch (DockerExecTimeoutException | JsonProcessingException  e) {
-            logger.warning("Failed to push metrics to container", e);
+            context.log(logger, LogLevel.WARNING, "Failed to push metrics to container", e);
         }
     }
 
     private Optional<Container> getContainer() {
         if (containerState == ABSENT) return Optional.empty();
-        Optional<Container> container = dockerOperations.getContainer(containerName);
+        Optional<Container> container = dockerOperations.getContainer(context.containerName());
         if (! container.isPresent()) containerState = ABSENT;
         return container;
     }
@@ -747,8 +745,8 @@ public class NodeAgentImpl implements NodeAgent {
     // to allow the node admin to make decisions that depend on the docker image. Or, each docker image
     // needs to contain routines for drain and suspend. For many images, these can just be dummy routines.
     private void orchestratorSuspendNode() {
-        logger.info("Ask Orchestrator for permission to suspend node " + hostname);
-        orchestrator.suspend(hostname);
+        context.log(logger, "Ask Orchestrator for permission to suspend node");
+        orchestrator.suspend(context.hostname().value());
     }
 
     protected ContainerData createContainerData(Environment environment, NodeSpec node) {
