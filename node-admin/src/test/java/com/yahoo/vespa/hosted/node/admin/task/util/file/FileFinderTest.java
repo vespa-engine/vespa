@@ -108,13 +108,6 @@ public class FileFinderTest {
             assertTrue(Files.exists(testRoot()));
         }
 
-        @Test
-        public void everything() {
-            FileFinder.deleteRecursively(testRoot());
-
-            assertFalse(Files.exists(testRoot()));
-        }
-
         @Before
         public void setup() throws IOException {
             Path root = testRoot();

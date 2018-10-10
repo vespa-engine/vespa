@@ -20,8 +20,6 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
-
 /**
  * Helper class to find and list or deleteRecursively files and directories. Follows the general syntax of command line
  * tool `find`.
@@ -76,11 +74,15 @@ public class FileFinder {
         return this;
     }
 
-    /** Recursively deletes all matching elements */
-    public int deleteRecursively() {
-        int[] numDeletions = { 0 }; // :(
-        forEach(attributes -> numDeletions[0] += deleteRecursively(attributes));
-        return numDeletions[0];
+    /**
+     * Recursively deletes all matching elements
+     *
+     * @return true iff anything was matched and deleted
+     */
+    public boolean deleteRecursively() {
+        boolean[] deletedAnything = { false }; // :(
+        forEach(attributes -> deletedAnything[0] |= attributes.unixPath().deleteRecursively());
+        return deletedAnything[0];
     }
 
     public List<FileAttributes> list() {
@@ -160,17 +162,6 @@ public class FileFinder {
         }
     }
 
-    private static int deleteRecursively(FileAttributes fileAttributes) {
-        int numDeletions = 0;
-        if (fileAttributes.isDirectory()) {
-            numDeletions = FileFinder.from(fileAttributes.path())
-                    .match(all())
-                    .deleteRecursively();
-        }
-
-        return numDeletions + (deleteIfExists(fileAttributes.path()) ? 1 : 0);
-    }
-
 
     // Ideally, we would reuse the FileAttributes in this package, but unfortunately we only get
     // BasicFileAttributes and not PosixFileAttributes from FileVisitor
@@ -184,6 +175,7 @@ public class FileFinder {
         }
 
         public Path path() { return path; }
+        public UnixPath unixPath() { return new UnixPath(path); }
         public String filename() { return path.getFileName().toString(); }
         public Instant lastModifiedTime() { return attributes.lastModifiedTime().toInstant(); }
         public boolean isRegularFile() { return attributes.isRegularFile(); }
@@ -223,29 +215,5 @@ public class FileFinder {
 
     public static Predicate<FileAttributes> all() {
         return attrs -> true;
-    }
-
-
-    // Other helpful methods that no not throw checked exceptions
-    public static boolean moveIfExists(Path from, Path to) {
-        try {
-            Files.move(from, to);
-            return true;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public static boolean deleteIfExists(Path path) {
-        return uncheck(() -> Files.deleteIfExists(path));
-    }
-
-    public static Path createDirectories(Path path) {
-        return uncheck(() -> Files.createDirectories(path));
-    }
-
-    public static int deleteRecursively(Path path) {
-        return deleteRecursively(
-                new FileAttributes(path, uncheck(() -> Files.readAttributes(path, BasicFileAttributes.class))));
     }
 }

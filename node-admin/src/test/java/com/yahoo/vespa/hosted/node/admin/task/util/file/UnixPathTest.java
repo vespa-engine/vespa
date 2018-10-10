@@ -17,15 +17,15 @@ import static org.junit.Assert.assertTrue;
  * @author hakonhall
  */
 public class UnixPathTest {
-    final FileSystem fileSystem = TestFileSystem.create();
+    private final FileSystem fs = TestFileSystem.create();
 
     @Test
     public void createParents() {
-        Path parentDirectory = fileSystem.getPath("/a/b/c");
+        Path parentDirectory = fs.getPath("/a/b/c");
         Path filePath = parentDirectory.resolve("bar");
         UnixPath path = new UnixPath(filePath);
 
-        assertFalse(Files.exists(fileSystem.getPath("/a")));
+        assertFalse(Files.exists(fs.getPath("/a")));
         path.createParents();
         assertTrue(Files.exists(parentDirectory));
     }
@@ -33,7 +33,7 @@ public class UnixPathTest {
     @Test
     public void utf8File() {
         String original = "foo\nbar\n";
-        UnixPath path = new UnixPath(fileSystem.getPath("example.txt"));
+        UnixPath path = new UnixPath(fs.getPath("example.txt"));
         path.writeUtf8File(original);
         String fromFile = path.readUtf8File();
         assertEquals(original, fromFile);
@@ -42,7 +42,7 @@ public class UnixPathTest {
     @Test
     public void permissions() {
         String expectedPermissions = "rwxr-x---";
-        UnixPath path = new UnixPath(fileSystem.getPath("file.txt"));
+        UnixPath path = new UnixPath(fs.getPath("file.txt"));
         path.writeUtf8File("foo");
         path.setPermissions(expectedPermissions);
         assertEquals(expectedPermissions, path.getPermissions());
@@ -50,12 +50,11 @@ public class UnixPathTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void badPermissionsString() {
-        new UnixPath(fileSystem.getPath("file.txt")).setPermissions("abcdefghi");
+        new UnixPath(fs.getPath("file.txt")).setPermissions("abcdefghi");
     }
 
     @Test
     public void owner() {
-        FileSystem fs = TestFileSystem.create();
         Path path = fs.getPath("file.txt");
         UnixPath unixPath = new UnixPath(path);
         unixPath.writeUtf8File("foo");
@@ -69,12 +68,11 @@ public class UnixPathTest {
 
     @Test
     public void createDirectoryWithPermissions() {
-        FileSystem fs = TestFileSystem.create();
         Path path = fs.getPath("dir");
         UnixPath unixPath = new UnixPath(path);
         String permissions = "rwxr-xr--";
         unixPath.createDirectory(permissions);
-        assertTrue(Files.isDirectory(path));
+        assertTrue(unixPath.isDirectory());
         assertEquals(permissions, unixPath.getPermissions());
     }
 }
