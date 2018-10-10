@@ -106,10 +106,6 @@ public class LogFileHandler extends StreamHandler {
     {
         super();
         this.compressOnRotation = compressOnRotation;
-        init();
-    }
-    
-    private void init() {
         logThread = new LogThread(this);
         logThread.start();
     }
