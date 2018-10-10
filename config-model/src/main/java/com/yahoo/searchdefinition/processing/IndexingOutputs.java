@@ -82,7 +82,7 @@ public class IndexingOutputs extends Processor {
     }
 
     private static void fillSummaryToFromField(SDField field, Set<String> dynamicSummary, Set<String> staticSummary) {
-        for (SummaryField summaryField : field.getSummaryFields()) {
+        for (SummaryField summaryField : field.getSummaryFields().values()) {
             String summaryName = summaryField.getName();
             if (summaryField.getTransform().isDynamic()) {
                 dynamicSummary.add(summaryName);

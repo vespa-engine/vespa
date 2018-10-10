@@ -24,6 +24,8 @@ import java.util.logging.Level;
  */
 public class SummaryClass extends Derived {
 
+    public static final String DOCUMENT_ID_FIELD = "documentid";
+
     /** True if this summary class needs to access summary information on disk */
     private boolean accessingDiskSummary=false;
 
@@ -53,7 +55,7 @@ public class SummaryClass extends Derived {
     /** MUST be called after all other fields are added */
     private void deriveImplicitFields(DocumentSummary summary) {
         if (summary.getName().equals("default")) {
-            addField("documentid", DataType.STRING);
+            addField(SummaryClass.DOCUMENT_ID_FIELD, DataType.STRING);
         }
     }
 

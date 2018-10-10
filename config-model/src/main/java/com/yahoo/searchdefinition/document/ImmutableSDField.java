@@ -5,10 +5,12 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -76,9 +78,9 @@ public interface ImmutableSDField {
 
     String getName();
 
-    /**
-     * @return a {@link Field} representation (which is sadly not immutable).
-     */
+    Map<String, SummaryField> getSummaryFields();
+
+    /** Returns a {@link Field} representation (which is sadly not immutable) */
     Field asField();
 
     boolean hasFullIndexingDocprocRights();
