@@ -31,7 +31,7 @@ public class ContactInformationMaintainer extends Maintainer {
     private final Organization organization;
 
     public ContactInformationMaintainer(Controller controller, Duration interval, JobControl jobControl, Organization organization) {
-        super(controller, interval, jobControl, EnumSet.of(SystemName.cd, SystemName.main));
+        super(controller, interval, jobControl, null, EnumSet.of(SystemName.cd, SystemName.main));
         this.organization = Objects.requireNonNull(organization, "organization must be non-null");
     }
 
