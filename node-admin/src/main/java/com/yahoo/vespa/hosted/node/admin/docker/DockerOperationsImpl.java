@@ -23,7 +23,6 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -95,12 +94,7 @@ public class DockerOperationsImpl implements DockerOperations {
         }
 
         if (environment.getNodeType() == NodeType.host) {
-            Path zpePathInNode = environment.pathInNodeUnderVespaHome("var/zpe");
-            if (environment.isRunningOnHost()) {
-                command.withSharedVolume("/var/zpe", zpePathInNode.toString());
-            } else {
-                command.withVolume(environment.pathInHostFromPathInNode(containerName, zpePathInNode).toString(), zpePathInNode.toString());
-            }
+            command.withSharedVolume("/var/zpe", environment.pathInNodeUnderVespaHome("var/zpe").toString());
         }
 
         DockerNetworking networking = environment.getDockerNetworking();

@@ -1,7 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.component;
 
-import java.util.function.Supplier;
+import com.yahoo.log.LogLevel;
+
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public interface TaskContext {
@@ -34,20 +36,15 @@ public interface TaskContext {
      *
      * Do not log a message that is also recorded with recordSystemModification.
      */
-    default void log(Logger logger, String message) {}
+    default void log(Logger logger, String message) {
+        log(logger, LogLevel.INFO, message);
+    }
+
     default void log(Logger logger, String messageFormat, Object... args) {
         log(logger, String.format(messageFormat, args));
     }
 
-    /**
-     * Register a message supplier to be called if the task failed, to help with debugging
-     * of the task (and too verbose to log at every run). The message is also logged at
-     * LogLevel.DEBUG if enabled.
-     *
-     * Do not call logOnFailure for a message passed to either recordSystemModification or log.
-     *
-     * @param messageSupplier Supplier to be called possibly immediately (if DEBUG is enabled),
-     *                        or later if the task failed. Either way, it will only be called once.
-     */
-    default void logOnFailure(Logger logger, Supplier<String> messageSupplier) {}
+    void log(Logger logger, Level level, String message);
+
+    void log(Logger logger, Level level, String message, Throwable throwable);
 }
