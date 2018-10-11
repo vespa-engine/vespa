@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.test;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.ConfigModelRegistry;
@@ -104,13 +105,13 @@ public class ModelAmendingTestCase {
         @Override
         public void doBuild(AdminModelAmender model, Element spec, ConfigModelContext modelContext) {
             for (AdminModel adminModel : model.adminModels)
-                amend(adminModel);
+                amend(modelContext.getDeployLogger(), adminModel);
         }
 
-        private void amend(AdminModel adminModel) {
+        private void amend(DeployLogger deployLogger, AdminModel adminModel) {
             for (HostResource host : adminModel.getAdmin().getHostSystem().getHosts()) {
                 if ( ! host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty()) continue; // already amended
-                adminModel.getAdmin().addAndInitializeService(host, new AmendedService(host.getHost()));
+                adminModel.getAdmin().addAndInitializeService(deployLogger, host, new AmendedService(host.getHost()));
             }
         }
 

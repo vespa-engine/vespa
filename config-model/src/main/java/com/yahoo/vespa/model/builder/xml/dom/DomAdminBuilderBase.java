@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
@@ -54,7 +55,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         this.configServerSpecs = configServerSpecs;
     }
 
-    List<Configserver> getConfigServersFromSpec(AbstractConfigProducer parent) {
+    List<Configserver> getConfigServersFromSpec(DeployLogger deployLogger, AbstractConfigProducer parent) {
         List<Configserver> configservers = new ArrayList<>();
         for (ConfigServerSpec spec : configServerSpecs) {
             HostSystem hostSystem = parent.getHostSystem();
@@ -63,7 +64,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
             Configserver configserver = new Configserver(parent, spec.getHostName(), spec.getConfigServerPort());
             configserver.setHostResource(host);
             configserver.setBasePort(configserver.getWantedPort());
-            configserver.initService();
+            configserver.initService(deployLogger);
             configservers.add(configserver);
         }
         return configservers;
@@ -77,7 +78,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         Map<String, MetricsConsumer> legacyMetricsConsumers = DomMetricBuilderHelper
                 .buildMetricsConsumers(XML.getChild(adminElement, "metric-consumers"));
         if (! legacyMetricsConsumers.isEmpty()) {
-            parent.deployLogger().log(WARNING, "Element 'metric-consumers' is deprecated and will be removed in Vespa 7. Use 'metrics' instead!");
+            deployState.getDeployLogger().log(WARNING, "Element 'metric-consumers' is deprecated and will be removed in Vespa 7. Use 'metrics' instead!");
         }
         FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent);
 

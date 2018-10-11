@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
@@ -97,8 +98,8 @@ public class HostResource implements Comparable<HostResource> {
      * @param wantedPort the wanted port for this service
      * @return  The allocated ports for the Service.
      */
-    List<Integer> allocateService(AbstractService service, int wantedPort) {
-        List<Integer> ports = allocatePorts(service, wantedPort);
+    List<Integer> allocateService(DeployLogger deployLogger, AbstractService service, int wantedPort) {
+        List<Integer> ports = allocatePorts(deployLogger, service, wantedPort);
         assert (getService(service.getServiceName()) == null) :
                 ("There is already a service with name '" + service.getServiceName() + "' registered on " + this +
                 ". Most likely a programming error - all service classes must have unique names, even in different packages!");
@@ -107,7 +108,7 @@ public class HostResource implements Comparable<HostResource> {
         return ports;
     }
 
-    private List<Integer> allocatePorts(AbstractService service, int wantedPort) {
+    private List<Integer> allocatePorts(DeployLogger deployLogger, AbstractService service, int wantedPort) {
         List<Integer> ports = new ArrayList<>();
         if (service.getPortCount() < 1)
             return ports;
@@ -118,7 +119,7 @@ public class HostResource implements Comparable<HostResource> {
                 throw new RuntimeException(service + " wants baseport " + wantedPort +
                                            ", but it has not reserved any ports, so it cannot name a desired baseport.");
             }
-            if (service.requiresWantedPort() || canUseWantedPort(service, wantedPort, serviceBasePort))
+            if (service.requiresWantedPort() || canUseWantedPort(deployLogger, service, wantedPort, serviceBasePort))
                 serviceBasePort = wantedPort;
         }
 
@@ -136,12 +137,12 @@ public class HostResource implements Comparable<HostResource> {
         return ports;
     }
 
-    private boolean canUseWantedPort(AbstractService service, int wantedPort, int serviceBasePort) {
+    private boolean canUseWantedPort(DeployLogger deployLogger, AbstractService service, int wantedPort, int serviceBasePort) {
         for (int i = 0; i < service.getPortCount(); i++) {
             int port = wantedPort + i;
             if (portDB.containsKey(port)) {
                 AbstractService s = (AbstractService)portDB.get(port);
-                s.getRoot().deployLogger().log(Level.WARNING, service.getServiceName() +" cannot reserve port " + port + " on " +
+                deployLogger.log(Level.WARNING, service.getServiceName() +" cannot reserve port " + port + " on " +
                         this + ": Already reserved for " + s.getServiceName() +
                         ". Using default port range from " + serviceBasePort);
                 return false;

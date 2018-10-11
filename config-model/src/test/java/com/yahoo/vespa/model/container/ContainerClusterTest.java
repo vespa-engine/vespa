@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.RoutingProviderConfig;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployProperties;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockRoot;
@@ -87,30 +88,32 @@ public class ContainerClusterTest {
         assertEquals("cd", config.system());
     }
 
-    private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster) {
-        return createContainerCluster(isHosted, isCombinedCluster, Optional.empty(), Optional.empty());
+    private ContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster) {
+        return createContainerCluster(root, isCombinedCluster, Optional.empty(), Optional.empty());
     }
 
-    private ContainerCluster createClusterControllerCluster() {
-        return createContainerCluster(false, false, new ClusterControllerClusterVerifier());
+    private ContainerCluster createClusterControllerCluster(MockRoot root) {
+        return createContainerCluster(root, false, new ClusterControllerClusterVerifier());
     }
 
-    private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster, ContainerClusterVerifier extraComponents) {
-        return createContainerCluster(isHosted, isCombinedCluster, Optional.empty(), Optional.of(extraComponents));
+    private ContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster, ContainerClusterVerifier extraComponents) {
+        return createContainerCluster(root, isCombinedCluster, Optional.empty(), Optional.of(extraComponents));
     }
 
-    private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster,
+    private ContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster,
                                                     Optional<Integer> memoryPercentage) {
-        return createContainerCluster(isHosted, isCombinedCluster, memoryPercentage, Optional.empty());
+        return createContainerCluster(root, isCombinedCluster, memoryPercentage, Optional.empty());
     }
-    private ContainerCluster createContainerCluster(boolean isHosted, boolean isCombinedCluster, 
-                                                    Optional<Integer> memoryPercentage, Optional<ContainerClusterVerifier> extraComponents) {
+    private MockRoot createRoot(boolean isHosted) {
         DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(isHosted).build()).build();
-        MockRoot root = new MockRoot("foo", state);
+        return new MockRoot("foo", state);
+    }
+    private ContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster,
+                                                    Optional<Integer> memoryPercentage, Optional<ContainerClusterVerifier> extraComponents) {
 
         ContainerCluster cluster = extraComponents.isPresent()
-                ? new ContainerCluster(root, "container0", "container1", extraComponents.get(), state)
-                : new ContainerCluster(root, "container0", "container1", state);
+                ? new ContainerCluster(root, "container0", "container1", extraComponents.get(), root.getDeployState())
+                : new ContainerCluster(root, "container0", "container1", root.getDeployState());
         if (isCombinedCluster)
             cluster.setHostClusterId("test-content-cluster");
         cluster.setMemoryPercentage(memoryPercentage);
@@ -120,7 +123,7 @@ public class ContainerClusterTest {
     private void verifyHeapSizeAsPercentageOfPhysicalMemory(boolean isHosted, boolean isCombinedCluster, 
                                                             Optional<Integer> explicitMemoryPercentage, 
                                                             int expectedMemoryPercentage) {
-        ContainerCluster cluster = createContainerCluster(isHosted, isCombinedCluster, explicitMemoryPercentage);
+        ContainerCluster cluster = createContainerCluster(createRoot(isHosted), isCombinedCluster, explicitMemoryPercentage);
         QrStartConfig.Builder qsB = new QrStartConfig.Builder();
         cluster.getSearch().getConfig(qsB);
         QrStartConfig qsC= new QrStartConfig(qsB);
@@ -153,11 +156,12 @@ public class ContainerClusterTest {
         }
     }
     private void verifyJvmArgs(boolean isHosted, boolean hasDocProc) {
-        ContainerCluster cluster = createContainerCluster(isHosted, false);
+        MockRoot root = createRoot(isHosted);
+        ContainerCluster cluster = createContainerCluster(root, false);
         if (hasDocProc) {
             cluster.setDocproc(new ContainerDocproc(cluster, null));
         }
-        addContainer(cluster, "c1", "host-c1");
+        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
         assertEquals(1, cluster.getContainers().size());
         Container container = cluster.getContainers().get(0);
         verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmArgs());
@@ -173,8 +177,9 @@ public class ContainerClusterTest {
 
     @Test
     public void testContainerClusterMaxThreads() {
-        ContainerCluster cluster = createContainerCluster(false, false);
-        addContainer(cluster, "c1","host-c1");
+        MockRoot root = createRoot(false);
+        ContainerCluster cluster = createContainerCluster(root, false);
+        addContainer(root.deployLogger(), cluster, "c1","host-c1");
 
         ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
         cluster.getConfig(tpBuilder);
@@ -184,8 +189,9 @@ public class ContainerClusterTest {
 
     @Test
     public void testClusterControllerResourceUsage() {
-        ContainerCluster cluster = createClusterControllerCluster();
-        addClusterController(cluster, "host-c1");
+        MockRoot root = createRoot(false);
+        ContainerCluster cluster = createClusterControllerCluster(root);
+        addClusterController(root.deployLogger(), cluster, "host-c1");
         assertEquals(1, cluster.getContainers().size());
         ClusterControllerContainer container = (ClusterControllerContainer) cluster.getContainers().get(0);
         QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
@@ -201,10 +207,11 @@ public class ContainerClusterTest {
 
     @Test
     public void testThatYouCanNotAddNonClusterControllerContainerToClusterControllerCluster() {
-        ContainerCluster cluster = createClusterControllerCluster();
-        addClusterController(cluster, "host-c1");
+        MockRoot root = createRoot(false);
+        ContainerCluster cluster = createClusterControllerCluster(root);
+        addClusterController(root.deployLogger(), cluster, "host-c1");
         try {
-            addContainer(cluster, "c2", "host-c2");
+            addContainer(root.deployLogger(), cluster, "c2", "host-c2");
             assertTrue(false);
         } catch (IllegalArgumentException e) {
             assertEquals("Cluster container1 does not accept container qrserver on host 'host-c2'", e.getMessage());
@@ -213,15 +220,17 @@ public class ContainerClusterTest {
 
     @Test
     public void testThatLinguisticsIsExcludedForClusterControllerCluster() {
-        ContainerCluster cluster = createClusterControllerCluster();
-        addClusterController(cluster, "host-c1");
+        MockRoot root = createRoot(false);
+        ContainerCluster cluster = createClusterControllerCluster(root);
+        addClusterController(root.deployLogger(), cluster, "host-c1");
         assertFalse(contains("com.yahoo.language.provider.SimpleLinguisticsProvider", cluster.getAllComponents()));
     }
 
     @Test
     public void testThatLinguisticsIsIncludedForNonClusterControllerClusters() {
-        ContainerCluster cluster = createContainerCluster(false, false);
-        addClusterController(cluster, "host-c1");
+        MockRoot root = createRoot(false);
+        ContainerCluster cluster = createContainerCluster(root, false);
+        addClusterController(root.deployLogger(), cluster, "host-c1");
         assertTrue(contains("com.yahoo.language.provider.SimpleLinguisticsProvider", cluster.getAllComponents()));
     }
 
@@ -242,8 +251,9 @@ public class ContainerClusterTest {
 
     @Test
     public void requireThatWeCanhandleNull() {
-        ContainerCluster cluster = createContainerCluster(false, false);
-        addContainer(cluster, "c1", "host-c1");
+        MockRoot root = createRoot(false);
+        ContainerCluster cluster = createContainerCluster(root, false);
+        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
         Container container = cluster.getContainers().get(0);
         container.setJvmArgs("");
         String empty = container.getJvmArgs();
@@ -264,24 +274,25 @@ public class ContainerClusterTest {
     }
 
 
-    private static void addContainer(ContainerCluster cluster, String name, String hostName) {
+    private static void addContainer(DeployLogger deployLogger, ContainerCluster cluster, String name, String hostName) {
         Container container = new Container(cluster, name, 0, cluster.isHostedVespa());
         container.setHostResource(new HostResource(new Host(null, hostName)));
-        container.initService();
+        container.initService(deployLogger);
         cluster.addContainer(container);
     }
 
-    private static void addClusterController(ContainerCluster cluster, String hostName) {
+    private static void addClusterController(DeployLogger deployLogger, ContainerCluster cluster, String hostName) {
         Container container = new ClusterControllerContainer(cluster, 1, false, cluster.isHostedVespa());
         container.setHostResource(new HostResource(new Host(null, hostName)));
-        container.initService();
+        container.initService(deployLogger);
         cluster.addContainer(container);
     }
 
     private static ContainerCluster newContainerCluster() {
-        ContainerCluster cluster = new ContainerCluster(null, "subId", "name", DeployState.createTestState());
-        addContainer(cluster, "c1", "host-c1");
-        addContainer(cluster, "c2", "host-c2");
+        DeployState deployState = DeployState.createTestState();
+        ContainerCluster cluster = new ContainerCluster(null, "subId", "name", deployState);
+        addContainer(deployState.getDeployLogger(), cluster, "c1", "host-c1");
+        addContainer(deployState.getDeployLogger(), cluster, "c2", "host-c2");
         return cluster;
     }
 

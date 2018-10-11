@@ -3,9 +3,8 @@ package com.yahoo.vespa.model;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.UnknownHostException;
-import java.util.*;
-import java.util.logging.Level;
+import java.util.Objects;
+
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 
@@ -37,24 +36,14 @@ public final class Host extends AbstractConfigProducer<AbstractConfigProducer<?>
         this.runsConfigServer = runsConfigServer;
         this.hostname = hostname;
         if (parent instanceof HostSystem)
-            checkName(hostname);
-    }
-
-    private void checkName(String hostname) {
-        // Give a warning if the host does not exist
-        try {
-            Object address = java.net.InetAddress.getByName(hostname);
-        } catch (UnknownHostException e) {
-            deployLogger().log(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
-        }
-        if (! hostname.contains(".")) {
-            deployLogger().log(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
-                                              "since it is not a canonical hostname");
-        }
+            ((HostSystem)parent).checkName(hostname);
     }
 
     public static Host createConfigServerHost(AbstractConfigProducer parent, String hostname) {
         return new Host(parent, hostname, true);
+    }
+    public static Host createHost(AbstractConfigProducer parent, String hostname) {
+        return new Host(parent, hostname, false);
     }
 
     // For testing

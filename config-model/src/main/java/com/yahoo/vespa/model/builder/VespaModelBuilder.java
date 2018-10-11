@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -25,6 +26,6 @@ public abstract class VespaModelBuilder {
      * @param producerRoot The root producer.
      * @param configModelRepo a {@link com.yahoo.config.model.ConfigModelRepo instance}
      */
-    public abstract void postProc(AbstractConfigProducer producerRoot, ConfigModelRepo configModelRepo);
+    public abstract void postProc(DeployLogger deployLogger, AbstractConfigProducer producerRoot, ConfigModelRepo configModelRepo);
 
 }

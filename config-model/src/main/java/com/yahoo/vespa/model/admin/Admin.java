@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.admin;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
@@ -191,7 +192,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
      */
     public void addPerHostServices(List<HostResource> hosts, DeployState deployState) {
         if (slobroks.isEmpty()) // TODO: Move to caller
-            slobroks.addAll(createDefaultSlobrokSetup());
+            slobroks.addAll(createDefaultSlobrokSetup(deployState.getDeployLogger()));
         for (HostResource host : hosts) {
             if (!host.getHost().runsConfigServer()) {
                 addCommonServices(host, deployState);
@@ -199,36 +200,36 @@ public class Admin extends AbstractConfigProducer implements Serializable {
         }
     }
     private void addCommonServices(HostResource host, DeployState deployState) {
-        addConfigSentinel(host, deployState.getProperties().applicationId(), deployState.zone());
-        addLogd(host);
-        addConfigProxy(host);
+        addConfigSentinel(deployState.getDeployLogger(), host, deployState.getProperties().applicationId(), deployState.zone());
+        addLogd(deployState.getDeployLogger(), host);
+        addConfigProxy(deployState.getDeployLogger(), host);
         addFileDistribution(host);
         if (logForwarderConfig != null) {
-            addLogForwarder(host);
+            addLogForwarder(deployState.getDeployLogger(), host);
         }
     }
 
-    private void addConfigSentinel(HostResource host, ApplicationId applicationId, Zone zone) {
+    private void addConfigSentinel(DeployLogger deployLogger, HostResource host, ApplicationId applicationId, Zone zone) {
         ConfigSentinel configSentinel = new ConfigSentinel(host.getHost(), applicationId, zone);
-        addAndInitializeService(host, configSentinel);
+        addAndInitializeService(deployLogger, host, configSentinel);
         host.getHost().setConfigSentinel(configSentinel);
     }
 
-    private void addLogForwarder(HostResource host) {
-        addAndInitializeService(host, new LogForwarder(host.getHost(), logForwarderConfig));
+    private void addLogForwarder(DeployLogger deployLogger, HostResource host) {
+        addAndInitializeService(deployLogger, host, new LogForwarder(host.getHost(), logForwarderConfig));
     }
 
-    private void addLogd(HostResource host) {
-        addAndInitializeService(host, new Logd(host.getHost()));
+    private void addLogd(DeployLogger deployLogger, HostResource host) {
+        addAndInitializeService(deployLogger, host, new Logd(host.getHost()));
     }
 
-    private void addConfigProxy(HostResource host) {
-        addAndInitializeService(host, new ConfigProxy(host.getHost()));
+    private void addConfigProxy(DeployLogger deployLogger, HostResource host) {
+        addAndInitializeService(deployLogger, host, new ConfigProxy(host.getHost()));
     }
 
-    public void addAndInitializeService(HostResource host, AbstractService service) {
+    public void addAndInitializeService(DeployLogger deployLogger, HostResource host, AbstractService service) {
         service.setHostResource(host);
-        service.initService();
+        service.initService(deployLogger);
     }
 
     private void addFileDistribution(HostResource host) {
@@ -252,12 +253,12 @@ public class Admin extends AbstractConfigProducer implements Serializable {
     }
 
     // If not configured by user: Use default setup: max 3 slobroks, 1 on the default configserver host
-    private List<Slobrok> createDefaultSlobrokSetup() {
+    private List<Slobrok> createDefaultSlobrokSetup(DeployLogger deployLogger) {
         List<HostResource> hosts = getHostSystem().getHosts();
         List<Slobrok> slobs = new ArrayList<>();
         if (logserver != null) {
             Slobrok slobrok = new Slobrok(this, 0);
-            addAndInitializeService(logserver.getHostResource(), slobrok);
+            addAndInitializeService(deployLogger, logserver.getHostResource(), slobrok);
             slobs.add(slobrok);
         }
 
@@ -266,7 +267,7 @@ public class Admin extends AbstractConfigProducer implements Serializable {
             HostResource host = hosts.get(n);
             if ((logserver== null || host != logserver.getHostResource()) && ! host.getHost().runsConfigServer()) {
                 Slobrok newSlobrok = new Slobrok(this, slobs.size());
-                addAndInitializeService(host, newSlobrok);
+                addAndInitializeService(deployLogger, host, newSlobrok);
                 slobs.add(newSlobrok);
             }
             n++;

@@ -325,7 +325,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                 if (clusterControllers == null) {
                     List<HostResource> hosts = admin.getClusterControllerHosts();
                     if (hosts.size() > 1) {
-                        admin.deployLogger().log(Level.INFO, "When having content cluster(s) and more than 1 config server it is recommended to configure cluster controllers explicitly.");
+                        context.getDeployState().getDeployLogger().log(Level.INFO, "When having content cluster(s) and more than 1 config server it is recommended to configure cluster controllers explicitly.");
                     }
                     clusterControllers = createClusterControllers(admin, hosts, "cluster-controllers", false, context.getDeployState());
                     admin.setClusterControllers(clusterControllers);
@@ -468,7 +468,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                 for (HostResource host : hosts) {
                     ClusterControllerContainer clusterControllerContainer = new ClusterControllerContainer(clusterControllers, index, multitenant, deployState.isHosted());
                     clusterControllerContainer.setHostResource(host);
-                    clusterControllerContainer.initService();
+                    clusterControllerContainer.initService(deployState.getDeployLogger());
                     clusterControllerContainer.setProp("clustertype", "admin")
                             .setProp("clustername", clusterControllers.getName())
                             .setProp("index", String.valueOf(index));

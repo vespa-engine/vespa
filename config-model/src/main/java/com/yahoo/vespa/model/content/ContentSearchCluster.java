@@ -201,7 +201,7 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
 
             // TODO: remove explicit building of user configs when the complete content model is built using builders.
             sc.getLocalSDS().add(new AbstractSearchCluster.SearchDefinitionSpec(searchDefinition,
-                    UserConfigBuilder.build(e.getXml(), deployState, sc.getRoot().deployLogger())));
+                    UserConfigBuilder.build(e.getXml(), deployState, deployState.getDeployLogger())));
             //need to get the document names from this sdfile
             sc.addDocumentNames(searchDefinition);
         }
@@ -235,11 +235,11 @@ public class ContentSearchCluster extends AbstractConfigProducer implements Prot
             snode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
                                       clusterName, node, flushOnShutdown, tuning, parentGroup.getOwner().isHostedVespa());
             snode.setHostResource(node.getHostResource());
-            snode.initService();
+            snode.initService(deployState.getDeployLogger());
 
             tls = new TransactionLogServer(snode, clusterName);
             tls.setHostResource(snode.getHostResource());
-            tls.initService();
+            tls.initService(deployState.getDeployLogger());
         } else {
             snode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown, tuning).build(deployState, parent, element.getXml());
             tls = new TransactionLogServer.Builder(clusterName).build(deployState, snode, element.getXml());

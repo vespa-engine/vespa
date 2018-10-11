@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -23,7 +24,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             if (equals("dispatch", e)) {
                 handleDispatch(e, tuning);
             } else if (equals("searchnode", e)) {
-                handleSearchNode(parent, e, tuning);
+                handleSearchNode(deployState.getDeployLogger(), parent, e, tuning);
             }
         }
         return tuning;
@@ -58,13 +59,13 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleSearchNode(AbstractConfigProducer parent, Element spec, Tuning t) {
+    private void handleSearchNode(DeployLogger deployLogger, AbstractConfigProducer parent, Element spec, Tuning t) {
         t.searchNode = new Tuning.SearchNode();
         for (Element e : XML.getChildren(spec)) {
             if (equals("requestthreads", e)) {
                handleRequestThreads(e, t.searchNode);
             } else if (equals("flushstrategy", e)) {
-                handleFlushStrategy(parent,e, t.searchNode);
+                handleFlushStrategy(deployLogger, parent,e, t.searchNode);
             } else if (equals("resizing", e)) {
                 handleResizing(e, t.searchNode);
             } else if (equals("index", e)) {
@@ -72,7 +73,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             } else if (equals("attribute", e)) {
                 handleAttribute(e, t.searchNode);
             } else if (equals("summary", e)) {
-                handleSummary(parent, e, t.searchNode);
+                handleSummary(deployLogger, parent, e, t.searchNode);
             } else if (equals("initialize", e)) {
                 handleInitialize(e, t.searchNode);
             } else if (equals("feeding", e)) {
@@ -95,15 +96,15 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleFlushStrategy(AbstractConfigProducer parent, Element spec, Tuning.SearchNode sn) {
+    private void handleFlushStrategy(DeployLogger deployLogger, AbstractConfigProducer parent, Element spec, Tuning.SearchNode sn) {
         for (Element e : XML.getChildren(spec)) {
             if (equals("native", e)) {
-                handleNativeStrategy(parent, e, sn);
+                handleNativeStrategy(deployLogger, parent, e, sn);
             }
         }
     }
 
-    private void handleNativeStrategy(AbstractConfigProducer parent, Element spec, Tuning.SearchNode sn) {
+    private void handleNativeStrategy(DeployLogger deployLogger, AbstractConfigProducer parent, Element spec, Tuning.SearchNode sn) {
         sn.strategy = new Tuning.SearchNode.FlushStrategy();
         Tuning.SearchNode.FlushStrategy fs = sn.strategy;
         for (Element e : XML.getChildren(spec)) {
@@ -128,7 +129,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
             } else if (equals("transactionlog", e)) {
                 for (Element subElem : XML.getChildren(e)) {
                     if (equals("maxentries", subElem)) {
-                        parent.deployLogger().log(Level.WARNING, "Element 'transactionlog.maxentries is deprecated and ignored in 'native' flush strategy. Use 'transactionlog.maxsize' to limit by size.");
+                        deployLogger.log(Level.WARNING, "Element 'transactionlog.maxentries is deprecated and ignored in 'native' flush strategy. Use 'transactionlog.maxsize' to limit by size.");
                     } else if (equals("maxsize", subElem)) {
                         fs.transactionLogMaxSize = asLong(subElem);
                     }
@@ -187,7 +188,7 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleSummary(AbstractConfigProducer parent, Element spec, Tuning.SearchNode sn) {
+    private void handleSummary(DeployLogger deployLogger, AbstractConfigProducer parent, Element spec, Tuning.SearchNode sn) {
         sn.summary = new Tuning.SearchNode.Summary();
         for (Element e : XML.getChildren(spec)) {
             if (equals("io", e)) {
@@ -200,31 +201,31 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
                     }
                 }
             } else if (equals("store", e)) {
-                handleSummaryStore(parent, e, sn.summary);
+                handleSummaryStore(deployLogger, parent, e, sn.summary);
             }
         }
     }
 
-    private void handleSummaryStore(AbstractConfigProducer parent, Element spec, Tuning.SearchNode.Summary s) {
+    private void handleSummaryStore(DeployLogger deployLogger, AbstractConfigProducer parent, Element spec, Tuning.SearchNode.Summary s) {
         s.store = new Tuning.SearchNode.Summary.Store();
         for (Element e : XML.getChildren(spec)) {
             if (equals("cache", e)) {
                 s.store.cache = new Tuning.SearchNode.Summary.Store.Component();
-                handleSummaryStoreComponent(parent, e, s.store.cache);
+                handleSummaryStoreComponent(deployLogger, parent, e, s.store.cache);
             } else if (equals("logstore", e)) {
-                handleSummaryLogStore(parent, e, s.store);
+                handleSummaryLogStore(deployLogger, parent, e, s.store);
             }
         }
     }
 
-    private void handleSummaryStoreComponent(AbstractConfigProducer parent, Element spec, Tuning.SearchNode.Summary.Store.Component c) {
+    private void handleSummaryStoreComponent(DeployLogger deployLogger, AbstractConfigProducer parent, Element spec, Tuning.SearchNode.Summary.Store.Component c) {
          for (Element e : XML.getChildren(spec)) {
             if (equals("maxsize", e)) {
                 c.maxSize = asLong(e);
             } else if (equals("maxsize-percent", e)) {
                 c.maxSizePercent = asDouble(e);
             } else if (equals("maxentries", e)) {
-                parent.deployLogger().log(Level.WARNING, "Element 'maxentries is deprecated and ignored. Will only limit by size.");
+                deployLogger.log(Level.WARNING, "Element 'maxentries is deprecated and ignored. Will only limit by size.");
             } else if (equals("initialentries", e)) {
                 c.initialEntries = asLong(e);
             } else if (equals("compression", e)) {
@@ -244,24 +245,23 @@ public class DomSearchTuningBuilder extends VespaDomBuilder.DomConfigProducerBui
         }
     }
 
-    private void handleSummaryLogStore(AbstractConfigProducer parent, Element spec, Tuning.SearchNode.Summary.Store s) {
+    private void handleSummaryLogStore(DeployLogger deployLogger, AbstractConfigProducer parent, Element spec, Tuning.SearchNode.Summary.Store s) {
         s.logStore = new Tuning.SearchNode.Summary.Store.LogStore();
         for (Element e : XML.getChildren(spec)) {
             if (equals("maxfilesize", e)) {
                 s.logStore.maxFileSize = asLong(e);
             } else if (equals("maxdiskbloatfactor", e)) {
-                parent.deployLogger().log(Level.WARNING,
+                deployLogger.log(Level.WARNING,
                         "Element 'maxdiskbloatfactor is deprecated and ignored." +
                         " The min value from flush.memory.xxx.diskbloatfactor is used instead");
             } else if (equals("minfilesizefactor", e)) {
                 s.logStore.minFileSizeFactor = asDouble(e);
             } else if (equals("numthreads", e)) {
-                parent.deployLogger().log(Level.WARNING,
-                        "Element 'numthreads is deprecated. Use feeding.concurrency instead.");
+                deployLogger.log(Level.WARNING, "Element 'numthreads is deprecated. Use feeding.concurrency instead.");
                 s.logStore.numThreads = asInt(e);
             } else if (equals("chunk", e)) {
                 s.logStore.chunk = new Tuning.SearchNode.Summary.Store.Component(true);
-                handleSummaryStoreComponent(parent, e, s.logStore.chunk);
+                handleSummaryStoreComponent(deployLogger, parent, e, s.logStore.chunk);
             }
         }
     }

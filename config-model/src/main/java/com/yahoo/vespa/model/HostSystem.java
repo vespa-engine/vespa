@@ -38,10 +38,25 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     private final Map<String, HostResource> hostname2host = new LinkedHashMap<>();
     private final HostProvisioner provisioner;
+    private final DeployLogger deployLogger;
 
-    public HostSystem(AbstractConfigProducer parent, String name, HostProvisioner provisioner) {
+    public HostSystem(AbstractConfigProducer parent, String name, HostProvisioner provisioner, DeployLogger deployLogger) {
         super(parent, name);
         this.provisioner = provisioner;
+        this.deployLogger = deployLogger;
+    }
+
+    void checkName(String hostname) {
+        // Give a warning if the host does not exist
+        try {
+            Object address = java.net.InetAddress.getByName(hostname);
+        } catch (UnknownHostException e) {
+            deployLogger.log(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
+        }
+        if (! hostname.contains(".")) {
+            deployLogger.log(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
+                    "since it is not a canonical hostname");
+        }
     }
 
     /**
@@ -110,7 +125,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     }
 
     private HostResource addNewHost(HostSpec hostSpec) {
-        Host host = new Host(this, hostSpec.hostname());
+        Host host = Host.createHost(this, hostSpec.hostname());
         HostResource hostResource = new HostResource(host, hostSpec.version());
         hostResource.setFlavor(hostSpec.flavor());
         hostSpec.membership().ifPresent(hostResource::addClusterMembership);

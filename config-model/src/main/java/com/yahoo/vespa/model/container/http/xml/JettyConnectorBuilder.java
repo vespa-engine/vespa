@@ -33,7 +33,7 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
         if (legacyServerConfig != null) {
             String configName = legacyServerConfig.getAttribute("name");
             if (configName.equals("container.jdisc.config.http-server")) {
-                ancestor.deployLogger().log(Level.WARNING, "The config 'container.jdisc.config.http-server' is deprecated and will be removed in a later version of Vespa."
+                deployState.getDeployLogger().log(Level.WARNING, "The config 'container.jdisc.config.http-server' is deprecated and will be removed in a later version of Vespa."
                         + " Please use 'jdisc.http.connector' instead, see http://docs.vespa.ai/documentation/jdisc/http-server-and-filters.html#configuring-jetty-server");
             } else {
                 legacyServerConfig = null;

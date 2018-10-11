@@ -455,7 +455,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             Container node = new Container(cluster, "container.0", 0, cluster.isHostedVespa());
             HostResource host = allocateSingleNodeHost(cluster, log, containerElement, context);
             node.setHostResource(host);
-            node.initService();
+            node.initService(context.getDeployLogger());
             cluster.addContainers(Collections.singleton(node));
         }
         else {
@@ -544,7 +544,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                                   ClusterSpec.Type.container,
                                                                                   ClusterSpec.Id.from(cluster.getName()), 
                                                                                   log);
-        return createNodesFromHosts(hosts, cluster);
+        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
 
     private List<Container> createNodesFromNodeType(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
@@ -556,7 +556,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().getHostSystem().allocateHosts(clusterSpec, 
                                                                 Capacity.fromRequiredNodeType(type), 1, log);
-        return createNodesFromHosts(hosts, cluster);
+        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
     
     private List<Container> createNodesFromContentServiceReference(ContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
@@ -579,7 +579,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                             referenceId, 
                                             cluster.getRoot().getHostSystem(),
                                             context.getDeployLogger());
-        return createNodesFromHosts(hosts, cluster);
+        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
 
     /**
@@ -619,13 +619,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return servicesRootOf(parentElement);
     }
     
-    private List<Container> createNodesFromHosts(Map<HostResource, ClusterMembership> hosts, ContainerCluster cluster) {
+    private List<Container> createNodesFromHosts(DeployLogger deployLogger, Map<HostResource, ClusterMembership> hosts, ContainerCluster cluster) {
         List<Container> nodes = new ArrayList<>();
         for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
             String id = "container." + entry.getValue().index();
             Container container = new Container(cluster, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa());
             container.setHostResource(entry.getKey());
-            container.initService();
+            container.initService(deployLogger);
             nodes.add(container);
         }
         return nodes;

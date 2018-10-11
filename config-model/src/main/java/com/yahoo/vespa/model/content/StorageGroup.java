@@ -210,7 +210,7 @@ public class StorageGroup {
             if (group.isPresent() && nodes.isPresent())
                 throw new IllegalStateException("Both group and nodes exists, only one of these tags is legal");
             if (group.isPresent() && (group.get().getStringAttribute("name") != null || group.get().getIntegerAttribute("distribution-key") != null))
-                    owner.deployLogger().log(LogLevel.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
+                    deployState.getDeployLogger().log(LogLevel.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
 
             GroupBuilder groupBuilder = collectGroup(group, nodes, null, null);
             if (owner.isHostedVespa()) {
@@ -470,13 +470,13 @@ public class StorageGroup {
         private static StorageNode createStorageNode(DeployState deployState, ContentCluster parent, HostResource hostResource, StorageGroup parentGroup, ClusterMembership clusterMembership) {
             StorageNode sNode = new StorageNode(parent.getStorageNodes(), null, clusterMembership.index(), clusterMembership.retired());
             sNode.setHostResource(hostResource);
-            sNode.initService();
+            sNode.initService(deployState.getDeployLogger());
 
             // TODO: Supplying null as XML is not very nice
             PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, parentGroup, null);
             Distributor d = new Distributor(parent.getDistributorNodes(), clusterMembership.index(), null, provider);
             d.setHostResource(sNode.getHostResource());
-            d.initService();
+            d.initService(deployState.getDeployLogger());
             return sNode;
         }
     }

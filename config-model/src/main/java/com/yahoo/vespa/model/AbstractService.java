@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -123,7 +124,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      * @param hostResource The physical host on which this service should run.
      * @param userPort The wanted port given by the user.
      */
-    private void initService(HostResource hostResource, int userPort) {
+    private void initService(DeployLogger deployLogger, HostResource hostResource, int userPort) {
         if (initialized) {
             throw new IllegalStateException("Service '" + getConfigId() + "' already initialized.");
         }
@@ -132,7 +133,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
                                        "The hostalias is probably missing from hosts.xml.");
         }
         id = getIndex(hostResource);
-        ports = hostResource.allocateService(this, getInstanceWantedPort(userPort));
+        ports = hostResource.allocateService(deployLogger, this, getInstanceWantedPort(userPort));
         initialized = true;
     }
 
@@ -140,8 +141,8 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
      * Called by builder class which has not given the host or port in a constructor, hence
      * initService is not yet run for this.
      */
-    public void initService() {
-        initService(this.hostResource, this.basePort);
+    public void initService(DeployLogger deployLogger) {
+        initService(deployLogger, this.hostResource, this.basePort);
     }
 
     /**

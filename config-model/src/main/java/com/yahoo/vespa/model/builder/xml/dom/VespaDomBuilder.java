@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelRepo;
@@ -172,12 +173,12 @@ public class VespaDomBuilder extends VespaModelBuilder {
                 if (port > 0) {
                     t.setBasePort(port);
                 }
-                allocateHost(t, hostSystem, producerSpec);
+                allocateHost(t, hostSystem, producerSpec, deployState.getDeployLogger());
             }
             // This depends on which constructor in AbstractService is used, but the best way
             // is to let this method do initialize.
             if (!t.isInitialized()) {
-                t.initService();
+                t.initService(deployState.getDeployLogger());
             }
         }
 
@@ -189,7 +190,9 @@ public class VespaDomBuilder extends VespaModelBuilder {
          * @param hostSystem a {@link HostSystem}
          * @param producerSpec xml element for the service
          */
-        private void allocateHost(final AbstractService service, HostSystem hostSystem, Element producerSpec) {
+        private void allocateHost(final AbstractService service, HostSystem hostSystem,
+                                  Element producerSpec, DeployLogger deployLogger)
+        {
             // TODO store service on something else than HostSystem, to not make that overloaded
             service.setHostResource(hostSystem.getHost(producerSpec.getAttribute("hostalias")));
         }
@@ -230,7 +233,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
                     deployState.getDocumentModel(),
                     deployState.getProperties().vespaVersion(),
                     deployState.getProperties().applicationId());
-            root.setHostSystem(new HostSystem(root, "hosts", deployState.getProvisioner()));
+            root.setHostSystem(new HostSystem(root, "hosts", deployState.getProvisioner(), deployState.getDeployLogger()));
             new Client(root);
             return root;
         }
@@ -274,8 +277,8 @@ public class VespaDomBuilder extends VespaModelBuilder {
      * @param root root config producer
      * @param configModelRepo a {@link ConfigModelRepo}
      */
-    public void postProc(AbstractConfigProducer root, ConfigModelRepo configModelRepo) {
-        createTlds(configModelRepo);
+    public void postProc(DeployLogger deployLogger, AbstractConfigProducer root, ConfigModelRepo configModelRepo) {
+        createTlds(deployLogger, configModelRepo);
         setContentSearchClusterIndexes(configModelRepo);
         createDocprocMBusServersAndClients(configModelRepo);
     }
@@ -291,10 +294,10 @@ public class VespaDomBuilder extends VespaModelBuilder {
             docproc.getChains().addServersAndClientsForChains();
     }
 
-    private void createTlds(ConfigModelRepo pc) {
+    private void createTlds(DeployLogger deployLogger, ConfigModelRepo pc) {
          for (ConfigModel p : pc.asMap().values()) {
             if (p instanceof Content) {
-                ((Content)p).createTlds(pc);
+                ((Content)p).createTlds(deployLogger, pc);
             }
         }
     }

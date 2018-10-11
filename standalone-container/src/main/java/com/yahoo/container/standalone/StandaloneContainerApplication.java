@@ -251,7 +251,7 @@ public class StandaloneContainerApplication implements Application {
         // such that the above and below code to finalize the container can be
         // replaced by root.finalize();
 
-        initializeContainer(container, spec);
+        initializeContainer(deployState.getDeployLogger(), container, spec);
 
         root.freezeModelTopology();
         return new Pair<>(root, container);
@@ -274,12 +274,12 @@ public class StandaloneContainerApplication implements Application {
         return builder.build();
     }
 
-    private static void initializeContainer(Container container, Element spec) {
+    private static void initializeContainer(DeployLogger deployLogger, Container container, Element spec) {
         HostResource host = container.getRoot().getHostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);
 
         container.setBasePort(VespaDomBuilder.getXmlWantedPort(spec));
         container.setHostResource(host);
-        container.initService();
+        container.initService(deployLogger);
     }
 
     private static Element getJDiscInServices(Element element) {

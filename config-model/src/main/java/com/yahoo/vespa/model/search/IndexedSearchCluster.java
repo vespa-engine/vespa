@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.config.search.AttributesConfig;
@@ -74,7 +75,7 @@ public class IndexedSearchCluster extends SearchCluster
             }
         }
 
-        public UnionConfiguration(AbstractConfigProducer parent, List<DocumentDatabase> docDbs) {
+        private UnionConfiguration(AbstractConfigProducer parent, List<DocumentDatabase> docDbs) {
             super(parent, "union");
             this.docDbs = docDbs;
         }
@@ -92,7 +93,6 @@ public class IndexedSearchCluster extends SearchCluster
 
     // This is the document selector string as derived from the subscription tag.
     private String routingSelector = null;
-    private DocumentSelectionConverter selectionConverter = null;
     private List<DocumentDatabase> documentDbs = new LinkedList<>();
     private final UnionConfiguration unionCfg;
     private int maxNodesDownPerFixedRow = 0;
@@ -177,11 +177,11 @@ public class IndexedSearchCluster extends SearchCluster
         return this;
     }
 
-    public Dispatch addTld(AbstractConfigProducer tldParent, HostResource hostResource) {
+    public Dispatch addTld(DeployLogger deployLogger, AbstractConfigProducer tldParent, HostResource hostResource) {
         int index = rootDispatch.getDispatchers().size();
         Dispatch tld = Dispatch.createTld(rootDispatch, tldParent, index);
         tld.setHostResource(hostResource);
-        tld.initService();
+        tld.initService(deployLogger);
         rootDispatch.addDispatcher(tld);
         return tld;
     }
@@ -193,7 +193,7 @@ public class IndexedSearchCluster extends SearchCluster
      * @param tldParent the indexed search cluster the tlds to add should be connected to
      * @param containerCluster the container cluster that should use the tlds created for searching the indexed search cluster above
      */
-    public void addTldsWithSameIdsAsContainers(AbstractConfigProducer tldParent, ContainerCluster containerCluster) {
+    public void addTldsWithSameIdsAsContainers(DeployLogger deployLogger, AbstractConfigProducer tldParent, ContainerCluster containerCluster) {
         for (Container container : containerCluster.getContainers()) {
             String containerSubId = container.getSubId();
             if ( ! containerSubId.contains(".")) {
@@ -204,14 +204,14 @@ public class IndexedSearchCluster extends SearchCluster
             log.log(LogLevel.DEBUG, "Adding tld with index " + containerIndex + " for content cluster " + this.getClusterName() +
                                     ", container cluster " + containerClusterName + " (container id " + containerSubId +
                                     ") on host " + container.getHostResource().getHostname());
-            rootDispatch.addDispatcher(createTld(tldParent, container.getHostResource(), containerClusterName, containerIndex));
+            rootDispatch.addDispatcher(createTld(deployLogger, tldParent, container.getHostResource(), containerClusterName, containerIndex));
         }
     }
 
-    public Dispatch createTld(AbstractConfigProducer tldParent, HostResource hostResource, String containerClusterName, int containerIndex) {
+    private Dispatch createTld(DeployLogger deployLogger, AbstractConfigProducer tldParent, HostResource hostResource, String containerClusterName, int containerIndex) {
         Dispatch tld = Dispatch.createTldWithContainerIdInName(rootDispatch, tldParent, containerClusterName, containerIndex);
         tld.setHostResource(hostResource);
-        tld.initService();
+        tld.initService(deployLogger);
         return tld;
     }
 
@@ -241,7 +241,7 @@ public class IndexedSearchCluster extends SearchCluster
         }
     }
 
-    protected void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
+    private void fillDocumentDBConfig(DocumentDatabase sdoc, ProtonConfig.Documentdb.Builder ddbB) {
         ddbB.inputdoctypename(sdoc.getInputDocType())
             .configid(sdoc.getConfigId())
             .visibilitydelay(getVisibilityDelay());
@@ -264,7 +264,7 @@ public class IndexedSearchCluster extends SearchCluster
         this.routingSelector=sel;
         if (this.routingSelector != null) {
             try {
-                this.selectionConverter = new DocumentSelectionConverter(this.routingSelector);
+                new DocumentSelectionConverter(this.routingSelector);
             } catch (Exception e) {
                 throw new IllegalArgumentException("Invalid routing selector: " + e.getMessage());
             }
@@ -278,9 +278,11 @@ public class IndexedSearchCluster extends SearchCluster
         if ((routingSelector == null) && !getDocumentNames().isEmpty()) {
             Iterator<String> it = getDocumentNames().iterator();
             routingSelector = it.next();
+            StringBuilder sb = new StringBuilder(routingSelector);
             while (it.hasNext()) {
-                routingSelector += " or " + it.next();
+                sb.append(" or ").append(it.next());
             }
+            routingSelector = sb.toString();
         }
     }
     @Override
@@ -289,7 +291,7 @@ public class IndexedSearchCluster extends SearchCluster
             com.yahoo.searchdefinition.Search search = spec.getSearchDefinition().getSearch();
             if ( ! (search instanceof DocumentOnlySearch)) {
                 DocumentDatabase db = new DocumentDatabase(this, search.getName(),
-                                                           new DerivedConfiguration(search, deployLogger(),
+                                                           new DerivedConfiguration(search, deployState.getDeployLogger(),
                                                                                     deployState.rankProfileRegistry(),
                                                                                     deployState.getQueryProfiles().getRegistry(),
                                                                                     deployState.getImportedModels()));
@@ -308,7 +310,7 @@ public class IndexedSearchCluster extends SearchCluster
         this.searchCoverage = searchCoverage;
     }
 
-    public SearchCoverage getSearchCoverage() {
+    SearchCoverage getSearchCoverage() {
         return searchCoverage;
     }
 
@@ -336,9 +338,9 @@ public class IndexedSearchCluster extends SearchCluster
     }
 
     @Override
-    protected void exportSdFiles(File toDir) throws IOException { }
+    protected void exportSdFiles(File toDir) { }
 
-    public int getMinNodesPerColumn() { return 0; }
+    int getMinNodesPerColumn() { return 0; }
 
     boolean useFixedRowInDispatch() {
         for (SearchNode node : getSearchNodes()) {
@@ -356,7 +358,7 @@ public class IndexedSearchCluster extends SearchCluster
     public void setMaxNodesDownPerFixedRow(int value) {
         maxNodesDownPerFixedRow = value;
     }
-    public int getSearchableCopies() {
+    int getSearchableCopies() {
         return searchableCopies;
     }
 
@@ -381,12 +383,12 @@ public class IndexedSearchCluster extends SearchCluster
         return dispatchSpec != null && dispatchSpec.getGroups() != null && !dispatchSpec.getGroups().isEmpty();
     }
 
-    public void setupDispatchGroups() {
+    public void setupDispatchGroups(DeployLogger deployLogger) {
         if (!useMultilevelDispatchSetup()) {
             return;
         }
         rootDispatch.clearSearchers();
-        new DispatchGroupBuilder(dispatchParent, rootDispatch, this).build(dispatchSpec.getGroups(), getSearchNodes());
+        new DispatchGroupBuilder(dispatchParent, rootDispatch, this).build(deployLogger, dispatchSpec.getGroups(), getSearchNodes());
     }
 
     @Override
