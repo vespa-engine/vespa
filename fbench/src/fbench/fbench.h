@@ -10,6 +10,7 @@
 class FBench
 {
 private:
+    vespalib::CryptoEngine::SP _crypto_engine;
     std::vector<Client::UP> _clients;
     int                 _numClients;
     int                 _ignoreCount;
@@ -31,6 +32,10 @@ private:
     std::string         _queryStringToAppend;
     std::string         _extraHeaders;
     std::string         _authority;
+
+    bool init_crypto_engine(const std::string &ca_certs_file_name,
+                            const std::string &cert_chain_file_name,
+                            const std::string &private_key_file_name);
 
     void InitBenchmark(int numClients, int ignoreCount, int cycle,
                        const char *filenamePattern, const char *outputPattern,
