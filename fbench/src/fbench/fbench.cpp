@@ -226,11 +226,11 @@ FBench::Usage()
     printf(" -o <str> : save query results to output files with the given pattern\n");
     printf("            (default is not saving.)\n");
     printf(" -r <num> : number of times to re-use each query file. -1 means no limit [-1]\n");
-    printf(" -m <num> : max line size in input query files [8192].\n");
+    printf(" -m <num> : max line size in input query files [131072].\n");
     printf("            Can not be less than the minimum [1024].\n");
     printf(" -p <num> : print summary every <num> seconds.\n");
     printf(" -k       : disable HTTP keep-alive.\n");
-    printf(" -y       : write data on coverage to output file (must used with -x).\n");
+    printf(" -y       : write data on coverage to output file.\n");
     printf(" -z       : use single query file to be distributed between clients.\n\n");
     printf(" <hostname> : the host you want to benchmark.\n");
     printf(" <port>     : the port to use when contacting the host.\n\n");
