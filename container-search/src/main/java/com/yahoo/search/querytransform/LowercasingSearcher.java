@@ -54,6 +54,8 @@ public abstract class LowercasingSearcher extends Searcher {
             Item next = i.next();
             if (next instanceof WordItem) {
                 lowerCase((WordItem) next, indexFacts);
+            } else if (next instanceof SameElementItem) {
+                traverseSameElement((SameElementItem) next, indexFacts);
             } else if (next instanceof CompositeItem) {
                 traverse((CompositeItem) next, indexFacts);
             } else if (next instanceof WeightedSetItem) {
@@ -66,8 +68,24 @@ public abstract class LowercasingSearcher extends Searcher {
         }
     }
 
+    private void traverseSameElement(SameElementItem base, IndexFacts.Session indexFacts) {
+        for (Iterator<Item> i = base.getItemIterator(); i.hasNext();) {
+            Item next = i.next();
+            if (next instanceof WordItem) {
+               lowerCase(base.getFieldName(), (WordItem) next, indexFacts);
+            }
+        }
+    }
+
     private void lowerCase(WordItem word, IndexFacts.Session indexFacts) {
         if (shouldLowercase(word, indexFacts)) {
+            word.setWord(toLowerCase(word.getWord()));
+            word.setLowercased(true);
+        }
+    }
+
+    private void lowerCase(String commonPath, WordItem word, IndexFacts.Session indexFacts) {
+        if (shouldLowercase(commonPath, word, indexFacts)) {
             word.setWord(toLowerCase(word.getWord()));
             word.setLowercased(true);
         }
@@ -133,5 +151,6 @@ public abstract class LowercasingSearcher extends Searcher {
      * @return whether to convert the term to lower case
      */
     public abstract boolean shouldLowercase(WordItem word, IndexFacts.Session indexFacts);
+    public abstract boolean shouldLowercase(String commonPath, WordItem word, IndexFacts.Session indexFacts);
 
 }

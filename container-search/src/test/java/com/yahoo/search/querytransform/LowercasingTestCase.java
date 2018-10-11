@@ -7,6 +7,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.yahoo.prelude.query.SameElementItem;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,6 +37,7 @@ public class LowercasingTestCase {
 
     private static final String TEDDY = "teddy";
     private static final String BAMSE = "bamse";
+    private static final String SARR = "sarr";
     IndexFacts settings;
     Execution execution;
 
@@ -44,13 +46,19 @@ public class LowercasingTestCase {
         IndexFacts f = new IndexFacts();
         Index bamse = new Index(BAMSE);
         Index teddy = new Index(TEDDY);
+        Index sarrBamse = new Index(SARR + "." + BAMSE);
+        Index sarrTeddy = new Index(SARR + "." + TEDDY);
         Index defaultIndex = new Index("default");
         bamse.setLowercase(true);
         teddy.setLowercase(false);
+        sarrBamse.setLowercase(true);
+        sarrTeddy.setLowercase(true);
         defaultIndex.setLowercase(true);
         f.addIndex("nalle", bamse);
         f.addIndex("nalle", teddy);
         f.addIndex("nalle", defaultIndex);
+        f.addIndex("nalle", sarrBamse);
+        f.addIndex("nalle", sarrTeddy);
         f.freeze();
         settings = f;
         execution = new Execution(new Chain<Searcher>(
@@ -213,5 +221,20 @@ public class LowercasingTestCase {
         assertEquals(.7d, root.getAlternatives().get(1).exactness, 1e-15d);
         assertEquals("def", root.getAlternatives().get(2).word);
         assertEquals(1.0d, root.getAlternatives().get(2).exactness, 1e-15d);
+    }
+
+    @Test
+    public void testLowercaseingSameElement() {
+        Query q = new Query();
+        SameElementItem root = new SameElementItem(SARR);
+        root.addItem(new WordItem("ABC", BAMSE, true));
+        root.addItem(new WordItem("DEF", TEDDY, true));
+        q.getModel().getQueryTree().setRoot(root);
+        Result r = execution.search(q);
+        root = (SameElementItem) r.getQuery().getModel().getQueryTree().getRoot();
+        WordItem w0 = (WordItem) root.getItem(0);
+        WordItem w1 = (WordItem) root.getItem(1);
+        assertEquals("abc", w0.getWord());
+        assertEquals("def", w1.getWord());
     }
 }
