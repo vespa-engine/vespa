@@ -45,7 +45,7 @@ public class PingTestCase {
     public void testNiceCase() throws Exception {
         NiceStupidServer server = new NiceStupidServer();
         server.start();
-        checkSearchAndPing(true, true, true, server.getServerPort(), true);
+        checkSearchAndPing(true, true, true, server.getServerPort());
         server.stop();
     }
 
@@ -53,11 +53,11 @@ public class PingTestCase {
         clusterSearcher.getMonitor().ping(Executors.newCachedThreadPool(new DaemonThreadFactory()));
         Thread.yield();
     }
-    private void checkSearchAndPing(boolean firstSearch, boolean pongCheck, boolean secondSearch, int port, boolean forcePing) {
+    private void checkSearchAndPing(boolean firstSearch, boolean pongCheck, boolean secondSearch, int port) {
         String resultThing;
         String comment;
         TestHTTPClientSearcher searcher = new TestHTTPClientSearcher("test", "localhost", port);
-        if (forcePing) forcePing(searcher);
+        forcePing(searcher);
         try {
 
             Query query = new Query("/?query=test");
@@ -100,7 +100,7 @@ public class PingTestCase {
     public void testUselessCase() throws Exception {
         UselessStupidServer server = new UselessStupidServer();
         server.start();
-        checkSearchAndPing(false, true, false, server.getServerPort(), true);
+        checkSearchAndPing(false, true, false, server.getServerPort());
         server.stop();
     }
 
@@ -108,7 +108,7 @@ public class PingTestCase {
     public void testGrumpyCase() throws Exception {
         GrumpyStupidServer server = new GrumpyStupidServer();
         server.start();
-        checkSearchAndPing(false, false, false, server.getServerPort(), false);
+        checkSearchAndPing(false, false, false, server.getServerPort());
         server.stop();
     }
 
@@ -116,7 +116,7 @@ public class PingTestCase {
     public void testPassiveAggressiveCase() throws Exception {
         PassiveAggressiveStupidServer server = new PassiveAggressiveStupidServer();
         server.start();
-        checkSearchAndPing(true, false, true, server.getServerPort(), false);
+        checkSearchAndPing(false, false, false, server.getServerPort());
         server.stop();
     }
 
