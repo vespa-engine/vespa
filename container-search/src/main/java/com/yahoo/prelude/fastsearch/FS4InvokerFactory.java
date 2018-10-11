@@ -46,8 +46,8 @@ public class FS4InvokerFactory {
         return new FS4SearchInvoker(searcher, query, fs4ResourcePool, node.hostname(), node.fs4port(), node.key());
     }
 
-    public Optional<SearchInvoker> getSearchInvoker(Query query, SearchCluster.Group group) {
-        return getInvoker(group.nodes(), node -> getSearchInvoker(query, node), InterleavedSearchInvoker::new);
+    public Optional<SearchInvoker> getSearchInvoker(Query query, List<SearchCluster.Node> nodes) {
+        return getInvoker(nodes, node -> getSearchInvoker(query, node), InterleavedSearchInvoker::new);
     }
 
     public FillInvoker getFillInvoker(Query query, SearchCluster.Node node) {
@@ -92,6 +92,11 @@ public class FS4InvokerFactory {
         CLUSTERINVOKER construct(Map<Integer, INVOKER> subinvokers);
     }
 
+    /* Get an invocation object for the provided collection of nodes. If only one
+       node is used, only the single-node invoker is used. For multiple nodes, each
+       gets a single-node invoker and they are all wrapped into a cluster invoker.
+       The functional interfaces are used to allow code reuse with SearchInvokers
+       and FillInvokers even though they don't share much class hierarchy. */
     private <INVOKER extends CloseableInvoker, CLUSTERINVOKER extends INVOKER> Optional<INVOKER> getInvoker(
             Collection<SearchCluster.Node> nodes, InvokerConstructor<INVOKER> singleNodeCtor,
             ClusterInvokerConstructor<CLUSTERINVOKER, INVOKER> clusterCtor) {
