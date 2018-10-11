@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.logging;
 
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 
@@ -30,7 +31,7 @@ public class FilebeatConfigProvider {
         this.environment = environment;
     }
 
-    public Optional<String> getConfig(NodeSpec node) {
+    public Optional<String> getConfig(NodeAgentContext context, NodeSpec node) {
 
         if (environment.getLogstashNodes().size() == 0 || !node.getOwner().isPresent()) {
             return Optional.empty();
@@ -40,7 +41,7 @@ public class FilebeatConfigProvider {
         String logstashNodeString = environment.getLogstashNodes().stream()
                 .map(this::addQuotes)
                 .collect(Collectors.joining(","));
-        return Optional.of(getTemplate()
+        return Optional.of(getTemplate(context)
                 .replaceAll(ENVIRONMENT_FIELD, environment.getEnvironment())
                 .replaceAll(REGION_FIELD, environment.getRegion())
                 .replaceAll(FILEBEAT_SPOOL_SIZE_FIELD, Integer.toString(spoolSize))
@@ -58,7 +59,7 @@ public class FilebeatConfigProvider {
                 : String.format("\"%s\"", logstashNode);
     }
 
-    private String getTemplate() {
+    private String getTemplate(NodeAgentContext context) {
         return "################### Filebeat Configuration Example #########################\n" +
                 "\n" +
                 "############################# Filebeat ######################################\n" +
@@ -68,7 +69,7 @@ public class FilebeatConfigProvider {
                 "\n" +
                 "    # vespa\n" +
                 "    - paths:\n" +
-                "        - " + environment.pathInNodeUnderVespaHome("logs/vespa/vespa.log") + "\n" +
+                "        - " + context.pathInNodeUnderVespaHome("logs/vespa/vespa.log") + "\n" +
                 "      exclude_files: [\".gz$\"]\n" +
                 "      document_type: vespa\n" +
                 "      fields:\n" +
@@ -84,7 +85,7 @@ public class FilebeatConfigProvider {
                 "\n" +
                 "    # vespa qrs\n" +
                 "    - paths:\n" +
-                "        - " + environment.pathInNodeUnderVespaHome("logs/vespa/qrs/QueryAccessLog.*.*") + "\n" +
+                "        - " + context.pathInNodeUnderVespaHome("logs/vespa/qrs/QueryAccessLog.*.*") + "\n" +
                 "      exclude_files: [\".gz$\"]\n" +
                 "      exclude_lines: [\"reserved-for-internal-use/feedapi\"]\n" +
                 "      document_type: vespa-qrs\n" +
@@ -198,7 +199,7 @@ public class FilebeatConfigProvider {
                 "  # To enable logging to files, to_files option has to be set to true\n" +
                 "  files:\n" +
                 "    # The directory where the log files will written to.\n" +
-                "    path: " + environment.pathInNodeUnderVespaHome("logs/filebeat") + "\n" +
+                "    path: " + context.pathInNodeUnderVespaHome("logs/filebeat") + "\n" +
                 "\n" +
                 "    # The name of the files where the logs are written to.\n" +
                 "    name: filebeat\n" +

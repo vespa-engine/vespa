@@ -120,14 +120,14 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
         when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
-        when(storageMaintainer.getDiskUsageFor(eq(context.containerName()))).thenReturn(Optional.of(187500000000L));
+        when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(187500000000L));
 
         nodeAgent.converge();
 
         verify(dockerOperations, never()).removeContainer(any());
         verify(orchestrator, never()).suspend(any(String.class));
         verify(dockerOperations, never()).pullImageAsyncIfNeeded(any());
-        verify(storageMaintainer, never()).removeOldFilesFromNode(eq(context.containerName()));
+        verify(storageMaintainer, never()).removeOldFilesFromNode(eq(context));
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository);
         // TODO: Verify this isn't run unless 1st time
@@ -153,11 +153,11 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
         when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
-        when(storageMaintainer.getDiskUsageFor(eq(context.containerName()))).thenReturn(Optional.of(217432719360L));
+        when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(217432719360L));
 
         nodeAgent.converge();
 
-        verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(context.containerName()));
+        verify(storageMaintainer, times(1)).removeOldFilesFromNode(eq(context));
     }
 
     @Test
@@ -173,7 +173,7 @@ public class NodeAgentImplTest {
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
         when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
-        when(storageMaintainer.getDiskUsageFor(eq(context.containerName()))).thenReturn(Optional.of(187500000000L));
+        when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(187500000000L));
 
         nodeAgent.converge();
         inOrder.verify(dockerOperations, never()).startServices(eq(context.containerName()));
@@ -215,7 +215,7 @@ public class NodeAgentImplTest {
         when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
         when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
         when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
-        when(storageMaintainer.getDiskUsageFor(eq(context.containerName()))).thenReturn(Optional.of(201326592000L));
+        when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
 
         nodeAgent.converge();
 
@@ -256,7 +256,7 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
         when(dockerOperations.pullImageAsyncIfNeeded(any())).thenReturn(true);
-        when(storageMaintainer.getDiskUsageFor(eq(context.containerName()))).thenReturn(Optional.of(201326592000L));
+        when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
 
         nodeAgent.converge();
 
@@ -291,7 +291,7 @@ public class NodeAgentImplTest {
                 .thenReturn(Optional.of(secondSpec))
                 .thenReturn(Optional.of(thirdSpec));
         when(dockerOperations.pullImageAsyncIfNeeded(any())).thenReturn(true);
-        when(storageMaintainer.getDiskUsageFor(eq(context.containerName()))).thenReturn(Optional.of(201326592000L));
+        when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
         when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
 
         nodeAgent.converge();
@@ -458,7 +458,7 @@ public class NodeAgentImplTest {
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations, nodeRepository);
         inOrder.verify(dockerOperations, times(1)).removeContainer(any());
-        inOrder.verify(storageMaintainer, times(1)).cleanupNodeStorage(eq(context.containerName()), eq(node));
+        inOrder.verify(storageMaintainer, times(1)).archiveNodeStorage(eq(context));
         inOrder.verify(nodeRepository, times(1)).setNodeState(eq(hostName), eq(Node.State.ready));
 
         verify(dockerOperations, never()).createContainer(eq(context.containerName()), any(), any());
@@ -513,7 +513,7 @@ public class NodeAgentImplTest {
         when(nodeRepository.getOptionalNode(eq(hostName))).thenReturn(Optional.of(node));
         when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
         when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
-        when(storageMaintainer.getDiskUsageFor(eq(context.containerName()))).thenReturn(Optional.of(201326592000L));
+        when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
 
         nodeAgent.tick();
 
@@ -537,7 +537,7 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
         when(nodeRepository.getOptionalNode(eq(hostName))).thenReturn(Optional.of(node));
-        when(storageMaintainer.getDiskUsageFor(eq(context.containerName()))).thenReturn(Optional.of(201326592000L));
+        when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
 
         final InOrder inOrder = inOrder(orchestrator, dockerOperations, nodeRepository);
         doThrow(new RuntimeException("Failed 1st time"))
@@ -607,7 +607,7 @@ public class NodeAgentImplTest {
         when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
         when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
         when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
-        when(storageMaintainer.getDiskUsageFor(eq(context.containerName()))).thenReturn(Optional.of(201326592000L));
+        when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
         doThrow(new DockerException("Failed to set up network")).doNothing().when(dockerOperations).startContainer(eq(context.containerName()));
 
         try {
@@ -663,7 +663,7 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
         when(nodeRepository.getOptionalNode(eq(hostName))).thenReturn(Optional.of(node));
-        when(storageMaintainer.getDiskUsageFor(eq(context.containerName()))).thenReturn(Optional.of(39625000000L));
+        when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(39625000000L));
         when(dockerOperations.getContainerStats(eq(context.containerName())))
                 .thenReturn(Optional.of(stats1))
                 .thenReturn(Optional.of(stats2));
@@ -731,7 +731,7 @@ public class NodeAgentImplTest {
         Path tempDirectory = Files.createTempDirectory("foo");
         when(pathResolver.getApplicationStoragePathForHost()).thenReturn(tempDirectory);
         when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
-        when(storageMaintainer.getDiskUsageFor(eq(context.containerName()))).thenReturn(Optional.of(201326592000L));
+        when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
 
         nodeAgent.converge();
 

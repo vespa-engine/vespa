@@ -11,9 +11,6 @@ import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesImpl;
 
 import java.net.URI;
 import java.nio.file.Path;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -26,10 +23,6 @@ import java.util.Optional;
  * @author hmusum
  */
 public class Environment {
-    private static final DateTimeFormatter filenameFormatter = DateTimeFormatter
-            .ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS").withZone(ZoneOffset.UTC);
-    public static final String APPLICATION_STORAGE_CLEANUP_PATH_PREFIX = "cleanup_";
-
     private final ConfigServerInfo configServerInfo;
     private final String environment;
     private final String region;
@@ -114,22 +107,6 @@ public class Environment {
 
     public PathResolver getPathResolver() {
         return pathResolver;
-    }
-
-    /**
-     * Absolute path in node admin to directory with processed and reported core dumps
-     */
-    public Path pathInNodeAdminToDoneCoredumps() {
-        return pathResolver.getApplicationStoragePathForNodeAdmin().resolve("processed-coredumps");
-    }
-
-    /**
-     * Absolute path in node admin container to the node cleanup directory.
-     */
-    public Path pathInNodeAdminToNodeCleanup(ContainerName containerName) {
-        return pathResolver.getApplicationStoragePathForNodeAdmin()
-                .resolve("archive")
-                .resolve(containerName.asString() + "_" + filenameFormatter.format(Instant.now()));
     }
 
     /**

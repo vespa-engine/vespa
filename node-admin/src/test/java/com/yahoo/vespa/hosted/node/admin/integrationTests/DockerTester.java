@@ -91,7 +91,7 @@ public class DockerTester implements AutoCloseable {
 
         Clock clock = Clock.systemUTC();
         DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, environment, processExecuter);
-        StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(dockerOperations, null, environment, callOrderVerifier, clock);
+        StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(dockerOperations, null, environment, callOrderVerifier);
         AclMaintainer aclMaintainer = mock(AclMaintainer.class);
         AthenzCredentialsMaintainer athenzCredentialsMaintainer = mock(AthenzCredentialsMaintainer.class);
 

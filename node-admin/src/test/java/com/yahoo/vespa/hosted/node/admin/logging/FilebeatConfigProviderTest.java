@@ -7,6 +7,8 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImplTest;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -30,12 +32,13 @@ public class FilebeatConfigProviderTest {
     private static final String region = "us-north-1";
     private static final String system = "main";
     private static final List<String> logstashNodes = ImmutableList.of("logstash1", "logstash2");
+    private final NodeAgentContext context = NodeAgentContextImplTest.nodeAgentFromHostname("node-123.hostname.tld");
 
     @Test
     public void it_replaces_all_fields_correctly() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
 
-        Optional<String> config = filebeatConfigProvider.getConfig(createNodeRepositoryNode(tenant, application, instance));
+        Optional<String> config = filebeatConfigProvider.getConfig(context, createNodeRepositoryNode(tenant, application, instance));
 
         assertTrue(config.isPresent());
         String configString = config.get();
@@ -47,7 +50,7 @@ public class FilebeatConfigProviderTest {
         Environment env = getEnvironment(Collections.emptyList());
 
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(env);
-        Optional<String> config = filebeatConfigProvider.getConfig(createNodeRepositoryNode(tenant, application, instance));
+        Optional<String> config = filebeatConfigProvider.getConfig(context, createNodeRepositoryNode(tenant, application, instance));
         assertFalse(config.isPresent());
     }
 
@@ -63,7 +66,7 @@ public class FilebeatConfigProviderTest {
                 .minMainMemoryAvailableGb(1)
                 .minDiskAvailableGb(1)
                 .build();
-        Optional<String> config = filebeatConfigProvider.getConfig(node);
+        Optional<String> config = filebeatConfigProvider.getConfig(context, node);
         assertFalse(config.isPresent());
     }
 
@@ -81,7 +84,7 @@ public class FilebeatConfigProviderTest {
     public void it_does_not_add_double_quotes() {
         Environment environment = getEnvironment(ImmutableList.of("unquoted", "\"quoted\""));
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
-        Optional<String> config = filebeatConfigProvider.getConfig(createNodeRepositoryNode(tenant, application, instance));
+        Optional<String> config = filebeatConfigProvider.getConfig(context, createNodeRepositoryNode(tenant, application, instance));
         assertThat(config.get(), containsString("hosts: [\"unquoted\",\"quoted\"]"));
     }
 
@@ -94,7 +97,7 @@ public class FilebeatConfigProviderTest {
     private String getConfigString() {
         FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(getEnvironment(logstashNodes));
         NodeSpec node = createNodeRepositoryNode(tenant, application, instance);
-        return filebeatConfigProvider.getConfig(node).orElseThrow(() -> new RuntimeException("Failed to get filebeat config"));
+        return filebeatConfigProvider.getConfig(context, node).orElseThrow(() -> new RuntimeException("Failed to get filebeat config"));
     }
 
     private Environment getEnvironment(List<String> logstashNodes) {
