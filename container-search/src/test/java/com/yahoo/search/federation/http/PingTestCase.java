@@ -2,11 +2,13 @@
 package com.yahoo.search.federation.http;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.StupidSingleThreadedHttpServer;
+import com.yahoo.search.cluster.ClusterSearcher;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.statistics.Statistics;
@@ -24,6 +26,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -42,15 +45,19 @@ public class PingTestCase {
     public void testNiceCase() throws Exception {
         NiceStupidServer server = new NiceStupidServer();
         server.start();
-        checkSearchAndPing(true, true, true, server.getServerPort());
+        checkSearchAndPing(true, true, true, server.getServerPort(), true);
         server.stop();
     }
 
-    private void checkSearchAndPing(boolean firstSearch, boolean pongCheck, boolean secondSearch, int port) {
+    private void forcePing(ClusterSearcher clusterSearcher) {
+        clusterSearcher.getMonitor().ping(Executors.newCachedThreadPool(new DaemonThreadFactory()));
+        Thread.yield();
+    }
+    private void checkSearchAndPing(boolean firstSearch, boolean pongCheck, boolean secondSearch, int port, boolean forcePing) {
         String resultThing;
         String comment;
-        TestHTTPClientSearcher searcher = new TestHTTPClientSearcher("test",
-                "localhost", port);
+        TestHTTPClientSearcher searcher = new TestHTTPClientSearcher("test", "localhost", port);
+        if (forcePing) forcePing(searcher);
         try {
 
             Query query = new Query("/?query=test");
@@ -93,7 +100,7 @@ public class PingTestCase {
     public void testUselessCase() throws Exception {
         UselessStupidServer server = new UselessStupidServer();
         server.start();
-        checkSearchAndPing(false, true, false, server.getServerPort());
+        checkSearchAndPing(false, true, false, server.getServerPort(), true);
         server.stop();
     }
 
@@ -101,7 +108,7 @@ public class PingTestCase {
     public void testGrumpyCase() throws Exception {
         GrumpyStupidServer server = new GrumpyStupidServer();
         server.start();
-        checkSearchAndPing(false, false, false, server.getServerPort());
+        checkSearchAndPing(false, false, false, server.getServerPort(), false);
         server.stop();
     }
 
@@ -109,7 +116,7 @@ public class PingTestCase {
     public void testPassiveAggressiveCase() throws Exception {
         PassiveAggressiveStupidServer server = new PassiveAggressiveStupidServer();
         server.start();
-        checkSearchAndPing(true, false, true, server.getServerPort());
+        checkSearchAndPing(true, false, true, server.getServerPort(), false);
         server.stop();
     }
 

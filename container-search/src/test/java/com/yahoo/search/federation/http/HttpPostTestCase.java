@@ -2,9 +2,11 @@
 package com.yahoo.search.federation.http;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.StupidSingleThreadedHttpServer;
+import com.yahoo.search.cluster.ClusterSearcher;
 import com.yahoo.search.federation.ProviderConfig.PingOption;
 import com.yahoo.search.federation.http.Connection;
 import com.yahoo.search.federation.http.HTTPProviderSearcher;
@@ -25,6 +27,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertThat;
@@ -36,6 +39,11 @@ import static org.junit.Assert.assertThat;
  */
 public class HttpPostTestCase {
 
+    private void forcePing(ClusterSearcher clusterSearcher) {
+        clusterSearcher.getMonitor().ping(Executors.newCachedThreadPool(new DaemonThreadFactory()));
+        Thread.yield();
+    }
+
     @Test
     public void testPostingSearcher() throws Exception {
         StupidSingleThreadedHttpServer server = new StupidSingleThreadedHttpServer();
@@ -44,6 +52,7 @@ public class HttpPostTestCase {
         TestPostSearcher searcher = new TestPostSearcher(new ComponentId("foo:1"),
                                                          Arrays.asList(new Connection("localhost", server.getServerPort())),
                                                          "/");
+        forcePing(searcher);
         Query q = new Query("");
         q.setTimeout(10000000L);
         Execution e = new Execution(searcher, Execution.Context.createContextStub());

@@ -107,7 +107,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
             // cluster monitor will only call working() when the
             // node transitions from down to up, so we need to
             // register the initial (working) state here:
-            working(node);
+            failed(node);
             clusterMonitor.add(node, true);
         }
     }

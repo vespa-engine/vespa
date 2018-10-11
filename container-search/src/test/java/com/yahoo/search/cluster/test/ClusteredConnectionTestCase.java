@@ -35,6 +35,7 @@ public class ClusteredConnectionTestCase {
         connections.add(connection1);
         connections.add(connection2);
         MyBackend myBackend=new MyBackend(new ComponentId("test"),connections);
+        forcePing(myBackend);
 
         Result r;
         r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
@@ -124,8 +125,8 @@ public class ClusteredConnectionTestCase {
         assertNull(r.hits().getError());
     }
 
-    private void forcePing(MyBackend myBackend) {
-        myBackend.getMonitor().ping(Executors.newCachedThreadPool(new DaemonThreadFactory()));
+    private void forcePing(ClusterSearcher clusterSearcher) {
+        clusterSearcher.getMonitor().ping(Executors.newCachedThreadPool(new DaemonThreadFactory()));
         Thread.yield();
     }
 

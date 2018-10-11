@@ -59,7 +59,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         this.hasher = hasher;
         for (T connection : connections) {
             monitor.add(connection, internal);
-            hasher.add(connection);
+            //hasher.add(connection);
         }
     }
 

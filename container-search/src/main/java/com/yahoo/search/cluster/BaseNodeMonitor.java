@@ -26,7 +26,7 @@ public abstract class BaseNodeMonitor<T> {
     /** The object representing the monitored node */
     protected T node;
 
-    protected boolean isWorking=true;
+    protected boolean isWorking=false;
 
     /** Whether this node is quarantined for unstability */
     protected boolean isQuarantined=false;

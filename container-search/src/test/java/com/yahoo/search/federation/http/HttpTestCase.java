@@ -2,9 +2,11 @@
 package com.yahoo.search.federation.http;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.StupidSingleThreadedHttpServer;
+import com.yahoo.search.cluster.ClusterSearcher;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.searchchain.Execution;
@@ -21,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -42,8 +45,13 @@ public class HttpTestCase {
         assertEquals(0, result.getQuery().errors().size());
     }
 
+    private void forcePing(ClusterSearcher clusterSearcher) {
+        clusterSearcher.getMonitor().ping(Executors.newCachedThreadPool(new DaemonThreadFactory()));
+        Thread.yield();
+    }
     private Result searchUsingLocalhost() {
         searcher = new TestHTTPClientSearcher("test","localhost",getPort());
+        forcePing(searcher);
         Query query = new Query("/?query=test");
 
         query.setWindow(0,10);

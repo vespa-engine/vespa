@@ -3,8 +3,10 @@ package com.yahoo.search.cluster.test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
 import com.yahoo.search.Query;
@@ -144,6 +146,11 @@ public class ClusterSearcherTestCase {
 
     }
 
+    private void forcePing(ClusterSearcher clusterSearcher) {
+        clusterSearcher.getMonitor().ping(Executors.newCachedThreadPool(new DaemonThreadFactory()));
+        Thread.yield();
+    }
+
     @Test
     public void testSimple() {
         Hit blockingHit = new Hit("blocking");
@@ -153,6 +160,7 @@ public class ClusterSearcherTestCase {
         searchers.add(blockingSearcher);
         searchers.add(new TestingBackendSearcher(nonblockingHit));
         ClusterSearcher<?> provider = new SearcherClusterSearcher(new ComponentId("simple"),searchers,new SimpleHasher<>());
+        forcePing(provider);
 
         Result blockingResult = new Execution(provider, Execution.Context.createContextStub()).search(new SimpleQuery(0));
         assertEquals(blockingHit,blockingResult.hits().get(0));

@@ -19,8 +19,9 @@ public class DirectSearchTestCase {
     @Test
     public void testDirectSearchEnabled() {
         FastSearcherTester tester = new FastSearcherTester(1, FastSearcherTester.selfHostname + ":9999:0");
+        tester.setResponding(FastSearcherTester.selfHostname, true);
         tester.search("?query=test&dispatch.direct=true");
-        assertEquals("The FastSearcher has used the local search node connection", 1, tester.requestCount(FastSearcherTester.selfHostname, 9999));
+        assertEquals("The FastSearcher has used the local search node connection", 2, tester.requestCount(FastSearcherTester.selfHostname, 9999));
     }
 
     @Test
@@ -33,8 +34,9 @@ public class DirectSearchTestCase {
     @Test
     public void testDirectSearchEnabledByDefault() {
         FastSearcherTester tester = new FastSearcherTester(1, FastSearcherTester.selfHostname + ":9999:0");
+        tester.setResponding(FastSearcherTester.selfHostname, true);
         tester.search("?query=test");
-        assertEquals("The FastSearcher has used the local search node connection", 1, tester.requestCount(FastSearcherTester.selfHostname, 9999));
+        assertEquals("The FastSearcher has used the local search node connection", 2, tester.requestCount(FastSearcherTester.selfHostname, 9999));
     }
 
     @Test
@@ -47,8 +49,9 @@ public class DirectSearchTestCase {
     @Test
     public void testDirectSearchWhenMultipleGroupsAndEnoughContainers() {
         FastSearcherTester tester = new FastSearcherTester(2, FastSearcherTester.selfHostname + ":9999:0", "otherhost:9999:1");
+        tester.setResponding(FastSearcherTester.selfHostname, true);
         tester.search("?query=test&dispatch.direct=true");
-        assertEquals(1, tester.requestCount(FastSearcherTester.selfHostname, 9999));
+        assertEquals(2, tester.requestCount(FastSearcherTester.selfHostname, 9999));
     }
 
     @Test
@@ -56,8 +59,9 @@ public class DirectSearchTestCase {
         FastSearcherTester tester = new FastSearcherTester(2, "otherhost:9999:1", FastSearcherTester.selfHostname + ":9999:0");
         int localDistributionKey = tester.dispatcher().searchCluster().nodesByHost().get(FastSearcherTester.selfHostname).asList().get(0).key();
         assertEquals(1, localDistributionKey);
+        tester.setResponding(FastSearcherTester.selfHostname, true);
         Result result = tester.search("?query=test&dispatch.direct=true");
-        assertEquals(1, tester.requestCount(FastSearcherTester.selfHostname, 9999));
+        assertEquals(2, tester.requestCount(FastSearcherTester.selfHostname, 9999));
         FastHit hit = (FastHit)result.hits().get(0);
         assertEquals(localDistributionKey, hit.getDistributionKey());
     }
@@ -72,7 +76,7 @@ public class DirectSearchTestCase {
     @Test
     public void testNoDirectSearchWhenLocalNodeIsDown() {
         FastSearcherTester tester = new FastSearcherTester(2, FastSearcherTester.selfHostname + ":9999:0", "otherhost:9999:1");
-        assertTrue(tester.vipStatus().isInRotation());
+        assertFalse(tester.vipStatus().isInRotation());
         tester.setResponding(FastSearcherTester.selfHostname, false);
         assertFalse(tester.vipStatus().isInRotation());
         assertEquals("1 ping request, 0 search requests", 1, tester.requestCount(FastSearcherTester.selfHostname, 9999));
