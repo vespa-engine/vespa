@@ -54,6 +54,14 @@ public class MockSearchCluster extends SearchCluster {
         return numNodesPerGroup;
     }
 
+    public Optional<Group> group(int n) {
+        if(n < numGroups) {
+            return Optional.of(groups.get(n));
+        } else {
+            return Optional.empty();
+        }
+    }
+
     public ImmutableMultimap<String, Node> nodesByHost() {
         return nodesByHost;
     }

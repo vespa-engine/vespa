@@ -1,14 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableCollection;
 import com.yahoo.collections.Pair;
 import com.yahoo.search.dispatch.SearchCluster.Group;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -62,16 +61,16 @@ public class SearchPath {
                 return Optional.of(sp);
             }
         } catch (NumberFormatException | InvalidSearchPathException e) {
-            throw new InvalidSearchPathException("Invalid search path: " + path);
+            throw new InvalidSearchPathException("Invalid search path: " + path, e);
         }
     }
 
-    private final List<Part> parts;
-    private final Integer row;
+    private final List<NodeSelection> nodes;
+    private final Integer group;
 
-    private SearchPath(List<Part> parts, Integer row) {
-        this.parts = parts;
-        this.row = row;
+    private SearchPath(List<NodeSelection> nodes, Integer group) {
+        this.nodes = nodes;
+        this.group = group;
     }
 
     private List<SearchCluster.Node> mapToNodes(SearchCluster cluster) {
@@ -79,116 +78,114 @@ public class SearchPath {
             return Collections.emptyList();
         }
 
-        SearchCluster.Group group = selectGroup(cluster);
+        SearchCluster.Group selectedGroup = selectGroup(cluster);
 
-        if (parts.isEmpty()) {
-            return group.nodes();
+        if (nodes.isEmpty()) {
+            return selectedGroup.nodes();
         }
+        List<SearchCluster.Node> groupNodes = selectedGroup.nodes();
         Set<Integer> wanted = new HashSet<>();
-        int max = group.nodes().size();
-        for (Part part : parts) {
-            wanted.addAll(part.matches(max));
+        int max = groupNodes.size();
+        for (NodeSelection node : nodes) {
+            wanted.addAll(node.matches(max));
         }
-        // ordering by distribution key might not be equal to ordering in services.xml
-        List<SearchCluster.Node> sortedByDistKey = new ArrayList<>(group.nodes());
-        sortedByDistKey.sort(Comparator.comparingInt(SearchCluster.Node::key));
-
         List<SearchCluster.Node> ret = new ArrayList<>();
         for (int idx : wanted) {
-            ret.add(sortedByDistKey.get(idx));
+            ret.add(groupNodes.get(idx));
         }
         return ret;
     }
 
     private boolean isEmpty() {
-        return parts.isEmpty() && row == null;
+        return nodes.isEmpty() && group == null;
     }
 
     private Group selectGroup(SearchCluster cluster) {
-        // ordering by group id might not be equal to ordering in services.xml
-        ImmutableMap<Integer, SearchCluster.Group> byId = cluster.groups();
-        List<Integer> sortedKeys = new ArrayList<>(byId.keySet());
-        Collections.sort(sortedKeys);
-
-        if (row != null && row < sortedKeys.size()) {
-            return byId.get(sortedKeys.get(row));
+        if (group != null) {
+            Optional<Group> specificGroup = cluster.group(group);
+            if (specificGroup.isPresent()) {
+                return specificGroup.get();
+            } else {
+                throw new InvalidSearchPathException("Invalid searchPath, cluster does not have " + (group + 1) + " groups");
+            }
         }
 
         // pick "anything": try to find the first working
-        for (Integer id : sortedKeys) {
-            SearchCluster.Group g = byId.get(id);
+        ImmutableCollection<Group> groups = cluster.groups().values();
+        for (Group g : groups) {
             if (g.hasSufficientCoverage()) {
                 return g;
             }
         }
+
         // fallback: first
-        return byId.get(sortedKeys.get(0));
+        return groups.iterator().next();
     }
 
     private static SearchPath parseElement(String element) {
-        Pair<String, String> partAndRow = halveAt('/', element);
-        List<Part> parts = parseParts(partAndRow.getFirst());
-        Integer row = parseRow(partAndRow.getSecond());
+        Pair<String, String> nodesAndGroup = halveAt('/', element);
+        List<NodeSelection> nodes = parseNodes(nodesAndGroup.getFirst());
+        Integer group = parseGroup(nodesAndGroup.getSecond());
 
-        return new SearchPath(parts, row);
+        return new SearchPath(nodes, group);
     }
 
-    private static List<Part> parseParts(String parts) {
-        List<Part> ret = new ArrayList<>();
-        while (parts.length() > 0) {
-            if (parts.startsWith("[")) {
-                parts = parsePartRange(parts, ret);
+    private static List<NodeSelection> parseNodes(String nodes) {
+        List<NodeSelection> ret = new ArrayList<>();
+        while (nodes.length() > 0) {
+            if (nodes.startsWith("[")) {
+                nodes = parseNodeRange(nodes, ret);
             } else {
-                if (isWildcard(parts)) { // any part will be accepted
+                if (isWildcard(nodes)) { // any node will be accepted
                     return Collections.emptyList();
                 }
-                parts = parsePartNum(parts, ret);
+                nodes = parseNodeNum(nodes, ret);
             }
         }
         return ret;
     }
 
     // an asterisk or an empty string followed by a comma or the end of the string
-    private static final Pattern WILDCARD_PART = Pattern.compile("^\\*?(?:,|$)");
+    private static final Pattern NODE_WILDCARD = Pattern.compile("^\\*?(?:,|$)");
 
-    private static boolean isWildcard(String part) {
-        return WILDCARD_PART.matcher(part).lookingAt();
+    private static boolean isWildcard(String node) {
+        return NODE_WILDCARD.matcher(node).lookingAt();
     }
 
-    private static final Pattern PART_RANGE = Pattern.compile("^\\[(\\d+),(\\d+)>(?:,|$)");
+    private static final Pattern NODE_RANGE = Pattern.compile("^\\[(\\d+),(\\d+)>(?:,|$)");
 
-    private static String parsePartRange(String parts, List<Part> into) {
-        Matcher m = PART_RANGE.matcher(parts);
+    private static String parseNodeRange(String nodes, List<NodeSelection> into) {
+        Matcher m = NODE_RANGE.matcher(nodes);
         if (m.find()) {
-            String ret = parts.substring(m.end());
+            String ret = nodes.substring(m.end());
             Integer start = Integer.parseInt(m.group(1));
             Integer end = Integer.parseInt(m.group(2));
             if (start > end) {
                 throw new InvalidSearchPathException("Invalid range");
             }
-            into.add(new Part(start, end));
+            into.add(new NodeSelection(start, end));
             return ret;
         } else {
             throw new InvalidSearchPathException("Invalid range expression");
         }
     }
 
-    private static String parsePartNum(String parts, List<Part> into) {
-        Pair<String, String> numAndRest = halveAt(',', parts);
-        int partNum = Integer.parseInt(numAndRest.getFirst());
-        into.add(new Part(partNum, partNum + 1));
+    private static String parseNodeNum(String nodes, List<NodeSelection> into) {
+        Pair<String, String> numAndRest = halveAt(',', nodes);
+        int nodeNum = Integer.parseInt(numAndRest.getFirst());
+        into.add(new NodeSelection(nodeNum, nodeNum + 1));
 
         return numAndRest.getSecond();
     }
 
-    private static Integer parseRow(String row) {
-        if (row.isEmpty()) {
+    private static Integer parseGroup(String group) {
+        if (group.isEmpty()) {
             return null;
         }
-        if ("/".equals(row) || "*".equals(row)) { // anything goes
+        if ("/".equals(group) || "*".equals(group)) { // anything goes
             return null;
         }
-        return Integer.parseInt(row);
+        return Integer.parseInt(group);
     }
 
     private static Pair<String, String> halveAt(char divider, String string) {
@@ -203,7 +200,7 @@ public class SearchPath {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         boolean first = true;
-        for (Part p : parts) {
+        for (NodeSelection p : nodes) {
             if (first) {
                 first = false;
             } else {
@@ -211,17 +208,17 @@ public class SearchPath {
             }
             sb.append(p.toString());
         }
-        if (row != null) {
-            sb.append('/').append(row);
+        if (group != null) {
+            sb.append('/').append(group);
         }
         return sb.toString();
     }
 
-    private static class Part {
+    private static class NodeSelection {
         private final int from;
         private final int to;
 
-        Part(int from, int to) {
+        NodeSelection(int from, int to) {
             this.from = from;
             this.to = to;
         }
@@ -247,6 +244,10 @@ public class SearchPath {
     public static class InvalidSearchPathException extends RuntimeException {
         public InvalidSearchPathException(String message) {
             super(message);
+        }
+
+        public InvalidSearchPathException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 
