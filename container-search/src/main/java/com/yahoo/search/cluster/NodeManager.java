@@ -2,6 +2,7 @@
 package com.yahoo.search.cluster;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Must be implemented by a node collection which wants
@@ -25,5 +26,8 @@ public interface NodeManager<T> {
     
     /** Called right after a ping has been issued to each node. This default implementation does nothing. */
     default void pingIterationCompleted() {}
+
+    // Must be called after children are fully constructed.
+    void waitUntilStateIsKnown(long timeout, TimeUnit timeUnit);
 
 }

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.federation.http;
 
+import com.sun.net.httpserver.HttpsParameters;
 import com.yahoo.component.ComponentId;
 import com.yahoo.search.federation.ProviderConfig;
 import com.yahoo.search.cache.QrBinaryCacheConfig;
@@ -50,9 +51,13 @@ public abstract class ConfiguredHTTPProviderSearcher extends HTTPProviderSearche
         configureCache(cacheConfig,regionConfig);
     }
 
+    private static HTTPParameters disablePing(HTTPParameters params) {
+        params.setPingOption(ProviderConfig.PingOption.Enum.DISABLE);
+        return params;
+    }
     /** Create an instance from direct parameters having a single connection. Useful for testing */
     public ConfiguredHTTPProviderSearcher(String idString,String host,int port,String path, Statistics manager) {
-        super(new ComponentId(idString), Collections.singletonList(new Connection(host,port)),path, manager);
+        super(new ComponentId(idString), Collections.singletonList(new Connection(host,port)),disablePing(new HTTPParameters(path)), manager);
     }
 
     /** Create an instance from direct parameters having a single connection. Useful for testing */

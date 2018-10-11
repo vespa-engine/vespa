@@ -3,6 +3,7 @@ package com.yahoo.search.cluster.test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.prelude.Ping;
@@ -121,10 +122,11 @@ public class ClusterSearcherTestCase {
     }
 
     /** A cluster searcher which clusters over a set of alternative searchers (search chains would be more realistic) */
-    static class SearcherClusterSearcher extends ClusterSearcher<Searcher> {
+    static final class SearcherClusterSearcher extends ClusterSearcher<Searcher> {
 
         public SearcherClusterSearcher(ComponentId id,List<Searcher> searchers,Hasher<Searcher> hasher) {
             super(id,searchers,hasher,false);
+            waitUntilStateIsKnown(-1, TimeUnit.MILLISECONDS);
         }
 
         @Override

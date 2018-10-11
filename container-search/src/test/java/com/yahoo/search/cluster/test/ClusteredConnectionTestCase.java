@@ -16,6 +16,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -93,8 +94,11 @@ public class ClusteredConnectionTestCase {
         assertEquals("from:0",r.hits().get(0).getId().stringValue());
     }
 
+    static final long FAIL_LIMIT_MS = 1000;
+
+
     @Test
-    public void testClusteringWithPing() {
+    public void testClusteringWithPing() throws InterruptedException {
         Connection connection0=new Connection("0");
         Connection connection1=new Connection("1");
         Connection connection2=new Connection("2");
@@ -112,7 +116,9 @@ public class ClusteredConnectionTestCase {
         connection2.setInService(false);
         connection1.setInService(false);
         connection0.setInService(false);
+        myBackend.getMonitor().getConfiguration().setFailLimit(FAIL_LIMIT_MS);
         forcePing(myBackend);
+        Thread.sleep(2 * FAIL_LIMIT_MS);
         r=new Execution(myBackend, Execution.Context.createContextStub()).search(new SimpleQuery(0));
         assertEquals("No backends in service. Try later",r.hits().getError().getMessage());
 
@@ -161,10 +167,11 @@ public class ClusteredConnectionTestCase {
      * client to a clustered service.
      * The goal is to make writing this correctly as simple as possible.
      */
-    private static class MyBackend extends ClusterSearcher<Connection> {
+    private static final class MyBackend extends ClusterSearcher<Connection> {
 
         public MyBackend(ComponentId componentId, List<Connection> connections) {
             super(componentId,connections,false);
+            waitUntilStateIsKnown(-1, TimeUnit.MILLISECONDS);
         }
 
         @Override

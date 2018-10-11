@@ -279,6 +279,7 @@ public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
         }
 
         initializeCertificate(httpParameters, certificateStore);
+        waitUntilStateIsKnown(5*httpParameters.getConnectionTimeout(), TimeUnit.MILLISECONDS);
     }
 
     /**

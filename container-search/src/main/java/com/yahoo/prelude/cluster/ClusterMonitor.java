@@ -106,7 +106,7 @@ public class ClusterMonitor implements Runnable, Freezable {
         }
     }
 
-    private boolean hasInformationAboutAllNodes() {
+    boolean hasInformationAboutAllNodes() {
         for (NodeMonitor monitor : nodeMonitors.values()) {
             if ( ! monitor.statusIsKnown())
                 return false;

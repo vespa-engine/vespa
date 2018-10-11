@@ -2,6 +2,7 @@
 package com.yahoo.search.cluster;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.protect.Error;
 import com.yahoo.log.LogLevel;
 import com.yahoo.prelude.Ping;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -59,7 +61,15 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         this.hasher = hasher;
         for (T connection : connections) {
             monitor.add(connection, internal);
-            hasher.add(connection);
+        }
+    }
+
+    // Must be called after children are fully constructed.
+    public void waitUntilStateIsKnown(long timeout, TimeUnit timeUnit) {
+        Executor pingExecutor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory(getIdString() + ".constructor.ping"));
+        monitor.ping(pingExecutor);
+        for (BaseNodeMonitor<T> node : monitor.nodeMonitors()) {
+            node.waitUntilStateIsDetermined(timeout, timeUnit);
         }
     }
 

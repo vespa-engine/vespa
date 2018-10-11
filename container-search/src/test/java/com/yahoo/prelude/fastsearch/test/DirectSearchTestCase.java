@@ -73,6 +73,7 @@ public class DirectSearchTestCase {
     public void testNoDirectSearchWhenLocalNodeIsDown() {
         FastSearcherTester tester = new FastSearcherTester(2, FastSearcherTester.selfHostname + ":9999:0", "otherhost:9999:1");
         assertTrue(tester.vipStatus().isInRotation());
+        tester.dispatcher().searchCluster().getMonitorConfiguration().setFailLimit(0);
         tester.setResponding(FastSearcherTester.selfHostname, false);
         assertFalse(tester.vipStatus().isInRotation());
         assertEquals("1 ping request, 0 search requests", 1, tester.requestCount(FastSearcherTester.selfHostname, 9999));

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.cluster;
 
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import com.yahoo.search.result.ErrorMessage;
@@ -26,7 +27,7 @@ public abstract class BaseNodeMonitor<T> {
     /** The object representing the monitored node */
     protected T node;
 
-    protected boolean isWorking=true;
+    protected boolean isWorking=false;
 
     /** Whether this node is quarantined for unstability */
     protected boolean isQuarantined=false;
@@ -90,5 +91,16 @@ public abstract class BaseNodeMonitor<T> {
 
     /** Returns whether or not this is monitoring an internal node. Default is false. */
     public boolean isInternal() { return internal; }
+
+    /** Wait until we know the state of the node. */
+    public boolean waitUntilStateIsDetermined(long timeout, TimeUnit timeUnit) {
+        long doom = System.currentTimeMillis() + timeUnit.toMillis(timeout);
+        while ((respondedAt == 0) && (System.currentTimeMillis() < doom) ) {
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) { }
+        }
+        return isWorking();
+    }
 
 }

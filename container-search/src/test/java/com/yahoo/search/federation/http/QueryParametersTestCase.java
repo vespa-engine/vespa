@@ -2,6 +2,8 @@
 package com.yahoo.search.federation.http;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.prelude.Ping;
+import com.yahoo.prelude.Pong;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.searchchain.Execution;
@@ -52,6 +54,10 @@ public class QueryParametersTestCase {
             super(new ComponentId("test"), Collections.singletonList(new Connection("host", Defaults.getDefaults().vespaWebServicePort())), "path", Statistics.nullImplementation);
         }
 
+        @Override
+        public Pong ping(Ping ping, Connection connection) {
+            return new Pong();
+        }
         @Override
         public Map<String, String> getCacheKey(Query q) {
             return Collections.singletonMap("nocaching", String.valueOf(Math.random()));

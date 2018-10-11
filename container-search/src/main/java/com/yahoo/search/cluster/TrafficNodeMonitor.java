@@ -3,6 +3,8 @@ package com.yahoo.search.cluster;
 
 import com.yahoo.search.result.ErrorMessage;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * This node monitor is responsible for maintaining the state of a monitored node.
  * It has the following properties:
@@ -25,6 +27,7 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
     /** Whether or not this has ever responded successfully */
     private boolean atStartUp = true;
 
+    @Override
     public T getNode() { return node; }
 
     /**
@@ -33,7 +36,7 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
      * @param error a container which should contain a short description
      */
     @Override
-    public void failed(ErrorMessage error) {
+    public synchronized void failed(ErrorMessage error) {
         respondedAt = now();
 
         switch (error.getCode()) {
@@ -43,8 +46,9 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
             case 11:
                 // Only count not being able to talk to backend at all
                 // as errors we care about
-                if ((respondedAt-succeededAt) > 10000) {
-                    setWorking(false, "Not working for 10 s: " + error.toString());
+                long failedTime = (respondedAt-succeededAt);
+                if (failedTime > configuration.getFailLimit()) {
+                    setWorking(false, "Not working for " + failedTime + " ms: " + error.toString());
                 }
                 break;
             default:
@@ -56,16 +60,19 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
     /**
      * Called when a response is received from this node.
      */
-    public void responded() {
+    @Override
+    public synchronized void responded() {
         respondedAt=now();
         succeededAt=respondedAt;
         atStartUp = false;
 
         if (!isWorking)
             setWorking(true,"Responds correctly");
+        notifyAll();
     }
 
     /** Thread-safely changes the state of this node if required */
+    @Override
     protected synchronized void setWorking(boolean working,String explanation) {
         if (this.isWorking==working) return; // Old news
 
@@ -85,6 +92,17 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
         }
 
         this.isWorking=working;
+    }
+
+    @Override
+    public synchronized boolean waitUntilStateIsDetermined(long timeout, TimeUnit timeUnit) {
+        long doom = System.currentTimeMillis() + timeUnit.toMillis(timeout);
+        try {
+            for (long remain = doom - System.currentTimeMillis(); atStartUp && remain > 0; remain = doom - System.currentTimeMillis()) {
+                wait(remain);
+            }
+        } catch (InterruptedException e) {}
+        return isWorking;
     }
 
 }

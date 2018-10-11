@@ -109,7 +109,7 @@ public class PingTestCase {
     public void testPassiveAggressiveCase() throws Exception {
         PassiveAggressiveStupidServer server = new PassiveAggressiveStupidServer();
         server.start();
-        checkSearchAndPing(true, false, true, server.getServerPort());
+        checkSearchAndPing(false, false, false, server.getServerPort());
         server.stop();
     }
 

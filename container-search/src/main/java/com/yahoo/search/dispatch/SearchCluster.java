@@ -5,9 +5,12 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.net.HostName;
+import com.yahoo.search.cluster.BaseNodeMonitor;
 import com.yahoo.search.cluster.ClusterMonitor;
+import com.yahoo.search.cluster.MonitorConfiguration;
 import com.yahoo.search.cluster.NodeManager;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.vespa.config.search.DispatchConfig;
@@ -27,6 +30,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -104,12 +108,9 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         // We can switch to monitoring the rpc interface instead when we move the query phase to rpc
         this.clusterMonitor = new ClusterMonitor<>(this);
         for (Node node : nodes) {
-            // cluster monitor will only call working() when the
-            // node transitions from down to up, so we need to
-            // register the initial (working) state here:
-            working(node);
             clusterMonitor.add(node, true);
         }
+        waitUntilStateIsKnown(-1, TimeUnit.MILLISECONDS);
     }
 
     private static Optional<Node> findDirectDispatchTarget(String selfHostname,
@@ -272,6 +273,19 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
                     updateSufficientCoverage(currentGroup,
                                              100 * (double) currentGroup.getActiveDocuments() / averageDocumentsInOtherGroups > minActivedocsCoveragePercentage);
             }
+        }
+    }
+
+    public MonitorConfiguration getMonitorConfiguration() {
+        return clusterMonitor.getConfiguration();
+    }
+
+    @Override
+    public void waitUntilStateIsKnown(long timeout, TimeUnit timeUnit) {
+        Executor pingExecutor = Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("searchcluster.constructor.ping"));
+        clusterMonitor.ping(pingExecutor);
+        for (BaseNodeMonitor<Node> node : clusterMonitor.nodeMonitors()) {
+            node.waitUntilStateIsDetermined(timeout, timeUnit);
         }
     }
 

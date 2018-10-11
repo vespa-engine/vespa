@@ -67,7 +67,7 @@ import static com.yahoo.container.QrSearchersConfig.Searchcluster.Indexingmode.S
  * @author geirst
  */
 @After("*")
-public class ClusterSearcher extends Searcher {
+public final class ClusterSearcher extends Searcher {
 
     private final static Logger log = Logger.getLogger(ClusterSearcher.class.getName());
 
@@ -169,6 +169,15 @@ public class ClusterSearcher extends Searcher {
         }
         monitor.freeze();
         monitor.startPingThread();
+        waitUntilStateIsDetermined();
+    }
+
+    private void waitUntilStateIsDetermined() {
+        try {
+            while (!monitor.hasInformationAboutAllNodes()) {
+                Thread.sleep(1);
+            }
+        } catch (InterruptedException e) { }
     }
 
     private static QrSearchersConfig.Searchcluster getSearchClusterConfigFromClusterName(QrSearchersConfig config, String name) {
