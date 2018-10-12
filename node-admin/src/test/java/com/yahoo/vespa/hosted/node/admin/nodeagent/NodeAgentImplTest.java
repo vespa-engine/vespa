@@ -124,15 +124,15 @@ public class NodeAgentImplTest {
 
         nodeAgent.converge();
 
-        verify(dockerOperations, never()).removeContainer(any());
+        verify(dockerOperations, never()).removeContainer(eq(context), any());
         verify(orchestrator, never()).suspend(any(String.class));
         verify(dockerOperations, never()).pullImageAsyncIfNeeded(any());
         verify(storageMaintainer, never()).removeOldFilesFromNode(eq(context));
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository);
         // TODO: Verify this isn't run unless 1st time
-        inOrder.verify(dockerOperations, never()).startServices(eq(context.containerName()));
-        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context.containerName()));
+        inOrder.verify(dockerOperations, never()).startServices(eq(context));
+        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
@@ -176,24 +176,24 @@ public class NodeAgentImplTest {
         when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(187500000000L));
 
         nodeAgent.converge();
-        inOrder.verify(dockerOperations, never()).startServices(eq(context.containerName()));
-        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context.containerName()));
+        inOrder.verify(dockerOperations, never()).startServices(eq(context));
+        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
 
         nodeAgent.suspend();
         nodeAgent.converge();
-        inOrder.verify(dockerOperations, never()).startServices(eq(context.containerName()));
-        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context.containerName())); // Expect a resume, but no start services
+        inOrder.verify(dockerOperations, never()).startServices(eq(context));
+        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context)); // Expect a resume, but no start services
 
         // No new suspends/stops, so no need to resume/start
         nodeAgent.converge();
-        inOrder.verify(dockerOperations, never()).startServices(eq(context.containerName()));
-        inOrder.verify(dockerOperations, never()).resumeNode(eq(context.containerName()));
+        inOrder.verify(dockerOperations, never()).startServices(eq(context));
+        inOrder.verify(dockerOperations, never()).resumeNode(eq(context));
 
         nodeAgent.suspend();
         nodeAgent.stopServices();
         nodeAgent.converge();
-        inOrder.verify(dockerOperations, times(1)).startServices(eq(context.containerName()));
-        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context.containerName()));
+        inOrder.verify(dockerOperations, times(1)).startServices(eq(context));
+        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
     }
 
     @Test
@@ -219,16 +219,16 @@ public class NodeAgentImplTest {
 
         nodeAgent.converge();
 
-        verify(dockerOperations, never()).removeContainer(any());
+        verify(dockerOperations, never()).removeContainer(eq(context), any());
         verify(dockerOperations, never()).startServices(any());
         verify(orchestrator, never()).suspend(any(String.class));
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository, aclMaintainer);
         inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(dockerImage));
-        inOrder.verify(dockerOperations, times(1)).createContainer(eq(context.containerName()), eq(node), any());
-        inOrder.verify(dockerOperations, times(1)).startContainer(eq(context.containerName()));
+        inOrder.verify(dockerOperations, times(1)).createContainer(eq(context), eq(node), any());
+        inOrder.verify(dockerOperations, times(1)).startContainer(eq(context));
         inOrder.verify(aclMaintainer, times(1)).run();
-        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context.containerName()));
+        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
                 hostName, new NodeAttributes()
                         .withRestartGeneration(restartGeneration)
@@ -262,7 +262,7 @@ public class NodeAgentImplTest {
 
         verify(orchestrator, never()).suspend(any(String.class));
         verify(orchestrator, never()).resume(any(String.class));
-        verify(dockerOperations, never()).removeContainer(any());
+        verify(dockerOperations, never()).removeContainer(eq(context), any());
 
         final InOrder inOrder = inOrder(dockerOperations);
         inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(newDockerImage));
@@ -302,9 +302,9 @@ public class NodeAgentImplTest {
         inOrder.verify(orchestrator).resume(any(String.class));
         inOrder.verify(orchestrator).resume(any(String.class));
         inOrder.verify(orchestrator).suspend(any(String.class));
-        inOrder.verify(dockerOperations).removeContainer(any());
-        inOrder.verify(dockerOperations, times(1)).createContainer(eq(context.containerName()), eq(thirdSpec), any());
-        inOrder.verify(dockerOperations).startContainer(eq(context.containerName()));
+        inOrder.verify(dockerOperations).removeContainer(eq(context), any());
+        inOrder.verify(dockerOperations, times(1)).createContainer(eq(context), eq(thirdSpec), any());
+        inOrder.verify(dockerOperations).startContainer(eq(context));
         inOrder.verify(orchestrator).resume(any(String.class));
     }
 
@@ -329,8 +329,8 @@ public class NodeAgentImplTest {
             fail("Expected to throw an exception");
         } catch (Exception ignored) { }
 
-        verify(dockerOperations, never()).createContainer(eq(context.containerName()), eq(node), any());
-        verify(dockerOperations, never()).startContainer(eq(context.containerName()));
+        verify(dockerOperations, never()).createContainer(eq(context), eq(node), any());
+        verify(dockerOperations, never()).startContainer(eq(context));
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository, never()).updateNodeAttributes(any(String.class), any(NodeAttributes.class));
     }
@@ -354,7 +354,7 @@ public class NodeAgentImplTest {
 
         nodeAgent.converge();
 
-        verify(dockerOperations, never()).removeContainer(any());
+        verify(dockerOperations, never()).removeContainer(eq(context), any());
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository, never()).updateNodeAttributes(eq(hostName), any());
     }
@@ -379,10 +379,10 @@ public class NodeAgentImplTest {
         nodeAgent.converge();
 
         // Should only be called once, when we initialize
-        verify(dockerOperations, times(1)).getContainer(eq(context.containerName()));
-        verify(dockerOperations, never()).removeContainer(any());
-        verify(dockerOperations, never()).createContainer(eq(context.containerName()), eq(node), any());
-        verify(dockerOperations, never()).startContainer(eq(context.containerName()));
+        verify(dockerOperations, times(1)).getContainer(eq(context));
+        verify(dockerOperations, never()).removeContainer(eq(context), any());
+        verify(dockerOperations, never()).createContainer(eq(context), eq(node), any());
+        verify(dockerOperations, never()).startContainer(eq(context));
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository, never()).updateNodeAttributes(eq(hostName), any());
     }
@@ -410,7 +410,7 @@ public class NodeAgentImplTest {
         nodeAgent.converge();
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations);
-        inOrder.verify(dockerOperations, never()).removeContainer(any());
+        inOrder.verify(dockerOperations, never()).removeContainer(eq(context), any());
 
         verify(orchestrator, never()).resume(any(String.class));
         verify(nodeRepository, never()).updateNodeAttributes(eq(hostName), any());
@@ -457,16 +457,16 @@ public class NodeAgentImplTest {
         nodeAgent.converge();
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations, nodeRepository);
-        inOrder.verify(dockerOperations, times(1)).stopServices(eq(context.containerName()));
+        inOrder.verify(dockerOperations, times(1)).stopServices(eq(context));
         inOrder.verify(storageMaintainer, times(1)).handleCoreDumpsForContainer(eq(context), eq(node), any());
-        inOrder.verify(dockerOperations, times(1)).removeContainer(any());
+        inOrder.verify(dockerOperations, times(1)).removeContainer(eq(context), any());
         inOrder.verify(storageMaintainer, times(1)).archiveNodeStorage(eq(context));
         inOrder.verify(nodeRepository, times(1)).setNodeState(eq(hostName), eq(Node.State.ready));
 
-        verify(dockerOperations, never()).createContainer(eq(context.containerName()), any(), any());
-        verify(dockerOperations, never()).startContainer(eq(context.containerName()));
-        verify(dockerOperations, never()).suspendNode(eq(context.containerName()));
-        verify(dockerOperations, times(1)).stopServices(eq(context.containerName()));
+        verify(dockerOperations, never()).createContainer(eq(context), any(), any());
+        verify(dockerOperations, never()).startContainer(eq(context));
+        verify(dockerOperations, never()).suspendNode(eq(context));
+        verify(dockerOperations, times(1)).stopServices(eq(context));
         verify(orchestrator, never()).resume(any(String.class));
         verify(orchestrator, never()).suspend(any(String.class));
         // current Docker image and vespa version should be cleared
@@ -519,9 +519,9 @@ public class NodeAgentImplTest {
 
         nodeAgent.tick();
 
-        verify(dockerOperations, times(1)).removeContainer(any());
-        verify(dockerOperations, times(1)).createContainer(eq(context.containerName()), eq(node), any());
-        verify(dockerOperations, times(1)).startContainer(eq(context.containerName()));
+        verify(dockerOperations, times(1)).removeContainer(eq(context), any());
+        verify(dockerOperations, times(1)).createContainer(eq(context), eq(node), any());
+        verify(dockerOperations, times(1)).startContainer(eq(context));
     }
 
     @Test
@@ -544,7 +544,7 @@ public class NodeAgentImplTest {
         final InOrder inOrder = inOrder(orchestrator, dockerOperations, nodeRepository);
         doThrow(new RuntimeException("Failed 1st time"))
                 .doNothing()
-                .when(dockerOperations).resumeNode(eq(context.containerName()));
+                .when(dockerOperations).resumeNode(eq(context));
 
         // 1st try
         try {
@@ -610,16 +610,16 @@ public class NodeAgentImplTest {
         when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
         when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
         when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
-        doThrow(new DockerException("Failed to set up network")).doNothing().when(dockerOperations).startContainer(eq(context.containerName()));
+        doThrow(new DockerException("Failed to set up network")).doNothing().when(dockerOperations).startContainer(eq(context));
 
         try {
             nodeAgent.converge();
             fail("Expected to get DockerException");
         } catch (DockerException ignored) { }
 
-        verify(dockerOperations, never()).removeContainer(any());
-        verify(dockerOperations, times(1)).createContainer(eq(context.containerName()), eq(node), any());
-        verify(dockerOperations, times(1)).startContainer(eq(context.containerName()));
+        verify(dockerOperations, never()).removeContainer(eq(context), any());
+        verify(dockerOperations, times(1)).createContainer(eq(context), eq(node), any());
+        verify(dockerOperations, times(1)).startContainer(eq(context));
         verify(nodeAgent, never()).resumeNodeIfNeeded(any());
 
         // The docker container was actually started and is running, but subsequent exec calls to set up
@@ -627,9 +627,9 @@ public class NodeAgentImplTest {
         mockGetContainer(dockerImage, true);
         nodeAgent.converge();
 
-        verify(dockerOperations, times(1)).removeContainer(any());
-        verify(dockerOperations, times(2)).createContainer(eq(context.containerName()), eq(node), any());
-        verify(dockerOperations, times(2)).startContainer(eq(context.containerName()));
+        verify(dockerOperations, times(1)).removeContainer(eq(context), any());
+        verify(dockerOperations, times(2)).createContainer(eq(context), eq(node), any());
+        verify(dockerOperations, times(2)).startContainer(eq(context));
         verify(nodeAgent, times(1)).resumeNodeIfNeeded(any());
     }
 
@@ -666,7 +666,7 @@ public class NodeAgentImplTest {
 
         when(nodeRepository.getOptionalNode(eq(hostName))).thenReturn(Optional.of(node));
         when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(39625000000L));
-        when(dockerOperations.getContainerStats(eq(context.containerName())))
+        when(dockerOperations.getContainerStats(eq(context)))
                 .thenReturn(Optional.of(stats1))
                 .thenReturn(Optional.of(stats2));
         when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
@@ -683,13 +683,13 @@ public class NodeAgentImplTest {
 
         String[] expectedCommand = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:19091",  "setExtraMetrics", expectedMetrics};
         doAnswer(invocation -> {
-            ContainerName calledContainerName = (ContainerName) invocation.getArguments()[0];
+            NodeAgentContext calledContainerName = (NodeAgentContext) invocation.getArguments()[0];
             long calledTimeout = (long) invocation.getArguments()[1];
             String[] calledCommand = new String[invocation.getArguments().length - 2];
             System.arraycopy(invocation.getArguments(), 2, calledCommand, 0, calledCommand.length);
             calledCommand[calledCommand.length - 1] = calledCommand[calledCommand.length - 1].replaceAll("\"timestamp\":\\d+", "\"timestamp\":0");
 
-            assertEquals(context.containerName(), calledContainerName);
+            assertEquals(context, calledContainerName);
             assertEquals(5L, calledTimeout);
             assertArrayEquals(expectedCommand, calledCommand);
             return null;
@@ -707,7 +707,7 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
 
         when(nodeRepository.getOptionalNode(eq(hostName))).thenReturn(Optional.of(node));
-        when(dockerOperations.getContainerStats(eq(context.containerName()))).thenReturn(Optional.empty());
+        when(dockerOperations.getContainerStats(eq(context))).thenReturn(Optional.empty());
 
         nodeAgent.converge(); // Run the converge loop once to initialize lastNode
 
@@ -737,15 +737,15 @@ public class NodeAgentImplTest {
 
         nodeAgent.converge();
 
-        verify(dockerOperations, never()).removeContainer(any());
+        verify(dockerOperations, never()).removeContainer(eq(context), any());
         verify(orchestrator, never()).suspend(any(String.class));
 
         final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository, aclMaintainer);
         inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(dockerImage));
-        inOrder.verify(dockerOperations, times(1)).createContainer(eq(context.containerName()), eq(node), any());
-        inOrder.verify(dockerOperations, times(1)).startContainer(eq(context.containerName()));
+        inOrder.verify(dockerOperations, times(1)).createContainer(eq(context), eq(node), any());
+        inOrder.verify(dockerOperations, times(1)).startContainer(eq(context));
         inOrder.verify(aclMaintainer, times(1)).run();
-        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context.containerName()));
+        inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
                 hostName, new NodeAttributes()
                         .withRebootGeneration(rebootGeneration)
@@ -775,6 +775,6 @@ public class NodeAgentImplTest {
                         isRunning ? 1 : 0)) :
                 Optional.empty();
 
-        when(dockerOperations.getContainer(eq(context.containerName()))).thenReturn(container);
+        when(dockerOperations.getContainer(eq(context))).thenReturn(container);
     }
 }

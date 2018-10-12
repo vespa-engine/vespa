@@ -138,7 +138,7 @@ public class StorageMaintainer {
         // Write config and restart yamas-agent
         Path yamasAgentFolder = context.pathOnHostFromPathInNode("/etc/yamas-agent");
         configs.forEach(s -> uncheck(() -> s.writeTo(yamasAgentFolder)));
-        dockerOperations.executeCommandInContainerAsRoot(context.containerName(), "service", "yamas-agent", "restart");
+        dockerOperations.executeCommandInContainerAsRoot(context, "service", "yamas-agent", "restart");
     }
 
     private SecretAgentCheckConfig annotatedCheck(NodeSpec node, SecretAgentCheckConfig check) {

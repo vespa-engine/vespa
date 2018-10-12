@@ -178,7 +178,7 @@ public class NodeAgentImpl implements NodeAgent {
         serviceRestarter = service -> {
             try {
                 ProcessResult processResult = dockerOperations.executeCommandInContainerAsRoot(
-                        context.containerName(), "service", service, "restart");
+                        context, "service", service, "restart");
 
                 if (!processResult.isSuccess()) {
                     context.log(logger, LogLevel.ERROR, "Failed to restart service " + service + ": " + processResult);
@@ -219,7 +219,7 @@ public class NodeAgentImpl implements NodeAgent {
     void startServicesIfNeeded() {
         if (!hasStartedServices) {
             context.log(logger, "Starting services");
-            dockerOperations.startServices(context.containerName());
+            dockerOperations.startServices(context);
             hasStartedServices = true;
         }
     }
@@ -234,7 +234,7 @@ public class NodeAgentImpl implements NodeAgent {
             }
 
             context.log(logger, LogLevel.DEBUG, "Starting optional node program resume command");
-            dockerOperations.resumeNode(context.containerName());
+            dockerOperations.resumeNode(context);
             hasResumedNode = true;
         }
     }
@@ -265,8 +265,8 @@ public class NodeAgentImpl implements NodeAgent {
 
     private void startContainer(NodeSpec node) {
         ContainerData containerData = createContainerData(context, node);
-        dockerOperations.createContainer(context.containerName(), node, containerData);
-        dockerOperations.startContainer(context.containerName());
+        dockerOperations.createContainer(context, node, containerData);
+        dockerOperations.startContainer(context);
         lastCpuMetric = new CpuUsageReporter();
 
         hasStartedServices = true; // Automatically started with the container
@@ -302,7 +302,7 @@ public class NodeAgentImpl implements NodeAgent {
             context.log(logger, "Restarting services");
             // Since we are restarting the services we need to suspend the node.
             orchestratorSuspendNode();
-            dockerOperations.restartVespa(context.containerName());
+            dockerOperations.restartVespa(context);
         }
     }
 
@@ -312,7 +312,7 @@ public class NodeAgentImpl implements NodeAgent {
         if (containerState == ABSENT) return;
         try {
             hasStartedServices = hasResumedNode = false;
-            dockerOperations.stopServices(context.containerName());
+            dockerOperations.stopServices(context);
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
         }
@@ -324,7 +324,7 @@ public class NodeAgentImpl implements NodeAgent {
         if (containerState == ABSENT) return;
         try {
             hasResumedNode = false;
-            dockerOperations.suspendNode(context.containerName());
+            dockerOperations.suspendNode(context);
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
         } catch (RuntimeException e) {
@@ -379,7 +379,7 @@ public class NodeAgentImpl implements NodeAgent {
             }
             stopFilebeatSchedulerIfNeeded();
             storageMaintainer.handleCoreDumpsForContainer(context, node, Optional.of(existingContainer));
-            dockerOperations.removeContainer(existingContainer);
+            dockerOperations.removeContainer(context, existingContainer);
             containerState = ABSENT;
             context.log(logger, "Container successfully removed, new containerState is " + containerState);
             return Optional.empty();
@@ -600,7 +600,7 @@ public class NodeAgentImpl implements NodeAgent {
         final NodeSpec node = lastNode;
         if (node == null || containerState != UNKNOWN) return;
 
-        Optional<ContainerStats> containerStats = dockerOperations.getContainerStats(context.containerName());
+        Optional<ContainerStats> containerStats = dockerOperations.getContainerStats(context);
         if (!containerStats.isPresent()) return;
 
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
@@ -675,7 +675,7 @@ public class NodeAgentImpl implements NodeAgent {
 
             // Push metrics to the metrics proxy in each container - give it maximum 1 seconds to complete
             String[] command = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:19091",  "setExtraMetrics", wrappedMetrics};
-            dockerOperations.executeCommandInContainerAsRoot(context.containerName(), 5L, command);
+            dockerOperations.executeCommandInContainerAsRoot(context, 5L, command);
         } catch (DockerExecTimeoutException | JsonProcessingException  e) {
             context.log(logger, LogLevel.WARNING, "Failed to push metrics to container", e);
         }
@@ -683,7 +683,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private Optional<Container> getContainer() {
         if (containerState == ABSENT) return Optional.empty();
-        Optional<Container> container = dockerOperations.getContainer(context.containerName());
+        Optional<Container> container = dockerOperations.getContainer(context);
         if (! container.isPresent()) containerState = ABSENT;
         return container;
     }
