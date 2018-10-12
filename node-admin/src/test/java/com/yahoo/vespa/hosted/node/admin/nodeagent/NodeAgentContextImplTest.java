@@ -15,23 +15,45 @@ import static org.junit.Assert.assertEquals;
  * @author freva
  */
 public class NodeAgentContextImplTest {
-    private final NodeAgentContext context = nodeAgentFromHostname("container-1.domain.tld");
-
+    private final FileSystem fileSystem = TestFileSystem.create();
+    private final NodeAgentContext context = nodeAgentFromHostname(fileSystem, "container-1.domain.tld");
 
     @Test
     public void path_on_host_from_path_in_node_test() {
         assertEquals(
                 "/home/docker/container-1",
-                context.pathOnHostFromPathInNode(Paths.get("/")).toString());
+                context.pathOnHostFromPathInNode("/").toString());
 
         assertEquals(
                 "/home/docker/container-1/dev/null",
-                context.pathOnHostFromPathInNode(Paths.get("/dev/null")).toString());
+                context.pathOnHostFromPathInNode("/dev/null").toString());
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void path_in_container_must_be_absolute() {
-        context.pathOnHostFromPathInNode(Paths.get("some/relative/path"));
+        context.pathOnHostFromPathInNode("some/relative/path");
+    }
+
+    @Test
+    public void path_in_node_from_path_on_host_test() {
+        assertEquals(
+                "/dev/null",
+                context.pathInNodeFromPathOnHost(fileSystem.getPath("/home/docker/container-1/dev/null")).toString());
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void path_on_host_must_be_absolute() {
+        context.pathInNodeFromPathOnHost("some/relative/path");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void path_on_host_must_be_inside_container_storage_of_context() {
+        context.pathInNodeFromPathOnHost(fileSystem.getPath("/home/docker/container-2/dev/null"));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void path_on_host_must_be_inside_container_storage() {
+        context.pathInNodeFromPathOnHost(fileSystem.getPath("/home"));
     }
 
     @Test

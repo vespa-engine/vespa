@@ -19,17 +19,34 @@ public interface NodeAgentContext extends TaskContext {
 
     AthenzService identity();
 
+
     /**
-     * Translates an absolute path in container to an absolute path in host.
+     * This method is the inverse of {@link #pathInNodeFromPathOnHost(Path)}}
      *
      * @param pathInNode absolute path in the container
      * @return the absolute path on host pointing at the same inode
      */
     Path pathOnHostFromPathInNode(Path pathInNode);
 
+    /** @see #pathOnHostFromPathInNode(Path) */
     default Path pathOnHostFromPathInNode(String pathInNode) {
         return pathOnHostFromPathInNode(Paths.get(pathInNode));
     }
+
+
+    /**
+     * This method is the inverse of {@link #pathOnHostFromPathInNode(Path)}
+     *
+     * @param pathOnHost absolute path on host
+     * @return the absolute path in the container pointing at the same inode
+     */
+    Path pathInNodeFromPathOnHost(Path pathOnHost);
+
+    /** @see #pathOnHostFromPathInNode(Path) */
+    default Path pathInNodeFromPathOnHost(String pathOnHost) {
+        return pathInNodeFromPathOnHost(Paths.get(pathOnHost));
+    }
+
 
     /**
      * @param relativePath relative path under Vespa home in container
@@ -37,6 +54,7 @@ public interface NodeAgentContext extends TaskContext {
      */
     Path pathInNodeUnderVespaHome(Path relativePath);
 
+    /** @see #pathInNodeUnderVespaHome(Path) */
     default Path pathInNodeUnderVespaHome(String relativePath) {
         return pathInNodeUnderVespaHome(Paths.get(relativePath));
     }
