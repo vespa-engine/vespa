@@ -33,11 +33,6 @@ public class HostSpec implements Comparable<HostSpec> {
         this(hostname, new ArrayList<>(), Optional.empty(), membership);
     }
 
-    // TODO: Remove after May 2018
-    public HostSpec(String hostname, ClusterMembership membership, Flavor flavor) {
-        this(hostname, new ArrayList<>(), Optional.of(flavor), Optional.of(membership));
-    }
-
     public HostSpec(String hostname, ClusterMembership membership, Flavor flavor, Optional<com.yahoo.component.Version> version) {
         this(hostname, new ArrayList<>(), Optional.of(flavor), Optional.of(membership), version);
     }
