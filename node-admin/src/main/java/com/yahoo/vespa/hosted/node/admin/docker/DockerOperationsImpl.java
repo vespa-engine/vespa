@@ -299,6 +299,7 @@ public class DockerOperationsImpl implements DockerOperations {
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/daemontools_y"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/jdisc_core"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/langdetect/"), false);
+        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/nginx"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/vespa"), false);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/yca"), true);
         directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/yck"), false);
