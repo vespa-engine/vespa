@@ -95,6 +95,10 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
     @Override
     protected void derive(ImmutableSDField field, Search search) {
+        derive(field, search, false);
+    }
+
+    protected void derive(ImmutableSDField field, Search search, boolean inPosition) {
         if (field.getDataType().equals(DataType.PREDICATE)) {
             Index index = field.getIndex(field.getName());
             if (index != null) {
@@ -113,15 +117,15 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             String name = e.getValue();
             addIndexAlias(alias, name);
         }
+        boolean isPosition = field.getDataType().equals(PositionDataType.INSTANCE) ||
+                field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE));
         if (field.usesStructOrMap()) {
             for (ImmutableSDField structField : field.getStructFields()) {
-                derive(structField, search); // Recursion
+                derive(structField, search, isPosition); // Recursion
             }
         }
 
-        if (field.getDataType().equals(PositionDataType.INSTANCE) ||
-            field.getDataType().equals(DataType.getArray(PositionDataType.INSTANCE)))
-        {
+        if (isPosition) {
             addIndexCommand(field.getName(), CMD_DEFAULT_POSITION);
         }
 
@@ -135,9 +139,9 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             addIndexCommand(field, CMD_MULTIVALUE);
         }
 
-        if (field.doesAttributing() && !field.doesIndexing()) {
+        Attribute attribute = field.getAttributes().get(field.getName());
+        if ((field.doesAttributing() || (attribute != null && !inPosition)) && !field.doesIndexing()) {
             addIndexCommand(field.getName(), CMD_ATTRIBUTE);
-            Attribute attribute = field.getAttributes().get(field.getName());
             if (attribute != null && attribute.isFastSearch())
                 addIndexCommand(field.getName(), CMD_FAST_SEARCH);
         } else if (field.doesIndexing()) {
