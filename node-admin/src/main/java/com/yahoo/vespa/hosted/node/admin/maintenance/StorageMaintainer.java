@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoredumpHandler;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -241,13 +240,8 @@ public class StorageMaintainer {
 
     /** Checks if container has any new coredumps, reports and archives them if so */
     public void handleCoreDumpsForContainer(NodeAgentContext context, NodeSpec node) {
-        final Path coredumpsPath = context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("var/crash"));
         final Map<String, Object> nodeAttributes = getCoredumpNodeAttributes(node);
-        try {
-            coredumpHandler.processAll(coredumpsPath, nodeAttributes);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to process coredumps", e);
-        }
+        coredumpHandler.converge(context, nodeAttributes);
     }
 
     private Map<String, Object> getCoredumpNodeAttributes(NodeSpec node) {
