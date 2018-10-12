@@ -15,9 +15,9 @@ namespace vespalib {
 class TlsCryptoEngine : public CryptoEngine
 {
 private:
-    std::unique_ptr<net::tls::TlsContext> _tls_ctx;    
+    std::shared_ptr<net::tls::TlsContext> _tls_ctx;
 public:
-    TlsCryptoEngine(net::tls::TransportSecurityOptions tls_opts);
+    explicit TlsCryptoEngine(net::tls::TransportSecurityOptions tls_opts);
     std::unique_ptr<TlsCryptoSocket> create_tls_crypto_socket(SocketHandle socket, bool is_server);
     CryptoSocket::UP create_crypto_socket(SocketHandle socket, bool is_server) override {
         return create_tls_crypto_socket(std::move(socket), is_server);
