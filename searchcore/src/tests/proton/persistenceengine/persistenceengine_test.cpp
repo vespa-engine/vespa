@@ -326,13 +326,15 @@ DocumentId docId0;
 DocumentId docId1("id:type1:type1::1");
 DocumentId docId2("id:type2:type2::1");
 DocumentId docId3("id:type3:type3::1");
+DocumentId old_docId("doc:old:id-scheme"); 
 Document::SP doc1(createDoc(type1, docId1));
 Document::SP doc2(createDoc(type2, docId2));
 Document::SP doc3(createDoc(type3, docId3));
-Document::SP old_doc(createDoc(type1, DocumentId("doc:old:id-scheme")));
+Document::SP old_doc(createDoc(type1, old_docId));
 document::DocumentUpdate::SP upd1(createUpd(type1, docId1));
 document::DocumentUpdate::SP upd2(createUpd(type2, docId2));
 document::DocumentUpdate::SP upd3(createUpd(type3, docId3));
+document::DocumentUpdate::SP old_upd(createUpd(type1, old_docId));
 PartitionId partId(0);
 BucketId bckId1(1);
 BucketId bckId2(2);
@@ -514,6 +516,15 @@ TEST_F("require that updates are routed to handler", SimpleFixture)
 }
 
 
+TEST_F("require that updates with old id scheme are rejected", SimpleFixture)
+{
+    storage::spi::LoadType loadType(0, "default");
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
+
+    EXPECT_EQUAL(UpdateResult(Result::PERMANENT_ERROR, "Old id scheme not supported in elastic mode (doc:old:id-scheme)"),
+                 f.engine.update(bucket1, tstamp1, old_upd, context));
+}
+
 TEST_F("require that update is rejected if resource limit is reached", SimpleFixture)
 {
     f._writeFilter._acceptWriteOperation = false;
@@ -570,7 +581,7 @@ TEST_F("require that removes with old id scheme are rejected", SimpleFixture)
     Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
 
     EXPECT_EQUAL(RemoveResult(Result::PERMANENT_ERROR, "Old id scheme not supported in elastic mode (doc:old:id-scheme)"),
-                 f.engine.remove(bucket1, tstamp1, old_doc->getId(), context));
+                 f.engine.remove(bucket1, tstamp1, old_docId, context));
 }
 
 TEST_F("require that remove is NOT rejected if resource limit is reached", SimpleFixture)

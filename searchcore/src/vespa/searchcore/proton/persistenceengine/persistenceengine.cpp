@@ -400,6 +400,10 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
     LOG(spam, "update(%s, %" PRIu64 ", (\"%s\", \"%s\"), createIfNonExistent='%s')",
         b.toString().c_str(), static_cast<uint64_t>(t.getValue()), docType.toString().c_str(),
         upd->getId().toString().c_str(), (upd->getCreateIfNonExistent() ? "true" : "false"));
+    if (!upd->getId().hasDocType()) {
+        return UpdateResult(Result::PERMANENT_ERROR,
+                            make_string("Old id scheme not supported in elastic mode (%s)", upd->getId().toString().c_str()));
+    }
     IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
 
     if (handler) {
