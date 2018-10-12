@@ -160,8 +160,8 @@ class ApacheGatewayConnection implements GatewayConnection {
     }
 
     private ByteBuffer[] getDataWithStartAndEndOfFeed(List<Document> docs, int version) {
-        List<ByteBuffer> data = new ArrayList<ByteBuffer>();
-        if (version == 2 || version == 3) {
+        List<ByteBuffer> data = new ArrayList<>();
+        if (version == 2 || version == 3) { // TODO: Vespa 7: Remove support for version 2
             for (Document doc : docs) {
                 int operationSize = doc.size() + startOfFeed.length + endOfFeed.length;
                 StringBuilder envelope = new StringBuilder();

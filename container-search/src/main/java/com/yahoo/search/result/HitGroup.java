@@ -845,62 +845,18 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
         return fillableHits().iterator().hasNext();
     }
 
+    /** Returns the set of summaries for which all concrete hits recursively below this is filled. */
     @Override
     public Set<String> getFilled() {
-        Iterator<Hit> hitIterator = hits.iterator();
-        Set<String> firstSummaryNames = getSummaryNamesNextFilledHit(hitIterator);
-        if (firstSummaryNames == null || firstSummaryNames.isEmpty())
-            return firstSummaryNames;
-
-        Set<String> intersection = firstSummaryNames;
-        while (true) {
-            Set<String> summaryNames = getSummaryNamesNextFilledHit(hitIterator);
-            if (summaryNames == null)
-                break;
-
-            if (intersection.size() == 1)
-                return getFilledSingle(first(intersection), hitIterator);
-
-
-            boolean notInSet = false;
-            if (intersection == firstSummaryNames) {
-                if (intersection.size() == summaryNames.size()) {
-                    for(String s : summaryNames) {
-                        if ( ! intersection.contains(s)) {
-                            intersection = new HashSet<>(firstSummaryNames);
-                            notInSet = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            if (notInSet) {
-                intersection.retainAll(summaryNames);
-            }
-
+        Set<String> filled = null;
+        for (Hit hit : hits) {
+            if (hit.getFilled() == null) continue;
+            if (filled == null)
+                filled = new HashSet<>(hit.getFilled());
+            else
+                filled.retainAll(hit.getFilled());
         }
-
-        return intersection;
-    }
-
-    private Set<String> getSummaryNamesNextFilledHit(Iterator<Hit> hitIterator) {
-        while (hitIterator.hasNext()) {
-            Set<String> filled = hitIterator.next().getFilled();
-            if (filled != null)
-                return filled;
-        }
-        return null;
-    }
-
-    private Set<String> getFilledSingle(String summaryName, Iterator<Hit> hitIterator) {
-        while (true) {
-            Set<String> summaryNames = getSummaryNamesNextFilledHit(hitIterator);
-            if (summaryNames == null) {
-                return Collections.singleton(summaryName);
-            } else if (!summaryNames.contains(summaryName)) {
-                return Collections.emptySet();
-            }
-        }
+        return filled;
     }
 
     private Iterable<Hit> fillableHits() {
