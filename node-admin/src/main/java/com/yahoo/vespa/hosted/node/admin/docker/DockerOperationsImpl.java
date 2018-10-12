@@ -13,10 +13,10 @@ import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
-import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.io.IOException;
 import java.net.Inet6Address;
@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
@@ -38,6 +40,8 @@ import java.util.stream.Stream;
  */
 public class DockerOperationsImpl implements DockerOperations {
 
+    private static final Logger logger = Logger.getLogger(DockerOperationsImpl.class.getName());
+
     private static final String MANAGER_NAME = "node-admin";
 
     private static final String IPV6_NPT_PREFIX = "fd00::";
@@ -46,7 +50,6 @@ public class DockerOperationsImpl implements DockerOperations {
     private final Docker docker;
     private final Environment environment;
     private final ProcessExecuter processExecuter;
-    private final String nodeProgram;
     private final Map<Path, Boolean> directoriesToMount;
 
     public DockerOperationsImpl(Docker docker, Environment environment, ProcessExecuter processExecuter) {
@@ -54,14 +57,12 @@ public class DockerOperationsImpl implements DockerOperations {
         this.environment = environment;
         this.processExecuter = processExecuter;
 
-        this.nodeProgram = environment.pathInNodeUnderVespaHome("bin/vespa-nodectl").toString();
         this.directoriesToMount = getDirectoriesToMount(environment);
     }
 
     @Override
-    public void createContainer(ContainerName containerName, NodeSpec node, ContainerData containerData) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-        logger.info("Creating container " + containerName);
+    public void createContainer(NodeAgentContext context, NodeSpec node, ContainerData containerData) {
+        context.log(logger, "Creating container");
 
         // IPv6 - Assume always valid
         Inet6Address ipV6Address = environment.getIpAddresses().getIPv6Address(node.getHostname()).orElseThrow(
@@ -73,7 +74,7 @@ public class DockerOperationsImpl implements DockerOperations {
         Docker.CreateContainerCommand command = docker.createContainerCommand(
                 node.getWantedDockerImage().get(),
                 ContainerResources.from(node.getMinCpuCores(), node.getMinMainMemoryAvailableGb()),
-                containerName,
+                context.containerName(),
                 node.getHostname())
                 .withManagedBy(MANAGER_NAME)
                 .withEnvironment("VESPA_CONFIGSERVERS", configServers)
@@ -86,15 +87,15 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withAddCapability("SYS_ADMIN"); // Needed for perf
 
         if (isInfrastructureHost(environment.getNodeType())) {
-            command.withVolume("/var/lib/sia", "/var/lib/sia");
+            command.withVolume(Paths.get("/var/lib/sia"), Paths.get("/var/lib/sia"));
         }
 
         if (environment.getNodeType() == NodeType.proxyhost) {
-            command.withVolume("/opt/yahoo/share/ssl/certs", "/opt/yahoo/share/ssl/certs");
+            command.withVolume(Paths.get("/opt/yahoo/share/ssl/certs"), Paths.get("/opt/yahoo/share/ssl/certs"));
         }
 
         if (environment.getNodeType() == NodeType.host) {
-            command.withSharedVolume("/var/zpe", environment.pathInNodeUnderVespaHome("var/zpe").toString());
+            command.withSharedVolume(Paths.get("/var/zpe"), environment.pathInNodeUnderVespaHome("var/zpe"));
         }
 
         DockerNetworking networking = environment.getDockerNetworking();
@@ -117,8 +118,8 @@ public class DockerOperationsImpl implements DockerOperations {
         }
 
         for (Path pathInNode : directoriesToMount.keySet()) {
-            String pathInHost = environment.pathInHostFromPathInNode(containerName, pathInNode).toString();
-            command.withVolume(pathInHost, pathInNode.toString());
+            Path pathInHost = environment.pathInHostFromPathInNode(context.containerName(), pathInNode);
+            command.withVolume(pathInHost, pathInNode);
         }
 
         // TODO: Enforce disk constraints
@@ -164,35 +165,31 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void startContainer(ContainerName containerName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-        logger.info("Starting container " + containerName);
-
-        docker.startContainer(containerName);
+    public void startContainer(NodeAgentContext context) {
+        context.log(logger, "Starting container");
+        docker.startContainer(context.containerName());
 
         directoriesToMount.entrySet().stream()
                 .filter(Map.Entry::getValue)
                 .map(Map.Entry::getKey)
                 .forEach(path ->
-                        docker.executeInContainerAsRoot(containerName, "chmod", "-R", "a+w", path.toString()));
+                        executeCommandInContainerAsRoot(context, "chmod", "-R", "a+w", path.toString()));
     }
 
     @Override
-    public void removeContainer(Container existingContainer) {
-        final ContainerName containerName = existingContainer.name;
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-        if (existingContainer.state.isRunning()) {
-            logger.info("Stopping container " + containerName.asString());
-            docker.stopContainer(containerName);
+    public void removeContainer(NodeAgentContext context, Container container) {
+        if (container.state.isRunning()) {
+            context.log(logger, "Stopping container");
+            docker.stopContainer(context.containerName());
         }
 
-        logger.info("Deleting container " + containerName.asString());
-        docker.deleteContainer(containerName);
+        context.log(logger, "Deleting container");
+        docker.deleteContainer(context.containerName());
     }
 
     @Override
-    public Optional<Container> getContainer(ContainerName containerName) {
-        return docker.getContainer(containerName);
+    public Optional<Container> getContainer(NodeAgentContext context) {
+        return docker.getContainer(context.containerName());
     }
 
     @Override
@@ -200,88 +197,84 @@ public class DockerOperationsImpl implements DockerOperations {
         return docker.pullImageAsyncIfNeeded(dockerImage);
     }
 
-    ProcessResult executeCommandInContainer(ContainerName containerName, String... command) {
-        ProcessResult result = docker.executeInContainerAsRoot(containerName, command);
-
-        if (!result.isSuccess()) {
-            throw new RuntimeException("Container " + containerName.asString() +
-                    ": command " + Arrays.toString(command) + " failed: " + result);
-        }
-        return result;
+    @Override
+    public ProcessResult executeCommandInContainerAsRoot(NodeAgentContext context, Long timeoutSeconds, String... command) {
+        return docker.executeInContainerAsUser(context.containerName(), "root", OptionalLong.of(timeoutSeconds), command);
     }
 
     @Override
-    public ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... command) {
-        return docker.executeInContainerAsRoot(containerName, timeoutSeconds, command);
-    }
-
-    @Override
-    public ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String... command) {
-        return docker.executeInContainerAsRoot(containerName, command);
+    public ProcessResult executeCommandInContainerAsRoot(NodeAgentContext context, String... command) {
+        context.log(logger, context.containerName().asString() + " " + Arrays.asList(command));
+        return docker.executeInContainerAsUser(context.containerName(), "root", OptionalLong.empty(), command);
     }
 
     @Override
     public ProcessResult executeCommandInNetworkNamespace(ContainerName containerName, String... command) {
-        final PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         final Integer containerPid = docker.getContainer(containerName)
                 .filter(container -> container.state.isRunning())
                 .map(container -> container.pid)
                 .orElseThrow(() -> new RuntimeException("PID not found for container with name: " +
                         containerName.asString()));
 
-        Path procPath = environment.getPathResolver().getPathToRootOfHost().resolve("proc");
-
         final String[] wrappedCommand = Stream.concat(
-                Stream.of("nsenter", String.format("--net=%s/%d/ns/net", procPath, containerPid), "--"),
+                Stream.of("nsenter", String.format("--net=/proc/%d/ns/net", containerPid), "--"),
                 Stream.of(command))
                 .toArray(String[]::new);
 
         try {
             Pair<Integer, String> result = processExecuter.exec(wrappedCommand);
             if (result.getFirst() != 0) {
-                String msg = String.format(
+                throw new RuntimeException(String.format(
                         "Failed to execute %s in network namespace for %s (PID = %d), exit code: %d, output: %s",
-                        Arrays.toString(wrappedCommand), containerName.asString(), containerPid, result.getFirst(), result.getSecond());
-                logger.error(msg);
-                throw new RuntimeException(msg);
+                        Arrays.toString(wrappedCommand), containerName.asString(), containerPid, result.getFirst(), result.getSecond()));
             }
             return new ProcessResult(0, result.getSecond(), "");
         } catch (IOException e) {
-            logger.warning(String.format("IOException while executing %s in network namespace for %s (PID = %d)",
+            throw new RuntimeException(String.format("IOException while executing %s in network namespace for %s (PID = %d)",
                     Arrays.toString(wrappedCommand), containerName.asString(), containerPid), e);
-            throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void resumeNode(ContainerName containerName) {
-        executeCommandInContainer(containerName, nodeProgram, "resume");
+    public void resumeNode(NodeAgentContext context) {
+        executeNodeCtlInContainer(context, "resume");
     }
 
     @Override
-    public void suspendNode(ContainerName containerName) {
-        executeCommandInContainer(containerName, nodeProgram, "suspend");
+    public void suspendNode(NodeAgentContext context) {
+        executeNodeCtlInContainer(context, "suspend");
     }
 
     @Override
-    public void restartVespa(ContainerName containerName) {
-        executeCommandInContainer(containerName, nodeProgram, "restart-vespa");
+    public void restartVespa(NodeAgentContext context) {
+        executeNodeCtlInContainer(context, "restart-vespa");
     }
 
     @Override
-    public void startServices(ContainerName containerName) {
-        executeCommandInContainer(containerName, nodeProgram, "start");
+    public void startServices(NodeAgentContext context) {
+        executeNodeCtlInContainer(context, "start");
     }
 
     @Override
-    public void stopServices(ContainerName containerName) {
-        executeCommandInContainer(containerName, nodeProgram, "stop");
+    public void stopServices(NodeAgentContext context) {
+        executeNodeCtlInContainer(context, "stop");
+    }
+
+    ProcessResult executeNodeCtlInContainer(NodeAgentContext context, String program) {
+        String[] command = new String[] {context.pathInNodeUnderVespaHome("bin/vespa-nodectl").toString(), program};
+        ProcessResult result = executeCommandInContainerAsRoot(context, command);
+
+        if (!result.isSuccess()) {
+            throw new RuntimeException("Container " + context.containerName().asString() +
+                    ": command " + Arrays.toString(command) + " failed: " + result);
+        }
+        return result;
     }
 
 
     @Override
-    public Optional<ContainerStats> getContainerStats(ContainerName containerName) {
-        return docker.getContainerStats(containerName);
+    public Optional<ContainerStats> getContainerStats(NodeAgentContext context) {
+        return docker.getContainerStats(context.containerName());
     }
 
     @Override
