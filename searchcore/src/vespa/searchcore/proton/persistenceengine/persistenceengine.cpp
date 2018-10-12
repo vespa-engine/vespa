@@ -404,6 +404,10 @@ PersistenceEngine::update(const Bucket& b, Timestamp t, const DocumentUpdate::SP
         return UpdateResult(Result::PERMANENT_ERROR,
                             make_string("Old id scheme not supported in elastic mode (%s)", upd->getId().toString().c_str()));
     }
+    if (upd->getId().getDocType() != docType.getName()) {
+        return UpdateResult(Result::PERMANENT_ERROR,
+                            make_string("Update operation rejected due to bad id (%s, %s)", upd->getId().toString().c_str(), docType.getName().c_str()));
+    }
     IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
 
     if (handler) {
