@@ -378,7 +378,7 @@ public class NodeAgentImpl implements NodeAgent {
                 }
             }
             stopFilebeatSchedulerIfNeeded();
-            storageMaintainer.handleCoreDumpsForContainer(context, node);
+            storageMaintainer.handleCoreDumpsForContainer(context, node, Optional.of(existingContainer));
             dockerOperations.removeContainer(existingContainer);
             containerState = ABSENT;
             context.log(logger, "Container successfully removed, new containerState is " + containerState);
@@ -492,7 +492,7 @@ public class NodeAgentImpl implements NodeAgent {
                 updateNodeRepoWithCurrentAttributes(node);
                 break;
             case active:
-                storageMaintainer.handleCoreDumpsForContainer(context, node);
+                storageMaintainer.handleCoreDumpsForContainer(context, node, container);
 
                 storageMaintainer.getDiskUsageFor(context)
                         .map(diskUsage -> (double) diskUsage / BYTES_IN_GB / node.getMinDiskAvailableGb())

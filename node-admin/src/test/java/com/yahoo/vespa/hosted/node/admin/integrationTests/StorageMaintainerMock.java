@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.system.ProcessExecuter;
+import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
@@ -27,7 +28,7 @@ public class StorageMaintainerMock extends StorageMaintainer {
     }
 
     @Override
-    public void handleCoreDumpsForContainer(NodeAgentContext context, NodeSpec node) {
+    public void handleCoreDumpsForContainer(NodeAgentContext context, NodeSpec node, Optional<Container> container) {
     }
 
     @Override
