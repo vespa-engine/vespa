@@ -1,13 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/vespalib/net/crypto_engine.h>
 #include <httpclient/httpclient.h>
 #include <cstring>
 
 class DebugHTTPClient : public HTTPClient
 {
 public:
-  DebugHTTPClient(const char* server, int port, bool keepAlive)
-    : HTTPClient(server, port, keepAlive, true) {}
+    DebugHTTPClient()
+        : HTTPClient(std::make_shared<vespalib::NullCryptoEngine>(),
+                     "localhost", 80, true, true) {}
 
   static void SplitLineTest(const char *input);
   static void DebugSplitLine();

@@ -140,7 +140,7 @@ FBench::CreateClients()
             off_beg = _queryfileOffset[i];
             off_end = _queryfileOffset[i+1];
         }
-        client = std::make_unique<Client>(
+        client = std::make_unique<Client>(_crypto_engine,
             new ClientArguments(i, _clients.size(), _filenamePattern,
                                 _outputPattern, _hostnames[i % _hostnames.size()].c_str(),
                                 _ports[i % _ports.size()], _cycle,

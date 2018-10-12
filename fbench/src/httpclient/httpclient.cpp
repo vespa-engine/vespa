@@ -17,10 +17,12 @@ HTTPClient::ChunkedReader
 HTTPClient::ChunkedReader::_instance;
 
 
-HTTPClient::HTTPClient(const char *hostname, int port,
+HTTPClient::HTTPClient(vespalib::CryptoEngine::SP engine, const char *hostname, int port,
                        bool keepAlive, bool headerBenchmarkdataCoverage,
                        const std::string & extraHeaders, const std::string &authority)
-    : _socket(new FastOS_Socket()),
+    : _engine(std::move(engine)),
+      _address(vespalib::SocketAddress::select_remote(port, hostname)),
+      _socket(),
       _hostname(hostname),
       _port(port),
       _keepAlive(keepAlive),
@@ -48,7 +50,6 @@ HTTPClient::HTTPClient(const char *hostname, int port,
     _dataDone(false),
     _reader(NULL)
 {
-    _socket->SetAddressByHostName(port, hostname);
     if (_authority == "") {
         char tmp[1024];
         snprintf(tmp, 1024, "%s:%d", hostname, port);
@@ -56,17 +57,31 @@ HTTPClient::HTTPClient(const char *hostname, int port,
     }
 }
 
+bool
+HTTPClient::connect_socket()
+{
+    _socket.reset();
+    auto handle = _address.connect([](auto &h)
+                                   {
+                                       return (h.set_nodelay(true) &&
+                                               h.set_linger(false, 0));
+                                   });
+    if (!handle.valid()) {
+        return false;
+    }
+    _socket = vespalib::SyncCryptoSocket::create(*_engine, std::move(handle), false);
+    return bool(_socket);
+}
+
 ssize_t
 HTTPClient::FillBuffer() {
-    _bufused = _socket->Read(_buf, _bufsize); // may be -1
+    _bufused = _socket->read(_buf, _bufsize); // may be -1
     _bufpos  = 0;
     return _bufused;
 }
 
 HTTPClient::~HTTPClient()
 {
-    if (_socket)
-        _socket->Close();
     delete [] _buf;
 }
 
@@ -148,9 +163,9 @@ HTTPClient::Connect(const char *url, bool usePost, const char *content, int cLen
 
     // try to reuse connection if keep-alive is enabled
     if (_keepAlive
-        && _socket->IsOpened()
-        && _socket->Write(req, strlen(req)) == (ssize_t)strlen(req)
-        && (!usePost || _socket->Write(content, cLen) == (ssize_t)cLen)
+        && _socket
+        && _socket->write(req, strlen(req)) == (ssize_t)strlen(req)
+        && (!usePost || _socket->write(content, cLen) == (ssize_t)cLen)
         && FillBuffer() > 0) {
 
         // DEBUG
@@ -161,17 +176,14 @@ HTTPClient::Connect(const char *url, bool usePost, const char *content, int cLen
         }
         return true;
     } else {
-        _socket->Close();
+        _socket.reset();
         ResetBuffer();
     }
 
     // try to open new connection to server
-    if (_socket->SetSoBlocking(true)
-        && _socket->Connect()
-        && _socket->SetNoDelay(true)
-        && _socket->SetSoLinger(false, 0)
-        && _socket->Write(req, strlen(req)) == (ssize_t)strlen(req)
-        && (!usePost || _socket->Write(content, cLen) == (ssize_t)cLen))
+    if (connect_socket()
+        && _socket->write(req, strlen(req)) == (ssize_t)strlen(req)
+        && (!usePost || _socket->write(content, cLen) == (ssize_t)cLen))
     {
 
         // DEBUG
@@ -181,7 +193,7 @@ HTTPClient::Connect(const char *url, bool usePost, const char *content, int cLen
         }
         return true;
     } else {
-        _socket->Close();
+        _socket.reset();
     }
 
     // DEBUG
@@ -395,7 +407,7 @@ HTTPClient::ConnCloseReader::Read(HTTPClient &client,
         res = fromBuffer;
     }
     if ((len - fromBuffer) > (len >> 1)) {
-        readRes = client._socket->Read(static_cast<char *>(buf)
+        readRes = client._socket->read(static_cast<char *>(buf)
                                        + fromBuffer, len - fromBuffer);
         if (readRes < 0) {
             client.Close();
@@ -434,7 +446,7 @@ HTTPClient::ContentLengthReader::Read(HTTPClient &client,
         readLen = (len - fromBuffer
                    < client._contentLength - client._dataRead) ?
                   len - fromBuffer : client._contentLength - client._dataRead;
-        readRes = client._socket->Read(static_cast<char *>(buf)
+        readRes = client._socket->read(static_cast<char *>(buf)
                                        + fromBuffer, readLen);
         if (readRes < 0) {
             client.Close();
@@ -510,7 +522,7 @@ HTTPClient::Close()
             || _connectionCloseGiven
             || !_dataDone
             || (_httpVersion == 0 && !_keepAliveGiven)) ?
-        _socket->Close() : true;
+        (_socket.reset(), true) : true;
 }
 
 HTTPClient::FetchStatus

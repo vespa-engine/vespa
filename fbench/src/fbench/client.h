@@ -4,6 +4,7 @@
 #include <fstream>
 #include <atomic>
 #include <thread>
+#include <vespa/vespalib/net/crypto_engine.h>
 
 #define FBENCH_DELIMITER "\n[--xxyyzz--FBENCH_MAGIC_DELIMITER--zzyyxx--]\n"
 
@@ -188,7 +189,7 @@ public:
      * The client arguments given to this method becomes the
      * responsibility of the client.
      **/
-    Client(ClientArguments *args);
+    Client(vespalib::CryptoEngine::SP engine, ClientArguments *args);
 
     /**
      * Delete objects owned by this client, including the client arguments.
