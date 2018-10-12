@@ -217,18 +217,18 @@ public class VespaMetricSet {
     private static Set<Metric> getSearchNodeMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
 
-        metrics.add(new Metric("proton.numstoreddocs.last", "documents_total"));
-        metrics.add(new Metric("proton.numindexeddocs.last", "documents_ready"));
-        metrics.add(new Metric("proton.numactivedocs.last", "documents_active"));
-        metrics.add(new Metric("proton.numremoveddocs.last", "documents_removed"));
+        metrics.add(new Metric("content.proton.documentdb.documents.total.last", "documents_total"));
+        metrics.add(new Metric("content.proton.documentdb.documents.ready.last", "documents_ready"));
+        metrics.add(new Metric("content.proton.documentdb.documents.active.last", "documents_active"));
+        metrics.add(new Metric("content.proton.documentdb.documents.removed.last", "documents_removed"));
 
-        metrics.add(new Metric("proton.docsinmemory.last", "documents_inmemory"));
-        metrics.add(new Metric("proton.diskusage.last", "diskusage"));
-        metrics.add(new Metric("proton.memoryusage.max", "content.proton.memoryusage.max"));
-        metrics.add(new Metric("proton.transport.query.count.rate", "query_requests"));
-        metrics.add(new Metric("proton.docsum.docs.rate", "document_requests"));
-        metrics.add(new Metric("proton.docsum.latency.average", "content.proton.transport.docsum.latency.average"));
-        metrics.add(new Metric("proton.transport.query.latency.average", "query_latency"));
+        metrics.add(new Metric("content.proton.documentdb.index.docs_in_memory.last", "documents_inmemory"));
+        metrics.add(new Metric("content.proton.documentdb.disk_usage.last", "diskusage"));
+        metrics.add(new Metric("content.proton.documentdb.memory_usage.allocated_bytes.max", "content.proton.memoryusage.max"));
+        metrics.add(new Metric("content.proton.transport.query.count.rate", "query_requests"));
+        metrics.add(new Metric("content.proton.docsum.docs.rate", "document_requests"));
+        metrics.add(new Metric("content.proton.docsum.latency.average", "content.proton.transport.docsum.latency.average"));
+        metrics.add(new Metric("content.proton.transport.query.latency.average", "query_latency"));
 
         // jobs
         metrics.add(new Metric("content.proton.documentdb.job.total.average"));
