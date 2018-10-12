@@ -5,7 +5,7 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.hostname.config.ApihostnamesConfig;
+import com.yahoo.vespa.hosted.controller.api.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -50,11 +50,11 @@ public class ContactInformationMaintainerTest {
     @Before
     public void before() {
         tester = new ControllerTester();
-        ApihostnamesConfig.Builder apihostnamesConfigBuilder = new ApihostnamesConfig.Builder().hostnames(Arrays.asList("http://localhost:4443/"));
-        ApihostnamesConfig apihostnamesConfig = new ApihostnamesConfig(apihostnamesConfigBuilder);
+        ApiAuthorityConfig.Builder apiAuthorityConfigBuilder = new ApiAuthorityConfig.Builder().authorities("http://localhost:4443/");
+        ApiAuthorityConfig apiAuthorityConfig = new ApiAuthorityConfig(apiAuthorityConfigBuilder);
         maintainer = new ContactInformationMaintainer(tester.controller(), Duration.ofDays(1),
                                                       new JobControl(tester.controller().curator()),
-                                                      tester.organization(), apihostnamesConfig);
+                                                      tester.organization(), apiAuthorityConfig);
         wireMockRule.stubFor(post(urlEqualTo(contactInfoPath))
                 .willReturn(aResponse().withStatus(200)));
         wireMockRule.stubFor(get(urlEqualTo(tenantPath))

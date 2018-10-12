@@ -1,3 +1,0 @@
-namespace=vespa.hosted.controller.api.hostname.config
-
-hostnames[] string

@@ -1,7 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.vespa.hosted.controller.api.hostname.config.ApihostnamesConfig;
+import com.yahoo.vespa.hosted.controller.api.authority.config.ApiAuthorityConfig;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.slime.ArrayTraverser;
@@ -43,13 +43,13 @@ public class ContactInformationMaintainer extends Maintainer {
     private static final Logger log = Logger.getLogger(ContactInformationMaintainer.class.getName());
 
     private final Organization organization;
-    private final List<String> baseUris;
+    private final String[] baseUris;
     private CloseableHttpClient httpClient = HttpClientBuilder.create().build();
 
-    public ContactInformationMaintainer(Controller controller, Duration interval, JobControl jobControl, Organization organization, ApihostnamesConfig apihostnamesConfig) {
+    public ContactInformationMaintainer(Controller controller, Duration interval, JobControl jobControl, Organization organization, ApiAuthorityConfig apiAuthorityConfig) {
         super(controller, interval, jobControl, null, EnumSet.of(SystemName.cd, SystemName.main));
         this.organization = Objects.requireNonNull(organization, "organization must be non-null");
-        this.baseUris = apihostnamesConfig.hostnames();
+        this.baseUris = apiAuthorityConfig.authorities().split(",");
     }
 
     // The maintainer will eventually feed contact info to systems other than its own, determined by the baseUris list.
