@@ -155,7 +155,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
 
     /** Returns the n'th (zero-indexed) group in the cluster if possible */
     public Optional<Group> group(int n) {
-        if (orderedGroups.size() < n) {
+        if (orderedGroups.size() > n) {
             return Optional.of(orderedGroups.get(n));
         } else {
             return Optional.empty();
