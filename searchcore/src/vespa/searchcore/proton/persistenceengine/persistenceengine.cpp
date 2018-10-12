@@ -353,10 +353,13 @@ PersistenceEngine::RemoveResult
 PersistenceEngine::remove(const Bucket& b, Timestamp t, const DocumentId& did, Context&)
 {
     std::shared_lock<std::shared_timed_mutex> rguard(_rwMutex);
-    assert(did.hasDocType());
-    DocTypeName docType(did.getDocType());
     LOG(spam, "remove(%s, %" PRIu64 ", \"%s\")", b.toString().c_str(),
         static_cast<uint64_t>(t.getValue()), did.toString().c_str());
+    if (!did.hasDocType()) {
+        return RemoveResult(Result::PERMANENT_ERROR,
+                            make_string("Old id scheme not supported in elastic mode (%s)", did.toString().c_str()));
+    }
+    DocTypeName docType(did.getDocType());
     IPersistenceHandler::SP handler = getHandler(b.getBucketSpace(), docType);
     if (!handler) {
         return RemoveResult(Result::PERMANENT_ERROR,

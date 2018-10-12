@@ -564,6 +564,15 @@ TEST_F("require that removes are routed to handlers", SimpleFixture)
 }
 
 
+TEST_F("require that removes with old id scheme are rejected", SimpleFixture)
+{
+    storage::spi::LoadType loadType(0, "default");
+    Context context(loadType, storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
+
+    EXPECT_EQUAL(RemoveResult(Result::PERMANENT_ERROR, "Old id scheme not supported in elastic mode (doc:old:id-scheme)"),
+                 f.engine.remove(bucket1, tstamp1, old_doc->getId(), context));
+}
+
 TEST_F("require that remove is NOT rejected if resource limit is reached", SimpleFixture)
 {
     f._writeFilter._acceptWriteOperation = false;
