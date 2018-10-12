@@ -46,4 +46,16 @@ public class Coverage extends com.yahoo.container.handler.Coverage {
 
     public Coverage setNodesTried(int nodesTried) { super.setNodesTried(nodesTried); return this; }
 
+    public void mergeWithPartition(Coverage other) {
+        if (other == null) {
+            return;
+        }
+        int newResultSets = Integer.max(this.resultSets, other.resultSets);
+        int newFullResultSets = Integer.min(this.fullResultSets, other.fullResultSets);
+
+        merge(other);
+
+        this.resultSets = newResultSets;
+        this.fullResultSets = newFullResultSets;
+    }
 }

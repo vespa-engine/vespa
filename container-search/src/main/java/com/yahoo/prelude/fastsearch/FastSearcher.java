@@ -22,6 +22,7 @@ import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.Ranking;
+import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -264,16 +265,21 @@ public class FastSearcher extends VespaBackEndSearcher {
     }
 
     private Result mergeResults(List<Result> results, Query query, Execution execution) {
-        if(results.size() == 1) {
+        if (results.size() == 1) {
             return results.get(0);
         }
 
         Result result = new Result(query);
+        // keep a separate tally of coverage as the normal merge counts using
+        // federated query rules
+        Coverage finalCoverage = new Coverage(0, 0);
 
         for (Result partialResult : results) {
+            finalCoverage.mergeWithPartition(partialResult.getCoverage(true));
             result.mergeWith(partialResult);
             result.hits().addAll(partialResult.hits().asUnorderedHits());
         }
+        result.setCoverage(finalCoverage);
 
         if (query.getOffset() != 0 || result.hits().size() > query.getHits()) {
             // with multiple results, each partial result is expected to have

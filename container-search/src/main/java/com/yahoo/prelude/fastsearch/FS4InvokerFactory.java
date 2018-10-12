@@ -43,7 +43,7 @@ public class FS4InvokerFactory {
     }
 
     public SearchInvoker getSearchInvoker(Query query, SearchCluster.Node node) {
-        return new FS4SearchInvoker(searcher, query, fs4ResourcePool, node.hostname(), node.fs4port(), node.key());
+        return new FS4SearchInvoker(searcher, query, fs4ResourcePool, node);
     }
 
     public Optional<SearchInvoker> getSearchInvoker(Query query, List<SearchCluster.Node> nodes) {

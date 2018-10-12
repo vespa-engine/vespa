@@ -11,10 +11,13 @@ import com.yahoo.fs4.mplex.FS4Channel;
 import com.yahoo.fs4.mplex.InvalidChannelException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.SearchCluster;
 import com.yahoo.search.dispatch.SearchInvoker;
+import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -30,18 +33,17 @@ import static java.util.Arrays.asList;
 public class FS4SearchInvoker extends SearchInvoker {
     private final VespaBackEndSearcher searcher;
     private FS4Channel channel;
-    private final Optional<Integer> distributionKey;
+    private final Optional<SearchCluster.Node> node;
 
     private ErrorMessage pendingSearchError = null;
     private Query query = null;
     private QueryPacket queryPacket = null;
 
-    public FS4SearchInvoker(VespaBackEndSearcher searcher, Query query, FS4ResourcePool fs4ResourcePool, String hostname, int port,
-            int distributionKey) {
+    public FS4SearchInvoker(VespaBackEndSearcher searcher, Query query, FS4ResourcePool fs4ResourcePool, SearchCluster.Node node) {
         this.searcher = searcher;
-        this.distributionKey = Optional.of(distributionKey);
+        this.node = Optional.of(node);
 
-        Backend backend = fs4ResourcePool.getBackend(hostname, port);
+        Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port());
         this.channel = backend.openChannel();
         channel.setQuery(query);
     }
@@ -49,7 +51,7 @@ public class FS4SearchInvoker extends SearchInvoker {
     // fdispatch code path
     public FS4SearchInvoker(VespaBackEndSearcher searcher, Query query, Backend backend) {
         this.searcher = searcher;
-        this.distributionKey = Optional.empty();
+        this.node = Optional.empty();
         this.channel = backend.openChannel();
         channel.setQuery(query);
     }
@@ -82,20 +84,20 @@ public class FS4SearchInvoker extends SearchInvoker {
     @Override
     protected List<Result> getSearchResults(CacheKey cacheKey) throws IOException {
         if(pendingSearchError != null) {
-            return asList(new Result(query, pendingSearchError));
+            return errorResult(pendingSearchError);
         }
         BasicPacket[] basicPackets;
 
         try {
             basicPackets = channel.receivePackets(query.getTimeLeft(), 1);
         } catch (ChannelTimeoutException e) {
-            return asList(new Result(query, ErrorMessage.createTimeout("Timeout while waiting for " + getName())));
+            return errorResult(ErrorMessage.createTimeout("Timeout while waiting for " + getName()));
         } catch (InvalidChannelException e) {
-            return asList(new Result(query, ErrorMessage.createBackendCommunicationError("Invalid channel for " + getName())));
+            return errorResult(ErrorMessage.createBackendCommunicationError("Invalid channel for " + getName()));
         }
 
         if (basicPackets.length == 0) {
-            return asList(new Result(query, ErrorMessage.createBackendCommunicationError(getName() + " got no packets back")));
+            return errorResult(ErrorMessage.createBackendCommunicationError(getName() + " got no packets back"));
         }
 
         if (isLoggingFine())
@@ -114,7 +116,7 @@ public class FS4SearchInvoker extends SearchInvoker {
 
         searcher.addMetaInfo(query, queryPacket.getQueryPacketData(), resultPacket, result);
 
-        searcher.addUnfilledHits(result, resultPacket.getDocuments(), false, queryPacket.getQueryPacketData(), cacheKey, distributionKey);
+        searcher.addUnfilledHits(result, resultPacket.getDocuments(), false, queryPacket.getQueryPacketData(), cacheKey, node.map(SearchCluster.Node::key));
         Packet[] packets;
         CacheControl cacheControl = searcher.getCacheControl();
         PacketWrapper packetWrapper = cacheControl.lookup(cacheKey, query);
@@ -129,10 +131,19 @@ public class FS4SearchInvoker extends SearchInvoker {
             } else {
                 packets = new Packet[1];
                 packets[0] = resultPacket;
-                cacheControl.cache(cacheKey, query, new DocsumPacketKey[0], packets, distributionKey);
+                cacheControl.cache(cacheKey, query, new DocsumPacketKey[0], packets, node.map(SearchCluster.Node::key));
             }
         }
         return asList(result);
+    }
+
+    private List<Result> errorResult(ErrorMessage errorMessage) {
+        Result error = new Result(query, errorMessage);
+        node.ifPresent(n -> {
+            Coverage coverage = new Coverage(0, n.getActiveDocuments(), 0);
+            error.setCoverage(coverage);
+        });
+        return Arrays.asList(error);
     }
 
     @Override
