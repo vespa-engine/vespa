@@ -3,7 +3,9 @@
 
 #include <ostream>
 #include <memory>
-#include <vespa/fastos/socket.h>
+#include <vespa/vespalib/net/sync_crypto_socket.h>
+#include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/net/socket_address.h>
 
 /**
  * This class implements a HTTP client that may be used to fetch
@@ -88,7 +90,10 @@ protected:
   };
   friend class HTTPClient::ChunkedReader;
 
-  std::unique_ptr<FastOS_Socket>   _socket;
+    vespalib::CryptoEngine::SP     _engine;
+    vespalib::SocketAddress        _address;
+    vespalib::SyncCryptoSocket::UP _socket;
+
   std::string      _hostname;
   int              _port;
   bool             _keepAlive;
@@ -130,6 +135,17 @@ protected:
     _bufpos  = 0;
     _bufused = 0;
   }
+
+    /**
+     * (re)connects the socket to the host/port specified in the
+     * constructor. The hostname is not resolved again; the resolve
+     * result is cached by the constructor. Also sets tcp nodelay flag
+     * and disables lingering. Note to servers: This is a no-nonsense
+     * socket that will be closed in your face in very ungraceful
+     * ways. Do not expect half-close niceties or tls session
+     * termination packets.
+     **/
+    bool connect_socket();
 
   /**
    * Fill the internal buffer with data from the url we are connected
@@ -215,8 +231,8 @@ public:
    * @param port the TCP port to use when contacting the host.
    * @param keepAlive flag indicating if keep-alive should be enabled.
    **/
-  HTTPClient(const char *hostname, int port, bool keepAlive,
-             bool headerBenchmarkdataCoverage, const std::string & extraHeaders="", const std::string &authority = "");
+    HTTPClient(vespalib::CryptoEngine::SP engine, const char *hostname, int port, bool keepAlive,
+               bool headerBenchmarkdataCoverage, const std::string & extraHeaders="", const std::string &authority = "");
 
   /**
    * Disconnect from server and free memory.

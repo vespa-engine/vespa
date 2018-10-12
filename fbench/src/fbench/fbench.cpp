@@ -3,16 +3,40 @@
 #include <httpclient/httpclient.h>
 #include <util/filereader.h>
 #include <util/clientstatus.h>
+#include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/net/tls/transport_security_options.h>
+#include <vespa/vespalib/net/tls/tls_crypto_engine.h>
+#include <vespa/vespalib/net/tls/crypto_exception.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
 #include "client.h"
 #include "fbench.h"
 #include <cstring>
 #include <cmath>
 #include <csignal>
 
+namespace {
+
+std::string maybe_load(const std::string &file_name, bool &failed) {
+    std::string content;
+    if (!file_name.empty()) {
+        vespalib::MappedFileInput file(file_name);
+        if (file.valid()) {
+            content = std::string(file.get().data, file.get().size);
+        } else {
+            fprintf(stderr, "could not load file: '%s'\n", file_name.c_str());
+            failed = true;
+        }
+    }
+    return content;
+}
+
+}
+
 sig_atomic_t exitSignal = 0;
 
 FBench::FBench()
-    : _clients(),
+    : _crypto_engine(),
+      _clients(),
       _ignoreCount(0),
       _cycle(0),
       _filenamePattern(NULL),
@@ -33,6 +57,44 @@ FBench::~FBench()
     _clients.clear();
     free(_filenamePattern);
     free(_outputPattern);
+}
+
+bool
+FBench::init_crypto_engine(const std::string &ca_certs_file_name,
+                           const std::string &cert_chain_file_name,
+                           const std::string &private_key_file_name)
+{
+    if (ca_certs_file_name.empty() &&
+        cert_chain_file_name.empty() &&
+        private_key_file_name.empty())
+    {
+        _crypto_engine = std::make_shared<vespalib::NullCryptoEngine>();
+        return true;
+    }
+    if (ca_certs_file_name.empty()) {
+        fprintf(stderr, "CA certificate required; specify with -T\n");
+        return false;
+    }
+    if (cert_chain_file_name.empty() != private_key_file_name.empty()) {
+        fprintf(stderr, "both client certificate AND client private key required; specify with -C and -K\n");
+        return false;
+    }
+    bool load_failed = false;
+    vespalib::net::tls::TransportSecurityOptions
+        tls_opts(maybe_load(ca_certs_file_name, load_failed),
+                 maybe_load(cert_chain_file_name, load_failed),
+                 maybe_load(private_key_file_name, load_failed));
+    if (load_failed) {
+        fprintf(stderr, "failed to load transport security options\n");
+        return false;
+    }
+    try {
+        _crypto_engine = std::make_shared<vespalib::TlsCryptoEngine>(tls_opts);
+    } catch (vespalib::net::tls::CryptoException &e) {
+        fprintf(stderr, "%s\n", e.what());
+        return false;
+    }
+    return true;
 }
 
 void
@@ -78,7 +140,7 @@ FBench::CreateClients()
             off_beg = _queryfileOffset[i];
             off_end = _queryfileOffset[i+1];
         }
-        client = std::make_unique<Client>(
+        client = std::make_unique<Client>(_crypto_engine,
             new ClientArguments(i, _clients.size(), _filenamePattern,
                                 _outputPattern, _hostnames[i % _hostnames.size()].c_str(),
                                 _ports[i % _ports.size()], _cycle,
@@ -226,12 +288,15 @@ FBench::Usage()
     printf(" -o <str> : save query results to output files with the given pattern\n");
     printf("            (default is not saving.)\n");
     printf(" -r <num> : number of times to re-use each query file. -1 means no limit [-1]\n");
-    printf(" -m <num> : max line size in input query files [8192].\n");
+    printf(" -m <num> : max line size in input query files [131072].\n");
     printf("            Can not be less than the minimum [1024].\n");
     printf(" -p <num> : print summary every <num> seconds.\n");
     printf(" -k       : disable HTTP keep-alive.\n");
-    printf(" -y       : write data on coverage to output file (must used with -x).\n");
-    printf(" -z       : use single query file to be distributed between clients.\n\n");
+    printf(" -y       : write data on coverage to output file.\n");
+    printf(" -z       : use single query file to be distributed between clients.\n");
+    printf(" -T <str> : CA certificate file to verify peer against.\n");
+    printf(" -C <str> : client certificate file name.\n");
+    printf(" -K <str> : client private key file name.\n\n");
     printf(" <hostname> : the host you want to benchmark.\n");
     printf(" <port>     : the port to use when contacting the host.\n\n");
     printf("Several hostnames and ports can be listed\n");
@@ -263,6 +328,9 @@ FBench::Main(int argc, char *argv[])
     const char *outputFilePattern = NULL;
     std::string queryStringToAppend;
     std::string extraHeaders;
+    std::string ca_certs_file_name; // -T
+    std::string cert_chain_file_name; // -C
+    std::string private_key_file_name; // -K
 
     int  restartLimit = -1;
     bool keepAlive    = true;
@@ -282,7 +350,7 @@ FBench::Main(int argc, char *argv[])
 
     idx = 1;
     optError = false;
-    while((opt = GetOpt(argc, argv, "H:A:a:n:c:l:i:s:q:o:r:m:p:kxyzP", arg, idx)) != -1) {
+    while((opt = GetOpt(argc, argv, "H:A:T:C:K:a:n:c:l:i:s:q:o:r:m:p:kxyzP", arg, idx)) != -1) {
         switch(opt) {
         case 'A':
             authority = arg;
@@ -293,6 +361,15 @@ FBench::Main(int argc, char *argv[])
                 fprintf(stderr, "Do not override 'Host:' header, use -A option instead\n");
                 return -1;
             }
+            break;
+        case 'T':
+            ca_certs_file_name = std::string(arg);
+            break;
+        case 'C':
+            cert_chain_file_name = std::string(arg);
+            break;
+        case 'K':
+            private_key_file_name = std::string(arg);
             break;
         case 'a':
             queryStringToAppend = std::string(arg);
@@ -362,6 +439,11 @@ FBench::Main(int argc, char *argv[])
     int args = (argc - idx);
     if (args % 2 != 0) {
         fprintf(stderr, "Not equal number of hostnames and ports\n");
+        return -1;
+    }
+
+    if (!init_crypto_engine(ca_certs_file_name, cert_chain_file_name, private_key_file_name)) {
+        fprintf(stderr, "failed to initialize crypto engine\n");
         return -1;
     }
 
