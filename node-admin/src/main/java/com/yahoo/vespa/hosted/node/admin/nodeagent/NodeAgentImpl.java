@@ -378,6 +378,7 @@ public class NodeAgentImpl implements NodeAgent {
                 }
             }
             stopFilebeatSchedulerIfNeeded();
+            storageMaintainer.handleCoreDumpsForContainer(context, node);
             dockerOperations.removeContainer(existingContainer);
             containerState = ABSENT;
             context.log(logger, "Container successfully removed, new containerState is " + containerState);
