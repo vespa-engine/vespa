@@ -5,6 +5,7 @@ import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.core.AccessLogConfig;
 import com.yahoo.io.NativeIO;
 import com.yahoo.log.LogFileDb;
+import com.yahoo.system.ProcessExecuter;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,7 +25,6 @@ import java.util.logging.StreamHandler;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
-
 
 /**
  * <p>Implements log file naming/rotating logic for container logs.</p>
@@ -308,11 +308,9 @@ public class LogFileHandler extends StreamHandler {
         }
         String [] cmd = new String[]{"/bin/ln", "-sf", canonicalPath, f2.getPath()};
         try {
-            Runtime r = Runtime.getRuntime();
-            Process p = r.exec(cmd);
+            int retval = new ProcessExecuter().exec(cmd).getFirst();
             // Detonator pattern: Think of all the fun we can have if ln isn't what we
             // think it is, if it doesn't return, etc, etc
-            int retval = p.waitFor();
             if (retval != 0) {
                 logger.warning("Command '" + Arrays.toString(cmd) + "' + failed with exitcode=" + retval);
             }
