@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
@@ -39,7 +38,6 @@ public class NodeAdminImpl implements NodeAdmin {
     private final ScheduledExecutorService metricsScheduler =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("metricsscheduler"));
 
-    private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
     private final Runnable aclMaintainer;
 
@@ -58,7 +56,13 @@ public class NodeAdminImpl implements NodeAdmin {
                          Runnable aclMaintainer,
                          MetricReceiverWrapper metricReceiver,
                          Clock clock) {
-        this.dockerOperations = dockerOperations;
+        this(nodeAgentFactory, aclMaintainer, metricReceiver, clock);
+    }
+
+    public NodeAdminImpl(Function<String, NodeAgent> nodeAgentFactory,
+                         Runnable aclMaintainer,
+                         MetricReceiverWrapper metricReceiver,
+                         Clock clock) {
         this.nodeAgentFactory = nodeAgentFactory;
         this.aclMaintainer = aclMaintainer;
 
@@ -203,9 +207,6 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     void synchronizeNodesToNodeAgents(Set<String> hostnamesToRun) {
-        Map<String, Container> runningContainersByHostname = dockerOperations.getAllManagedContainers().stream()
-                .collect(Collectors.toMap(c -> c.hostname, c -> c));
-
         // Stop and remove NodeAgents that should no longer be running
         diff(nodeAgentsByHostname.keySet(), hostnamesToRun)
                 .forEach(hostname -> nodeAgentsByHostname.remove(hostname).stop());
@@ -213,11 +214,6 @@ public class NodeAdminImpl implements NodeAdmin {
         // Start NodeAgent for hostnames that should be running, but aren't yet
         diff(hostnamesToRun, nodeAgentsByHostname.keySet())
                 .forEach(this::startNodeAgent);
-
-        // Remove containers that are running, but have no NodeAgent managing it (and after the previous steps,
-        // these containers shouldn't be running, otherwise a NodeAgent would have been created)
-        diff(runningContainersByHostname.keySet(), nodeAgentsByHostname.keySet())
-                .forEach(hostname -> dockerOperations.removeContainer(runningContainersByHostname.get(hostname)));
     }
 
     private void startNodeAgent(String hostname) {
