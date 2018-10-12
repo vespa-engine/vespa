@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 
 import java.net.InetAddress;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 /**
  * Mock with some simple logic
@@ -106,25 +108,9 @@ public class DockerMock implements Docker {
     }
 
     @Override
-    public ProcessResult executeInContainer(ContainerName containerName, String... args) {
+    public ProcessResult executeInContainerAsUser(ContainerName containerName, String user, OptionalLong timeout, String... args) {
         synchronized (monitor) {
-            callOrderVerifier.add("executeInContainer with " + containerName + ", args: " + Arrays.toString(args));
-        }
-        return new ProcessResult(0, null, "");
-    }
-
-    @Override
-    public ProcessResult executeInContainerAsRoot(ContainerName containerName, String... args) {
-        synchronized (monitor) {
-            callOrderVerifier.add("executeInContainerAsRoot with " + containerName + ", args: " + Arrays.toString(args));
-        }
-        return new ProcessResult(0, null, "");
-    }
-
-    @Override
-    public ProcessResult executeInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... args) {
-        synchronized (monitor) {
-            callOrderVerifier.add("executeInContainerAsRoot with " + containerName + ", args: " + Arrays.toString(args));
+            callOrderVerifier.add("executeInContainer " + containerName.asString() + " as " + user + ", args: " + Arrays.toString(args));
         }
         return new ProcessResult(0, null, "");
     }
@@ -142,12 +128,12 @@ public class DockerMock implements Docker {
         }
 
         @Override
-        public CreateContainerCommand withVolume(String path, String volumePath) {
+        public CreateContainerCommand withVolume(Path path, Path volumePath) {
             return this;
         }
 
         @Override
-        public CreateContainerCommand withSharedVolume(String path, String volumePath) {
+        public CreateContainerCommand withSharedVolume(Path path, Path volumePath) {
             return this;
         }
 

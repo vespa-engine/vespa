@@ -2,9 +2,11 @@
 package com.yahoo.vespa.hosted.dockerapi;
 
 import java.net.InetAddress;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 /**
  * API to simplify the com.github.dockerjava API for clients,
@@ -26,19 +28,19 @@ public interface Docker {
          * /foo's content visible/readable/writable only inside the container which was last
          * started and on the host. All the other containers will get "Permission denied".
          *
-         * <p>Use {@link #withSharedVolume(String, String)} to mount a given host directory
+         * <p>Use {@link #withSharedVolume(Path, Path)} to mount a given host directory
          * into multiple containers.
          */
-        CreateContainerCommand withVolume(String path, String volumePath);
+        CreateContainerCommand withVolume(Path path, Path volumePath);
 
         /**
          * Mounts a directory on host inside the docker container.
          *
          * <p>The bind mount content will be <b>shared</b> among multiple containers.
          *
-         * @see #withVolume(String, String)
+         * @see #withVolume(Path, Path)
          */
-        CreateContainerCommand withSharedVolume(String path, String volumePath);
+        CreateContainerCommand withSharedVolume(Path path, Path volumePath);
         CreateContainerCommand withNetworkMode(String mode);
         CreateContainerCommand withIpAddress(InetAddress address);
         CreateContainerCommand withUlimit(String name, int softLimit, int hardLimit);
@@ -84,34 +86,12 @@ public interface Docker {
     boolean deleteUnusedDockerImages(List<DockerImage> excludes, Duration minImageAgeToDelete);
 
     /**
-     * Execute a command in docker container as $VESPA_USER. Will block until the command is finished.
-     *
      * @param containerName The name of the container
-     * @param command The command with arguments to run.
-     *
-     * @return exitcodes, stdout and stderr in the ProcessResult
-     */
-    ProcessResult executeInContainer(ContainerName containerName, String... command);
-
-    /**
-     * Execute a command in docker container as "root". Will block until the command is finished.
-     *
-     * @param containerName The name of the container
-     * @param command The command with arguments to run.
-     *
-     * @return exitcodes, stdout and stderr in the ProcessResult
-     */
-    ProcessResult executeInContainerAsRoot(ContainerName containerName, String... command);
-
-    /**
-     * Execute a command in docker container as "root"
-     * The timeout will not kill the process spawned.
-     *
-     * @param containerName The name of the container
+     * @param user can be "username", "username:group", "uid" or "uid:gid"
      * @param timeoutSeconds Timeout for the process to finish in seconds or without timeout if empty
-     * @param command The command with arguments to run.
+     * @param command The command with arguments to run
      *
      * @return exitcodes, stdout and stderr in the ProcessResult
      */
-    ProcessResult executeInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... command);
+    ProcessResult executeInContainerAsUser(ContainerName containerName, String user, OptionalLong timeoutSeconds, String... command);
 }
