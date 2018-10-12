@@ -47,10 +47,6 @@ public class CoredumpHandler {
     private final Supplier<String> coredumpIdSupplier;
 
     /**
-     *
-     * @param terminal
-     * @param coreCollector
-     * @param coredumpReporter
      * @param crashPathInContainer path inside the container where core dump are dumped
      * @param doneCoredumpsPath path on host where processed core dumps are stored
      */
@@ -150,7 +146,7 @@ public class CoredumpHandler {
     }
 
     /**
-     * Compresses core file (and deletes the uncompressed cored), then moves the entire core dump processing
+     * Compresses core file (and deletes the uncompressed core), then moves the entire core dump processing
      * directory to {@link #doneCoredumpsPath} for archive
      */
     private void finishProcessing(NodeAgentContext context, Path coredumpDirectory) throws IOException {
