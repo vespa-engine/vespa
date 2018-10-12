@@ -62,6 +62,7 @@ public class Processing {
                 FilterFieldNames::new,
                 MatchConsistency::new,
                 ValidateFieldTypes::new,
+                SummaryDiskAccessValidator::new,
                 DisallowComplexMapAndWsetKeyTypes::new,
                 SortingSettings::new,
                 FieldSetValidity::new,
@@ -80,7 +81,7 @@ public class Processing {
                 IndexingValues::new);
     }
 
-    /** Processors of rank profiles only (those who tolerate and so something useful when the search field is null) */
+    /** Processors of rank profiles only (those who tolerate and do something useful when the search field is null) */
     private Collection<ProcessorFactory> rankProfileProcessors() {
         return Arrays.asList(
                 RankProfileTypeSettingsProcessor::new,

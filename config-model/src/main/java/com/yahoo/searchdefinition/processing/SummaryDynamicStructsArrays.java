@@ -32,7 +32,7 @@ public class SummaryDynamicStructsArrays extends Processor {
         for (SDField field : search.allConcreteFields()) {
             DataType type = field.getDataType();
             if (type instanceof ArrayDataType || type instanceof WeightedSetDataType || type instanceof StructDataType) {
-                for (SummaryField sField : field.getSummaryFields()) {
+                for (SummaryField sField : field.getSummaryFields().values()) {
                     if (sField.getTransform().equals(SummaryTransform.DYNAMICTEASER)) {
                         throw new IllegalArgumentException("For field '"+field.getName()+"': dynamic summary is illegal " +
                                                            "for fields of type struct, array or weighted set. Use an " +

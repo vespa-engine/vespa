@@ -71,7 +71,7 @@ public class IndexingScriptChangeMessageBuilder {
     }
 
     private void checkSummaryTransform(ChangeMessageBuilder builder) {
-        for (SummaryField nextSummaryField : nextField.getSummaryFields()) {
+        for (SummaryField nextSummaryField : nextField.getSummaryFields().values()) {
             String fieldName = nextSummaryField.getName();
             SummaryField currentSummaryField = currentField.getSummaryField(fieldName);
             if (currentSummaryField != null) {
