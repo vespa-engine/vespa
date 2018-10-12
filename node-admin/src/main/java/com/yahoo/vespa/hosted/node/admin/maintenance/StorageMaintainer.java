@@ -6,6 +6,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.system.ProcessExecuter;
+import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
@@ -19,7 +20,6 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoredumpHandler;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -240,17 +240,12 @@ public class StorageMaintainer {
     }
 
     /** Checks if container has any new coredumps, reports and archives them if so */
-    public void handleCoreDumpsForContainer(NodeAgentContext context, NodeSpec node) {
-        final Path coredumpsPath = context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("var/crash"));
-        final Map<String, Object> nodeAttributes = getCoredumpNodeAttributes(node);
-        try {
-            coredumpHandler.processAll(coredumpsPath, nodeAttributes);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to process coredumps", e);
-        }
+    public void handleCoreDumpsForContainer(NodeAgentContext context, NodeSpec node, Optional<Container> container) {
+        final Map<String, Object> nodeAttributes = getCoredumpNodeAttributes(node, container);
+        coredumpHandler.converge(context, nodeAttributes);
     }
 
-    private Map<String, Object> getCoredumpNodeAttributes(NodeSpec node) {
+    private Map<String, Object> getCoredumpNodeAttributes(NodeSpec node, Optional<Container> container) {
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("hostname", node.getHostname());
         attributes.put("parent_hostname", environment.getParentHostHostname());
@@ -259,7 +254,7 @@ public class StorageMaintainer {
         attributes.put("flavor", node.getFlavor());
         attributes.put("kernel_version", System.getProperty("os.version"));
 
-        node.getCurrentDockerImage().ifPresent(image -> attributes.put("docker_image", image.asString()));
+        container.map(c -> c.image).ifPresent(image -> attributes.put("docker_image", image.asString()));
         node.getVespaVersion().ifPresent(version -> attributes.put("vespa_version", version));
         node.getOwner().ifPresent(owner -> {
             attributes.put("tenant", owner.getTenant());

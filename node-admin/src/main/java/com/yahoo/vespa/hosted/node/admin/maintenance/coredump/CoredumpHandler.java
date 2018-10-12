@@ -2,20 +2,26 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.system.ProcessExecuter;
-import com.yahoo.vespa.hosted.node.admin.maintenance.FileHelper;
+import com.google.common.collect.ImmutableMap;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.logging.Level;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+
+import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameMatches;
+import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameStartsWith;
+import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
 
 /**
  * Finds coredumps, collects metadata and reports them
@@ -24,127 +30,145 @@ import java.util.logging.Logger;
  */
 public class CoredumpHandler {
 
+    private static final Pattern JAVA_CORE_PATTERN = Pattern.compile("java_pid.*\\.hprof");
+    private static final String LZ4_PATH = "/usr/bin/lz4";
     private static final String PROCESSING_DIRECTORY_NAME = "processing";
-    static final String METADATA_FILE_NAME = "metadata.json";
+    private static final String METADATA_FILE_NAME = "metadata.json";
+    private static final String COREDUMP_FILENAME_PREFIX = "dump_";
 
     private final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    private final Terminal terminal;
     private final CoreCollector coreCollector;
-    private final Path doneCoredumpsPath;
     private final CoredumpReporter coredumpReporter;
+    private final Path crashPatchInContainer;
+    private final Path doneCoredumpsPath;
+    private final Supplier<String> coredumpIdSupplier;
 
-    public CoredumpHandler(CoredumpReporter coredumpReporter, Path doneCoredumpsPath) {
-        this(new CoreCollector(new ProcessExecuter()), coredumpReporter, doneCoredumpsPath);
+    /**
+     * @param crashPathInContainer path inside the container where core dump are dumped
+     * @param doneCoredumpsPath path on host where processed core dumps are stored
+     */
+    public CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
+                           Path crashPathInContainer, Path doneCoredumpsPath) {
+        this(terminal, coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath, () -> UUID.randomUUID().toString());
     }
 
-    CoredumpHandler(CoreCollector coreCollector, CoredumpReporter coredumpReporter, Path doneCoredumpsPath) {
+    CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
+                           Path crashPathInContainer, Path doneCoredumpsPath, Supplier<String> coredumpIdSupplier) {
+        this.terminal = terminal;
         this.coreCollector = coreCollector;
         this.coredumpReporter = coredumpReporter;
+        this.crashPatchInContainer = crashPathInContainer;
         this.doneCoredumpsPath = doneCoredumpsPath;
+        this.coredumpIdSupplier = coredumpIdSupplier;
     }
 
-    public void processAll(Path coredumpsPath, Map<String, Object> nodeAttributes) throws IOException {
-        removeJavaCoredumps(coredumpsPath);
-        handleNewCoredumps(coredumpsPath, nodeAttributes);
-        removeOldCoredumps();
+
+    public void converge(NodeAgentContext context, Map<String, Object> nodeAttributes) {
+        Path containerCrashPathOnHost = context.pathOnHostFromPathInNode(crashPatchInContainer);
+        Path containerProcessingPathOnHost = containerCrashPathOnHost.resolve(PROCESSING_DIRECTORY_NAME);
+
+        // Remove java core dumps
+        FileFinder.files(containerCrashPathOnHost)
+                .match(nameMatches(JAVA_CORE_PATTERN))
+                .maxDepth(1)
+                .deleteRecursively();
+
+        // Check if we have already started to process a core dump or we can enqueue a new core one
+        getCoredumpToProcess(containerCrashPathOnHost, containerProcessingPathOnHost)
+                .ifPresent(path -> processAndReportSingleCoredump(context, path, nodeAttributes));
     }
 
-    private void removeJavaCoredumps(Path coredumpsPath) throws IOException {
-        if (! coredumpsPath.toFile().isDirectory()) return;
-        FileHelper.deleteFiles(coredumpsPath, Duration.ZERO, Optional.of("^java_pid.*\\.hprof$"), false);
+    /** @return path to directory inside processing directory that contains a core dump file to process */
+    Optional<Path> getCoredumpToProcess(Path containerCrashPathOnHost, Path containerProcessingPathOnHost) {
+        return FileFinder.directories(containerProcessingPathOnHost).stream()
+                .map(FileFinder.FileAttributes::path)
+                .findAny()
+                .map(Optional::of)
+                .orElseGet(() -> enqueueCoredump(containerCrashPathOnHost, containerProcessingPathOnHost));
     }
-
-    private void removeOldCoredumps() throws IOException {
-        if (! doneCoredumpsPath.toFile().isDirectory()) return;
-        FileHelper.deleteDirectories(doneCoredumpsPath, Duration.ofDays(10), Optional.empty());
-    }
-
-    private void handleNewCoredumps(Path coredumpsPath, Map<String, Object> nodeAttributes) {
-        enqueueCoredumps(coredumpsPath);
-        processAndReportCoredumps(coredumpsPath, nodeAttributes);
-    }
-
 
     /**
      * Moves a coredump to a new directory under the processing/ directory. Limit to only processing
      * one coredump at the time, starting with the oldest.
+     *
+     * @return path to directory inside processing directory which contains the enqueued core dump file
      */
-    void enqueueCoredumps(Path coredumpsPath) {
-        Path processingCoredumpsPath = getProcessingCoredumpsPath(coredumpsPath);
-        processingCoredumpsPath.toFile().mkdirs();
-        if (!FileHelper.listContentsOfDirectory(processingCoredumpsPath).isEmpty()) return;
-
-        FileHelper.listContentsOfDirectory(coredumpsPath).stream()
-                .filter(path -> path.toFile().isFile() && ! path.getFileName().toString().startsWith("."))
-                .min((Comparator.comparingLong(o -> o.toFile().lastModified())))
-                .ifPresent(coredumpPath -> {
-                    try {
-                        enqueueCoredumpForProcessing(coredumpPath, processingCoredumpsPath);
-                    } catch (Throwable e) {
-                        logger.log(Level.WARNING, "Failed to process coredump " + coredumpPath, e);
-                    }
+    Optional<Path> enqueueCoredump(Path containerCrashPathOnHost, Path containerProcessingPathOnHost) {
+        return FileFinder.files(containerCrashPathOnHost)
+                .match(nameStartsWith(".").negate())
+                .maxDepth(1)
+                .stream()
+                .min(Comparator.comparing(FileFinder.FileAttributes::lastModifiedTime))
+                .map(FileFinder.FileAttributes::path)
+                .map(coredumpPath -> {
+                    UnixPath coredumpInProcessingDirectory = new UnixPath(
+                            containerProcessingPathOnHost
+                                    .resolve(coredumpIdSupplier.get())
+                                    .resolve(COREDUMP_FILENAME_PREFIX + coredumpPath.getFileName()));
+                    coredumpInProcessingDirectory.createParents();
+                    return uncheck(() -> Files.move(coredumpPath, coredumpInProcessingDirectory.toPath())).getParent();
                 });
     }
 
-    void processAndReportCoredumps(Path coredumpsPath, Map<String, Object> nodeAttributes) {
-        Path processingCoredumpsPath = getProcessingCoredumpsPath(coredumpsPath);
-        doneCoredumpsPath.toFile().mkdirs();
-
-        FileHelper.listContentsOfDirectory(processingCoredumpsPath).stream()
-                .filter(path -> path.toFile().isDirectory())
-                .forEach(coredumpDirectory -> processAndReportSingleCoredump(coredumpDirectory, nodeAttributes));
-    }
-
-    private void processAndReportSingleCoredump(Path coredumpDirectory, Map<String, Object> nodeAttributes) {
+    void processAndReportSingleCoredump(NodeAgentContext context, Path coredumpDirectory, Map<String, Object> nodeAttributes) {
         try {
-            String metadata = collectMetadata(coredumpDirectory, nodeAttributes);
+            String metadata = getMetadata(context, coredumpDirectory, nodeAttributes);
             String coredumpId = coredumpDirectory.getFileName().toString();
             coredumpReporter.reportCoredump(coredumpId, metadata);
-            finishProcessing(coredumpDirectory);
-            logger.info("Successfully reported coredump " + coredumpId);
-        } catch (Throwable e) {
-            logger.log(Level.WARNING, "Failed to report coredump " + coredumpDirectory, e);
+            finishProcessing(context, coredumpDirectory);
+            context.log(logger, "Successfully reported coredump " + coredumpId);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to process coredump " + coredumpDirectory, e);
         }
-    }
-
-    private void enqueueCoredumpForProcessing(Path coredumpPath, Path processingCoredumpsPath) throws IOException {
-        // Make coredump readable
-        coredumpPath.toFile().setReadable(true, false);
-
-        // Create new directory for this coredump and move it into it
-        Path folder = processingCoredumpsPath.resolve(UUID.randomUUID().toString());
-        folder.toFile().mkdirs();
-        Files.move(coredumpPath, folder.resolve(coredumpPath.getFileName()));
-    }
-
-    String collectMetadata(Path coredumpDirectory, Map<String, Object> nodeAttributes) throws IOException {
-        Path metadataPath = coredumpDirectory.resolve(METADATA_FILE_NAME);
-        if (!Files.exists(metadataPath)) {
-            Path coredumpPath = FileHelper.listContentsOfDirectory(coredumpDirectory).stream().findFirst()
-                    .orElseThrow(() -> new RuntimeException("No coredump file found in processing directory " + coredumpDirectory));
-            Map<String, Object> metadata = coreCollector.collect(coredumpPath);
-            metadata.putAll(nodeAttributes);
-
-            Map<String, Object> fields = new HashMap<>();
-            fields.put("fields", metadata);
-
-            String metadataFields = objectMapper.writeValueAsString(fields);
-            Files.write(metadataPath, metadataFields.getBytes());
-            return metadataFields;
-        } else {
-            return new String(Files.readAllBytes(metadataPath));
-        }
-    }
-
-    private void finishProcessing(Path coredumpDirectory) throws IOException {
-        Files.move(coredumpDirectory, doneCoredumpsPath.resolve(coredumpDirectory.getFileName()));
     }
 
     /**
-     * @return Path to directory where coredumps are temporarily moved while still being processed
+     * @return coredump metadata from metadata.json if present, otherwise attempts to get metadata using
+     * {@link CoreCollector} and stores it to metadata.json
      */
-    static Path getProcessingCoredumpsPath(Path coredumpsPath) {
-        return coredumpsPath.resolve(PROCESSING_DIRECTORY_NAME);
+    String getMetadata(NodeAgentContext context, Path coredumpDirectory, Map<String, Object> nodeAttributes) throws IOException {
+        UnixPath metadataPath = new UnixPath(coredumpDirectory.resolve(METADATA_FILE_NAME));
+        if (!Files.exists(metadataPath.toPath())) {
+            Path coredumpFilePathOnHost = findCoredumpFileInProcessingDirectory(coredumpDirectory);
+            Path coredumpFilePathInContainer = context.pathInNodeFromPathOnHost(coredumpFilePathOnHost);
+            Map<String, Object> metadata = coreCollector.collect(context, coredumpFilePathInContainer);
+            metadata.putAll(nodeAttributes);
+
+            String metadataFields = objectMapper.writeValueAsString(ImmutableMap.of("fields", metadata));
+            metadataPath.writeUtf8File(metadataFields);
+            return metadataFields;
+        } else {
+            return metadataPath.readUtf8File();
+        }
+    }
+
+    /**
+     * Compresses core file (and deletes the uncompressed core), then moves the entire core dump processing
+     * directory to {@link #doneCoredumpsPath} for archive
+     */
+    private void finishProcessing(NodeAgentContext context, Path coredumpDirectory) throws IOException {
+        Path coreFile = findCoredumpFileInProcessingDirectory(coredumpDirectory);
+        Path compressedCoreFile = coreFile.getParent().resolve(coreFile.getFileName() + ".lz4");
+        terminal.newCommandLine(context)
+                .add(LZ4_PATH, "-f", coreFile.toString(), compressedCoreFile.toString())
+                .execute();
+        Files.delete(coreFile);
+
+        Path newCoredumpDirectory = doneCoredumpsPath.resolve(coredumpDirectory.getFileName());
+        Files.move(coredumpDirectory, newCoredumpDirectory);
+    }
+
+    private Path findCoredumpFileInProcessingDirectory(Path coredumpProccessingDirectory) {
+        return FileFinder.files(coredumpProccessingDirectory)
+                .match(nameStartsWith(COREDUMP_FILENAME_PREFIX))
+                .maxDepth(1)
+                .stream()
+                .map(FileFinder.FileAttributes::path)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "No coredump file found in processing directory " + coredumpProccessingDirectory));
     }
 }

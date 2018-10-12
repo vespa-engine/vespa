@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
@@ -53,15 +52,6 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private final GaugeWrapper numberOfContainersInLoadImageState;
     private final CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
-
-    public NodeAdminImpl(DockerOperations dockerOperations,
-                         Function<String, NodeAgent> nodeAgentFactory,
-                         StorageMaintainer storageMaintainer,
-                         Runnable aclMaintainer,
-                         MetricReceiverWrapper metricReceiver,
-                         Clock clock) {
-        this(dockerOperations, nodeAgentFactory, aclMaintainer, metricReceiver, clock);
-    }
 
     public NodeAdminImpl(DockerOperations dockerOperations,
                          Function<String, NodeAgent> nodeAgentFactory,

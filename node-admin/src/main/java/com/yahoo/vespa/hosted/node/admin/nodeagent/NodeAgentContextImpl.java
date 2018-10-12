@@ -59,15 +59,26 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     @Override
     public Path pathOnHostFromPathInNode(Path pathInNode) {
         if (! pathInNode.isAbsolute())
-            throw new IllegalArgumentException("Expected an absolute path in container, got: " + pathInNode);
+            throw new IllegalArgumentException("Expected an absolute path in the container, got: " + pathInNode);
 
         return pathToNodeRootOnHost.resolve(ROOT.relativize(pathInNode).toString());
     }
 
     @Override
+    public Path pathInNodeFromPathOnHost(Path pathOnHost) {
+        if (! pathOnHost.isAbsolute())
+            throw new IllegalArgumentException("Expected an absolute path on the host, got: " + pathOnHost);
+
+        if (!pathOnHost.startsWith(pathToNodeRootOnHost))
+            throw new IllegalArgumentException("Path " + pathOnHost + " does not exist in the container");
+
+        return ROOT.resolve(pathToNodeRootOnHost.relativize(pathOnHost).toString());
+    }
+
+    @Override
     public Path pathInNodeUnderVespaHome(Path relativePath) {
         if (relativePath.isAbsolute())
-            throw new IllegalArgumentException("Expected a relative path to Vespa home, got: " + relativePath);
+            throw new IllegalArgumentException("Expected a relative path to the Vespa home, got: " + relativePath);
 
         return pathToVespaHome.resolve(relativePath);
     }

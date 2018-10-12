@@ -457,6 +457,8 @@ public class NodeAgentImplTest {
         nodeAgent.converge();
 
         final InOrder inOrder = inOrder(storageMaintainer, dockerOperations, nodeRepository);
+        inOrder.verify(dockerOperations, times(1)).stopServices(eq(context.containerName()));
+        inOrder.verify(storageMaintainer, times(1)).handleCoreDumpsForContainer(eq(context), eq(node), any());
         inOrder.verify(dockerOperations, times(1)).removeContainer(any());
         inOrder.verify(storageMaintainer, times(1)).archiveNodeStorage(eq(context));
         inOrder.verify(nodeRepository, times(1)).setNodeState(eq(hostName), eq(Node.State.ready));
