@@ -24,10 +24,7 @@ import java.net.InetAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.logging.Logger;
@@ -50,14 +47,11 @@ public class DockerOperationsImpl implements DockerOperations {
     private final Docker docker;
     private final Environment environment;
     private final ProcessExecuter processExecuter;
-    private final Map<Path, Boolean> directoriesToMount;
 
     public DockerOperationsImpl(Docker docker, Environment environment, ProcessExecuter processExecuter) {
         this.docker = docker;
         this.environment = environment;
         this.processExecuter = processExecuter;
-
-        this.directoriesToMount = getDirectoriesToMount(environment);
     }
 
     @Override
@@ -79,24 +73,13 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withManagedBy(MANAGER_NAME)
                 .withEnvironment("VESPA_CONFIGSERVERS", configServers)
                 .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS",
-                                 environment.getContainerEnvironmentResolver().createSettings(environment, node))
+                        environment.getContainerEnvironmentResolver().createSettings(environment, node))
                 .withUlimit("nofile", 262_144, 262_144)
                 .withUlimit("nproc", 32_768, 409_600)
                 .withUlimit("core", -1, -1)
                 .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
                 .withAddCapability("SYS_ADMIN"); // Needed for perf
 
-        if (isInfrastructureHost(environment.getNodeType())) {
-            command.withVolume(Paths.get("/var/lib/sia"), Paths.get("/var/lib/sia"));
-        }
-
-        if (environment.getNodeType() == NodeType.proxyhost) {
-            command.withVolume(Paths.get("/opt/yahoo/share/ssl/certs"), Paths.get("/opt/yahoo/share/ssl/certs"));
-        }
-
-        if (environment.getNodeType() == NodeType.host) {
-            command.withSharedVolume(Paths.get("/var/zpe"), environment.pathInNodeUnderVespaHome("var/zpe"));
-        }
 
         DockerNetworking networking = environment.getDockerNetworking();
         command.withNetworkMode(networking.getDockerNetworkMode());
@@ -117,10 +100,7 @@ public class DockerOperationsImpl implements DockerOperations {
             addEtcHosts(containerData, node.getHostname(), ipV4Local, ipV6Local);
         }
 
-        for (Path pathInNode : directoriesToMount.keySet()) {
-            Path pathInHost = environment.pathInHostFromPathInNode(context.containerName(), pathInNode);
-            command.withVolume(pathInHost, pathInNode);
-        }
+        addMounts(context, command);
 
         // TODO: Enforce disk constraints
         long minMainMemoryAvailableMb = (long) (node.getMinMainMemoryAvailableGb() * 1024);
@@ -168,12 +148,6 @@ public class DockerOperationsImpl implements DockerOperations {
     public void startContainer(NodeAgentContext context) {
         context.log(logger, "Starting container");
         docker.startContainer(context.containerName());
-
-        directoriesToMount.entrySet().stream()
-                .filter(Map.Entry::getValue)
-                .map(Map.Entry::getKey)
-                .forEach(path ->
-                        executeCommandInContainerAsRoot(context, "chmod", "-R", "a+w", path.toString()));
     }
 
     @Override
@@ -285,56 +259,71 @@ public class DockerOperationsImpl implements DockerOperations {
     /**
      * Returns map of directories to mount and whether they should be writable by everyone
      */
-    private static Map<Path, Boolean> getDirectoriesToMount(Environment environment) {
-        final Map<Path, Boolean> directoriesToMount = new HashMap<>();
-        directoriesToMount.put(Paths.get("/etc/yamas-agent"), true);
-        directoriesToMount.put(Paths.get("/etc/filebeat"), true);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/daemontools_y"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/jdisc_core"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/langdetect/"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/nginx"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/vespa"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/yca"), true);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/yck"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/yell"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/ykeykey"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/ykeykeyd"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/yms_agent"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/ysar"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/ystatus"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/zpu"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/cache"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/crash"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/db/jdisc"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/db/vespa"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/jdisc_container"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/jdisc_core"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/maven"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/mediasearch"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/run"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/scoreboards"), true);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/service"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/share"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/spool"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/vespa"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/yca"), true);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/ycore++"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/zookeeper"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("tmp"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/container-data"), false);
-        if (environment.getNodeType() == NodeType.proxyhost)
-            directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/vespa-hosted/routing"), true);
-        if (environment.getNodeType() == NodeType.host)
-            directoriesToMount.put(Paths.get("/var/lib/sia"), true);
+    private static void addMounts(NodeAgentContext context, Docker.CreateContainerCommand command) {
+        final Path varLibSia = Paths.get("/var/lib/sia");
 
-        return Collections.unmodifiableMap(directoriesToMount);
+        // Paths unique to each container
+        List<Path> paths = Arrays.asList(
+                Paths.get("/etc/yamas-agent"),
+                Paths.get("/etc/filebeat"),
+                context.pathInNodeUnderVespaHome("logs/daemontools_y"),
+                context.pathInNodeUnderVespaHome("logs/jdisc_core"),
+                context.pathInNodeUnderVespaHome("logs/langdetect/"),
+                context.pathInNodeUnderVespaHome("logs/nginx"),
+                context.pathInNodeUnderVespaHome("logs/vespa"),
+                context.pathInNodeUnderVespaHome("logs/yca"),
+                context.pathInNodeUnderVespaHome("logs/yck"),
+                context.pathInNodeUnderVespaHome("logs/yell"),
+                context.pathInNodeUnderVespaHome("logs/ykeykey"),
+                context.pathInNodeUnderVespaHome("logs/ykeykeyd"),
+                context.pathInNodeUnderVespaHome("logs/yms_agent"),
+                context.pathInNodeUnderVespaHome("logs/ysar"),
+                context.pathInNodeUnderVespaHome("logs/ystatus"),
+                context.pathInNodeUnderVespaHome("logs/zpu"),
+                context.pathInNodeUnderVespaHome("var/cache"),
+                context.pathInNodeUnderVespaHome("var/crash"),
+                context.pathInNodeUnderVespaHome("var/db/jdisc"),
+                context.pathInNodeUnderVespaHome("var/db/vespa"),
+                context.pathInNodeUnderVespaHome("var/jdisc_container"),
+                context.pathInNodeUnderVespaHome("var/jdisc_core"),
+                context.pathInNodeUnderVespaHome("var/maven"),
+                context.pathInNodeUnderVespaHome("var/mediasearch"),
+                context.pathInNodeUnderVespaHome("var/run"),
+                context.pathInNodeUnderVespaHome("var/scoreboards"),
+                context.pathInNodeUnderVespaHome("var/service"),
+                context.pathInNodeUnderVespaHome("var/share"),
+                context.pathInNodeUnderVespaHome("var/spool"),
+                context.pathInNodeUnderVespaHome("var/vespa"),
+                context.pathInNodeUnderVespaHome("var/yca"),
+                context.pathInNodeUnderVespaHome("var/ycore++"),
+                context.pathInNodeUnderVespaHome("var/zookeeper"),
+                context.pathInNodeUnderVespaHome("tmp"),
+                context.pathInNodeUnderVespaHome("var/container-data"));
+
+        if (context.nodeType() == NodeType.proxyhost)
+            paths.add(context.pathInNodeUnderVespaHome("var/vespa-hosted/routing"));
+        if (context.nodeType() == NodeType.host)
+            paths.add(varLibSia);
+
+        paths.forEach(path -> command.withVolume(context.pathOnHostFromPathInNode(path), path));
+
+
+        // Shared paths
+        if (isInfrastructureHost(context.nodeType()))
+            command.withSharedVolume(varLibSia, varLibSia);
+
+        if (context.nodeType() == NodeType.proxyhost)
+            command.withSharedVolume(Paths.get("/opt/yahoo/share/ssl/certs"), Paths.get("/opt/yahoo/share/ssl/certs"));
+
+        if (context.nodeType() == NodeType.host)
+            command.withSharedVolume(Paths.get("/var/zpe"), context.pathInNodeUnderVespaHome("var/zpe"));
     }
 
     /** Returns whether given nodeType is a Docker host for infrastructure nodes */
     private static boolean isInfrastructureHost(NodeType nodeType) {
         return nodeType == NodeType.confighost ||
-               nodeType == NodeType.proxyhost ||
-               nodeType == NodeType.controllerhost;
+                nodeType == NodeType.proxyhost ||
+                nodeType == NodeType.controllerhost;
     }
 
 }
