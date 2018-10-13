@@ -38,7 +38,7 @@ public class ClusterMonitor<T> {
     private final Map<T, BaseNodeMonitor<T>> nodeMonitors = Collections.synchronizedMap(new java.util.LinkedHashMap<>());
 
     /** @deprecated use the constructor with just the first argument instead */
-    @Deprecated
+    @Deprecated // TODO: Remove on Vespa 7
     public ClusterMonitor(NodeManager<T> manager, String ignored) {
         this(manager);
     }
