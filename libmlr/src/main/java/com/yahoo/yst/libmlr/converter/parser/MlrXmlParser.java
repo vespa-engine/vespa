@@ -17,7 +17,6 @@ import java.util.logging.Logger;
  * Parses Treenet output V5 into Abstract Treenet XML File format.
  *
  * @author allenwei
- *
  */
 public class MlrXmlParser {
 
@@ -30,16 +29,21 @@ public class MlrXmlParser {
     private HashSet<String> respIdSet = new HashSet<String>(10000);
 
     public MlrFunction parseXmlFile(String fileName) throws DecisionTreeXmlException {
-
         File file = new File(fileName);
-        if (!file.exists()) {
+        if ( ! file.exists()) {
             String errMsg = fileName + " does not exist.";
             logErrors(errMsg);
             throw new DecisionTreeXmlException(errMsg);
         }
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        DocumentBuilder docBuilder = null;
+        try { // XXE prevention
+            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        }
+        catch (ParserConfigurationException e) {
+            throw new IllegalStateException("Could not disallow-doctype-decl", e);
+        }
+        DocumentBuilder docBuilder;
 
         try {
             docBuilder = dbf.newDocumentBuilder();
