@@ -5,9 +5,6 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
 import org.junit.Test;
 
-import java.util.Collections;
-
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -51,40 +48,6 @@ public class FillingTestCase {
         group.analyze();
         assertTrue(group.isFilled("summary"));  // consistent again
         assertTrue(group.isFilled("otherSummary"));
-    }
-
-    @Test
-    public void testPartiallyFilledWith2Hits() {
-        Hit hit1 = new Hit("id1");
-        Hit hit2 = new Hit("id2");
-
-        hit1.setFilled("summary");
-        hit2.setFillable();
-
-        HitGroup hits = new HitGroup();
-        hits.add(hit1);
-        hits.add(hit2);
-
-        assertEquals(Collections.emptySet(), hits.getFilled());
-    }
-
-    @Test
-    public void testPartiallyFilledDiverse() {
-        Hit hit1 = new Hit("id1");
-        Hit hit2 = new Hit("id2");
-        Hit hit3 = new Hit("id3");
-
-        hit1.setFilled("summary1");
-        hit1.setFilled("summary2");
-        hit2.setFilled("summary1");
-        hit3.setFilled("summary1");
-
-        HitGroup hits = new HitGroup();
-        hits.add(hit1);
-        hits.add(hit2);
-        hits.add(hit3);
-
-        assertEquals(Collections.singleton("summary1"), hits.getFilled());
     }
 
     private Hit createNonFilled(String id) {

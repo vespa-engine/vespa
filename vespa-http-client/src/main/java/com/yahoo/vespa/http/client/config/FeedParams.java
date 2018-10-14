@@ -30,7 +30,7 @@ public final class FeedParams {
      * Enumeration of data formats that are acceptable by the OutputStream
      * returned by {@link com.yahoo.vespa.http.client.Session#stream(CharSequence)}.
      */
-    public enum DataFormat {
+    public static enum DataFormat {
         /** UTF-8-encoded XML. Preamble is not necessary. */
         XML_UTF8,
         JSON_UTF8

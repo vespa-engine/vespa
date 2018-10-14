@@ -35,7 +35,6 @@ public final class SessionParams {
      * settings, use {@link #setConnectionParams(ConnectionParams)}.
      */
     public static final class Builder {
-
         private final List<Cluster> clusters = new LinkedList<>();
         private FeedParams feedParams = new FeedParams.Builder().build();
         private ConnectionParams connectionParams = new ConnectionParams.Builder().build();
