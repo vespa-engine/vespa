@@ -43,7 +43,6 @@ import java.util.zip.GZIPInputStream;
  * Accept feeds from outside of the Vespa cluster.
  *
  * @author Steinar Knutsen
- * @since 5.1
  */
 public class FeedHandler extends LoggingRequestHandler {
 
@@ -131,7 +130,7 @@ public class FeedHandler extends LoggingRequestHandler {
         int version;
         if (washedClientVersions.contains("3")) {
             version = 3;
-        } else if (washedClientVersions.contains("2")) {
+        } else if (washedClientVersions.contains("2")) { // TODO: Vespa 7: Remove support for Version 2
             version = 2;
         } else {
             return new Tuple2<>(new ErrorHttpResponse(
