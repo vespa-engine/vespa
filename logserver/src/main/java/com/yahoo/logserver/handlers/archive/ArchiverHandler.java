@@ -231,9 +231,7 @@ public class ArchiverHandler extends AbstractLogHandler {
 
     private void setRootDir(String rootDir) {
         // roundabout way of setting things, but this way we can
-        // get around Java's ineptitude for file handling. (relative
-        // paths in File are broken)
-        //
+        // get around Java's ineptitude for file handling (relative paths in File are broken)
         absoluteRootDir = new File(rootDir).getAbsolutePath();
         root = new File(absoluteRootDir);
 
@@ -242,8 +240,7 @@ public class ArchiverHandler extends AbstractLogHandler {
             log.log(LogLevel.DEBUG, "Using " + absoluteRootDir + " as root");
         } else {
             if (! root.mkdirs()) {
-                log.log(LogLevel.ERROR,
-                        "Unable to create directory " + absoluteRootDir);
+                log.log(LogLevel.ERROR, "Unable to create directory " + absoluteRootDir);
             } else {
                 log.log(LogLevel.DEBUG, "Created root at " + absoluteRootDir);
             }

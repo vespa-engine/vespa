@@ -101,7 +101,7 @@ public class LogFormatter extends Formatter {
      * <li>%%  %
      * </ul>
      */
-    public static final String insertDate (String pattern, long time) {
+    public static String insertDate(String pattern, long time) {
         DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS Z");
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         Date date = new Date(time);

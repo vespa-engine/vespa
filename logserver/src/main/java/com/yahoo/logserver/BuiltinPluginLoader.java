@@ -14,6 +14,7 @@ import com.yahoo.logserver.handlers.replicator.ReplicatorPlugin;
  * @author Stig Bakken
  */
 public class BuiltinPluginLoader extends AbstractPluginLoader {
+
     private static final Logger log = Logger.getLogger(BuiltinPluginLoader.class.getName());
 
     public void loadPlugins() {

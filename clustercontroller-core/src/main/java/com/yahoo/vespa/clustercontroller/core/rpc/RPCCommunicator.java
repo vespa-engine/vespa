@@ -1,25 +1,35 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @class Communicator
- *
- * Responsible for doing RPC requests to VDS nodes.
- */
-
 package com.yahoo.vespa.clustercontroller.core.rpc;
 
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.DataValue;
+import com.yahoo.jrt.Int32Value;
+import com.yahoo.jrt.Int8Value;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.Transport;
+import com.yahoo.jrt.Values;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.clustercontroller.core.*;
+import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
+import com.yahoo.vespa.clustercontroller.core.Communicator;
+import com.yahoo.vespa.clustercontroller.core.FleetControllerOptions;
+import com.yahoo.vespa.clustercontroller.core.GetNodeStateRequest;
+import com.yahoo.vespa.clustercontroller.core.NodeInfo;
+import com.yahoo.vespa.clustercontroller.core.SetClusterStateRequest;
+import com.yahoo.vespa.clustercontroller.core.Timer;
 
 import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
- * This class is not thread-safe.
+ * Responsible for doing RPC requests to VDS nodes.
+ This class is not thread-safe.
  */
 public class RPCCommunicator implements Communicator {
 
@@ -43,14 +53,13 @@ public class RPCCommunicator implements Communicator {
         return new Supervisor(new Transport());
     }
 
-    public RPCCommunicator(
-            final Supervisor supervisor,
-            final Timer t,
-            final int index,
-            final int nodeStateRequestTimeoutIntervalMaxMs,
-            final int nodeStateRequestTimeoutIntervalStartPercentage,
-            final int nodeStateRequestTimeoutIntervalStopPercentage,
-            final int nodeStateRequestRoundTripTimeMaxSeconds) {
+    public RPCCommunicator(Supervisor supervisor,
+                           Timer t,
+                           int index,
+                           int nodeStateRequestTimeoutIntervalMaxMs,
+                           int nodeStateRequestTimeoutIntervalStartPercentage,
+                           int nodeStateRequestTimeoutIntervalStopPercentage,
+                           int nodeStateRequestRoundTripTimeMaxSeconds) {
         this.timer = t;
         this.fleetControllerIndex = index;
         checkArgument(nodeStateRequestTimeoutIntervalMaxMs > 0);
@@ -73,14 +82,13 @@ public class RPCCommunicator implements Communicator {
     public Target getConnection(final NodeInfo node) {
         Target t = node.getConnection();
         if (t == null || !t.isValid()) {
-            t = node.setConnection(
-                    supervisor.connect(new Spec(node.getRpcAddress())));
+            t = node.setConnection(supervisor.connect(new Spec(node.getRpcAddress())));
         }
         return t;
     }
 
     @Override
-    public void propagateOptions(final FleetControllerOptions options) {
+    public void propagateOptions(FleetControllerOptions options) {
         checkArgument(options.nodeStateRequestTimeoutMS > 0);
         checkArgument(options.nodeStateRequestTimeoutEarliestPercentage >= 0);
         checkArgument(options.nodeStateRequestTimeoutEarliestPercentage <= 100);
@@ -121,15 +129,15 @@ public class RPCCommunicator implements Communicator {
 
     @Override
     public void setSystemState(ClusterStateBundle stateBundle, NodeInfo node, Waiter<SetClusterStateRequest> externalWaiter) {
-        final RPCSetClusterStateWaiter waiter = new RPCSetClusterStateWaiter(externalWaiter, timer);
-        final ClusterState baselineState = stateBundle.getBaselineClusterState();
+        RPCSetClusterStateWaiter waiter = new RPCSetClusterStateWaiter(externalWaiter, timer);
+        ClusterState baselineState = stateBundle.getBaselineClusterState();
 
         Target connection = getConnection(node);
-        if (!connection.isValid()) {
+        if ( ! connection.isValid()) {
             log.log(LogLevel.DEBUG, "Connection to " + node.getRpcAddress() + " could not be created.");
             return;
         }
-        final int nodeVersion = node.getVersion();
+        int nodeVersion = node.getVersion();
         Request req;
         if (nodeVersion <= 2) {
             req = new Request(LEGACY_SET_SYSTEM_STATE2_RPC_METHOD_NAME);
@@ -155,13 +163,13 @@ public class RPCCommunicator implements Communicator {
 
     // protected for testing.
     protected int generateNodeStateRequestTimeoutMs() {
-        final double intervalFraction = Math.random();
-        final double earliestTimeoutSeconds =
+        double intervalFraction = Math.random();
+        double earliestTimeoutSeconds =
                 nodeStateRequestTimeoutIntervalMaxSeconds * nodeStateRequestTimeoutIntervalStartPercentage / 100.0;
-        final double latestTimeoutSeconds =
+        double latestTimeoutSeconds =
                 nodeStateRequestTimeoutIntervalMaxSeconds * nodeStateRequestTimeoutIntervalStopPercentage / 100.0;
-        final double interval = latestTimeoutSeconds - earliestTimeoutSeconds;
-        final double timeoutSeconds = earliestTimeoutSeconds + intervalFraction * interval;
+        double interval = latestTimeoutSeconds - earliestTimeoutSeconds;
+        double timeoutSeconds = earliestTimeoutSeconds + intervalFraction * interval;
         return (int) (timeoutSeconds * 1000);
     }
 

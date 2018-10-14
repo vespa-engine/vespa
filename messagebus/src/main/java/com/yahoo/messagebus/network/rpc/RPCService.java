@@ -10,7 +10,7 @@ import java.util.Random;
  * An RPCService represents a set of remote sessions matching a service pattern. The sessions are monitored using the
  * slobrok. If multiple sessions are available, round robin is used to balance load between them.
  *
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author havardpe
  */
 public class RPCService {
 

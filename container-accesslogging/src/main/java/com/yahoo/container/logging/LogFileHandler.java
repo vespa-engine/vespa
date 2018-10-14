@@ -226,7 +226,7 @@ public class LogFileHandler extends StreamHandler {
     }
 
     // Throw InterruptedException upwards rather than relying on isInterrupted to stop the thread as
-    // isInterrupted() returns false after inerruption in p.waitFor
+    // isInterrupted() returns false after interruption in p.waitFor
     private void internalRotateNow() throws InterruptedException {
         // figure out new file name, then
         // use super.setOutputStream to switch to a new file
@@ -295,7 +295,7 @@ public class LogFileHandler extends StreamHandler {
     }
 
     /** Name files by date - create a symlink with a constant name to the newest file */
-    private void createSymlinkToCurrentFile() throws InterruptedException {
+    private void createSymlinkToCurrentFile() {
         if (symlinkName == null) return;
         File f = new File(fileName);
         File f2 = new File(f.getParent(), symlinkName);
