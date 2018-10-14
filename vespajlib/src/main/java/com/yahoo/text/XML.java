@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.text;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -208,6 +209,26 @@ public class XML {
     }
 
     private static final Scan scanner = new Scan();
+
+    /**
+     * Parses an XML file without allowing external DTD's
+     *
+     * @throws IllegalArgumentException if parsing fails
+     */
+    public static Document parse(File xmlFile) {
+        try {
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            // Prevent XXE
+            dbFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            return dbFactory.newDocumentBuilder().parse(xmlFile);
+        }
+        catch (ParserConfigurationException e) {
+            throw new IllegalStateException("Could not disallow-doctype-decl", e);
+        }
+        catch (IOException | SAXException e) {
+            throw new IllegalArgumentException("Cannot parse '" + xmlFile + "'", e);
+        }
+    }
 
     /**
      * Replaces the characters that need to be escaped with their corresponding
