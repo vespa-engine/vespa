@@ -8,8 +8,8 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class Metric
-{
+public abstract class Metric {
+
     private String name;
     private String tags;
     private String description;
@@ -146,7 +146,7 @@ public abstract class Metric
 
         writer.openTag(getXMLTag());
 
-        if (getXMLTag() != getName()) {
+        if ( ! getXMLTag().equals(getName())) {
             writer.attribute(TAG_NAME, getName());
         }
 

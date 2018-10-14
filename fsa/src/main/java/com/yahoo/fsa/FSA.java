@@ -17,7 +17,7 @@ import java.util.NoSuchElementException;
 /**
  * Finite-State Automaton.
  *
- * @author  <a href="mailto:boros@yahoo-inc.com">Peter Boros</a>
+ * @author Peter Boros
  */
 public class FSA {
 
@@ -158,6 +158,7 @@ public class FSA {
      * Class used to iterate over all accepted strings in the fsa.
      */
     public static class Iterator implements java.util.Iterator<Iterator.Item> {
+
         /**
          * Internally, this class stores the state information for the iterator.
          * Externally, it is used for accessing the data associated with the iterator position.
@@ -171,6 +172,7 @@ public class FSA {
 
             /**
              * Constructor
+             *
              * @param fsa the FSA object the iterator is associated with.
              * @param state the state used as start state.
              */
@@ -216,6 +218,7 @@ public class FSA {
                 return fsa.dataString(state);
             }
 
+            @Override
             public String toString() {
                 return "string: " + string + "(" + getString() + "), symbol: " + symbol + ", state: " + state;
             }
@@ -382,25 +385,19 @@ public class FSA {
     private void init(FileInputStream file, String charsetname) {
         try {
             _charset = Charset.forName(charsetname);
-
             _header = file.getChannel().map(MapMode.READ_ONLY,0,256);
             _header.order(ByteOrder.LITTLE_ENDIAN);
             if (h_magic()!=2038637673) {
                 throw new IOException("Stream does not contain an FSA: Wrong file magic number " + h_magic());
             }
-            _symbol_tab = file.getChannel().map(MapMode.READ_ONLY,
-                    256,h_size());
+            _symbol_tab = file.getChannel().map(MapMode.READ_ONLY, 256, h_size());
             _symbol_tab.order(ByteOrder.LITTLE_ENDIAN);
-            _state_tab = file.getChannel().map(MapMode.READ_ONLY,
-                    256+h_size(),4*h_size());
+            _state_tab = file.getChannel().map(MapMode.READ_ONLY, 256+h_size(), 4*h_size());
             _state_tab.order(ByteOrder.LITTLE_ENDIAN);
-            _data = file.getChannel().map(MapMode.READ_ONLY,
-                    256+5*h_size(),h_data_size());
+            _data = file.getChannel().map(MapMode.READ_ONLY, 256+5*h_size(), h_data_size());
             _data.order(ByteOrder.LITTLE_ENDIAN);
             if(h_has_phash()>0){
-                _phash = file.getChannel().map(MapMode.READ_ONLY,
-                        256+5*h_size()+h_data_size(),
-                        4*h_size());
+                _phash = file.getChannel().map(MapMode.READ_ONLY, 256+5*h_size()+h_data_size(), 4*h_size());
                 _phash.order(ByteOrder.LITTLE_ENDIAN);
             }
             _ok=true;

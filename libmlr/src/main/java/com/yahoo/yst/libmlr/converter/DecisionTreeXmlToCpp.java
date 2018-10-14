@@ -31,7 +31,6 @@ import com.yahoo.yst.libmlr.converter.parser.MlrXmlParser;
  * This class generates C++ from an MLR Decision Tree File
  *
  * @author allenwei
- *
  */
 public class DecisionTreeXmlToCpp {
 

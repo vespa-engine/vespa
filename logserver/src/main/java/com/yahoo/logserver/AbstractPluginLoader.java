@@ -14,6 +14,7 @@ import java.util.logging.Logger;
  * @author Stig Bakken
  */
 public abstract class AbstractPluginLoader implements PluginLoader {
+
     private static final Logger log = Logger.getLogger(AbstractPluginLoader.class.getName());
 
     public abstract void loadPlugins();

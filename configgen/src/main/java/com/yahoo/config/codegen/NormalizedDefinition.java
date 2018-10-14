@@ -19,7 +19,8 @@ import java.nio.charset.Charset;
  * @author hmusum
  */
 public class NormalizedDefinition {
-    /* Patterns used for finding ranges in config definitions */
+
+    // Patterns used for finding ranges in config definitions
     private static final Pattern intPattern = Pattern.compile(".*int.*range.*");
     private static final Pattern doublePattern = Pattern.compile(".*double.*range.*");
     private MessageDigest md5;

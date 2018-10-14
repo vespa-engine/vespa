@@ -1,20 +1,21 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.security.SecureRandom;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.Random;
-
 
 /**
  * A very simple CryptoSocket that performs connection handshaking and
  * data transformation. Used to test encryption integration separate
  * from TLS.
- **/
+ *
+ * @author havardpe
+ */
 public class XorCryptoSocket implements CryptoSocket {
 
     private static final int CHUNK_SIZE = 4096;
@@ -28,7 +29,7 @@ public class XorCryptoSocket implements CryptoSocket {
     private SocketChannel channel;
 
     private static byte genKey() {
-        return (byte) new Random().nextInt(256);
+        return (byte) new SecureRandom().nextInt(256);
     }
 
     private HandshakeResult readKey() throws IOException {
