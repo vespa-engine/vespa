@@ -251,6 +251,38 @@ public class VdsVisitTestCase {
     }
 
     @Test
+    public void testDefaultIsXml() throws Exception {
+        // Short options testing (for options that do not collide with each other)
+        String[] args = new String[] {
+        };
+        VdsVisit.ArgumentParser parser = createMockArgumentParser();
+        VdsVisit.VdsVisitParameters allParams = parser.parse(args);
+        assertFalse(allParams.getJsonOutput());
+    }
+
+    @Test
+    public void testJsonOutput() throws Exception {
+        // Short options testing (for options that do not collide with each other)
+        String[] args = new String[] {
+                "--jsonoutput"
+        };
+        VdsVisit.ArgumentParser parser = createMockArgumentParser();
+        VdsVisit.VdsVisitParameters allParams = parser.parse(args);
+        assertTrue(allParams.getJsonOutput());
+    }
+
+    @Test
+    public void testCmlOutput() throws Exception {
+        // Short options testing (for options that do not collide with each other)
+        String[] args = new String[] {
+                "--xmloutput"
+        };
+        VdsVisit.ArgumentParser parser = createMockArgumentParser();
+        VdsVisit.VdsVisitParameters allParams = parser.parse(args);
+        assertFalse(allParams.getJsonOutput());
+    }
+
+    @Test
     public void testAutoSelectClusterRoute() throws Exception {
         List<ClusterDef> clusterDefs = new ArrayList<>();
         clusterDefs.add(new ClusterDef("storage", "content/cluster.foo/storage"));
