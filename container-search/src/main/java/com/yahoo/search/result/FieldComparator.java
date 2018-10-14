@@ -57,6 +57,11 @@ public class FieldComparator extends ChainableComparator {
             Object a = getField(first,fieldName);
             Object b = getField(second,fieldName);
 
+            // If either of the values are null, don't touch the ordering
+            // This is to avoid problems if the sorting is called before the
+            // result is filled.
+            if ((a == null) || (b == null)) return 0;
+
             int x = compareValues(a, b, fieldOrder.getSorter());
             if (x != 0) {
                 if (fieldOrder.getSortOrder() == Sorting.Order.DESCENDING)
@@ -76,12 +81,6 @@ public class FieldComparator extends ChainableComparator {
 
     @SuppressWarnings("rawtypes")
     private int compareValues(Object first, Object second, Sorting.AttributeSorter s) {
-        if (first == null) {
-            if (second == null) return 0;
-            return -1;
-        } else if (second == null) {
-            return 1;
-        }
         if (first.getClass().isInstance(second)
                 && first instanceof Comparable) {
             // We now know:
