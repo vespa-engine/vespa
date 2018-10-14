@@ -19,13 +19,13 @@ import com.yahoo.container.StatisticsConfig;
  * will be disabled by initializing the Statistics class with a null config
  * object.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public final class StatisticsImpl extends AbstractComponent implements Statistics {
+
     private final Timer worker;
     private final StatisticsConfig config;
-    private static final Logger log = Logger.getLogger(StatisticsImpl.class
-            .getName());
+    private static final Logger log = Logger.getLogger(StatisticsImpl.class.getName());
     private final int collectioninterval;
     private final int logginginterval;
     // default access for testing only
@@ -44,9 +44,9 @@ public final class StatisticsImpl extends AbstractComponent implements Statistic
      *             if logging interval is smaller than collection interval, or
      *             collection interval is not a multiplum of logging interval
      */
-    public StatisticsImpl(final StatisticsConfig config) {
-        final int l = (int) config.loggingintervalsec();
-        final int c = (int) config.collectionintervalsec();
+    public StatisticsImpl(StatisticsConfig config) {
+        int l = (int) config.loggingintervalsec();
+        int c = (int) config.collectionintervalsec();
 
         if (l != 0 && l < c) {
             throw new IllegalArgumentException(
@@ -68,15 +68,13 @@ public final class StatisticsImpl extends AbstractComponent implements Statistic
      * Cancel internal worker thread and do any other necessary cleanup. The
      * internal worker thread is a daemon thread, so not calling this will not
      * hamper a clean exit from the VM.
-     *
-     * @since 5.1.4
      */
     @Override
     public void deconstruct() {
         worker.cancel();
     }
 
-    private void schedule(final Handle h) {
+    private void schedule(Handle h) {
         if (logginginterval != 0) {
             h.run();
             // We use the rather creative assumption that there is
@@ -94,9 +92,9 @@ public final class StatisticsImpl extends AbstractComponent implements Statistic
      * the internal state of this object.
      */
     @Override
-    public void register(final Handle h) {
+    public void register(Handle h) {
         synchronized (handles) {
-            final Handle oldHandle = handles.get(h.getName());
+            Handle oldHandle = handles.get(h.getName());
             if (oldHandle == h) {
                 log.log(Level.WARNING, "Handle [" + h + "] already registered");
                 return;
@@ -115,9 +113,9 @@ public final class StatisticsImpl extends AbstractComponent implements Statistic
      * Remove a named handler from the set of working handlers.
      */
     @Override
-    public void remove(final String name) {
+    public void remove(String name) {
         synchronized (handles) {
-            final Handle oldHandle = handles.remove(name);
+            Handle oldHandle = handles.remove(name);
             if (oldHandle != null) {
                 oldHandle.cancel();
             }
@@ -141,7 +139,7 @@ public final class StatisticsImpl extends AbstractComponent implements Statistic
     @Override
     public int purge() {
         synchronized (handles) {
-            final Iterator<Handle> it = handles.values().iterator();
+            Iterator<Handle> it = handles.values().iterator();
             while (it.hasNext()) {
                 final Handle h = it.next();
                 if (h.isCancelled()) {
@@ -151,4 +149,5 @@ public final class StatisticsImpl extends AbstractComponent implements Statistic
             return worker == null ? 0 : worker.purge();
         }
     }
+
 }

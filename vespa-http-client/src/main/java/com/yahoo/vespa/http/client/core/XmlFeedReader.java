@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Reads an input stream of xml, sends these to session.
+ *
  * @author dybis
 */
 public class XmlFeedReader {
@@ -23,12 +24,13 @@ public class XmlFeedReader {
 
     public static void read(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) throws Exception {
 
-        SAXParserFactory parserFactor = SAXParserFactory.newInstance();
-        parserFactor.setValidating(false);
-        parserFactor.setNamespaceAware(false);
-        final SAXParser parser = parserFactor.newSAXParser();
+        SAXParserFactory parserFactory = SAXParserFactory.newInstance();
+        // XXE prevention:
+        parserFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        parserFactory.setValidating(false);
+        parserFactory.setNamespaceAware(false);
+        SAXParser parser = parserFactory.newSAXParser();
         SAXClientFeeder saxClientFeeder = new SAXClientFeeder(feedClient, numSent);
-        SAXClientFeeder handler = saxClientFeeder;
 
         InputSource inputSource = new InputSource();
         inputSource.setEncoding(StandardCharsets.UTF_8.displayName());
@@ -36,8 +38,7 @@ public class XmlFeedReader {
         // This is to send events about CDATA to the saxClientFeeder 
         // (https://docs.oracle.com/javase/tutorial/jaxp/sax/events.html)
         parser.setProperty("http://xml.org/sax/properties/lexical-handler", saxClientFeeder);
-
-        parser.parse(inputSource, handler);
+        parser.parse(inputSource, saxClientFeeder);
     }
 }
 
