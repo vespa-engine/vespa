@@ -9,7 +9,7 @@ import com.yahoo.vespa.http.client.core.Headers;
 /**
  * Wrapper for the feed feederSettings read from HTTP request.
  *
- * @author Steinar Knutsen
+ * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class FeederSettings {
 
