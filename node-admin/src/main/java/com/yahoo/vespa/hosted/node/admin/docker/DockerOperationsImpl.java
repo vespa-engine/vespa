@@ -23,6 +23,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -178,7 +179,6 @@ public class DockerOperationsImpl implements DockerOperations {
 
     @Override
     public ProcessResult executeCommandInContainerAsRoot(NodeAgentContext context, String... command) {
-        context.log(logger, context.containerName().asString() + " " + Arrays.asList(command));
         return docker.executeInContainerAsUser(context.containerName(), "root", OptionalLong.empty(), command);
     }
 
@@ -263,7 +263,7 @@ public class DockerOperationsImpl implements DockerOperations {
         final Path varLibSia = Paths.get("/var/lib/sia");
 
         // Paths unique to each container
-        List<Path> paths = Arrays.asList(
+        List<Path> paths = new ArrayList<>(Arrays.asList(
                 Paths.get("/etc/yamas-agent"),
                 Paths.get("/etc/filebeat"),
                 context.pathInNodeUnderVespaHome("logs/daemontools_y"),
@@ -298,7 +298,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 context.pathInNodeUnderVespaHome("var/ycore++"),
                 context.pathInNodeUnderVespaHome("var/zookeeper"),
                 context.pathInNodeUnderVespaHome("tmp"),
-                context.pathInNodeUnderVespaHome("var/container-data"));
+                context.pathInNodeUnderVespaHome("var/container-data")));
 
         if (context.nodeType() == NodeType.proxyhost)
             paths.add(context.pathInNodeUnderVespaHome("var/vespa-hosted/routing"));
