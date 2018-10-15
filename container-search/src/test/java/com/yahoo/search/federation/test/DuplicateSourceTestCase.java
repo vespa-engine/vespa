@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -14,6 +15,7 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,10 +38,9 @@ public class DuplicateSourceTestCase {
         MockBackendSearcher mockBackendSearcher = new MockBackendSearcher();
         SearchChainRegistry searchChains = new SearchChainRegistry();
         searchChains.register(new Chain<>("chain1", mockBackendSearcher));
-        IndexFacts indexFacts = new IndexFacts();
         Map<String, List<String>> clusters = new HashMap<>();
         clusters.put("chain1", ImmutableList.of("doc1", "doc2"));
-        indexFacts.setClusters(clusters);
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(clusters, Collections.emptyList()));
         SearchChainResolver resolver = new SearchChainResolver.Builder()
                                        .addSearchChain(new ComponentId("chain1"), ImmutableList.of("doc1", "doc2"))
                                        .build();

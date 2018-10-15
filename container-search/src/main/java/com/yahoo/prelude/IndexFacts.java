@@ -108,7 +108,11 @@ public class IndexFacts {
 
     /**
      * Public only for testing.
+     *
+     * @deprecated set at creation time
      */
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public void setClusters(Map<String, List<String>> clusters) {
         ensureNotFrozen();
         this.clusters = clusters;
@@ -343,7 +347,7 @@ public class IndexFacts {
      * @deprecated set indexes at creation time instead
      */
     // TODO: Remove on Vespa 7
-    @Deprecated
+    @Deprecated // OK
     public void addIndex(String sdName, Index index) {
         ensureNotFrozen();
 
