@@ -7,7 +7,7 @@
   <packaging>jar</packaging>
   <version>1.0.0-SNAPSHOT</version>
   <name>xml2cpp</name>
-  <description>Fork of xml2cppConverver with support for SS3 models.</description>
+  <description>Fork of xml2cppConverter with support for SS3 models.</description>
   <dependencies>
   </dependencies>
   <build>
