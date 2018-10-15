@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -27,7 +28,7 @@ public class CreateContainerCommandImplTest {
                 .withUlimit("nproc", 10, 20)
                 .withEnvironment("env1", "val1")
                 .withEnvironment("env2", "val2")
-                .withVolume("vol1", "/host/vol1")
+                .withVolume(Paths.get("vol1"), Paths.get("/host/vol1"))
                 .withAddCapability("SYS_PTRACE")
                 .withAddCapability("SYS_ADMIN")
                 .withDropCapability("NET_ADMIN")

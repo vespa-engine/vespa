@@ -152,7 +152,7 @@ public class CoreCollectorTest {
     }
 
     private void mockExec(String[] cmd, String output, String error) {
-        when(docker.executeCommandInContainerAsRoot(context.containerName(), cmd))
+        when(docker.executeCommandInContainerAsRoot(context, cmd))
                 .thenReturn(new ProcessResult(error.isEmpty() ? 0 : 1, output, error));
     }
 }

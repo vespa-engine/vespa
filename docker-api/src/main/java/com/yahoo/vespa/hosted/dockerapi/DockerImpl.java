@@ -34,14 +34,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 public class DockerImpl implements Docker {
     private static final Logger logger = Logger.getLogger(DockerImpl.class.getName());
@@ -120,25 +119,9 @@ public class DockerImpl implements Docker {
         return new CreateContainerCommandImpl(dockerClient, image, containerResources, name, hostName);
     }
 
-    @Override
-    public ProcessResult executeInContainer(ContainerName containerName, String... args) {
-        return executeInContainerAsUser(containerName, getDefaults().vespaUser(), Optional.empty(), args);
-    }
 
     @Override
-    public ProcessResult executeInContainerAsRoot(ContainerName containerName, String... args) {
-        return executeInContainerAsUser(containerName, "root", Optional.empty(), args);
-    }
-
-    @Override
-    public ProcessResult executeInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... args) {
-        return executeInContainerAsUser(containerName, "root", Optional.of(timeoutSeconds), args);
-    }
-
-    /**
-     * Execute command in container as user, "user" can be "username", "username:group", "uid" or "uid:gid"
-     */
-    private ProcessResult executeInContainerAsUser(ContainerName containerName, String user, Optional<Long> timeoutSeconds, String... command) {
+    public ProcessResult executeInContainerAsUser(ContainerName containerName, String user, OptionalLong timeoutSeconds, String... command) {
         try {
             ExecCreateCmdResponse response = execCreateCmd(containerName, user, command);
 
@@ -148,7 +131,7 @@ public class DockerImpl implements Docker {
                     .exec(new ExecStartResultCallback(output, errors));
 
             if (timeoutSeconds.isPresent()) {
-                if (!callback.awaitCompletion(timeoutSeconds.get(), TimeUnit.SECONDS))
+                if (!callback.awaitCompletion(timeoutSeconds.getAsLong(), TimeUnit.SECONDS))
                     throw new DockerExecTimeoutException(String.format(
                             "Command '%s' did not finish within %s seconds.", command[0], timeoutSeconds));
             } else {

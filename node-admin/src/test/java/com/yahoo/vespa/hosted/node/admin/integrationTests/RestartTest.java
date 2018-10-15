@@ -38,7 +38,7 @@ public class RestartTest {
 
             dockerTester.callOrderVerifier.assertInOrder(
                     "Suspend for host1.test.yahoo.com",
-                    "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerTester.NODE_PROGRAM + ", restart-vespa]");
+                    "executeInContainer host1 as root, args: [" + DockerTester.NODE_PROGRAM + ", restart-vespa]");
         }
     }
 
