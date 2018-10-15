@@ -156,6 +156,10 @@ export LD_PRELOAD=${VESPA_HOME}/lib64/vespa/malloc/libvespamalloc.so
 printenv > $cfpfile
 fixddir $bundlecachedir
 
+# Delete mdbm lock files
+# TODO: Remove when scoreboard is no longer used
+$(ROOT)/bin64/mdbm_delete_lockfiles $(ROOT)/var/scoreboards/configserver.sbm || true
+
 vespa-run-as-vespa-user vespa-runserver -s configserver -r 30 -p $pidfile -- \
 	java \
 	-Xms128m -Xmx2048m \
