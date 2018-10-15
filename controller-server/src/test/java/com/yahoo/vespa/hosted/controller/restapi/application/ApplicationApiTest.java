@@ -47,13 +47,13 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
-import com.yahoo.vespa.hosted.controller.maintenance.ContactInformationMaintainer;
 import com.yahoo.vespa.hosted.controller.maintenance.DeploymentMetricsMaintainer;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Contact;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -1269,9 +1269,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private void updateContactInformation() {
-        new ContactInformationMaintainer(tester.controller(), Duration.ofDays(1),
-                                         new JobControl(tester.controller().curator()),
-                                         organization()).run();
+        Contact contact = new Contact(URI.create("www.contacts.tld/1234"), URI.create("www.properties.tld/1234"), URI.create("www.issues.tld/1234"), Arrays.asList(Arrays.asList("alice"), Arrays.asList("bob")));
+        tester.controller().tenants().lockIfPresent(TenantName.from("tenant2"), lockedTenant -> tester.controller().tenants().store(lockedTenant.with(contact)));
     }
 
     private void registerContact(long propertyId) {
