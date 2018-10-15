@@ -7,7 +7,8 @@ package com.yahoo.prelude.logging;
  * @author Steinar Knutsen
  * @deprecated do not use
  */
-@Deprecated // TODO: Remove on Vespa 7
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public class AccessLogEntry extends com.yahoo.container.logging.AccessLogEntry {
 
     public AccessLogEntry() {

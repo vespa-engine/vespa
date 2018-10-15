@@ -10,7 +10,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.NUMBER;
 /**
  * Parser for queries of type advanced.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @deprecated since 5.11, YQL+ should be used for formal queries
  */
 @Deprecated // OK DO NOT REMOVE (we'll keep this around longer)

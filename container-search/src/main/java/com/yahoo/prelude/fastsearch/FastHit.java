@@ -359,7 +359,7 @@ public class FastHit extends Hit {
 
     /** @deprecated do not use */
     // TODO: Make private on Vespa 7
-    @Deprecated
+    @Deprecated // OK
     public static String asHexString(GlobalId gid) {
         return asHexString(new StringBuilder(), gid).toString();
     }

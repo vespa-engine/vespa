@@ -26,10 +26,11 @@ import java.util.*;
  * @author Steinar Knutsen
  * @deprecated do not use
  */
+// TODO: Remove on Vespa 7 (not necessary any more)
 @After({PhaseNames.RAW_QUERY, PHRASE_REPLACEMENT})
 @Before(PhaseNames.TRANSFORMED_QUERY)
 @Provides(IndexCombinatorSearcher.MIXED_RECALL_REWRITE)
-@Deprecated // TODO: Remove on Vespa 7 (not necessary any more)
+@Deprecated // OK
 public class IndexCombinatorSearcher extends Searcher {
 
     public static final String MIXED_RECALL_REWRITE = "MixedRecallRewrite";
