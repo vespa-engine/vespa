@@ -23,7 +23,11 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.charset.Charset;
 import java.util.Map;
 
@@ -348,6 +352,11 @@ public class VdsVisit {
                 .desc("Output documents as JSON")
                 .hasArg(false)
                 .build());
+        options.addOption(Option.builder()
+                .longOpt("xmloutput")
+                .desc("Output documents as XML")
+                .hasArg(false)
+                .build());
 
         options.addOption(Option.builder()
                 .longOpt("bucketspace")
@@ -371,7 +380,7 @@ public class VdsVisit {
         private boolean abortOnClusterDown = false;
         private int processTime = 0;
         private int fullTimeout = 7 * 24 * 60 * 60 * 1000;
-        private boolean jsonOutput = false;
+        private boolean jsonOutput = false; // TODO VESPA 7 make it default to true.
 
         public VisitorParameters getVisitorParameters() {
             return visitorParameters;
@@ -440,6 +449,7 @@ public class VdsVisit {
         public void setJsonOutput(boolean jsonOutput) {
             this.jsonOutput = jsonOutput;
         }
+        public boolean getJsonOutput() { return jsonOutput; }
     }
 
     protected static class ArgumentParser {
@@ -575,6 +585,8 @@ public class VdsVisit {
             }
             if (line.hasOption("jsonoutput")) {
                 allParams.setJsonOutput(true);
+            } else if (line.hasOption("xmloutput")) {
+                allParams.setJsonOutput(false);
             }
 
             allParams.setVisitorParameters(params);
