@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
+import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyUtils;
@@ -21,6 +22,7 @@ import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import javax.net.ssl.SSLContext;
@@ -37,6 +39,7 @@ import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.logging.Logger;
 
 import static java.util.Collections.singleton;
 
@@ -46,6 +49,8 @@ import static java.util.Collections.singleton;
  * @author bjorncs
  */
 public class AthenzCredentialsMaintainer {
+
+    private static final Logger logger = Logger.getLogger(AthenzCredentialsMaintainer.class.getName());
 
     private static final Duration EXPIRY_MARGIN = Duration.ofDays(1);
     private static final Duration REFRESH_PERIOD = Duration.ofDays(1);
@@ -95,43 +100,42 @@ public class AthenzCredentialsMaintainer {
         this.clock = Clock.systemUTC();
     }
 
-    public void converge() {
+    public void converge(NodeAgentContext context) {
         try {
-            if (!enabled) {
-                log.debug("Feature disabled on this host - not fetching certificate");
-                return;
-            }
-            log.debug("Checking certificate");
-            Instant now = clock.instant();
+            context.log(logger, LogLevel.DEBUG, "Checking certificate");
             if (!Files.exists(privateKeyFile) || !Files.exists(certificateFile) || !Files.exists(identityDocumentFile)) {
-                log.info("Certificate/private key/identity document file does not exist");
+                context.log(logger, "Certificate/private key/identity document file does not exist");
                 Files.createDirectories(privateKeyFile.getParent());
                 Files.createDirectories(certificateFile.getParent());
                 Files.createDirectories(identityDocumentFile.getParent());
-                registerIdentity();
+                registerIdentity(context);
                 return;
             }
-            X509Certificate certificate = readCertificateFromFile();
+
+            X509Certificate certificate = readCertificateFromFile(certificateFile);
+            Instant now = clock.instant();
             Instant expiry = certificate.getNotAfter().toInstant();
             if (isCertificateExpired(expiry, now)) {
-                log.info(String.format("Certificate has expired (expiry=%s)", expiry.toString()));
-                registerIdentity();
+                context.log(logger, "Certificate has expired (expiry=%s)", expiry.toString());
+                registerIdentity(context);
                 return;
             }
+
             Duration age = Duration.between(certificate.getNotBefore().toInstant(), now);
             if (shouldRefreshCredentials(age)) {
-                log.info(String.format("Certificate is ready to be refreshed (age=%s)", age.toString()));
+                context.log(logger, "Certificate is ready to be refreshed (age=%s)", age.toString());
                 if (shouldThrottleRefreshAttempts(now)) {
-                    log.warning(String.format("Skipping refresh attempt as last refresh was on %s (less than %s ago)",
-                                              lastRefreshAttempt.toString(), REFRESH_BACKOFF.toString()));
+                    context.log(logger, LogLevel.WARNING, String.format(
+                            "Skipping refresh attempt as last refresh was on %s (less than %s ago)",
+                            lastRefreshAttempt.toString(), REFRESH_BACKOFF.toString()));
                     return;
                 } else {
                     lastRefreshAttempt = now;
-                    refreshIdentity();
+                    refreshIdentity(context);
                     return;
                 }
             }
-            log.debug("Certificate is still valid");
+            context.log(logger, LogLevel.DEBUG, "Certificate is still valid");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -159,17 +163,8 @@ public class AthenzCredentialsMaintainer {
         return REFRESH_BACKOFF.compareTo(Duration.between(lastRefreshAttempt, now)) > 0;
     }
 
-    private X509Certificate readCertificateFromFile() throws IOException {
-        String pemEncodedCertificate = new String(Files.readAllBytes(certificateFile));
-        return X509CertificateUtils.fromPem(pemEncodedCertificate);
-    }
-
-    private boolean isCertificateExpired(Instant expiry, Instant now) {
-        return now.isAfter(expiry.minus(EXPIRY_MARGIN));
-    }
-
     @SuppressWarnings("deprecation")
-    private void registerIdentity() {
+    private void registerIdentity(NodeAgentContext context) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         SignedIdentityDocument signedIdentityDocument = identityDocumentClient.getNodeIdentityDocument(hostname);
         com.yahoo.vespa.athenz.tls.Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
@@ -185,14 +180,14 @@ public class AthenzCredentialsMaintainer {
                             csr);
             EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
             writePrivateKeyAndCertificate(keyPair.getPrivate(), instanceIdentity.certificate());
-            log.info("Instance successfully registered and credentials written to file");
+            context.log(logger, "Instance successfully registered and credentials written to file");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
     @SuppressWarnings("deprecation")
-    private void refreshIdentity() {
+    private void refreshIdentity(NodeAgentContext context) {
         SignedIdentityDocument identityDocument = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         com.yahoo.vespa.athenz.tls.Pkcs10Csr csr = csrGenerator.generateInstanceCsr(containerIdentity, identityDocument.providerUniqueId(), identityDocument.ipAddresses(), keyPair);
@@ -211,17 +206,17 @@ public class AthenzCredentialsMaintainer {
                                 false,
                                 csr);
                 writePrivateKeyAndCertificate(keyPair.getPrivate(), instanceIdentity.certificate());
-                log.info("Instance successfully refreshed and credentials written to file");
+                context.log(logger, "Instance successfully refreshed and credentials written to file");
             } catch (ZtsClientException e) {
                 if (e.getErrorCode() == 403 && e.getDescription().startsWith("Certificate revoked")) {
-                    log.error("Certificate cannot be refreshed as it is revoked by ZTS - re-registering the instance now", e);
-                    registerIdentity();
+                    context.log(logger, LogLevel.ERROR, "Certificate cannot be refreshed as it is revoked by ZTS - re-registering the instance now", e);
+                    registerIdentity(context);
                 } else {
                     throw e;
                 }
             }
         } catch (Exception e) {
-            log.error("Certificate refresh failed: " + e.getMessage(), e);
+            context.log(logger, LogLevel.ERROR, "Certificate refresh failed: " + e.getMessage(), e);
         }
     }
 
@@ -239,4 +234,12 @@ public class AthenzCredentialsMaintainer {
         return Paths.get(file.toAbsolutePath().toString() + ".tmp");
     }
 
+    private static X509Certificate readCertificateFromFile(Path certificateFile) throws IOException {
+        String pemEncodedCertificate = new String(Files.readAllBytes(certificateFile));
+        return X509CertificateUtils.fromPem(pemEncodedCertificate);
+    }
+
+    private static boolean isCertificateExpired(Instant expiry, Instant now) {
+        return now.isAfter(expiry.minus(EXPIRY_MARGIN));
+    }
 }

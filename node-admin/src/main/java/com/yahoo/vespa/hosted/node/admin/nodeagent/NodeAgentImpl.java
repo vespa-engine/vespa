@@ -516,7 +516,7 @@ public class NodeAgentImpl implements NodeAgent {
                 startServicesIfNeeded();
                 resumeNodeIfNeeded(node);
 
-                athenzCredentialsMaintainer.converge();
+                athenzCredentialsMaintainer.converge(context);
 
                 doBeforeConverge(node);
 
