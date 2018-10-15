@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
@@ -50,7 +49,7 @@ public class ControllerMaintenance extends AbstractComponent {
     private final ContactInformationMaintainer contactInformationMaintainer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
-    public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
+    public ControllerMaintenance(MaintainerConfig maintainerConfig, Controller controller, CuratorDb curator,
                                  JobControl jobControl, Metric metric, Chef chefClient,
                                  DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues,
                                  NameService nameService, NodeRepositoryClientInterface nodeRepositoryClient,
@@ -73,7 +72,7 @@ public class ControllerMaintenance extends AbstractComponent {
         jobRunner = new JobRunner(controller, Duration.ofSeconds(30), jobControl);
         osUpgraders = osUpgraders(controller, jobControl);
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
-        contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, organization, apiAuthorityConfig);
+        contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, organization);
     }
 
     public Upgrader upgrader() { return upgrader; }
