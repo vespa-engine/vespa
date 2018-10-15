@@ -4,6 +4,8 @@ package com.yahoo.prelude.query.parser.test;
 import com.yahoo.language.Language;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.IntItem;
@@ -22,6 +24,7 @@ import com.yahoo.prelude.query.parser.TestLinguistics;
 import com.yahoo.search.Query;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;
@@ -2058,13 +2061,17 @@ public class ParseTestCase {
 
     @Test
     public void testExactMatchParsing1() {
-        IndexFacts indexFacts = ParsingTester.createIndexFacts();
-        Index index1=new Index("testexact1");
-        index1.setExact(true,null);
-        Index index2=new Index("testexact2");
-        index2.setExact(true,"()/aa*::*&");
-        indexFacts.addIndex("testsd",index1);
-        indexFacts.addIndex("testsd",index2);
+        SearchDefinition sd = new SearchDefinition("testsd");
+
+        Index index1 = new Index("testexact1");
+        index1.setExact(true, null);
+        sd.addIndex(index1);
+
+        Index index2 = new Index("testexact2");
+        index2.setExact(true, "()/aa*::*&");
+        sd.addIndex(index2);
+
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
         ParsingTester customTester = new ParsingTester(indexFacts);
 
         customTester.assertParsed("testexact1:/,%&#", "testexact1:/,%&#", Query.Type.ALL);
@@ -2076,10 +2083,13 @@ public class ParseTestCase {
     /** Testing terminators containing control characters in conjunction with those control characters */
     @Test
     public void testExactMatchParsing2() {
-        IndexFacts indexFacts = ParsingTester.createIndexFacts();
-        Index index1=new Index("testexact1");
-        index1.setExact(true,"*!*");
-        indexFacts.addIndex("testsd",index1);
+        SearchDefinition sd = new SearchDefinition("testsd");
+
+        Index index1 = new Index("testexact1");
+        index1.setExact(true, "*!*");
+        sd.addIndex(index1);
+
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
         ParsingTester customTester = new ParsingTester(indexFacts);
 
         customTester.assertParsed("testexact1:_-_*!200","testexact1:_-_*!**!!",Query.Type.ALL);
@@ -2088,10 +2098,13 @@ public class ParseTestCase {
     /** Testing terminators containing control characters in conjunction with those control characters */
     @Test
     public void testExactMatchParsing3() {
-        IndexFacts indexFacts = ParsingTester.createIndexFacts();
-        Index index1=new Index("testexact1");
-        index1.setExact(true,"*");
-        indexFacts.addIndex("testsd",index1);
+        SearchDefinition sd = new SearchDefinition("testsd");
+
+        Index index1 = new Index("testexact1");
+        index1.setExact(true, "*");
+        sd.addIndex(index1);
+
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
         ParsingTester customTester = new ParsingTester(indexFacts);
 
         customTester.assertParsed("testexact1:_-_*!200","testexact1:_-_**!!",Query.Type.ALL);

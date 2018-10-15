@@ -5,8 +5,11 @@ package com.yahoo.search.querytransform;
 import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.SameElementItem;
 import org.junit.After;
 import org.junit.Before;
@@ -31,19 +34,16 @@ import com.yahoo.search.searchchain.Execution;
 /**
  * Tests term lowercasing in the search chain.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class LowercasingTestCase {
 
     private static final String TEDDY = "teddy";
     private static final String BAMSE = "bamse";
     private static final String SARR = "sarr";
-    IndexFacts settings;
-    Execution execution;
 
-    @Before
-    public void setUp() throws Exception {
-        IndexFacts f = new IndexFacts();
+    private IndexFacts createIndexFacts() {
+        SearchDefinition sd = new SearchDefinition("nalle");
         Index bamse = new Index(BAMSE);
         Index teddy = new Index(TEDDY);
         Index sarrBamse = new Index(SARR + "." + BAMSE);
@@ -54,25 +54,22 @@ public class LowercasingTestCase {
         sarrBamse.setLowercase(true);
         sarrTeddy.setLowercase(true);
         defaultIndex.setLowercase(true);
-        f.addIndex("nalle", bamse);
-        f.addIndex("nalle", teddy);
-        f.addIndex("nalle", defaultIndex);
-        f.addIndex("nalle", sarrBamse);
-        f.addIndex("nalle", sarrTeddy);
-        f.freeze();
-        settings = f;
-        execution = new Execution(new Chain<Searcher>(
-                new VespaLowercasingSearcher(new LowercasingConfig(new LowercasingConfig.Builder()))),
-                Execution.Context.createContextStub(settings));
+        sd.addIndex(bamse);
+        sd.addIndex(teddy);
+        sd.addIndex(defaultIndex);
+        sd.addIndex(sarrBamse);
+        sd.addIndex(sarrTeddy);
+        return new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
     }
 
-    @After
-    public void tearDown() throws Exception {
-        execution = null;
+    private Execution createExecution() {
+        return new Execution(new Chain<Searcher>(
+                new VespaLowercasingSearcher(new LowercasingConfig(new LowercasingConfig.Builder()))),
+                Execution.Context.createContextStub(createIndexFacts()));
     }
 
     @Test
-    public void smoke() {
+    public void simple() {
         Query q = new Query();
         AndItem root = new AndItem();
         WordItem tmp;
@@ -84,7 +81,7 @@ public class LowercasingTestCase {
         root.addItem(tmp);
         q.getModel().getQueryTree().setRoot(root);
 
-        Result r = execution.search(q);
+        Result r = createExecution().search(q);
         root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
         WordItem w0 = (WordItem) root.getItem(0);
         WordItem w1 = (WordItem) root.getItem(1);
@@ -129,7 +126,7 @@ public class LowercasingTestCase {
 
         q.getModel().getQueryTree().setRoot(a0);
 
-        Result r = execution.search(q);
+        Result r = createExecution().search(q);
         AndItem root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
         tmp = (WordItem) root.getItem(0);
         assertEquals("nalle0", tmp.getWord());
@@ -162,7 +159,7 @@ public class LowercasingTestCase {
         tmp.addToken("dEf", 5);
         root.addItem(tmp);
         q.getModel().getQueryTree().setRoot(root);
-        Result r = execution.search(q);
+        Result r = createExecution().search(q);
         root = (AndItem) r.getQuery().getModel().getQueryTree().getRoot();
         WeightedSetItem w0 = (WeightedSetItem) root.getItem(0);
         WeightedSetItem w1 = (WeightedSetItem) root.getItem(1);
@@ -174,11 +171,11 @@ public class LowercasingTestCase {
 
     @Test
     public void testDisableLowercasingWeightedSet() {
-        execution = new Execution(new Chain<Searcher>(
+        Execution execution = new Execution(new Chain<Searcher>(
                 new VespaLowercasingSearcher(new LowercasingConfig(
                         new LowercasingConfig.Builder()
                                 .transform_weighted_sets(false)))),
-                Execution.Context.createContextStub(settings));
+                Execution.Context.createContextStub(createIndexFacts()));
 
         Query q = new Query();
         AndItem root = new AndItem();
@@ -202,8 +199,8 @@ public class LowercasingTestCase {
 
     @Test
     public void testLowercasingWordAlternatives() {
-        execution = new Execution(new Chain<Searcher>(new VespaLowercasingSearcher(new LowercasingConfig(
-                new LowercasingConfig.Builder().transform_weighted_sets(false)))), Execution.Context.createContextStub(settings));
+        Execution execution = new Execution(new Chain<Searcher>(new VespaLowercasingSearcher(new LowercasingConfig(
+                new LowercasingConfig.Builder().transform_weighted_sets(false)))), Execution.Context.createContextStub(createIndexFacts()));
 
         Query q = new Query();
         WordAlternativesItem root;
@@ -224,17 +221,18 @@ public class LowercasingTestCase {
     }
 
     @Test
-    public void testLowercaseingSameElement() {
+    public void testLowercasingSameElement() {
         Query q = new Query();
         SameElementItem root = new SameElementItem(SARR);
         root.addItem(new WordItem("ABC", BAMSE, true));
         root.addItem(new WordItem("DEF", TEDDY, true));
         q.getModel().getQueryTree().setRoot(root);
-        Result r = execution.search(q);
+        Result r = createExecution().search(q);
         root = (SameElementItem) r.getQuery().getModel().getQueryTree().getRoot();
         WordItem w0 = (WordItem) root.getItem(0);
         WordItem w1 = (WordItem) root.getItem(1);
         assertEquals("abc", w0.getWord());
         assertEquals("def", w1.getWord());
     }
+
 }

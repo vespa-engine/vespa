@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import com.yahoo.search.config.IndexInfoConfig;
@@ -21,15 +20,13 @@ import com.yahoo.container.QrSearchersConfig;
  */
 public final class IndexModel {
 
-    private static final Logger log = Logger.getLogger(IndexModel.class.getName());
-
-    // Copied from MasterClustersInfoUpdater. It's a temporary workaround for IndexFacts.
+    // Copied from MasterClustersInfoUpdater. It's a temporary workaround for IndexFacts
     private Map<String, List<String>> masterClusters;
     private Map<String, SearchDefinition> searchDefinitions;
     private SearchDefinition unionSearchDefinition;
 
     /**
-     * Use IndexModel as a pure wrapper for the parameters given.
+     * Create an index model.
      */
     public IndexModel(Map<String, List<String>> masterClusters, Collection<SearchDefinition> searchDefinitions) {
         this.masterClusters = masterClusters;
@@ -112,6 +109,7 @@ public final class IndexModel {
 
         for (SearchDefinition sd : searchDefinitions) {
             for (Index index : sd.indices().values()) {
+                union.getOrCreateIndex(index.getName());
                 for (String command : index.allCommands())
                     union.addCommand(index.getName(), command);
                 for (String alias : index.aliases())

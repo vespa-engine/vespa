@@ -253,8 +253,8 @@ public class Index {
     public int getGramSize() { return gramSize; }
 
     public void setNGram(boolean nGram,int gramSize) {
-        this.isNGram=nGram;
-        this.gramSize=gramSize;
+        this.isNGram = nGram;
+        this.gramSize = gramSize;
     }
 
     public void setDynamicSummary(boolean dynamicSummary) { this.dynamicSummary=dynamicSummary; }

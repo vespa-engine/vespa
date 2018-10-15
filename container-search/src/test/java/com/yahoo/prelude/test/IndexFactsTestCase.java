@@ -134,10 +134,13 @@ public class IndexFactsTestCase {
     }
 
     private void assertExactIsWorking(String indexName) {
-        Index index=new Index(indexName);
+        SearchDefinition sd = new SearchDefinition("artist");
+
+        Index index = new Index(indexName);
         index.setExact(true,"^^^");
-        IndexFacts indexFacts = createIndexFacts();
-        indexFacts.addIndex("artist",index);
+        sd.addIndex(index);
+
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
         Query query = new Query();
         query.getModel().getSources().add("artist");
         assertTrue(indexFacts.newSession(query).getIndex(indexName).isExact());
@@ -150,7 +153,7 @@ public class IndexFactsTestCase {
         assertExactIsWorking("test");
         assertExactIsWorking("artist_name_ft_norm1");
 
-        List search=new ArrayList();
+        List search = new ArrayList();
         search.add("three");
         Query query = new Query();
         query.getModel().getSources().add("three");
@@ -176,13 +179,15 @@ public class IndexFactsTestCase {
 
     @Test
     public void testComplexExactMatching() {
-        IndexFacts indexFacts = createIndexFacts();
+        SearchDefinition sd = new SearchDefinition("foobar");
         String u_name = "foo_bar";
         Index u_index = new Index(u_name);
         u_index.setExact(true, "^^^");
         Index b_index = new Index("bar");
-        indexFacts.addIndex("foobar", u_index);
-        indexFacts.addIndex("foobar", b_index);
+        sd.addIndex(u_index);
+        sd.addIndex(b_index);
+
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
         Query query = new Query();
         query.getModel().getSources().add("foobar");
         IndexFacts.Session session = indexFacts.newSession(query);

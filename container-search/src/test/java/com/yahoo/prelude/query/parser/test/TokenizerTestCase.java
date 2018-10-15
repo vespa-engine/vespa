@@ -4,6 +4,8 @@ package com.yahoo.prelude.query.parser.test;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
 import com.yahoo.prelude.query.parser.SpecialTokens;
 import com.yahoo.prelude.query.parser.Token;
@@ -304,13 +306,17 @@ public class TokenizerTestCase {
 
     @Test
     public void testExactMatchTokenization() {
-        Index index1=new Index("testexact1");
-        index1.setExact(true,null);
-        Index index2=new Index("testexact2");
-        index2.setExact(true,"()/aa*::*&");
-        IndexFacts facts = new IndexFacts();
-        facts.addIndex("testsd",index1);
-        facts.addIndex("testsd",index2);
+        SearchDefinition sd = new SearchDefinition("testsd");
+
+        Index index1 = new Index("testexact1");
+        index1.setExact(true, null);
+        sd.addIndex(index1);
+
+        Index index2 = new Index("testexact2");
+        index2.setExact(true, "()/aa*::*&");
+        sd.addIndex(index2);
+
+        IndexFacts facts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
         IndexFacts.Session session = facts.newSession(Collections.emptySet(), Collections.emptySet());
         Tokenizer tokenizer=new Tokenizer(new SimpleLinguistics());
         List<?> tokens=tokenizer.tokenize("normal a:b (normal testexact1:/,%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*& b:c", "default", session);
@@ -344,16 +350,20 @@ public class TokenizerTestCase {
 
     @Test
     public void testExactMatchTokenizationTerminatorTerminatesQuery() {
-        Index index1=new Index("testexact1");
-        index1.setExact(true,null);
-        Index index2=new Index("testexact2");
-        index2.setExact(true,"()/aa*::*&");
-        IndexFacts facts = new IndexFacts();
-        facts.addIndex("testsd",index1);
-        facts.addIndex("testsd",index2);
-        Tokenizer tokenizer=new Tokenizer(new SimpleLinguistics());
+        SearchDefinition sd = new SearchDefinition("testsd");
+
+        Index index1 = new Index("testexact1");
+        index1.setExact(true, null);
+        sd.addIndex(index1);
+
+        Index index2 = new Index("testexact2");
+        index2.setExact(true, "()/aa*::*&");
+        sd.addIndex(index2);
+
+        IndexFacts facts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
         IndexFacts.Session session = facts.newSession(Collections.emptySet(), Collections.emptySet());
-        List<?> tokens=tokenizer.tokenize("normal a:b (normal testexact1:/,%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*&", session);
+        List<?> tokens = tokenizer.tokenize("normal a:b (normal testexact1:/,%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*&", session);
         assertEquals(new Token(WORD, "normal"), tokens.get(0));
         assertEquals(new Token(SPACE, " "), tokens.get(1));
         assertEquals(new Token(WORD, "a"), tokens.get(2));
@@ -377,16 +387,20 @@ public class TokenizerTestCase {
 
     @Test
     public void testExactMatchTokenizationWithTerminatorTerminatedByEndOfString() {
-        Index index1=new Index("testexact1");
-        index1.setExact(true,null);
-        Index index2=new Index("testexact2");
-        index2.setExact(true,"()/aa*::*&");
-        IndexFacts facts = new IndexFacts();
-        facts.addIndex("testsd",index1);
-        facts.addIndex("testsd",index2);
-        Tokenizer tokenizer=new Tokenizer(new SimpleLinguistics());
+        SearchDefinition sd = new SearchDefinition("testsd");
+
+        Index index1 = new Index("testexact1");
+        index1.setExact(true,  null);
+        sd.addIndex(index1);
+
+        Index index2 = new Index("testexact2");
+        index2.setExact(true, "()/aa*::*&");
+        sd.addIndex(index2);
+
+        IndexFacts facts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
         IndexFacts.Session session = facts.newSession(Collections.emptySet(), Collections.emptySet());
-        List<?> tokens=tokenizer.tokenize("normal a:b (normal testexact1:/,%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*", session);
+        List<?> tokens = tokenizer.tokenize("normal a:b (normal testexact1:/,%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*", session);
         assertEquals(new Token(WORD, "normal"), tokens.get(0));
         assertEquals(new Token(SPACE, " "), tokens.get(1));
         assertEquals(new Token(WORD, "a"), tokens.get(2));
@@ -410,16 +424,20 @@ public class TokenizerTestCase {
 
     @Test
     public void testExactMatchTokenizationEndsByColon() {
-        Index index1=new Index("testexact1");
-        index1.setExact(true,null);
-        Index index2=new Index("testexact2");
-        index2.setExact(true,"()/aa*::*&");
-        IndexFacts facts = new IndexFacts();
-        facts.addIndex("testsd",index1);
-        facts.addIndex("testsd",index2);
-        Tokenizer tokenizer=new Tokenizer(new SimpleLinguistics());
+        SearchDefinition sd = new SearchDefinition("testsd");
+
+        Index index1 = new Index("testexact1");
+        index1.setExact(true, null);
+        sd.addIndex(index1);
+
+        Index index2 = new Index("testexact2");
+        index2.setExact(true, "()/aa*::*&");
+        sd.addIndex(index2);
+
+        IndexFacts facts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+        Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
         IndexFacts.Session session = facts.newSession(Collections.emptySet(), Collections.emptySet());
-        List<?> tokens=tokenizer.tokenize("normal a:b (normal testexact1:!/%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*&b:", session);
+        List<?> tokens = tokenizer.tokenize("normal a:b (normal testexact1:!/%#%&+-+ ) testexact2:ho_/&%&/()/aa*::*&b:", session);
         assertEquals(new Token(WORD, "normal"), tokens.get(0));
         assertEquals(new Token(SPACE, " "), tokens.get(1));
         assertEquals(new Token(WORD, "a"), tokens.get(2));
@@ -444,13 +462,17 @@ public class TokenizerTestCase {
 
     @Test
     public void testExactMatchHeuristics() {
-        Index index1=new Index("testexact1");
+        SearchDefinition sd = new SearchDefinition("testsd");
+
+        Index index1 = new Index("testexact1");
         index1.setExact(true, null);
-        Index index2=new Index("testexact2");
+        sd.addIndex(index1);
+
+        Index index2 = new Index("testexact2");
         index2.setExact(true, "()/aa*::*&");
-        IndexFacts indexFacts = new IndexFacts();
-        indexFacts.addIndex("testsd", index1);
-        indexFacts.addIndex("testsd", index2);
+        sd.addIndex(index2);
+
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
         IndexFacts.Session facts = indexFacts.newSession(Collections.emptySet(), Collections.emptySet());
 
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());

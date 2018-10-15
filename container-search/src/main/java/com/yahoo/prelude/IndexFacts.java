@@ -183,6 +183,7 @@ public class IndexFacts {
         }
 
         DocumentTypeListOffset sd = chooseSearchDefinition(documentTypes, 0);
+
         while (sd != null) {
             Index index = sd.searchDefinition.getIndex(canonicName);
 
