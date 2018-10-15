@@ -64,8 +64,9 @@ public class IndexFacts {
 
     @SuppressWarnings({"deprecation"})
     public IndexFacts(IndexModel indexModel) {
-        if (indexModel.getSearchDefinitions() != null && indexModel.getUnionSearchDefinition() != null) {
-            setSearchDefinitions(indexModel.getSearchDefinitions(), indexModel.getUnionSearchDefinition());
+        if (indexModel.getSearchDefinitions() != null) {
+            this.searchDefinitions = indexModel.getSearchDefinitions();
+            this.unionSearchDefinition = indexModel.getUnionSearchDefinition();
         }
         if (indexModel.getMasterClusters() != null) {
             setMasterClusters(indexModel.getMasterClusters());

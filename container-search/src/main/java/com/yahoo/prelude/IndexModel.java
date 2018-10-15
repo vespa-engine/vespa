@@ -127,7 +127,7 @@ public final class IndexModel {
 
     public Map<String, SearchDefinition> getSearchDefinitions() { return searchDefinitions; }
 
-    // TODO: Deprecate on Vespa 7 and remove on Vespa 8
+    // TODO: Deprecate on Vespa 7 and make package scope on Vespa 8
     public SearchDefinition getUnionSearchDefinition() { return unionSearchDefinition; }
 
 }
