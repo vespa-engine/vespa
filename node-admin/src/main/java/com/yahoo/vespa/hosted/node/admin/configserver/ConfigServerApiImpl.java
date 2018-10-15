@@ -58,19 +58,32 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
     private final CloseableHttpClient client;
 
+    // TODO: Remove after 2018-12-01
     public static ConfigServerApiImpl create(ConfigServerInfo info, SiaIdentityProvider provider) {
+        return create(info, provider, new AthenzIdentityVerifier(singleton(info.getConfigServerIdentity())));
+    }
+
+    public static ConfigServerApiImpl create(ConfigServerInfo info, SiaIdentityProvider provider, HostnameVerifier hostnameVerifier) {
         return new ConfigServerApiImpl(
                 info.getConfigServerUris(),
-                new AthenzIdentityVerifier(singleton(info.getConfigServerIdentity())),
+                hostnameVerifier,
                 provider);
+    }
+
+    // TODO: Remove after 2018-12-01
+    public static ConfigServerApiImpl createFor(ConfigServerInfo info,
+                                                SiaIdentityProvider provider,
+                                                HostName configServerHostname) {
+        return createFor(info, provider, new AthenzIdentityVerifier(singleton(info.getConfigServerIdentity())), configServerHostname);
     }
 
     public static ConfigServerApiImpl createFor(ConfigServerInfo info,
                                                 SiaIdentityProvider provider,
+                                                HostnameVerifier hostnameVerifier,
                                                 HostName configServerHostname) {
         return new ConfigServerApiImpl(
                 Collections.singleton(info.getConfigServerUri(configServerHostname.value())),
-                new AthenzIdentityVerifier(singleton(info.getConfigServerIdentity())),
+                hostnameVerifier,
                 provider);
     }
 
