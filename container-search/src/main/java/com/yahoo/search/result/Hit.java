@@ -484,7 +484,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      *
      * @deprecated do not use
      */
-    @Deprecated // TODO: Remove on Vespa 7
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public void changeFieldKey(String oldKey, String newKey) {
         Map<String,Object> fieldMap = getFieldMap();
         Object value = fieldMap.remove(oldKey);

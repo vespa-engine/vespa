@@ -321,7 +321,7 @@ public class FastHit extends Hit {
      *
      * @deprecated do not use
      */
-    @Deprecated
+    @Deprecated // OK
     @Override
     @SuppressWarnings("deprecation")
     public void changeFieldKey(String oldKey, String newKey) {
@@ -358,7 +358,8 @@ public class FastHit extends Hit {
     }
 
     /** @deprecated do not use */
-    @Deprecated // TODO: Make private on Vespa 7
+    // TODO: Make private on Vespa 7
+    @Deprecated
     public static String asHexString(GlobalId gid) {
         return asHexString(new StringBuilder(), gid).toString();
     }

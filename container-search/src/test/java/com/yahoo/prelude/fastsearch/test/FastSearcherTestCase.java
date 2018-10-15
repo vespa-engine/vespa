@@ -6,6 +6,7 @@ import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.search.Fs4Config;
+import com.yahoo.document.GlobalId;
 import com.yahoo.fs4.mplex.*;
 import com.yahoo.fs4.test.QueryTestCase;
 import com.yahoo.language.simple.SimpleLinguistics;
@@ -541,11 +542,22 @@ public class FastSearcherTestCase {
                 hit.getField("TITLE"));
         assertEquals("352", hit.getField("WORDS").toString());
         assertEquals(2003., hit.getRelevance().getScore(), 0.01d);
-        assertEquals("index:testhittype/234/" + FastHit.asHexString(hit.getGlobalId()), hit.getId().toString());
+        assertEquals("index:testhittype/234/" + asHexString(hit.getGlobalId()), hit.getId().toString());
         assertEquals("9190", hit.getField("BYTES").toString());
         assertEquals("testhittype", hit.getSource());
     }
 
+    private static String asHexString(GlobalId gid) {
+        StringBuilder sb = new StringBuilder();
+        byte[] rawGid = gid.getRawId();
+        for (byte b : rawGid) {
+            String hex = Integer.toHexString(0xFF & b);
+            if (hex.length() == 1)
+                sb.append('0');
+            sb.append(hex);
+        }
+        return sb.toString();
+    }
 
     @Test
     public void null_summary_is_included_in_trace() {
