@@ -48,7 +48,7 @@ public class IndexFacts {
      * @deprecated do not use
      */
     // TODO: Make this package private in Vespa 7
-    @Deprecated
+    @Deprecated // OK
     public static final String unionName = "unionOfAllKnown";
 
     /** A search definition which contains the union of all settings. */

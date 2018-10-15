@@ -518,8 +518,6 @@ public class FastSearcherTestCase {
         Chain<Searcher> chain = new Chain<>(fastSearcher);
         Execution e = new Execution(chain, Execution.Context.createContextStub());
         Pong pong = e.ping(new Ping());
-        assertTrue(pong.getPongPacket().isPresent());
-        assertEquals(127, pong.getPongPacket().get().getDocstamp());
         backend.shutdown();
         server.dispatch.socket.close();
         server.dispatch.connection.close();
