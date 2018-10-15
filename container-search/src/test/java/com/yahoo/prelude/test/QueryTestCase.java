@@ -4,7 +4,10 @@ package com.yahoo.prelude.test;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.QueryException;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
@@ -16,6 +19,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -30,18 +34,6 @@ import static org.junit.Assume.assumeTrue;
  * @author Bjorn Borud
  */
 public class QueryTestCase {
-
-    private final IndexFacts facts = new IndexFacts();
-
-    @Before
-    public void setUp() {
-        // Setup the indices we expect
-        facts.addIndex(null,"fast.type");
-        facts.addIndex(null,"def");
-        facts.addIndex(null,"default");
-        facts.addIndex(null,"keyword");
-        facts.addIndex(null,"content");
-    }
 
     /**
      * Basic test
@@ -377,9 +369,23 @@ public class QueryTestCase {
         return newQueryFromEncoded(com.yahoo.search.test.QueryTestCase.httpEncode(queryString), language, linguistics);
     }
 
+    private IndexFacts createIndexFacts() {
+        SearchDefinition sd = new SearchDefinition("test");
+        sd.addIndex(new Index("fast.type"));
+        sd.addIndex(new Index("def"));
+        sd.addIndex(new Index("default"));
+        sd.addIndex(new Index("keyword"));
+        sd.addIndex(new Index("content"));
+        return new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
+    }
+
     private Query newQueryFromEncoded(String encodedQueryString, Language language, Linguistics linguistics) {
         Query query = new Query(encodedQueryString);
-        query.getModel().setExecution(new Execution(new Execution.Context(null, facts, null, null, linguistics)));
+        query.getModel().setExecution(new Execution(new Execution.Context(null,
+                                                                          createIndexFacts(),
+                                                                          null,
+                                                                          null,
+                                                                          linguistics)));
         query.getModel().setLanguage(language);
         return query;
     }

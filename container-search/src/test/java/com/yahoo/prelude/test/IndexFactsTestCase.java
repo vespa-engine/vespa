@@ -74,11 +74,6 @@ public class IndexFactsTestCase {
         assertEquals("a:b",  q.getModel().getQueryTree().getRoot().toString());
         q = newQuery("?query=notarealindex:b", indexFacts);
         assertEquals("\"notarealindex b\"",  q.getModel().getQueryTree().getRoot().toString());
-
-        // Add an index to an SD which also happens to be the default
-        indexFacts.addIndex("one", "yetanothersynthetic");
-        q = newQuery("?query=yetanothersynthetic:b", indexFacts);
-        assertEquals("yetanothersynthetic:b",  q.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test

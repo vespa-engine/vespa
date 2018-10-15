@@ -319,7 +319,7 @@ public class IndexFacts {
      * @deprecated set indexes at creation time instead
      */
     // TODO: Remove on Vespa 7
-    @Deprecated
+    @Deprecated // OK
     public void addIndex(String sdName, String indexName) {
         ensureNotFrozen();
 
