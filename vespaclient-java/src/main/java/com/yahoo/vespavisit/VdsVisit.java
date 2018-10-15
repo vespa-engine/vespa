@@ -349,6 +349,12 @@ public class VdsVisit {
                 .hasArg(false)
                 .build());
 
+        options.addOption(Option.builder("x")
+              .longOpt("xmloutput")
+              .desc("Output documents as XML (default format)")
+              .hasArg(false)
+              .build());
+
         options.addOption(Option.builder()
                 .longOpt("bucketspace")
                 .hasArg(true)
@@ -573,7 +579,12 @@ public class VdsVisit {
                 throttlePolicy.setMaxPendingCount(((Number)line.getParsedOptionValue("maxpendingsuperbuckets")).intValue());
                 params.setThrottlePolicy(throttlePolicy);
             }
-            if (line.hasOption("jsonoutput")) {
+            boolean jsonOutput = line.hasOption("jsonoutput");
+            boolean xmlOutput = line.hasOption("xmloutput");
+            if (jsonOutput && xmlOutput) {
+                throw new IllegalArgumentException("Cannot combine both xml and json output");
+            }
+            if (jsonOutput) {
                 allParams.setJsonOutput(true);
             }
 
