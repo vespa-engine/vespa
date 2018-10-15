@@ -38,7 +38,7 @@ import java.util.Set;
  * @deprecated use YQL
  */
 // TODO: Remove on Vespa 7
-@Deprecated
+@Deprecated // OK
 public class QueryCombinator extends Searcher {
 
     private static final String QUERYPREFIX = "query.";

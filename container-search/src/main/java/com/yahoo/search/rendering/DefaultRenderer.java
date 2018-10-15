@@ -1,16 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.io.ByteWriter;
 import com.yahoo.net.URI;
-import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.hitfield.HitField;
 import com.yahoo.prelude.hitfield.JSONString;
 import com.yahoo.prelude.hitfield.XMLString;
-import com.yahoo.prelude.templates.UserTemplate;
 import com.yahoo.processing.rendering.AsynchronousSectionedRenderer;
 import com.yahoo.processing.response.Data;
 import com.yahoo.processing.response.DataList;
@@ -33,11 +30,8 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
-
-// TODO: Rename to XmlRenderer and make this a deprecated empty subclass.
 
 /**
  * XML rendering of search results. This is NOT the default (but it once was).
@@ -46,7 +40,8 @@ import java.util.stream.Collectors;
  * @deprecated use JsonRenderer instead
  */
 @SuppressWarnings({ "rawtypes", "deprecation" })
-@Deprecated // TODO: Remove on Vespa 7
+@Deprecated // OK
+// TODO: Rename to XmlRenderer on Vespa 7
 public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result> {
 
     public static final String  DEFAULT_MIMETYPE    = "text/xml";

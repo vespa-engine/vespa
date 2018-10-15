@@ -135,7 +135,9 @@ import java.util.logging.Logger;
  * </dl>
  *
  * @author Arne Bergene Fossaa
+ * @deprecated
  */
+// TODO: Remove on Vespa 7
 @Deprecated
 public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
 

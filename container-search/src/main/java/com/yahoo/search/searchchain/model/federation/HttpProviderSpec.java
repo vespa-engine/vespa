@@ -17,6 +17,7 @@ import java.util.List;
  */
 @Immutable
 public class HttpProviderSpec {
+
     public enum Type {
         vespa(com.yahoo.search.federation.vespa.VespaSearcher.class);
 

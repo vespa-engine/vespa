@@ -530,7 +530,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /**
      * @deprecated do not use
      */
-    @Deprecated // TODO: Remove on Vespa 7
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public boolean requestHasProperty(String name) {
         return httpRequest.hasProperty(name);
     }
@@ -644,7 +645,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      *
      * @deprecated this is ignored
      */
-    @Deprecated // TODO: Remove on Vespa 7
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public void setCompress(boolean ignored) { }
 
     /**
@@ -652,7 +654,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      *
      * @deprecated this always returns false
      */
-    @Deprecated // TODO: Remove on Vespa 7
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public boolean getCompress() { return false; }
 
     /** Returns a string describing this query */

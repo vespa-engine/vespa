@@ -38,7 +38,9 @@ import java.util.logging.Logger;
  *
  * @author Arne Bergene Fossaa
  * @author bratseth
+ * @deprecated
  */
+// TODO: Remove on Vespa 7
 @Deprecated
 public abstract class HTTPProviderSearcher extends HTTPSearcher {
 

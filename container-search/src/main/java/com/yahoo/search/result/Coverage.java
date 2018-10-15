@@ -6,7 +6,7 @@ import com.google.common.annotations.Beta;
 /**
  * The coverage report for a result set.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @author baldersheim
  */
 public class Coverage extends com.yahoo.container.handler.Coverage {

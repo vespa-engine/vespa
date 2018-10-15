@@ -155,8 +155,12 @@ public class Templating {
      * Returns the templates which will render the result. This is never null.
      * If default rendering is used, it is a TemplateSet containing no
      * templates.
+     *
+     * @deprecated use a renderer instead
      */
     @SuppressWarnings("rawtypes")
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public UserTemplate getTemplates() {
         if (renderer == null) {
             return TemplateSet.getDefault();

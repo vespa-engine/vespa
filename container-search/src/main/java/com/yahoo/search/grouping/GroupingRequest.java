@@ -128,7 +128,8 @@ public class GroupingRequest {
      * @return this, to allow chaining.
      * @deprecated this is a noop
      */
-    @Deprecated // TODO: Remove on Vespa 7
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public GroupingRequest setResultGroup(RootGroup group) {
         return this;
     }
@@ -164,7 +165,8 @@ public class GroupingRequest {
      * @deprecated use query.getSelect().getGrouping()
      */
     @SuppressWarnings({ "unchecked" })
-    @Deprecated
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public static List<GroupingRequest> getRequests(Query query) {
         return query.getSelect().getGrouping();
     }
