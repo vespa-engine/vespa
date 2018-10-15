@@ -175,7 +175,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      */
     @Deprecated
     public List<FieldUpdate> getFieldUpdates() {
-        return Collections.unmodifiableList(fieldUpdates);
+        return Collections.unmodifiableList(new ArrayList<>(id2FieldUpdateMap.values()));
     }
 
     /**
