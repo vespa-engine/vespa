@@ -37,6 +37,7 @@ public class CommandLineOptions {
     public static final String PRIORITY_OPTION = "priority";
     public static final String LOADTYPE_OPTION = "loadtype";
     public static final String JSONOUTPUT_OPTION = "jsonoutput";
+    public static final String XMLOUTPUT_OPTION = "xmloutput";
 
     private final Options options = createOptions();
     private final InputStream stdIn;
@@ -135,6 +136,11 @@ public class CommandLineOptions {
                 .hasArg(false)
                 .desc("JSON output")
                 .longOpt(JSONOUTPUT_OPTION).build());
+ 
+        options.addOption(Option.builder("x")
+                .hasArg(false)
+                .desc("XML output (default format)")
+                .longOpt(XMLOUTPUT_OPTION).build());
 
         return options;
     }
@@ -165,11 +171,15 @@ public class CommandLineOptions {
             boolean noRetry = cl.hasOption(NORETRY_OPTION);
             boolean showDocSize = cl.hasOption(SHOWDOCSIZE_OPTION);
             boolean jsonOutput = cl.hasOption(JSONOUTPUT_OPTION);
+            boolean xmlOutput = cl.hasOption(XMLOUTPUT_OPTION);
             int trace = getTrace(cl);
             DocumentProtocol.Priority priority = getPriority(cl);
             double timeout = getTimeout(cl);
             Iterator<String> documentIds = getDocumentIds(cl);
 
+            if (jsonOutput && xmlOutput) {
+                throw new IllegalArgumentException("Cannot combine both xml and json output");
+            }
             if (printIdsOnly && headersOnly) {
                 throw new IllegalArgumentException("Print ids and headers only options are mutually exclusive.");
             }
