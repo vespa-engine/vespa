@@ -211,26 +211,6 @@ public class XML {
     private static final Scan scanner = new Scan();
 
     /**
-     * Parses an XML file without allowing external DTD's
-     *
-     * @throws IllegalArgumentException if parsing fails
-     */
-    public static Document parse(File xmlFile) {
-        try {
-            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            // Prevent XXE
-            dbFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            return dbFactory.newDocumentBuilder().parse(xmlFile);
-        }
-        catch (ParserConfigurationException e) {
-            throw new IllegalStateException("Could not disallow-doctype-decl", e);
-        }
-        catch (IOException | SAXException e) {
-            throw new IllegalArgumentException("Cannot parse '" + xmlFile + "'", e);
-        }
-    }
-
-    /**
      * Replaces the characters that need to be escaped with their corresponding
      * character entities.
      *
@@ -418,18 +398,43 @@ public class XML {
     }
 
     /**
-     * Returns the Document of an XML file reader
+     * Returns the parsed Document from an XML file
      *
-     * @throws RuntimeException if the root Document cannot be returned
+     * @throws IllegalArgumentException if the file cannot be opened or parsed
+     */
+    public static Document getDocument(File xmlFile) {
+        try {
+            return getDocumentBuilder().parse(xmlFile);
+        }
+        catch (IOException e) {
+            throw new IllegalArgumentException("Could not read '" + xmlFile + "'", e);
+        }
+        catch (SAXParseException e) {
+            throw new IllegalArgumentException("Could not parse '" + xmlFile +
+                                               "', error at line " + e.getLineNumber() + ", column " + e.getColumnNumber(), e);
+        }
+        catch (SAXException e) {
+            throw new IllegalArgumentException("Could not parse '" + xmlFile + "'", e);
+        }
+    }
+
+    /**
+     * Returns the parsed Document from an XML file
+     *
+     * @throws IllegalArgumentException if the file cannot be opened or parsed
      */
     public static Document getDocument(Reader reader) {
         try {
             return getDocumentBuilder().parse(new InputSource(reader));
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new IllegalArgumentException("Could not read '" + reader + "'", e);
-        } catch (SAXParseException e) {
-            throw new IllegalArgumentException("Could not parse '" + reader + "', error at line " + e.getLineNumber() + ", column " + e.getColumnNumber(), e);
-        } catch (SAXException e) {
+        }
+        catch (SAXParseException e) {
+            throw new IllegalArgumentException("Could not parse '" + reader +
+                                               "', error at line " + e.getLineNumber() + ", column " + e.getColumnNumber(), e);
+        }
+        catch (SAXException e) {
             throw new IllegalArgumentException("Could not parse '" + reader + "'", e);
         }
     }
@@ -437,16 +442,15 @@ public class XML {
     /**
      * Returns the Document of the string XML payload
      */
-    public static Document getDocument(String string) {
-        return getDocument(new StringReader(string));
+    public static Document getDocument(String xmlString) {
+        return getDocument(new StringReader(xmlString));
     }
 
     /**
      * Creates a new XML DocumentBuilder
      *
      * @return a DocumentBuilder
-     * @throws RuntimeException
-     *             if we fail to create one
+     * @throws RuntimeException if we fail to create one
      */
     public static DocumentBuilder getDocumentBuilder() {
         return getDocumentBuilder("com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl", null);
@@ -455,13 +459,9 @@ public class XML {
     /**
      * Creates a new XML DocumentBuilder
      *
-     * @param implementation
-     *            which jaxp implementation should be used
-     * @param classLoader
-     *            which class loader should be used when getting a new
-     *            DocumentBuilder
-     * @throws RuntimeException
-     *             if we fail to create one
+     * @param implementation which jaxp implementation should be used
+     * @param classLoader which class loader should be used when getting a new DocumentBuilder
+     * @throws RuntimeException if we fail to create one
      * @return a DocumentBuilder
      */
     public static DocumentBuilder getDocumentBuilder(String implementation, ClassLoader classLoader) {
@@ -469,17 +469,18 @@ public class XML {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance(implementation, classLoader);
             factory.setNamespaceAware(true);
             factory.setXIncludeAware(true);
+            // Prevent XXE
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             return factory.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
-            throw new RuntimeException("Could not create an XML builder");
+            throw new RuntimeException("Could not create an XML builder", e);
         }
     }
 
     /**
      * Returns the child Element objects from a w3c dom spec
      *
-     * @return List of elements. Empty list (never null) if none found or if the
-     *         given element is null
+     * @return List of elements. Empty list (never null) if none found or if the given element is null
      */
     public static List<Element> getChildren(Element spec) {
         List<Element> children = new ArrayList<>();
@@ -500,8 +501,7 @@ public class XML {
     /**
      * Returns the child Element objects with given name from a w3c dom spec
      *
-     * @return List of elements. Empty list (never null) if none found or the
-     *         given element is null
+     * @return List of elements. Empty list (never null) if none found or the given element is null
      */
     public static List<Element> getChildren(Element spec, String name) {
         List<Element> ret = new ArrayList<>();
