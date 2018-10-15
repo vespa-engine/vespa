@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.container.QrSearchersConfig;
 
@@ -18,6 +17,7 @@ import com.yahoo.container.QrSearchersConfig;
  * Parameter class used for construction IndexFacts.
  *
  * @author Steinar Knutsen
+ * @author bratseth
  */
 public final class IndexModel {
 
@@ -34,7 +34,7 @@ public final class IndexModel {
     public IndexModel(Map<String, List<String>> masterClusters, Collection<SearchDefinition> searchDefinitions) {
         this.masterClusters = masterClusters;
         this.searchDefinitions = searchDefinitions.stream().collect(Collectors.toMap(sd -> sd.getName(), sd -> sd));
-        this.unionSearchDefinition = createUnionOf(searchDefinitions);
+        this.unionSearchDefinition = unionOf(searchDefinitions);
     }
 
     /**
@@ -49,9 +49,14 @@ public final class IndexModel {
         this.unionSearchDefinition = unionSearchDefinition;
     }
 
+    public IndexModel(IndexInfoConfig indexInfo, QrSearchersConfig clusters) {
+        this(indexInfo, toClusters(clusters));
+    }
+
     public IndexModel(IndexInfoConfig indexInfo, Map<String, List<String>> clusters) {
         if (indexInfo != null) {
-            setDefinitions(indexInfo);
+            searchDefinitions = toSearchDefinitions(indexInfo);
+            unionSearchDefinition = unionOf(searchDefinitions.values());
         } else {
             searchDefinitions = null;
             unionSearchDefinition = null;
@@ -59,76 +64,50 @@ public final class IndexModel {
         this.masterClusters = clusters;
     }
 
-    public IndexModel(IndexInfoConfig indexInfo, QrSearchersConfig clusters) {
-        if (indexInfo != null) {
-            setDefinitions(indexInfo);
-        } else {
-            searchDefinitions = null;
-            unionSearchDefinition = null;
-        }
-        if (clusters != null) {
-            setMasterClusters(clusters);
-        } else {
-            masterClusters = null;
-        }
-    }
+    private static Map<String, List<String>> toClusters(QrSearchersConfig config) {
+        if (config == null) return new HashMap<>();
 
-    private void setMasterClusters(QrSearchersConfig config) {
-        masterClusters = new HashMap<>();
+        Map<String, List<String>> clusters = new HashMap<>();
         for (int i = 0; i < config.searchcluster().size(); ++i) {
             List<String> docTypes = new ArrayList<>();
             String clusterName = config.searchcluster(i).name();
             for (int j = 0; j < config.searchcluster(i).searchdef().size(); ++j) {
                 docTypes.add(config.searchcluster(i).searchdef(j));
             }
-            masterClusters.put(clusterName, docTypes);
+            clusters.put(clusterName, docTypes);
         }
+        return clusters;
     }
 
     @SuppressWarnings("deprecation")
-    private void setDefinitions(IndexInfoConfig c) {
-        // TODO: Use createUnionOf to create the union search definition
-        searchDefinitions = new HashMap<>();
-        unionSearchDefinition = new SearchDefinition(IndexFacts.unionName);
+    private static Map<String, SearchDefinition> toSearchDefinitions(IndexInfoConfig c) {
+        Map<String, SearchDefinition> searchDefinitions = new HashMap<>();
 
         for (Iterator<IndexInfoConfig.Indexinfo> i = c.indexinfo().iterator(); i.hasNext();) {
             IndexInfoConfig.Indexinfo info = i.next();
-
             SearchDefinition sd = new SearchDefinition(info.name());
-
             for (Iterator<IndexInfoConfig.Indexinfo.Command> j = info.command().iterator(); j.hasNext();) {
                 IndexInfoConfig.Indexinfo.Command command = j.next();
                 sd.addCommand(command.indexname(),command.command());
-                unionSearchDefinition.addCommand(command.indexname(),command.command());
             }
-
             sd.fillMatchGroups();
             searchDefinitions.put(info.name(), sd);
         }
-        unionSearchDefinition.fillMatchGroups();
 
         for (IndexInfoConfig.Indexinfo info : c.indexinfo()) {
-
             SearchDefinition sd = searchDefinitions.get(info.name());
-
             for (IndexInfoConfig.Indexinfo.Alias alias : info.alias()) {
                 String aliasString = alias.alias();
                 String indexString = alias.indexname();
 
                 sd.addAlias(aliasString, indexString);
-                try {
-                    unionSearchDefinition.addAlias(aliasString, indexString);
-                } catch (IllegalArgumentException e) {
-                    log.log(LogLevel.WARNING, "Ignored the alias '" + aliasString + "' for '" + indexString +
-                                              "' in the union of all search definitions, source has to be " +
-                                              "explicitly set to '" + sd.getName() + "' for that alias to work.", e);
-                }
             }
         }
+        return searchDefinitions;
     }
 
     @SuppressWarnings("deprecation")
-    private SearchDefinition createUnionOf(Collection<SearchDefinition> searchDefinitions) {
+    private SearchDefinition unionOf(Collection<SearchDefinition> searchDefinitions) {
         SearchDefinition union = new SearchDefinition(IndexFacts.unionName);
 
         for (SearchDefinition sd : searchDefinitions) {

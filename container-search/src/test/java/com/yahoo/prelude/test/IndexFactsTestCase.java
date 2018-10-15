@@ -33,6 +33,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests using synthetic index names for IndexFacts class.
@@ -257,15 +258,14 @@ public class IndexFactsTestCase {
                         new Indexinfo.Builder().name("music").command(
                                 new Command.Builder().indexname("title")
                                         .command("index"))));
-        IndexModel m = new IndexModel(cfg, (QrSearchersConfig)null);
-        assertNotNull(m.getSearchDefinitions().get("music").getIndex("title"));
-        assertNull(m.getSearchDefinitions().get("music").getIndex("btitle"));
-        assertNotNull(m.getSearchDefinitions().get("music2").getIndex("btitle"));
-        assertNotNull(m.getSearchDefinitions().get("music2").getIndex("title"));
-        assertSame(m.getSearchDefinitions().get("music2").getIndex("btitle"),
-                   m.getSearchDefinitions().get("music2").getIndex("title"));
-        assertNotSame(m.getSearchDefinitions().get("music").getIndex("title"),
-                      m.getSearchDefinitions().get("music2").getIndex("title"));
+        try {
+            new IndexModel(cfg, (QrSearchersConfig) null);
+            fail("Excepted exception"); // (This is validated at deploy time)
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Tried adding the alias 'title' for the index name 'btitle' when the name 'title' already maps to 'title'",
+                         e.getMessage());
+        }
     }
 
     private Query newQuery(String queryString, IndexFacts indexFacts) {
