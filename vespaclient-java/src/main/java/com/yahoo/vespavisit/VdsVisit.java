@@ -586,7 +586,7 @@ public class VdsVisit {
             if (jsonOutput && xmlOutput) {
                 throw new IllegalArgumentException("Cannot combine both xml and json output");
             }
-            allParams.setJsonOutput(!jsonOutput && !xmlOutput ? false : jsonOutput); // TODO Vespa 7 Change default to JSON
+            allParams.setJsonOutput((!jsonOutput && !xmlOutput) ? false : jsonOutput); // TODO Vespa 7 Change default to JSON
 
             allParams.setVisitorParameters(params);
             return allParams;
