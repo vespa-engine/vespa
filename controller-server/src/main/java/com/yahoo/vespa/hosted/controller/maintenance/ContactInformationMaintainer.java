@@ -105,10 +105,13 @@ public class ContactInformationMaintainer extends Maintainer {
             Slime slime = SlimeUtils.jsonToSlime(EntityUtils.toByteArray(response.getEntity()));
             Inspector inspector = slime.get();
             inspector.traverse((ArrayTraverser) (index, tenant) -> {
-                tenantList.add(tenant.field("tenant").asString());
+                String tenantType = tenant.field("metaData").field("type").asString();
+                if (tenantType.equalsIgnoreCase("athens")) {
+                    tenantList.add(tenant.field("tenant").asString());
+                }
             });
         } catch (IOException e) {
-            log.log(LogLevel.WARNING, "Failed to get tenant list from base URI: " + baseUri.toString() +
+            log.log(LogLevel.WARNING, "Failed to get tenant list from base URI: " + baseUri +
                     Exceptions.toMessageString(e) + ". Retrying in " +
                     maintenanceInterval());
         }

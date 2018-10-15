@@ -58,7 +58,12 @@ public class ContactInformationMaintainerTest {
         wireMockRule.stubFor(post(urlEqualTo(contactInfoPath))
                 .willReturn(aResponse().withStatus(200)));
         wireMockRule.stubFor(get(urlEqualTo(tenantPath))
-                .willReturn(okJson("[{\"tenant\":\"tenant1\"}]")));
+                .willReturn(okJson("[" +
+                        "{\"tenant\": \"tenant1\"," +
+                        "\"metaData\": {\"type\": \"ATHENS\"}}," +
+                        "{\"tenant\": \"tenant2\"," +
+                        "\"metaData\": {\"type\": \"USER\"}}" +
+                        "]")));
         wireMockRule.stubFor(get(urlEqualTo(tenantPath + "tenant1"))
                 .willReturn(okJson("{\"tenant\":\"tenant1\", \"athensDomain\":\"domain\", \"property\":\"property\", \"propertyId\":\"1\"}")));
     }
