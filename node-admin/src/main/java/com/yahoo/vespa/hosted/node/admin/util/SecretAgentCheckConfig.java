@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -49,6 +50,9 @@ public class SecretAgentCheckConfig {
         Files.createDirectories(yamasAgentDirectory);
         Path scheduleFilePath = yamasAgentDirectory.resolve(id + ".yaml");
         Files.write(scheduleFilePath, render().getBytes());
+
+        // TODO: Remove after 6.301
+        Files.setPosixFilePermissions(scheduleFilePath, PosixFilePermissions.fromString("rw-r--r--"));
     }
 
     public FileWriter getFileWriterTo(Path destinationPath) {
