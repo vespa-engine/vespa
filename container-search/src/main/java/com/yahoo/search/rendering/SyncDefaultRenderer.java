@@ -2,18 +2,12 @@
 package com.yahoo.search.rendering;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
-import com.yahoo.io.ByteWriter;
 import com.yahoo.log.LogLevel;
 import com.yahoo.net.URI;
-import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.hitfield.HitField;
 import com.yahoo.prelude.hitfield.JSONString;
 import com.yahoo.prelude.hitfield.XMLString;
-import com.yahoo.prelude.templates.Context;
-import com.yahoo.prelude.templates.DefaultTemplateSet;
-import com.yahoo.prelude.templates.MapContext;
-import com.yahoo.prelude.templates.UserTemplate;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.grouping.result.HitRenderer;
@@ -30,7 +24,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 

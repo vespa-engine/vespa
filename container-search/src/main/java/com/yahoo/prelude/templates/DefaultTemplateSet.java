@@ -34,7 +34,8 @@ import java.util.stream.Collectors;
  * @deprecated use JsonRenderer instead
  */
 @SuppressWarnings("deprecation")
-@Deprecated // TODO: Remove on Vespa 7
+// TODO: Remove on Vespa 7
+@Deprecated // OK (But wait for deprecated handlers in vespaclient-container-plugin to be removed)
 public class DefaultTemplateSet extends UserTemplate<XMLWriter> {
 
     private static final Utf8String RESULT = new Utf8String("result");

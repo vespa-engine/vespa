@@ -6,7 +6,6 @@ import com.yahoo.prelude.hitfield.JSONString;
 import com.yahoo.prelude.hitfield.XMLString;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.StructuredData;
-import com.yahoo.search.result.FeatureData;
 import com.yahoo.text.XML;
 
 import java.util.Collection;
@@ -20,7 +19,8 @@ import java.util.Set;
  * @deprecated use a Renderer instead
  */
 @SuppressWarnings("deprecation")
-@Deprecated // TODO: Remove on Vespa 7
+// TODO: Remove on Vespa 7
+@Deprecated // OK (But wait for deprecated handlers in vespaclient-container-plugin to be removed)
 public class HitContext extends Context {
 
     private final Hit hit;

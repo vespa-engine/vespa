@@ -16,7 +16,8 @@ import java.util.logging.Logger;
  * @deprecated use a renderer instead
  */
 @SuppressWarnings("deprecation")
-@Deprecated // TODO: Remove on Vespa 7
+// TODO: Remove on Vespa 7
+@Deprecated // OK (But wait for deprecated handlers in vespaclient-container-plugin to be removed)
 public class LogExceptionUserTemplateDelegator<T extends Writer> extends UserTemplate<T> {
 
     private static Logger log = Logger.getLogger(LogExceptionUserTemplateDelegator.class.getName());

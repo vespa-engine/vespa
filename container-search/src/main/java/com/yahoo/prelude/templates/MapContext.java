@@ -11,7 +11,8 @@ import java.util.Map;
  * @deprecated use a Renderer instead
  */
 @SuppressWarnings("deprecation")
-@Deprecated // TODO: Remove on Vespa 7
+// TODO: Remove on Vespa 7
+@Deprecated // OK (But wait for deprecated handlers in vespaclient-container-plugin to be removed)
 public class MapContext extends Context {
 
     private Map<String, Object> map = new LinkedHashMap<>();

@@ -48,12 +48,12 @@ public class ExecutionAbstractTestCase {
         return source;
     }
 
-    protected void assertRendered(Result result,String resultFileName) {
+    protected void assertRendered(Result result, String resultFileName) {
         assertRendered(result,resultFileName,false);
     }
 
-    protected void assertRendered(Result result,String resultFileName, UserTemplate<?> template) {
-        assertRendered(result,resultFileName,template,false);
+    protected void assertRendered(Result result, String resultFileName, UserTemplate<?> template) {
+        assertRendered(result, resultFileName, template,false);
     }
 
     protected void assertRendered(Result result,String resultFileName,boolean print) {
