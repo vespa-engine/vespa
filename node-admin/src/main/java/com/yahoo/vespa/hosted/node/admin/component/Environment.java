@@ -41,7 +41,7 @@ public class Environment {
     private final Path trustStorePath;
     private final DockerNetworking dockerNetworking;
 
-    private Environment(ConfigServerConfig configServerConfig,
+    private Environment(ConfigServerInfo configServerInfo,
                         Path trustStorePath,
                         String environment,
                         String region,
@@ -58,9 +58,7 @@ public class Environment {
                         AthenzService nodeAthenzIdentity,
                         boolean nodeAgentCertEnabled,
                         DockerNetworking dockerNetworking) {
-        Objects.requireNonNull(configServerConfig, "configServerConfig cannot be null");
-
-        this.configServerInfo = new ConfigServerInfo(configServerConfig);
+        this.configServerInfo = Objects.requireNonNull(configServerInfo, "configServerConfig cannot be null");
         this.environment = Objects.requireNonNull(environment, "environment cannot be null");;
         this.region = Objects.requireNonNull(region, "region cannot be null");;
         this.system = Objects.requireNonNull(system, "system cannot be null");;
@@ -189,7 +187,7 @@ public class Environment {
     }
 
     public static class Builder {
-        private ConfigServerConfig configServerConfig;
+        private ConfigServerInfo configServerInfo;
         private String environment;
         private String region;
         private String system;
@@ -208,7 +206,12 @@ public class Environment {
         private DockerNetworking dockerNetworking;
 
         public Builder configServerConfig(ConfigServerConfig configServerConfig) {
-            this.configServerConfig = configServerConfig;
+            this.configServerInfo = new ConfigServerInfo(configServerConfig);
+            return this;
+        }
+
+        public Builder configServerInfo(ConfigServerInfo configServerInfo) {
+            this.configServerInfo = configServerInfo;
             return this;
         }
 
@@ -293,7 +296,7 @@ public class Environment {
         }
 
         public Environment build() {
-            return new Environment(configServerConfig,
+            return new Environment(configServerInfo,
                                    trustStorePath,
                                    environment,
                                    region,

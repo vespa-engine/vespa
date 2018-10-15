@@ -76,7 +76,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final Environment environment;
     private final Clock clock;
     private final Duration timeBetweenEachConverge;
-    private final AthenzCredentialsMaintainer athenzCredentialsMaintainer;
+    private final Optional<AthenzCredentialsMaintainer> athenzCredentialsMaintainer;
 
     private int numberOfUnhandledException = 0;
     private Instant lastConverge;
@@ -120,7 +120,7 @@ public class NodeAgentImpl implements NodeAgent {
             final Environment environment,
             final Clock clock,
             final Duration timeBetweenEachConverge,
-            final AthenzCredentialsMaintainer athenzCredentialsMaintainer) {
+            final Optional<AthenzCredentialsMaintainer> athenzCredentialsMaintainer) {
         this.context = context;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
@@ -516,7 +516,7 @@ public class NodeAgentImpl implements NodeAgent {
                 startServicesIfNeeded();
                 resumeNodeIfNeeded(node);
 
-                athenzCredentialsMaintainer.converge(context);
+                athenzCredentialsMaintainer.ifPresent(maintainer -> maintainer.converge(context));
 
                 doBeforeConverge(node);
 
@@ -544,7 +544,7 @@ public class NodeAgentImpl implements NodeAgent {
             case dirty:
                 removeContainerIfNeededUpdateContainerState(node, container);
                 context.log(logger, "State is " + node.getState() + ", will delete application storage and mark node as ready");
-                athenzCredentialsMaintainer.clearCredentials();
+                athenzCredentialsMaintainer.ifPresent(maintainer -> maintainer.clearCredentials(context));
                 storageMaintainer.archiveNodeStorage(context);
                 updateNodeRepoWithCurrentAttributes(node);
                 nodeRepository.setNodeState(context.hostname().value(), Node.State.ready);

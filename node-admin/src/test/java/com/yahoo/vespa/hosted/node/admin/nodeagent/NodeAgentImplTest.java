@@ -6,7 +6,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
@@ -761,7 +760,7 @@ public class NodeAgentImplTest {
         doNothing().when(storageMaintainer).writeMetricsConfig(any(), any());
 
         return new NodeAgentImpl(context, nodeRepository, orchestrator, dockerOperations,
-                storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL, athenzCredentialsMaintainer);
+                storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL, Optional.of(athenzCredentialsMaintainer));
     }
 
     private void mockGetContainer(DockerImage dockerImage, boolean isRunning) {
