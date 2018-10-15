@@ -2,11 +2,13 @@
 package com.yahoo.prelude;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import com.yahoo.log.LogLevel;
 import com.yahoo.search.config.IndexInfoConfig;
@@ -29,6 +31,16 @@ public final class IndexModel {
     /**
      * Use IndexModel as a pure wrapper for the parameters given.
      */
+    public IndexModel(Map<String, List<String>> masterClusters, Collection<SearchDefinition> searchDefinitions) {
+        this.masterClusters = masterClusters;
+        this.searchDefinitions = searchDefinitions.stream().collect(Collectors.toMap(sd -> sd.getName(), sd -> sd));
+        this.unionSearchDefinition = createUnionOf(searchDefinitions);
+    }
+
+    /**
+     * Use IndexModel as a pure wrapper for the parameters given.
+     */
+    // TODO: Deprecate on Vespa 7 and remove on Vespa 8
     public IndexModel(Map<String, List<String>> masterClusters,
                       Map<String, SearchDefinition> searchDefinitions,
                       SearchDefinition unionSearchDefinition) {
@@ -75,6 +87,7 @@ public final class IndexModel {
 
     @SuppressWarnings("deprecation")
     private void setDefinitions(IndexInfoConfig c) {
+        // TODO: Use createUnionOf to create the union search definition
         searchDefinitions = new HashMap<>();
         unionSearchDefinition = new SearchDefinition(IndexFacts.unionName);
 
@@ -105,31 +118,37 @@ public final class IndexModel {
                 sd.addAlias(aliasString, indexString);
                 try {
                     unionSearchDefinition.addAlias(aliasString, indexString);
-                } catch (RuntimeException e) {
-                    log.log(LogLevel.WARNING,
-                            "Ignored the alias \""
-                                    + aliasString
-                                    + "\" for \""
-                                    + indexString
-                                    + "\" in the union of all search definitions,"
-                                    + " source has to be explicitly set to \""
-                                    + sd.getName()
-                                    + "\" for that alias to work.", e);
+                } catch (IllegalArgumentException e) {
+                    log.log(LogLevel.WARNING, "Ignored the alias '" + aliasString + "' for '" + indexString +
+                                              "' in the union of all search definitions, source has to be " +
+                                              "explicitly set to '" + sd.getName() + "' for that alias to work.", e);
                 }
             }
         }
     }
 
-    public Map<String, List<String>> getMasterClusters() {
-        return masterClusters;
+    @SuppressWarnings("deprecation")
+    private SearchDefinition createUnionOf(Collection<SearchDefinition> searchDefinitions) {
+        SearchDefinition union = new SearchDefinition(IndexFacts.unionName);
+
+        for (SearchDefinition sd : searchDefinitions) {
+            for (Index index : sd.indices().values()) {
+                for (String command : index.allCommands())
+                    union.addCommand(index.getName(), command);
+                for (String alias : index.aliases())
+                    union.addAlias(alias, index.getName());
+            }
+
+        }
+        union.fillMatchGroups();
+        return union;
     }
 
-    public Map<String, SearchDefinition> getSearchDefinitions() {
-        return searchDefinitions;
-    }
+    public Map<String, List<String>> getMasterClusters() { return masterClusters; }
 
-    public SearchDefinition getUnionSearchDefinition() {
-        return unionSearchDefinition;
-    }
+    public Map<String, SearchDefinition> getSearchDefinitions() { return searchDefinitions; }
+
+    // TODO: Deprecate on Vespa 7 and remove on Vespa 8
+    public SearchDefinition getUnionSearchDefinition() { return unionSearchDefinition; }
 
 }

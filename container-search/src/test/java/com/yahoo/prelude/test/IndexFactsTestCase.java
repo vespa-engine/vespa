@@ -3,12 +3,14 @@ package com.yahoo.prelude.test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.config.IndexInfoConfig;
@@ -45,7 +47,14 @@ public class IndexFactsTestCase {
     private IndexFacts createIndexFacts() {
         ConfigGetter<IndexInfoConfig> getter = new ConfigGetter<>(IndexInfoConfig.class);
         IndexInfoConfig config = getter.getConfig(INDEXFACTS_TESTING);
+        return new IndexFacts(new IndexModel(config, createClusters()));
+    }
 
+    private IndexFacts createIndexFacts(Collection<SearchDefinition> searchDefinitions) {
+        return new IndexFacts(new IndexModel(createClusters(), searchDefinitions));
+    }
+
+    private Map<String, List<String>> createClusters() {
         List<String> clusterOne = new ArrayList<>();
         List<String> clusterTwo = new ArrayList<>();
         clusterOne.addAll(Arrays.asList("one", "two"));
@@ -53,9 +62,7 @@ public class IndexFactsTestCase {
         Map<String, List<String>> clusters = new HashMap<>();
         clusters.put("clusterOne", clusterOne);
         clusters.put("clusterTwo", clusterTwo);
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(config, clusters));
-
-        return indexFacts;
+        return clusters;
     }
 
     @Test
@@ -88,16 +95,13 @@ public class IndexFactsTestCase {
         sd.addCommand("c", "default-position");
         assertTrue(sd.getDefaultPosition().equals("c"));
 
-        SearchDefinition sd2 = new SearchDefinition("sd");
+        SearchDefinition sd2 = new SearchDefinition("sd2");
         sd2.addIndex(new Index("b").addCommand("any"));
         assertNull(sd2.getDefaultPosition());
         sd2.addIndex(a);
         assertTrue(sd2.getDefaultPosition().equals("a"));
 
-        Map<String,SearchDefinition> m = new TreeMap<>();
-        m.put(sd.getName(), sd);
-        IndexFacts indexFacts = createIndexFacts();
-        indexFacts.setSearchDefinitions(m,sd2);
+        IndexFacts indexFacts = createIndexFacts(ImmutableList.of(sd, sd2));
         assertTrue(indexFacts.getDefaultPosition(null).equals("a"));
         assertTrue(indexFacts.getDefaultPosition("sd").equals("c"));
     }

@@ -22,10 +22,7 @@ public class SearchDefinition {
     /** A map of all indices in this search definition, indexed by name */
     private Map<String, Index> indices = new HashMap<>();
 
-    /*
-     * A map of all indices in this search definition, indexed by lower cased
-     * name.
-     */
+    /* A map of all indices in this search definition, indexed by lower cased name. */
     private Map<String, Index> lowerCase = new HashMap<>();
 
     private String defaultPosition;
@@ -49,29 +46,23 @@ public class SearchDefinition {
     }
 
     public void addAlias(String alias, String indexName) {
-        Index old;
-
-        if ((old = indices.get(alias)) != null) {
-            if (old.getName().equals(indexName)) {
-                return;
-            } else {
-                throw new IllegalArgumentException("Tried adding the alias \""
-                        + alias + "\" for the index name \"" + indexName
-                        + "\" when the name \"" + alias
-                        + "\" already maps to \"" + old.getName() + "\".");
-            }
+        Index old = indices.get(alias);
+        if (old != null) {
+            if (old.getName().equals(indexName)) return;
+            throw new IllegalArgumentException("Tried adding the alias '" + alias + "' for the index name '" +
+                                               indexName + "' when the name '" + alias +
+                                               "' already maps to '" + old.getName() + "'");
         }
         Index index = indices.get(indexName);
-        if (index == null) {
-            throw new IllegalArgumentException("Failed adding alias \"" + alias
-                    + "\" for the index name \"" + indexName
-                    + "\" as there is no index with that name available.");
-        }
+        if (index == null)
+            throw new IllegalArgumentException("Failed adding alias '" + alias + "' for the index name '" + indexName +
+                                               "' as there is no index with that name available.");
         indices.put(alias, index);
+        index.addAlias(alias);
+
         String lca = toLowerCase(alias);
-        if (lowerCase.get(lca) == null) {
+        if (lowerCase.get(lca) == null)
             lowerCase.put(lca, index);
-        }
     }
 
     public Index getIndex(String name) {
@@ -119,7 +110,5 @@ public class SearchDefinition {
             }
         }
     }
-
-
 
 }
