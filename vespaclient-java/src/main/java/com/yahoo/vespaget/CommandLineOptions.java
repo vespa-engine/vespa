@@ -227,7 +227,7 @@ public class CommandLineOptions {
                     .setTraceLevel(trace)
                     .setPriority(priority)
                     .setTimeout(timeout)
-                    .setJsonOutput(!jsonOutput && !xmlOutput ? false : jsonOutput) // TODO Vespa 7 Change default to JSON
+                    .setJsonOutput((!jsonOutput && !xmlOutput) ? false : jsonOutput) // TODO Vespa 7 Change default to JSON
                     .build();
         } catch (ParseException pe) {
             throw new IllegalArgumentException(pe.getMessage());
