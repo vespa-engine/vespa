@@ -80,7 +80,11 @@ public class ControllerContainerTest {
             "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock'/>\n" +
-            "  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'/>\n" +
+            "  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'>\n" +
+            "    <config name=\"vespa.hosted.controller.authority.config.api-authority\">\n" +
+            "      <authorities><item>https://localhost:4443/</item></authorities>\n" +
+            "    </config>" +
+            "  </component>" +
             "  <component id='com.yahoo.vespa.hosted.controller.maintenance.JobControl'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.RoutingGeneratorMock'/>\n" +
             "  <component id='com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock'/>\n" +
