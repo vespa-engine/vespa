@@ -28,7 +28,7 @@ public class FeedClientImpl implements FeedClient {
 
     public FeedClientImpl(
             SessionParams sessionParams, ResultCallback resultCallback, ScheduledThreadPoolExecutor timeoutExecutor) {
-        this.closeTimeoutMs = (1 + sessionParams.getConnectionParams().getMaxRetries()) * (
+        this.closeTimeoutMs = (10 + 3 * sessionParams.getConnectionParams().getMaxRetries()) * (
                 sessionParams.getFeedParams().getServerTimeout(TimeUnit.MILLISECONDS) +
                 sessionParams.getFeedParams().getClientTimeout(TimeUnit.MILLISECONDS));
         this.operationProcessor = new OperationProcessor(

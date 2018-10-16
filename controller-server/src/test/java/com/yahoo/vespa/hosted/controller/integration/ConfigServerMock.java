@@ -302,6 +302,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return Optional.of(new Logs(logs));
     }
 
+    @Override
+    public List<String> getContentClusters(DeploymentId deployment) {
+        return Collections.singletonList("music");
+    }
+
     public static class Application {
 
         private final ApplicationId id;
