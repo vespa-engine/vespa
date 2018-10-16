@@ -73,7 +73,8 @@ import java.util.stream.Collectors;
  * @deprecated use a Renderer instead
  */
 @SuppressWarnings("deprecation")
-@Deprecated // TODO: Remove on Vespa 7
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public class TiledTemplateSet extends DefaultTemplateSet {
 
     private FormattingOptions hitOptionsForProvider;

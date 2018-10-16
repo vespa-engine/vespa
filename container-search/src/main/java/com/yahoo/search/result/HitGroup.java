@@ -389,7 +389,7 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
      * @deprecated prefer addError to add some error information.
      */
     // TODO: Remove on Vespa 7
-    @Deprecated
+    @Deprecated // OK
     public void setError(ErrorMessage error) {
         addError(error);
     }

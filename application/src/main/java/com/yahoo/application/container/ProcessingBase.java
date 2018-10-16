@@ -21,17 +21,9 @@ import java.util.concurrent.Executors;
  * @author gjoranv
  */
 @Beta
-public abstract class ProcessingBase<
-        REQUEST extends Request,
-        RESPONSE extends Response,
-        PROCESSOR extends Processor>
-{
+public abstract class ProcessingBase<REQUEST extends Request, RESPONSE extends Response, PROCESSOR extends Processor> {
 
-    /**
-     * Returns a registry of configured chains.
-     *
-     * @return a registry of configured chains
-     */
+    /** Returns a registry of configured chains */
     public abstract ChainRegistry<PROCESSOR> getChains();
 
     /**

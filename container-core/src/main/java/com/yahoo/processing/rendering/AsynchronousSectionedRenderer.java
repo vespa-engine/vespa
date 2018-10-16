@@ -218,7 +218,7 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
     public final ListenableFuture<Boolean> renderBeforeHandover(OutputStream stream, RESPONSE response,
                                                                 Execution execution, Request request) {
         beforeHandoverMode = true;
-        if (!isInitialized) throw new IllegalStateException("render() invoked before init().");
+        if ( ! isInitialized) throw new IllegalStateException("render() invoked before init().");
 
         return startRender(stream, response, execution, request);
     }

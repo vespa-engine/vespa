@@ -8,7 +8,10 @@ package com.yahoo.search.federation.http;
  * The host and port state is immutable.
  *
  * @author bratseth
+ * @deprecated
  */
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public class Connection {
 
     private String host;

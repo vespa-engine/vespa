@@ -24,7 +24,8 @@ import java.util.logging.Logger;
  * @author Steinar Knutsen
  */
 @SuppressWarnings("deprecation")
-@Deprecated // TODO: Remove on Vespa 7
+@Deprecated // OK (But wait for deprecated handlers in vespaclient-container-plugin to be removed)
+// TODO: Remove on Vespa 7
 public abstract class UserTemplate<T extends Writer> extends GenericTemplateSet {
 
     // &amp;

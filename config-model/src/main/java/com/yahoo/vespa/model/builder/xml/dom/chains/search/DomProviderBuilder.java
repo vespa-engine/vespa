@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Builds a provider from xml.
@@ -48,11 +49,11 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
         final Double connectionTimeout;
         final Double connectionPoolTimeout;
         final String clusterName;
-        final List<HttpProviderSpec.Node> nodes;
+        final List<Node> nodes;
         final String certificateApplicationId;
         final Integer certificateTtl;
         final Integer certificateRetryWait;
-        final HttpProviderSpec.Node certificateProxy;  // Just re-using the Node class, as it matches our needs
+        final Node certificateProxy;  // Just re-using the Node class, as it matches our needs
         final Integer cacheSizeMB;
 
         ProviderReader(Element providerElement) {
@@ -130,36 +131,36 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
             return (x == null) ? null : TimeParser.seconds(x).intValue();
         }
 
-        private HttpProviderSpec.Node readCertificateProxy(Element providerElement) {
+        private Node readCertificateProxy(Element providerElement) {
             Element certificateProxySpec = XML.getChild(providerElement, "yca-proxy");
             if (certificateProxySpec == null) {
                 return null; // no proxy
             }
             if(getAttributeOrNull(certificateProxySpec, "host") == null) {
-                return new HttpProviderSpec.Node(null, 0); // default proxy
+                return new Node(null, 0); // default proxy
             }
             return readNode(certificateProxySpec);
         }
 
-        private List<HttpProviderSpec.Node> readNodes(Element providerElement) {
+        private List<Node> readNodes(Element providerElement) {
             Element nodesSpec = XML.getChild(providerElement, "nodes");
             if (nodesSpec == null) {
                 return null;
             }
 
-            List<HttpProviderSpec.Node> nodes = new ArrayList<>();
+            List<Node> nodes = new ArrayList<>();
             for (Element nodeSpec : XML.getChildren(nodesSpec, "node")) {
                 nodes.add(readNode(nodeSpec));
             }
             return nodes;
         }
 
-        private HttpProviderSpec.Node readNode(Element nodeElement) {
+        private Node readNode(Element nodeElement) {
             String host = getAttributeOrNull(nodeElement, "host");
             // The direct calls to parse methods below works because the schema
             // guarantees us no null references
             int port = Integer.parseInt(getAttributeOrNull(nodeElement, "port"));
-            return new HttpProviderSpec.Node(host, port);
+            return new Node(host, port);
         }
 
         private String readType(Element providerElement) {
@@ -212,7 +213,7 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
 
         if (providerReader.type == null) {
             return buildEmptyHttpProvider(specWithoutInnerSearchers, providerReader, federationOptions);
-        } else if (HttpProviderSpec.includesType(providerReader.type)) {
+        } else if (HttpProviderSpec.includesType(providerReader.type)) { // TODO: Remove on Vespa 7
             return buildHttpProvider(specWithoutInnerSearchers, providerReader, federationOptions);
         } else if (LocalProviderSpec.includesType(providerReader.type)) {
             return buildLocalProvider(specWithoutInnerSearchers, providerReader, federationOptions);
@@ -236,6 +237,7 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
         }
     }
 
+    // TODO: Remove on Vespa 7
     private Provider buildHttpProvider(ChainSpecification specWithoutInnerSearchers, ProviderReader providerReader, FederationOptions federationOptions) {
         ensureEmpty(specWithoutInnerSearchers.componentId, providerReader.clusterName);
 
@@ -250,6 +252,7 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
     }
 
 
+    // TODO: Remove on Vespa 7
     private Provider buildEmptyHttpProvider(ChainSpecification specWithoutInnerSearchers, ProviderReader providerReader, FederationOptions federationOptions) {
         ensureEmpty(specWithoutInnerSearchers.componentId, providerReader.clusterName);
 
@@ -258,15 +261,21 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
                 new HttpProviderSpec(
                         providerReader.cacheWeight,
                         providerReader.path,
-                        providerReader.nodes,
+                        providerReader.nodes.stream().map(node -> toHttpProviderNode(node)).collect(Collectors.toList()),
                         providerReader.certificateApplicationId,
                         providerReader.certificateTtl,
                         providerReader.certificateRetryWait,
-                        providerReader.certificateProxy,
+                        toHttpProviderNode(providerReader.certificateProxy),
                         providerReader.cacheSizeMB,
                         connectionParameters(providerReader)));
     }
 
+    // TODO: Remove on Vespa 7
+    private HttpProviderSpec.Node toHttpProviderNode(Node node) {
+        return new HttpProviderSpec.Node(node.host, node.port);
+    }
+
+    // TODO: Remove on Vespa 7
     private HttpProviderSpec.ConnectionParameters connectionParameters(ProviderReader providerReader) {
         return new HttpProviderSpec.ConnectionParameters(
                 providerReader.readTimeout,
@@ -282,4 +291,24 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
             }
         }
     }
+
+    public static class Node {
+
+        public final String host;
+        public final int port;
+
+        public Node(String host, int port) {
+            this.host = host;
+            this.port = port;
+        }
+
+        @Override
+        public String toString() {
+            return "Node{" +
+                   "host='" + host + '\'' +
+                   ", port=" + port +
+                   '}';
+        }
+    }
+
 }

@@ -48,7 +48,7 @@ public class IndexFacts {
      * @deprecated do not use
      */
     // TODO: Make this package private in Vespa 7
-    @Deprecated
+    @Deprecated // OK
     public static final String unionName = "unionOfAllKnown";
 
     /** A search definition which contains the union of all settings. */
@@ -64,8 +64,9 @@ public class IndexFacts {
 
     @SuppressWarnings({"deprecation"})
     public IndexFacts(IndexModel indexModel) {
-        if (indexModel.getSearchDefinitions() != null && indexModel.getUnionSearchDefinition() != null) {
-            setSearchDefinitions(indexModel.getSearchDefinitions(), indexModel.getUnionSearchDefinition());
+        if (indexModel.getSearchDefinitions() != null) {
+            this.searchDefinitions = indexModel.getSearchDefinitions();
+            this.unionSearchDefinition = indexModel.getUnionSearchDefinition();
         }
         if (indexModel.getMasterClusters() != null) {
             setMasterClusters(indexModel.getMasterClusters());
@@ -107,7 +108,11 @@ public class IndexFacts {
 
     /**
      * Public only for testing.
+     *
+     * @deprecated set at creation time
      */
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public void setClusters(Map<String, List<String>> clusters) {
         ensureNotFrozen();
         this.clusters = clusters;
@@ -118,7 +123,7 @@ public class IndexFacts {
      * @deprecated set indexes at creation time instead
      */
     // TODO: Remove on Vespa 7
-    @Deprecated
+    @Deprecated // OK
     public void setSearchDefinitions(Map<String, SearchDefinition> searchDefinitions,
                                      SearchDefinition unionSearchDefinition) {
         ensureNotFrozen();
@@ -182,6 +187,7 @@ public class IndexFacts {
         }
 
         DocumentTypeListOffset sd = chooseSearchDefinition(documentTypes, 0);
+
         while (sd != null) {
             Index index = sd.searchDefinition.getIndex(canonicName);
 
@@ -318,7 +324,7 @@ public class IndexFacts {
      * @deprecated set indexes at creation time instead
      */
     // TODO: Remove on Vespa 7
-    @Deprecated
+    @Deprecated // OK
     public void addIndex(String sdName, String indexName) {
         ensureNotFrozen();
 
@@ -341,7 +347,7 @@ public class IndexFacts {
      * @deprecated set indexes at creation time instead
      */
     // TODO: Remove on Vespa 7
-    @Deprecated
+    @Deprecated // OK
     public void addIndex(String sdName, Index index) {
         ensureNotFrozen();
 

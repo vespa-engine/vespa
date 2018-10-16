@@ -3,12 +3,14 @@ package com.yahoo.prelude.test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.config.IndexInfoConfig;
@@ -31,6 +33,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests using synthetic index names for IndexFacts class.
@@ -45,7 +48,14 @@ public class IndexFactsTestCase {
     private IndexFacts createIndexFacts() {
         ConfigGetter<IndexInfoConfig> getter = new ConfigGetter<>(IndexInfoConfig.class);
         IndexInfoConfig config = getter.getConfig(INDEXFACTS_TESTING);
+        return new IndexFacts(new IndexModel(config, createClusters()));
+    }
 
+    private IndexFacts createIndexFacts(Collection<SearchDefinition> searchDefinitions) {
+        return new IndexFacts(new IndexModel(createClusters(), searchDefinitions));
+    }
+
+    private Map<String, List<String>> createClusters() {
         List<String> clusterOne = new ArrayList<>();
         List<String> clusterTwo = new ArrayList<>();
         clusterOne.addAll(Arrays.asList("one", "two"));
@@ -53,9 +63,7 @@ public class IndexFactsTestCase {
         Map<String, List<String>> clusters = new HashMap<>();
         clusters.put("clusterOne", clusterOne);
         clusters.put("clusterTwo", clusterTwo);
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(config, clusters));
-
-        return indexFacts;
+        return clusters;
     }
 
     @Test
@@ -66,11 +74,6 @@ public class IndexFactsTestCase {
         assertEquals("a:b",  q.getModel().getQueryTree().getRoot().toString());
         q = newQuery("?query=notarealindex:b", indexFacts);
         assertEquals("\"notarealindex b\"",  q.getModel().getQueryTree().getRoot().toString());
-
-        // Add an index to an SD which also happens to be the default
-        indexFacts.addIndex("one", "yetanothersynthetic");
-        q = newQuery("?query=yetanothersynthetic:b", indexFacts);
-        assertEquals("yetanothersynthetic:b",  q.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
@@ -88,16 +91,13 @@ public class IndexFactsTestCase {
         sd.addCommand("c", "default-position");
         assertTrue(sd.getDefaultPosition().equals("c"));
 
-        SearchDefinition sd2 = new SearchDefinition("sd");
+        SearchDefinition sd2 = new SearchDefinition("sd2");
         sd2.addIndex(new Index("b").addCommand("any"));
         assertNull(sd2.getDefaultPosition());
         sd2.addIndex(a);
         assertTrue(sd2.getDefaultPosition().equals("a"));
 
-        Map<String,SearchDefinition> m = new TreeMap<>();
-        m.put(sd.getName(), sd);
-        IndexFacts indexFacts = createIndexFacts();
-        indexFacts.setSearchDefinitions(m,sd2);
+        IndexFacts indexFacts = createIndexFacts(ImmutableList.of(sd, sd2));
         assertTrue(indexFacts.getDefaultPosition(null).equals("a"));
         assertTrue(indexFacts.getDefaultPosition("sd").equals("c"));
     }
@@ -134,10 +134,13 @@ public class IndexFactsTestCase {
     }
 
     private void assertExactIsWorking(String indexName) {
-        Index index=new Index(indexName);
+        SearchDefinition sd = new SearchDefinition("artist");
+
+        Index index = new Index(indexName);
         index.setExact(true,"^^^");
-        IndexFacts indexFacts = createIndexFacts();
-        indexFacts.addIndex("artist",index);
+        sd.addIndex(index);
+
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
         Query query = new Query();
         query.getModel().getSources().add("artist");
         assertTrue(indexFacts.newSession(query).getIndex(indexName).isExact());
@@ -150,7 +153,7 @@ public class IndexFactsTestCase {
         assertExactIsWorking("test");
         assertExactIsWorking("artist_name_ft_norm1");
 
-        List search=new ArrayList();
+        List search = new ArrayList();
         search.add("three");
         Query query = new Query();
         query.getModel().getSources().add("three");
@@ -176,13 +179,15 @@ public class IndexFactsTestCase {
 
     @Test
     public void testComplexExactMatching() {
-        IndexFacts indexFacts = createIndexFacts();
+        SearchDefinition sd = new SearchDefinition("foobar");
         String u_name = "foo_bar";
         Index u_index = new Index(u_name);
         u_index.setExact(true, "^^^");
         Index b_index = new Index("bar");
-        indexFacts.addIndex("foobar", u_index);
-        indexFacts.addIndex("foobar", b_index);
+        sd.addIndex(u_index);
+        sd.addIndex(b_index);
+
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
         Query query = new Query();
         query.getModel().getSources().add("foobar");
         IndexFacts.Session session = indexFacts.newSession(query);
@@ -253,15 +258,14 @@ public class IndexFactsTestCase {
                         new Indexinfo.Builder().name("music").command(
                                 new Command.Builder().indexname("title")
                                         .command("index"))));
-        IndexModel m = new IndexModel(cfg, (QrSearchersConfig)null);
-        assertNotNull(m.getSearchDefinitions().get("music").getIndex("title"));
-        assertNull(m.getSearchDefinitions().get("music").getIndex("btitle"));
-        assertNotNull(m.getSearchDefinitions().get("music2").getIndex("btitle"));
-        assertNotNull(m.getSearchDefinitions().get("music2").getIndex("title"));
-        assertSame(m.getSearchDefinitions().get("music2").getIndex("btitle"),
-                   m.getSearchDefinitions().get("music2").getIndex("title"));
-        assertNotSame(m.getSearchDefinitions().get("music").getIndex("title"),
-                      m.getSearchDefinitions().get("music2").getIndex("title"));
+        try {
+            new IndexModel(cfg, (QrSearchersConfig) null);
+            fail("Excepted exception"); // (This is validated at deploy time)
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Tried adding the alias 'title' for the index name 'btitle' when the name 'title' already maps to 'title'",
+                         e.getMessage());
+        }
     }
 
     private Query newQuery(String queryString, IndexFacts indexFacts) {

@@ -12,7 +12,10 @@ import org.apache.http.HttpEntity;
  * Wrapper for adding timeout to an HttpEntity instance.
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @deprecated
  */
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public class TimedHttpEntity implements HttpEntity {
     /**
      * The wrapped entity. Never null.

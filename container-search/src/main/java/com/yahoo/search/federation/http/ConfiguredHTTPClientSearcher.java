@@ -15,8 +15,10 @@ import com.yahoo.statistics.Statistics;
  * the provider and cache configurations to parameters which are passed upwards.
  *
  * @author bratseth
+ * @deprecated
  */
-@Deprecated
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public abstract class ConfiguredHTTPClientSearcher extends HTTPClientSearcher {
 
     /** Create this from a configuraton */

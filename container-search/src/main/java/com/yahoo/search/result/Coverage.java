@@ -6,31 +6,40 @@ import com.google.common.annotations.Beta;
 /**
  * The coverage report for a result set.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @author baldersheim
  */
 public class Coverage extends com.yahoo.container.handler.Coverage {
 
     public Coverage(long docs, long active) {
-        this(docs, active, 0);
+        this(docs, active, docs > 1 ? 1 : 0, docs > 1 ? 1: 0);
     }
 
     public Coverage(long docs, long active, int nodes) {
         super(docs, active, nodes, 1);
     }
 
-    @Deprecated
+    public Coverage(long docs, long active, int nodes, int resultSets) {
+        super(docs, active, nodes, resultSets);
+    }
+
+    // TODO: Remove on Vespa 7
+    /** @deprecated don't send a "full" boolean */
+    @Deprecated // OK
     public Coverage(long docs, int nodes, boolean full) {
         this(docs, nodes, full, 1);
     }
 
-    @Deprecated
+    // TODO: Remove on Vespa 7
+    /** @deprecated don't send a "full" boolean */
+    @Deprecated // OK
     public Coverage(long docs, int nodes, boolean full, int resultSets) {
         super(docs, nodes, full, resultSets);
     }
 
     /**
      * Will set number of documents present in ideal state
+     *
      * @param soonActive Number of documents active in ideal state
      * @return self for chaining
      */
@@ -39,6 +48,7 @@ public class Coverage extends com.yahoo.container.handler.Coverage {
 
     /**
      * Will set the reasons for degraded coverage as reported by vespa backend.
+     *
      * @param degradedReason Reason for degradation
      * @return self for chaining
      */

@@ -29,8 +29,10 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  * Parse Vespa XML results and create Result instances.
  *
  * @author Steinar Knutsen
+ * @deprecated
  */
-// Ripe for a rewrite or major refactoring.
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 @SuppressWarnings("deprecation")
 public class ResultBuilder extends DefaultHandler {
     private static final String ERROR = "error";

@@ -13,6 +13,8 @@ import com.yahoo.language.simple.SimpleDetector;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.Highlight;
@@ -40,6 +42,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -769,14 +772,15 @@ public class QueryTestCase {
 
     private void assertDetectionText(String expectedDetectionText, String queryString, String ... indexSpecs) {
         Query q = new Query(httpEncode("/?query=" + queryString));
-        IndexFacts indexFacts = new IndexFacts();
+        SearchDefinition sd = new SearchDefinition("testSearchDefinition");
         for (String indexSpec : indexSpecs) {
             String[] specParts = indexSpec.split(":");
             Index tokenIndex = new Index(specParts[1]);
             if (specParts[0].equals("text"))
                 tokenIndex.setPlainTokens(true);
-            indexFacts.addIndex("testSearchDefinition", tokenIndex);
+            sd.addIndex(tokenIndex);
         }
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
         MockLinguistics mockLinguistics = new MockLinguistics();
         q.getModel().setExecution(new Execution(Execution.Context.createContextStub(null, indexFacts, mockLinguistics)));
         q.getModel().getQueryTree(); // cause parsing

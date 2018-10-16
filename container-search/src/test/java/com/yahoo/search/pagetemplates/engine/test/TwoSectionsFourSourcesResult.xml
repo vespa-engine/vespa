@@ -1,65 +1,66 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-<result version="1.0" layout="twoColumns">
-
+<page version="1.0" layout="twoColumns">
   <section region="left">
-    <hit relevance="1.0" source="source3">
-      <id>source3-1</id>
-    </hit>
-    <hit relevance="0.5" source="source3">
-      <id>source3-2</id>
-    </hit>
-    <hit relevance="0.3333333333333333" source="source3">
-      <id>source3-3</id>
-    </hit>
-    <hit relevance="0.25" source="source3">
-      <id>source3-4</id>
-    </hit>
-    <hit relevance="0.2" source="source3">
-      <id>source3-5</id>
-    </hit>
-    <hit relevance="1.0" source="source1">
-      <id>source1-1</id>
-    </hit>
-    <hit relevance="0.5" source="source1">
-      <id>source1-2</id>
-    </hit>
-    <hit relevance="0.3333333333333333" source="source1">
-      <id>source1-3</id>
-    </hit>
+    <content>
+      <hit relevance="1.0" source="source3">
+        <id>source3-1</id>
+      </hit>
+      <hit relevance="0.5" source="source3">
+        <id>source3-2</id>
+      </hit>
+      <hit relevance="0.3333333333333333" source="source3">
+        <id>source3-3</id>
+      </hit>
+      <hit relevance="0.25" source="source3">
+        <id>source3-4</id>
+      </hit>
+      <hit relevance="0.2" source="source3">
+        <id>source3-5</id>
+      </hit>
+      <hit relevance="1.0" source="source1">
+        <id>source1-1</id>
+      </hit>
+      <hit relevance="0.5" source="source1">
+        <id>source1-2</id>
+      </hit>
+      <hit relevance="0.3333333333333333" source="source1">
+        <id>source1-3</id>
+      </hit>
+    </content>
   </section>
-
   <section region="right">
-    <hit relevance="1.0" source="source4">
-      <id>source4-1</id>
-    </hit>
-    <hit relevance="1.0" source="source2">
-      <id>source2-1</id>
-    </hit>
-    <hit relevance="0.5" source="source4">
-      <id>source4-2</id>
-    </hit>
-    <hit relevance="0.5" source="source2">
-      <id>source2-2</id>
-    </hit>
-    <hit relevance="0.3333333333333333" source="source4">
-      <id>source4-3</id>
-    </hit>
-    <hit relevance="0.3333333333333333" source="source2">
-      <id>source2-3</id>
-    </hit>
-    <hit relevance="0.25" source="source4">
-      <id>source4-4</id>
-    </hit>
-    <hit relevance="0.25" source="source2">
-      <id>source2-4</id>
-    </hit>
-    <hit relevance="0.2" source="source4">
-      <id>source4-5</id>
-    </hit>
-    <hit relevance="0.16666666666666666" source="source4">
-      <id>source4-6</id>
-    </hit>
+    <content>
+      <hit relevance="1.0" source="source4">
+        <id>source4-1</id>
+      </hit>
+      <hit relevance="1.0" source="source2">
+        <id>source2-1</id>
+      </hit>
+      <hit relevance="0.5" source="source4">
+        <id>source4-2</id>
+      </hit>
+      <hit relevance="0.5" source="source2">
+        <id>source2-2</id>
+      </hit>
+      <hit relevance="0.3333333333333333" source="source4">
+        <id>source4-3</id>
+      </hit>
+      <hit relevance="0.3333333333333333" source="source2">
+        <id>source2-3</id>
+      </hit>
+      <hit relevance="0.25" source="source4">
+        <id>source4-4</id>
+      </hit>
+      <hit relevance="0.25" source="source2">
+        <id>source2-4</id>
+      </hit>
+      <hit relevance="0.2" source="source4">
+        <id>source4-5</id>
+      </hit>
+      <hit relevance="0.16666666666666666" source="source4">
+        <id>source4-6</id>
+      </hit>
+    </content>
   </section>
-
-</result>
+</page>

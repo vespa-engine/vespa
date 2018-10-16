@@ -11,6 +11,6 @@ import com.yahoo.component.provider.Freezable;
 public interface PageElement extends Freezable {
 
     /** Accepts a visitor to this structure */
-    public void accept(PageTemplateVisitor visitor);
+    void accept(PageTemplateVisitor visitor);
 
 }

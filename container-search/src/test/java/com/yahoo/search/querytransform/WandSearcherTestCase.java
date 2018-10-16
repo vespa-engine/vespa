@@ -4,6 +4,8 @@ package com.yahoo.search.querytransform;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.DotProductItem;
 import com.yahoo.prelude.query.Item;
@@ -20,6 +22,7 @@ import com.yahoo.search.searchchain.Execution;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.ListIterator;
 
 import static com.yahoo.container.protect.Error.INVALID_QUERY_PARAMETER;
@@ -40,10 +43,9 @@ public class WandSearcherTestCase {
 
     @SuppressWarnings("deprecation")
     private IndexFacts buildIndexFacts() {
-        IndexFacts retval = new IndexFacts();
-        retval.addIndex("test", new Index(VESPA_FIELD));
-        retval.freeze();
-        return retval;
+        SearchDefinition sd = new SearchDefinition("test");
+        sd.addIndex(new Index(VESPA_FIELD));
+        return new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
     }
 
     private Execution buildExec() {

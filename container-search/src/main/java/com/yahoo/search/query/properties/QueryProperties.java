@@ -29,11 +29,9 @@ import java.util.Map;
  */
 public class QueryProperties extends Properties {
 
-    /**
-     * TODO: Remove on Vespa 7
-     * @deprecated use Query.nativeProperties
-     */
-    @Deprecated
+    /** @deprecated use Query.nativeProperties */
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public static final CompoundName[] PER_SOURCE_QUERY_PROPERTIES =
             Query.nativeProperties.toArray(new CompoundName[] {});
 

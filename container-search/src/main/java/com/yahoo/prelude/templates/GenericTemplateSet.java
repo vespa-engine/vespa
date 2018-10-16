@@ -14,7 +14,8 @@ import java.util.Properties;
  * 
  * @deprecated use a renderer instead
  */
-@Deprecated // TODO: Remove on Vespa 7
+// TODO: Remove on Vespa 7
+@Deprecated // OK (But wait for deprecated handlers in vespaclient-container-plugin to be removed)
 public class GenericTemplateSet {
 
     public static final String  DEFAULT_MIMETYPE    = "text/xml";

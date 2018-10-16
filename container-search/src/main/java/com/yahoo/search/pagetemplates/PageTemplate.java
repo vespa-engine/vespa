@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * A page template represents a particular way to organize a return page. It is a recursive structure of
+ * A page template represents a particular way to organize a result page. It is a recursive structure of
  * page template elements.
  *
  * @author bratseth

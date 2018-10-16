@@ -45,7 +45,9 @@ import edu.umd.cs.findbugs.annotations.Nullable;
  *
  * @author Arne Bergene Fossaa
  * @author Steinar Knutsen
+ * @deprecated
  */
+// TODO: Remove on Vespa 7
 @Deprecated
 @Provides("Vespa")
 @After("*")

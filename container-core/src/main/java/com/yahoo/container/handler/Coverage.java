@@ -127,14 +127,14 @@ public class Coverage {
      */
     public boolean getFull() {
         switch (fullReason) {
-        case EXPLICITLY_FULL:
-            return true;
-        case EXPLICITLY_INCOMPLETE:
-            return false;
-        case DOCUMENT_COUNT:
-            return docs == active;
-        default:
-            throw new IllegalStateException("Implementation out of sync. Please report this as a bug.");
+            case EXPLICITLY_FULL:
+                return true;
+            case EXPLICITLY_INCOMPLETE:
+                return false;
+            case DOCUMENT_COUNT:
+                return docs == active;
+            default:
+                throw new IllegalStateException("Implementation out of sync. Please report this as a bug.");
         }
     }
 

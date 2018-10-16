@@ -16,7 +16,8 @@ import java.util.Set;
  * @deprecated use a Renderer instead
  */
 @SuppressWarnings("deprecation")
-@Deprecated // TODO: Remove on Vespa 7
+// TODO: Remove on Vespa 7
+@Deprecated // OK (But wait for deprecated handlers in vespaclient-container-plugin to be removed)
 public class FormattingOptions {
 
 	public static final String DEFAULT_TYPE_ATTRIBUTE_NAME = "type";
