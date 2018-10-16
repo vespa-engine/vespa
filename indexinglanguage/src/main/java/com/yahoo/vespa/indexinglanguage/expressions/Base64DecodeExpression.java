@@ -2,15 +2,17 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.LongFieldValue;
 import org.apache.commons.codec.binary.Base64;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class Base64DecodeExpression extends Expression {
+public final class Base64DecodeExpression extends Expression {
 
+    public Base64DecodeExpression() {
+        super(DataType.STRING);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         String input = String.valueOf(ctx.getValue());
@@ -35,11 +37,6 @@ public class Base64DecodeExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.STRING;
     }
 
     @Override

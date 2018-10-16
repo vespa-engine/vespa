@@ -17,14 +17,16 @@ import java.util.List;
 /**
  * @author Simon Thoresen Hult
  */
-public class StatementExpression extends ExpressionList<Expression> {
+public final class StatementExpression extends ExpressionList<Expression> {
 
     public StatementExpression(Expression... lst) {
         this(Arrays.asList(lst));
+        setInputType(resolveInputType());
     }
 
     public StatementExpression(Iterable<Expression> lst) {
         super(filterList(lst));
+        setInputType(resolveInputType());
     }
 
     @Override
@@ -41,8 +43,7 @@ public class StatementExpression extends ExpressionList<Expression> {
         }
     }
 
-    @Override
-    public DataType requiredInputType() {
+    private DataType resolveInputType() {
         for (Expression exp : this) {
             DataType type = exp.requiredInputType();
             if (type != null) {

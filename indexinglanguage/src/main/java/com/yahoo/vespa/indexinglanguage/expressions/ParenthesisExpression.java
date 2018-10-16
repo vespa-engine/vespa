@@ -14,6 +14,7 @@ public class ParenthesisExpression extends CompositeExpression {
     private final Expression innerExp;
 
     public ParenthesisExpression(Expression innerExp) {
+        super(innerExp.requiredInputType());
         this.innerExp = innerExp;
     }
 
@@ -29,11 +30,6 @@ public class ParenthesisExpression extends CompositeExpression {
     @Override
     protected void doVerify(VerificationContext context) {
         innerExp.verify(context);
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return innerExp.requiredInputType();
     }
 
     @Override

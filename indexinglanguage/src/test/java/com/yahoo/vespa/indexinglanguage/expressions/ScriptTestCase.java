@@ -57,7 +57,7 @@ public class ScriptTestCase {
         assertVerifyThrows(null, exp, "Expected int input, got null.");
         assertVerifyThrows(DataType.STRING, exp, "Expected int input, got string.");
 
-        assertVerifyThrows(null, newScript(newStatement(SimpleExpression.newConversion(DataType.INT, DataType.STRING)),
+        assertVerifyThrows(null, () -> newScript(newStatement(SimpleExpression.newConversion(DataType.INT, DataType.STRING)),
                                            newStatement(SimpleExpression.newConversion(DataType.STRING, DataType.INT))),
                            "Statements require conflicting input types, int vs string.");
     }

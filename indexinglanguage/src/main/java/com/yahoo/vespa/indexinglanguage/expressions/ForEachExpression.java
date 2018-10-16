@@ -13,11 +13,12 @@ import com.yahoo.vespa.objects.ObjectPredicate;
 /**
  * @author Simon Thoresen Hult
  */
-public class ForEachExpression extends CompositeExpression {
+public final class ForEachExpression extends CompositeExpression {
 
     private final Expression exp;
 
     public ForEachExpression(Expression exp) {
+        super(UnresolvedDataType.INSTANCE);
         this.exp = exp;
     }
 
@@ -69,11 +70,6 @@ public class ForEachExpression extends CompositeExpression {
             throw new VerificationException(this, "Expected Array, Struct or WeightedSet input, got " +
                                                   input.getName() + ".");
         }
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

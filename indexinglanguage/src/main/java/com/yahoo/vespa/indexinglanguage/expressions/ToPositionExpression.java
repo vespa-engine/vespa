@@ -8,8 +8,11 @@ import com.yahoo.document.PositionDataType;
 /**
  * @author Simon Thoresen Hult
  */
-public class ToPositionExpression extends Expression {
+public final class ToPositionExpression extends Expression {
 
+    public ToPositionExpression() {
+        super(DataType.STRING);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         ctx.setValue(PositionDataType.fromString(String.valueOf(ctx.getValue())));
@@ -18,11 +21,6 @@ public class ToPositionExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.STRING;
     }
 
     @Override

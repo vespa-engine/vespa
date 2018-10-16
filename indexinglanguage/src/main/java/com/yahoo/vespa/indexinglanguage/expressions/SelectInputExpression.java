@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * @author Simon Thoresen Hult
  */
-public class SelectInputExpression extends CompositeExpression {
+public final class SelectInputExpression extends CompositeExpression {
 
     private final List<Pair<String, Expression>> cases;
 
@@ -25,6 +25,7 @@ public class SelectInputExpression extends CompositeExpression {
     }
 
     public SelectInputExpression(List<Pair<String, Expression>> cases) {
+        super(null);
         this.cases = cases;
     }
 
@@ -59,11 +60,6 @@ public class SelectInputExpression extends CompositeExpression {
         for (Pair<String, Expression> entry : cases) {
             select(entry.getSecond(), predicate, operation);
         }
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return null;
     }
 
     @Override

@@ -9,8 +9,11 @@ import com.yahoo.language.Language;
  *
  * @author Simon Thoresen Hult
  */
-public class SetLanguageExpression extends Expression {
+public final class SetLanguageExpression extends Expression {
 
+    public SetLanguageExpression() {
+        super(DataType.STRING);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         ctx.setLanguage(Language.fromLanguageTag(String.valueOf(ctx.getValue())));
@@ -19,11 +22,6 @@ public class SetLanguageExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         // empty
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.STRING;
     }
 
     @Override

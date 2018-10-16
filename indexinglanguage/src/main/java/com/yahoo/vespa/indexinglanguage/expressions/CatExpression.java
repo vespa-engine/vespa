@@ -15,10 +15,11 @@ import java.util.*;
 /**
  * @author Simon Thoresen Hult
  */
-public class CatExpression extends ExpressionList<Expression> {
+public final class CatExpression extends ExpressionList<Expression> {
 
     public CatExpression(Expression... lst) {
         super(Arrays.asList(lst));
+        setInputType(resolveInputType());
     }
 
     public CatExpression(Collection<? extends Expression> lst) {
@@ -62,8 +63,7 @@ public class CatExpression extends ExpressionList<Expression> {
         context.setValue(resolveOutputType(types));
     }
 
-    @Override
-    public DataType requiredInputType() {
+    private DataType resolveInputType() {
         DataType prev = null;
         for (Expression exp : this) {
             DataType next = exp.requiredInputType();

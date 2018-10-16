@@ -10,8 +10,11 @@ import org.apache.commons.codec.binary.Base64;
 /**
  * @author Simon Thoresen Hult
  */
-public class Base64EncodeExpression extends Expression {
+public final class Base64EncodeExpression extends Expression {
 
+    public Base64EncodeExpression() {
+        super(DataType.LONG);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         long input = ((LongFieldValue)ctx.getValue()).getLong();
@@ -27,11 +30,6 @@ public class Base64EncodeExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.LONG;
     }
 
     @Override

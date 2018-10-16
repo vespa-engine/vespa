@@ -18,10 +18,11 @@ public abstract class ExpressionList<T extends Expression> extends CompositeExpr
     private final List<T> expressions = new LinkedList<T>();
 
     protected ExpressionList() {
-        // empty
+        super(null);
     }
 
     protected ExpressionList(Iterable<? extends T> lst) {
+        super(null);
         for (T exp : lst) {
             this.expressions.add(exp);
         }

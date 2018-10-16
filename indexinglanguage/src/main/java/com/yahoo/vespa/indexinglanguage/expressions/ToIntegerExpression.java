@@ -2,14 +2,16 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class ToIntegerExpression extends Expression {
+public final class ToIntegerExpression extends Expression {
 
+    public ToIntegerExpression() {
+        super(UnresolvedDataType.INSTANCE);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         ctx.setValue(new IntegerFieldValue(Integer.valueOf(String.valueOf(ctx.getValue()))));
@@ -18,11 +20,6 @@ public class ToIntegerExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

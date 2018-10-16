@@ -17,23 +17,21 @@ import java.util.Iterator;
 /**
  * @author Simon Thoresen Hult
  */
-public class ScriptExpression extends ExpressionList<StatementExpression> {
-
-    private final DataType inputType;
+public final class ScriptExpression extends ExpressionList<StatementExpression> {
 
     public ScriptExpression() {
         super();
-        inputType = resolveInputTypeAndcatch();
+        setInputType(resolveInputType());
     }
 
     public ScriptExpression(StatementExpression... lst) {
         super(Arrays.asList(lst));
-        inputType = resolveInputTypeAndcatch();
+        setInputType(resolveInputType());
     }
 
     public ScriptExpression(Collection<? extends StatementExpression> lst) {
         super(lst);
-        inputType = resolveInputTypeAndcatch();
+        setInputType(resolveInputType());
     }
 
     @Override
@@ -54,18 +52,6 @@ public class ScriptExpression extends ExpressionList<StatementExpression> {
         context.setValue(input);
     }
 
-    @Override
-    public DataType requiredInputType() {
-        return inputType != null ? inputType : resolveInputType();
-    }
-
-    private DataType resolveInputTypeAndcatch() {
-        try {
-            return resolveInputType();
-        } catch (VerificationException e) {
-            return null;
-        }
-    }
     private DataType resolveInputType() {
         DataType prev = null;
         for (Expression exp : this) {

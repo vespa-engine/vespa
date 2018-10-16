@@ -2,18 +2,28 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
-import com.yahoo.document.annotation.*;
+import com.yahoo.document.annotation.Annotation;
+import com.yahoo.document.annotation.AnnotationTypes;
+import com.yahoo.document.annotation.SpanNode;
+import com.yahoo.document.annotation.SpanTree;
+import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class FlattenExpression extends Expression {
+public final class FlattenExpression extends Expression {
 
+    public FlattenExpression() {
+        super(DataType.STRING);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         StringFieldValue input = (StringFieldValue)ctx.getValue();
@@ -60,11 +70,6 @@ public class FlattenExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.STRING;
     }
 
     @Override

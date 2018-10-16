@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 /**
  * @author Simon Thoresen Hult
  */
-public class IfThenExpression extends CompositeExpression {
+public final class IfThenExpression extends CompositeExpression {
 
     public static enum Comparator {
         EQ("=="),
@@ -46,11 +46,13 @@ public class IfThenExpression extends CompositeExpression {
     }
 
     public IfThenExpression(Expression lhs, Comparator cmp, Expression rhs, Expression ifTrue, Expression ifFalse) {
+        super(null);
         this.lhs = lhs;
         this.cmp = cmp;
         this.rhs = rhs;
         this.ifTrue = ifTrue;
         this.ifFalse = ifFalse;
+        setInputType(resolveInputType());
     }
 
     public Expression getLeftHandSide() {
@@ -112,8 +114,7 @@ public class IfThenExpression extends CompositeExpression {
         select(ifFalse, predicate, operation);
     }
 
-    @Override
-    public DataType requiredInputType() {
+    private DataType resolveInputType() {
         DataType input = null;
         input = resolveRequiredInputType(input, lhs.requiredInputType());
         input = resolveRequiredInputType(input, rhs.requiredInputType());

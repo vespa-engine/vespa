@@ -3,9 +3,7 @@ package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.IntegerFieldValue;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
@@ -258,6 +256,9 @@ public class ExpressionConverterTestCase {
 
     private static class MyComposite extends CompositeExpression {
 
+        MyComposite() {
+            super(null);
+        }
         @Override
         protected void doExecute(ExecutionContext ctx) {
 
@@ -266,11 +267,6 @@ public class ExpressionConverterTestCase {
         @Override
         protected void doVerify(VerificationContext context) {
 
-        }
-
-        @Override
-        public DataType requiredInputType() {
-            return null;
         }
 
         @Override

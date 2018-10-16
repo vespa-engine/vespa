@@ -3,15 +3,17 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class ToArrayExpression extends Expression {
+public final class ToArrayExpression extends Expression {
 
+    public ToArrayExpression() {
+        super(UnresolvedDataType.INSTANCE);
+    }
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     protected void doExecute(ExecutionContext ctx) {
@@ -28,11 +30,6 @@ public class ToArrayExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(DataType.getArray(context.getValue()));
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -10,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom;
 /**
  * @author Simon Thoresen Hult
  */
-public class RandomExpression extends Expression {
+public final class RandomExpression extends Expression {
 
     private final Integer max;
 
@@ -19,6 +18,7 @@ public class RandomExpression extends Expression {
     }
 
     public RandomExpression(Integer max) {
+        super(null);
         this.max = max;
     }
 
@@ -40,11 +40,6 @@ public class RandomExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return null;
     }
 
     @Override

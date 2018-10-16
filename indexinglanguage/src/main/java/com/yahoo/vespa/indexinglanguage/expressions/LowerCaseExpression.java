@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.StringFieldValue;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
@@ -10,8 +9,11 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
 /**
  * @author Simon Thoresen Hult
  */
-public class LowerCaseExpression extends Expression {
+public final class LowerCaseExpression extends Expression {
 
+    public LowerCaseExpression() {
+        super(DataType.STRING);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         ctx.setValue(new StringFieldValue(toLowerCase(String.valueOf(ctx.getValue()))));
@@ -20,11 +22,6 @@ public class LowerCaseExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.STRING;
     }
 
     @Override
@@ -39,10 +36,7 @@ public class LowerCaseExpression extends Expression {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof LowerCaseExpression)) {
-            return false;
-        }
-        return true;
+        return (obj instanceof LowerCaseExpression);
     }
 
     @Override
