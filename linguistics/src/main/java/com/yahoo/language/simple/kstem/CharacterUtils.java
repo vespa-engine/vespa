@@ -29,7 +29,8 @@ public abstract class CharacterUtils {
    * explicitly returns a version matching java 4 semantics 
    * @deprecated Only for n-gram backwards compat
    */
-  @Deprecated
+  // TODO: Remove on Vespa 7
+  @Deprecated // OK
   public static CharacterUtils getJava4Instance() {
     return JAVA_4;
   }
