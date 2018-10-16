@@ -1,4 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "crypto_utils.h"
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/net/tls/tls_context.h>
@@ -8,10 +9,12 @@
 #include <vespa/vespalib/net/tls/impl/openssl_tls_context_impl.h>
 #include <vespa/vespalib/test/make_tls_options_for_testing.h>
 #include <iostream>
+#include <stdexcept>
 #include <stdlib.h>
 
 using namespace vespalib;
 using namespace vespalib::net::tls;
+using namespace vespalib::net::tls::impl;
 
 const char* decode_state_to_str(DecodeResult::State state) noexcept {
     switch (state) {
@@ -53,7 +56,7 @@ void print_decode_result(const char* mode, const DecodeResult& res) {
 
 struct Fixture {
     TransportSecurityOptions tls_opts;
-    std::unique_ptr<TlsContext> tls_ctx;
+    std::shared_ptr<TlsContext> tls_ctx;
     std::unique_ptr<CryptoCodec> client;
     std::unique_ptr<CryptoCodec> server;
     SmartBuffer client_to_server;
@@ -62,11 +65,12 @@ struct Fixture {
     Fixture()
         : tls_opts(vespalib::test::make_tls_options_for_testing()),
           tls_ctx(TlsContext::create_default_context(tls_opts)),
-          client(create_openssl_codec(*tls_ctx, CryptoCodec::Mode::Client)),
-          server(create_openssl_codec(*tls_ctx, CryptoCodec::Mode::Server)),
+          client(create_openssl_codec(tls_ctx, CryptoCodec::Mode::Client)),
+          server(create_openssl_codec(tls_ctx, CryptoCodec::Mode::Server)),
           client_to_server(64 * 1024),
           server_to_client(64 * 1024)
     {}
+    ~Fixture();
 
     static TransportSecurityOptions create_options_without_own_peer_cert() {
         auto source_opts = vespalib::test::make_tls_options_for_testing();
@@ -76,13 +80,13 @@ struct Fixture {
     static std::unique_ptr<CryptoCodec> create_openssl_codec(
             const TransportSecurityOptions& opts, CryptoCodec::Mode mode) {
         auto ctx = TlsContext::create_default_context(opts);
-        return create_openssl_codec(*ctx, mode);
+        return create_openssl_codec(ctx, mode);
     }
 
     static std::unique_ptr<CryptoCodec> create_openssl_codec(
-            const TlsContext& ctx, CryptoCodec::Mode mode) {
-        return std::make_unique<impl::OpenSslCryptoCodecImpl>(
-                *dynamic_cast<const impl::OpenSslTlsContextImpl&>(ctx).native_context(), mode);
+            const std::shared_ptr<TlsContext>& ctx, CryptoCodec::Mode mode) {
+        auto ctx_impl = std::dynamic_pointer_cast<impl::OpenSslTlsContextImpl>(ctx);
+        return std::make_unique<impl::OpenSslCryptoCodecImpl>(std::move(ctx_impl), mode);
     }
 
     EncodeResult do_encode(CryptoCodec& codec, Output& buffer, vespalib::stringref plaintext) {
@@ -155,7 +159,10 @@ struct Fixture {
     }
 };
 
+Fixture::~Fixture() = default;
+
 TEST_F("client and server can complete handshake", Fixture) {
+    fprintf(stderr, "Compiled with %s\n", OPENSSL_VERSION_TEXT);
     EXPECT_TRUE(f.handshake());
 }
 
@@ -303,6 +310,158 @@ TEST_F("Can specify multiple trusted CA certs in transport options", Fixture) {
     f.server = f.create_openssl_codec(multi_ca_using_ca_2, CryptoCodec::Mode::Server);
     EXPECT_TRUE(f.handshake());
 }
+
+struct CertFixture : Fixture {
+    CertKeyWrapper root_ca;
+
+    static CertKeyWrapper make_root_ca() {
+        auto dn = X509Certificate::DistinguishedName()
+                .country("US").state("CA").locality("Sunnyvale")
+                .organization("ACME, Inc.")
+                .organizational_unit("ACME Root CA")
+                .add_common_name("acme.example.com");
+        auto subject = X509Certificate::SubjectInfo(std::move(dn));
+        auto key = PrivateKey::generate_p256_ec_key();
+        auto params = X509Certificate::Params::self_signed(std::move(subject), key);
+        auto cert = X509Certificate::generate_from(std::move(params));
+        return {std::move(cert), std::move(key)};
+    }
+
+    CertFixture()
+        : Fixture(),
+          root_ca(make_root_ca())
+    {}
+    ~CertFixture();
+
+    CertKeyWrapper create_ca_issued_peer_cert(const std::vector<vespalib::string>& common_names,
+                                              const std::vector<vespalib::string>& sans) {
+        auto dn = X509Certificate::DistinguishedName()
+                .country("US").state("CA").locality("Sunnyvale")
+                .organization("Wile E. Coyote, Ltd.")
+                .organizational_unit("Personal Rocketry Division");
+        for (auto& cn : common_names) {
+            dn.add_common_name(cn);
+        }
+        auto subject = X509Certificate::SubjectInfo(std::move(dn));
+        for (auto& san : sans) {
+            subject.add_subject_alt_name(san);
+        }
+        auto key = PrivateKey::generate_p256_ec_key();
+        auto params = X509Certificate::Params::issued_by(std::move(subject), key, root_ca.cert, root_ca.key);
+        auto cert = X509Certificate::generate_from(std::move(params));
+        return {std::move(cert), std::move(key)};
+    }
+
+    void reset_client_with_cert_opts(const CertKeyWrapper& ck, std::shared_ptr<CertificateVerificationCallback> cert_cb) {
+        TransportSecurityOptions client_opts(root_ca.cert->to_pem(), ck.cert->to_pem(),
+                                             ck.key->private_to_pem(), std::move(cert_cb));
+        client = create_openssl_codec(client_opts, CryptoCodec::Mode::Client);
+    }
+
+    void reset_server_with_cert_opts(const CertKeyWrapper& ck, std::shared_ptr<CertificateVerificationCallback> cert_cb) {
+        TransportSecurityOptions server_opts(root_ca.cert->to_pem(), ck.cert->to_pem(),
+                                             ck.key->private_to_pem(), std::move(cert_cb));
+        server = create_openssl_codec(server_opts, CryptoCodec::Mode::Server);
+    }
+};
+
+CertFixture::~CertFixture() = default;
+
+struct PrintingCertificateCallback : CertificateVerificationCallback {
+    bool verify(const PeerCredentials& peer_creds) const override {
+        if (!peer_creds.common_name.empty())  {
+            fprintf(stderr, "Got a CN: %s\n", peer_creds.common_name.c_str());
+        }
+        for (auto& dns : peer_creds.dns_sans) {
+            fprintf(stderr, "Got a DNS SAN entry: %s\n", dns.c_str());
+        }
+        return true;
+    }
+};
+
+// Single-use mock verifier
+struct MockCertificateCallback : CertificateVerificationCallback {
+    mutable PeerCredentials creds; // only used in single thread testing context
+    bool verify(const PeerCredentials& peer_creds) const override {
+        creds = peer_creds;
+        return true;
+    }
+};
+
+struct AlwaysFailVerifyCallback : CertificateVerificationCallback {
+    bool verify([[maybe_unused]] const PeerCredentials& peer_creds) const override {
+        fprintf(stderr, "Rejecting certificate, none shall pass!\n");
+        return false;
+    }
+};
+
+struct ExceptionThrowingCallback : CertificateVerificationCallback {
+    bool verify([[maybe_unused]] const PeerCredentials& peer_creds) const override {
+        throw std::runtime_error("oh no what is going on");
+    }
+};
+
+TEST_F("Certificate verification callback returning false breaks handshake", CertFixture) {
+    auto ck = f.create_ca_issued_peer_cert({"hello.world.example.com"}, {});
+
+    f.reset_client_with_cert_opts(ck, std::make_shared<PrintingCertificateCallback>());
+    f.reset_server_with_cert_opts(ck, std::make_shared<AlwaysFailVerifyCallback>());
+    EXPECT_FALSE(f.handshake());
+}
+
+TEST_F("Exception during verification callback processing breaks handshake", CertFixture) {
+    auto ck = f.create_ca_issued_peer_cert({"hello.world.example.com"}, {});
+
+    f.reset_client_with_cert_opts(ck, std::make_shared<PrintingCertificateCallback>());
+    f.reset_server_with_cert_opts(ck, std::make_shared<ExceptionThrowingCallback>());
+    EXPECT_FALSE(f.handshake());
+}
+
+TEST_F("certificate verification callback observes CN and DNS SANs", CertFixture) {
+    auto ck = f.create_ca_issued_peer_cert(
+            {{"rockets.wile.example.com"}},
+            {{"DNS:crash.wile.example.com"}, {"DNS:burn.wile.example.com"}});
+
+    fprintf(stderr, "certs:\n%s%s\n", f.root_ca.cert->to_pem().c_str(), ck.cert->to_pem().c_str());
+
+    f.reset_client_with_cert_opts(ck, std::make_shared<PrintingCertificateCallback>());
+    auto server_cb = std::make_shared<MockCertificateCallback>();
+    f.reset_server_with_cert_opts(ck, server_cb);
+    ASSERT_TRUE(f.handshake());
+
+    auto& creds = server_cb->creds;
+    EXPECT_EQUAL("rockets.wile.example.com", creds.common_name);
+    ASSERT_EQUAL(2u, creds.dns_sans.size());
+    EXPECT_EQUAL("crash.wile.example.com", creds.dns_sans[0]);
+    EXPECT_EQUAL("burn.wile.example.com", creds.dns_sans[1]);
+}
+
+TEST_F("last occurring CN is given to verification callback if multiple CNs are present", CertFixture) {
+    auto ck = f.create_ca_issued_peer_cert(
+            {{"foo.wile.example.com"}, {"bar.wile.example.com"}, {"baz.wile.example.com"}}, {});
+
+    f.reset_client_with_cert_opts(ck, std::make_shared<PrintingCertificateCallback>());
+    auto server_cb = std::make_shared<MockCertificateCallback>();
+    f.reset_server_with_cert_opts(ck, server_cb);
+    ASSERT_TRUE(f.handshake());
+
+    auto& creds = server_cb->creds;
+    EXPECT_EQUAL("baz.wile.example.com", creds.common_name);
+}
+
+// TODO we are likely to want IPADDR SANs at some point
+TEST_F("Only DNS SANs are enumerated", CertFixture) {
+    auto ck = f.create_ca_issued_peer_cert({}, {"IP:127.0.0.1"});
+
+    f.reset_client_with_cert_opts(ck, std::make_shared<PrintingCertificateCallback>());
+    auto server_cb = std::make_shared<MockCertificateCallback>();
+    f.reset_server_with_cert_opts(ck, server_cb);
+    ASSERT_TRUE(f.handshake());
+    EXPECT_EQUAL(0u, server_cb->creds.dns_sans.size());
+}
+
+// TODO we can't test embedded nulls since the OpenSSL v3 extension APIs
+// take in null terminated strings as arguments... :I
 
 /*
  * TODO tests:

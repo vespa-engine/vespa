@@ -5,14 +5,14 @@
 /*
  * Generated with the following commands:
  *
- * openssl ecparam -name prime256v1 -genkey -out ca.key
+ * openssl ecparam -name prime256v1 -genkey -noout -out ca.key
  *
  * openssl req -new -x509 -nodes -key ca.key \
  *    -sha256 -out ca.pem \
  *    -subj '/C=US/L=LooneyVille/O=ACME/OU=ACME test CA/CN=acme.example.com' \
  *    -days 10000
  *
- * openssl ecparam -name prime256v1 -genkey -out host.key
+ * openssl ecparam -name prime256v1 -genkey -noout -out host.key
  *
  * openssl req -new -key host.key -out host.csr \
  *    -subj '/C=US/L=LooneyVille/O=Wile. E. Coyote, Ltd./CN=wile.example.com' \
@@ -59,10 +59,7 @@ zL06UPI=
 -----END CERTIFICATE-----)";
 
 // host.key
-constexpr const char* key_pem = R"(-----BEGIN EC PARAMETERS-----
-BggqhkjOPQMBBw==
------END EC PARAMETERS-----
------BEGIN EC PRIVATE KEY-----
+constexpr const char* key_pem = R"(-----BEGIN EC PRIVATE KEY-----
 MHcCAQEEID6di2PFYn8hPrxPbkFDGkSqF+K8L520In7nx3g0jwzOoAoGCCqGSM49
 AwEHoUQDQgAEe+Y4hxt66em0STviGUj6ZDbxzoLoubXWRml8JDFrEc2S2433KWw2
 npxYSKVCyo3a/Vo33V8/H0WgOXioKEZJxA==

@@ -6,6 +6,7 @@ vespa_add_library(vespalib_vespalib_net_tls OBJECT
     crypto_exception.cpp
     maybe_tls_crypto_engine.cpp
     maybe_tls_crypto_socket.cpp
+    peer_credentials.cpp
     protocol_snooping.cpp
     tls_context.cpp
     tls_crypto_engine.cpp

@@ -4,8 +4,8 @@
 
 namespace vespalib::net::tls {
 
-std::unique_ptr<TlsContext> TlsContext::create_default_context(const TransportSecurityOptions& opts) {
-    return std::make_unique<impl::OpenSslTlsContextImpl>(opts);
+std::shared_ptr<TlsContext> TlsContext::create_default_context(const TransportSecurityOptions& opts) {
+    return std::make_shared<impl::OpenSslTlsContextImpl>(opts);
 }
 
 }

@@ -119,7 +119,7 @@ public:
      *
      * Throws CryptoException if resources cannot be allocated for the codec.
      */
-    static std::unique_ptr<CryptoCodec> create_default_codec(TlsContext& ctx, Mode mode);
+    static std::unique_ptr<CryptoCodec> create_default_codec(std::shared_ptr<TlsContext> ctx, Mode mode);
 };
 
 }
