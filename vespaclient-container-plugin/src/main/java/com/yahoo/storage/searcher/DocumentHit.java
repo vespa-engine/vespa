@@ -9,6 +9,8 @@ import com.yahoo.search.result.Hit;
 import java.util.Iterator;
 import java.util.Map;
 
+@Deprecated // OK
+// TODO: Remove on Vespa 7
 public class DocumentHit extends Hit {
 
     private Document document;

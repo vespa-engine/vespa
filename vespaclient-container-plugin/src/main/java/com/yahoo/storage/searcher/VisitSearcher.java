@@ -27,7 +27,11 @@ import com.yahoo.vespaclient.config.FeederConfig;
 
 /**
  * A searcher that allows you to iterate through a storage cluster using visiting.
+ *
+ * @deprecated do not use
  */
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public class VisitSearcher extends Searcher {
 
     public static final String VISITOR_CONTINUATION_TOKEN_FIELDNAME = "visitorContinuationToken";

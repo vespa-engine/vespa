@@ -32,7 +32,8 @@ public interface OperationHandler {
         public final Optional<String> bucketSpace;
 
         /** @deprecated Use a VisitOptions.Builder instead */
-        @Deprecated
+        // TODO: Remove on Vespa 7
+        @Deprecated // OK
         public VisitOptions(Optional<String> cluster, Optional<String> continuation, Optional<Integer> wantedDocumentCount) {
             this.cluster = cluster;
             this.continuation = continuation;

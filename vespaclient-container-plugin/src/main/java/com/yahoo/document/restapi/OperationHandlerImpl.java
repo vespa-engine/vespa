@@ -10,6 +10,7 @@ import com.yahoo.document.json.JsonWriter;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.DocumentAccessException;
+import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.SyncParameters;
 import com.yahoo.documentapi.SyncSession;
 import com.yahoo.documentapi.VisitorControlHandler;
@@ -22,7 +23,6 @@ import com.yahoo.documentapi.metrics.DocumentOperationStatus;
 import com.yahoo.documentapi.metrics.DocumentOperationType;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.metrics.simple.MetricReceiver;
-import com.yahoo.storage.searcher.ContinuationHit;
 import com.yahoo.vdslib.VisitorOrdering;
 import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaclient.ClusterList;
@@ -195,10 +195,9 @@ public class OperationHandlerImpl implements OperationHandler {
             throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.INTERRUPTED));
         }
         if (localDataVisitorHandler.getErrors().isEmpty()) {
-            final Optional<String> continuationToken;
+            Optional<String> continuationToken;
             if (! visitorControlHandler.getProgress().isFinished()) {
-                final ContinuationHit continuationHit = new ContinuationHit(visitorControlHandler.getProgress());
-                continuationToken = Optional.of(continuationHit.getValue());
+                continuationToken = Optional.of(visitorControlHandler.getProgress().serializeToString());
             } else {
                 continuationToken = Optional.empty();
             }
@@ -448,7 +447,7 @@ public class OperationHandlerImpl implements OperationHandler {
 
         if (options.continuation.isPresent()) {
             try {
-                params.setResumeToken(ContinuationHit.getToken(options.continuation.get()));
+                params.setResumeToken(ProgressToken.fromSerializedString(options.continuation.get()));
             } catch (Exception e) {
                 throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.UNSPECIFIED));
             }

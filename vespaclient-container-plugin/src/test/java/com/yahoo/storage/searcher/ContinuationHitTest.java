@@ -11,6 +11,7 @@ import java.util.TreeSet;
 
 import static org.junit.Assert.*;
 
+@SuppressWarnings("deprecation")
 public class ContinuationHitTest {
 
     private static final String SINGLE_BUCKET_URL_SAFE_BASE64
