@@ -13,6 +13,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -112,6 +113,13 @@ public class Dispatcher extends AbstractComponent {
     }
 
     private Optional<SearchInvoker> getInternalInvoker(Query query, SearchInvokerSupplier invokerFactory) {
+        Optional<SearchCluster.Node> directNode = searchCluster.directDispatchTarget();
+        if (directNode.isPresent()) {
+            SearchCluster.Node node = directNode.get();
+            query.trace(false, 2, "Dispatching directly to ", node);
+            return invokerFactory.supply(query, Arrays.asList(node));
+        }
+
         Optional<SearchCluster.Group> groupInCluster = loadBalancer.takeGroupForQuery(query);
         if (!groupInCluster.isPresent()) {
             return Optional.empty();
