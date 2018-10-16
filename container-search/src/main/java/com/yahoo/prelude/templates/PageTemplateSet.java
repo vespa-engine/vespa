@@ -18,7 +18,7 @@ import java.io.Writer;
  */
 @SuppressWarnings("deprecation")
 // TODO: Remove on Vespa 7
-@Deprecated
+@Deprecated // OK
 public class PageTemplateSet extends TiledTemplateSet {
 
     public PageTemplateSet() {

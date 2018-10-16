@@ -197,7 +197,6 @@ public class DefaultTemplateSet extends UserTemplate<XMLWriter> {
         }
     }
 
-
     /**
      * Renders a hit group.
      */

@@ -80,7 +80,7 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
     }
 
     /**
-     * Creates a json renderer using a custom executor.
+     * Creates an XML renderer using a custom executor.
      * Using a custom executor is useful for tests to avoid creating new threads for each renderer registry.
      */
     public DefaultRenderer(Executor executor) {

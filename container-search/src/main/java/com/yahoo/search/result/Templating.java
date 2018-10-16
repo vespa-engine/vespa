@@ -191,7 +191,6 @@ public class Templating {
     /**
      * @deprecated since 5.1.21, use {@link Presentation#getRenderer()}
      */
-    @Deprecated // OK Do not remove on Vespa 6. Remove when we move everything having to do with templates
     public Renderer<Result> getRenderer() {
         return renderer;
     }
@@ -199,7 +198,6 @@ public class Templating {
     /**
      * @deprecated since 5.1.21, use {@link Presentation#setRenderer(com.yahoo.component.ComponentSpecification)}
      */
-    @Deprecated // OK Do not remove on Vespa 6. Remove when we move everything having to do with templates
     public void setRenderer(Renderer<Result> renderer) {
         this.renderer = renderer;
     }

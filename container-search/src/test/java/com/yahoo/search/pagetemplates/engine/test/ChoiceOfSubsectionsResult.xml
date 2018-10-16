@@ -1,29 +1,30 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-<result version="1.0">
-
+<page version="1.0">
   <section>
-    <hit relevance="1.0" source="source2">
-      <id>source2-1</id>
-    </hit>
-    <hit relevance="0.5" source="source2">
-      <id>source2-2</id>
-    </hit>
-    <hit relevance="0.3333333333333333" source="source2">
-      <id>source2-3</id>
-    </hit>
+    <content>
+      <hit relevance="1.0" source="source2">
+        <id>source2-1</id>
+      </hit>
+      <hit relevance="0.5" source="source2">
+        <id>source2-2</id>
+      </hit>
+      <hit relevance="0.3333333333333333" source="source2">
+        <id>source2-3</id>
+      </hit>
+    </content>
   </section>
-
   <section>
-    <hit relevance="1.0" source="source4">
-      <id>source4-1</id>
-    </hit>
-    <hit relevance="0.5" source="source4">
-      <id>source4-2</id>
-    </hit>
-    <hit relevance="0.3333333333333333" source="source4">
-      <id>source4-3</id>
-    </hit>
+    <content>
+      <hit relevance="1.0" source="source4">
+        <id>source4-1</id>
+      </hit>
+      <hit relevance="0.5" source="source4">
+        <id>source4-2</id>
+      </hit>
+      <hit relevance="0.3333333333333333" source="source4">
+        <id>source4-3</id>
+      </hit>
+    </content>
   </section>
-
-</result>
+</page>

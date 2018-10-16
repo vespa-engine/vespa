@@ -31,7 +31,7 @@ import com.yahoo.text.Utf8;
 /**
  * Test the XML renderer
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class XMLRendererTestCase {
 
