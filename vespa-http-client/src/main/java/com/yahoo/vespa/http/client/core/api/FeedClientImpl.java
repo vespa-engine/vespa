@@ -60,13 +60,13 @@ public class FeedClientImpl implements FeedClient {
 
     @Override
     public void close() {
-        Instant lastResultReceived = Instant.now();
+        Instant lastOldestResultReceivedAt = Instant.now();
         Optional<String> oldestIncompleteId = operationProcessor.oldestIncompleteResultId();
 
-        while (oldestIncompleteId.isPresent() && waitForOperations(lastResultReceived, sleepTimeMs, closeTimeoutMs)) {
+        while (oldestIncompleteId.isPresent() && waitForOperations(lastOldestResultReceivedAt, sleepTimeMs, closeTimeoutMs)) {
             Optional<String> oldestIncompleteIdNow = operationProcessor.oldestIncompleteResultId();
             if ( ! oldestIncompleteId.equals(oldestIncompleteIdNow))
-                lastResultReceived = Instant.now();
+                lastOldestResultReceivedAt = Instant.now();
             oldestIncompleteId = oldestIncompleteIdNow;
         }
         operationProcessor.close();

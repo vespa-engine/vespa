@@ -109,9 +109,9 @@ public class OperationProcessor {
     /** Returns the id of the oldest operation to be sent. */
     public Optional<String> oldestIncompleteResultId() {
         synchronized (monitor) {
-            return Optional.of(docSendInfoByOperationId.keySet().iterator())
-                           .filter(Iterator::hasNext)
-                           .map(Iterator::next);
+            return docSendInfoByOperationId.isEmpty()
+                    ? Optional.empty()
+                    : Optional.of(docSendInfoByOperationId.keySet().iterator().next());
         }
     }
 
