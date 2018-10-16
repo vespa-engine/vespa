@@ -108,12 +108,18 @@ public abstract class DataType extends Identifiable implements Serializable, Com
         if (valClass != null) {
             Pair<Class<?>, Class<?>> key = new Pair<>(valClass, arg.getClass());
             Constructor<?> cstr = constructorCache.get(key);
-            try {
-                if (cstr == null) {
-                    cstr = valClass.getConstructor(key.getSecond());
-                    constructorCache.put(key, cstr);
+            if (cstr == null) {
+                if (!constructorCache.containsKey(key)) {
+                    try {
+                        cstr = valClass.getConstructor(key.getSecond());
+                        constructorCache.put(key, cstr);
+                    } catch (NoSuchMethodException e) {
+                        constructorCache.put(key, null);
+                    }
                 }
-                return (FieldValue)cstr.newInstance(arg);
+            }
+            try {
+                return cstr != null ? (FieldValue)cstr.newInstance(arg) : null;
             } catch (ReflectiveOperationException e) {
                 // Only rethrow exceptions coming from the underlying FieldValue constructor.
                 if (e instanceof InvocationTargetException) {
