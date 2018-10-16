@@ -16,7 +16,7 @@ public class CoverageTestCase {
 
     @Test
     public void testZeroCoverage() {
-        Coverage c = new Coverage(0L, 0, false, 0);
+        Coverage c = new Coverage(0L, 0, 0);
         assertEquals(0, c.getResultPercentage());
         assertEquals(0, c.getResultSets());
     }
@@ -35,36 +35,36 @@ public class CoverageTestCase {
 
     @Test
     public void testDefaultCoverage() {
-        boolean create=true;
+        boolean create = true;
 
-        Result r1=new Result(new Query());
-        assertEquals(0,r1.getCoverage(create).getResultSets());
-        Result r2=new Result(new Query());
+        Result r1 = new Result(new Query());
+        assertEquals(0, r1.getCoverage(create).getResultSets());
+        Result r2 = new Result(new Query());
 
         r1.mergeWith(r2);
-        assertEquals(0,r1.getCoverage(create).getResultSets());
+        assertEquals(0, r1.getCoverage(create).getResultSets());
     }
 
     @Test
     public void testDefaultSearchScenario() {
-        boolean create=true;
+        boolean create = true;
 
-        Result federationSearcherResult=new Result(new Query());
-        Result singleSourceResult=new Result(new Query());
+        Result federationSearcherResult = new Result(new Query());
+        Result singleSourceResult = new Result(new Query());
         federationSearcherResult.mergeWith(singleSourceResult);
-        assertNull(federationSearcherResult.getCoverage(!create));
-        assertEquals(0,federationSearcherResult.getCoverage(create).getResultSets());
+        assertNull(federationSearcherResult.getCoverage( ! create));
+        assertEquals(0, federationSearcherResult.getCoverage(create).getResultSets());
     }
 
     @Test
     public void testRequestingCoverageSearchScenario() {
-        boolean create=true;
+        boolean create = true;
 
-        Result federationSearcherResult=new Result(new Query());
-        Result singleSourceResult=new Result(new Query());
-        singleSourceResult.setCoverage(new Coverage(10,1,true));
+        Result federationSearcherResult = new Result(new Query());
+        Result singleSourceResult = new Result(new Query());
+        singleSourceResult.setCoverage(new Coverage(10, 1));
         federationSearcherResult.mergeWith(singleSourceResult);
-        assertEquals(1,federationSearcherResult.getCoverage(create).getResultSets());
+        assertEquals(1, federationSearcherResult.getCoverage(create).getResultSets());
     }
 
 }

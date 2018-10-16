@@ -516,18 +516,22 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
 
     /** Generate a HitField from a field if the field exists */
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public HitField buildHitField(String key) {
         return buildHitField(key, false);
     }
 
     /** Generate a HitField from a field if the field exists */
     @SuppressWarnings("deprecation")
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public HitField buildHitField(String key, boolean forceNoPreTokenize) {
         return buildHitField(key, forceNoPreTokenize, false);
     }
 
-    // TODO: Remove third parameter on Vespa 7
-    @Deprecated
+    // TODO: Remove third parameter on Vespa 7 (set always true)
+    @Deprecated // OK
     public HitField buildHitField(String key, boolean forceNoPreTokenize, boolean forceStringHandling) {
         Object o = getField(key);
         if (o == null) return null;
@@ -556,7 +560,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     public Set<String> types() { return types; }
 
     /** @deprecated do not use */
-    @Deprecated
+    // TODO: FRemove on Vespa 7
+    @Deprecated // OK
     public String getTypeString() {
         return types().stream().collect(Collectors.joining(" "));
     }
@@ -569,7 +574,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      *
      * @deprecated do not use
      */
-    @Deprecated // TODO: Make package private on Vespa 7
+    // TODO: Make package private on Vespa 7
+    @Deprecated // OK
     public int getAddNumber() { return addNumber; }
 
     /**
@@ -578,7 +584,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      *
      * @deprecated do not use
      */
-    @Deprecated // TODO: Make package private on Vespa 7
+    // TODO: Make package private on Vespa 7
+    @Deprecated // OK
     public void setAddNumber(int addNumber) { this.addNumber = addNumber; }
 
     /**
@@ -604,11 +611,13 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     public void setAuxiliary(boolean auxiliary) { this.auxiliary = auxiliary; }
 
     /** @deprecated do not use */
-    @Deprecated // TODO: Remove on Vespa 7
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public int getSourceNumber() { return sourceNumber; }
 
     /** @deprecated do not use */
-    @Deprecated // TODO: Remove on Vespa 7
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public void setSourceNumber(int number) { this.sourceNumber = number; }
 
     /** Returns the query which produced this hit, or null if not known */
@@ -631,7 +640,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * @deprecated do not use
      * @return a field of this hit, or null if the property is not set
      */
-    @Deprecated // TODO: Remove on Vespa 7
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public String getFieldXML(String key) {
         Object p = getField(key);
 
@@ -649,7 +659,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /**
      * @deprecated do not use
      */
-    @Deprecated // TODO: Remove on Vespa 7
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public String getUnboldedField(String key, boolean escape) {
         Object p = getField(key);
 
@@ -718,7 +729,8 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /**
      * @deprecated do not use
      */
-    @Deprecated // TODO: Remove on Vespa 7
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public static String stripCharacter(char strip, String toStripFrom) {
         StringBuilder builder = null;
 

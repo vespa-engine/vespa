@@ -263,7 +263,7 @@ public class SearchHandler extends LoggingRequestHandler {
         Result result = new Result(query, errorMessage);
         Renderer renderer = getRendererCopy(ComponentSpecification.fromString(request.getProperty("format")));
 
-        result.getTemplating().setRenderer(renderer); // Pre-Vespa 6 Result.getEncoding() expects this TODO: Remove
+        result.getTemplating().setRenderer(renderer); // Pre-Vespa 6 Result.getEncoding() expects this TODO: Remove opn Vespa 7
 
         return new HttpSearchResponse(getHttpResponseStatus(request, result), result, query, renderer);
     }
@@ -322,11 +322,11 @@ public class SearchHandler extends LoggingRequestHandler {
         }
 
         Renderer renderer;
-        if (result.getTemplating().usesDefaultTemplate()) {
+        if (result.getTemplating().usesDefaultTemplate()) { // TODO: Remove on Vespa 7
             renderer = toRendererCopy(query.getPresentation().getRenderer());
-            result.getTemplating().setRenderer(renderer); // pre-Vespa 6 Result.getEncoding() expects this to be set. TODO: Remove
+            result.getTemplating().setRenderer(renderer); // pre-Vespa 6 Result.getEncoding() expects this to be set.
         }
-        else { // somebody explicitly assigned a old style template
+        else { // somebody explicitly assigned a old style template // TODO: Remove on Vespa 7
             renderer = perRenderingCopy(result.getTemplating().getRenderer());
         }
 
@@ -390,7 +390,7 @@ public class SearchHandler extends LoggingRequestHandler {
         }
         Result result = execution.search(query);
 
-        if (result.getTemplating() == null)
+        if (result.getTemplating() == null) // TODO: Remove on Vespa 7
             result.getTemplating().setRenderer(renderer);
 
         ensureQuerySet(result, query);

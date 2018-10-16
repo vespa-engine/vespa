@@ -20,7 +20,7 @@ public interface ErrorHit extends Cloneable {
      * @deprecated use errors().iterator().next()
      */
     // TODO: Remove on Vespa 7
-    @Deprecated 
+    @Deprecated // OK
     ErrorMessage getMainError();
 
     /**

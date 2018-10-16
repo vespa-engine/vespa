@@ -18,7 +18,8 @@ import com.yahoo.search.query.Presentation;
  * @author Steinar Knutsen
  * @deprecated do not use
  */
-@Deprecated // TODO: Remove on Vespa 7
+@Deprecated // OK (But wait for deprecated handlers in vespaclient-container-plugin to be removed)
+// TODO: Remove on Vespa 7
 public class Templating {
 
     private final Result result;

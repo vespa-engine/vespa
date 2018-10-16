@@ -559,7 +559,7 @@ public class JsonRendererTestCase {
         Execution execution = new Execution(
                 Execution.Context.createContextStub());
         Result r = new Result(q);
-        r.setCoverage(new Coverage(500, 1, true));
+        r.setCoverage(new Coverage(500, 1));
 
         FastHit h = new FastHit("http://localhost/", .95);
         h.setField("$a", "Hello, world.");

@@ -19,12 +19,16 @@ public class Coverage extends com.yahoo.container.handler.Coverage {
         super(docs, active, nodes, 1);
     }
 
-    @Deprecated
+    // TODO: Remove on Vespa 7
+    /** @deprecated don't send a "full" boolean */
+    @Deprecated // OK
     public Coverage(long docs, int nodes, boolean full) {
         this(docs, nodes, full, 1);
     }
 
-    @Deprecated
+    // TODO: Remove on Vespa 7
+    /** @deprecated don't send a "full" boolean */
+    @Deprecated // OK
     public Coverage(long docs, int nodes, boolean full, int resultSets) {
         super(docs, nodes, full, resultSets);
     }

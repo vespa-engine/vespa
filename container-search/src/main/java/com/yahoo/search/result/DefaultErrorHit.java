@@ -63,7 +63,7 @@ public class DefaultErrorHit extends Hit implements ErrorHit, Cloneable {
      * @deprecated use {@link #errors()}
      */
     @Override
-    @Deprecated
+    @Deprecated // OK
     // TODO: Remove on Vespa 7
     public ErrorMessage getMainError() {
         return errors.get(0);
