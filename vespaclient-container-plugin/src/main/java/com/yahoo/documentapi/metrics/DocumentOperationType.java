@@ -10,6 +10,7 @@ import com.yahoo.messagebus.Message;
  * @author freva
  */
 public enum DocumentOperationType {
+
     PUT, REMOVE, UPDATE, ERROR;
 
     public static DocumentOperationType fromMessage(Message msg) {
@@ -23,5 +24,6 @@ public enum DocumentOperationType {
             return ERROR;
         }
     }
+
 }
 

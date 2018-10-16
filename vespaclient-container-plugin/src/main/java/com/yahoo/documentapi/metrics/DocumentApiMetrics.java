@@ -18,6 +18,7 @@ import java.util.Map;
  * @author freva
  */
 public class DocumentApiMetrics {
+
     private final Counter feeds;
     private final Gauge feedLatency;
     private final Map<DocumentOperationStatus, Map<DocumentOperationType, Point>> points = new HashMap<>();
@@ -46,7 +47,7 @@ public class DocumentApiMetrics {
     }
 
     public void reportSuccessful(DocumentOperationType documentOperationType, Instant startTime) {
-        final double latency = Duration.between(startTime, Instant.now()).toMillis() / 1000.0d;
+        double latency = Duration.between(startTime, Instant.now()).toMillis() / 1000.0d;
         reportSuccessful(documentOperationType, latency);
     }
 
@@ -54,4 +55,5 @@ public class DocumentApiMetrics {
         Point point = points.get(documentOperationStatus).get(documentOperationType);
         feeds.add(point);
     }
+
 }

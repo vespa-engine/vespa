@@ -19,7 +19,8 @@ import java.io.Writer;
  *
  * @deprecated use a renderer instead
  */
-@Deprecated // TODO: Remove on Vespa 7
+@Deprecated // OK
+// TODO: Remove on Vespa 7
 @SuppressWarnings("deprecation")
 public class DocumentFieldTemplate extends com.yahoo.prelude.templates.UserTemplate<Writer> {
 

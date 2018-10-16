@@ -6,28 +6,22 @@ import com.yahoo.search.result.Hit;
 import java.io.IOException;
 import java.util.Base64;
 
+/**
+ * @deprecated
+ */
+@Deprecated // OK
+// TODO: Remove on Vespa 7
 public class ContinuationHit extends Hit {
 
     private final String value;
 
     public ContinuationHit(ProgressToken token) {
         super("continuation");
-
-        final byte[] serialized = token.serialize();
-        value = Base64.getUrlEncoder().encodeToString(serialized);
+        value = token.serializeToString();
     }
 
-    public static ProgressToken getToken(String continuation) throws IOException {
-        byte[] serialized;
-        try {
-            serialized = Base64.getUrlDecoder().decode(continuation);
-        } catch (IllegalArgumentException e) {
-            // Legacy visitor tokens were encoded with MIME Base64 which may fail decoding as URL-safe.
-            // Try again with MIME decoder to avoid breaking upgrade scenarios.
-            // TODO(vekterli): remove once this is no longer a risk.
-            serialized = Base64.getMimeDecoder().decode(continuation);
-        }
-        return new ProgressToken(serialized);
+    public static ProgressToken getToken(String continuation) {
+        return ProgressToken.fromSerializedString(continuation);
     }
 
     public String getValue() {

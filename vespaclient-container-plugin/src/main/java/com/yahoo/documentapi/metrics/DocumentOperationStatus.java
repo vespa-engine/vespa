@@ -16,6 +16,7 @@ import java.util.Set;
  * @author freva
  */
 public enum DocumentOperationStatus {
+
     OK, REQUEST_ERROR, SERVER_ERROR;
 
     public static DocumentOperationStatus fromHttpStatusCode(int httpStatus) {
@@ -30,4 +31,5 @@ public enum DocumentOperationStatus {
     public static DocumentOperationStatus fromMessageBusErrorCodes(Set<Integer> errorCodes) {
         return fromHttpStatusCode(OperationHandlerImpl.getHTTPStatusCode(errorCodes));
     }
+
 }

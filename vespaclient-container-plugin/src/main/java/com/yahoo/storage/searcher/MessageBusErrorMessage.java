@@ -7,6 +7,8 @@ import com.yahoo.search.result.ErrorMessage;
  * Simple ErrorMessage extension that includes a message bus error code, not
  * just the searcher error code (which isn't very useful for a Vespa XML consumer)
  */
+@Deprecated // OK
+// TODO: Remove on Vespa 7
 public class MessageBusErrorMessage extends ErrorMessage {
 
     private int mbusCode;

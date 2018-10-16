@@ -57,8 +57,11 @@ import java.util.zip.GZIPInputStream;
  *   contenttype=string (default: no content type specified)
  *   For specifiying the returned HTTP header content type for a returned
  *   document field's content. field must also be specified.
+ * @deprecated do not use
  */
 @SuppressWarnings("deprecation")
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public class GetSearcher extends Searcher {
 
     private static final Logger log = Logger.getLogger(GetSearcher.class.getName());

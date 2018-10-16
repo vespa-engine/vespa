@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi;
 
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
@@ -16,8 +17,8 @@ import com.yahoo.vespa.objects.Serializer;
  * Token to use to keep track of progress for visiting. Can be used to resume
  * visiting if visiting has been aborted for any reason.
  *
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
- * @author <a href="mailto:vekterli@yahoo-inc.com">Tor Brede Vekterli</a>
+ * @author Thomas Gundersen
+ * @author vekterli
  */
 public class ProgressToken {
 
@@ -245,6 +246,24 @@ public class ProgressToken {
         out.getBuf().rewind();
         out.getBuf().get(ret);
         return ret;
+    }
+
+    /** Returns a string (base64) encoding of the serial form of this token */
+    public String serializeToString() {
+        return Base64.getUrlEncoder().encodeToString(serialize());
+    }
+
+    public static ProgressToken fromSerializedString(String serializedString) {
+        byte[] serialized;
+        try {
+            serialized = Base64.getUrlDecoder().decode(serializedString);
+        } catch (IllegalArgumentException e) {
+            // Legacy visitor tokens were encoded with MIME Base64 which may fail decoding as URL-safe.
+            // Try again with MIME decoder to avoid breaking upgrade scenarios.
+            // TODO(vekterli): remove once this is no longer a risk.
+            serialized = Base64.getMimeDecoder().decode(serializedString);
+        }
+        return new ProgressToken(serialized);
     }
 
     public void addFailedBucket(BucketId superbucket, BucketId progress, String errorMsg) {

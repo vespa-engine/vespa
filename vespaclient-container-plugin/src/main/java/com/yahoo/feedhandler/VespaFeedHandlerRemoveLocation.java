@@ -23,7 +23,8 @@ import java.util.concurrent.Executor;
 /**
  * @deprecated Legacy API. Will be removed in Vespa 7
  */
-@Deprecated
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public class VespaFeedHandlerRemoveLocation extends VespaFeedHandlerBase {
 
     @Inject
