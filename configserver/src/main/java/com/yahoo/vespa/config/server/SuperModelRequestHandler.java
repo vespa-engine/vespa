@@ -11,10 +11,8 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.rpc.ConfigResponseFactory;
-import com.yahoo.vespa.config.server.rpc.ConfigResponseFactoryFactory;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -42,7 +40,7 @@ public class SuperModelRequestHandler implements RequestHandler {
                                     ConfigserverConfig configserverConfig,
                                     SuperModelManager superModelManager) {
         this.configDefinitionRepo = configDefinitionRepo;
-        this.responseFactory = ConfigResponseFactoryFactory.createFactory(configserverConfig);
+        this.responseFactory = ConfigResponseFactory.create(configserverConfig);
         this.superModelManager = superModelManager;
         updateHandler();
     }

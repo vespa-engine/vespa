@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
@@ -12,6 +13,17 @@ import com.yahoo.vespa.config.protocol.ConfigResponse;
  * @author Ulf Lilleengen
  */
 public interface ConfigResponseFactory {
+
+    static ConfigResponseFactory create(ConfigserverConfig configserverConfig) {
+        switch (configserverConfig.payloadCompressionType()) {
+            case LZ4:
+                return new LZ4ConfigResponseFactory();
+            case UNCOMPRESSED:
+                return new UncompressedConfigResponseFactory();
+            default:
+                throw new IllegalArgumentException("Unknown payload compression type " + configserverConfig.payloadCompressionType());
+        }
+    }
 
     /**
      * Create a {@link ConfigResponse} for a given payload and generation.
