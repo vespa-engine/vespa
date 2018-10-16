@@ -17,16 +17,12 @@ public class FeedClientImplTest {
 
     @Test
     public void testCloseWaitTimeOldTimestamp() {
-        assertThat(FeedClientImpl.waitForOperations(Instant.now().minusSeconds(1000), 1, sleepValueMillis, 10), is(false));
+        assertThat(FeedClientImpl.waitForOperations(Instant.now().minusSeconds(1000), sleepValueMillis, 10), is(false));
     }
 
     @Test
     public void testCloseWaitTimeOutInFutureStillOperations() {
-        assertThat(FeedClientImpl.waitForOperations(Instant.now(), 1, sleepValueMillis, 2000), is(true));
+        assertThat(FeedClientImpl.waitForOperations(Instant.now(), sleepValueMillis, 2000), is(true));
     }
 
-    @Test
-    public void testCloseWaitZeroOperations() {
-        assertThat(FeedClientImpl.waitForOperations(Instant.now(), 0, sleepValueMillis, 2000), is(false));
-    }
 }
