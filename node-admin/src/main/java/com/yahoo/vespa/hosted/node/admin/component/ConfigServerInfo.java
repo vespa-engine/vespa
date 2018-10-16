@@ -24,14 +24,18 @@ public class ConfigServerInfo {
     private final Map<String, URI> configServerURIs;
     private final AthenzService configServerIdentity;
 
+    // TODO: Remove
     public ConfigServerInfo(ConfigServerConfig config) {
-        this.configServerHostNames = config.hosts();
-        this.configServerURIs = createConfigServerUris(
-                config.scheme(),
-                config.hosts(),
-                config.port());
-        this.loadBalancerEndpoint = createLoadBalancerEndpoint(config.loadBalancerHost(), config.scheme(), config.port());
-        this.configServerIdentity = (AthenzService) AthenzIdentities.from(config.configserverAthenzIdentity());
+        this(config.loadBalancerHost(), config.hosts(), config.scheme(), config.port(),
+                (AthenzService) AthenzIdentities.from(config.configserverAthenzIdentity()));
+    }
+
+    public ConfigServerInfo(String loadBalancerHostName, List<String> configServerHostNames,
+                            String scheme, int port, AthenzService configServerAthenzIdentity) {
+        this.configServerHostNames = configServerHostNames;
+        this.configServerURIs = createConfigServerUris(scheme, configServerHostNames, port);
+        this.loadBalancerEndpoint = createLoadBalancerEndpoint(loadBalancerHostName, scheme, port);
+        this.configServerIdentity = configServerAthenzIdentity;
     }
 
     private static URI createLoadBalancerEndpoint(String loadBalancerHost, String scheme, int port) {
