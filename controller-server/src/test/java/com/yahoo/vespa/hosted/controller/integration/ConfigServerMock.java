@@ -303,7 +303,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public List<String> getStorageClusters(DeploymentId deployment) {
+    public List<String> getContentClusters(DeploymentId deployment) {
         return Collections.singletonList("music");
     }
 

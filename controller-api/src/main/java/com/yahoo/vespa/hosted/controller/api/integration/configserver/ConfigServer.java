@@ -44,7 +44,7 @@ public interface ConfigServer {
 
     Optional<Logs> getLogs(DeploymentId deployment, HashMap<String, String> queryParameters);
 
-    List<String> getStorageClusters(DeploymentId deployment);
+    List<String> getContentClusters(DeploymentId deployment);
 
     /**
      * Set new status on en endpoint in one zone.

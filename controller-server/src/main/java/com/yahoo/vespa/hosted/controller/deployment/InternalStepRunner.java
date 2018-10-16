@@ -468,11 +468,11 @@ public class InternalStepRunner implements StepRunner {
         return deployments.build();
     }
 
-    /** Returns all clusters in all current deployments of the given real application. */
+    /** Returns all content clusters in all current deployments of the given real application. */
     private Map<ZoneId, List<String>> listClusters(ApplicationId id) {
         ImmutableMap.Builder<ZoneId, List<String>> clusters = ImmutableMap.builder();
         application(id).deployments().keySet()
-                       .forEach(zone -> clusters.put(zone, ImmutableList.copyOf(controller.configServer().getStorageClusters(new DeploymentId(id, zone)))));
+                       .forEach(zone -> clusters.put(zone, ImmutableList.copyOf(controller.configServer().getContentClusters(new DeploymentId(id, zone)))));
         return clusters.build();
     }
 
