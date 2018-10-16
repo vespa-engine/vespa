@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.result;
 
+import com.yahoo.data.access.Inspector;
+import com.yahoo.data.access.Inspectable;
 import com.yahoo.search.query.Sorting;
 
 import java.util.Comparator;
@@ -57,11 +59,6 @@ public class FieldComparator extends ChainableComparator {
             Object a = getField(first,fieldName);
             Object b = getField(second,fieldName);
 
-            // If either of the values are null, don't touch the ordering
-            // This is to avoid problems if the sorting is called before the
-            // result is filled.
-            if ((a == null) || (b == null)) return 0;
-
             int x = compareValues(a, b, fieldOrder.getSorter());
             if (x != 0) {
                 if (fieldOrder.getSortOrder() == Sorting.Order.DESCENDING)
@@ -72,15 +69,61 @@ public class FieldComparator extends ChainableComparator {
         return super.compare(first,second);
     }
 
+    private Object getSubField(Object field, String key) {
+        if (field instanceof Inspectable) {
+            Inspector top = ((Inspectable)field).inspect();
+            int firstDot = key.indexOf('.');
+            if (firstDot > 0) {
+                Inspector sub = top.field(key.substring(0, firstDot));
+                if (sub.valid()) {
+                    return getSubField(sub, key.substring(firstDot + 1));
+                }
+            }
+            Inspector sub = top.field(key);
+            if (sub.valid()) {
+                switch (sub.type()) {
+                case EMPTY:
+                    return null;
+                case BOOL:
+                    return (sub.asBool() ? Boolean.TRUE : Boolean.FALSE);
+                case LONG:
+                    return new Long(sub.asLong());
+                case DOUBLE:
+                    return new Double(sub.asDouble());
+                case STRING:
+                    return sub.asString();
+                }
+                return sub.toString();
+            }
+        }
+        // fallback value
+        return field;
+    }
+
     public Object getField(Hit hit,String key) {
         if ("[relevance]".equals(key)) return hit.getRelevance();
         if ("[rank]".equals(key)) return hit.getRelevance();
         if ("[source]".equals(key)) return hit.getSource();
+        // missing: "[docid]"
+        int firstDot = key.indexOf('.');
+        if (firstDot > 0 && hit.getField(key) == null) {
+            String keyPrefix = key.substring(0, firstDot);
+            String keySuffix = key.substring(firstDot + 1);
+            Object a = hit.getField(keyPrefix);
+            Object b = getSubField(a, keySuffix);
+            return b;
+        }
         return hit.getField(key);
     }
 
     @SuppressWarnings("rawtypes")
     private int compareValues(Object first, Object second, Sorting.AttributeSorter s) {
+        if (first == null) {
+            if (second == null) return 0;
+            return -1;
+        } else if (second == null) {
+            return 1;
+        }
         if (first.getClass().isInstance(second)
                 && first instanceof Comparable) {
             // We now know:
