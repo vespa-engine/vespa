@@ -18,8 +18,11 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -35,7 +38,7 @@ import java.util.logging.Logger;
 public class OperationProcessor {
 
     private static final Logger log = Logger.getLogger(OperationProcessor.class.getName());
-    private final Map<String, DocumentSendInfo> docSendInfoByOperationId = new HashMap<>();
+    private final Map<String, DocumentSendInfo> docSendInfoByOperationId = new LinkedHashMap<>();
     private final ArrayListMultimap<String, Document> blockedDocumentsByDocumentId = ArrayListMultimap.create();
     private final Set<String> inflightDocumentIds = new HashSet<>();
     private final int numDestinations;
@@ -100,6 +103,15 @@ public class OperationProcessor {
     public int getIncompleteResultQueueSize() {
         synchronized (monitor) {
             return docSendInfoByOperationId.size();
+        }
+    }
+
+    /** Returns the id of the oldest operation to be sent. */
+    public Optional<String> oldestIncompleteResultId() {
+        synchronized (monitor) {
+            return Optional.of(docSendInfoByOperationId.keySet().iterator())
+                           .filter(Iterator::hasNext)
+                           .map(Iterator::next);
         }
     }
 
