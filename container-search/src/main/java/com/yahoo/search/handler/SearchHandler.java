@@ -411,11 +411,7 @@ public class SearchHandler extends LoggingRequestHandler {
 
     /**
      * For internal use only
-     * 
-     * @deprecated remove on Vespa 7
      */
-    // TODO: Remove on Vespa 7
-    @Deprecated
     public Renderer<Result> getRendererCopy(ComponentSpecification spec) {
         Renderer<Result> renderer = rendererRegistry.getRenderer(spec);
         return perRenderingCopy(renderer);

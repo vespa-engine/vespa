@@ -15,7 +15,10 @@ import com.yahoo.search.federation.ProviderConfig;
  * A set of parameters for talking to an http backend
  *
  * @author bratseth
+ * @deprecated
  */
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public final class HTTPParameters {
 
     public static final String RETRIES = "com.yahoo.search.federation.http.retries";

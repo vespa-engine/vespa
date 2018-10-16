@@ -11,6 +11,7 @@ import com.yahoo.search.federation.ProviderConfig;
  *
  * @author bratseth
  */
+// TODO: Remove on Vespa 7
 class ConfiguredSearcherHelper {
 
     /** No instantiation */

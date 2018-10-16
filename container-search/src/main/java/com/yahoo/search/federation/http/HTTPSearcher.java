@@ -138,7 +138,7 @@ import java.util.logging.Logger;
  * @deprecated
  */
 // TODO: Remove on Vespa 7
-@Deprecated
+@Deprecated // OK
 public abstract class HTTPSearcher extends ClusterSearcher<Connection> {
 
     protected static final String YCA_HTTP_HEADER = "Yahoo-App-Auth";

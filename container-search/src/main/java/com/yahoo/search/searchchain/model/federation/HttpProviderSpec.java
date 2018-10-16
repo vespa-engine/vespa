@@ -14,8 +14,11 @@ import java.util.List;
  * Specifies how a http provider is to be set up.
  *
  * @author Tony Vaagenes
+ * @deprecated
  */
 @Immutable
+@Deprecated // OK
+// TODO: Remove on Vespa 7
 public class HttpProviderSpec {
 
     public enum Type {
