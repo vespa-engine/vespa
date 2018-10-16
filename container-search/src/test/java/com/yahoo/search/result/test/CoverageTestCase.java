@@ -16,7 +16,7 @@ public class CoverageTestCase {
 
     @Test
     public void testZeroCoverage() {
-        Coverage c = new Coverage(0L, 0, 0);
+        Coverage c = new Coverage(0L, 0, 0, 0);
         assertEquals(0, c.getResultPercentage());
         assertEquals(0, c.getResultSets());
     }
@@ -52,7 +52,7 @@ public class CoverageTestCase {
         Result federationSearcherResult = new Result(new Query());
         Result singleSourceResult = new Result(new Query());
         federationSearcherResult.mergeWith(singleSourceResult);
-        assertNull(federationSearcherResult.getCoverage( ! create));
+        assertNull(federationSearcherResult.getCoverage( !create));
         assertEquals(0, federationSearcherResult.getCoverage(create).getResultSets());
     }
 

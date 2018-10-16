@@ -97,7 +97,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
         totalHitCount += result.getTotalHitCount();
         deepHitCount += result.getDeepHitCount();
         timeAccountant.merge(result.getElapsedTime());
-        boolean create=true;
+        boolean create = true;
         if (result.getCoverage(!create) != null || getCoverage(!create) != null)
             getCoverage(create).merge(result.getCoverage(create));
     }
@@ -316,7 +316,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
      */
     public Coverage getCoverage(boolean create) {
         if (coverage == null && create)
-            coverage = new Coverage(0L, 0, (hits().size() == 0 ? 0 : 1));
+            coverage = new Coverage(0L, 0, 0, (hits().size() == 0 ? 0 : 1));
         return coverage;
     }
 

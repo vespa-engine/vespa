@@ -479,8 +479,8 @@ public class JsonRendererTestCase {
                 Execution.Context.createContextStub());
         Result r = new Result(q);
         execution.search(q);
-        final TraceNode child = new TraceNode("string payload", 0L);
-        final TraceNode childOfChild = new TraceNode(null, 0L);
+        TraceNode child = new TraceNode("string payload", 0L);
+        TraceNode childOfChild = new TraceNode(null, 0L);
         child.add(childOfChild);
         childOfChild.add(new TraceNode("in OO languages, nesting is for birds", 0L));
         execution.trace().traceNode().add(child);
@@ -490,7 +490,7 @@ public class JsonRendererTestCase {
 
 
     @Test
-    public final void test() throws IOException, InterruptedException, ExecutionException, JSONException {
+    public final void test() throws IOException, InterruptedException, ExecutionException {
         String expected = "{\n"
                 + "    \"root\": {\n"
                 + "        \"children\": [\n"
@@ -556,10 +556,9 @@ public class JsonRendererTestCase {
                 + "    }\n"
                 + "}";
         Query q = new Query("/?query=a&tracelevel=5&reportCoverage=true");
-        Execution execution = new Execution(
-                Execution.Context.createContextStub());
+        Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
-        r.setCoverage(new Coverage(500, 1));
+        r.setCoverage(new Coverage(500, 500,1,1));
 
         FastHit h = new FastHit("http://localhost/", .95);
         h.setField("$a", "Hello, world.");
@@ -593,7 +592,7 @@ public class JsonRendererTestCase {
                 + "                \"non-ideal-state\" : false"
                 + "            },\n"
                 + "            \"full\": false,\n"
-                + "            \"nodes\": 0,\n"
+                + "            \"nodes\": 1,\n"
                 + "            \"results\": 1,\n"
                 + "            \"resultsFull\": 0\n"
                 + "        },\n"
