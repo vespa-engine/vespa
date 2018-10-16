@@ -43,6 +43,9 @@ public interface ConfigServer {
     Map<?,?> getServiceApiResponse(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String restPath);
 
     Optional<Logs> getLogs(DeploymentId deployment, HashMap<String, String> queryParameters);
+
+    List<String> getStorageClusters(DeploymentId deployment);
+
     /**
      * Set new status on en endpoint in one zone.
      *

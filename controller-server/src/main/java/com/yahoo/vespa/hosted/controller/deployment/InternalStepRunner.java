@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
@@ -333,12 +334,15 @@ public class InternalStepRunner implements StepRunner {
             return Optional.empty();
         }
 
+        Map<ZoneId, List<String>> clusters = listClusters(id.application());
+
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
         if (testerEndpoint.isPresent() && controller.jobController().cloud().ready(testerEndpoint.get())) {
             logger.log("Starting tests ...");
             controller.jobController().cloud().startTests(testerEndpoint.get(),
                                                           TesterCloud.Suite.of(id.type()),
-                                                          testConfig(id.application(), id.type().zone(controller.system()), controller.system(), endpoints));
+                                                          testConfig(id.application(), id.type().zone(controller.system()),
+                                                                     controller.system(), endpoints, clusters));
             return Optional.of(running);
         }
 
@@ -464,6 +468,14 @@ public class InternalStepRunner implements StepRunner {
         return deployments.build();
     }
 
+    /** Returns all clusters in all current deployments of the given real application. */
+    private Map<ZoneId, List<String>> listClusters(ApplicationId id) {
+        ImmutableMap.Builder<ZoneId, List<String>> clusters = ImmutableMap.builder();
+        application(id).deployments().keySet()
+                       .forEach(zone -> clusters.put(zone, ImmutableList.copyOf(controller.configServer().getStorageClusters(new DeploymentId(id, zone)))));
+        return clusters.build();
+    }
+
     /** Returns the generated services.xml content for the tester application. */
     static byte[] servicesXml(SystemName systemName) {
         String domain = systemName == SystemName.main ? "vespa.vespa" : "vespa.vespa.cd";
@@ -524,18 +536,29 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns the config for the tests to run for the given job. */
-    private static byte[] testConfig(ApplicationId id, ZoneId testerZone, SystemName system, Map<ZoneId, List<URI>> deployments) {
+    private static byte[] testConfig(ApplicationId id, ZoneId testerZone, SystemName system,
+                                     Map<ZoneId, List<URI>> deployments, Map<ZoneId, List<String>> clusters) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
+
         root.setString("application", id.serializedForm());
         root.setString("zone", testerZone.value());
         root.setString("system", system.name());
+
         Cursor endpointsObject = root.setObject("endpoints");
         deployments.forEach((zone, endpoints) -> {
             Cursor endpointArray = endpointsObject.setArray(zone.value());
             for (URI endpoint : endpoints)
                 endpointArray.addString(endpoint.toString());
         });
+
+        Cursor clustersObject = root.setObject("clusters");
+        clusters.forEach((zone, clusterList) -> {
+            Cursor clusterArray = clustersObject.setArray(zone.value());
+            for (String cluster : clusterList)
+                clusterArray.addString(cluster);
+        });
+
         try {
             return SlimeUtils.toJsonBytes(slime);
         }
