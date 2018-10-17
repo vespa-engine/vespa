@@ -37,9 +37,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameMatches;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.olderThan;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.ifExists;
@@ -283,57 +281,5 @@ public class StorageMaintainer {
         new UnixPath(containerLogsInArchiveDir).createParents();
         new UnixPath(containerLogsOnHost).moveIfExists(containerLogsInArchiveDir);
         new UnixPath(context.pathOnHostFromPathInNode("/")).deleteRecursively();
-    }
-
-    /**
-     * Runs node-maintainer's SpecVerifier and returns its output
-     * @param node Node specification containing the excepted values we want to verify against
-     * @return new combined hardware divergence
-     * @throws RuntimeException if exit code != 0
-     */
-    public String getHardwareDivergence(NodeSpec node) {
-        List<String> arguments = new ArrayList<>(Arrays.asList("specification",
-                "--disk", Double.toString(node.getMinDiskAvailableGb()),
-                "--memory", Double.toString(node.getMinMainMemoryAvailableGb()),
-                "--cpu_cores", Double.toString(node.getMinCpuCores()),
-                "--is_ssd", Boolean.toString(node.isFastDisk()),
-                "--bandwidth", Double.toString(node.getBandwidth()),
-                "--ips", String.join(",", node.getIpAddresses())));
-
-        if (environment.getDockerNetworking() == DockerNetworking.HOST_NETWORK) {
-            arguments.add("--skip-reverse-lookup");
-        }
-
-        node.getHardwareDivergence().ifPresent(hardwareDivergence -> {
-            arguments.add("--divergence");
-            arguments.add(hardwareDivergence);
-        });
-
-        return executeMaintainer("com.yahoo.vespa.hosted.node.verification.Main", arguments.toArray(new String[0]));
-    }
-
-
-    private String executeMaintainer(String mainClass, String... args) {
-        String[] command = Stream.concat(
-                Stream.of("sudo",
-                        "VESPA_HOSTNAME=" + getDefaults().vespaHostname(),
-                        "VESPA_HOME=" + getDefaults().vespaHome(),
-                        getDefaults().underVespaHome("libexec/vespa/node-admin/maintenance.sh"),
-                        mainClass),
-                Stream.of(args))
-                .toArray(String[]::new);
-
-        try {
-            Pair<Integer, String> result = processExecuter.exec(command);
-
-            if (result.getFirst() != 0) {
-                throw new RuntimeException(
-                        String.format("Maintainer failed to execute command: %s, Exit code: %d, Stdout/stderr: %s",
-                                Arrays.toString(command), result.getFirst(), result.getSecond()));
-            }
-            return result.getSecond().trim();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to execute maintainer", e);
-        }
     }
 }

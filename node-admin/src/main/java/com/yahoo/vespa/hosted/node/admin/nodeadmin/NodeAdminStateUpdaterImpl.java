@@ -24,9 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -101,8 +98,6 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
 
             log.info(objectToString() + ": Starting threads and schedulers");
             nodeAdmin.start();
-            specVerifierScheduler.scheduleWithFixedDelay(() ->
-                    updateHardwareDivergence(storageMaintainer), 5, 60, TimeUnit.MINUTES);
 
             while (! terminated.get()) {
                 tick();
@@ -125,25 +120,6 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             debug.put("NodeAdmin", nodeAdmin.debugInfo());
         }
         return debug;
-    }
-
-    private void updateHardwareDivergence(StorageMaintainer maintainer) {
-        if (currentState != RESUMED) return;
-
-        try {
-            NodeSpec node = nodeRepository.getNode(dockerHostHostName);
-            if (node.getState() == Node.State.parked) return;
-            String hardwareDivergence = maintainer.getHardwareDivergence(node);
-
-            // Only update hardware divergence if there is a change.
-            if (!node.getHardwareDivergence().orElse("null").equals(hardwareDivergence)) {
-                NodeAttributes nodeAttributes = new NodeAttributes().withHardwareDivergence(hardwareDivergence);
-                log.info("Updating hardware divergence to " + hardwareDivergence);
-                nodeRepository.updateNodeAttributes(dockerHostHostName, nodeAttributes);
-            }
-        } catch (RuntimeException e) {
-            log.log(Level.WARNING, "Failed to report hardware divergence", e);
-        }
     }
 
     @Override
@@ -310,16 +286,14 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
 
         // First we need to stop NodeAdminStateUpdaterImpl thread to make sure no new NodeAgents are spawned
         signalWorkToBeDone();
-        specVerifierScheduler.shutdown();
 
         do {
             try {
                 loopThread.join();
-                specVerifierScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
             } catch (InterruptedException e1) {
                 log.info("Interrupted while waiting for NodeAdminStateUpdater thread and specVerfierScheduler to shutdown");
             }
-        } while (loopThread.isAlive() || !specVerifierScheduler.isTerminated());
+        } while (loopThread.isAlive());
 
         // Finally, stop NodeAdmin and all the NodeAgents
         nodeAdmin.stop();
