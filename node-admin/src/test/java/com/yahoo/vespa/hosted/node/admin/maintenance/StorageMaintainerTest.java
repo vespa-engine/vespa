@@ -2,12 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.google.common.collect.ImmutableSet;
-import com.yahoo.system.ProcessExecuter;
-import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.component.Environment;
-import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
@@ -35,24 +30,14 @@ import static org.mockito.Mockito.mock;
  * @author dybis
  */
 public class StorageMaintainerTest {
-    private final Environment environment = new Environment.Builder()
-            .configServerConfig(new ConfigServerConfig(new ConfigServerConfig.Builder()))
-            .region("us-east-1")
-            .environment("prod")
-            .system("main")
-            .cloud("mycloud")
-            .pathResolver(new PathResolver())
-            .dockerNetworking(DockerNetworking.HOST_NETWORK)
-            .build();
     private final DockerOperations docker = mock(DockerOperations.class);
-    private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
     @Test
     public void testDiskUsed() throws IOException, InterruptedException {
-        StorageMaintainer storageMaintainer = new StorageMaintainer(docker, processExecuter, environment, null, null);
+        StorageMaintainer storageMaintainer = new StorageMaintainer(docker, null, null);
         int writeSize = 10000;
         Files.write(folder.newFile().toPath(), new byte[writeSize]);
 
@@ -63,7 +48,7 @@ public class StorageMaintainerTest {
 
     @Test
     public void testNonExistingDiskUsed() throws IOException, InterruptedException {
-        StorageMaintainer storageMaintainer = new StorageMaintainer(docker, processExecuter, environment, null, null);
+        StorageMaintainer storageMaintainer = new StorageMaintainer(docker, null, null);
         long usedBytes = storageMaintainer.getDiskUsedInBytes(folder.getRoot().toPath().resolve("doesn't exist"));
         assertEquals(0L, usedBytes);
     }
@@ -88,7 +73,7 @@ public class StorageMaintainerTest {
 
 
         // Archive container-1
-        StorageMaintainer storageMaintainer = new StorageMaintainer(docker, processExecuter, environment, null, pathToArchiveDir);
+        StorageMaintainer storageMaintainer = new StorageMaintainer(docker, null, pathToArchiveDir);
         storageMaintainer.archiveNodeStorage(context1);
 
         // container-1 should be gone from container-storage

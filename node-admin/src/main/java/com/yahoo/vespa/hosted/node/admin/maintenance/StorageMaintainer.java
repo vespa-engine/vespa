@@ -1,17 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
-import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
-import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.logging.FilebeatConfigProvider;
-import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
@@ -28,7 +23,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -52,16 +46,11 @@ public class StorageMaintainer {
             .ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
 
     private final DockerOperations dockerOperations;
-    private final ProcessExecuter processExecuter;
-    private final Environment environment;
     private final CoredumpHandler coredumpHandler;
     private final Path archiveContainerStoragePath;
 
-    public StorageMaintainer(DockerOperations dockerOperations, ProcessExecuter processExecuter,
-                             Environment environment, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath) {
+    public StorageMaintainer(DockerOperations dockerOperations, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath) {
         this.dockerOperations = dockerOperations;
-        this.processExecuter = processExecuter;
-        this.environment = environment;
         this.coredumpHandler = coredumpHandler;
         this.archiveContainerStoragePath = archiveContainerStoragePath;
     }
