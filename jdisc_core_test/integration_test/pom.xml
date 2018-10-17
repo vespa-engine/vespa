@@ -243,8 +243,11 @@
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
-                                <!-- Allow installing fragment bundles, see felix.framework:ExtensionManager.addExtensionBundle -->
+                                <!-- java.lang + java.net are opened to avoid "WARNING: Illegal reflective access ... "-->
+                                <!-- jdk.internal.loader is opened to allow installing extension bundles, see felix.framework:ExtensionManager.addExtensionBundle -->
                                 <argLine>
+                                    --add-opens=java.base/java.lang=ALL-UNNAMED
+                                    --add-opens=java.base/java.net=ALL-UNNAMED
                                     --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED
                                 </argLine>
                              </configuration>
