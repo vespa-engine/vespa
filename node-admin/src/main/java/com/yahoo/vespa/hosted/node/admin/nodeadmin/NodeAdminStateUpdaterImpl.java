@@ -1,16 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
-import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.concurrent.classlock.ClassLock;
-import com.yahoo.concurrent.classlock.ClassLocking;
-import com.yahoo.concurrent.classlock.LockInterruptException;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
-import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
@@ -25,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -51,52 +45,33 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     private RuntimeException lastConvergenceException;
 
     private final Logger log = Logger.getLogger(NodeAdminStateUpdater.class.getName());
-    private final ScheduledExecutorService specVerifierScheduler =
-            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("specverifier"));
     private final Thread loopThread;
 
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final NodeAdmin nodeAdmin;
     private final Clock clock;
-    private final String dockerHostHostName;
+    private final String hostHostname;
     private final Duration nodeAdminConvergeStateInterval;
 
-    private final Optional<ClassLocking> classLocking;
-    private Optional<ClassLock> classLock = Optional.empty();
     private Instant lastTick;
 
     public NodeAdminStateUpdaterImpl(
             NodeRepository nodeRepository,
             Orchestrator orchestrator,
-            StorageMaintainer storageMaintainer,
             NodeAdmin nodeAdmin,
-            String dockerHostHostName,
+            HostName hostHostname,
             Clock clock,
-            Duration nodeAdminConvergeStateInterval,
-            Optional<ClassLocking> classLocking) {
-        log.info(objectToString() + ": Creating object");
+            Duration nodeAdminConvergeStateInterval) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.nodeAdmin = nodeAdmin;
-        this.dockerHostHostName = dockerHostHostName;
+        this.hostHostname = hostHostname.value();
         this.clock = clock;
         this.nodeAdminConvergeStateInterval = nodeAdminConvergeStateInterval;
-        this.classLocking = classLocking;
         this.lastTick = clock.instant();
 
         this.loopThread = new Thread(() -> {
-            if (classLocking.isPresent()) {
-                log.info(objectToString() + ": Acquiring lock");
-                try {
-                    classLock = Optional.of(classLocking.get().lockWhile(NodeAdminStateUpdater.class, () -> !terminated.get()));
-                } catch (LockInterruptException e) {
-                    classLock = Optional.empty();
-                    return;
-                }
-            }
-
-            log.info(objectToString() + ": Starting threads and schedulers");
             nodeAdmin.start();
 
             while (! terminated.get()) {
@@ -106,15 +81,11 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
         this.loopThread.setName("tick-NodeAdminStateUpdater");
     }
 
-    private String objectToString() {
-        return this.getClass().getSimpleName() + "@" + Integer.toString(System.identityHashCode(this));
-    }
-
     @Override
     public Map<String, Object> getDebugPage() {
         Map<String, Object> debug = new LinkedHashMap<>();
         synchronized (monitor) {
-            debug.put("dockerHostHostName", dockerHostHostName);
+            debug.put("hostHostname", hostHostname);
             debug.put("wantedState", wantedState);
             debug.put("currentState", currentState);
             debug.put("NodeAdmin", nodeAdmin.debugInfo());
@@ -215,13 +186,13 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             throw new ConvergenceException("NodeAdmin is not yet " + (wantFrozen ? "frozen" : "unfrozen"));
         }
 
-        boolean hostIsActiveInNR = nodeRepository.getNode(dockerHostHostName).getState() == Node.State.active;
+        boolean hostIsActiveInNR = nodeRepository.getNode(hostHostname).getState() == Node.State.active;
         switch (wantedState) {
             case RESUMED:
-                if (hostIsActiveInNR) orchestrator.resume(dockerHostHostName);
+                if (hostIsActiveInNR) orchestrator.resume(hostHostname);
                 break;
             case SUSPENDED_NODE_ADMIN:
-                if (hostIsActiveInNR) orchestrator.suspend(dockerHostHostName);
+                if (hostIsActiveInNR) orchestrator.suspend(hostHostname);
                 break;
             case SUSPENDED:
                 // Fetch active nodes from node repo before suspending nodes.
@@ -233,9 +204,9 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
                 List<String> nodesInActiveState = getNodesInActiveState();
 
                 List<String> nodesToSuspend = new ArrayList<>(nodesInActiveState);
-                if (hostIsActiveInNR) nodesToSuspend.add(dockerHostHostName);
+                if (hostIsActiveInNR) nodesToSuspend.add(hostHostname);
                 if (!nodesToSuspend.isEmpty()) {
-                    orchestrator.suspend(dockerHostHostName, nodesToSuspend);
+                    orchestrator.suspend(hostHostname, nodesToSuspend);
                     log.info("Orchestrator allows suspension of " + nodesToSuspend);
                 }
 
@@ -257,7 +228,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
 
     private void fetchContainersToRunFromNodeRepository() {
         try {
-            final List<NodeSpec> containersToRun = nodeRepository.getNodes(dockerHostHostName);
+            final List<NodeSpec> containersToRun = nodeRepository.getNodes(hostHostname);
             nodeAdmin.refreshContainersToRun(containersToRun);
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Failed to update which containers should be running", e);
@@ -265,7 +236,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     }
 
     private List<String> getNodesInActiveState() {
-        return nodeRepository.getNodes(dockerHostHostName)
+        return nodeRepository.getNodes(hostHostname)
                              .stream()
                              .filter(node -> node.getState() == Node.State.active)
                              .map(NodeSpec::getHostname)
@@ -277,12 +248,9 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     }
 
     public void stop() {
-        log.info(objectToString() + ": Stop called");
         if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
-
-        classLocking.ifPresent(ClassLocking::interrupt);
 
         // First we need to stop NodeAdminStateUpdaterImpl thread to make sure no new NodeAgents are spawned
         signalWorkToBeDone();
@@ -297,11 +265,5 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
 
         // Finally, stop NodeAdmin and all the NodeAgents
         nodeAdmin.stop();
-
-        classLock.ifPresent(lock -> {
-            log.info(objectToString() + ": Releasing lock");
-            lock.close();
-        });
-        log.info(objectToString() + ": Stop complete");
     }
 }
