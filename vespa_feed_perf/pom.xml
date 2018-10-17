@@ -53,6 +53,14 @@
             <artifactId>messagebus</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency> <!-- Required by com.yahoo.security.* in vespajlib -->
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency> <!-- Required by com.yahoo.security.* in vespajlib -->
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <resources>
