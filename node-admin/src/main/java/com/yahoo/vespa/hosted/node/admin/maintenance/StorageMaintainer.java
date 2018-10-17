@@ -167,20 +167,6 @@ public class StorageMaintainer {
         return check;
     }
 
-    public void writeFilebeatConfig(NodeAgentContext context, NodeSpec node) {
-        try {
-            FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
-            Optional<String> config = filebeatConfigProvider.getConfig(context, node);
-            if (!config.isPresent()) return;
-
-            Path filebeatPath = context.pathOnHostFromPathInNode("/etc/filebeat/filebeat.yml");
-            Files.write(filebeatPath, config.get().getBytes());
-            context.log(logger, "Wrote filebeat config");
-        } catch (Throwable t) {
-            context.log(logger, LogLevel.ERROR, "Failed writing filebeat config", t);
-        }
-    }
-
     public Optional<Long> getDiskUsageFor(NodeAgentContext context) {
         Path containerDir = context.pathOnHostFromPathInNode("/");
         try {

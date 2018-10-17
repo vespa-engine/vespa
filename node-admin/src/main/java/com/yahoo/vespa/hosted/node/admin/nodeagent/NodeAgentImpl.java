@@ -228,7 +228,6 @@ public class NodeAgentImpl implements NodeAgent {
         if (!hasResumedNode) {
             if (!currentFilebeatRestarter.isPresent()) {
                 storageMaintainer.writeMetricsConfig(context, node);
-                storageMaintainer.writeFilebeatConfig(context, node);
                 currentFilebeatRestarter = Optional.of(filebeatRestarter.scheduleWithFixedDelay(
                         () -> serviceRestarter.accept("filebeat"), 1, 1, TimeUnit.DAYS));
             }

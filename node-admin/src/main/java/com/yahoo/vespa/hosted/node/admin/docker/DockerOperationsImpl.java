@@ -265,7 +265,6 @@ public class DockerOperationsImpl implements DockerOperations {
         // Paths unique to each container
         List<Path> paths = new ArrayList<>(Arrays.asList(
                 Paths.get("/etc/yamas-agent"),
-                Paths.get("/etc/filebeat"),
                 context.pathInNodeUnderVespaHome("logs/daemontools_y"),
                 context.pathInNodeUnderVespaHome("logs/jdisc_core"),
                 context.pathInNodeUnderVespaHome("logs/langdetect/"),
