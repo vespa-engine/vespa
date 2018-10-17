@@ -22,7 +22,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
-import com.yahoo.vespa.hosted.node.admin.component.Environment;
+import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -72,11 +72,10 @@ public class NodeAgentImpl implements NodeAgent {
     private final Orchestrator orchestrator;
     private final DockerOperations dockerOperations;
     private final StorageMaintainer storageMaintainer;
-    private final Runnable aclMaintainer;
-    private final Environment environment;
     private final Clock clock;
     private final Duration timeBetweenEachConverge;
     private final Optional<AthenzCredentialsMaintainer> athenzCredentialsMaintainer;
+    private final Optional<AclMaintainer> aclMaintainer;
 
     private int numberOfUnhandledException = 0;
     private Instant lastConverge;
@@ -116,22 +115,20 @@ public class NodeAgentImpl implements NodeAgent {
             final Orchestrator orchestrator,
             final DockerOperations dockerOperations,
             final StorageMaintainer storageMaintainer,
-            final Runnable aclMaintainer,
-            final Environment environment,
             final Clock clock,
             final Duration timeBetweenEachConverge,
-            final Optional<AthenzCredentialsMaintainer> athenzCredentialsMaintainer) {
+            final Optional<AthenzCredentialsMaintainer> athenzCredentialsMaintainer,
+            final Optional<AclMaintainer> aclMaintainer) {
         this.context = context;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.dockerOperations = dockerOperations;
         this.storageMaintainer = storageMaintainer;
-        this.aclMaintainer = aclMaintainer;
-        this.environment = environment;
         this.clock = clock;
         this.timeBetweenEachConverge = timeBetweenEachConverge;
         this.lastConverge = clock.instant();
         this.athenzCredentialsMaintainer = athenzCredentialsMaintainer;
+        this.aclMaintainer = aclMaintainer;
 
         this.loopThread = new Thread(() -> {
             try {
@@ -508,7 +505,7 @@ public class NodeAgentImpl implements NodeAgent {
                     containerState = STARTING;
                     startContainer(node);
                     containerState = UNKNOWN;
-                    aclMaintainer.run();
+                    aclMaintainer.ifPresent(AclMaintainer::converge);
                 }
 
                 verifyHealth(node);

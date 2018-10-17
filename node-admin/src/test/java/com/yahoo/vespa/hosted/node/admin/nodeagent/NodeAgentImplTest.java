@@ -12,22 +12,17 @@ import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
-import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer;
-import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -80,18 +75,7 @@ public class NodeAgentImplTest {
             Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
     private final AthenzCredentialsMaintainer athenzCredentialsMaintainer = mock(AthenzCredentialsMaintainer.class);
 
-    private final PathResolver pathResolver = mock(PathResolver.class);
     private final ManualClock clock = new ManualClock();
-    private final Environment environment = new Environment.Builder()
-            .configServerConfig(new ConfigServerConfig(new ConfigServerConfig.Builder()))
-            .environment("dev")
-            .region("us-east-1")
-            .system("main")
-            .cloud("mycloud")
-            .parentHostHostname("parent.host.name.yahoo.com")
-            .pathResolver(pathResolver)
-            .dockerNetworking(DockerNetworking.HOST_NETWORK)
-            .build();
 
     private final NodeSpec.Builder nodeBuilder = new NodeSpec.Builder()
             .hostname(context.hostname().value())
@@ -196,7 +180,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void absentContainerCausesStart() throws Exception {
+    public void absentContainerCausesStart() {
         final Optional<Long> restartGeneration = Optional.of(1L);
         final long rebootGeneration = 0;
         final NodeSpec node = nodeBuilder
@@ -211,8 +195,6 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
 
         when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
-        when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
-        when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
         when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
         when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
 
@@ -226,7 +208,7 @@ public class NodeAgentImplTest {
         inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(dockerImage));
         inOrder.verify(dockerOperations, times(1)).createContainer(eq(context), eq(node), any());
         inOrder.verify(dockerOperations, times(1)).startContainer(eq(context));
-        inOrder.verify(aclMaintainer, times(1)).run();
+        inOrder.verify(aclMaintainer, times(1)).converge();
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
                 hostName, new NodeAttributes()
@@ -268,7 +250,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void containerIsRestartedIfFlavorChanged() throws IOException {
+    public void containerIsRestartedIfFlavorChanged() {
         final long wantedRestartGeneration = 1;
         final long currentRestartGeneration = 1;
         NodeSpec.Builder specBuilder = nodeBuilder
@@ -291,7 +273,6 @@ public class NodeAgentImplTest {
                 .thenReturn(Optional.of(thirdSpec));
         when(dockerOperations.pullImageAsyncIfNeeded(any())).thenReturn(true);
         when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
-        when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
 
         nodeAgent.converge();
         nodeAgent.converge();
@@ -501,7 +482,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void testRestartDeadContainerAfterNodeAdminRestart() throws IOException {
+    public void testRestartDeadContainerAfterNodeAdminRestart() {
         final NodeSpec node = nodeBuilder
                 .currentDockerImage(dockerImage)
                 .wantedDockerImage(dockerImage)
@@ -512,8 +493,6 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, false);
 
         when(nodeRepository.getOptionalNode(eq(hostName))).thenReturn(Optional.of(node));
-        when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
-        when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
         when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
 
         nodeAgent.tick();
@@ -590,7 +569,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void start_container_subtask_failure_leads_to_container_restart() throws IOException {
+    public void start_container_subtask_failure_leads_to_container_restart() {
         final long restartGeneration = 1;
         final long rebootGeneration = 0;
         final NodeSpec node = nodeBuilder
@@ -605,8 +584,6 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = spy(makeNodeAgent(null, false));
 
         when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
-        when(pathResolver.getApplicationStoragePathForNodeAdmin()).thenReturn(Files.createTempDirectory("foo"));
-        when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
         when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
         when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
         doThrow(new DockerException("Failed to set up network")).doNothing().when(dockerOperations).startContainer(eq(context));
@@ -669,7 +646,6 @@ public class NodeAgentImplTest {
         when(dockerOperations.getContainerStats(eq(context)))
                 .thenReturn(Optional.of(stats1))
                 .thenReturn(Optional.of(stats2));
-        when(pathResolver.getApplicationStoragePathForHost()).thenReturn(Files.createTempDirectory("bar"));
 
         nodeAgent.converge(); // Run the converge loop once to initialize lastNode
         nodeAgent.updateContainerNodeMetrics(); // Update metrics once to init and lastCpuMetric
@@ -718,7 +694,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void testRunningConfigServer() throws IOException {
+    public void testRunningConfigServer() {
         final long rebootGeneration = 0;
         final NodeSpec node = nodeBuilder
                 .nodeType(NodeType.config)
@@ -730,8 +706,6 @@ public class NodeAgentImplTest {
         NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
 
         when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
-        Path tempDirectory = Files.createTempDirectory("foo");
-        when(pathResolver.getApplicationStoragePathForHost()).thenReturn(tempDirectory);
         when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
         when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
 
@@ -744,7 +718,7 @@ public class NodeAgentImplTest {
         inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(dockerImage));
         inOrder.verify(dockerOperations, times(1)).createContainer(eq(context), eq(node), any());
         inOrder.verify(dockerOperations, times(1)).startContainer(eq(context));
-        inOrder.verify(aclMaintainer, times(1)).run();
+        inOrder.verify(aclMaintainer, times(1)).converge();
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
                 hostName, new NodeAttributes()
@@ -757,11 +731,10 @@ public class NodeAgentImplTest {
         mockGetContainer(dockerImage, isRunning);
 
         when(dockerOperations.getContainerStats(any())).thenReturn(Optional.of(emptyContainerStats));
-        doNothing().when(storageMaintainer).writeFilebeatConfig(any(), any());
         doNothing().when(storageMaintainer).writeMetricsConfig(any(), any());
 
         return new NodeAgentImpl(context, nodeRepository, orchestrator, dockerOperations,
-                storageMaintainer, aclMaintainer, environment, clock, NODE_AGENT_SCAN_INTERVAL, Optional.of(athenzCredentialsMaintainer));
+                storageMaintainer, clock, NODE_AGENT_SCAN_INTERVAL, Optional.of(athenzCredentialsMaintainer), Optional.of(aclMaintainer));
     }
 
     private void mockGetContainer(DockerImage dockerImage, boolean isRunning) {
