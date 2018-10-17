@@ -312,7 +312,7 @@ public class DockerOperationsImpl implements DockerOperations {
         if (isInfrastructureHost(context.nodeType()))
             command.withSharedVolume(varLibSia, varLibSia);
 
-        if (context.nodeType() == NodeType.proxyhost)
+        if (context.nodeType() == NodeType.proxyhost || context.nodeType() == NodeType.controllerhost)
             command.withSharedVolume(Paths.get("/opt/yahoo/share/ssl/certs"), Paths.get("/opt/yahoo/share/ssl/certs"));
 
         if (context.nodeType() == NodeType.host)
