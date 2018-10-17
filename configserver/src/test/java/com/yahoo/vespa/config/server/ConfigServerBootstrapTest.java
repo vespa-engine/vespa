@@ -56,7 +56,7 @@ public class ConfigServerBootstrapTest {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3");
         DeployTester tester = new DeployTester(configserverConfig, provisioner);
-        tester.deployApp("src/test/apps/hosted/", "myApp", Instant.now());
+        tester.deployApp("src/test/apps/hosted/");
 
         File versionFile = temporaryFolder.newFile();
         VersionState versionState = new VersionState(versionFile);
@@ -82,7 +82,7 @@ public class ConfigServerBootstrapTest {
     public void testBootstrapWhenRedeploymentFails() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         DeployTester tester = new DeployTester(configserverConfig);
-        tester.deployApp("src/test/apps/hosted/", "myApp", Instant.now());
+        tester.deployApp("src/test/apps/hosted/");
 
         File versionFile = temporaryFolder.newFile();
         VersionState versionState = new VersionState(versionFile);
@@ -125,7 +125,8 @@ public class ConfigServerBootstrapTest {
         DeployTester tester = new DeployTester(modelFactories, configserverConfig,
                                                Clock.systemUTC(), new Zone(Environment.dev, RegionName.defaultName()),
                                                provisioner, curator);
-        ApplicationId app = tester.deployApp("src/test/apps/app/", "myApp", vespaVersion, Instant.now());
+        tester.deployApp("src/test/apps/app/", vespaVersion, Instant.now());
+        ApplicationId applicationId = tester.applicationId();
 
         File versionFile = temporaryFolder.newFile();
         VersionState versionState = new VersionState(versionFile);
@@ -134,7 +135,7 @@ public class ConfigServerBootstrapTest {
         // Ugly hack, but I see no other way of doing it:
         // Manipulate application version in zookeeper so that it is an older version than the model we know, which is
         // the case when upgrading on non-hosted installations
-        curator.set(Path.fromString("/config/v2/tenants/" + app.tenant().value() + "/sessions/2/version"), Utf8.toBytes("1.2.2"));
+        curator.set(Path.fromString("/config/v2/tenants/" + applicationId.tenant().value() + "/sessions/2/version"), Utf8.toBytes("1.2.2"));
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
         VipStatus vipStatus = new VipStatus();

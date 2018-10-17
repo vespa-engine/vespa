@@ -43,9 +43,9 @@ public class HostedDeployTest {
     public void testRedeployWithVersion() {
         CountingModelFactory modelFactory = DeployTester.createModelFactory(Version.fromString("4.5.6"), Clock.systemUTC());
         DeployTester tester = new DeployTester(Collections.singletonList(modelFactory), createConfigserverConfig());
-        tester.deployApp("src/test/apps/hosted/", "myApp", "4.5.6", Instant.now());
+        tester.deployApp("src/test/apps/hosted/", "4.5.6", Instant.now());
 
-        Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
+        Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
         assertTrue(deployment.isPresent());
         deployment.get().prepare();
         deployment.get().activate();
@@ -55,7 +55,8 @@ public class HostedDeployTest {
     @Test
     public void testRedeploy() {
         DeployTester tester = new DeployTester(createConfigserverConfig());
-        ApplicationId appId = tester.deployApp("src/test/apps/hosted/", "myApp", Instant.now());
+        ApplicationId appId = tester.applicationId();
+        tester.deployApp("src/test/apps/hosted/");
         LocalSession s1 = tester.applicationRepository().getActiveSession(appId);
         System.out.println("First session: " + s1.getSessionId());
         assertFalse(tester.applicationRepository().getActiveSession(appId).getMetaData().isInternalRedeploy());
@@ -77,8 +78,8 @@ public class HostedDeployTest {
         modelFactories.add(DeployTester.createModelFactory(Version.fromString("6.2.0"), clock));
         modelFactories.add(DeployTester.createModelFactory(Version.fromString("7.0.0"), clock));
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), clock, Zone.defaultZone());
-        ApplicationId app = tester.deployApp("src/test/apps/hosted/", "myApp", "6.2.0", Instant.now());
-        assertEquals(3, tester.getAllocatedHostsOf(app).getHosts().size());
+        tester.deployApp("src/test/apps/hosted/", "6.2.0", Instant.now());
+        assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
     }
 
     /** Test that only the minimal set of models are created (model versions used on hosts, the wanted version and the latest version) */
@@ -108,8 +109,8 @@ public class HostedDeployTest {
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(),
                                                clock, new Zone(Environment.dev, RegionName.defaultName()), provisioner);
         // Deploy with version that does not exist on hosts, the model for this version should also be created
-        ApplicationId app = tester.deployApp("src/test/apps/hosted/", "myApp", "7.0.0", Instant.now());
-        assertEquals(3, tester.getAllocatedHostsOf(app).getHosts().size());
+        tester.deployApp("src/test/apps/hosted/", "7.0.0", Instant.now());
+        assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
         assertTrue(factory600.creationCount() > 0);
@@ -139,7 +140,7 @@ public class HostedDeployTest {
 
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(),
                                                clock, new Zone(Environment.dev, RegionName.defaultName()), provisioner);
-        tester.deployApp("src/test/apps/hosted-routing-app/", "myApp", "7.2.0", Instant.now());
+        tester.deployApp("src/test/apps/hosted-routing-app/", "7.2.0", Instant.now());
         assertTrue("Newest is always included", factory720.creationCount() > 0);
     }
 
@@ -156,14 +157,15 @@ public class HostedDeployTest {
 
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(),
                                                Clock.systemUTC(), new Zone(Environment.prod, RegionName.defaultName()), provisioner);
+        ApplicationId applicationId = tester.applicationId();
         // Deploy with oldest version
-        ApplicationId app = tester.deployApp("src/test/apps/hosted/", "myApp", "6.0.0", Instant.now());
-        assertEquals(3, tester.getAllocatedHostsOf(app).getHosts().size());
+        tester.deployApp("src/test/apps/hosted/", "6.0.0", Instant.now());
+        assertEquals(3, tester.getAllocatedHostsOf(applicationId).getHosts().size());
 
         // Deploy with version that does not exist on hosts and with app package that has no write access control,
         // validation of access control should not be done, since the app is already deployed in prod
-        app = tester.deployApp("src/test/apps/hosted-no-write-access-control", "myApp", "6.1.0", Instant.now());
-        assertEquals(3, tester.getAllocatedHostsOf(app).getHosts().size());
+        tester.deployApp("src/test/apps/hosted-no-write-access-control", "6.1.0", Instant.now());
+        assertEquals(3, tester.getAllocatedHostsOf(applicationId).getHosts().size());
     }
 
     @Test
@@ -174,7 +176,7 @@ public class HostedDeployTest {
         modelFactories.add(DeployTester.createModelFactory(clock));
         modelFactories.add(DeployTester.createFailingModelFactory(Version.fromIntValues(1, 0, 0))); // older than default
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig());
-        tester.deployApp("src/test/apps/validationOverride/", "myApp", clock.instant());
+        tester.deployApp("src/test/apps/validationOverride/", clock.instant());
 
         // Redeployment from local active works
         {
