@@ -27,12 +27,14 @@ public enum StemMode {
      *
      * @deprecated do not use
      */
-    @Deprecated
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public int getValue() {
         return value;
     }
 
-    @Deprecated
+    @Deprecated // OK
+    // TODO: Remove on Vespa 7
     public static StemMode valueOf(int value) {
         for (StemMode mode : values()) {
             if (mode.value == value) {
