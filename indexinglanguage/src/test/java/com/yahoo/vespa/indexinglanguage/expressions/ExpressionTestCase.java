@@ -62,7 +62,7 @@ public class ExpressionTestCase {
     }
 
     private static Expression newRequiredInput(DataType requiredInput) {
-        return new SimpleExpression().setRequiredInput(requiredInput);
+        return new SimpleExpression(requiredInput);
     }
 
     private static Expression newCreatedOutput(DataType createdOutput, FieldValue actualOutput) {

@@ -53,7 +53,7 @@ public class ScriptTestCase {
             exp.verify(input);
             fail();
         } catch (VerificationException e) {
-            assertTrue(e.getExpression() instanceof ScriptExpression);
+            assertTrue(e.getExpressionType().equals(ScriptExpression.class));
             assertEquals("Expected any input, got null.", e.getMessage());
         }
     }

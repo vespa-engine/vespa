@@ -263,10 +263,10 @@ public class IfThenTestCase {
     }
 
     private static Expression newRequiredInput(DataType lhs, Comparator cmp, DataType rhs, DataType ifTrue, DataType ifFalse) {
-        return new IfThenExpression(new SimpleExpression().setRequiredInput(lhs), cmp,
-                                    new SimpleExpression().setRequiredInput(rhs),
-                                    new SimpleExpression().setRequiredInput(ifTrue),
-                                    ifFalse != null ? new SimpleExpression().setRequiredInput(ifFalse) : null);
+        return new IfThenExpression(new SimpleExpression(lhs), cmp,
+                                    new SimpleExpression(rhs),
+                                    new SimpleExpression(ifTrue),
+                                    ifFalse != null ? new SimpleExpression(ifFalse) : null);
     }
 
     private static class MyFieldValue extends FieldValue {

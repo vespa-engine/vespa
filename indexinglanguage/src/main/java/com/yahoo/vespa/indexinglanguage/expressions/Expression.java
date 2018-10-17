@@ -17,14 +17,12 @@ import com.yahoo.vespa.objects.Selectable;
  */
 public abstract class Expression extends Selectable {
 
-    private DataType inputType;
+    private final DataType inputType;
 
     protected Expression(DataType inputType) {
         this.inputType = inputType;
     }
-    protected void setInputType(DataType inputType) {
-        this.inputType = inputType;
-    }
+
     public final FieldValue execute(FieldValue val) {
         return execute(new ExecutionContext().setValue(val));
     }

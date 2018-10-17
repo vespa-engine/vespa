@@ -18,6 +18,10 @@ final class SimpleExpression extends Expression {
     public SimpleExpression() {
         super(null);
     }
+    public SimpleExpression(DataType requiredInput) {
+        super(requiredInput);
+    }
+
     public SimpleExpression setExecuteValue(FieldValue executeValue) {
         this.hasExecuteValue = true;
         this.executeValue = executeValue;
@@ -27,11 +31,6 @@ final class SimpleExpression extends Expression {
     public SimpleExpression setVerifyValue(DataType verifyValue) {
         this.hasVerifyValue = true;
         this.verifyValue = verifyValue;
-        return this;
-    }
-
-    public SimpleExpression setRequiredInput(DataType requiredInput) {
-        setInputType(requiredInput);
         return this;
     }
 
@@ -92,16 +91,16 @@ final class SimpleExpression extends Expression {
     }
 
     public static SimpleExpression newOutput(DataType createdOutput) {
-        return new SimpleExpression().setCreatedOutput(createdOutput)
+        return new SimpleExpression(null).setCreatedOutput(createdOutput)
                                      .setVerifyValue(createdOutput);
     }
 
     public static SimpleExpression newRequired(DataType requiredInput) {
-        return new SimpleExpression().setRequiredInput(requiredInput);
+        return new SimpleExpression(requiredInput);
     }
 
     public static SimpleExpression newConversion(DataType requiredInput, DataType createdOutput) {
-        return new SimpleExpression().setRequiredInput(requiredInput)
+        return new SimpleExpression(requiredInput)
                                      .setCreatedOutput(createdOutput)
                                      .setExecuteValue(createdOutput.createFieldValue())
                                      .setVerifyValue(createdOutput);

@@ -46,13 +46,12 @@ public final class IfThenExpression extends CompositeExpression {
     }
 
     public IfThenExpression(Expression lhs, Comparator cmp, Expression rhs, Expression ifTrue, Expression ifFalse) {
-        super(null);
+        super(resolveInputType(lhs, rhs, ifTrue, ifFalse));
         this.lhs = lhs;
         this.cmp = cmp;
         this.rhs = rhs;
         this.ifTrue = ifTrue;
         this.ifFalse = ifFalse;
-        setInputType(resolveInputType());
     }
 
     public Expression getLeftHandSide() {
@@ -114,7 +113,7 @@ public final class IfThenExpression extends CompositeExpression {
         select(ifFalse, predicate, operation);
     }
 
-    private DataType resolveInputType() {
+    private static DataType resolveInputType(Expression lhs, Expression rhs, Expression ifTrue, Expression ifFalse) {
         DataType input = null;
         input = resolveRequiredInputType(input, lhs.requiredInputType());
         input = resolveRequiredInputType(input, rhs.requiredInputType());
@@ -174,7 +173,7 @@ public final class IfThenExpression extends CompositeExpression {
         return ret;
     }
 
-    private DataType resolveRequiredInputType(DataType prev, DataType next) {
+    private static DataType resolveRequiredInputType(DataType prev, DataType next) {
         if (next == null) {
             return prev;
         }
@@ -182,7 +181,7 @@ public final class IfThenExpression extends CompositeExpression {
             return next;
         }
         if (!prev.equals(next)) {
-            throw new VerificationException(this, "Operands require conflicting input types, " +
+            throw new VerificationException(IfThenExpression.class, "Operands require conflicting input types, " +
                                                   prev.getName() + " vs " + next.getName() + ".");
         }
         return prev;

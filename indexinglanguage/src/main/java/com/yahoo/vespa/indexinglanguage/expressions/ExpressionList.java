@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
+import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
@@ -17,12 +18,8 @@ public abstract class ExpressionList<T extends Expression> extends CompositeExpr
 
     private final List<T> expressions = new LinkedList<T>();
 
-    protected ExpressionList() {
-        super(null);
-    }
-
-    protected ExpressionList(Iterable<? extends T> lst) {
-        super(null);
+    protected ExpressionList(Iterable<? extends T> lst, DataType inputType) {
+        super(inputType);
         for (T exp : lst) {
             this.expressions.add(exp);
         }

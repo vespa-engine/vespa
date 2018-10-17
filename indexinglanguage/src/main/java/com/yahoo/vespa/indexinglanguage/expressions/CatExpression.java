@@ -18,12 +18,11 @@ import java.util.*;
 public final class CatExpression extends ExpressionList<Expression> {
 
     public CatExpression(Expression... lst) {
-        super(Arrays.asList(lst));
-        setInputType(resolveInputType());
+        this(Arrays.asList(lst));
     }
 
     public CatExpression(Collection<? extends Expression> lst) {
-        super(lst);
+        super(lst, resolveInputType(lst));
     }
 
     @Override
@@ -63,17 +62,17 @@ public final class CatExpression extends ExpressionList<Expression> {
         context.setValue(resolveOutputType(types));
     }
 
-    private DataType resolveInputType() {
+    private static DataType resolveInputType(Collection<? extends Expression> list) {
         DataType prev = null;
-        for (Expression exp : this) {
+        for (Expression exp : list) {
             DataType next = exp.requiredInputType();
             if (next == null) {
                 // ignore
             } else if (prev == null) {
                 prev = next;
             } else if (!prev.isAssignableFrom(next)) {
-                throw new VerificationException(this, "Operands require conflicting input types, " +
-                                                      prev.getName() + " vs " + next.getName() + ".");
+                throw new VerificationException(CatExpression.class, "Operands require conflicting input types, " +
+                                                                      prev.getName() + " vs " + next.getName() + ".");
             }
         }
         return prev;

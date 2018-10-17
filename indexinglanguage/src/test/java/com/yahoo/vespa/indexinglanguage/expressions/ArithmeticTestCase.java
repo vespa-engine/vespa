@@ -82,7 +82,7 @@ public class ArithmeticTestCase {
     @Test
     public void requireThatOperandInputCanBeNull() {
         SimpleExpression reqNull = new SimpleExpression();
-        SimpleExpression reqInt = new SimpleExpression().setRequiredInput(DataType.INT);
+        SimpleExpression reqInt = new SimpleExpression(DataType.INT);
         assertNull(newArithmetic(reqNull, Operator.ADD, reqNull).requiredInputType());
         assertEquals(DataType.INT, newArithmetic(reqInt, Operator.ADD, reqNull).requiredInputType());
         assertEquals(DataType.INT, newArithmetic(reqInt, Operator.ADD, reqInt).requiredInputType());
@@ -91,10 +91,10 @@ public class ArithmeticTestCase {
 
     @Test
     public void requireThatOperandsAreInputCompatible() {
-        assertVerify(new SimpleExpression().setRequiredInput(DataType.INT), Operator.ADD,
-                     new SimpleExpression().setRequiredInput(DataType.INT), DataType.INT);
-        assertVerifyThrows(new SimpleExpression().setRequiredInput(DataType.INT), Operator.ADD,
-                           new SimpleExpression().setRequiredInput(DataType.STRING), null,
+        assertVerify(new SimpleExpression(DataType.INT), Operator.ADD,
+                     new SimpleExpression(DataType.INT), DataType.INT);
+        assertVerifyThrows(new SimpleExpression(DataType.INT), Operator.ADD,
+                           new SimpleExpression(DataType.STRING), null,
                            "Operands require conflicting input types, int vs string.");
     }
 
