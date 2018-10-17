@@ -38,7 +38,7 @@ public class HostedOverrideProcessorTest {
 
 
     @Test
-    public void testParsingDefault() throws IOException, SAXException, XMLStreamException, ParserConfigurationException, TransformerException {
+    public void testParsingDefault() throws TransformerException {
         String expected = 
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
@@ -50,7 +50,7 @@ public class HostedOverrideProcessorTest {
     }
 
     @Test
-    public void testParsingEnvironmentAndRegion() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingEnvironmentAndRegion() throws TransformerException {
         String expected = 
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
@@ -62,7 +62,7 @@ public class HostedOverrideProcessorTest {
     }
 
     @Test
-    public void testParsingEnvironmentAndRegion2() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingEnvironmentAndRegion2() throws TransformerException {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                         "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
@@ -74,7 +74,7 @@ public class HostedOverrideProcessorTest {
     }
 
     @Test
-    public void testParsingEnvironmentAndRegion3() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingEnvironmentAndRegion3() throws TransformerException {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                         "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
@@ -86,7 +86,7 @@ public class HostedOverrideProcessorTest {
     }
 
     @Test
-    public void testParsingEnvironmentUnknownRegion() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingEnvironmentUnknownRegion() throws TransformerException {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
@@ -98,7 +98,7 @@ public class HostedOverrideProcessorTest {
     }
 
     @Test
-    public void testParsingEnvironmentNoRegion() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingEnvironmentNoRegion() throws TransformerException {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
@@ -110,7 +110,7 @@ public class HostedOverrideProcessorTest {
     }
 
     @Test
-    public void testParsingUnknownEnvironment() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingUnknownEnvironment() throws TransformerException {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
@@ -122,7 +122,7 @@ public class HostedOverrideProcessorTest {
     }
 
     @Test
-    public void testParsingUnknownEnvironmentUnknownRegion() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingUnknownEnvironmentUnknownRegion() throws TransformerException {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
@@ -134,7 +134,7 @@ public class HostedOverrideProcessorTest {
     }
 
     @Test
-    public void testParsingInheritEnvironment() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingInheritEnvironment() throws TransformerException {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
