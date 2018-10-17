@@ -9,7 +9,7 @@ import com.yahoo.vespa.athenz.api.ZToken;
 import com.yahoo.vespa.athenz.client.zts.Identity;
 import com.yahoo.vespa.athenz.client.zts.InstanceIdentity;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
-import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
+import com.yahoo.security.Pkcs10Csr;
 
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;

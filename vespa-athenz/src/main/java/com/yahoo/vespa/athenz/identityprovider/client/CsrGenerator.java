@@ -4,18 +4,18 @@ package com.yahoo.vespa.athenz.identityprovider.client;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
-import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
-import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
-import com.yahoo.vespa.athenz.tls.SubjectAlternativeName;
+import com.yahoo.security.Pkcs10Csr;
+import com.yahoo.security.Pkcs10CsrBuilder;
+import com.yahoo.security.SubjectAlternativeName;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
 import java.util.Set;
 
-import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
-import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.DNS_NAME;
-import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.IP_ADDRESS;
-import static com.yahoo.vespa.athenz.tls.SubjectAlternativeName.Type.RFC822_NAME;
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_RSA;
+import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
+import static com.yahoo.security.SubjectAlternativeName.Type.IP_ADDRESS;
+import static com.yahoo.security.SubjectAlternativeName.Type.RFC822_NAME;
 
 /**
  * Generates a {@link Pkcs10Csr} for an instance.

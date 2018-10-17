@@ -6,7 +6,7 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.ZToken;
-import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
+import com.yahoo.security.Pkcs10Csr;
 
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;

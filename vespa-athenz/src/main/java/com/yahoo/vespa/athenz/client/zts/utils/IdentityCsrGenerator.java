@@ -3,13 +3,13 @@ package com.yahoo.vespa.athenz.client.zts.utils;
 
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
-import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
-import com.yahoo.vespa.athenz.tls.Pkcs10CsrBuilder;
+import com.yahoo.security.Pkcs10Csr;
+import com.yahoo.security.Pkcs10CsrBuilder;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
 
-import static com.yahoo.vespa.athenz.tls.SignatureAlgorithm.SHA256_WITH_RSA;
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_RSA;
 
 /**
  * Generates a {@link Pkcs10Csr} instance for use with {@link ZtsClient#getServiceIdentity(AthenzService, String, Pkcs10Csr)}

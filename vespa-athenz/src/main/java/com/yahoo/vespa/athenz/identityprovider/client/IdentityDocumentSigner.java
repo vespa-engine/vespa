@@ -5,7 +5,7 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
-import com.yahoo.vespa.athenz.tls.SignatureAlgorithm;
+import com.yahoo.security.SignatureAlgorithm;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;

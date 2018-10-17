@@ -5,6 +5,7 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyUtils;
+import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -150,11 +151,10 @@ public class AthenzCredentialsMaintainer {
                         now)) > 0;
     }
 
-    @SuppressWarnings("deprecation")
     private void registerIdentity(NodeAgentContext context, Path privateKeyFile, Path certificateFile, Path identityDocumentFile) {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
         SignedIdentityDocument signedIdentityDocument = identityDocumentClient.getNodeIdentityDocument(context.hostname().value());
-        com.yahoo.vespa.athenz.tls.Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
+        Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 context.identity(), signedIdentityDocument.providerUniqueId(), signedIdentityDocument.ipAddresses(), keyPair);
         try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, hostIdentityProvider)) {
             InstanceIdentity instanceIdentity =
@@ -173,11 +173,10 @@ public class AthenzCredentialsMaintainer {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void refreshIdentity(NodeAgentContext context, Path privateKeyFile, Path certificateFile, Path identityDocumentFile) {
         SignedIdentityDocument identityDocument = EntityBindingsMapper.readSignedIdentityDocumentFromFile(identityDocumentFile);
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        com.yahoo.vespa.athenz.tls.Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
+        Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 context.identity(), identityDocument.providerUniqueId(), identityDocument.ipAddresses(), keyPair);
         SSLContext containerIdentitySslContext =
                 new SslContextBuilder()
