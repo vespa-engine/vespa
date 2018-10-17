@@ -16,7 +16,7 @@ import com.yahoo.search.predicate.optimization.PredicateProcessor;
 /**
  * @author Simon Thoresen Hult
  */
-public class OptimizePredicateExpression extends Expression {
+public final class OptimizePredicateExpression extends Expression {
 
     private final PredicateProcessor optimizer;
 
@@ -25,6 +25,7 @@ public class OptimizePredicateExpression extends Expression {
     }
 
     OptimizePredicateExpression(PredicateProcessor optimizer) {
+        super(DataType.PREDICATE);
         this.optimizer = optimizer;
     }
 
@@ -58,11 +59,6 @@ public class OptimizePredicateExpression extends Expression {
         } else if (input != type) {
             throw new VerificationException(this, "Variable '" + var + "' must have type " + type.getName() + ".");
         }
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.PREDICATE;
     }
 
     @Override

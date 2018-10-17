@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
@@ -13,12 +12,13 @@ import com.yahoo.vespa.indexinglanguage.linguistics.LinguisticsAnnotator;
 /**
  * @author Simon Thoresen Hult
  */
-public class TokenizeExpression extends Expression {
+public final class TokenizeExpression extends Expression {
 
     private final Linguistics linguistics;
     private final AnnotatorConfig config;
 
     public TokenizeExpression(Linguistics linguistics, AnnotatorConfig config) {
+        super(DataType.STRING);
         this.linguistics = linguistics;
         this.config = config;
     }
@@ -49,11 +49,6 @@ public class TokenizeExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         // empty
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.STRING;
     }
 
     @Override

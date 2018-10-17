@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.text.StringUtilities;
@@ -12,11 +11,12 @@ import java.util.regex.Pattern;
 /**
  * @author Simon Thoresen Hult
  */
-public class SplitExpression extends Expression {
+public final class SplitExpression extends Expression {
 
     private final Pattern splitPattern;
 
     public SplitExpression(String splitString) {
+        super(DataType.STRING);
         this.splitPattern = Pattern.compile(splitString);
     }
 
@@ -40,11 +40,6 @@ public class SplitExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.STRING;
     }
 
     @Override

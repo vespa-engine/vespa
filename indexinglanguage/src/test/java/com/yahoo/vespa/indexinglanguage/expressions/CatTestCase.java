@@ -46,19 +46,19 @@ public class CatTestCase {
     public void requireThatExpressionCanBeVerified() {
         assertVerify(new SetValueExpression(new StringFieldValue("foo")),
                      new SetValueExpression(new StringFieldValue("bar")), null);
-        assertVerify(new SimpleExpression().setRequiredInput(DataType.STRING),
-                     new SimpleExpression().setRequiredInput(DataType.STRING), DataType.STRING);
+        assertVerify(new SimpleExpression(DataType.STRING),
+                     new SimpleExpression(DataType.STRING), DataType.STRING);
         assertVerifyThrows(new SimpleExpression().setCreatedOutput(null),
                            new SimpleExpression().setCreatedOutput(DataType.STRING), null,
                            "Attempting to concatenate a null value ");
-        assertVerifyThrows(new SimpleExpression().setRequiredInput(DataType.STRING),
-                           new SimpleExpression().setRequiredInput(DataType.INT), null,
+        assertVerifyThrows(new SimpleExpression(DataType.STRING),
+                           new SimpleExpression(DataType.INT), null,
                            "Operands require conflicting input types, string vs int.");
-        assertVerifyThrows(new SimpleExpression().setRequiredInput(DataType.STRING),
-                           new SimpleExpression().setRequiredInput(DataType.STRING), null,
+        assertVerifyThrows(new SimpleExpression(DataType.STRING),
+                           new SimpleExpression(DataType.STRING), null,
                            "Expected string input, got null.");
-        assertVerifyThrows(new SimpleExpression().setRequiredInput(DataType.STRING),
-                           new SimpleExpression().setRequiredInput(DataType.STRING), DataType.INT,
+        assertVerifyThrows(new SimpleExpression(DataType.STRING),
+                           new SimpleExpression(DataType.STRING), DataType.INT,
                            "Expected string input, got int.");
     }
 

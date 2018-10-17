@@ -7,8 +7,11 @@ import com.yahoo.document.DocumentType;
 /**
  * @author Simon Thoresen Hult
  */
-public class ClearStateExpression extends Expression {
+public final class ClearStateExpression extends Expression {
 
+    public ClearStateExpression() {
+        super(null);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         ctx.clear();
@@ -17,11 +20,6 @@ public class ClearStateExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.clear();
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return null;
     }
 
     @Override

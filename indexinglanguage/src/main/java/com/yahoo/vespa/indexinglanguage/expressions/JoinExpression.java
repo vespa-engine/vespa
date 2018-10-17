@@ -3,7 +3,6 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
@@ -14,11 +13,12 @@ import java.util.Iterator;
 /**
  * @author Simon Thoresen Hult
  */
-public class JoinExpression extends Expression {
+public final class JoinExpression extends Expression {
 
     private final String delimiter;
 
     public JoinExpression(String delimiter) {
+        super(UnresolvedDataType.INSTANCE);
         this.delimiter = delimiter;
     }
 
@@ -50,11 +50,6 @@ public class JoinExpression extends Expression {
             throw new VerificationException(this, "Expected Array input, got " + input.getName() + ".");
         }
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

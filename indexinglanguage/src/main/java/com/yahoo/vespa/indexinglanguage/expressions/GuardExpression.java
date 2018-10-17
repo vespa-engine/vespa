@@ -11,12 +11,13 @@ import com.yahoo.vespa.objects.ObjectPredicate;
 /**
  * @author Simon Thoresen Hult
  */
-public class GuardExpression extends CompositeExpression {
+public final class GuardExpression extends CompositeExpression {
 
     private final Expression exp;
     private final boolean shouldExecute;
 
     public GuardExpression(Expression exp) {
+        super(exp.requiredInputType());
         this.exp = exp;
         shouldExecute = shouldExecute(exp);
     }
@@ -37,11 +38,6 @@ public class GuardExpression extends CompositeExpression {
     @Override
     protected void doVerify(VerificationContext context) {
         exp.verify(context);
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return exp.requiredInputType();
     }
 
     @Override

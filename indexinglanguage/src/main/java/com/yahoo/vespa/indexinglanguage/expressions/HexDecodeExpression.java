@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.LongFieldValue;
 
 import java.math.BigInteger;
@@ -10,10 +9,13 @@ import java.math.BigInteger;
 /**
  * @author Simon Thoresen Hult
  */
-public class HexDecodeExpression extends Expression {
+public final class HexDecodeExpression extends Expression {
 
     private static final BigInteger ULONG_MAX = new BigInteger("18446744073709551616");
 
+    public HexDecodeExpression() {
+        super(DataType.STRING);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         String input = String.valueOf(ctx.getValue());
@@ -39,11 +41,6 @@ public class HexDecodeExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.STRING;
     }
 
     @Override

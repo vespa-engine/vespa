@@ -14,12 +14,13 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * @author Simon Thoresen Hult
  */
-public class InputExpression extends Expression {
+public final class InputExpression extends Expression {
 
     private final String fieldName;
     private FieldPath fieldPath;
 
     public InputExpression(String fieldName) {
+        super(null);
         this.fieldName = fieldName;
     }
 
@@ -43,11 +44,6 @@ public class InputExpression extends Expression {
             throw new VerificationException(this, "Field '" + fieldName + "' not found.");
         }
         context.setValue(val);
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return null;
     }
 
     @Override

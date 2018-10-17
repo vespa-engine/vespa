@@ -4,7 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 /**
  * @author Simon Thoresen Hult
  */
-public class SummaryExpression extends OutputExpression {
+public final class SummaryExpression extends OutputExpression {
 
     public SummaryExpression(String fieldName) {
         super("summary", fieldName);

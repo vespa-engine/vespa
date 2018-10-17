@@ -2,8 +2,13 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
-import com.yahoo.document.annotation.*;
+import com.yahoo.document.annotation.Annotation;
+import com.yahoo.document.annotation.AnnotationTypes;
+import com.yahoo.document.annotation.Span;
+import com.yahoo.document.annotation.SpanList;
+import com.yahoo.document.annotation.SpanNode;
+import com.yahoo.document.annotation.SpanTree;
+import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.process.TokenType;
@@ -13,8 +18,11 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
 /**
  * @author Simon Thoresen Hult
  */
-public class ExactExpression extends Expression {
+public final class ExactExpression extends Expression {
 
+    public ExactExpression() {
+        super(DataType.STRING);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         StringFieldValue input = (StringFieldValue)ctx.getValue();
@@ -41,11 +49,6 @@ public class ExactExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         // empty
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.STRING;
     }
 
     @Override

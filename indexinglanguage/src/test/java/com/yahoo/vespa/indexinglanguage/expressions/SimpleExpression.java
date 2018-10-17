@@ -2,20 +2,25 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.FieldValue;
 
 /**
  * @author Simon Thoresen Hult
  */
-class SimpleExpression extends Expression {
+final class SimpleExpression extends Expression {
 
     private boolean hasExecuteValue = false;
     private boolean hasVerifyValue = false;
     private FieldValue executeValue;
     private DataType verifyValue;
-    private DataType requiredInput;
     private DataType createdOutput;
+
+    public SimpleExpression() {
+        super(null);
+    }
+    public SimpleExpression(DataType requiredInput) {
+        super(requiredInput);
+    }
 
     public SimpleExpression setExecuteValue(FieldValue executeValue) {
         this.hasExecuteValue = true;
@@ -26,11 +31,6 @@ class SimpleExpression extends Expression {
     public SimpleExpression setVerifyValue(DataType verifyValue) {
         this.hasVerifyValue = true;
         this.verifyValue = verifyValue;
-        return this;
-    }
-
-    public SimpleExpression setRequiredInput(DataType requiredInput) {
-        this.requiredInput = requiredInput;
         return this;
     }
 
@@ -54,18 +54,13 @@ class SimpleExpression extends Expression {
     }
 
     @Override
-    public DataType requiredInputType() {
-        return requiredInput;
-    }
-
-    @Override
     public DataType createdOutputType() {
         return createdOutput;
     }
 
     @Override
     public int hashCode() {
-        return hashCode(executeValue) + hashCode(verifyValue) + hashCode(requiredInput) + hashCode(createdOutput);
+        return hashCode(executeValue) + hashCode(verifyValue) + hashCode(requiredInputType()) + hashCode(createdOutput);
     }
 
     @Override
@@ -86,7 +81,7 @@ class SimpleExpression extends Expression {
         if (!equals(verifyValue, rhs.verifyValue)) {
             return false;
         }
-        if (!equals(requiredInput, rhs.requiredInput)) {
+        if (!equals(requiredInputType(), rhs.requiredInputType())) {
             return false;
         }
         if (!equals(createdOutput, rhs.createdOutput)) {
@@ -96,16 +91,16 @@ class SimpleExpression extends Expression {
     }
 
     public static SimpleExpression newOutput(DataType createdOutput) {
-        return new SimpleExpression().setCreatedOutput(createdOutput)
+        return new SimpleExpression(null).setCreatedOutput(createdOutput)
                                      .setVerifyValue(createdOutput);
     }
 
     public static SimpleExpression newRequired(DataType requiredInput) {
-        return new SimpleExpression().setRequiredInput(requiredInput);
+        return new SimpleExpression(requiredInput);
     }
 
     public static SimpleExpression newConversion(DataType requiredInput, DataType createdOutput) {
-        return new SimpleExpression().setRequiredInput(requiredInput)
+        return new SimpleExpression(requiredInput)
                                      .setCreatedOutput(createdOutput)
                                      .setExecuteValue(createdOutput.createFieldValue())
                                      .setVerifyValue(createdOutput);

@@ -13,6 +13,7 @@ public abstract class OutputExpression extends Expression {
     private final String fieldName;
 
     public OutputExpression(String image, String fieldName) {
+        super(UnresolvedDataType.INSTANCE);
         this.image = image;
         this.fieldName = fieldName;
     }
@@ -29,11 +30,6 @@ public abstract class OutputExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.tryOutputType(this, fieldName, context.getValue());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

@@ -8,7 +8,10 @@ import com.yahoo.document.datatypes.StringFieldValue;
 /**
  * @author Simon Thoresen Hult
  */
-public class TrimExpression extends Expression {
+public final class TrimExpression extends Expression {
+    public TrimExpression() {
+        super(DataType.STRING);
+    }
 
     @Override
     protected void doExecute(ExecutionContext ctx) {
@@ -18,11 +21,6 @@ public class TrimExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.STRING;
     }
 
     @Override

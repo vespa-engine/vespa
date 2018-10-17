@@ -28,7 +28,7 @@ class OutputAssert {
         assertVerify(new MyAdapter(null), DataType.INT, exp);
         assertVerify(new MyAdapter(null), DataType.STRING, exp);
         assertVerifyThrows(new MyAdapter(null), null, exp, "Expected any input, got null.");
-        assertVerifyThrows(new MyAdapter(new VerificationException(null, "foo")), DataType.INT, exp, "foo");
+        assertVerifyThrows(new MyAdapter(new VerificationException((Expression) null, "foo")), DataType.INT, exp, "foo");
     }
 
     public static void assertVerify(FieldTypeAdapter adapter, DataType value, Expression exp) {

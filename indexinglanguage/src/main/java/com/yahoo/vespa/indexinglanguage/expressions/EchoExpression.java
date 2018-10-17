@@ -2,14 +2,13 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 
 import java.io.PrintStream;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class EchoExpression extends Expression {
+public final class EchoExpression extends Expression {
 
     private final PrintStream out;
 
@@ -18,6 +17,7 @@ public class EchoExpression extends Expression {
     }
 
     public EchoExpression(PrintStream out) {
+        super(UnresolvedDataType.INSTANCE);
         this.out = out;
     }
 
@@ -33,11 +33,6 @@ public class EchoExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         // empty
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

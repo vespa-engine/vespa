@@ -2,8 +2,11 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
-import com.yahoo.document.annotation.*;
+import com.yahoo.document.annotation.AnnotationTypes;
+import com.yahoo.document.annotation.Span;
+import com.yahoo.document.annotation.SpanList;
+import com.yahoo.document.annotation.SpanTree;
+import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.GramSplitter;
@@ -17,7 +20,7 @@ import java.util.Iterator;
  *
  * @author bratseth
  */
-public class NGramExpression extends Expression {
+public final class NGramExpression extends Expression {
 
     private final Linguistics linguistics;
     private final int gramSize;
@@ -29,6 +32,7 @@ public class NGramExpression extends Expression {
      * @param gramSize the gram size
      */
     public NGramExpression(Linguistics linguistics, int gramSize) {
+        super(DataType.STRING);
         this.linguistics = linguistics;
         this.gramSize = gramSize;
     }
@@ -75,11 +79,6 @@ public class NGramExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         // empty
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.STRING;
     }
 
     @Override

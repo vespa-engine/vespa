@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
@@ -10,12 +9,13 @@ import com.yahoo.document.datatypes.WeightedSet;
 /**
  * @author Simon Thoresen Hult
  */
-public class ToWsetExpression extends Expression {
+public final class ToWsetExpression extends Expression {
 
     private final Boolean createIfNonExistent;
     private final Boolean removeIfZero;
 
     public ToWsetExpression(boolean createIfNonExistent, boolean removeIfZero) {
+        super(UnresolvedDataType.INSTANCE);
         this.createIfNonExistent = createIfNonExistent;
         this.removeIfZero = removeIfZero;
     }
@@ -44,11 +44,6 @@ public class ToWsetExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(DataType.getWeightedSet(context.getValue(), createIfNonExistent, removeIfZero));
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override
