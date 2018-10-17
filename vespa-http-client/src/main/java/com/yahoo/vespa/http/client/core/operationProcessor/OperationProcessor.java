@@ -56,7 +56,7 @@ public class OperationProcessor {
     private final boolean blockOperationsToSameDocument;
     private int traceCounter = 0;
     private final boolean traceToStderr;
-    private final String clientId = new BigInteger(130, random).toString(32);;
+    private final String clientId = new BigInteger(130, random).toString(32);
 
     public OperationProcessor(
             IncompleteResultsThrottler incompleteResultsThrottler,
@@ -162,7 +162,8 @@ public class OperationProcessor {
     }
 
     private Result process(EndpointResult endpointResult, int clusterId) {
-
+        Result result;
+        Document blockedDocumentToSend = null;
         synchronized (monitor) {
             if (!docSendInfoByOperationId.containsKey(endpointResult.getOperationId())) {
                 log.finer("Received out-of-order or too late result, discarding: " + endpointResult);
@@ -184,7 +185,7 @@ public class OperationProcessor {
                 return null;
             }
 
-            Result result = documentSendInfo.createResult();
+            result = documentSendInfo.createResult();
             docSendInfoByOperationId.remove(endpointResult.getOperationId());
 
             String documentId = documentSendInfo.getDocument().getDocumentId();
@@ -196,10 +197,13 @@ public class OperationProcessor {
             if (blockedDocuments.isEmpty()) {
                 inflightDocumentIds.remove(documentId);
             } else {
-                sendToClusters(blockedDocuments.remove(0));
+                blockedDocumentToSend = blockedDocuments.remove(0);
             }
-            return result;
         }
+        if (blockedDocumentToSend != null) {
+            sendToClusters(blockedDocumentToSend);
+        }
+        return result;
     }
 
     public void resultReceived(EndpointResult endpointResult, int clusterId) {
