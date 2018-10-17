@@ -4,6 +4,7 @@ package com.yahoo.vespa.athenz.api;
 import com.yahoo.athenz.auth.token.RoleToken;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -39,6 +40,10 @@ public class ZToken {
         return token.getRoles().stream()
                 .map(roleName -> new AthenzRole(domain, roleName))
                 .collect(toList());}
+
+    public Instant getExpiryTime () {
+        return Instant.ofEpochSecond(token.getExpiryTime());
+    }
 
     @Override
     public boolean equals(Object o) {
