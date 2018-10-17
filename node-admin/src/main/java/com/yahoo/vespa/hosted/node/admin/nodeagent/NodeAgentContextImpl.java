@@ -97,4 +97,52 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     public void log(Logger logger, Level level, String message, Throwable throwable) {
         logger.log(level, logPrefix + message, throwable);
     }
+    
+
+    /** For testing only! */
+    public static class Builder {
+        private final String hostname;
+        private NodeType nodeType;
+        private AthenzService identity;
+        private Path pathToContainerStorage;
+        private Path pathToVespaHome;
+        
+        public Builder(String hostname) {
+            this.hostname = hostname;
+        }
+
+        public Builder nodeType(NodeType nodeType) {
+            this.nodeType = nodeType;
+            return this;
+        }
+
+        public Builder identity(AthenzService identity) {
+            this.identity = identity;
+            return this;
+        }
+
+        public Builder pathToContainerStorage(Path pathToContainerStorage) {
+            this.pathToContainerStorage = pathToContainerStorage;
+            return this;
+        }
+
+        public Builder pathToVespaHome(Path pathToVespaHome) {
+            this.pathToVespaHome = pathToVespaHome;
+            return this;
+        }
+
+        public Builder fileSystem(FileSystem fileSystem) {
+            return pathToContainerStorage(fileSystem.getPath("/home/docker"));
+        }
+
+        public NodeAgentContextImpl build() {
+            return new NodeAgentContextImpl(
+                    hostname,
+                    Optional.ofNullable(nodeType).orElse(NodeType.tenant),
+                    Optional.ofNullable(identity).orElseGet(() -> new AthenzService("domain", "service")),
+                    Optional.ofNullable(pathToContainerStorage).orElseGet(() -> Paths.get("/home/docker")),
+                    Optional.ofNullable(pathToVespaHome).orElseGet(() -> Paths.get("/opt/vespa"))
+            );
+        }
+    }
 }

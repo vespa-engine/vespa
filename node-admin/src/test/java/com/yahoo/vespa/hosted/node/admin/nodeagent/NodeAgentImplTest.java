@@ -68,7 +68,7 @@ public class NodeAgentImplTest {
     private static final String vespaVersion = "1.2.3";
 
     private final String hostName = "host1.test.yahoo.com";
-    private final NodeAgentContext context = NodeAgentContextImplTest.nodeAgentFromHostname(hostName);
+    private final NodeAgentContext context = new NodeAgentContextImpl.Builder(hostName).build();
     private final DockerImage dockerImage = new DockerImage("dockerImage");
     private final DockerOperations dockerOperations = mock(DockerOperations.class);
     private final NodeRepository nodeRepository = mock(NodeRepository.class);

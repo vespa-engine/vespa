@@ -51,7 +51,7 @@ public class DockerOperationsImplTest {
 
     @Test
     public void processResultFromNodeProgramWhenSuccess() {
-        final NodeAgentContext context = NodeAgentContextImplTest.nodeAgentFromHostname("container-123.domain.tld");
+        final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld").build();
         final ProcessResult actualResult = new ProcessResult(0, "output", "errors");
 
         when(docker.executeInContainerAsUser(any(), any(), any(), anyVararg()))
@@ -72,7 +72,7 @@ public class DockerOperationsImplTest {
 
     @Test(expected = RuntimeException.class)
     public void processResultFromNodeProgramWhenNonZeroExitCode() {
-        final NodeAgentContext context = NodeAgentContextImplTest.nodeAgentFromHostname("container-123.domain.tld");
+        final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld").build();
         final ProcessResult actualResult = new ProcessResult(3, "output", "errors");
 
         when(docker.executeInContainerAsUser(any(), any(), any(), anyVararg()))
@@ -105,10 +105,6 @@ public class DockerOperationsImplTest {
         InetAddress ipV6Local = InetAddresses.forString("::1");
         InetAddress ipV4Local = InetAddresses.forString("127.0.0.1");
 
-        DockerOperationsImpl dockerOperations = new DockerOperationsImpl(
-                docker,
-                environment,
-                processExecuter);
         dockerOperations.addEtcHosts(containerData, hostname, Optional.empty(), ipV6Local);
 
         verify(containerData, times(1)).addFile(

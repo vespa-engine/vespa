@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.component.PathResolver;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImplTest;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Rule;
@@ -112,7 +112,8 @@ public class StorageMaintainerTest {
     }
 
     private NodeAgentContext createNodeAgentContextAndContainerStorage(FileSystem fileSystem, String containerName) throws IOException {
-        NodeAgentContext context = NodeAgentContextImplTest.nodeAgentFromHostname(fileSystem, containerName + ".domain.tld");
+        NodeAgentContext context = new NodeAgentContextImpl.Builder(containerName + ".domain.tld")
+                .fileSystem(fileSystem).build();
 
         Path containerVespaHomeOnHost = context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome(""));
         Files.createDirectories(context.pathOnHostFromPathInNode("/etc/something"));
