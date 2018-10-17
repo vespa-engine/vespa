@@ -72,37 +72,37 @@ public class StorageMaintainer {
         // host-life
         Path hostLifeCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_host_life");
         SecretAgentCheckConfig hostLifeSchedule = new SecretAgentCheckConfig("host-life", 60, hostLifeCheckPath);
-        configs.add(annotatedCheck(node, hostLifeSchedule));
+        configs.add(annotatedCheck(context, node, hostLifeSchedule));
 
         // ntp
         Path ntpCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_ntp");
         SecretAgentCheckConfig ntpSchedule = new SecretAgentCheckConfig("ntp", 60, ntpCheckPath);
-        configs.add(annotatedCheck(node, ntpSchedule));
+        configs.add(annotatedCheck(context, node, ntpSchedule));
 
         // coredumps (except for the done coredumps which is handled by the host)
         Path coredumpCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_coredumps");
         SecretAgentCheckConfig coredumpSchedule = new SecretAgentCheckConfig("system-coredumps-processing", 300,
                 coredumpCheckPath, "--application", "system-coredumps-processing", "--lastmin",
                 "129600", "--crit", "1", "--coredir", context.pathInNodeUnderVespaHome("var/crash/processing").toString());
-        configs.add(annotatedCheck(node, coredumpSchedule));
+        configs.add(annotatedCheck(context, node, coredumpSchedule));
 
         // athenz certificate check
         Path athenzCertExpiryCheckPath = context.pathInNodeUnderVespaHome("libexec64/yms/yms_check_athenz_certs");
         SecretAgentCheckConfig athenzCertExpirySchedule = new SecretAgentCheckConfig("athenz-certificate-expiry", 60,
                  athenzCertExpiryCheckPath, "--threshold", "20")
                 .withRunAsUser("root");
-        configs.add(annotatedCheck(node, athenzCertExpirySchedule));
+        configs.add(annotatedCheck(context, node, athenzCertExpirySchedule));
 
         if (context.nodeType() != NodeType.config) {
             // vespa-health
             Path vespaHealthCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa_health");
             SecretAgentCheckConfig vespaHealthSchedule = new SecretAgentCheckConfig("vespa-health", 60, vespaHealthCheckPath, "all");
-            configs.add(annotatedCheck(node, vespaHealthSchedule));
+            configs.add(annotatedCheck(context, node, vespaHealthSchedule));
 
             // vespa
             Path vespaCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa");
             SecretAgentCheckConfig vespaSchedule = new SecretAgentCheckConfig("vespa", 60, vespaCheckPath, "all");
-            configs.add(annotatedCheck(node, vespaSchedule));
+            configs.add(annotatedCheck(context, node, vespaSchedule));
         }
 
         if (context.nodeType() == NodeType.config) {
@@ -110,14 +110,14 @@ public class StorageMaintainer {
             Path configServerCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_ymonsb2");
             SecretAgentCheckConfig configServerSchedule = new SecretAgentCheckConfig("configserver", 60,
                     configServerCheckPath, "-zero", "configserver");
-            configs.add(annotatedCheck(node, configServerSchedule));
+            configs.add(annotatedCheck(context, node, configServerSchedule));
 
             //zkbackupage
             Path zkbackupCheckPath = context.pathInNodeUnderVespaHome("libexec/yamas2/yms_check_file_age.py");
             SecretAgentCheckConfig zkbackupSchedule = new SecretAgentCheckConfig("zkbackupage", 300,
                     zkbackupCheckPath, "-f", context.pathInNodeUnderVespaHome("var/vespa-hosted/zkbackup.stat").toString(),
                     "-m", "150", "-a", "config-zkbackupage");
-            configs.add(annotatedCheck(node, zkbackupSchedule));
+            configs.add(annotatedCheck(context, node, zkbackupSchedule));
         }
 
         if (context.nodeType() == NodeType.proxy) {
@@ -126,13 +126,13 @@ public class StorageMaintainer {
             SecretAgentCheckConfig routingAgeSchedule = new SecretAgentCheckConfig("routing-configage", 60,
                     routingAgeCheckPath, "-f", context.pathInNodeUnderVespaHome("var/vespa-hosted/routing/nginx.conf").toString(),
                     "-m", "90", "-a", "routing-configage");
-            configs.add(annotatedCheck(node, routingAgeSchedule));
+            configs.add(annotatedCheck(context, node, routingAgeSchedule));
 
             //ssl-check
             Path sslCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_ssl_status");
             SecretAgentCheckConfig sslSchedule = new SecretAgentCheckConfig("ssl-status", 300,
                     sslCheckPath, "-e", "localhost", "-p", "4443", "-t", "30");
-            configs.add(annotatedCheck(node, sslSchedule));
+            configs.add(annotatedCheck(context, node, sslSchedule));
         }
 
         // Write config and restart yamas-agent
@@ -145,14 +145,14 @@ public class StorageMaintainer {
         dockerOperations.executeCommandInContainerAsRoot(context, "service", "yamas-agent", "restart");
     }
 
-    private SecretAgentCheckConfig annotatedCheck(NodeSpec node, SecretAgentCheckConfig check) {
+    private SecretAgentCheckConfig annotatedCheck(NodeAgentContext context, NodeSpec node, SecretAgentCheckConfig check) {
         check.withTag("namespace", "Vespa")
                 .withTag("role", SecretAgentCheckConfig.nodeTypeToRole(node.getNodeType()))
                 .withTag("flavor", node.getFlavor())
                 .withTag("canonicalFlavor", node.getCanonicalFlavor())
                 .withTag("state", node.getState().toString())
-                .withTag("zone", environment.getZone())
-                .withTag("parentHostname", environment.getParentHostHostname());
+                .withTag("zone", String.format("%s.%s", context.zone().environment().value(), context.zone().regionName().value()));
+        node.getParentHostname().ifPresent(parent -> check.withTag("parentHostname", parent));
         node.getOwner().ifPresent(owner -> check
                 .withTag("tenantName", owner.getTenant())
                 .withTag("app", owner.getApplication() + "." + owner.getInstance())
@@ -231,20 +231,20 @@ public class StorageMaintainer {
 
     /** Checks if container has any new coredumps, reports and archives them if so */
     public void handleCoreDumpsForContainer(NodeAgentContext context, NodeSpec node, Optional<Container> container) {
-        final Map<String, Object> nodeAttributes = getCoredumpNodeAttributes(node, container);
+        final Map<String, Object> nodeAttributes = getCoredumpNodeAttributes(context, node, container);
         coredumpHandler.converge(context, nodeAttributes);
     }
 
-    private Map<String, Object> getCoredumpNodeAttributes(NodeSpec node, Optional<Container> container) {
+    private Map<String, Object> getCoredumpNodeAttributes(NodeAgentContext context, NodeSpec node, Optional<Container> container) {
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("hostname", node.getHostname());
-        attributes.put("parent_hostname", environment.getParentHostHostname());
-        attributes.put("region", environment.getRegion());
-        attributes.put("environment", environment.getEnvironment());
+        attributes.put("region", context.zone().regionName());
+        attributes.put("environment", context.zone().environment());
         attributes.put("flavor", node.getFlavor());
         attributes.put("kernel_version", System.getProperty("os.version"));
 
         container.map(c -> c.image).ifPresent(image -> attributes.put("docker_image", image.asString()));
+        node.getParentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
         node.getVespaVersion().ifPresent(version -> attributes.put("vespa_version", version));
         node.getOwner().ifPresent(owner -> {
             attributes.put("tenant", owner.getTenant());

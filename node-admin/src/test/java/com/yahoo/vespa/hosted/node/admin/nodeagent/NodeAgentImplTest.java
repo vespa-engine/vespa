@@ -659,6 +659,7 @@ public class NodeAgentImplTest {
                 .membership(membership)
                 .minMainMemoryAvailableGb(2)
                 .allowedToBeDown(true)
+                .parentHostname("parent.host.name.yahoo.com")
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);

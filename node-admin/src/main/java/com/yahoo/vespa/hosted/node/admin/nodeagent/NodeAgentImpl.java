@@ -605,8 +605,8 @@ public class NodeAgentImpl implements NodeAgent {
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
                 .add("host", context.hostname().value())
                 .add("role", "tenants")
-                .add("state", node.getState().toString())
-                .add("parentHostname", environment.getParentHostHostname());
+                .add("state", node.getState().toString());
+        node.getParentHostname().ifPresent(parent -> dimensionsBuilder.add("parentHostname", parent));
         node.getAllowedToBeDown().ifPresent(allowed ->
                 dimensionsBuilder.add("orchestratorState", allowed ? "ALLOWED_TO_BE_DOWN" : "NO_REMARKS"));
         Dimensions dimensions = dimensionsBuilder.build();
