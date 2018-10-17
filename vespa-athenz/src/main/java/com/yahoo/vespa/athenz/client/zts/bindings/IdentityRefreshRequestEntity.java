@@ -4,7 +4,7 @@ package com.yahoo.vespa.athenz.client.zts.bindings;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.yahoo.vespa.athenz.client.zts.bindings.serializers.Pkcs10CsrSerializer;
-import com.yahoo.vespa.athenz.tls.Pkcs10Csr;
+import com.yahoo.security.Pkcs10Csr;
 
 /**
  * @author bjorncs
