@@ -194,6 +194,10 @@ exec_jsvc () {
         -XX:+HeapDumpOnOutOfMemoryError \
         -XX:HeapDumpPath="${VESPA_HOME}/var/crash" \
         -XX:+ExitOnOutOfMemoryError \
+        --illegal-access=warn \
+        --add-opens=java.base/java.lang=ALL-UNNAMED \
+        --add-opens=java.base/java.net=ALL-UNNAMED \
+        --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED \
         -Djava.library.path="${VESPA_HOME}/lib64" \
         -Djava.awt.headless=true \
         -Djavax.net.ssl.keyStoreType=JKS \
@@ -266,6 +270,10 @@ exec $numactlcmd $envcmd java \
         -XX:+HeapDumpOnOutOfMemoryError \
         -XX:HeapDumpPath="${VESPA_HOME}/var/crash" \
         -XX:+ExitOnOutOfMemoryError \
+        --illegal-access=warn \
+        --add-opens=java.base/java.lang=ALL-UNNAMED \
+        --add-opens=java.base/java.net=ALL-UNNAMED \
+        --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED \
         -Djava.library.path="${VESPA_HOME}/lib64" \
         -Djava.awt.headless=true \
         -Djavax.net.ssl.keyStoreType=JKS \
