@@ -1,9 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.model.api.ConfigChangeAction;
+import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
+import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
@@ -13,8 +19,11 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-import static com.yahoo.vespa.config.server.deploy.DeployTester.CountingModelFactory;
 
+import com.yahoo.vespa.config.server.configchange.MockRestartAction;
+import com.yahoo.vespa.config.server.configchange.RestartActions;
+import com.yahoo.vespa.config.server.http.v2.PrepareResult;
+import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.session.LocalSession;
 import org.junit.Test;
 
@@ -24,13 +33,18 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.yahoo.vespa.config.server.deploy.DeployTester.CountingModelFactory;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -208,6 +222,24 @@ public class HostedDeployTest {
         }
     }
 
+    @Test
+    public void testThatConfigChangeActionsAreCollectedFromAllModels() {
+        List<ServiceInfo> services = Collections.singletonList(
+                new ServiceInfo("serviceName", "serviceType", null, new HashMap<>(), "configId", "hostName"));
+
+        List<ModelFactory> modelFactories = Arrays.asList(
+                new ConfigChangeActionsModelFactory(Version.fromIntValues(6, 1, 0), new MockRestartAction("change", services)),
+                new ConfigChangeActionsModelFactory(Version.fromIntValues(6, 2, 0), new MockRestartAction("other change", services)));
+
+        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig());
+        PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.2.0", Instant.now());
+
+        assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+        List<RestartActions.Entry> actions = prepareResult.configChangeActions().getRestartActions().getEntries();
+        assertThat(actions.size(), is(1));
+        assertThat(actions.get(0).getMessages(), equalTo(ImmutableSet.of("change", "other change")));
+    }
+
     private static ConfigserverConfig createConfigserverConfig() {
         return new ConfigserverConfig(new ConfigserverConfig.Builder()
                                               .configServerDBDir(Files.createTempDir().getAbsolutePath())
@@ -222,6 +254,22 @@ public class HostedDeployTest {
 
     private Host createHost(String hostname) {
         return new Host(hostname, Collections.emptyList(), Optional.empty(), Optional.empty());
+    }
+
+    private static class ConfigChangeActionsModelFactory extends TestModelFactory {
+
+        private final ConfigChangeAction action;
+
+        ConfigChangeActionsModelFactory(Version vespaVersion, ConfigChangeAction action) {
+            super(vespaVersion);
+            this.action = action;
+        }
+
+        @Override
+        public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
+            ModelCreateResult result = super.createAndValidateModel(modelContext, validationParameters);
+            return new ModelCreateResult(result.getModel(), Arrays.asList(action));
+        }
     }
 
 }
