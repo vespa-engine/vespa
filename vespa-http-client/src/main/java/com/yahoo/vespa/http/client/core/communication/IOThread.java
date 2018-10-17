@@ -165,7 +165,7 @@ class IOThread implements Runnable, AutoCloseable {
 
 
     public void post(final Document document) throws InterruptedException {
-        documentQueue.put(document, false);
+        documentQueue.put(document, Thread.currentThread() == thread);
     }
 
     @Override

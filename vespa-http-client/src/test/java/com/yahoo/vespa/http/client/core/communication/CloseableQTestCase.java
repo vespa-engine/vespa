@@ -4,6 +4,7 @@ package com.yahoo.vespa.http.client.core.communication;
 import com.yahoo.vespa.http.client.core.Document;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class CloseableQTestCase {
@@ -34,5 +35,14 @@ public class CloseableQTestCase {
             t.join();
         } catch (InterruptedException e) {
         }
+    }
+
+    @Test
+    public void requireThatSelfIsUnbounded() throws InterruptedException {
+        DocumentQueue q = new DocumentQueue(1);
+        q.put(new Document("1", "data", null /* context */), true);
+        q.put(new Document("2", "data", null /* context */), true);
+        q.put(new Document("3", "data", null /* context */), true);
+        assertEquals(3, q.size());
     }
 }
