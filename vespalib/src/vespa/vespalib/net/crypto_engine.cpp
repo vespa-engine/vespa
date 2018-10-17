@@ -46,6 +46,7 @@ public:
     ssize_t drain(char *, size_t) override { return 0; }
     ssize_t write(const char *buf, size_t len) override { return _socket.write(buf, len); }
     ssize_t flush() override { return 0; }
+    ssize_t half_close() override { return _socket.half_close(); }
 };
 
 class XorCryptoSocket : public CryptoSocket
@@ -167,6 +168,16 @@ public:
             }
         }
         return 0; // done
+    }
+    ssize_t half_close() override {
+        auto flush_res = flush();
+        while (flush_res > 0) {
+            flush_res = flush();
+        }
+        if (flush_res < 0) {
+            return flush_res;
+        }
+        return _socket.half_close();
     }
 };
 

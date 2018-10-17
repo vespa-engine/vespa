@@ -47,6 +47,12 @@ SocketHandle::shutdown()
 }
 
 int
+SocketHandle::half_close()
+{
+    return ::shutdown(_fd, SHUT_WR);
+}
+
+int
 SocketHandle::get_so_error() const
 {
     if (!valid()) {

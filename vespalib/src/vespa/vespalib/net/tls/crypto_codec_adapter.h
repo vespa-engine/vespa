@@ -20,6 +20,8 @@ private:
     SmartBuffer                  _output;
     SocketHandle                 _socket;
     std::unique_ptr<CryptoCodec> _codec;
+    bool                         _got_tls_close;
+    bool                         _encoded_tls_close;
 
     bool is_blocked(ssize_t res, int error) const {
         return ((res < 0) && ((error == EWOULDBLOCK) || (error == EAGAIN)));
@@ -30,7 +32,8 @@ private:
     ssize_t flush_all();  // -1/0 -> error/ok
 public:
     CryptoCodecAdapter(SocketHandle socket, std::unique_ptr<CryptoCodec> codec)
-        : _input(64 * 1024), _output(64 * 1024), _socket(std::move(socket)), _codec(std::move(codec)) {}
+        : _input(64 * 1024), _output(64 * 1024), _socket(std::move(socket)), _codec(std::move(codec)),
+          _got_tls_close(false), _encoded_tls_close(false) {}
     void inject_read_data(const char *buf, size_t len) override;
     int get_fd() const override { return _socket.get(); }
     HandshakeResult handshake() override;
@@ -39,6 +42,7 @@ public:
     ssize_t drain(char *, size_t) override;
     ssize_t write(const char *buf, size_t len) override;
     ssize_t flush() override;
+    ssize_t half_close() override;
 };
 
 } // namespace vespalib::net::tls
