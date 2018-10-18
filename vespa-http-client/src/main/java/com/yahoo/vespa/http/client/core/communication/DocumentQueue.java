@@ -38,10 +38,10 @@ class DocumentQueue {
         }
     }
 
-    void put(Document document) throws InterruptedException {
+    void put(Document document, boolean self) throws InterruptedException {
         document.resetQueueTime();
         synchronized (queue) {
-            while (!closed && queue.size() >= maxSize) {
+            while (!closed && (queue.size() >= maxSize) && !self) {
                 queue.wait();
             }
             if (closed) {

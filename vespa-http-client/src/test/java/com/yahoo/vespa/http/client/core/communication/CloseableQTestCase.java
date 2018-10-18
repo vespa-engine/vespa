@@ -4,13 +4,14 @@ package com.yahoo.vespa.http.client.core.communication;
 import com.yahoo.vespa.http.client.core.Document;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class CloseableQTestCase {
     @Test
     public void requestThatPutIsInterruptedOnClose() throws InterruptedException {
         final DocumentQueue q = new DocumentQueue(1);
-        q.put(new Document("id", "data", null /* context */));
+        q.put(new Document("id", "data", null /* context */), false);
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -25,7 +26,7 @@ public class CloseableQTestCase {
         });
         t.start();
         try {
-            q.put(new Document("id2", "data2", null /* context */));
+            q.put(new Document("id2", "data2", null /* context */), false);
             fail("This shouldn't have worked.");
         } catch (IllegalStateException ise) {
             // ok!
@@ -34,5 +35,14 @@ public class CloseableQTestCase {
             t.join();
         } catch (InterruptedException e) {
         }
+    }
+
+    @Test
+    public void requireThatSelfIsUnbounded() throws InterruptedException {
+        DocumentQueue q = new DocumentQueue(1);
+        q.put(new Document("1", "data", null /* context */), true);
+        q.put(new Document("2", "data", null /* context */), true);
+        q.put(new Document("3", "data", null /* context */), true);
+        assertEquals(3, q.size());
     }
 }
