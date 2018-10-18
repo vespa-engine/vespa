@@ -48,6 +48,24 @@ import static org.junit.Assert.assertEquals;
 public class FailedExpirerTest {
 
     @Test
+    public void ensure_failed_nodes_are_deallocated_in_test_quickly() {
+        FailureScenario scenario = new FailureScenario(SystemName.main, Environment.test)
+                .withNode("node1")
+                .withNode("node2")
+                .setReady("node1", "node2")
+                .allocate(ClusterSpec.Type.content, "node1", "node2")
+                .failNode(1, "node1");
+
+        scenario.clock().advance(Duration.ofMinutes(1));
+        scenario.expirer().run();
+        scenario.assertNodesIn(Node.State.failed, "node1"); // None moved yet
+
+        scenario.clock().advance(Duration.ofHours(2));
+        scenario.expirer().run();
+        scenario.assertNodesIn(Node.State.dirty, "node1");
+    }
+
+    @Test
     public void ensure_failed_nodes_are_deallocated_in_prod() {
         FailureScenario scenario = new FailureScenario(SystemName.main, Environment.prod)
                 .withNode("node1")

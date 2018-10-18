@@ -63,7 +63,11 @@ public class FailedExpirer extends Maintainer {
         this.zone = zone;
         this.clock = clock;
         if (zone.system() == SystemName.main) {
-            defaultExpiry = Duration.ofDays(4);
+            if (zone.environment() == Environment.staging || zone.environment() == Environment.test) {
+                defaultExpiry = Duration.ofHours(1);
+            } else {
+                defaultExpiry = Duration.ofDays(4);
+            }
             containerExpiry = Duration.ofHours(1);
         } else {
             defaultExpiry = containerExpiry = Duration.ofMinutes(30);
