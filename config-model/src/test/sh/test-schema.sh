@@ -12,10 +12,6 @@ cmd="java -jar $jar src/main/resources/schema/services.rng src/test/schema-test-
 echo $cmd
 $cmd
 
-cmd="java -jar $jar src/main/resources/schema/services.rng src/test/schema-test-files/major-version-services.xml"
-echo $cmd
-$cmd
-
 cmd="java -jar $jar src/main/resources/schema/services.rng src/test/schema-test-files/standalone-container.xml"
 echo $cmd
 $cmd
