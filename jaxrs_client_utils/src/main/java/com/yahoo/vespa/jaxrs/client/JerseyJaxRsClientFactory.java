@@ -4,6 +4,7 @@ package com.yahoo.vespa.jaxrs.client;
 import com.yahoo.vespa.applicationmodel.HostName;
 import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.HttpUrlConnectorProvider;
+import org.glassfish.jersey.client.JerseyInvocation;
 import org.glassfish.jersey.client.proxy.WebResourceFactory;
 
 import javax.net.ssl.HostnameVerifier;
@@ -15,6 +16,9 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriBuilder;
 import java.util.Collections;
+import java.util.Optional;
+import java.util.logging.Filter;
+import java.util.logging.Logger;
 
 /**
  * Factory for creating Jersey clients from a JAX-RS resource interface.
@@ -25,6 +29,10 @@ public class JerseyJaxRsClientFactory implements JaxRsClientFactory {
 
     private static final int DEFAULT_CONNECT_TIMEOUT_MS = 30000;
     private static final int DEFAULT_READ_TIMEOUT_MS = 30000;
+
+    static {
+        disableHttpComplianceWarningLogging();
+    }
 
     // Client is a heavy-weight object with a finalizer so we create only one and re-use it
     private final Client client;
@@ -71,6 +79,16 @@ public class JerseyJaxRsClientFactory implements JaxRsClientFactory {
         UriBuilder uriBuilder = UriBuilder.fromPath(pathPrefix).host(hostName.s()).port(port).scheme(scheme);
         WebTarget target = client.target(uriBuilder);
         return WebResourceFactory.newResource(apiClass, target);
+    }
+
+    public static void disableHttpComplianceWarningLogging() {
+        // Jersey insists on logging a warning when SUPPRESS_HTTP_COMPLIANCE_VALIDATION=true. Filter the warning
+        Logger jerseyInvocationLogger = Logger.getLogger(JerseyInvocation.class.getName());
+        Optional<Filter> currentFilter = Optional.ofNullable(jerseyInvocationLogger.getFilter());
+        Filter filter = logRecord ->
+                !logRecord.getMessage().contains("Entity must not be null for http method PUT")
+                && currentFilter.map(f -> f.isLoggable(logRecord)).orElse(true); // Honour existing filter if exists
+        jerseyInvocationLogger.setFilter(filter);
     }
 
 }
