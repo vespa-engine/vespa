@@ -140,7 +140,7 @@ public class StorageMaintainer {
                 .withTag("flavor", node.getFlavor())
                 .withTag("canonicalFlavor", node.getCanonicalFlavor())
                 .withTag("state", node.getState().toString())
-                .withTag("zone", String.format("%s.%s", context.zone().environment().value(), context.zone().regionName().value()));
+                .withTag("zone", String.format("%s.%s", context.zoneId().environment().value(), context.zoneId().regionName().value()));
         node.getParentHostname().ifPresent(parent -> check.withTag("parentHostname", parent));
         node.getOwner().ifPresent(owner -> check
                 .withTag("tenantName", owner.getTenant())
@@ -227,8 +227,8 @@ public class StorageMaintainer {
     private Map<String, Object> getCoredumpNodeAttributes(NodeAgentContext context, NodeSpec node, Optional<Container> container) {
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("hostname", node.getHostname());
-        attributes.put("region", context.zone().regionName());
-        attributes.put("environment", context.zone().environment());
+        attributes.put("region", context.zoneId().regionName());
+        attributes.put("environment", context.zoneId().environment());
         attributes.put("flavor", node.getFlavor());
         attributes.put("kernel_version", System.getProperty("os.version"));
 

@@ -23,7 +23,7 @@ public interface NodeAgentContext extends TaskContext {
 
     DockerNetworking dockerNetworking();
 
-    ZoneId zone();
+    ZoneId zoneId();
 
 
     /**

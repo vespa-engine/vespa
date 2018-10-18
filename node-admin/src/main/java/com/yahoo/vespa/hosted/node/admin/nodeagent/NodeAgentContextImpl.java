@@ -74,7 +74,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
-    public ZoneId zone() {
+    public ZoneId zoneId() {
         return zoneId;
     }
 
