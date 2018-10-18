@@ -20,6 +20,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -90,6 +91,20 @@ public class FilesApplicationPackageTest {
         assertTrue(deployment.exists());
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         assertTrue(app.getDeployment().isPresent());
+        assertFalse(app.getMajorVersion().isPresent());
         assertThat(IOUtils.readAll(new FileReader(deployment)), is(IOUtils.readAll(app.getDeployment().get())));
     }
+
+    @Test
+    public void testPinningMajorVersion() throws IOException {
+        File appDir = new File("src/test/resources/app-pinning-major-version");
+        final File deployment = new File(appDir, "deployment.xml");
+        assertTrue(deployment.exists());
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
+        assertTrue(app.getDeployment().isPresent());
+        assertTrue(app.getMajorVersion().isPresent());
+        assertEquals(6, (int)app.getMajorVersion().get());
+        assertThat(IOUtils.readAll(new FileReader(deployment)), is(IOUtils.readAll(app.getDeployment().get())));
+    }
+
 }

@@ -162,6 +162,12 @@ public class ApplicationList {
         return listOf(list.stream().filter(a -> a.deploymentSpec().canUpgradeAt(instant)));
     }
 
+    /** Returns the subset of applications that hasn't pinned to another major version than the given one */
+    public ApplicationList allowMajorVersion(int majorVersion) {
+        return listOf(list.stream().filter(a -> ! a.deploymentSpec().majorVersion().isPresent() ||
+                                                a.deploymentSpec().majorVersion().get().equals(majorVersion)));
+    }
+
     /** Returns the first n application in this (or all, if there are less than n). */
     public ApplicationList first(int n) {
         if (list.size() < n) return this;

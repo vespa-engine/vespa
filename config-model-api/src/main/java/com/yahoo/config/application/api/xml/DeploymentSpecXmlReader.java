@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
  */
 public class DeploymentSpecXmlReader {
 
+    private static final String majorVersionTag = "major-version";
     private static final String testTag = "test";
     private static final String stagingTag = "staging";
     private static final String blockChangeTag = "block-change";
@@ -101,7 +102,14 @@ public class DeploymentSpecXmlReader {
         }
         Optional<AthenzDomain> athenzDomain = stringAttribute("athenz-domain", root).map(AthenzDomain::from);
         Optional<AthenzService> athenzService = stringAttribute("athenz-service", root).map(AthenzService::from);
-        return new DeploymentSpec(globalServiceId, readUpgradePolicy(root), readChangeBlockers(root), steps, xmlForm, athenzDomain, athenzService);
+        return new DeploymentSpec(globalServiceId,
+                                  readUpgradePolicy(root),
+                                  optionalIntegerAttribute(majorVersionTag, root),
+                                  readChangeBlockers(root),
+                                  steps,
+                                  xmlForm,
+                                  athenzDomain,
+                                  athenzService);
     }
 
     /** Imposes some constraints on tag order which are not expressible in the schema */
@@ -131,6 +139,19 @@ public class DeploymentSpecXmlReader {
         if (value == null || value.isEmpty()) return 0;
         try {
             return Long.parseLong(value);
+        }
+        catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Expected an integer for attribute '" + attributeName +
+                                               "' but got '" + value + "'");
+        }
+    }
+
+    /** Returns the given attribute as an integer, or 0 if it is not present */
+    private Optional<Integer> optionalIntegerAttribute(String attributeName, Element tag) {
+        String value = tag.getAttribute(attributeName);
+        if (value == null || value.isEmpty()) return Optional.empty();
+        try {
+            return Optional.of(Integer.parseInt(value));
         }
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("Expected an integer for attribute '" + attributeName +

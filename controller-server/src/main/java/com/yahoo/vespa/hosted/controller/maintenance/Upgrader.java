@@ -66,6 +66,7 @@ public class Upgrader extends Maintainer {
         cancelUpgradesOf(applications().with(UpgradePolicy.conservative).upgrading().failing().notUpgradingTo(conservativeTarget), reason);
 
         // Schedule the right upgrades
+
         canaryTarget.ifPresent(target -> upgrade(applications().with(UpgradePolicy.canary), target));
         defaultTarget.ifPresent(target -> upgrade(applications().with(UpgradePolicy.defaultPolicy), target));
         conservativeTarget.ifPresent(target -> upgrade(applications().with(UpgradePolicy.conservative), target));
@@ -94,6 +95,7 @@ public class Upgrader extends Maintainer {
         applications = applications.notPullRequest(); // Pull requests are deployed as separate applications to test then deleted; No need to upgrade
         applications = applications.hasProductionDeployment();
         applications = applications.onLowerVersionThan(version);
+        applications = applications.allowMajorVersion(version.getMajor());
         applications = applications.notDeployingAt(controller().clock().instant()); // wait with applications deploying an application change or already upgrading
         applications = applications.notFailingOn(version); // try to upgrade only if it hasn't failed on this version
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
