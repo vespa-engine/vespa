@@ -16,10 +16,9 @@ import java.util.Map;
  *
  * @author hmusum
  */
-@FunctionalInterface
 public interface ContainerEnvironmentResolver {
 
-    String createSettings(NodeSpec node);
+    String createSettings(Environment environment, NodeSpec node);
 
     class ContainerEnvironmentSettings {
 
