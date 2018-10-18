@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -165,21 +166,25 @@ public class RemoteSessionTest {
     @Test
     public void require_that_an_application_package_can_limit_to_one_major_version() {
         ApplicationPackage application =
-                new MockApplicationPackage.Builder().withServices("<services major-version='2' version=\"1.0\"></services>").build();
+                new MockApplicationPackage.Builder().withServices("<services version='1.0'/>")
+                                                    .withDeploymentSpec("<deployment version='1.0' major-version='2'/>")
+                                                    .build();
+        assertTrue(application.getMajorVersion().isPresent());
+        assertEquals(2, (int)application.getMajorVersion().get());
 
         MockModelFactory failingFactory = new MockModelFactory();
         failingFactory.vespaVersion = Version.fromIntValues(3, 0, 0);
-        failingFactory.throwOnLoad = true;
+        failingFactory.throwErrorOnLoad = true;
 
         MockModelFactory okFactory = new MockModelFactory();
         okFactory.vespaVersion = Version.fromIntValues(2, 0, 0);
-        okFactory.throwOnLoad = false;
+        okFactory.throwErrorOnLoad = false;
 
         SessionZooKeeperClient zkc = new MockSessionZKClient(curator, tenantName, 3, application);
         RemoteSession session = createSession(3, zkc, Arrays.asList(okFactory, failingFactory), failingFactory.clock());
         session.loadPrepared();
 
-        // Does not cause an exception because model version 3 is skipped
+        // Does not cause an error because model version 3 is skipped
     }
 
     @Test
@@ -242,7 +247,12 @@ public class RemoteSessionTest {
 
     private class MockModelFactory implements ModelFactory {
 
+        /** Throw a RuntimeException on load - this is handled gracefully during model building */
         public boolean throwOnLoad = false;
+
+        /** Throw an Error on load - this is useful to propagate this condition all the way to the test */
+        public boolean throwErrorOnLoad = false;
+
         public ModelContext modelContext;
         public Version vespaVersion = Version.fromIntValues(1, 2, 3);
 
@@ -267,9 +277,10 @@ public class RemoteSessionTest {
 
         @Override
         public Model createModel(ModelContext modelContext) {
-            if (throwOnLoad) {
+            if (throwErrorOnLoad)
+                throw new Error("Foo");
+            if (throwOnLoad)
                 throw new IllegalArgumentException("Foo");
-            }
             this.modelContext = modelContext;
             return loadModel();
         }
@@ -286,9 +297,10 @@ public class RemoteSessionTest {
 
         @Override
         public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
-            if (throwOnLoad) {
+            if (throwErrorOnLoad)
+                throw new Error("Foo");
+            if (throwOnLoad)
                 throw new IllegalArgumentException("Foo");
-            }
             this.modelContext = modelContext;
             return new ModelCreateResult(loadModel(), new ArrayList<>());
         }
