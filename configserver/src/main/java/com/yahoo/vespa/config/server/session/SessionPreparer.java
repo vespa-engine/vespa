@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.google.common.collect.ImmutableList;
+import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -63,6 +64,7 @@ public class SessionPreparer {
     private final Curator curator;
     private final Zone zone;
 
+    @Inject
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
                            FileDistributionFactory fileDistributionFactory,
                            HostProvisionerProvider hostProvisionerProvider,

@@ -40,7 +40,6 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.config.GenericConfig;
-import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -367,11 +366,10 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private static void populateConfigBuilder(Builder builder, ConfigProducer configProducer) {
         boolean found = configProducer.cascadeConfig(builder);
         boolean foundOverride = configProducer.addUserConfig(builder);
-        if (logDebug()) {
-            log.log(LogLevel.DEBUG, "Trying to get config for " + builder.getClass().getDeclaringClass().getName() +
-                    " for config id " + quote(configProducer.getConfigId()) +
-                    ", found=" + found + ", foundOverride=" + foundOverride);
-        }
+        log.log(LogLevel.DEBUG, () -> "Trying to get config for " + builder.getClass().getDeclaringClass().getName() +
+                " for config id " + quote(configProducer.getConfigId()) +
+                ", found=" + found + ", foundOverride=" + foundOverride);
+
     }
 
     /**
@@ -383,7 +381,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      */
     @Override
     public ConfigPayload getConfig(ConfigKey configKey, com.yahoo.vespa.config.buildergen.ConfigDefinition targetDef) {
-        ConfigBuilder builder = InstanceResolver.resolveToBuilder(configKey, this, targetDef);
+        ConfigBuilder builder = InstanceResolver.resolveToBuilder(configKey, this);
         if (builder != null) {
             log.log(LogLevel.DEBUG, () -> "Found builder for " + configKey);
             ConfigPayload payload;
@@ -426,7 +424,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         return keySet;
     }
 
-    public ConfigInstance.Builder createBuilder(ConfigDefinitionKey key, ConfigDefinition targetDef) {
+    public ConfigInstance.Builder createBuilder(ConfigDefinitionKey key) {
         String className = createClassName(key.getName());
         Class<?> clazz;
 
@@ -436,16 +434,12 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         ClassLoader classLoader = getConfigClassLoader(producerName);
         if (classLoader == null) {
             classLoader = getClass().getClassLoader();
-            if (logDebug()) {
-                log.log(LogLevel.DEBUG, "No producer found to get classloader from for " + fullClassName + ". Using default");
-            }
+            log.log(LogLevel.DEBUG, () -> "No producer found to get classloader from for " + fullClassName + ". Using default");
         }
         try {
             clazz = classLoader.loadClass(builderName);
         } catch (ClassNotFoundException e) {
-            if (logDebug()) {
-                log.log(LogLevel.DEBUG, "Tried to load " + builderName + ", not found, trying with generic builder");
-            }
+            log.log(LogLevel.DEBUG, () -> "Tried to load " + builderName + ", not found, trying with generic builder");
             // TODO: Enable config compiler when configserver is using new API.
             // ConfigCompiler compiler = new LazyConfigCompiler(Files.createTempDir());
             // return compiler.compile(targetDef.generateClass()).newInstance();
@@ -461,10 +455,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             throw new ConfigurationRuntimeException(fullClassName + " is not a ConfigInstance.Builder, can not produce config for the name '" + key.getName() + "'.");
         }
         return (ConfigInstance.Builder) i;
-    }
-
-    private static boolean logDebug() {
-        return log.isLoggable(LogLevel.DEBUG);
     }
 
     /**

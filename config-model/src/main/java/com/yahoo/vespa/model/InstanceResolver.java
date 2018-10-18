@@ -9,7 +9,6 @@ import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.codegen.LeafCNode;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.yolean.Exceptions;
 
 import java.lang.reflect.Field;
@@ -32,8 +31,7 @@ import static com.yahoo.config.codegen.ConfiggenUtil.createClassName;
  * Thread safe.
  * </p>
  *
- * @author vegardh
- * @since 5.1.5
+ * @author Vegard Havdal
  */
 // TODO  This functionality should be on VespaModel itself, but we don't have a way right now to apply a config override to a ConfigInstance.Builder
 class InstanceResolver {
@@ -66,10 +64,10 @@ class InstanceResolver {
      *
      * @return the config builder or null if no producer for this found in model
      */
-    static ConfigBuilder resolveToBuilder(ConfigKey<?> key, VespaModel model, ConfigDefinition targetDef) {
+    static ConfigBuilder resolveToBuilder(ConfigKey<?> key, VespaModel model) {
         if (model == null) return null;
         ConfigDefinitionKey defKey = new ConfigDefinitionKey(key);
-        ConfigInstance.Builder builder = model.createBuilder(defKey, targetDef);
+        ConfigInstance.Builder builder = model.createBuilder(defKey);
         model.getConfig(builder, key.getConfigId());
         return builder;
     }
