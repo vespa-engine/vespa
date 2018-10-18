@@ -6,7 +6,6 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.search.Fs4Config;
-import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.fs4.QueryPacket;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
@@ -540,7 +539,6 @@ public class ClusterSearcherTestCase {
                                    qrSearchersConfig.build(),
                                    clusterConfig.build(),
                                    documentDbConfig.build(),
-                                   new LegacyEmulationConfig.Builder().build(),
                                    new QrMonitorConfig.Builder().build(),
                                    new DispatchConfig.Builder().build(),
                                    createClusterInfoConfig(),
@@ -555,7 +553,7 @@ public class ClusterSearcherTestCase {
         clusterInfoConfigBuilder.nodeCount(1);
         return new ClusterInfoConfig(clusterInfoConfigBuilder);
     }
-    
+
     private static class QueryTimeoutFixture {
         ClusterSearcher searcher;
         Execution exec;
