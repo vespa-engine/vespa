@@ -539,7 +539,7 @@ public class FastHit extends Hit {
             DocsumField fieldType = type.getField(name);
             if (fieldType == null) return null;
             Inspector fieldValue = data.field(name);
-            if ( ! fieldValue.valid() && ! fieldType.getEmulConfig().forceFillEmptyFields()) return null;
+            if ( ! fieldValue.valid()) return null;
             return fieldType.convert(fieldValue);
         }
 

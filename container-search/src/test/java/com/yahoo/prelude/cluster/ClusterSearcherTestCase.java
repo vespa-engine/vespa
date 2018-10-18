@@ -6,7 +6,6 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.search.Fs4Config;
-import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.fs4.QueryPacket;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
@@ -530,13 +529,12 @@ public class ClusterSearcherTestCase {
         ClusterConfig clusterCfg = new ClusterConfig(clusterCfgBld);
         DocumentdbInfoConfig documentDbCfg = new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder().
                 documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("type1")));
-        LegacyEmulationConfig emulationCfg = new LegacyEmulationConfig(new LegacyEmulationConfig.Builder());
         QrMonitorConfig monitorCfg = new QrMonitorConfig(new QrMonitorConfig.Builder());
         Statistics statistics = Statistics.nullImplementation;
         Fs4Config fs4Cfg = new Fs4Config(new Fs4Config.Builder());
         FS4ResourcePool fs4ResourcePool = new FS4ResourcePool(fs4Cfg, new QrConfig(new QrConfig.Builder()));
-        ClusterSearcher searcher = new ClusterSearcher(id, qrsCfg, clusterCfg, documentDbCfg, emulationCfg, monitorCfg, 
-                                                       new DispatchConfig(new DispatchConfig.Builder()), 
+        ClusterSearcher searcher = new ClusterSearcher(id, qrsCfg, clusterCfg, documentDbCfg, monitorCfg,
+                                                       new DispatchConfig(new DispatchConfig.Builder()),
                                                        createClusterInfoConfig(),
                                                        statistics, fs4ResourcePool, new VipStatus());
         return searcher;
@@ -548,7 +546,7 @@ public class ClusterSearcherTestCase {
         clusterInfoConfigBuilder.nodeCount(1);
         return new ClusterInfoConfig(clusterInfoConfigBuilder);
     }
-    
+
     private static class QueryTimeoutFixture {
         ClusterSearcher searcher;
         Execution exec;
