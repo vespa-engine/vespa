@@ -2,7 +2,6 @@
 package com.yahoo.prelude.fastsearch;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.container.search.LegacyEmulationConfig;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,8 +28,8 @@ public class DocumentDatabase {
 
     private final ImmutableMap<String, RankProfile> rankProfiles;
 
-    public DocumentDatabase(DocumentdbInfoConfig.Documentdb documentDb, LegacyEmulationConfig emulConfig) {
-        this(documentDb.name(), new DocsumDefinitionSet(documentDb, emulConfig), toRankProfiles(documentDb.rankprofile()));
+    public DocumentDatabase(DocumentdbInfoConfig.Documentdb documentDb) {
+        this(documentDb.name(), new DocsumDefinitionSet(documentDb), toRankProfiles(documentDb.rankprofile()));
     }
 
     public DocumentDatabase(String name, DocsumDefinitionSet docsumDefinitionSet, Collection<RankProfile> rankProfiles) {
