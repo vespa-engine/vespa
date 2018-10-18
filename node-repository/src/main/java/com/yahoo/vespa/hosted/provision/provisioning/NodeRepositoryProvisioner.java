@@ -21,12 +21,10 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 
-import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -81,7 +79,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         int effectiveGroups;
         NodeSpec requestedNodes;
         if ( requestedCapacity.type() == NodeType.tenant) {
-            int nodeCount = application.instance().isTester() ? 1 : capacityPolicies.decideSize(requestedCapacity);
+            int nodeCount = application.instance().isTester() ? 1 : capacityPolicies.decideSize(requestedCapacity, cluster.type());
 
             if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.nodeCount())
                 logger.log(Level.INFO, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
