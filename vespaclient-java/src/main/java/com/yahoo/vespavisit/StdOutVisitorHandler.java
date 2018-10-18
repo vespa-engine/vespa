@@ -78,6 +78,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
             this.maxSize = maxSize;
         }
 
+        @Override
         protected boolean removeEldestEntry(Map.Entry<String, Integer> eldest) {
             if (size() > maxSize) {
                 dump(eldest);
@@ -243,6 +244,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
             log.log(LogLevel.INFO, "Got EmptyBuckets: " + buckets);
         }
 
+        @Override
         public synchronized void onDone() {
             if (jsonOutput) {
                 writeFeedEnd();
