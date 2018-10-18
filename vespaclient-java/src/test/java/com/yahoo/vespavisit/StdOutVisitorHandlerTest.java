@@ -37,4 +37,16 @@ public class StdOutVisitorHandlerTest {
         String output = out.toString();
         assertEquals("", output.trim());
     }
+
+    @Test
+    public void printing_zero_documents_produces_empty_output() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        StdOutVisitorHandler visitorHandler =
+                new StdOutVisitorHandler(/*printIds*/false, false, false, false, false, false, 0, jsonOutput, new PrintStream(out, true));
+        VisitorDataHandler dataHandler = visitorHandler.getDataHandler();
+        dataHandler.onDone();
+        String expectedOutput = jsonOutput ? "[]" : "";
+        String output = out.toString().trim();
+        assertEquals(expectedOutput, output);
+    }
 }

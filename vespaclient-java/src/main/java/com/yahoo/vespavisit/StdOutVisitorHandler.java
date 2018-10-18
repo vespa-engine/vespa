@@ -250,6 +250,9 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
         @Override
         public synchronized void onDone() {
             if (jsonOutput && !printIds) {
+                if (first) {
+                    out.print('[');
+                }
                 out.println("]");
             }
             statisticsMap.dumpAll();
