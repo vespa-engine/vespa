@@ -8,8 +8,6 @@ import com.yahoo.document.json.JsonWriter;
 import com.yahoo.document.serialization.XmlStream;
 import com.yahoo.documentapi.AckToken;
 import com.yahoo.documentapi.DumpVisitorDataHandler;
-import com.yahoo.documentapi.ProgressToken;
-import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorDataHandler;
 import com.yahoo.documentapi.messagebus.protocol.DocumentListEntry;
 import com.yahoo.documentapi.messagebus.protocol.DocumentListMessage;
@@ -20,6 +18,7 @@ import com.yahoo.messagebus.Message;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,7 @@ import java.util.logging.Logger;
  * Due to java not being able to inherit two classes, and neither being an
  * interface this had to be implemented by creating a wrapper class.
  *
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
 public class StdOutVisitorHandler extends VdsVisitHandler {
     private static final Logger log = Logger.getLogger(
@@ -48,22 +47,28 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
                                 boolean showProgress, boolean showStatistics, boolean doStatistics,
                                 boolean abortOnClusterDown, int processtime, boolean jsonOutput)
     {
-        super(showProgress, showStatistics, abortOnClusterDown);
+        this(printIds, indentXml, showProgress, showStatistics, doStatistics, abortOnClusterDown, processtime, jsonOutput, createStdOutPrintStream());
+    }
 
+    StdOutVisitorHandler(boolean printIds, boolean indentXml,
+                         boolean showProgress, boolean showStatistics, boolean doStatistics,
+                         boolean abortOnClusterDown, int processtime, boolean jsonOutput, PrintStream out)
+    {
+        super(showProgress, showStatistics, abortOnClusterDown);
         this.printIds = printIds;
         this.indentXml = indentXml;
         this.processTimeMilliSecs = processtime;
         this.jsonOutput = jsonOutput;
-        String charset = "UTF-8";
-        try {
-            out = new PrintStream(System.out, true, charset);
-        } catch (java.io.UnsupportedEncodingException e) {
-            System.out.println(charset + " is an unsupported encoding, " +
-                               "using default instead.");
-            out = System.out;
-        }
+        this.out = out;
+        this.dataHandler = new DataHandler(doStatistics);
+    }
 
-        dataHandler = new DataHandler(doStatistics);
+    private static PrintStream createStdOutPrintStream() {
+        try {
+            return new PrintStream(System.out, true, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // Will not happen - UTF-8 is always supported
+        }
     }
 
     @Override
@@ -80,6 +85,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
             this.maxSize = maxSize;
         }
 
+        @Override
         protected boolean removeEldestEntry(Map.Entry<String, Integer> eldest) {
             if (size() > maxSize) {
                 dump(eldest);
@@ -209,11 +215,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
             }
         }
 
-        private void writeFeedEnd() {
-            out.println("]");
-        }
-
-        public void onMapVisitorData(Map<String, String> data) {
+        private void onMapVisitorData(Map<String, String> data) {
             for (String key : data.keySet()) {
                 if (doStatistics) {
                     Integer i = statisticsMap.get(key);
@@ -228,7 +230,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
             }
         }
 
-        public void onDocumentList(BucketId bucketId, List<DocumentListEntry> documents) {
+        private void onDocumentList(BucketId bucketId, List<DocumentListEntry> documents) {
             out.println("Got document list of bucket " + bucketId.toString());
             for (DocumentListEntry entry : documents) {
                 entry.getDocument().setLastModified(entry.getTimestamp());
@@ -236,7 +238,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
             }
         }
 
-        public void onEmptyBuckets(List<BucketId> bucketIds) {
+        private void onEmptyBuckets(List<BucketId> bucketIds) {
             StringBuilder buckets = new StringBuilder();
             for(BucketId bid : bucketIds) {
                 buckets.append(" ");
@@ -245,48 +247,16 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
             log.log(LogLevel.INFO, "Got EmptyBuckets: " + buckets);
         }
 
+        @Override
         public synchronized void onDone() {
-            if (jsonOutput) {
-                writeFeedEnd();
+            if (jsonOutput && !printIds) {
+                if (first) {
+                    out.print('[');
+                }
+                out.println("]");
             }
             statisticsMap.dumpAll();
             super.onDone();
-        }
-    }
-
-    class ControlHandler extends VisitorControlHandler {
-        public void onProgress(ProgressToken token) {
-            if (showProgress) {
-                synchronized (printLock) {
-                    if (lastLineIsProgress) {
-                        System.err.print('\r');
-                    }
-                    System.err.format("%.1f %% finished.",
-                                      token.percentFinished());
-                    lastLineIsProgress = true;
-                }
-            }
-            super.onProgress(token);
-        }
-
-        public void onDone(CompletionCode code, String message) {
-            if (lastLineIsProgress) {
-                System.err.print('\n');
-                lastLineIsProgress = false;
-            }
-            if (code != CompletionCode.SUCCESS) {
-                if (code == CompletionCode.ABORTED) {
-                    System.err.println("Visitor aborted: " + message);
-                } else if (code == CompletionCode.TIMEOUT) {
-                    System.err.println("Visitor timed out: " + message);
-                } else {
-                    System.err.println("Visitor aborted due to unknown issue "
-                                     + code + ": " + message);
-                }
-            } else if (showProgress) {
-                System.err.println("Completed visiting.");
-            }
-            super.onDone(code, message);
         }
     }
 }
