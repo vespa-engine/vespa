@@ -3,7 +3,6 @@ package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.Type;
-import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.search.result.FeatureData;
 
 /**
@@ -13,7 +12,7 @@ import com.yahoo.search.result.FeatureData;
  */
 public class FeatureDataField extends LongstringField {
 
-    public FeatureDataField (String name) {
+    public FeatureDataField(String name) {
         super(name);
     }
 
@@ -25,23 +24,12 @@ public class FeatureDataField extends LongstringField {
     @Override
     public Object convert(Inspector value) {
         if (! value.valid()) {
-            if (getEmulConfig().stringBackedFeatureData()) {
-                return "";
-            } else if (getEmulConfig().forceFillEmptyFields()) {
-                return new FeatureData(com.yahoo.data.access.simple.Value.empty());
-            } else {
-                return null;
-            }
+            return null;
         }
         if (value.type() == Type.STRING) {
             return value.asString();
         }
-        FeatureData obj = new FeatureData(value);
-        if (getEmulConfig().stringBackedFeatureData()) {
-            return obj.toJson();
-        } else {
-            return obj;
-        }
+        return new FeatureData(value);
     }
 
 }
