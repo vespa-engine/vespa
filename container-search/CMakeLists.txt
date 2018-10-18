@@ -6,7 +6,6 @@ install_config_definition(src/main/resources/configdefinitions/federation.def se
 install_config_definition(src/main/resources/configdefinitions/fs4.def container.search.fs4.def)
 install_config_definition(src/main/resources/configdefinitions/index-info.def search.config.index-info.def)
 install_config_definition(src/main/resources/configdefinitions/keyvalue.def prelude.searcher.keyvalue.def)
-install_config_definition(src/main/resources/configdefinitions/legacy-emulation.def container.search.legacy-emulation.def)
 install_config_definition(src/main/resources/configdefinitions/lowercasing.def search.querytransform.lowercasing.def)
 install_config_definition(src/main/resources/configdefinitions/measure-qps.def search.statistics.measure-qps.def)
 install_config_definition(src/main/resources/configdefinitions/page-templates.def search.pagetemplates.page-templates.def)

@@ -3,7 +3,6 @@ package com.yahoo.prelude.fastsearch;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.prelude.hitfield.RawData;
 import com.yahoo.prelude.hitfield.XMLString;
 import com.yahoo.prelude.hitfield.JSONString;
@@ -61,33 +60,6 @@ public class SlimeSummaryTestCase {
         assertNull(hit.getField("xmlstring_field"));
         assertNull(hit.getField("xmlstring_field"));
         assertNull(hit.getField("jsonstring_field"));
-        assertNull(hit.getField("tensor_field1"));
-        assertNull(hit.getField("tensor_field2"));
-    }
-
-    @Test
-    public void testDecodingEmptyWithLegacyEmulation() {
-        LegacyEmulationConfig emulationConfig = new LegacyEmulationConfig(new LegacyEmulationConfig.Builder().forceFillEmptyFields(true));
-        DocsumDefinitionSet docsum = createDocsumDefinitionSet(summary_cf, emulationConfig);
-        FastHit hit = new FastHit();
-        assertNull(docsum.lazyDecode("default", emptySummary(), hit));
-        assertEquals(NanNumber.NaN, hit.getField("integer_field"));
-        assertEquals(NanNumber.NaN, hit.getField("short_field"));
-        assertEquals(NanNumber.NaN, hit.getField("byte_field"));
-        assertEquals(NanNumber.NaN, hit.getField("float_field"));
-        assertEquals(NanNumber.NaN, hit.getField("double_field"));
-        assertEquals(NanNumber.NaN, hit.getField("int64_field"));
-        assertEquals("", hit.getField("string_field"));
-        assertEquals(RawData.class, hit.getField("data_field").getClass());
-        assertEquals("", hit.getField("data_field").toString());
-        assertEquals("", hit.getField("longstring_field"));
-        assertEquals(RawData.class, hit.getField("longdata_field").getClass());
-        assertEquals("", hit.getField("longdata_field").toString());
-        assertEquals(XMLString.class, hit.getField("xmlstring_field").getClass());
-        assertEquals("", hit.getField("xmlstring_field").toString());
-        // assertEquals(hit.getField("jsonstring_field"), instanceOf(JSONString.class));
-        assertEquals("", hit.getField("jsonstring_field").toString());
-        // Empty tensors are represented by null because we don't have type information here to create the right empty tensor
         assertNull(hit.getField("tensor_field1"));
         assertNull(hit.getField("tensor_field2"));
     }
@@ -422,11 +394,6 @@ public class SlimeSummaryTestCase {
     private DocsumDefinitionSet createDocsumDefinitionSet(String configID) {
         DocumentdbInfoConfig config = new ConfigGetter<>(DocumentdbInfoConfig.class).getConfig(configID);
         return new DocsumDefinitionSet(config.documentdb(0));
-    }
-
-    private DocsumDefinitionSet createDocsumDefinitionSet(String configID, LegacyEmulationConfig legacyEmulationConfig) {
-        DocumentdbInfoConfig config = new ConfigGetter<>(DocumentdbInfoConfig.class).getConfig(configID);
-        return new DocsumDefinitionSet(config.documentdb(0), legacyEmulationConfig);
     }
 
     private static class Utf8FieldTraverser implements Hit.RawUtf8Consumer {
