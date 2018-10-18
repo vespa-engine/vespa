@@ -11,7 +11,6 @@ import com.yahoo.concurrent.Receiver.MessageState;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.fs4.mplex.Backend;
-import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
@@ -100,7 +99,6 @@ public class ClusterSearcher extends Searcher {
                            QrSearchersConfig qrsConfig,
                            ClusterConfig clusterConfig,
                            DocumentdbInfoConfig documentDbConfig,
-                           LegacyEmulationConfig emulationConfig,
                            QrMonitorConfig monitorConfig,
                            DispatchConfig dispatchConfig,
                            ClusterInfoConfig clusterInfoConfig,
@@ -133,7 +131,7 @@ public class ClusterSearcher extends Searcher {
         SummaryParameters docSumParams = new SummaryParameters(qrsConfig
                 .com().yahoo().prelude().fastsearch().FastSearcher().docsum()
                 .defaultclass());
-        
+
         for (DocumentdbInfoConfig.Documentdb docDb : documentDbConfig.documentdb()) {
             String docTypeName = docDb.name();
             documentTypes.add(docTypeName);
@@ -146,7 +144,7 @@ public class ClusterSearcher extends Searcher {
         if (searchClusterConfig.indexingmode() == STREAMING) {
             VdsStreamingSearcher searcher = vdsCluster(fs4ResourcePool.getServerId(),
                                                        searchClusterIndex,
-                                                       searchClusterConfig, cacheParams, emulationConfig, docSumParams,
+                                                       searchClusterConfig, cacheParams, docSumParams,
                                                        documentDbConfig);
             addBackendSearcher(searcher);
         } else {
@@ -156,7 +154,7 @@ public class ClusterSearcher extends Searcher {
                     if ( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host())) {
                         Backend dispatchBackend = createBackend(searchClusterConfig.dispatcher(dispatcherIndex));
                         FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool,
-                                                               cacheParams, emulationConfig, docSumParams,
+                                                               cacheParams, docSumParams,
                                                                documentDbConfig, dispatchBackend, dispatcher, dispatcherIndex);
                         addBackendSearcher(searcher);
                     }
@@ -192,22 +190,21 @@ public class ClusterSearcher extends Searcher {
     }
 
     private static ClusterParams makeClusterParams(int searchclusterIndex,
-                                                   LegacyEmulationConfig emulConfig,
                                                    int dispatchIndex) {
-        return new ClusterParams("sc" + searchclusterIndex + ".num" + dispatchIndex, emulConfig);
+        return new ClusterParams("sc" + searchclusterIndex + ".num" + dispatchIndex);
     }
 
     private static FastSearcher searchDispatch(int searchclusterIndex,
                                                FS4ResourcePool fs4ResourcePool,
                                                CacheParams cacheParams,
-                                               LegacyEmulationConfig emulConfig,
                                                SummaryParameters docSumParams,
                                                DocumentdbInfoConfig documentdbInfoConfig,
                                                Backend backend,
                                                Dispatcher dispatcher,
                                                int dispatcherIndex) {
-        ClusterParams clusterParams = makeClusterParams(searchclusterIndex, emulConfig, dispatcherIndex);
-        return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, cacheParams, 
+        ClusterParams clusterParams = makeClusterParams(searchclusterIndex,
+                                                        dispatcherIndex);
+        return new FastSearcher(backend, fs4ResourcePool, dispatcher, docSumParams, clusterParams, cacheParams,
                                 documentdbInfoConfig);
     }
 
@@ -215,14 +212,13 @@ public class ClusterSearcher extends Searcher {
                                                    int searchclusterIndex,
                                                    QrSearchersConfig.Searchcluster searchClusterConfig,
                                                    CacheParams cacheParams,
-                                                   LegacyEmulationConfig emulConfig,
                                                    SummaryParameters docSumParams,
                                                    DocumentdbInfoConfig documentdbInfoConfig)
     {
         if (searchClusterConfig.searchdef().size() != 1) {
             throw new IllegalArgumentException("Search clusters in streaming search shall only contain a single searchdefinition : " + searchClusterConfig.searchdef());
         }
-        ClusterParams clusterParams = makeClusterParams(searchclusterIndex, emulConfig, 0);
+        ClusterParams clusterParams = makeClusterParams(searchclusterIndex, 0);
         VdsStreamingSearcher searcher = (VdsStreamingSearcher) VespaBackEndSearcher
                 .getSearcher("com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher");
         searcher.setSearchClusterConfigId(searchClusterConfig.rankprofiles().configid());
@@ -319,7 +315,7 @@ public class ClusterSearcher extends Searcher {
 
         if (invalidInDocTypes != null && !invalidInDocTypes.isEmpty()) {
             String plural = invalidInDocTypes.size() > 1 ? "s" : "";
-            return new Result(query, 
+            return new Result(query,
                               ErrorMessage.createInvalidQueryParameter("Requested rank profile '" + rankProfile +
                                                                        "' is undefined for document type" + plural + " '" +
                                                                        StringUtils.join(invalidInDocTypes.iterator(), ", ") + "'"));
@@ -384,7 +380,7 @@ public class ClusterSearcher extends Searcher {
         if (query.getTimeout() <= maxQueryTimeout) return;
 
         if (query.isTraceable(2)) {
-            query.trace("Query timeout (" + query.getTimeout() + " ms) > max query timeout (" + 
+            query.trace("Query timeout (" + query.getTimeout() + " ms) > max query timeout (" +
                         maxQueryTimeout + " ms). Setting timeout to " + maxQueryTimeout + " ms.", 2);
         }
         query.setTimeout(maxQueryTimeout);

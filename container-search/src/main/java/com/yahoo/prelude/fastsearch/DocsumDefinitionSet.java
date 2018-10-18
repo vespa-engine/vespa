@@ -7,7 +7,6 @@ import com.yahoo.data.access.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.prelude.ConfigurationException;
-import com.yahoo.container.search.LegacyEmulationConfig;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -31,26 +30,14 @@ public final class DocsumDefinitionSet {
     private final static Logger log = Logger.getLogger(DocsumDefinitionSet.class.getName());
 
     private final Map<String, DocsumDefinition> definitionsByName;
-    private final LegacyEmulationConfig emulationConfig;
 
     public DocsumDefinitionSet(DocumentdbInfoConfig.Documentdb config) {
-        this(config, new LegacyEmulationConfig(new LegacyEmulationConfig.Builder()));
-    }
-
-    public DocsumDefinitionSet(DocumentdbInfoConfig.Documentdb config, LegacyEmulationConfig emulConfig) {
-        this(toDocsums(config, emulConfig), emulConfig);
+        this(toDocsums(config));
     }
 
     public DocsumDefinitionSet(Collection<DocsumDefinition> docsumDefinitions) {
-        this(docsumDefinitions, new LegacyEmulationConfig(new LegacyEmulationConfig.Builder()));
-    }
-
-    public DocsumDefinitionSet(Collection<DocsumDefinition> docsumDefinitions, LegacyEmulationConfig emulConfig) {
         this.definitionsByName = ImmutableMap.copyOf(docsumDefinitions.stream().collect(Collectors.toMap(DocsumDefinition::getName, p -> p)));
-        this.emulationConfig = emulConfig;
     }
-
-    public LegacyEmulationConfig legacyEmulationConfig() { return emulationConfig; }
 
     /**
      * Returns the summary definition of the given name, or the default if not found.
@@ -111,10 +98,10 @@ public final class DocsumDefinitionSet {
         return definitionsByName.size();
     }
 
-    private static Collection<DocsumDefinition> toDocsums(DocumentdbInfoConfig.Documentdb config, LegacyEmulationConfig emulConfig) {
+    private static Collection<DocsumDefinition> toDocsums(DocumentdbInfoConfig.Documentdb config) {
         Collection<DocsumDefinition> docsums = new ArrayList<>();
         for (int i = 0; i < config.summaryclass().size(); ++i)
-            docsums.add(new DocsumDefinition(config.summaryclass(i), emulConfig));
+            docsums.add(new DocsumDefinition(config.summaryclass(i)));
         if (docsums.isEmpty())
             log.warning("No summary classes found in DocumentdbInfoConfig.Documentdb");
         return docsums;
