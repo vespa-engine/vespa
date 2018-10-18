@@ -337,7 +337,7 @@ public class NodeAgentImpl implements NodeAgent {
         }
         if (node.getWantedDockerImage().isPresent() && !node.getWantedDockerImage().get().equals(existingContainer.image)) {
             return Optional.of("The node is supposed to run a new Docker image: "
-                    + existingContainer.image.asString() + " -> " + node.getWantedDockerImage().get().asString());
+                    + existingContainer + " -> " + node.getWantedDockerImage().get());
         }
         if (!existingContainer.state.isRunning()) {
             return Optional.of("Container no longer running");

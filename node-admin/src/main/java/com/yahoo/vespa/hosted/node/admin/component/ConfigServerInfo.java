@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.node.admin.component;
 
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
+import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -17,12 +19,20 @@ import static java.util.stream.Collectors.toMap;
  * @author hakon
  */
 public class ConfigServerInfo {
+    private final List<String> configServerHostNames;
     private final URI loadBalancerEndpoint;
     private final Map<String, URI> configServerURIs;
     private final AthenzService configServerIdentity;
 
+    // TODO: Remove
+    public ConfigServerInfo(ConfigServerConfig config) {
+        this(config.loadBalancerHost(), config.hosts(), config.scheme(), config.port(),
+                (AthenzService) AthenzIdentities.from(config.configserverAthenzIdentity()));
+    }
+
     public ConfigServerInfo(String loadBalancerHostName, List<String> configServerHostNames,
                             String scheme, int port, AthenzService configServerAthenzIdentity) {
+        this.configServerHostNames = configServerHostNames;
         this.configServerURIs = createConfigServerUris(scheme, configServerHostNames, port);
         this.loadBalancerEndpoint = createLoadBalancerEndpoint(loadBalancerHostName, scheme, port);
         this.configServerIdentity = configServerAthenzIdentity;
@@ -33,7 +43,7 @@ public class ConfigServerInfo {
     }
 
     public List<String> getConfigServerHostNames() {
-        return new ArrayList<>(configServerURIs.keySet());
+        return configServerHostNames;
     }
 
     public List<URI> getConfigServerUris() {
