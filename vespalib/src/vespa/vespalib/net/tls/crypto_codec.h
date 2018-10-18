@@ -37,11 +37,12 @@ struct DecodeResult {
     enum class State {
         Failed,
         OK,
-        NeedsMorePeerData
-        // TODO add Closed/Shutdown as own state?
+        NeedsMorePeerData,
+        Closed
     };
     State state = State::Failed;
 
+    bool closed() const noexcept { return (state == State::Closed); }
     bool failed() const noexcept { return (state == State::Failed); }
     bool frame_decoded_ok() const noexcept { return (state == State::OK); }
 };
@@ -105,6 +106,9 @@ public:
      * complete frame is not present in `ciphertext`. In this case, decode()
      * must be called again once more data is available.
      *
+     * If result.closed() == true, the peer has half-closed their connection
+     * and no more data may be decoded.
+     *
      * Precondition:  handshake must be completed
      * Precondition:  plaintext_size >= min_decode_buffer_size()
      * Postcondition: if result.state == DecodeResult::State::OK, at least 1
@@ -112,6 +116,17 @@ public:
      */
     virtual DecodeResult decode(const char* ciphertext, size_t ciphertext_size,
                                 char* plaintext, size_t plaintext_size) noexcept = 0;
+
+    /**
+     * Encodes a frame into `ciphertext` which signals to the peer that all writes
+     * are complete. The peer may still send data to be decoded.
+     *
+     * After calling this method, encode() must not be called on the same codec instance.
+     *
+     * Precondition: ciphertext_size >= min_encode_buffer_size(), i.e. it must be
+     *               possible to encode at least 1 frame.
+     */
+    virtual EncodeResult half_close(char* ciphertext, size_t ciphertext_size) noexcept = 0;
 
     /*
      * Creates an implementation defined CryptoCodec that provides at least TLSv1.2

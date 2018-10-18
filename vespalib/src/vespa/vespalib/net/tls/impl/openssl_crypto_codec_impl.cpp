@@ -44,36 +44,36 @@ const char* ssl_error_to_str(int ssl_error) noexcept {
     // From https://www.openssl.org/docs/manmaster/man3/SSL_get_error.html
     // Our code paths shouldn't trigger most of these, but included for completeness
     switch (ssl_error) {
-        case SSL_ERROR_NONE:
-            return "SSL_ERROR_NONE";
-        case SSL_ERROR_ZERO_RETURN:
-            return "SSL_ERROR_ZERO_RETURN";
-        case SSL_ERROR_WANT_READ:
-            return "SSL_ERROR_WANT_READ";
-        case SSL_ERROR_WANT_WRITE:
-            return "SSL_ERROR_WANT_WRITE";
-        case SSL_ERROR_WANT_CONNECT:
-            return "SSL_ERROR_WANT_CONNECT";
-        case SSL_ERROR_WANT_ACCEPT:
-            return "SSL_ERROR_WANT_ACCEPT";
-        case SSL_ERROR_WANT_X509_LOOKUP:
-            return "SSL_ERROR_WANT_X509_LOOKUP";
+    case SSL_ERROR_NONE:
+        return "SSL_ERROR_NONE";
+    case SSL_ERROR_ZERO_RETURN:
+        return "SSL_ERROR_ZERO_RETURN";
+    case SSL_ERROR_WANT_READ:
+        return "SSL_ERROR_WANT_READ";
+    case SSL_ERROR_WANT_WRITE:
+        return "SSL_ERROR_WANT_WRITE";
+    case SSL_ERROR_WANT_CONNECT:
+        return "SSL_ERROR_WANT_CONNECT";
+    case SSL_ERROR_WANT_ACCEPT:
+        return "SSL_ERROR_WANT_ACCEPT";
+    case SSL_ERROR_WANT_X509_LOOKUP:
+        return "SSL_ERROR_WANT_X509_LOOKUP";
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
-        case SSL_ERROR_WANT_ASYNC:
-            return "SSL_ERROR_WANT_ASYNC";
-        case SSL_ERROR_WANT_ASYNC_JOB:
-            return "SSL_ERROR_WANT_ASYNC_JOB";
+    case SSL_ERROR_WANT_ASYNC:
+        return "SSL_ERROR_WANT_ASYNC";
+    case SSL_ERROR_WANT_ASYNC_JOB:
+        return "SSL_ERROR_WANT_ASYNC_JOB";
 #endif
 #if (OPENSSL_VERSION_NUMBER >= 0x10101000L)
-        case SSL_ERROR_WANT_CLIENT_HELLO_CB:
-            return "SSL_ERROR_WANT_CLIENT_HELLO_CB";
+    case SSL_ERROR_WANT_CLIENT_HELLO_CB:
+        return "SSL_ERROR_WANT_CLIENT_HELLO_CB";
 #endif
-        case SSL_ERROR_SYSCALL:
-            return "SSL_ERROR_SYSCALL";
-        case SSL_ERROR_SSL:
-            return "SSL_ERROR_SSL";
-        default:
-            return "Unknown SSL error code";
+    case SSL_ERROR_SYSCALL:
+        return "SSL_ERROR_SYSCALL";
+    case SSL_ERROR_SSL:
+        return "SSL_ERROR_SSL";
+    default:
+        return "Unknown SSL error code";
     }
 }
 
@@ -107,6 +107,10 @@ EncodeResult encoded_bytes(size_t consumed, size_t produced) noexcept {
 
 DecodeResult decode_failed() noexcept {
     return {0, 0, DecodeResult::State::Failed};
+}
+
+DecodeResult decode_peer_has_closed() noexcept {
+    return {0, 0, DecodeResult::State::Closed};
 }
 
 DecodeResult decoded_frames_with_plaintext_bytes(size_t produced_bytes) noexcept {
@@ -143,6 +147,11 @@ vespalib::string ssl_error_from_stack() {
     return vespalib::string(buf);
 }
 
+void log_ssl_error(const char* source, int ssl_error) {
+    LOG(error, "%s returned unexpected error: %s (%s)",
+        source, ssl_error_to_str(ssl_error), ssl_error_from_stack().c_str());
+}
+
 } // anon ns
 
 OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx, Mode mode)
@@ -154,7 +163,7 @@ OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContext
         throw CryptoException("Failed to create new SSL from SSL_CTX");
     }
     /*
-     * We use two separate memory BIOs rather than a BIO pair for writing and
+     * We use two separate buffer-wrapping BIOs rather than a BIO pair for writing and
      * reading ciphertext, respectively. This is because it _seems_ quite
      * a bit more straight forward to implement a full duplex API with two
      * separate BIOs, but there is little available documentation as to the
@@ -164,15 +173,15 @@ OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContext
      *
      * Handshakes may use both BIOs opaquely:
      *
-     *  handshake() : SSL_do_handshake()  --(_output_bio ciphertext)--> BIO_read  --> [peer]
-     *              : SSL_do_handshake() <--(_input_bio ciphertext)--   BIO_write <-- [peer]
+     *  handshake() : SSL_do_handshake()  --(_output_bio ciphertext)--> [peer]
+     *              : SSL_do_handshake() <--(_input_bio ciphertext)--   [peer]
      *
      * Once handshaking is complete, the input BIO is only used for decodes and the output
      * BIO is only used for encodes. We explicitly disallow TLS renegotiation, both for
      * the sake of simplicity and for added security (renegotiation is a bit of a rat's nest).
      *
-     *  encode() : SSL_write(plaintext) --(_output_bio ciphertext)--> BIO_read  --> [peer]
-     *  decode() : SSL_read(plaintext) <--(_input_bio ciphertext)--   BIO_write <-- [peer]
+     *  encode() : SSL_write(plaintext) --(_output_bio ciphertext)--> [peer]
+     *  decode() : SSL_read(plaintext) <--(_input_bio ciphertext)--   [peer]
      *
      */
     BioPtr tmp_input_bio  = new_tls_frame_const_memory_bio();
@@ -221,7 +230,6 @@ HandshakeResult OpenSslCryptoCodecImpl::handshake(const char* from_peer, size_t 
 HandshakeResult OpenSslCryptoCodecImpl::do_handshake_and_consume_peer_input_bytes() noexcept {
     // Assumption: SSL_do_handshake will place all required outgoing handshake
     // data in the output memory BIO without requiring WANT_WRITE.
-    // TODO test multi-frame sized handshake
     const long pending_read_before = BIO_pending(_input_bio);
 
     ::ERR_clear_error();
@@ -233,7 +241,6 @@ HandshakeResult OpenSslCryptoCodecImpl::do_handshake_and_consume_peer_input_byte
 
     if (ssl_result == SSL_ERROR_WANT_READ) {
         LOG(spam, "SSL_do_handshake() returned SSL_ERROR_WANT_READ");
-
         return handshake_consumed_bytes_and_needs_more_peer_data(static_cast<size_t>(consumed));
     } else if (ssl_result == SSL_ERROR_NONE) {
         // At this point SSL_do_handshake has stated it does not need any more peer data, i.e.
@@ -245,8 +252,7 @@ HandshakeResult OpenSslCryptoCodecImpl::do_handshake_and_consume_peer_input_byte
         LOG(debug, "SSL_do_handshake() is complete, using protocol %s", SSL_get_version(_ssl.get()));
         return handshake_consumed_bytes_and_is_complete(static_cast<size_t>(consumed));
     } else {
-        LOG(error, "SSL_do_handshake() returned unexpected error: %s (%s)",
-            ssl_error_to_str(ssl_result), ssl_error_from_stack().c_str());
+        log_ssl_error("SSL_do_handshake()", ssl_result);
         return handshake_failed();
     }
 }
@@ -266,23 +272,19 @@ EncodeResult OpenSslCryptoCodecImpl::encode(const char* plaintext, size_t plaint
     size_t bytes_consumed = 0;
     if (plaintext_size != 0) {
         ::ERR_clear_error();
-        int to_consume = static_cast<int>(std::min(plaintext_size, MaximumFramePlaintextSize));
+        const int to_consume = static_cast<int>(std::min(plaintext_size, MaximumFramePlaintextSize));
         // SSL_write encodes plaintext to ciphertext and writes to _output_bio
-        int consumed = ::SSL_write(_ssl.get(), plaintext, to_consume);
-        LOG(spam, "After SSL_write() -> %d _output_bio pending=%d", consumed, BIO_pending(_output_bio));
+        const int consumed = ::SSL_write(_ssl.get(), plaintext, to_consume);
         if (consumed < 0) {
-            int ssl_error = ::SSL_get_error(_ssl.get(), consumed);
-            LOG(error, "SSL_write() failed to write frame, got error %s (%s)",
-                ssl_error_to_str(ssl_error), ssl_error_from_stack().c_str());
-            // TODO explicitly detect and log TLS renegotiation error (SSL_ERROR_WANT_READ)?
-            return encode_failed();
+            log_ssl_error("SSL_write()", ::SSL_get_error(_ssl.get(), consumed));
+            return encode_failed(); // TODO explicitly detect and log TLS renegotiation error (SSL_ERROR_WANT_READ)?
         } else if (consumed != to_consume) {
             LOG(error, "SSL_write() returned OK but did not consume all requested plaintext");
             return encode_failed();
         }
         bytes_consumed = static_cast<size_t>(consumed);
     }
-    int produced = BIO_pending(_output_bio);
+    const int produced = BIO_pending(_output_bio);
     return encoded_bytes(bytes_consumed, static_cast<size_t>(produced));
 }
 DecodeResult OpenSslCryptoCodecImpl::decode(const char* ciphertext, size_t ciphertext_size,
@@ -316,27 +318,44 @@ DecodeResult OpenSslCryptoCodecImpl::drain_and_produce_plaintext_from_ssl(
     // This may consume the entire, parts of, or none of the input BIO's data,
     // depending on how much TLS frame data is available and its size relative
     // to the receiving plaintext buffer.
-    int produced = ::SSL_read(_ssl.get(), plaintext, static_cast<int>(plaintext_size));
+    const int produced = ::SSL_read(_ssl.get(), plaintext, static_cast<int>(plaintext_size));
     if (produced > 0) {
         // At least 1 frame decoded successfully.
         return decoded_frames_with_plaintext_bytes(static_cast<size_t>(produced));
     } else {
-        int ssl_error = ::SSL_get_error(_ssl.get(), produced);
-        switch (ssl_error) {
-        case SSL_ERROR_WANT_READ:
-            // SSL_read() was not able to decode a full frame with the ciphertext that
-            // we've fed it thus far; caller must feed it some and then try again.
-            LOG(spam, "SSL_read() returned SSL_ERROR_WANT_READ, must get more ciphertext");
-            return decode_needs_more_peer_data();
-        case SSL_ERROR_ZERO_RETURN:
-            LOG(debug, "SSL_read() returned SSL_ERROR_ZERO_RETURN; connection has been shut down normally by the peer");
-            return decode_failed(); // We'll just break the connection as per usual.
-        default:
-            LOG(error, "SSL_read() returned unexpected error: %s (%s)",
-                ssl_error_to_str(ssl_error), ssl_error_from_stack().c_str());
-            return decode_failed();
-        }
+        return remap_ssl_read_failure_to_decode_result(produced);
     }
+}
+
+DecodeResult OpenSslCryptoCodecImpl::remap_ssl_read_failure_to_decode_result(int read_result) noexcept {
+    const int ssl_error = ::SSL_get_error(_ssl.get(), read_result);
+    switch (ssl_error) {
+    case SSL_ERROR_WANT_READ:
+        // SSL_read() was not able to decode a full frame with the ciphertext that
+        // we've fed it thus far; caller must feed it some and then try again.
+        LOG(spam, "SSL_read() returned SSL_ERROR_WANT_READ, must get more ciphertext");
+        return decode_needs_more_peer_data();
+    case SSL_ERROR_ZERO_RETURN:
+        LOG(debug, "SSL_read() returned SSL_ERROR_ZERO_RETURN; connection has been shut down normally by the peer");
+        return decode_peer_has_closed();
+    default:
+        log_ssl_error("SSL_read()", ssl_error);
+        return decode_failed();
+    }
+}
+
+EncodeResult OpenSslCryptoCodecImpl::half_close(char* ciphertext, size_t ciphertext_size) noexcept {
+    LOG_ASSERT(verify_buf(ciphertext, ciphertext_size));
+    MutableBufferViewGuard mut_view_guard(*_output_bio, ciphertext, ciphertext_size);
+    const int pending_before = BIO_pending(_output_bio);
+    int ssl_result = ::SSL_shutdown(_ssl.get());
+    if (ssl_result < 0) {
+        log_ssl_error("SSL_shutdown()", ::SSL_get_error(_ssl.get(), ssl_result));
+        return encode_failed();
+    }
+    const int pending_after = BIO_pending(_output_bio);
+    LOG_ASSERT(pending_after >= pending_before);
+    return encoded_bytes(0, static_cast<size_t>(pending_after - pending_before));
 }
 
 }
