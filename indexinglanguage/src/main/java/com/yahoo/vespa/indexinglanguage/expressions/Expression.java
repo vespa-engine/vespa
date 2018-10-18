@@ -17,6 +17,12 @@ import com.yahoo.vespa.objects.Selectable;
  */
 public abstract class Expression extends Selectable {
 
+    private final DataType inputType;
+
+    protected Expression(DataType inputType) {
+        this.inputType = inputType;
+    }
+
     public final FieldValue execute(FieldValue val) {
         return execute(new ExecutionContext().setValue(val));
     }
@@ -133,7 +139,6 @@ public abstract class Expression extends Selectable {
     }
 
     public final DataType verify(VerificationContext context) {
-        DataType inputType = requiredInputType();
         if (inputType != null) {
             DataType input = context.getValue();
             if (input == null) {
@@ -167,7 +172,7 @@ public abstract class Expression extends Selectable {
 
     protected abstract void doVerify(VerificationContext context);
 
-    public abstract DataType requiredInputType();
+    public final DataType requiredInputType() { return inputType; }
 
     public abstract DataType createdOutputType();
 

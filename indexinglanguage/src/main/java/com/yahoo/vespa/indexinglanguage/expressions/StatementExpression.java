@@ -10,6 +10,7 @@ import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -17,14 +18,18 @@ import java.util.List;
 /**
  * @author Simon Thoresen Hult
  */
-public class StatementExpression extends ExpressionList<Expression> {
+public final class StatementExpression extends ExpressionList<Expression> {
 
     public StatementExpression(Expression... lst) {
         this(Arrays.asList(lst));
     }
 
     public StatementExpression(Iterable<Expression> lst) {
-        super(filterList(lst));
+        this(filterList(lst), null);
+    }
+
+    private StatementExpression(Iterable<Expression> list, Object unused) {
+        super(list, resolveInputType(list));
     }
 
     @Override
@@ -41,13 +46,13 @@ public class StatementExpression extends ExpressionList<Expression> {
         }
     }
 
-    @Override
-    public DataType requiredInputType() {
-        for (Expression exp : this) {
+    private static DataType resolveInputType(Iterable<Expression> lst) {
+        for (Expression exp : lst) {
             DataType type = exp.requiredInputType();
             if (type != null) {
                 return type;
             }
+
             type = exp.createdOutputType();
             if (type != null) {
                 return null;

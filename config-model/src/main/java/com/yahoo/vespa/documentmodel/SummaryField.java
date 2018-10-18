@@ -18,9 +18,10 @@ import static com.yahoo.text.Lowercase.toLowerCase;
 public class SummaryField extends Field implements Cloneable, TypedKey {
 
     /**
-     * This class represents a source (field name).
+     * A source (field name).
      */
     public static class Source implements Serializable {
+
         private String name;
         private boolean override = false;
         public Source(String name) {
@@ -29,9 +30,13 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
         public String getName() { return name; }
         public void setOverride(boolean override) { this.override = override; }
         public boolean getOverride() { return override; }
+
+        @Override
         public int hashCode() {
             return name.hashCode() + Boolean.valueOf(override).hashCode();
         }
+
+        @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof Source)) {
                 return false;
@@ -40,9 +45,12 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
             return name.equals(other.name) &&
                     override == other.override;
         }
+
+        @Override
         public String toString() {
-            return name;
+            return "source field '" + name + "'";
         }
+
     }
 
     /** A name-value property (used for smart summary) */
@@ -267,12 +275,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
     }
 
     public String toString() {
-        return
-            "summary field '" + getName() + ' ' + getDestinationString() +
-            "' [type: '" + getDataType().getName() +
-            "' transform: '" + transform +
-            "', source: '" + toString(sources) +
-            "', to '" + toString(destinations) + "']";
+        return "summary field '" + getName() + "'";
     }
 
     /** Returns a string which aids locating this field in the source search definition */

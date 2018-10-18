@@ -361,8 +361,7 @@ public class Value extends Handle {
                 throw new IllegalStateException("The Limits instance must be frozen.");
             }
             if (parameters.histogramId != HistogramType.REGULAR) {
-                log.log(LogLevel.WARNING, HISTOGRAM_TYPE_WARNING
-                        + " '" + name + "'");
+                log.log(LogLevel.WARNING, HISTOGRAM_TYPE_WARNING + " '" + name + "'");
             }
             this.histogramId = HistogramType.REGULAR;
             this.histogram = parameters.limits;

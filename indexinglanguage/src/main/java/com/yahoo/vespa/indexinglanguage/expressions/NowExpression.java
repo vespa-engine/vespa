@@ -2,13 +2,12 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.LongFieldValue;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class NowExpression extends Expression {
+public final class NowExpression extends Expression {
 
     private final Timer timer;
 
@@ -17,6 +16,7 @@ public class NowExpression extends Expression {
     }
 
     public NowExpression(Timer timer) {
+        super(null);
         this.timer = timer;
     }
 
@@ -32,11 +32,6 @@ public class NowExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return null;
     }
 
     @Override

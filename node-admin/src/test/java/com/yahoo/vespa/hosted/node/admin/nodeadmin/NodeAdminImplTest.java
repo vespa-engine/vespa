@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import org.junit.Test;
@@ -16,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -38,13 +37,10 @@ import static org.mockito.Mockito.when;
 public class NodeAdminImplTest {
     // Trick to allow mocking of typed interface without casts/warnings.
     private interface NodeAgentFactory extends Function<String, NodeAgent> {}
-    private final DockerOperations dockerOperations = mock(DockerOperations.class);
     private final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
-    private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
-    private final Runnable aclMaintainer = mock(Runnable.class);
     private final ManualClock clock = new ManualClock();
 
-    private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(dockerOperations, nodeAgentFactory, storageMaintainer, aclMaintainer,
+    private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(nodeAgentFactory, Optional.empty(),
             new MetricReceiverWrapper(MetricReceiver.nullImplementation), clock);
 
     @Test
@@ -55,7 +51,6 @@ public class NodeAdminImplTest {
         final NodeAgent nodeAgent2 = mock(NodeAgentImpl.class);
         when(nodeAgentFactory.apply(eq(hostName1))).thenReturn(nodeAgent1);
         when(nodeAgentFactory.apply(eq(hostName2))).thenReturn(nodeAgent2);
-        when(dockerOperations.getAllManagedContainers()).thenReturn(Collections.emptyList());
 
 
         final InOrder inOrder = inOrder(nodeAgentFactory, nodeAgent1, nodeAgent2);
@@ -93,8 +88,6 @@ public class NodeAdminImplTest {
 
     @Test
     public void testSetFrozen() {
-        when(dockerOperations.getAllManagedContainers()).thenReturn(Collections.emptyList());
-
         List<NodeAgent> nodeAgents = new ArrayList<>();
         Set<String> existingContainerHostnames = new HashSet<>();
         for (int i = 0; i < 3; i++) {

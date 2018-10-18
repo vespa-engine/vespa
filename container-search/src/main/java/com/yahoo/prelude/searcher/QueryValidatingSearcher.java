@@ -13,7 +13,8 @@ import com.yahoo.search.searchchain.Execution;
  * @author Steinar Knutsen
  * @deprecated do not use
  */
-@Deprecated // TODO: Remove on Vespa 7
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public class QueryValidatingSearcher extends Searcher {
 
     public Result search(Query query, Execution execution) {

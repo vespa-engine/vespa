@@ -80,27 +80,6 @@ public class LoadBalancerTest {
     }
 
     @Test
-    public void requreThatLoadBalancerReturnsSameGroupForSameQuery() {
-        Node n1 = new SearchCluster.Node(0, "test-node1", 0, 0);
-        Node n2 = new SearchCluster.Node(1, "test-node2", 1, 1);
-        SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1, n2), null, 1, null);
-        LoadBalancer lb = new LoadBalancer(cluster);
-
-        Query q = new Query();
-        // get first group
-        Optional<Group> grp = lb.takeGroupForQuery(q);
-        Group group = grp.get();
-        int id1 = group.id();
-        // release allocation
-        lb.releaseGroup(group);
-
-        // continue with same query
-        grp = lb.takeGroupForQuery(q);
-        group = grp.get();
-        assertThat(group.id(), equalTo(id1));
-    }
-
-    @Test
     public void requreThatLoadBalancerReturnsGroupWithShortestQueue() {
         Node n1 = new SearchCluster.Node(0, "test-node1", 0, 0);
         Node n2 = new SearchCluster.Node(1, "test-node2", 1, 1);

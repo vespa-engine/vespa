@@ -25,7 +25,7 @@ public class Bolding extends Processor {
     public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
         for (SDField field : search.allConcreteFields()) {
-            for (SummaryField summary : field.getSummaryFields()) {
+            for (SummaryField summary : field.getSummaryFields().values()) {
                 if (summary.getTransform().isBolded() &&
                     !((summary.getDataType() == DataType.STRING) || (summary.getDataType() == DataType.URI)))
                 {

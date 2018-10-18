@@ -7,8 +7,11 @@ import com.yahoo.document.DocumentType;
 /**
  * @author Simon Thoresen Hult
  */
-public class ThisExpression extends Expression {
+public final class ThisExpression extends Expression {
 
+    public ThisExpression() {
+        super(UnresolvedDataType.INSTANCE);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         // empty
@@ -17,11 +20,6 @@ public class ThisExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         // empty
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

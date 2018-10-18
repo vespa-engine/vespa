@@ -2,14 +2,16 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.ByteFieldValue;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class ToByteExpression extends Expression {
+public final class ToByteExpression extends Expression {
 
+    public ToByteExpression() {
+        super(UnresolvedDataType.INSTANCE);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         ctx.setValue(new ByteFieldValue(Byte.valueOf(String.valueOf(ctx.getValue()))));
@@ -18,11 +20,6 @@ public class ToByteExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

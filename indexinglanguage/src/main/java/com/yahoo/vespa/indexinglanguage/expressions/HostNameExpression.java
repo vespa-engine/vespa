@@ -9,7 +9,11 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 /**
  * @author Simon Thoresen Hult
  */
-public class HostNameExpression extends Expression {
+public final class HostNameExpression extends Expression {
+
+    public HostNameExpression() {
+        super(null);
+    }
 
     @Override
     protected void doExecute(ExecutionContext ctx) {
@@ -19,11 +23,6 @@ public class HostNameExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return null;
     }
 
     @Override

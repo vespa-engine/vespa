@@ -15,8 +15,11 @@ import java.util.zip.GZIPInputStream;
 /**
  * Used by HTTPSearcher when talking to services returning compressed content.
  *
- * @author <a href="mailto:mainak@yahoo-inc.com">Mainak Mandal</a>
+ * @author Mainak Mandal
+ * @deprecated
  */
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public class GzipDecompressingEntity extends HttpEntityWrapper {
 
     private static class Resources {

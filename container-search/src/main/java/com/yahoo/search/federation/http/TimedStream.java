@@ -8,7 +8,10 @@ import java.io.InputStream;
  * A stream which throws a TimeoutException if query timeout has been reached.
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @deprecated
  */
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public class TimedStream extends InputStream {
 
     /**

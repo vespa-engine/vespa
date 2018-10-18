@@ -8,7 +8,6 @@ import com.yahoo.search.cache.QrBinaryCacheConfig;
 import com.yahoo.search.cache.QrBinaryCacheRegionConfig;
 import com.yahoo.search.federation.ProviderConfig;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
-import com.yahoo.search.searchchain.model.federation.HttpProviderSpec;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,13 +18,15 @@ import static com.yahoo.search.federation.ProviderConfig.Yca;
 
 /**
  * A provider containing a http searcher.
+ *
  * @author Tony Vaagenes
  */
 public class HttpProvider extends Provider implements ProviderConfig.Producer,
-        QrBinaryCacheConfig.Producer,
-        QrBinaryCacheRegionConfig.Producer {
+                                                      QrBinaryCacheConfig.Producer,
+                                                      QrBinaryCacheRegionConfig.Producer {
 
-    private final HttpProviderSpec providerSpec;
+    @SuppressWarnings("deprecation")
+    private final com.yahoo.search.searchchain.model.federation.HttpProviderSpec providerSpec;
 
     //TODO: For backward compatibility only, eliminate this later
     private BinaryScaledAmount cacheSize;
@@ -44,8 +45,8 @@ public class HttpProvider extends Provider implements ProviderConfig.Producer,
     /*
      * Config producer for the contained http searcher..
      */
-
-    public HttpProvider(ChainSpecification specWithoutInnerSearchers, FederationOptions federationOptions, HttpProviderSpec providerSpec) {
+    @SuppressWarnings("deprecation")
+    public HttpProvider(ChainSpecification specWithoutInnerSearchers, FederationOptions federationOptions, com.yahoo.search.searchchain.model.federation.HttpProviderSpec providerSpec) {
         super(specWithoutInnerSearchers, federationOptions);
         this.providerSpec = providerSpec;
     }
@@ -70,7 +71,8 @@ public class HttpProvider extends Provider implements ProviderConfig.Producer,
         }
     }
 
-    private static Yca.Builder getCertificate(HttpProviderSpec providerSpec) {
+    @SuppressWarnings("deprecation")
+    private static Yca.Builder getCertificate(com.yahoo.search.searchchain.model.federation.HttpProviderSpec providerSpec) {
         Yca.Builder certificate = new Yca.Builder()
                 .applicationId(providerSpec.ycaApplicationId);
 
@@ -86,9 +88,10 @@ public class HttpProvider extends Provider implements ProviderConfig.Producer,
         return certificate;
     }
 
-    private static List<Node.Builder> getNodes(List<HttpProviderSpec.Node> nodeSpecs) {
+    @SuppressWarnings("deprecation")
+    private static List<Node.Builder> getNodes(List<com.yahoo.search.searchchain.model.federation.HttpProviderSpec.Node> nodeSpecs) {
         ArrayList<Node.Builder> nodes = new ArrayList<>();
-        for (HttpProviderSpec.Node node : nodeSpecs) {
+        for (com.yahoo.search.searchchain.model.federation.HttpProviderSpec.Node node : nodeSpecs) {
             nodes.add(
                     new Node.Builder()
                             .host(node.host)

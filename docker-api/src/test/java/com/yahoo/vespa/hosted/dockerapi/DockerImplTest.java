@@ -19,6 +19,8 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Matchers;
 
+import java.util.OptionalLong;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -66,7 +68,8 @@ public class DockerImplTest {
         when(state.isRunning()).thenReturn(false);
         when(state.getExitCode()).thenReturn(exitCode);
 
-        final ProcessResult result = docker.executeInContainer(new ContainerName(containerId), command);
+        final ProcessResult result = docker.executeInContainerAsUser(
+                new ContainerName(containerId), "root", OptionalLong.empty(), command);
         assertThat(result.getExitStatus(), is(exitCode));
     }
 

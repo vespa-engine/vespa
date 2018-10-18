@@ -1,55 +1,60 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-<result version="1.0">
-
+<page version="1.0">
   <section layout="row">
     <section id="section:box1">
-      <hit relevance="1.0" source="news">
-        <id>news-1</id>
-      </hit>
-      <hit relevance="0.5" source="news">
-        <id>news-2</id>
-      </hit>
-      <hit relevance="0.3333333333333333" source="news">
-        <id>news-3</id>
-      </hit>
+      <content>
+        <hit relevance="1.0" source="news">
+          <id>news-1</id>
+        </hit>
+        <hit relevance="0.5" source="news">
+          <id>news-2</id>
+        </hit>
+        <hit relevance="0.3333333333333333" source="news">
+          <id>news-3</id>
+        </hit>
+      </content>
     </section>
     <section id="section:box2">
-      <hit relevance="1.0" source="web">
-        <id>web-1</id>
-      </hit>
-      <hit relevance="0.5" source="web">
-        <id>web-2</id>
-      </hit>
-      <hit relevance="0.3333333333333333" source="web">
-        <id>web-3</id>
-      </hit>
+      <content>
+        <hit relevance="1.0" source="web">
+          <id>web-1</id>
+        </hit>
+        <hit relevance="0.5" source="web">
+          <id>web-2</id>
+        </hit>
+        <hit relevance="0.3333333333333333" source="web">
+          <id>web-3</id>
+        </hit>
+      </content>
     </section>
   </section>
-
   <section layout="row">
     <section id="section:box3">
-      <hit relevance="1.0" source="blog">
-        <id>blog-1</id>
-      </hit>
-      <hit relevance="0.5" source="blog">
-        <id>blog-2</id>
-      </hit>
-      <hit relevance="0.3333333333333333" source="blog">
-        <id>blog-3</id>
-      </hit>
+      <content>
+        <hit relevance="1.0" source="blog">
+          <id>blog-1</id>
+        </hit>
+        <hit relevance="0.5" source="blog">
+          <id>blog-2</id>
+        </hit>
+        <hit relevance="0.3333333333333333" source="blog">
+          <id>blog-3</id>
+        </hit>
+      </content>
     </section>
     <section id="section:box4">
-      <hit relevance="1.0" source="images">
-        <id>images-1</id>
-      </hit>
-      <hit relevance="0.5" source="images">
-        <id>images-2</id>
-      </hit>
-      <hit relevance="0.3333333333333333" source="images">
-        <id>images-3</id>
-      </hit>
+      <content>
+        <hit relevance="1.0" source="images">
+          <id>images-1</id>
+        </hit>
+        <hit relevance="0.5" source="images">
+          <id>images-2</id>
+        </hit>
+        <hit relevance="0.3333333333333333" source="images">
+          <id>images-3</id>
+        </hit>
+      </content>
     </section>
   </section>
-
-</result>
+</page>

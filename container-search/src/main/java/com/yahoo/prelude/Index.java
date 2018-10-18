@@ -4,7 +4,10 @@ package com.yahoo.prelude;
 
 import com.yahoo.language.process.StemMode;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 
@@ -43,6 +46,10 @@ public class Index {
     public static final Index nullIndex = new Index("(null)");
 
     private String name;
+
+    private List<String> aliases = new ArrayList<>();
+
+    // The state resulting from adding commands to this (using addCommand)
     private boolean uriIndex = false;
     private boolean hostIndex = false;
     private StemMode stemMode = StemMode.NONE;
@@ -60,27 +67,27 @@ public class Index {
     private boolean numerical = false;
     private long predicateUpperBound = Long.MAX_VALUE;
     private long predicateLowerBound = Long.MIN_VALUE;
-
-    /**
-     * True if this is an <i>exact</i> index - which should match
-     * tokens containing any characters
-     */
+    /** True if this is an <i>exact</i> index - which should match  tokens containing any characters */
     private boolean exact = false;
-
     private boolean isNGram = false;
     private int gramSize=2;
-
-    /**
-     * The string terminating an exact token in this index,
-     * or null to use the default (space)
-     */
+    /** The string terminating an exact token in this index, or null to use the default (space) */
     private String exactTerminator = null;
 
+    /** Commands which are not coverted into a field */
     private Set<String> commands = new java.util.HashSet<>();
+
+    /** All the commands added to this, including those converted to fields above */
+    private List<String> allCommands = new java.util.ArrayList<>();
 
     public Index(String name) {
         this.name = name;
     }
+
+    public void addAlias(String alias) { aliases.add(alias); }
+
+    /** Returns an unmodifiable list of the aliases of this index (not including the index proper name) */
+    public List<String> aliases() { return Collections.unmodifiableList(aliases); }
 
     /**
      * Returns the canonical name of this index, unless it
@@ -128,6 +135,8 @@ public class Index {
 
     /** Adds a type or untyped command string to this */
     public Index addCommand(String commandString) {
+        allCommands.add(commandString);
+
         if ("fullurl".equals(commandString)) {
             setUriIndex(true);
         } else if ("urlhost".equals(commandString)) {
@@ -151,7 +160,7 @@ public class Index {
         } else if (commandString.startsWith("exact ")) {
             setExact(true, commandString.substring(6));
         } else if (commandString.startsWith("ngram ")) {
-            setNGram(true,Integer.parseInt(commandString.substring(6)));
+            setNGram(true, Integer.parseInt(commandString.substring(6)));
         } else if (commandString.equals("attribute")) {
             setAttribute(true);
         } else if (commandString.equals("default-position")) {
@@ -189,7 +198,6 @@ public class Index {
         } else {
             predicateUpperBound = Long.MAX_VALUE;
         }
-
     }
 
     /**
@@ -245,8 +253,8 @@ public class Index {
     public int getGramSize() { return gramSize; }
 
     public void setNGram(boolean nGram,int gramSize) {
-        this.isNGram=nGram;
-        this.gramSize=gramSize;
+        this.isNGram = nGram;
+        this.gramSize = gramSize;
     }
 
     public void setDynamicSummary(boolean dynamicSummary) { this.dynamicSummary=dynamicSummary; }
@@ -314,6 +322,9 @@ public class Index {
     public long getPredicateUpperBound() { return predicateUpperBound; }
 
     public long getPredicateLowerBound() { return predicateLowerBound; }
+
+    /** Returns all the literal command strings given as arguments to addCommand in this instance */
+    public List<String> allCommands() { return allCommands; }
 
     @Override
     public String toString() {

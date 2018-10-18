@@ -37,11 +37,11 @@ public class HitConverterTestCase {
         HitConverter converter = new HitConverter(new MySearcher(), new Query());
         Hit hit = converter.toSearchHit("default", new FS4Hit(1, createGlobalId(2), 3).setContext(context()));
         assertNotNull(hit);
-        assertEquals(new URI("index:null/1/" + FastHit.asHexString(createGlobalId(2))), hit.getId());
+        assertEquals(new URI("index:null/1/" + asHexString(createGlobalId(2))), hit.getId());
 
         hit = converter.toSearchHit("default", new FS4Hit(4, createGlobalId(5), 6).setContext(context()));
         assertNotNull(hit);
-        assertEquals(new URI("index:null/4/" + FastHit.asHexString(createGlobalId(5))), hit.getId());
+        assertEquals(new URI("index:null/4/" + asHexString(createGlobalId(5))), hit.getId());
     }
 
     @Test
@@ -132,6 +132,18 @@ public class HitConverterTestCase {
         assertTrue(hit.isFilled("69"));
     }
 
+    private static String asHexString(GlobalId gid) {
+        StringBuilder sb = new StringBuilder();
+        byte[] rawGid = gid.getRawId();
+        for (byte b : rawGid) {
+            String hex = Integer.toHexString(0xFF & b);
+            if (hex.length() == 1)
+                sb.append('0');
+            sb.append(hex);
+        }
+        return sb.toString();
+    }
+
     private static class MySearcher extends Searcher {
 
         @Override
@@ -139,4 +151,5 @@ public class HitConverterTestCase {
             return exec.search(query);
         }
     }
+
 }

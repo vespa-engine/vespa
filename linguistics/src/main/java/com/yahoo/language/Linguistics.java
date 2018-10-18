@@ -46,7 +46,8 @@ public interface Linguistics {
      *
      * @deprecated use new com.yahoo.language.simple.SimpleLinguistics()
      */
-    @Deprecated // TODO: Remove this field on Vespa 7
+    @Deprecated // OK
+    // TODO: Remove this field on Vespa 7
     Linguistics SIMPLE = new SimpleLinguistics();
 
     /**

@@ -1,166 +1,147 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.io.IOUtils;
-import com.yahoo.system.ProcessExecuter;
-import com.yahoo.vespa.hosted.dockerapi.ContainerName;
-import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
+import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.logging.FilebeatConfigProvider;
-import com.yahoo.vespa.hosted.node.admin.component.Environment;
-import com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil;
-import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig;
 import com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoredumpHandler;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Clock;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameMatches;
+import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.olderThan;
+import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.ifExists;
+import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
 
 /**
  * @author freva
  */
 public class StorageMaintainer {
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final Logger logger = Logger.getLogger(StorageMaintainer.class.getName());
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
+            .ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
 
     private final DockerOperations dockerOperations;
-    private final ProcessExecuter processExecuter;
-    private final Environment environment;
     private final CoredumpHandler coredumpHandler;
-    private final Clock clock;
+    private final Path archiveContainerStoragePath;
 
-    private final Map<ContainerName, MaintenanceThrottler> maintenanceThrottlerByContainerName = new ConcurrentHashMap<>();
-
-    public StorageMaintainer(DockerOperations dockerOperations, ProcessExecuter processExecuter,
-                             MetricReceiverWrapper metricReceiver, Environment environment,
-                             CoredumpHandler coredumpHandler, Clock clock) {
-        this(dockerOperations, processExecuter, environment, coredumpHandler, clock);
-    }
-
-    public StorageMaintainer(DockerOperations dockerOperations, ProcessExecuter processExecuter,
-                             Environment environment, CoredumpHandler coredumpHandler, Path pathToContainerArchive) {
-        this(dockerOperations, processExecuter, environment, coredumpHandler, Clock.systemUTC());
-    }
-
-    public StorageMaintainer(DockerOperations dockerOperations, ProcessExecuter processExecuter,
-                             Environment environment,
-                             CoredumpHandler coredumpHandler, Clock clock) {
+    public StorageMaintainer(DockerOperations dockerOperations, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath) {
         this.dockerOperations = dockerOperations;
-        this.processExecuter = processExecuter;
-        this.environment = environment;
         this.coredumpHandler = coredumpHandler;
-        this.clock = clock;
+        this.archiveContainerStoragePath = archiveContainerStoragePath;
     }
 
-    public void writeMetricsConfig(ContainerName containerName, NodeSpec node) {
+    public void writeMetricsConfig(NodeAgentContext context, NodeSpec node) {
         List<SecretAgentCheckConfig> configs = new ArrayList<>();
 
         // host-life
-        Path hostLifeCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_host_life");
+        Path hostLifeCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_host_life");
         SecretAgentCheckConfig hostLifeSchedule = new SecretAgentCheckConfig("host-life", 60, hostLifeCheckPath);
-        configs.add(annotatedCheck(node, hostLifeSchedule));
+        configs.add(annotatedCheck(context, node, hostLifeSchedule));
 
         // ntp
-        Path ntpCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_ntp");
+        Path ntpCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_ntp");
         SecretAgentCheckConfig ntpSchedule = new SecretAgentCheckConfig("ntp", 60, ntpCheckPath);
-        configs.add(annotatedCheck(node, ntpSchedule));
+        configs.add(annotatedCheck(context, node, ntpSchedule));
 
         // coredumps (except for the done coredumps which is handled by the host)
-        Path coredumpCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_coredumps");
+        Path coredumpCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_coredumps");
         SecretAgentCheckConfig coredumpSchedule = new SecretAgentCheckConfig("system-coredumps-processing", 300,
                 coredumpCheckPath, "--application", "system-coredumps-processing", "--lastmin",
-                "129600", "--crit", "1", "--coredir", environment.pathInNodeUnderVespaHome("var/crash/processing").toString());
-        configs.add(annotatedCheck(node, coredumpSchedule));
+                "129600", "--crit", "1", "--coredir", context.pathInNodeUnderVespaHome("var/crash/processing").toString());
+        configs.add(annotatedCheck(context, node, coredumpSchedule));
 
         // athenz certificate check
-        Path athenzCertExpiryCheckPath = environment.pathInNodeUnderVespaHome("libexec64/yms/yms_check_athenz_certs");
+        Path athenzCertExpiryCheckPath = context.pathInNodeUnderVespaHome("libexec64/yms/yms_check_athenz_certs");
         SecretAgentCheckConfig athenzCertExpirySchedule = new SecretAgentCheckConfig("athenz-certificate-expiry", 60,
                  athenzCertExpiryCheckPath, "--threshold", "20")
                 .withRunAsUser("root");
-        configs.add(annotatedCheck(node, athenzCertExpirySchedule));
+        configs.add(annotatedCheck(context, node, athenzCertExpirySchedule));
 
-        if (node.getNodeType() != NodeType.config) {
+        if (context.nodeType() != NodeType.config) {
             // vespa-health
-            Path vespaHealthCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa_health");
+            Path vespaHealthCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa_health");
             SecretAgentCheckConfig vespaHealthSchedule = new SecretAgentCheckConfig("vespa-health", 60, vespaHealthCheckPath, "all");
-            configs.add(annotatedCheck(node, vespaHealthSchedule));
+            configs.add(annotatedCheck(context, node, vespaHealthSchedule));
 
             // vespa
-            Path vespaCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa");
+            Path vespaCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa");
             SecretAgentCheckConfig vespaSchedule = new SecretAgentCheckConfig("vespa", 60, vespaCheckPath, "all");
-            configs.add(annotatedCheck(node, vespaSchedule));
+            configs.add(annotatedCheck(context, node, vespaSchedule));
         }
 
-        if (node.getNodeType() == NodeType.config) {
+        if (context.nodeType() == NodeType.config) {
             // configserver
-            Path configServerCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_ymonsb2");
+            Path configServerCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_ymonsb2");
             SecretAgentCheckConfig configServerSchedule = new SecretAgentCheckConfig("configserver", 60,
                     configServerCheckPath, "-zero", "configserver");
-            configs.add(annotatedCheck(node, configServerSchedule));
+            configs.add(annotatedCheck(context, node, configServerSchedule));
 
             //zkbackupage
-            Path zkbackupCheckPath = environment.pathInNodeUnderVespaHome("libexec/yamas2/yms_check_file_age.py");
+            Path zkbackupCheckPath = context.pathInNodeUnderVespaHome("libexec/yamas2/yms_check_file_age.py");
             SecretAgentCheckConfig zkbackupSchedule = new SecretAgentCheckConfig("zkbackupage", 300,
-                    zkbackupCheckPath, "-f", environment.pathInNodeUnderVespaHome("var/vespa-hosted/zkbackup.stat").toString(),
+                    zkbackupCheckPath, "-f", context.pathInNodeUnderVespaHome("var/vespa-hosted/zkbackup.stat").toString(),
                     "-m", "150", "-a", "config-zkbackupage");
-            configs.add(annotatedCheck(node, zkbackupSchedule));
+            configs.add(annotatedCheck(context, node, zkbackupSchedule));
         }
 
-        if (node.getNodeType() == NodeType.proxy) {
+        if (context.nodeType() == NodeType.proxy) {
             //routing-configage
-            Path routingAgeCheckPath = environment.pathInNodeUnderVespaHome("libexec/yamas2/yms_check_file_age.py");
+            Path routingAgeCheckPath = context.pathInNodeUnderVespaHome("libexec/yamas2/yms_check_file_age.py");
             SecretAgentCheckConfig routingAgeSchedule = new SecretAgentCheckConfig("routing-configage", 60,
-                    routingAgeCheckPath, "-f", environment.pathInNodeUnderVespaHome("var/vespa-hosted/routing/nginx.conf").toString(),
+                    routingAgeCheckPath, "-f", context.pathInNodeUnderVespaHome("var/vespa-hosted/routing/nginx.conf").toString(),
                     "-m", "90", "-a", "routing-configage");
-            configs.add(annotatedCheck(node, routingAgeSchedule));
+            configs.add(annotatedCheck(context, node, routingAgeSchedule));
 
             //ssl-check
-            Path sslCheckPath = environment.pathInNodeUnderVespaHome("libexec/yms/yms_check_ssl_status");
+            Path sslCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_ssl_status");
             SecretAgentCheckConfig sslSchedule = new SecretAgentCheckConfig("ssl-status", 300,
                     sslCheckPath, "-e", "localhost", "-p", "4443", "-t", "30");
-            configs.add(annotatedCheck(node, sslSchedule));
+            configs.add(annotatedCheck(context, node, sslSchedule));
         }
 
         // Write config and restart yamas-agent
-        Path yamasAgentFolder = environment.pathInNodeAdminFromPathInNode(containerName, Paths.get("/etc/yamas-agent/"));
-        configs.forEach(s -> IOExceptionUtil.uncheck(() -> s.writeTo(yamasAgentFolder)));
-        final String[] restartYamasAgent = new String[]{"service", "yamas-agent", "restart"};
-        dockerOperations.executeCommandInContainerAsRoot(containerName, restartYamasAgent);
+        Path yamasAgentFolder = context.pathOnHostFromPathInNode("/etc/yamas-agent");
+
+        // TODO: Remove after 6.301
+        ifExists(() -> Files.setPosixFilePermissions(yamasAgentFolder, PosixFilePermissions.fromString("rw-r--r--")));
+
+        configs.forEach(s -> uncheck(() -> s.writeTo(yamasAgentFolder)));
+        dockerOperations.executeCommandInContainerAsRoot(context, "service", "yamas-agent", "restart");
     }
 
-    private SecretAgentCheckConfig annotatedCheck(NodeSpec node, SecretAgentCheckConfig check) {
+    private SecretAgentCheckConfig annotatedCheck(NodeAgentContext context, NodeSpec node, SecretAgentCheckConfig check) {
         check.withTag("namespace", "Vespa")
                 .withTag("role", SecretAgentCheckConfig.nodeTypeToRole(node.getNodeType()))
                 .withTag("flavor", node.getFlavor())
                 .withTag("canonicalFlavor", node.getCanonicalFlavor())
                 .withTag("state", node.getState().toString())
-                .withTag("zone", environment.getZone())
-                .withTag("parentHostname", environment.getParentHostHostname());
+                .withTag("zone", String.format("%s.%s", context.zoneId().environment().value(), context.zoneId().regionName().value()));
+        node.getParentHostname().ifPresent(parent -> check.withTag("parentHostname", parent));
         node.getOwner().ifPresent(owner -> check
                 .withTag("tenantName", owner.getTenant())
                 .withTag("app", owner.getApplication() + "." + owner.getInstance())
@@ -175,42 +156,21 @@ public class StorageMaintainer {
         return check;
     }
 
-    public void writeFilebeatConfig(ContainerName containerName, NodeSpec node) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
-        try {
-            FilebeatConfigProvider filebeatConfigProvider = new FilebeatConfigProvider(environment);
-            Optional<String> config = filebeatConfigProvider.getConfig(node);
-            if (!config.isPresent()) return;
-
-            Path filebeatPath = environment.pathInNodeAdminFromPathInNode(
-                    containerName, Paths.get("/etc/filebeat/filebeat.yml"));
-            Files.write(filebeatPath, config.get().getBytes());
-            logger.info("Wrote filebeat config.");
-        } catch (Throwable t) {
-            logger.error("Failed writing filebeat config; " + node, t);
-        }
-    }
-
-    public Optional<Long> getDiskUsageFor(ContainerName containerName) {
-        Path containerDir = environment.pathInNodeAdminFromPathInNode(containerName, Paths.get("/home/"));
+    public Optional<Long> getDiskUsageFor(NodeAgentContext context) {
+        Path containerDir = context.pathOnHostFromPathInNode("/");
         try {
             return Optional.of(getDiskUsedInBytes(containerDir));
         } catch (Throwable e) {
-            PrefixLogger logger = PrefixLogger.getNodeAgentLogger(StorageMaintainer.class, containerName);
-            logger.error("Problems during disk usage calculations in " + containerDir.toAbsolutePath(), e);
+            context.log(logger, LogLevel.WARNING, "Problems during disk usage calculations in " + containerDir.toAbsolutePath(), e);
             return Optional.empty();
         }
     }
 
     // Public for testing
     long getDiskUsedInBytes(Path path) throws IOException, InterruptedException {
-        if (!Files.exists(path)) {
-            return 0;
-        }
+        if (!Files.exists(path)) return 0;
 
-        final String[] command = {"du", "-xsk", path.toString()};
-
-        Process duCommand = new ProcessBuilder().command(command).start();
+        Process duCommand = new ProcessBuilder().command("du", "-xsk", path.toString()).start();
         if (!duCommand.waitFor(60, TimeUnit.SECONDS)) {
             duCommand.destroy();
             duCommand.waitFor();
@@ -227,95 +187,53 @@ public class StorageMaintainer {
     }
 
 
-    /**
-     * Deletes old log files for vespa, nginx, logstash, etc.
-     */
-    public void removeOldFilesFromNode(ContainerName containerName) {
-        if (! getMaintenanceThrottlerFor(containerName).shouldRemoveOldFilesNow()) return;
-
-        MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
-        addRemoveOldFilesCommand(maintainerExecutor, containerName);
-
-        maintainerExecutor.execute();
-        getMaintenanceThrottlerFor(containerName).updateNextRemoveOldFilesTime();
-    }
-
-    private void addRemoveOldFilesCommand(MaintainerExecutor maintainerExecutor, ContainerName containerName) {
-        Path[] pathsToClean = {
-                environment.pathInNodeUnderVespaHome("logs/elasticsearch2"),
-                environment.pathInNodeUnderVespaHome("logs/logstash2"),
-                environment.pathInNodeUnderVespaHome("logs/daemontools_y"),
-                environment.pathInNodeUnderVespaHome("logs/nginx"),
-                environment.pathInNodeUnderVespaHome("logs/vespa")
+    /** Deletes old log files for vespa, nginx, logstash, etc. */
+    public void removeOldFilesFromNode(NodeAgentContext context) {
+        Path[] logPaths = {
+                context.pathInNodeUnderVespaHome("logs/elasticsearch2"),
+                context.pathInNodeUnderVespaHome("logs/logstash2"),
+                context.pathInNodeUnderVespaHome("logs/daemontools_y"),
+                context.pathInNodeUnderVespaHome("logs/nginx"),
+                context.pathInNodeUnderVespaHome("logs/vespa")
         };
 
-        for (Path pathToClean : pathsToClean) {
-            Path path = environment.pathInNodeAdminFromPathInNode(containerName, pathToClean);
-            if (Files.exists(path)) {
-                maintainerExecutor.addJob("delete-files")
-                        .withArgument("basePath", path)
-                        .withArgument("maxAgeSeconds", Duration.ofDays(3).getSeconds())
-                        .withArgument("fileNameRegex", ".*\\.log.+")
-                        .withArgument("recursive", false);
-            }
+        for (Path pathToClean : logPaths) {
+            Path path = context.pathOnHostFromPathInNode(pathToClean);
+            FileFinder.files(path)
+                    .match(olderThan(Duration.ofDays(3)).and(nameMatches(Pattern.compile(".*\\.log.+"))))
+                    .maxDepth(1)
+                    .deleteRecursively();
         }
 
-        Path qrsDir = environment.pathInNodeAdminFromPathInNode(
-                containerName, environment.pathInNodeUnderVespaHome("logs/vespa/qrs"));
-        maintainerExecutor.addJob("delete-files")
-                .withArgument("basePath", qrsDir)
-                .withArgument("maxAgeSeconds", Duration.ofDays(3).getSeconds())
-                .withArgument("recursive", false);
+        FileFinder.files(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("logs/vespa/qrs")))
+                .match(olderThan(Duration.ofDays(3)))
+                .deleteRecursively();
 
-        Path logArchiveDir = environment.pathInNodeAdminFromPathInNode(
-                containerName, environment.pathInNodeUnderVespaHome("logs/vespa/logarchive"));
-        maintainerExecutor.addJob("delete-files")
-                .withArgument("basePath", logArchiveDir)
-                .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
-                .withArgument("recursive", false);
+        FileFinder.files(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("logs/vespa/logarchive")))
+                .match(olderThan(Duration.ofDays(31)))
+                .deleteRecursively();
 
-        Path fileDistrDir = environment.pathInNodeAdminFromPathInNode(
-                containerName, environment.pathInNodeUnderVespaHome("var/db/vespa/filedistribution"));
-        maintainerExecutor.addJob("delete-files")
-                .withArgument("basePath", fileDistrDir)
-                .withArgument("maxAgeSeconds", Duration.ofDays(31).getSeconds())
-                .withArgument("recursive", true);
+        FileFinder.directories(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("var/db/vespa/filedistribution")))
+                .match(olderThan(Duration.ofDays(31)))
+                .deleteRecursively();
     }
 
-    /**
-     * Checks if container has any new coredumps, reports and archives them if so
-     */
-    public void handleCoreDumpsForContainer(ContainerName containerName, NodeSpec node) {
-        MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
-        addHandleCoredumpsCommand(maintainerExecutor, containerName, node);
-        maintainerExecutor.execute();
+    /** Checks if container has any new coredumps, reports and archives them if so */
+    public void handleCoreDumpsForContainer(NodeAgentContext context, NodeSpec node, Optional<Container> container) {
+        final Map<String, Object> nodeAttributes = getCoredumpNodeAttributes(context, node, container);
+        coredumpHandler.converge(context, nodeAttributes);
     }
 
-    /**
-     * Will either schedule coredump execution in the given maintainerExecutor or run coredump handling
-     * directly if {@link #coredumpHandler} is set.
-     */
-    private void addHandleCoredumpsCommand(MaintainerExecutor maintainerExecutor, ContainerName containerName, NodeSpec node) {
-        final Path coredumpsPath = environment.pathInNodeAdminFromPathInNode(
-                containerName, environment.pathInNodeUnderVespaHome("var/crash"));
-        final Map<String, Object> nodeAttributes = getCoredumpNodeAttributes(node);
-        try {
-            coredumpHandler.processAll(coredumpsPath, nodeAttributes);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to process coredumps", e);
-        }
-    }
-
-    private Map<String, Object> getCoredumpNodeAttributes(NodeSpec node) {
+    private Map<String, Object> getCoredumpNodeAttributes(NodeAgentContext context, NodeSpec node, Optional<Container> container) {
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("hostname", node.getHostname());
-        attributes.put("parent_hostname", environment.getParentHostHostname());
-        attributes.put("region", environment.getRegion());
-        attributes.put("environment", environment.getEnvironment());
+        attributes.put("region", context.zoneId().regionName());
+        attributes.put("environment", context.zoneId().environment());
         attributes.put("flavor", node.getFlavor());
         attributes.put("kernel_version", System.getProperty("os.version"));
 
-        node.getCurrentDockerImage().ifPresent(image -> attributes.put("docker_image", image.asString()));
+        container.map(c -> c.image).ifPresent(image -> attributes.put("docker_image", image.asString()));
+        node.getParentHostname().ifPresent(parent -> attributes.put("parent_hostname", parent));
         node.getVespaVersion().ifPresent(version -> attributes.put("vespa_version", version));
         node.getOwner().ifPresent(owner -> {
             attributes.put("tenant", owner.getTenant());
@@ -329,140 +247,14 @@ public class StorageMaintainer {
      * Prepares the container-storage for the next container by deleting/archiving all the data of the current container.
      * Removes old files, reports coredumps and archives container data, runs when container enters state "dirty"
      */
-    public void cleanupNodeStorage(ContainerName containerName, NodeSpec node) {
-        MaintainerExecutor maintainerExecutor = new MaintainerExecutor();
-        addRemoveOldFilesCommand(maintainerExecutor, containerName);
-        addHandleCoredumpsCommand(maintainerExecutor, containerName, node);
-        addArchiveNodeData(maintainerExecutor, containerName);
+    public void archiveNodeStorage(NodeAgentContext context) {
+        Path logsDirInContainer = context.pathInNodeUnderVespaHome("logs");
+        Path containerLogsOnHost = context.pathOnHostFromPathInNode(logsDirInContainer);
+        Path containerLogsInArchiveDir = archiveContainerStoragePath
+                .resolve(context.containerName().asString() + "_" + DATE_TIME_FORMATTER.format(Instant.now()) + logsDirInContainer);
 
-        maintainerExecutor.execute();
-        getMaintenanceThrottlerFor(containerName).reset();
-    }
-
-    private void addArchiveNodeData(MaintainerExecutor maintainerExecutor, ContainerName containerName) {
-        maintainerExecutor.addJob("recursive-delete")
-                .withArgument("path", environment.pathInNodeAdminFromPathInNode(
-                        containerName, environment.pathInNodeUnderVespaHome("var")));
-
-        maintainerExecutor.addJob("move-files")
-                .withArgument("from", environment.pathInNodeAdminFromPathInNode(containerName, Paths.get("/")))
-                .withArgument("to", environment.pathInNodeAdminToNodeCleanup(containerName));
-    }
-
-    /**
-     * Runs node-maintainer's SpecVerifier and returns its output
-     * @param node Node specification containing the excepted values we want to verify against
-     * @return new combined hardware divergence
-     * @throws RuntimeException if exit code != 0
-     */
-    public String getHardwareDivergence(NodeSpec node) {
-        List<String> arguments = new ArrayList<>(Arrays.asList("specification",
-                "--disk", Double.toString(node.getMinDiskAvailableGb()),
-                "--memory", Double.toString(node.getMinMainMemoryAvailableGb()),
-                "--cpu_cores", Double.toString(node.getMinCpuCores()),
-                "--is_ssd", Boolean.toString(node.isFastDisk()),
-                "--bandwidth", Double.toString(node.getBandwidth()),
-                "--ips", String.join(",", node.getIpAddresses())));
-
-        if (environment.getDockerNetworking() == DockerNetworking.HOST_NETWORK) {
-            arguments.add("--skip-reverse-lookup");
-        }
-
-        node.getHardwareDivergence().ifPresent(hardwareDivergence -> {
-            arguments.add("--divergence");
-            arguments.add(hardwareDivergence);
-        });
-
-        return executeMaintainer("com.yahoo.vespa.hosted.node.verification.Main", arguments.toArray(new String[0]));
-    }
-
-
-    private String executeMaintainer(String mainClass, String... args) {
-        String[] command = Stream.concat(
-                Stream.of("sudo",
-                        "VESPA_HOSTNAME=" + getDefaults().vespaHostname(),
-                        "VESPA_HOME=" + getDefaults().vespaHome(),
-                        getDefaults().underVespaHome("libexec/vespa/node-admin/maintenance.sh"),
-                        mainClass),
-                Stream.of(args))
-                .toArray(String[]::new);
-
-        try {
-            Pair<Integer, String> result = processExecuter.exec(command);
-
-            if (result.getFirst() != 0) {
-                throw new RuntimeException(
-                        String.format("Maintainer failed to execute command: %s, Exit code: %d, Stdout/stderr: %s",
-                                Arrays.toString(command), result.getFirst(), result.getSecond()));
-            }
-            return result.getSecond().trim();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to execute maintainer", e);
-        }
-    }
-
-    /**
-     * Wrapper for node-admin-maintenance, queues up maintenances jobs and sends a single request to maintenance JVM
-     */
-    private class MaintainerExecutor {
-        private final List<MaintainerExecutorJob> jobs = new ArrayList<>();
-
-        MaintainerExecutorJob addJob(String jobName) {
-            MaintainerExecutorJob job = new MaintainerExecutorJob(jobName);
-            jobs.add(job);
-            return job;
-        }
-
-        void execute() {
-            if (jobs.isEmpty()) return;
-
-            String args;
-            try {
-                args = objectMapper.writeValueAsString(jobs);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed transform list of maintenance jobs to JSON");
-            }
-
-            executeMaintainer("com.yahoo.vespa.hosted.node.maintainer.Maintainer", args);
-        }
-    }
-
-    private class MaintainerExecutorJob {
-        @JsonProperty(value="type")
-        private final String type;
-
-        @JsonProperty(value="arguments")
-        private final Map<String, Object> arguments = new HashMap<>();
-
-        MaintainerExecutorJob(String type) {
-            this.type = type;
-        }
-
-        MaintainerExecutorJob withArgument(String argument, Object value) {
-            // Transform Path to String, otherwise ObjectMapper wont encode/decode it properly on the other end
-            arguments.put(argument, (value instanceof Path) ? value.toString() : value);
-            return this;
-        }
-    }
-
-    private MaintenanceThrottler getMaintenanceThrottlerFor(ContainerName containerName) {
-        maintenanceThrottlerByContainerName.putIfAbsent(containerName, new MaintenanceThrottler());
-        return maintenanceThrottlerByContainerName.get(containerName);
-    }
-
-    private class MaintenanceThrottler {
-        private Instant nextRemoveOldFilesAt = Instant.EPOCH;
-
-        void updateNextRemoveOldFilesTime() {
-            nextRemoveOldFilesAt = clock.instant().plus(Duration.ofHours(1));
-        }
-
-        boolean shouldRemoveOldFilesNow() {
-            return !nextRemoveOldFilesAt.isAfter(clock.instant());
-        }
-
-        void reset() {
-            nextRemoveOldFilesAt = Instant.EPOCH;
-        }
+        new UnixPath(containerLogsInArchiveDir).createParents();
+        new UnixPath(containerLogsOnHost).moveIfExists(containerLogsInArchiveDir);
+        new UnixPath(context.pathOnHostFromPathInNode("/")).deleteRecursively();
     }
 }

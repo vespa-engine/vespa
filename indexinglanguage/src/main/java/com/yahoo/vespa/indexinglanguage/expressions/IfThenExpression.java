@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 /**
  * @author Simon Thoresen Hult
  */
-public class IfThenExpression extends CompositeExpression {
+public final class IfThenExpression extends CompositeExpression {
 
     public static enum Comparator {
         EQ("=="),
@@ -46,6 +46,7 @@ public class IfThenExpression extends CompositeExpression {
     }
 
     public IfThenExpression(Expression lhs, Comparator cmp, Expression rhs, Expression ifTrue, Expression ifFalse) {
+        super(resolveInputType(lhs, rhs, ifTrue, ifFalse));
         this.lhs = lhs;
         this.cmp = cmp;
         this.rhs = rhs;
@@ -112,8 +113,7 @@ public class IfThenExpression extends CompositeExpression {
         select(ifFalse, predicate, operation);
     }
 
-    @Override
-    public DataType requiredInputType() {
+    private static DataType resolveInputType(Expression lhs, Expression rhs, Expression ifTrue, Expression ifFalse) {
         DataType input = null;
         input = resolveRequiredInputType(input, lhs.requiredInputType());
         input = resolveRequiredInputType(input, rhs.requiredInputType());
@@ -173,7 +173,7 @@ public class IfThenExpression extends CompositeExpression {
         return ret;
     }
 
-    private DataType resolveRequiredInputType(DataType prev, DataType next) {
+    private static DataType resolveRequiredInputType(DataType prev, DataType next) {
         if (next == null) {
             return prev;
         }
@@ -181,7 +181,7 @@ public class IfThenExpression extends CompositeExpression {
             return next;
         }
         if (!prev.equals(next)) {
-            throw new VerificationException(this, "Operands require conflicting input types, " +
+            throw new VerificationException(IfThenExpression.class, "Operands require conflicting input types, " +
                                                   prev.getName() + " vs " + next.getName() + ".");
         }
         return prev;

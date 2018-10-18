@@ -91,14 +91,6 @@ public class SearchChainsTest extends SearchChainsTestBase {
             "</searchchains>");
     }
 
-    @Test
-    public void require_vespa_searcher_inside_vespa_provider() {
-        SearchChains searchchains = getSearchChains();
-        SearchChain vespaProvider = searchchains.allChains().getComponent("vespa-provider");
-        Searcher<?> vespaSearcher = vespaProvider.getInnerComponents().iterator().next();
-        assertThat(vespaSearcher, instanceOf(HttpProviderSearcher.class));
-    }
-
     private SearchChains getSearchChains() {
         return (SearchChains) root.getChildren().get("searchchains");
     }

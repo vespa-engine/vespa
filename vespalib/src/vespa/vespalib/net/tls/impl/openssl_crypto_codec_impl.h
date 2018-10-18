@@ -10,6 +10,8 @@ namespace vespalib::net::tls { class TlsContext; }
 
 namespace vespalib::net::tls::impl {
 
+class OpenSslTlsContextImpl;
+
 /*
  * Frame-level OpenSSL-backed TLSv1.2/TLSv1.3 (depending on OpenSSL version)
  * crypto codec implementation.
@@ -18,12 +20,16 @@ namespace vespalib::net::tls::impl {
  * used by different threads safely.
  */
 class OpenSslCryptoCodecImpl : public CryptoCodec {
+    // The context maintains shared verification callback state, so it must be
+    // kept alive explictly for at least as long as any codecs.
+    std::shared_ptr<OpenSslTlsContextImpl> _ctx;
     SslPtr _ssl;
     ::BIO* _input_bio;  // Owned by _ssl
     ::BIO* _output_bio; // Owned by _ssl
     Mode _mode;
 public:
-    OpenSslCryptoCodecImpl(::SSL_CTX& ctx, Mode mode);
+    OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx, Mode mode);
+    ~OpenSslCryptoCodecImpl() override;
 
     /*
      * From RFC 8449 (Record Size Limit Extension for TLS), section 1:

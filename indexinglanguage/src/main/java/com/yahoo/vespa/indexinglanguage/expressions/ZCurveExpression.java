@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
@@ -12,8 +11,11 @@ import com.yahoo.geo.ZCurve;
 /**
  * @author Simon Thoresen Hult
  */
-public class ZCurveExpression extends Expression {
+public final class ZCurveExpression extends Expression {
 
+    public ZCurveExpression() {
+        super(PositionDataType.INSTANCE);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         Struct input = ((Struct)ctx.getValue());
@@ -34,11 +36,6 @@ public class ZCurveExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return PositionDataType.INSTANCE;
     }
 
     @Override

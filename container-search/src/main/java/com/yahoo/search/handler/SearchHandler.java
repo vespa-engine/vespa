@@ -127,20 +127,19 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
     @Inject
-    public SearchHandler(
-            final ChainsConfig chainsConfig,
-            final IndexInfoConfig indexInfo,
-            final QrSearchersConfig clusters,
-            final SpecialtokensConfig specialtokens,
-            final Statistics statistics,
-            final Linguistics linguistics,
-            final Metric metric,
-            final ComponentRegistry<Renderer> renderers,
-            final Executor executor,
-            final AccessLog accessLog,
-            final QueryProfilesConfig queryProfileConfig,
-            final ComponentRegistry<Searcher> searchers,
-            final ContainerHttpConfig containerHttpConfig) {
+    public SearchHandler(ChainsConfig chainsConfig,
+                         IndexInfoConfig indexInfo,
+                         QrSearchersConfig clusters,
+                         SpecialtokensConfig specialtokens,
+                         Statistics statistics,
+                         Linguistics linguistics,
+                         Metric metric,
+                         ComponentRegistry<Renderer> renderers,
+                         Executor executor,
+                         AccessLog accessLog,
+                         QueryProfilesConfig queryProfileConfig,
+                         ComponentRegistry<Searcher> searchers,
+                         ContainerHttpConfig containerHttpConfig) {
         super(executor, accessLog, metric, true);
         log.log(LogLevel.DEBUG, "SearchHandler.init " + System.identityHashCode(this));
         searchChainRegistry = new SearchChainRegistry(searchers);
@@ -167,7 +166,7 @@ public class SearchHandler extends LoggingRequestHandler {
 
     /** @deprecated use the constructor with ContainerHttpConfig */
     // TODO: Remove on Vespa 7
-    @Deprecated
+    @Deprecated // OK
     public SearchHandler(
             final ChainsConfig chainsConfig,
             final IndexInfoConfig indexInfo,
@@ -187,7 +186,7 @@ public class SearchHandler extends LoggingRequestHandler {
 
     /** @deprecated use the constructor without deprecated parameters */
     // TODO: Remove on Vespa 7
-    @Deprecated
+    @Deprecated // OK
     public SearchHandler(
             final ChainsConfig chainsConfig,
             final IndexInfoConfig indexInfo,
@@ -264,7 +263,7 @@ public class SearchHandler extends LoggingRequestHandler {
         Result result = new Result(query, errorMessage);
         Renderer renderer = getRendererCopy(ComponentSpecification.fromString(request.getProperty("format")));
 
-        result.getTemplating().setRenderer(renderer); // Pre-Vespa 6 Result.getEncoding() expects this TODO: Remove
+        result.getTemplating().setRenderer(renderer); // Pre-Vespa 6 Result.getEncoding() expects this TODO: Remove opn Vespa 7
 
         return new HttpSearchResponse(getHttpResponseStatus(request, result), result, query, renderer);
     }
@@ -323,11 +322,11 @@ public class SearchHandler extends LoggingRequestHandler {
         }
 
         Renderer renderer;
-        if (result.getTemplating().usesDefaultTemplate()) {
+        if (result.getTemplating().usesDefaultTemplate()) { // TODO: Remove on Vespa 7
             renderer = toRendererCopy(query.getPresentation().getRenderer());
-            result.getTemplating().setRenderer(renderer); // pre-Vespa 6 Result.getEncoding() expects this to be set. TODO: Remove
+            result.getTemplating().setRenderer(renderer); // pre-Vespa 6 Result.getEncoding() expects this to be set.
         }
-        else { // somebody explicitly assigned a old style template
+        else { // somebody explicitly assigned a old style template // TODO: Remove on Vespa 7
             renderer = perRenderingCopy(result.getTemplating().getRenderer());
         }
 
@@ -391,7 +390,7 @@ public class SearchHandler extends LoggingRequestHandler {
         }
         Result result = execution.search(query);
 
-        if (result.getTemplating() == null)
+        if (result.getTemplating() == null) // TODO: Remove on Vespa 7
             result.getTemplating().setRenderer(renderer);
 
         ensureQuerySet(result, query);
@@ -412,11 +411,8 @@ public class SearchHandler extends LoggingRequestHandler {
 
     /**
      * For internal use only
-     * 
-     * @deprecated remove on Vespa 7
      */
-    @Deprecated
-    public Renderer<Result> getRendererCopy(ComponentSpecification spec) { // TODO: Deprecate this
+    public Renderer<Result> getRendererCopy(ComponentSpecification spec) {
         Renderer<Result> renderer = rendererRegistry.getRenderer(spec);
         return perRenderingCopy(renderer);
     }

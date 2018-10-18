@@ -13,7 +13,7 @@ import java.math.MathContext;
 /**
  * @author Simon Thoresen Hult
  */
-public class ArithmeticExpression extends CompositeExpression {
+public final class ArithmeticExpression extends CompositeExpression {
 
     public enum Operator {
 
@@ -46,6 +46,7 @@ public class ArithmeticExpression extends CompositeExpression {
     private final Expression rhs;
 
     public ArithmeticExpression(Expression lhs, Operator op, Expression rhs) {
+        super(requiredInputType(lhs, rhs));
         lhs.getClass(); // throws NullPointerException
         op.getClass();
         rhs.getClass();
@@ -80,8 +81,7 @@ public class ArithmeticExpression extends CompositeExpression {
                                   context.setValue(input).execute(rhs).getValue()));
     }
 
-    @Override
-    public DataType requiredInputType() {
+    private static DataType requiredInputType(Expression lhs, Expression rhs) {
         DataType lhsType = lhs.requiredInputType();
         DataType rhsType = rhs.requiredInputType();
         if (lhsType == null) {
@@ -91,7 +91,7 @@ public class ArithmeticExpression extends CompositeExpression {
             return lhsType;
         }
         if (!lhsType.equals(rhsType)) {
-            throw new VerificationException(this, "Operands require conflicting input types, " +
+            throw new VerificationException(ArithmeticExpression.class, "Operands require conflicting input types, " +
                                                   lhsType.getName() + " vs " + rhsType.getName() + ".");
         }
         return lhsType;

@@ -4,7 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 /**
  * @author Simon Thoresen Hult
  */
-public class IndexExpression extends OutputExpression {
+public final class IndexExpression extends OutputExpression {
 
     public IndexExpression(String fieldName) {
         super("index", fieldName);

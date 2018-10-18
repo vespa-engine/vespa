@@ -10,7 +10,7 @@ class TransportSecurityOptions;
 struct TlsContext {
     virtual ~TlsContext() = default;
 
-    static std::unique_ptr<TlsContext> create_default_context(const TransportSecurityOptions&);
+    static std::shared_ptr<TlsContext> create_default_context(const TransportSecurityOptions&);
 };
 
 }

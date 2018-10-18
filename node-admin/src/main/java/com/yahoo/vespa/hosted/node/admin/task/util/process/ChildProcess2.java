@@ -5,7 +5,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.process;
 /**
  * @author hakonhall
  */
-interface ChildProcess2 extends AutoCloseable {
+public interface ChildProcess2 extends AutoCloseable {
     void waitForTermination();
     int exitCode();
     String getOutput();

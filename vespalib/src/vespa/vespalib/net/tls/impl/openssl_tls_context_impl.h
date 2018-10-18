@@ -3,12 +3,15 @@
 
 #include "openssl_typedefs.h"
 #include <vespa/vespalib/net/tls/tls_context.h>
+#include <vespa/vespalib/net/tls/certificate_verification_callback.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace vespalib::net::tls::impl {
 
 class OpenSslTlsContextImpl : public TlsContext {
     SslCtxPtr _ctx;
+    // Callback provided by options
+    std::shared_ptr<CertificateVerificationCallback> _cert_verify_callback;
 public:
     explicit OpenSslTlsContextImpl(const TransportSecurityOptions&);
     ~OpenSslTlsContextImpl() override;
@@ -24,6 +27,7 @@ private:
     void enable_ephemeral_key_exchange();
     void disable_compression();
     void enforce_peer_certificate_verification();
+    void set_provided_certificate_verification_callback();
 };
 
 }

@@ -29,7 +29,7 @@ public class CapacityPolicies {
     }
 
     public int decideSize(Capacity requestedCapacity, ClusterSpec.Type clusterType) {
-        int requestedNodes = ensureRedundancy(requestedCapacity.nodeCount(), clusterType);
+        int requestedNodes = ensureRedundancy(requestedCapacity.nodeCount(), clusterType, requestedCapacity.canFail());
         if (requestedCapacity.isRequired()) return requestedNodes;
 
         switch(zone.environment()) {
@@ -69,13 +69,14 @@ public class CapacityPolicies {
      * Throw if the node count is 1 for container and content clusters and we're in a production zone
      *
      * @return the argument node count
-     * @throws IllegalArgumentException if only one node is requested
+     * @throws IllegalArgumentException if only one node is requested and we can fail
      */
-    private int ensureRedundancy(int nodeCount, ClusterSpec.Type clusterType) {
-        if (Arrays.asList(ClusterSpec.Type.container, ClusterSpec.Type.content).contains(clusterType) &&
-                nodeCount == 1 && zone.environment().isProduction() && zone.system() != SystemName.cd) {
+    private int ensureRedundancy(int nodeCount, ClusterSpec.Type clusterType, boolean canFail) {
+        if (canFail &&
+                nodeCount == 1 &&
+                Arrays.asList(ClusterSpec.Type.container, ClusterSpec.Type.content).contains(clusterType) &&
+                zone.environment().isProduction() && zone.system() != SystemName.cd)
             throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy");
-        }
         return nodeCount;
     }
 

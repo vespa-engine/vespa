@@ -17,6 +17,7 @@ import java.util.*;
  * @author bratseth
  */
 public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
+
     private Map<SummaryField, List<String>> summaryMap = new java.util.LinkedHashMap<>(1);
 
     public VsmSummary(Search search) {
@@ -80,10 +81,10 @@ public class VsmSummary extends Derived implements VsmsummaryConfig.Producer {
         return true;
     }
 
-    private List<String> toStringList(Iterator i) {
+    private List<String> toStringList(Iterator<SummaryField.Source> i) {
         List<String> ret = new ArrayList<>();
         while (i.hasNext()) {
-            ret.add(i.next().toString());
+            ret.add(i.next().getName());
         }
         return ret;
     }

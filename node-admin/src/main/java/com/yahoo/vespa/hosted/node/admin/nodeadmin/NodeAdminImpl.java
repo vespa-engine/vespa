@@ -2,14 +2,12 @@
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.metrics.CounterWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.GaugeWrapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
-import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
+import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
@@ -20,6 +18,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -40,9 +39,8 @@ public class NodeAdminImpl implements NodeAdmin {
     private final ScheduledExecutorService metricsScheduler =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("metricsscheduler"));
 
-    private final DockerOperations dockerOperations;
     private final Function<String, NodeAgent> nodeAgentFactory;
-    private final Runnable aclMaintainer;
+    private final Optional<AclMaintainer> aclMaintainer;
 
     private final Clock clock;
     private boolean previousWantFrozen;
@@ -54,21 +52,10 @@ public class NodeAdminImpl implements NodeAdmin {
     private final GaugeWrapper numberOfContainersInLoadImageState;
     private final CounterWrapper numberOfUnhandledExceptionsInNodeAgent;
 
-    public NodeAdminImpl(DockerOperations dockerOperations,
-                         Function<String, NodeAgent> nodeAgentFactory,
-                         StorageMaintainer storageMaintainer,
-                         Runnable aclMaintainer,
+    public NodeAdminImpl(Function<String, NodeAgent> nodeAgentFactory,
+                         Optional<AclMaintainer> aclMaintainer,
                          MetricReceiverWrapper metricReceiver,
                          Clock clock) {
-        this(dockerOperations, nodeAgentFactory, aclMaintainer, metricReceiver, clock);
-    }
-
-    public NodeAdminImpl(DockerOperations dockerOperations,
-                         Function<String, NodeAgent> nodeAgentFactory,
-                         Runnable aclMaintainer,
-                         MetricReceiverWrapper metricReceiver,
-                         Clock clock) {
-        this.dockerOperations = dockerOperations;
         this.nodeAgentFactory = nodeAgentFactory;
         this.aclMaintainer = aclMaintainer;
 
@@ -181,10 +168,12 @@ public class NodeAdminImpl implements NodeAdmin {
             }
         }, 10, 55, TimeUnit.SECONDS);
 
-        int delay = 120; // WARNING: Reducing this will increase the load on config servers.
-        aclScheduler.scheduleWithFixedDelay(() -> {
-            if (!isFrozen()) aclMaintainer.run();
-        }, 30, delay, TimeUnit.SECONDS);
+        aclMaintainer.ifPresent(maintainer -> {
+            int delay = 120; // WARNING: Reducing this will increase the load on config servers.
+            aclScheduler.scheduleWithFixedDelay(() -> {
+                if (!isFrozen()) maintainer.converge();
+            }, 30, delay, TimeUnit.SECONDS);
+        });
     }
 
     @Override
@@ -213,9 +202,6 @@ public class NodeAdminImpl implements NodeAdmin {
     }
 
     void synchronizeNodesToNodeAgents(Set<String> hostnamesToRun) {
-        Map<String, Container> runningContainersByHostname = dockerOperations.getAllManagedContainers().stream()
-                .collect(Collectors.toMap(c -> c.hostname, c -> c));
-
         // Stop and remove NodeAgents that should no longer be running
         diff(nodeAgentsByHostname.keySet(), hostnamesToRun)
                 .forEach(hostname -> nodeAgentsByHostname.remove(hostname).stop());
@@ -223,11 +209,6 @@ public class NodeAdminImpl implements NodeAdmin {
         // Start NodeAgent for hostnames that should be running, but aren't yet
         diff(hostnamesToRun, nodeAgentsByHostname.keySet())
                 .forEach(this::startNodeAgent);
-
-        // Remove containers that are running, but have no NodeAgent managing it (and after the previous steps,
-        // these containers shouldn't be running, otherwise a NodeAgent would have been created)
-        diff(runningContainersByHostname.keySet(), nodeAgentsByHostname.keySet())
-                .forEach(hostname -> dockerOperations.removeContainer(runningContainersByHostname.get(hostname)));
     }
 
     private void startNodeAgent(String hostname) {

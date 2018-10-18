@@ -6,6 +6,8 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
@@ -19,6 +21,7 @@ import com.yahoo.search.querytransform.RangeQueryOptimizer;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.Iterator;
 
 import static org.junit.Assert.*;
@@ -210,15 +213,15 @@ public class RangeQueryOptimizerTestCase {
     }
 
     private static IndexFacts createIndexFacts() {
-        IndexFacts indexFacts = new IndexFacts();
+        SearchDefinition sd = new SearchDefinition("test");
         Index singleValue1 = new Index("s");
         Index singleValue2 = new Index("t");
         Index multiValue = new Index("m");
         multiValue.setMultivalue(true);
-        indexFacts.addIndex("test", singleValue1);
-        indexFacts.addIndex("test", singleValue2);
-        indexFacts.addIndex("test", multiValue);
-        return indexFacts;
+        sd.addIndex(singleValue1);
+        sd.addIndex(singleValue2);
+        sd.addIndex(multiValue);
+        return new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(sd)));
     }
 
 }

@@ -76,7 +76,7 @@ public class StatementTestCase {
     @Test
     public void requireThatRequiredInputIsNullIfAnyOutputIsCreatedFirst() {
         assertNull(newStatement(new SimpleExpression().setCreatedOutput(DataType.INT),
-                                new SimpleExpression().setRequiredInput(DataType.INT)).requiredInputType());
+                                new SimpleExpression(DataType.INT)).requiredInputType());
     }
 
     @Test

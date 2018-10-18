@@ -9,16 +9,21 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.component.Environment;
-import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
+import com.yahoo.vespa.hosted.node.admin.component.ContainerEnvironmentResolver;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
+import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import org.junit.Test;
 import org.mockito.InOrder;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -33,58 +38,50 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class DockerOperationsImplTest {
-    private final Environment environment = new Environment.Builder()
-            .configServerConfig(new ConfigServerConfig(new ConfigServerConfig.Builder()))
-            .region("us-east-1")
-            .environment("prod")
-            .system("main")
-            .cloud("mycloud")
-            .dockerNetworking(DockerNetworking.HOST_NETWORK)
-            .build();
     private final Docker docker = mock(Docker.class);
     private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
-    private final DockerOperationsImpl dockerOperations
-            = new DockerOperationsImpl(docker, environment, processExecuter);
+    private final ContainerEnvironmentResolver containerEnvironmentResolver = node -> "";
+    private final IPAddresses ipAddresses = new IPAddressesMock();
+    private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(
+            docker, processExecuter, containerEnvironmentResolver, Collections.emptyList(), ipAddresses);
 
     @Test
     public void processResultFromNodeProgramWhenSuccess() {
-        final ContainerName containerName = new ContainerName("container-name");
+        final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld").build();
         final ProcessResult actualResult = new ProcessResult(0, "output", "errors");
-        final String programPath = "/bin/command";
-        final String[] command = new String[]{programPath, "arg"};
 
-        when(docker.executeInContainerAsRoot(any(), anyVararg()))
+        when(docker.executeInContainerAsUser(any(), any(), any(), anyVararg()))
                 .thenReturn(actualResult); // output from node program
 
-        ProcessResult result = dockerOperations.executeCommandInContainer(containerName, command);
+        ProcessResult result = dockerOperations.executeNodeCtlInContainer(context, "start");
 
         final InOrder inOrder = inOrder(docker);
-        inOrder.verify(docker, times(1)).executeInContainerAsRoot(
-                eq(containerName),
-                eq(command[0]),
-                eq(command[1]));
+        inOrder.verify(docker, times(1)).executeInContainerAsUser(
+                eq(context.containerName()),
+                eq("root"),
+                eq(OptionalLong.empty()),
+                eq("/opt/vespa/bin/vespa-nodectl"),
+                eq("start"));
 
         assertThat(result, is(actualResult));
     }
 
     @Test(expected = RuntimeException.class)
     public void processResultFromNodeProgramWhenNonZeroExitCode() {
-        final ContainerName containerName = new ContainerName("container-name");
+        final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld").build();
         final ProcessResult actualResult = new ProcessResult(3, "output", "errors");
-        final String programPath = "/bin/command";
-        final String[] command = new String[]{programPath, "arg"};
 
-        when(docker.executeInContainerAsRoot(any(), anyVararg()))
+        when(docker.executeInContainerAsUser(any(), any(), any(), anyVararg()))
                 .thenReturn(actualResult); // output from node program
 
-        dockerOperations.executeCommandInContainer(containerName, command);
+        dockerOperations.executeNodeCtlInContainer(context, "start");
     }
 
     @Test
     public void runsCommandInNetworkNamespace() throws IOException {
         Container container = makeContainer("container-42", Container.State.RUNNING, 42);
 
-        when(processExecuter.exec(aryEq(new String[]{"nsenter", "--net=/host/proc/42/ns/net", "--", "iptables", "-nvL"})))
+        when(processExecuter.exec(aryEq(new String[]{"nsenter", "--net=/proc/42/ns/net", "--", "iptables", "-nvL"})))
                 .thenReturn(new Pair<>(0, ""));
 
         dockerOperations.executeCommandInNetworkNamespace(container.name, "iptables", "-nvL");
@@ -104,10 +101,6 @@ public class DockerOperationsImplTest {
         InetAddress ipV6Local = InetAddresses.forString("::1");
         InetAddress ipV4Local = InetAddresses.forString("127.0.0.1");
 
-        DockerOperationsImpl dockerOperations = new DockerOperationsImpl(
-                docker,
-                environment,
-                processExecuter);
         dockerOperations.addEtcHosts(containerData, hostname, Optional.empty(), ipV6Local);
 
         verify(containerData, times(1)).addFile(

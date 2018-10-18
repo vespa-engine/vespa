@@ -6,7 +6,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
  *
  * @author steinar
  */
-public class PassthroughExpression extends OutputExpression {
+public final class PassthroughExpression extends OutputExpression {
 
     private static final String PASSTHROUGH = "passthrough";
 

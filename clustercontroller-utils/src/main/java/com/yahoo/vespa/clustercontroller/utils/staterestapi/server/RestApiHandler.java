@@ -34,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class RestApiHandler implements HttpRequestHandler {
+
     public static final Duration MAX_TIMEOUT = Duration.ofHours(1);
 
     private final static Logger log = Logger.getLogger(RestApiHandler.class.getName());
@@ -56,8 +57,7 @@ public class RestApiHandler implements HttpRequestHandler {
 
     private static void logRequestException(HttpRequest request, Exception exception, Level level) {
         String exceptionString = Exceptions.toMessageString(exception);
-        log.log(level, "Failed to process request with URI path " +
-                request.getPath() + ": " + exceptionString);
+        log.log(level, "Failed to process request with URI path " + request.getPath() + ": " + exceptionString);
     }
 
     @Override

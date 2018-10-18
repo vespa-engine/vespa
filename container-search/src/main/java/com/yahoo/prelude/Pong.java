@@ -53,7 +53,8 @@ public class Pong {
      * 
      * @deprecated do not use
      */
-    @Deprecated
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public Optional<PongPacket> getPongPacket() { return pongPacket; }
     
     /** Returns the number of active documents in the backend responding in this Pong, if available */

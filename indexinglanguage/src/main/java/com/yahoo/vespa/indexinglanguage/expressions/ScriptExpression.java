@@ -12,23 +12,24 @@ import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class ScriptExpression extends ExpressionList<StatementExpression> {
+public final class ScriptExpression extends ExpressionList<StatementExpression> {
 
     public ScriptExpression() {
-        super();
+        this(Collections.emptyList());
     }
 
     public ScriptExpression(StatementExpression... lst) {
-        super(Arrays.asList(lst));
+        this(Arrays.asList(lst));
     }
 
     public ScriptExpression(Collection<? extends StatementExpression> lst) {
-        super(lst);
+        super(lst, resolveInputType(lst));
     }
 
     @Override
@@ -49,15 +50,14 @@ public class ScriptExpression extends ExpressionList<StatementExpression> {
         context.setValue(input);
     }
 
-    @Override
-    public DataType requiredInputType() {
+    private static DataType resolveInputType(Collection<? extends StatementExpression> list) {
         DataType prev = null;
-        for (Expression exp : this) {
+        for (Expression exp : list) {
             DataType next = exp.requiredInputType();
             if (prev == null) {
                 prev = next;
             } else if (next != null && !prev.isAssignableFrom(next)) {
-                throw new VerificationException(this, "Statements require conflicting input types, " +
+                throw new VerificationException(ScriptExpression.class, "Statements require conflicting input types, " +
                                                       prev.getName() + " vs " + next.getName() + ".");
             }
         }

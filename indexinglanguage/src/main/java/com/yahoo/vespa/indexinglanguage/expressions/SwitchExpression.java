@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * @author Simon Thoresen Hult
  */
-public class SwitchExpression extends CompositeExpression {
+public final class SwitchExpression extends CompositeExpression {
 
     private final Map<String, Expression> cases = new LinkedHashMap<>();
     private final Expression defaultExp;
@@ -26,6 +26,7 @@ public class SwitchExpression extends CompositeExpression {
     }
 
     public <T extends Expression> SwitchExpression(Map<String, T> cases, Expression defaultExp) {
+        super(null);
         this.defaultExp = defaultExp;
         for (Map.Entry<String, T> entry : cases.entrySet()) {
             this.cases.put(entry.getKey(), entry.getValue());
@@ -87,11 +88,6 @@ public class SwitchExpression extends CompositeExpression {
         }
         context.setValue(input).execute(defaultExp);
         context.setValue(input);
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return null;
     }
 
     @Override

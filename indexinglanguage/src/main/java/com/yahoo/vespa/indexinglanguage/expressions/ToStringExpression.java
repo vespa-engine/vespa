@@ -7,8 +7,11 @@ import com.yahoo.document.datatypes.StringFieldValue;
 /**
  * @author Simon Thoresen Hult
  */
-public class ToStringExpression extends Expression {
+public final class ToStringExpression extends Expression {
 
+    public ToStringExpression() {
+        super(UnresolvedDataType.INSTANCE);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         ctx.setValue(new StringFieldValue(String.valueOf(ctx.getValue())));
@@ -17,11 +20,6 @@ public class ToStringExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

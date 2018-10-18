@@ -87,7 +87,6 @@
         <module>jdisc_jetty</module>
         <module>jdisc_messagebus_service</module>
         <module>jrt</module>
-        <module>libmlr</module>
         <module>linguistics</module>
         <module>logd</module>
         <module>logserver</module>

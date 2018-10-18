@@ -16,7 +16,9 @@ public class BinaryUnit {
     public static double valueOf(String valueString) {
         Matcher matcher = pattern.matcher(valueString);
 
-        matcher.matches();
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Value '" + valueString + "' does not match the pattern for binary unit");
+        }
         double value = Double.valueOf(matcher.group(1));
         String unit = matcher.group(3);
         if (unit != null) {

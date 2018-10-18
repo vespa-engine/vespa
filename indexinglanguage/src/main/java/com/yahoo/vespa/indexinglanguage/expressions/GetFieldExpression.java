@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.datatypes.FieldValue;
@@ -11,11 +10,12 @@ import com.yahoo.document.datatypes.StructuredFieldValue;
 /**
  * @author Simon Thoresen Hult
  */
-public class GetFieldExpression extends Expression {
+public final class GetFieldExpression extends Expression {
 
     private final String fieldName;
 
     public GetFieldExpression(String fieldName) {
+        super(UnresolvedDataType.INSTANCE);
         this.fieldName = fieldName;
     }
 
@@ -50,11 +50,6 @@ public class GetFieldExpression extends Expression {
                                                   input.getName() + "'");
         }
         context.setValue(field.getDataType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

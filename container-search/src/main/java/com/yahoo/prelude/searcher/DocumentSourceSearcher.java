@@ -30,7 +30,8 @@ import java.util.Set;
  * @deprecated use {@link com.yahoo.search.searchchain.testutil.DocumentSourceSearcher}
  */
 @SuppressWarnings({"rawtypes"})
-@Deprecated // TODO: Remove on Vespa 7
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public class DocumentSourceSearcher extends Searcher {
 
     // as for the SuppressWarnings annotation above, we are inside

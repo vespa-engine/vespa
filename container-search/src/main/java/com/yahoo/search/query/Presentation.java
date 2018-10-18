@@ -97,12 +97,12 @@ public class Presentation implements Cloneable {
     public void setBolding(boolean bolding) { this.bolding = bolding; }
 
     /** @deprecated coverage information is always returned */
-    @Deprecated
+    @Deprecated // OK
     // TODO: Remove on Vespa 7
     public boolean getReportCoverage() { return true; }
 
     /** @deprecated coverage information is always returned */
-    @Deprecated
+    @Deprecated // OK
     // TODO: Remove on Vespa 7
     public void setReportCoverage(boolean ignored) { }
 

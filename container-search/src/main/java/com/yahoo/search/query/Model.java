@@ -99,7 +99,8 @@ public class Model implements Cloneable {
      * 
      * @deprecated do not use; language can now be assigned later and for parts of the query tree, making this quite useless
      */
-    @Deprecated
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public void traceLanguage() {
         if (getParent().getTraceLevel() < 2) return;
         if (language != null) {
@@ -536,7 +537,8 @@ public class Model implements Cloneable {
      * @param next string representation of header value
      * @deprecated not used, ytrace has been discontinued
      */
-    @Deprecated
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public void setYTraceHeaderToNext(String next) { }
 
     /**
@@ -546,7 +548,8 @@ public class Model implements Cloneable {
      * 
      * @deprecated not used, ytrace has been discontinued
      */
-    @Deprecated
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public String getYTraceHeaderToNext() {
         return null;
     }

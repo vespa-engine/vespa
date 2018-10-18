@@ -6,10 +6,10 @@
 
 namespace vespalib::net::tls {
 
-std::unique_ptr<CryptoCodec> CryptoCodec::create_default_codec(TlsContext& ctx, Mode mode) {
-    auto* ssl_ctx = dynamic_cast<impl::OpenSslTlsContextImpl*>(&ctx);
-    assert(ssl_ctx != nullptr);
-    return std::make_unique<impl::OpenSslCryptoCodecImpl>(*ssl_ctx->native_context(), mode);
+std::unique_ptr<CryptoCodec> CryptoCodec::create_default_codec(std::shared_ptr<TlsContext> ctx, Mode mode) {
+    auto ctx_impl = std::dynamic_pointer_cast<impl::OpenSslTlsContextImpl>(ctx); // only takes by const ref
+    assert(ctx_impl);
+    return std::make_unique<impl::OpenSslCryptoCodecImpl>(std::move(ctx_impl), mode);
 }
 
 }

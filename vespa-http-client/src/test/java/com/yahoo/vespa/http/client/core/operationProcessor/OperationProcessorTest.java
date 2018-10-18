@@ -11,6 +11,7 @@ import com.yahoo.vespa.http.client.core.EndpointResult;
 import org.junit.Test;
 
 import java.util.ArrayDeque;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -173,12 +175,15 @@ public class OperationProcessorTest {
         assertThat(queue.size(), is(0));
         // Only one operations should be in flight.
         assertThat(operationProcessor.getIncompleteResultQueueSize(), is(1));
+        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.of(doc1.getOperationId())));
         operationProcessor.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("host"))), 0);
         assertThat(queue.size(), is(1));
         assertThat(operationProcessor.getIncompleteResultQueueSize(), is(1));
+        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.of(doc1b.getOperationId())));
         operationProcessor.resultReceived(new EndpointResult(doc1b.getOperationId(), new Result.Detail(Endpoint.create("host"))), 0);
         assertThat(queue.size(), is(2));
         assertThat(operationProcessor.getIncompleteResultQueueSize(), is(0));
+        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.empty()));
         // This should have no effect.
         operationProcessor.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("host"))), 0);
         operationProcessor.resultReceived(new EndpointResult(doc1b.getOperationId(), new Result.Detail(Endpoint.create("host"))), 0);
@@ -239,18 +244,24 @@ public class OperationProcessorTest {
 
         assertThat(queue.size(), is(0));
         assertThat(operationProcessor.getIncompleteResultQueueSize(), is(3));
+        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.of(doc1.getOperationId())));
         // This should have no effect since it should not be sent.
         operationProcessor.resultReceived(new EndpointResult(doc1b.getOperationId(), new Result.Detail(endpoint)), 0);
         assertThat(operationProcessor.getIncompleteResultQueueSize(), is(3));
+        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.of(doc1.getOperationId())));
 
         operationProcessor.resultReceived(new EndpointResult(doc3.getOperationId(), new Result.Detail(endpoint)), 0);
         assertThat(operationProcessor.getIncompleteResultQueueSize(), is(2));
+        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.of(doc1.getOperationId())));
         operationProcessor.resultReceived(new EndpointResult(doc2.getOperationId(), new Result.Detail(endpoint)), 0);
         assertThat(operationProcessor.getIncompleteResultQueueSize(), is(1));
+        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.of(doc1.getOperationId())));
         operationProcessor.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(endpoint)), 0);
         assertThat(operationProcessor.getIncompleteResultQueueSize(), is(1));
+        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.of(doc1b.getOperationId())));
         operationProcessor.resultReceived(new EndpointResult(doc1b.getOperationId(), new Result.Detail(endpoint)), 0);
         assertThat(operationProcessor.getIncompleteResultQueueSize(), is(0));
+        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.empty()));
     }
 
     @Test

@@ -21,7 +21,8 @@ import java.io.Writer;
  * @deprecated use a renderer instead
  */
 @SuppressWarnings("deprecation")
-@Deprecated // TODO: Remove on Vespa 7
+@Deprecated // OK (But wait for deprecated handlers in vespaclient-container-plugin to be removed)
+// TODO: Remove on Vespa 7
 public class TemplateSet<T extends Writer> extends UserTemplate<T> {
 
     private static final String queryContextTemplateName = "queryContext";

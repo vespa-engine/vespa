@@ -12,23 +12,23 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.component.Environment;
+import com.yahoo.vespa.hosted.node.admin.component.ContainerEnvironmentResolver;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
-import com.yahoo.vespa.hosted.node.admin.util.PrefixLogger;
 
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
@@ -38,66 +38,56 @@ import java.util.stream.Stream;
  */
 public class DockerOperationsImpl implements DockerOperations {
 
+    private static final Logger logger = Logger.getLogger(DockerOperationsImpl.class.getName());
+
     private static final String MANAGER_NAME = "node-admin";
 
     private static final String IPV6_NPT_PREFIX = "fd00::";
     private static final String IPV4_NPT_PREFIX = "172.17.0.0";
 
     private final Docker docker;
-    private final Environment environment;
     private final ProcessExecuter processExecuter;
-    private final String nodeProgram;
-    private final Map<Path, Boolean> directoriesToMount;
+    private final ContainerEnvironmentResolver containerEnvironmentResolver;
+    private final List<String> configServerHostnames;
+    private final IPAddresses ipAddresses;
 
-    public DockerOperationsImpl(Docker docker, Environment environment, ProcessExecuter processExecuter) {
+    public DockerOperationsImpl(Docker docker, ProcessExecuter processExecuter,
+                                ContainerEnvironmentResolver containerEnvironmentResolver,
+                                List<String> configServerHostnames, IPAddresses ipAddresses) {
         this.docker = docker;
-        this.environment = environment;
         this.processExecuter = processExecuter;
-
-        this.nodeProgram = environment.pathInNodeUnderVespaHome("bin/vespa-nodectl").toString();
-        this.directoriesToMount = getDirectoriesToMount(environment);
+        this.containerEnvironmentResolver = containerEnvironmentResolver;
+        this.configServerHostnames = configServerHostnames;
+        this.ipAddresses = ipAddresses;
     }
 
     @Override
-    public void createContainer(ContainerName containerName, NodeSpec node, ContainerData containerData) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-        logger.info("Creating container " + containerName);
+    public void createContainer(NodeAgentContext context, NodeSpec node, ContainerData containerData) {
+        context.log(logger, "Creating container");
 
         // IPv6 - Assume always valid
-        Inet6Address ipV6Address = environment.getIpAddresses().getIPv6Address(node.getHostname()).orElseThrow(
+        Inet6Address ipV6Address = ipAddresses.getIPv6Address(node.getHostname()).orElseThrow(
                 () -> new RuntimeException("Unable to find a valid IPv6 address for " + node.getHostname() +
                         ". Missing an AAAA DNS entry?"));
 
-        String configServers = String.join(",", environment.getConfigServerHostNames());
+        String configServers = String.join(",", configServerHostnames);
 
         Docker.CreateContainerCommand command = docker.createContainerCommand(
                 node.getWantedDockerImage().get(),
                 ContainerResources.from(node.getMinCpuCores(), node.getMinMainMemoryAvailableGb()),
-                containerName,
+                context.containerName(),
                 node.getHostname())
                 .withManagedBy(MANAGER_NAME)
                 .withEnvironment("VESPA_CONFIGSERVERS", configServers)
-                .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS",
-                                 environment.getContainerEnvironmentResolver().createSettings(environment, node))
+                .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS", containerEnvironmentResolver.createSettings(node))
                 .withUlimit("nofile", 262_144, 262_144)
                 .withUlimit("nproc", 32_768, 409_600)
                 .withUlimit("core", -1, -1)
                 .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
                 .withAddCapability("SYS_ADMIN"); // Needed for perf
 
-        if (isInfrastructureHost(environment.getNodeType())) {
-            command.withVolume("/var/lib/sia", "/var/lib/sia");
-        }
 
-        if (environment.getNodeType() == NodeType.proxyhost) {
-            command.withVolume("/opt/yahoo/share/ssl/certs", "/opt/yahoo/share/ssl/certs");
-        }
-
-        if (environment.getNodeType() == NodeType.host) {
-            command.withSharedVolume("/var/zpe", environment.pathInNodeUnderVespaHome("var/zpe").toString());
-        }
-
-        DockerNetworking networking = environment.getDockerNetworking();
+        DockerNetworking networking = context.dockerNetworking();
         command.withNetworkMode(networking.getDockerNetworkMode());
 
         if (networking == DockerNetworking.NPT) {
@@ -106,7 +96,7 @@ public class DockerOperationsImpl implements DockerOperations {
             command.withIpAddress(ipV6Local);
 
             // IPv4 - Only present for some containers
-            Optional<InetAddress> ipV4Local = environment.getIpAddresses().getIPv4Address(node.getHostname())
+            Optional<InetAddress> ipV4Local = ipAddresses.getIPv4Address(node.getHostname())
                     .map(ipV4Address -> {
                         InetAddress ipV4Prefix = InetAddresses.forString(IPV4_NPT_PREFIX);
                         return IPAddresses.prefixTranslate(ipV4Address, ipV4Prefix, 2);
@@ -116,10 +106,7 @@ public class DockerOperationsImpl implements DockerOperations {
             addEtcHosts(containerData, node.getHostname(), ipV4Local, ipV6Local);
         }
 
-        for (Path pathInNode : directoriesToMount.keySet()) {
-            String pathInHost = environment.pathInHostFromPathInNode(containerName, pathInNode).toString();
-            command.withVolume(pathInHost, pathInNode.toString());
-        }
+        addMounts(context, command);
 
         // TODO: Enforce disk constraints
         long minMainMemoryAvailableMb = (long) (node.getMinMainMemoryAvailableGb() * 1024);
@@ -164,35 +151,25 @@ public class DockerOperationsImpl implements DockerOperations {
     }
 
     @Override
-    public void startContainer(ContainerName containerName) {
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-        logger.info("Starting container " + containerName);
-
-        docker.startContainer(containerName);
-
-        directoriesToMount.entrySet().stream()
-                .filter(Map.Entry::getValue)
-                .map(Map.Entry::getKey)
-                .forEach(path ->
-                        docker.executeInContainerAsRoot(containerName, "chmod", "-R", "a+w", path.toString()));
+    public void startContainer(NodeAgentContext context) {
+        context.log(logger, "Starting container");
+        docker.startContainer(context.containerName());
     }
 
     @Override
-    public void removeContainer(Container existingContainer) {
-        final ContainerName containerName = existingContainer.name;
-        PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
-        if (existingContainer.state.isRunning()) {
-            logger.info("Stopping container " + containerName.asString());
-            docker.stopContainer(containerName);
+    public void removeContainer(NodeAgentContext context, Container container) {
+        if (container.state.isRunning()) {
+            context.log(logger, "Stopping container");
+            docker.stopContainer(context.containerName());
         }
 
-        logger.info("Deleting container " + containerName.asString());
-        docker.deleteContainer(containerName);
+        context.log(logger, "Deleting container");
+        docker.deleteContainer(context.containerName());
     }
 
     @Override
-    public Optional<Container> getContainer(ContainerName containerName) {
-        return docker.getContainer(containerName);
+    public Optional<Container> getContainer(NodeAgentContext context) {
+        return docker.getContainer(context.containerName());
     }
 
     @Override
@@ -200,88 +177,83 @@ public class DockerOperationsImpl implements DockerOperations {
         return docker.pullImageAsyncIfNeeded(dockerImage);
     }
 
-    ProcessResult executeCommandInContainer(ContainerName containerName, String... command) {
-        ProcessResult result = docker.executeInContainerAsRoot(containerName, command);
-
-        if (!result.isSuccess()) {
-            throw new RuntimeException("Container " + containerName.asString() +
-                    ": command " + Arrays.toString(command) + " failed: " + result);
-        }
-        return result;
+    @Override
+    public ProcessResult executeCommandInContainerAsRoot(NodeAgentContext context, Long timeoutSeconds, String... command) {
+        return docker.executeInContainerAsUser(context.containerName(), "root", OptionalLong.of(timeoutSeconds), command);
     }
 
     @Override
-    public ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... command) {
-        return docker.executeInContainerAsRoot(containerName, timeoutSeconds, command);
-    }
-
-    @Override
-    public ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String... command) {
-        return docker.executeInContainerAsRoot(containerName, command);
+    public ProcessResult executeCommandInContainerAsRoot(NodeAgentContext context, String... command) {
+        return docker.executeInContainerAsUser(context.containerName(), "root", OptionalLong.empty(), command);
     }
 
     @Override
     public ProcessResult executeCommandInNetworkNamespace(ContainerName containerName, String... command) {
-        final PrefixLogger logger = PrefixLogger.getNodeAgentLogger(DockerOperationsImpl.class, containerName);
         final Integer containerPid = docker.getContainer(containerName)
                 .filter(container -> container.state.isRunning())
                 .map(container -> container.pid)
                 .orElseThrow(() -> new RuntimeException("PID not found for container with name: " +
                         containerName.asString()));
 
-        Path procPath = environment.getPathResolver().getPathToRootOfHost().resolve("proc");
-
         final String[] wrappedCommand = Stream.concat(
-                Stream.of("nsenter", String.format("--net=%s/%d/ns/net", procPath, containerPid), "--"),
+                Stream.of("nsenter", String.format("--net=/proc/%d/ns/net", containerPid), "--"),
                 Stream.of(command))
                 .toArray(String[]::new);
 
         try {
             Pair<Integer, String> result = processExecuter.exec(wrappedCommand);
             if (result.getFirst() != 0) {
-                String msg = String.format(
+                throw new RuntimeException(String.format(
                         "Failed to execute %s in network namespace for %s (PID = %d), exit code: %d, output: %s",
-                        Arrays.toString(wrappedCommand), containerName.asString(), containerPid, result.getFirst(), result.getSecond());
-                logger.error(msg);
-                throw new RuntimeException(msg);
+                        Arrays.toString(wrappedCommand), containerName.asString(), containerPid, result.getFirst(), result.getSecond()));
             }
             return new ProcessResult(0, result.getSecond(), "");
         } catch (IOException e) {
-            logger.warning(String.format("IOException while executing %s in network namespace for %s (PID = %d)",
+            throw new RuntimeException(String.format("IOException while executing %s in network namespace for %s (PID = %d)",
                     Arrays.toString(wrappedCommand), containerName.asString(), containerPid), e);
-            throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void resumeNode(ContainerName containerName) {
-        executeCommandInContainer(containerName, nodeProgram, "resume");
+    public void resumeNode(NodeAgentContext context) {
+        executeNodeCtlInContainer(context, "resume");
     }
 
     @Override
-    public void suspendNode(ContainerName containerName) {
-        executeCommandInContainer(containerName, nodeProgram, "suspend");
+    public void suspendNode(NodeAgentContext context) {
+        executeNodeCtlInContainer(context, "suspend");
     }
 
     @Override
-    public void restartVespa(ContainerName containerName) {
-        executeCommandInContainer(containerName, nodeProgram, "restart-vespa");
+    public void restartVespa(NodeAgentContext context) {
+        executeNodeCtlInContainer(context, "restart-vespa");
     }
 
     @Override
-    public void startServices(ContainerName containerName) {
-        executeCommandInContainer(containerName, nodeProgram, "start");
+    public void startServices(NodeAgentContext context) {
+        executeNodeCtlInContainer(context, "start");
     }
 
     @Override
-    public void stopServices(ContainerName containerName) {
-        executeCommandInContainer(containerName, nodeProgram, "stop");
+    public void stopServices(NodeAgentContext context) {
+        executeNodeCtlInContainer(context, "stop");
+    }
+
+    ProcessResult executeNodeCtlInContainer(NodeAgentContext context, String program) {
+        String[] command = new String[] {context.pathInNodeUnderVespaHome("bin/vespa-nodectl").toString(), program};
+        ProcessResult result = executeCommandInContainerAsRoot(context, command);
+
+        if (!result.isSuccess()) {
+            throw new RuntimeException("Container " + context.containerName().asString() +
+                    ": command " + Arrays.toString(command) + " failed: " + result);
+        }
+        return result;
     }
 
 
     @Override
-    public Optional<ContainerStats> getContainerStats(ContainerName containerName) {
-        return docker.getContainerStats(containerName);
+    public Optional<ContainerStats> getContainerStats(NodeAgentContext context) {
+        return docker.getContainerStats(context.containerName());
     }
 
     @Override
@@ -292,55 +264,70 @@ public class DockerOperationsImpl implements DockerOperations {
     /**
      * Returns map of directories to mount and whether they should be writable by everyone
      */
-    private static Map<Path, Boolean> getDirectoriesToMount(Environment environment) {
-        final Map<Path, Boolean> directoriesToMount = new HashMap<>();
-        directoriesToMount.put(Paths.get("/etc/yamas-agent"), true);
-        directoriesToMount.put(Paths.get("/etc/filebeat"), true);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/daemontools_y"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/jdisc_core"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/langdetect/"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/vespa"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/yca"), true);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/yck"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/yell"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/ykeykey"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/ykeykeyd"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/yms_agent"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/ysar"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/ystatus"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("logs/zpu"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/cache"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/crash"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/db/jdisc"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/db/vespa"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/jdisc_container"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/jdisc_core"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/maven"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/mediasearch"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/run"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/scoreboards"), true);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/service"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/share"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/spool"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/vespa"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/yca"), true);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/ycore++"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/zookeeper"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("tmp"), false);
-        directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/container-data"), false);
-        if (environment.getNodeType() == NodeType.proxyhost)
-            directoriesToMount.put(environment.pathInNodeUnderVespaHome("var/vespa-hosted/routing"), true);
-        if (environment.getNodeType() == NodeType.host)
-            directoriesToMount.put(Paths.get("/var/lib/sia"), true);
+    private static void addMounts(NodeAgentContext context, Docker.CreateContainerCommand command) {
+        final Path varLibSia = Paths.get("/var/lib/sia");
 
-        return Collections.unmodifiableMap(directoriesToMount);
+        // Paths unique to each container
+        List<Path> paths = new ArrayList<>(Arrays.asList(
+                Paths.get("/etc/yamas-agent"),
+                context.pathInNodeUnderVespaHome("logs/daemontools_y"),
+                context.pathInNodeUnderVespaHome("logs/jdisc_core"),
+                context.pathInNodeUnderVespaHome("logs/langdetect/"),
+                context.pathInNodeUnderVespaHome("logs/nginx"),
+                context.pathInNodeUnderVespaHome("logs/vespa"),
+                context.pathInNodeUnderVespaHome("logs/yca"),
+                context.pathInNodeUnderVespaHome("logs/yck"),
+                context.pathInNodeUnderVespaHome("logs/yell"),
+                context.pathInNodeUnderVespaHome("logs/ykeykey"),
+                context.pathInNodeUnderVespaHome("logs/ykeykeyd"),
+                context.pathInNodeUnderVespaHome("logs/yms_agent"),
+                context.pathInNodeUnderVespaHome("logs/ysar"),
+                context.pathInNodeUnderVespaHome("logs/ystatus"),
+                context.pathInNodeUnderVespaHome("logs/zpu"),
+                context.pathInNodeUnderVespaHome("var/cache"),
+                context.pathInNodeUnderVespaHome("var/crash"),
+                context.pathInNodeUnderVespaHome("var/db/jdisc"),
+                context.pathInNodeUnderVespaHome("var/db/vespa"),
+                context.pathInNodeUnderVespaHome("var/jdisc_container"),
+                context.pathInNodeUnderVespaHome("var/jdisc_core"),
+                context.pathInNodeUnderVespaHome("var/maven"),
+                context.pathInNodeUnderVespaHome("var/mediasearch"),
+                context.pathInNodeUnderVespaHome("var/run"),
+                context.pathInNodeUnderVespaHome("var/scoreboards"),
+                context.pathInNodeUnderVespaHome("var/service"),
+                context.pathInNodeUnderVespaHome("var/share"),
+                context.pathInNodeUnderVespaHome("var/spool"),
+                context.pathInNodeUnderVespaHome("var/vespa"),
+                context.pathInNodeUnderVespaHome("var/yca"),
+                context.pathInNodeUnderVespaHome("var/ycore++"),
+                context.pathInNodeUnderVespaHome("var/zookeeper"),
+                context.pathInNodeUnderVespaHome("tmp"),
+                context.pathInNodeUnderVespaHome("var/container-data")));
+
+        if (context.nodeType() == NodeType.proxyhost)
+            paths.add(context.pathInNodeUnderVespaHome("var/vespa-hosted/routing"));
+        if (context.nodeType() == NodeType.host)
+            paths.add(varLibSia);
+
+        paths.forEach(path -> command.withVolume(context.pathOnHostFromPathInNode(path), path));
+
+
+        // Shared paths
+        if (isInfrastructureHost(context.nodeType()))
+            command.withSharedVolume(varLibSia, varLibSia);
+
+        if (context.nodeType() == NodeType.proxyhost || context.nodeType() == NodeType.controllerhost)
+            command.withSharedVolume(Paths.get("/opt/yahoo/share/ssl/certs"), Paths.get("/opt/yahoo/share/ssl/certs"));
+
+        if (context.nodeType() == NodeType.host)
+            command.withSharedVolume(Paths.get("/var/zpe"), context.pathInNodeUnderVespaHome("var/zpe"));
     }
 
     /** Returns whether given nodeType is a Docker host for infrastructure nodes */
     private static boolean isInfrastructureHost(NodeType nodeType) {
         return nodeType == NodeType.confighost ||
-               nodeType == NodeType.proxyhost ||
-               nodeType == NodeType.controllerhost;
+                nodeType == NodeType.proxyhost ||
+                nodeType == NodeType.controllerhost;
     }
 
 }

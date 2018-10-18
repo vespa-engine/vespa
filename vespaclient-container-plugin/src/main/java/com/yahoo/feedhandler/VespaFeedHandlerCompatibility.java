@@ -12,7 +12,8 @@ import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 /**
  * @deprecated Legacy API. Will be removed in Vespa 7
  */
-@Deprecated
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public class VespaFeedHandlerCompatibility extends ThreadedHttpRequestHandler {
 
     private final VespaFeedHandlerGet getHandler;

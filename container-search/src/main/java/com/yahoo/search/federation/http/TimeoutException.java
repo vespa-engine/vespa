@@ -5,7 +5,10 @@ package com.yahoo.search.federation.http;
  * Timeout marker for slow HTTP connections.
  *
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @deprecated
  */
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public class TimeoutException extends RuntimeException {
 
     /**

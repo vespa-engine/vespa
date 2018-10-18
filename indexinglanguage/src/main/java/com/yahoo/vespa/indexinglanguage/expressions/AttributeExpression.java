@@ -4,7 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 /**
  * @author Simon Thoresen Hult
  */
-public class AttributeExpression extends OutputExpression {
+public final class AttributeExpression extends OutputExpression {
 
     public AttributeExpression(String fieldName) {
         super("attribute", fieldName);

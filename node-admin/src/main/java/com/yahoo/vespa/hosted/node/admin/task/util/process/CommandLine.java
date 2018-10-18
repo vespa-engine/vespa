@@ -220,8 +220,10 @@ public class CommandLine {
         this.sigKillGracePeriod = period;
         return this;
     }
+
+    public List<String> getArguments() { return Collections.unmodifiableList(arguments); }
+
     // Accessor fields necessary for classes in this package. Could be public if necessary.
-    List<String> getArguments() { return Collections.unmodifiableList(arguments); }
     boolean getRedirectStderrToStdoutInsteadOfDiscard() { return redirectStderrToStdoutInsteadOfDiscard; }
     Predicate<Integer> getSuccessfulExitCodePredicate() { return successfulExitCodePredicate; }
     Charset getOutputEncoding() { return outputEncoding; }

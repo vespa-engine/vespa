@@ -11,7 +11,10 @@ import com.yahoo.prelude.query.*;
  *
  * @author Steinar Knutsen
  * @author Rong-En Fan
+ * @deprecated use YQL
  */
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public class QueryMarshaller {
 
     private boolean atRoot = true;

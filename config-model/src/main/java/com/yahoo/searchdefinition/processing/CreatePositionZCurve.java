@@ -133,11 +133,11 @@ public class CreatePositionZCurve extends Processor {
 
     private Set<String> removeSummaryTo(SDField field) {
         Set<String> summaryTo = new HashSet<>();
-        Collection<SummaryField> summaryFields = field.getSummaryFields();
+        Collection<SummaryField> summaryFields = field.getSummaryFields().values();
         for (SummaryField summary : summaryFields) {
             summaryTo.addAll(summary.getDestinations());
         }
-        summaryFields.clear();
+        field.removeSummaryFields();
         return summaryTo;
     }
 

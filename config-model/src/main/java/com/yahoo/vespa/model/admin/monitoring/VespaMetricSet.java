@@ -334,6 +334,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_collateral_time.average"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.query_latency.average"));
         metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.docs_matched.rate"));
+        metrics.add(new Metric("content.proton.documentdb.matching.rank_profile.limited_queries.rate"));
 
         return metrics;
     }

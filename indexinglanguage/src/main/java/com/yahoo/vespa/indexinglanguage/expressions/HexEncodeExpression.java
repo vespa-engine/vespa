@@ -2,15 +2,17 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class HexEncodeExpression extends Expression {
+public final class HexEncodeExpression extends Expression {
 
+    public HexEncodeExpression() {
+        super(DataType.LONG);
+    }
     @Override
     protected void doExecute(ExecutionContext ctx) {
         long input = ((LongFieldValue)ctx.getValue()).getLong();
@@ -20,11 +22,6 @@ public class HexEncodeExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.LONG;
     }
 
     @Override

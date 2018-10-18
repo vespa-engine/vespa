@@ -2,18 +2,12 @@
 package com.yahoo.search.rendering;
 
 import com.yahoo.concurrent.CopyOnWriteHashMap;
-import com.yahoo.io.ByteWriter;
 import com.yahoo.log.LogLevel;
 import com.yahoo.net.URI;
-import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.hitfield.HitField;
 import com.yahoo.prelude.hitfield.JSONString;
 import com.yahoo.prelude.hitfield.XMLString;
-import com.yahoo.prelude.templates.Context;
-import com.yahoo.prelude.templates.DefaultTemplateSet;
-import com.yahoo.prelude.templates.MapContext;
-import com.yahoo.prelude.templates.UserTemplate;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.grouping.result.HitRenderer;
@@ -30,7 +24,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -70,16 +63,12 @@ public final class SyncDefaultRenderer extends Renderer {
 
 
     //Per instance members, must be created at rendering time, not construction time due to cloning.
-    private Context context;
-
-    private final DefaultTemplateSet defaultTemplate = new DefaultTemplateSet();
 
     private final CopyOnWriteHashMap<String, Utf8String> fieldNameMap = new CopyOnWriteHashMap<>();
 
     @Override
     public void init() {
         super.init();
-        context = new MapContext();
     }
 
     @Override
@@ -107,12 +96,6 @@ public final class SyncDefaultRenderer extends Renderer {
     public void render(Writer writer, Result result) throws IOException {
         XMLWriter xmlWriter = wrapWriter(writer);
 
-        context.put("context", context);
-        context.put("result", result);
-        context.setBoldOpenTag(defaultTemplate.getBoldOpenTag());
-        context.setBoldCloseTag(defaultTemplate.getBoldCloseTag());
-        context.setSeparatorTag(defaultTemplate.getSeparatorTag());
-
         try {
             header(xmlWriter, result);
         } catch (Exception e) {
@@ -138,7 +121,6 @@ public final class SyncDefaultRenderer extends Renderer {
 
     private void header(XMLWriter writer, Result result) throws IOException {
         // TODO: move setting this to Result
-        context.setUtf8Output("utf-8".equalsIgnoreCase(getRequestedEncoding(result.getQuery())));
         writer.xmlHeader(getRequestedEncoding(result.getQuery()));
         writer.openTag(RESULT).attribute(TOTAL_HIT_COUNT,String.valueOf(result.getTotalHitCount()));
         renderCoverageAttributes(result.getCoverage(false), writer);

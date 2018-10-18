@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
 
@@ -14,39 +15,39 @@ import java.util.Optional;
 
 public interface DockerOperations {
 
-    void createContainer(ContainerName containerName, NodeSpec node, ContainerData containerData);
+    void createContainer(NodeAgentContext context, NodeSpec node, ContainerData containerData);
 
-    void startContainer(ContainerName containerName);
+    void startContainer(NodeAgentContext context);
 
-    void removeContainer(Container existingContainer);
+    void removeContainer(NodeAgentContext context, Container container);
 
-    Optional<Container> getContainer(ContainerName containerName);
+    Optional<Container> getContainer(NodeAgentContext context);
 
     boolean pullImageAsyncIfNeeded(DockerImage dockerImage);
 
-    ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, String... command);
+    ProcessResult executeCommandInContainerAsRoot(NodeAgentContext context, String... command);
 
-    ProcessResult executeCommandInContainerAsRoot(ContainerName containerName, Long timeoutSeconds, String... command);
+    ProcessResult executeCommandInContainerAsRoot(NodeAgentContext context, Long timeoutSeconds, String... command);
 
     ProcessResult executeCommandInNetworkNamespace(ContainerName containerName, String... command);
 
 
     /** Resume node. Resuming a node means that it is ready to take on traffic. */
-    void resumeNode(ContainerName containerName);
+    void resumeNode(NodeAgentContext context);
 
     /**
      * Suspend node. Suspending a node means the node should be taken temporarly offline,
      * such that maintenance of the node can be done (upgrading, rebooting, etc).
      */
-    void suspendNode(ContainerName containerName);
+    void suspendNode(NodeAgentContext context);
 
-    void restartVespa(ContainerName containerName);
+    void restartVespa(NodeAgentContext context);
 
-    void startServices(ContainerName containerName);
+    void startServices(NodeAgentContext context);
 
-    void stopServices(ContainerName containerName);
+    void stopServices(NodeAgentContext context);
 
-    Optional<ContainerStats> getContainerStats(ContainerName containerName);
+    Optional<ContainerStats> getContainerStats(NodeAgentContext context);
 
     /**
      * Returns the list of containers managed by node-admin

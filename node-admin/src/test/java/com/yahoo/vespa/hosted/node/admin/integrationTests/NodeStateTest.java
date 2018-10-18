@@ -36,7 +36,7 @@ public class NodeStateTest {
 
         tester.callOrderVerifier.assertInOrder(
                 "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
-                "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerTester.NODE_PROGRAM + ", resume]");
+                "executeInContainer host1 as root, args: [" + DockerTester.NODE_PROGRAM + ", resume]");
     }
 
 
@@ -59,7 +59,7 @@ public class NodeStateTest {
             }
 
             dockerTester.callOrderVerifier.assertInOrder(
-                    "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerTester.NODE_PROGRAM + ", stop]",
+                    "executeInContainer host1 as root, args: [" + DockerTester.NODE_PROGRAM + ", stop]",
                     "stopContainer with ContainerName { name=host1 }",
                     "deleteContainer with ContainerName { name=host1 }");
         }
@@ -102,7 +102,7 @@ public class NodeStateTest {
                     "Node not started again after being put to active state",
                     "deleteContainer with ContainerName { name=host1 }",
                     "createContainerCommand with DockerImage { imageId=newDockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
-                    "executeInContainerAsRoot with ContainerName { name=host1 }, args: [" + DockerTester.NODE_PROGRAM + ", resume]");
+                    "executeInContainer host1 as root, args: [" + DockerTester.NODE_PROGRAM + ", resume]");
         }
     }
 }

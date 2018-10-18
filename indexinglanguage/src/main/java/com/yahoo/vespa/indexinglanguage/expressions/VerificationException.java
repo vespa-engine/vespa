@@ -6,15 +6,32 @@ package com.yahoo.vespa.indexinglanguage.expressions;
  */
 public class VerificationException extends RuntimeException {
 
-    private final Expression exp;
+    private final Class<?> type;
+    private final String exp;
 
     public VerificationException(Expression exp, String msg) {
         super(msg);
-        this.exp = exp;
+        if (exp != null) {
+            this.type = exp.getClass();
+            this.exp = exp.toString();
+        } else {
+            this.type = null;
+            this.exp = "null";
+        }
     }
 
-    public Expression getExpression() {
+
+    public VerificationException(Class<?> exp, String msg) {
+        super(msg);
+        this.type = exp;
+        this.exp = exp.getName();
+    }
+
+    public String getExpression() {
         return exp;
+    }
+    public Class<?> getExpressionType() {
+        return type;
     }
 
     @Override

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Transformer;
@@ -10,11 +9,12 @@ import com.yahoo.language.process.Transformer;
 /**
  * @author Simon Thoresen Hult
  */
-public class NormalizeExpression extends Expression {
+public final class NormalizeExpression extends Expression {
 
     private final Linguistics linguistics;
 
     public NormalizeExpression(Linguistics linguistics) {
+        super(DataType.STRING);
         this.linguistics = linguistics;
     }
 
@@ -32,11 +32,6 @@ public class NormalizeExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.STRING;
     }
 
     @Override

@@ -32,7 +32,7 @@ public final class Search extends ProcessingBase<Query, Result, Searcher> {
 
     @Override
     public ChainRegistry<Searcher> getChains() {
-        return asChainRegistry(handler.getSearchChainRegistry());
+        return asChainRegistry();
     }
 
     @Override
@@ -47,7 +47,7 @@ public final class Search extends ProcessingBase<Query, Result, Searcher> {
                                                            Renderer<Result> renderer,
                                                            ByteArrayOutputStream stream) throws IOException {
         Result result = process(chainSpec, request);
-        result.getTemplating().setRenderer(renderer);
+        result.getTemplating().setRenderer(renderer); // TODO: Remove on Vespa 7
         return HttpSearchResponse.waitableRender(result, result.getQuery(), renderer, stream);
     }
 
@@ -58,7 +58,7 @@ public final class Search extends ProcessingBase<Query, Result, Searcher> {
     }
 
     // TODO: move to SearchHandler.getChainRegistry and deprecate SH.getSCReg?
-    private ChainRegistry<Searcher> asChainRegistry(SearchChainRegistry legacyRegistry) {
+    private ChainRegistry<Searcher> asChainRegistry() {
         ChainRegistry<Searcher> chains = new ChainRegistry<>();
         for (Chain<Searcher> chain : handler.getSearchChainRegistry().allComponents())
             chains.register(chain.getId(), chain);

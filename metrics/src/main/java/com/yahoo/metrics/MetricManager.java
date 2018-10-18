@@ -37,7 +37,6 @@ import java.util.logging.Logger;
  *
  * If multiple locks is taken, the allowed locking order is: 1. Thread monitor. 2. Metric lock. 3. Config lock.
  */
-// TODO: Remove on Vespa 7
 public class MetricManager implements Runnable {
 
     private static final int STATE_CREATED = 0;

@@ -10,8 +10,11 @@ import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -62,7 +65,7 @@ public class Dispatcher extends AbstractComponent {
 
     @FunctionalInterface
     private interface SearchInvokerSupplier {
-        Optional<SearchInvoker> supply(Query query, SearchCluster.Group group);
+        Optional<SearchInvoker> supply(Query query, List<SearchCluster.Node> nodes);
     }
 
     public Optional<FillInvoker> getFillInvoker(Result result, VespaBackEndSearcher searcher, DocumentDatabase documentDb,
@@ -82,13 +85,41 @@ public class Dispatcher extends AbstractComponent {
 
     public Optional<SearchInvoker> getSearchInvoker(Query query, FS4InvokerFactory fs4InvokerFactory) {
         if (query.properties().getBoolean(dispatchInternal, false)) {
+            String searchPath = query.getModel().getSearchPath();
+            if (searchPath != null) {
+                Optional<SearchInvoker> invoker = getSearchPathInvoker(query, searchPath, fs4InvokerFactory::getSearchInvoker);
+                if (invoker.isPresent()) {
+                    return invoker;
+                }
+            }
             Optional<SearchInvoker> invoker = getInternalInvoker(query, fs4InvokerFactory::getSearchInvoker);
             return invoker;
         }
         return Optional.empty();
     }
 
+    // build invoker based on searchpath
+    private Optional<SearchInvoker> getSearchPathInvoker(Query query, String searchPath, SearchInvokerSupplier invokerFactory) {
+        try {
+            List<SearchCluster.Node> nodes = SearchPath.selectNodes(searchPath, searchCluster);
+            if (nodes.isEmpty()) {
+                return Optional.empty();
+            } else {
+                return invokerFactory.supply(query, nodes);
+            }
+        } catch (InvalidSearchPathException e) {
+            return Optional.of(new SearchErrorInvoker(e.getMessage()));
+        }
+    }
+
     private Optional<SearchInvoker> getInternalInvoker(Query query, SearchInvokerSupplier invokerFactory) {
+        Optional<SearchCluster.Node> directNode = searchCluster.directDispatchTarget();
+        if (directNode.isPresent()) {
+            SearchCluster.Node node = directNode.get();
+            query.trace(false, 2, "Dispatching directly to ", node);
+            return invokerFactory.supply(query, Arrays.asList(node));
+        }
+
         Optional<SearchCluster.Group> groupInCluster = loadBalancer.takeGroupForQuery(query);
         if (!groupInCluster.isPresent()) {
             return Optional.empty();
@@ -96,7 +127,7 @@ public class Dispatcher extends AbstractComponent {
         SearchCluster.Group group = groupInCluster.get();
         query.trace(false, 2, "Dispatching internally to ", group);
 
-        Optional<SearchInvoker> invoker = invokerFactory.supply(query, group);
+        Optional<SearchInvoker> invoker = invokerFactory.supply(query, group.nodes());
         if (invoker.isPresent()) {
             invoker.get().teardown(() -> loadBalancer.releaseGroup(group));
         } else {

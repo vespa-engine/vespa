@@ -101,7 +101,7 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
             return; // application class bound by another module
         }
         try {
-            final Class<Application> appClass = ContainerBuilder.safeClassCast(Application.class, Class.forName(appLocation));
+            Class<Application> appClass = ContainerBuilder.safeClassCast(Application.class, Class.forName(appLocation));
             guiceModules.install(new AbstractModule()  {
                 @Override
                 public void configure() {

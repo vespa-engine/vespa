@@ -2,16 +2,16 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class GetVarExpression extends Expression {
+public final class GetVarExpression extends Expression {
 
     private final String varName;
 
     public GetVarExpression(String varName) {
+        super(null);
         this.varName = varName;
     }
 
@@ -31,11 +31,6 @@ public class GetVarExpression extends Expression {
             throw new VerificationException(this, "Variable '" + varName + "' not found.");
         }
         context.setValue(input);
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return null;
     }
 
     @Override

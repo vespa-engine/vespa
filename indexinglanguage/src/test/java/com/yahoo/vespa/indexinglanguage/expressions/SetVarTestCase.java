@@ -68,7 +68,7 @@ public class SetVarTestCase {
             new SetVarExpression("out").verify(ctx);
             fail();
         } catch (VerificationException e) {
-            assertTrue(e.getExpression() instanceof SetVarExpression);
+            assertTrue(e.getExpressionType().equals(SetVarExpression.class));
             assertEquals("Attempting to assign conflicting types to variable 'out', int vs string.", e.getMessage());
         }
     }

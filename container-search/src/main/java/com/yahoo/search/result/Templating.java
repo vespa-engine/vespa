@@ -18,7 +18,8 @@ import com.yahoo.search.query.Presentation;
  * @author Steinar Knutsen
  * @deprecated do not use
  */
-@Deprecated // TODO: Remove on Vespa 7
+@Deprecated // OK (But wait for deprecated handlers in vespaclient-container-plugin to be removed)
+// TODO: Remove on Vespa 7
 public class Templating {
 
     private final Result result;
@@ -155,8 +156,12 @@ public class Templating {
      * Returns the templates which will render the result. This is never null.
      * If default rendering is used, it is a TemplateSet containing no
      * templates.
+     *
+     * @deprecated use a renderer instead
      */
     @SuppressWarnings("rawtypes")
+    // TODO: Remove on Vespa 7
+    @Deprecated // OK
     public UserTemplate getTemplates() {
         if (renderer == null) {
             return TemplateSet.getDefault();
@@ -187,7 +192,6 @@ public class Templating {
     /**
      * @deprecated since 5.1.21, use {@link Presentation#getRenderer()}
      */
-    @Deprecated // OK Do not remove on Vespa 6. Remove when we move everything having to do with templates
     public Renderer<Result> getRenderer() {
         return renderer;
     }
@@ -195,7 +199,6 @@ public class Templating {
     /**
      * @deprecated since 5.1.21, use {@link Presentation#setRenderer(com.yahoo.component.ComponentSpecification)}
      */
-    @Deprecated // OK Do not remove on Vespa 6. Remove when we move everything having to do with templates
     public void setRenderer(Renderer<Result> renderer) {
         this.renderer = renderer;
     }

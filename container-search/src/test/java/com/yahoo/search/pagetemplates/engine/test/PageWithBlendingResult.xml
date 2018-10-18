@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <page version="1.0">
-
   <renderer name="two-column"/>
-
   <section region="left">
     <source url="http://carmot.yahoo.com:4080/resource/[news article id]"/>
     <renderer name="articleBodyRenderer">
       <parameter name="color">blue</parameter>
     </renderer>
   </section>
-
   <section region="right">
     <renderer name="multi-item-column">
       <parameter name="items">3</parameter>
@@ -41,5 +38,4 @@
       </content>
     </section>
   </section>
-
 </page>

@@ -2,18 +2,18 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.StringFieldValue;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class SubstringExpression extends Expression {
+public final class SubstringExpression extends Expression {
 
     private final int from;
     private final int to;
 
     public SubstringExpression(int from, int to) {
+        super(DataType.STRING);
         if (from < 0 || to < 0 || to < from) {
             throw new IndexOutOfBoundsException();
         }
@@ -46,11 +46,6 @@ public class SubstringExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         context.setValue(createdOutputType());
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return DataType.STRING;
     }
 
     @Override

@@ -19,6 +19,7 @@ import com.yahoo.yolean.Exceptions;
 import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,6 +50,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     private final int size;
     private final ImmutableMap<Integer, Group> groups;
     private final ImmutableMultimap<String, Node> nodesByHost;
+    private final ImmutableList<Group> orderedGroups;
     private final ClusterMonitor<Node> clusterMonitor;
     private final VipStatus vipStatus;
 
@@ -80,9 +82,14 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
 
         // Create groups
         ImmutableMap.Builder<Integer, Group> groupsBuilder = new ImmutableMap.Builder<>();
-        for (Map.Entry<Integer, List<Node>> group : nodes.stream().collect(Collectors.groupingBy(Node::group)).entrySet())
-            groupsBuilder.put(group.getKey(), new Group(group.getKey(), group.getValue()));
+        for (Map.Entry<Integer, List<Node>> group : nodes.stream().collect(Collectors.groupingBy(Node::group)).entrySet()) {
+            Group g = new Group(group.getKey(), group.getValue());
+            groupsBuilder.put(group.getKey(), g);
+        }
         this.groups = groupsBuilder.build();
+        LinkedHashMap<Integer, Group> groupIntroductionOrder = new LinkedHashMap<>();
+        nodes.forEach(node -> groupIntroductionOrder.put(node.group(), groups.get(node.group)));
+        this.orderedGroups = ImmutableList.<Group>builder().addAll(groupIntroductionOrder.values()).build();
 
         // Index nodes by host
         ImmutableMultimap.Builder<String, Node> nodesByHostBuilder = new ImmutableMultimap.Builder<>();
@@ -146,12 +153,21 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     /** Returns the groups of this cluster as an immutable map indexed by group id */
     public ImmutableMap<Integer, Group> groups() { return groups; }
 
-    /** Returns the number of nodes per group - size()/groups.size() */
-    public int groupSize() { 
-        if (groups.size() == 0) return size();
-        return size() / groups.size(); 
+    /** Returns the n'th (zero-indexed) group in the cluster if possible */
+    public Optional<Group> group(int n) {
+        if (orderedGroups.size() > n) {
+            return Optional.of(orderedGroups.get(n));
+        } else {
+            return Optional.empty();
+        }
     }
-    
+
+    /** Returns the number of nodes per group - size()/groups.size() */
+    public int groupSize() {
+        if (groups.size() == 0) return size();
+        return size() / groups.size();
+    }
+
     /**
      * Returns the nodes of this cluster as an immutable map indexed by host.
      * One host may contain multiple nodes (on different ports), so this is a multi-map.

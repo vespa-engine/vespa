@@ -8,13 +8,13 @@
 #include <cassert>
 #include <cstring>
 
-Client::Client(ClientArguments *args)
+Client::Client(vespalib::CryptoEngine::SP engine, ClientArguments *args)
     : _args(args),
       _status(new ClientStatus()),
       _reqTimer(new Timer()),
       _cycleTimer(new Timer()),
       _masterTimer(new Timer()),
-      _http(new HTTPClient(_args->_hostname, _args->_port,
+      _http(new HTTPClient(std::move(engine), _args->_hostname, _args->_port,
                            _args->_keepAlive, _args->_headerBenchmarkdataCoverage,
                            _args->_extraHeaders, _args->_authority)),
       _reader(new FileReader()),

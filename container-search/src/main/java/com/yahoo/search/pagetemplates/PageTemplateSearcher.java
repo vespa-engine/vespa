@@ -46,7 +46,7 @@ import java.util.*;
  * </ul>
  *
  * <p>
- * The set of page templates chosen for the query specifies a list of sources to be queries (the page template sources).
+ * The set of page templates chosen for the query specifies a list of sources to be queried (the page template sources).
  * In addition, the query may contain
  * <ul>
  *   <li>a set of sources set explicitly in the Request, a query property or a searcher (the query model sources)

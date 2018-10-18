@@ -143,11 +143,9 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                 if (connection == null) continue;
                 log.log(LogLevel.DEBUG, "Got a status page request.");
                 String requestString = "";
-                BufferedReader br = null;
                 OutputStream output = null;
-                try{
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
                     StringBuilder sb = new StringBuilder();
-                    br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                     while (true) {
                         String s = br.readLine();
                         if (s == null) throw new java.io.IOException("No data in HTTP request on socket " + connection.toString());
@@ -235,16 +233,11 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                     log.log(LogLevel.WARNING, "Caught exception in HTTP server thread: "
                             + e.getClass().getName() + ": " + e.getMessage());
                 } finally {
-                    if (output != null) try{
+                    if (output != null) try {
                         output.close();
                     } catch (IOException e) {
                         log.log(e.getMessage().indexOf("Broken pipe") >= 0 ? LogLevel.DEBUG : LogLevel.INFO,
                                 "Failed to close output stream on socket " + connection + ": " + e.getMessage());
-                    }
-                    if (br != null) try {
-                        br.close();
-                    } catch (IOException e) {
-                        log.log(LogLevel.INFO, "Failed to close input stream on socket " + connection + ": " + e.getMessage());
                     }
                     if (connection != null) try{
                         connection.close();

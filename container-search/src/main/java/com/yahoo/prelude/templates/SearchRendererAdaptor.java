@@ -24,7 +24,8 @@ import java.util.Iterator;
  * @deprecated do not use
  */
 @SuppressWarnings({ "rawtypes", "deprecation", "unchecked" })
-@Deprecated // TODO: Remove on Vespa 7
+@Deprecated // OK (But wait for deprecated handlers in vespaclient-container-plugin to be removed)
+// TODO: Remove on Vespa 7
 public final class SearchRendererAdaptor extends Renderer {
 
     private final LogExceptionUserTemplateDelegator templates;

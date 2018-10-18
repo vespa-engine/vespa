@@ -1,4 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+#include <vespa/vespalib/net/crypto_engine.h>
 #include <httpclient/httpclient.h>
 #include <iostream>
 #include <thread>
@@ -11,13 +13,14 @@ main(int argc, char **argv)
     return 1;
   }
 
+  auto engine = std::make_shared<vespalib::NullCryptoEngine>();
   HTTPClient           *client;
   ssize_t               len;
 
   if(argc == 4) {
-    client = new HTTPClient(argv[1], atoi(argv[2]), false, true);
+      client = new HTTPClient(engine, argv[1], atoi(argv[2]), false, true);
   } else {
-    client = new HTTPClient(argv[1], atoi(argv[2]), true, true);
+      client = new HTTPClient(engine, argv[1], atoi(argv[2]), true, true);
   }
 
   std::ostream * output = & std::cout;

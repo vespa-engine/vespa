@@ -332,7 +332,11 @@ public class SearchBuilder {
      * @throws ParseException if there was a problem parsing the file content.
      */
     public static SearchBuilder createFromFile(String fileName) throws IOException, ParseException {
-        return createFromFile(fileName, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfileRegistry());
+        return createFromFile(fileName, new BaseDeployLogger());
+    }
+
+    public static SearchBuilder createFromFile(String fileName, DeployLogger logger) throws IOException, ParseException {
+        return createFromFile(fileName, logger, new RankProfileRegistry(), new QueryProfileRegistry());
     }
 
     /**

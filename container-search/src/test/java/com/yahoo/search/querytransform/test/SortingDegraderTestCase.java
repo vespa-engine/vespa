@@ -4,6 +4,8 @@ package com.yahoo.search.querytransform.test;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.QueryException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -13,6 +15,8 @@ import com.yahoo.search.query.properties.DefaultProperties;
 import com.yahoo.search.querytransform.SortingDegrader;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.Test;
+
+import java.util.Collections;
 
 import static org.junit.Assert.*;
 
@@ -147,7 +151,7 @@ public class SortingDegraderTestCase {
     }
 
     private IndexFacts createIndexFacts() {
-        IndexFacts indexFacts = new IndexFacts();
+        SearchDefinition test = new SearchDefinition("test");
 
         Index fastSearchAttribute1 = new Index("a1");
         fastSearchAttribute1.setFastSearch(true);
@@ -163,11 +167,11 @@ public class SortingDegraderTestCase {
         Index stringAttribute = new Index("stringAttribute");
         stringAttribute.setFastSearch(true);
 
-        indexFacts.addIndex("test", fastSearchAttribute1);
-        indexFacts.addIndex("test", fastSearchAttribute2);
-        indexFacts.addIndex("test", nonFastSearchAttribute);
-        indexFacts.addIndex("stringAttribute", stringAttribute);
-        return indexFacts;
+        test.addIndex(fastSearchAttribute1);
+        test.addIndex(fastSearchAttribute2);
+        test.addIndex(nonFastSearchAttribute);
+        test.addIndex(stringAttribute);
+        return new IndexFacts(new IndexModel(Collections.emptyMap(), Collections.singleton(test)));
     }
 
 }

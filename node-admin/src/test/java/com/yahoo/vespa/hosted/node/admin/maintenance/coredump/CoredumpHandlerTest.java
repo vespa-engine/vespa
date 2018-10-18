@@ -1,204 +1,205 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
+import com.google.common.collect.ImmutableMap;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.TestChildProcess2;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
+import com.yahoo.vespa.test.file.TestFileSystem;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 /**
  * @author freva
  */
 public class CoredumpHandlerTest {
+    private final FileSystem fileSystem = TestFileSystem.create();
+    private final Path donePath = fileSystem.getPath("/home/docker/dumps");
+    private final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld")
+            .fileSystem(fileSystem).build();
+    private final Path crashPathInContainer = Paths.get("/var/crash");
+    private final Path doneCoredumpsPath = fileSystem.getPath("/home/docker/dumps");
 
-    private static final Map<String, Object> attributes = new LinkedHashMap<>();
-    private static final Map<String, Object> metadata = new LinkedHashMap<>();
-    private static final String expectedMetadataFileContents = "{\"fields\":{" +
-            "\"bin_path\":\"/bin/bash\"," +
-            "\"backtrace\":[\"call 1\",\"function 2\",\"something something\"]," +
-            "\"hostname\":\"host123.yahoo.com\"," +
-            "\"vespa_version\":\"6.48.4\"," +
-            "\"kernel_version\":\"2.6.32-573.22.1.el6.YAHOO.20160401.10.x86_64\"," +
-            "\"docker_image\":\"vespa/ci:6.48.4\"}}";
-
-    static {
-        attributes.put("hostname", "host123.yahoo.com");
-        attributes.put("vespa_version", "6.48.4");
-        attributes.put("kernel_version", "2.6.32-573.22.1.el6.YAHOO.20160401.10.x86_64");
-        attributes.put("docker_image", "vespa/ci:6.48.4");
-
-        metadata.put("bin_path", "/bin/bash");
-        metadata.put("backtrace", Arrays.asList("call 1", "function 2", "something something"));
-    }
-
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
-
+    private final TestTerminal terminal = new TestTerminal();
     private final CoreCollector coreCollector = mock(CoreCollector.class);
     private final CoredumpReporter coredumpReporter = mock(CoredumpReporter.class);
-    private CoredumpHandler coredumpHandler;
-    private Path crashPath;
-    private Path donePath;
-    private Path processingPath;
+    @SuppressWarnings("unchecked")
+    private final Supplier<String> coredumpIdSupplier = mock(Supplier.class);
+    private final CoredumpHandler coredumpHandler = new CoredumpHandler(terminal, coreCollector, coredumpReporter,
+            crashPathInContainer, doneCoredumpsPath, coredumpIdSupplier);
+
+
+    @Test
+    public void coredump_enqueue_test() throws IOException {
+        final Path crashPathOnHost = fileSystem.getPath("/home/docker/container-1/some/crash/path");
+        final Path processingDir = fileSystem.getPath("/home/docker/container-1/some/other/processing");
+
+        Files.createDirectories(crashPathOnHost);
+        Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve(".bash.core.431")), FileTime.from(Instant.now()));
+
+        assertFolderContents(crashPathOnHost, ".bash.core.431");
+        Optional<Path> enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
+        assertEquals(Optional.empty(), enqueuedPath);
+
+        // bash.core.431 finished writing... and 2 more have since been written
+        Files.move(crashPathOnHost.resolve(".bash.core.431"), crashPathOnHost.resolve("bash.core.431"));
+        Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve("vespa-proton.core.119")), FileTime.from(Instant.now().minus(Duration.ofMinutes(10))));
+        Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve("vespa-slobrok.core.673")), FileTime.from(Instant.now().minus(Duration.ofMinutes(5))));
+
+        when(coredumpIdSupplier.get()).thenReturn("id-123").thenReturn("id-321");
+        enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
+        assertEquals(Optional.of(processingDir.resolve("id-123")), enqueuedPath);
+        assertFolderContents(crashPathOnHost, "bash.core.431", "vespa-slobrok.core.673");
+        assertFolderContents(processingDir, "id-123");
+        assertFolderContents(processingDir.resolve("id-123"), "dump_vespa-proton.core.119");
+        verify(coredumpIdSupplier, times(1)).get();
+
+        // Enqueue another
+        enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
+        assertEquals(Optional.of(processingDir.resolve("id-321")), enqueuedPath);
+        assertFolderContents(crashPathOnHost, "bash.core.431");
+        assertFolderContents(processingDir, "id-123", "id-321");
+        assertFolderContents(processingDir.resolve("id-321"), "dump_vespa-slobrok.core.673");
+        verify(coredumpIdSupplier, times(2)).get();
+    }
+
+    @Test
+    public void coredump_to_process_test() throws IOException {
+        final Path crashPathOnHost = fileSystem.getPath("/home/docker/container-1/some/crash/path");
+        final Path processingDir = fileSystem.getPath("/home/docker/container-1/some/other/processing");
+
+        // Initially there are no core dumps
+        Optional<Path> enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
+        assertEquals(Optional.empty(), enqueuedPath);
+
+        // 3 core dumps occur
+        Files.createDirectories(crashPathOnHost);
+        Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve("bash.core.431")), FileTime.from(Instant.now()));
+        Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve("vespa-proton.core.119")), FileTime.from(Instant.now().minus(Duration.ofMinutes(10))));
+        Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve("vespa-slobrok.core.673")), FileTime.from(Instant.now().minus(Duration.ofMinutes(5))));
+
+        when(coredumpIdSupplier.get()).thenReturn("id-123");
+        enqueuedPath = coredumpHandler.getCoredumpToProcess(crashPathOnHost, processingDir);
+        assertEquals(Optional.of(processingDir.resolve("id-123")), enqueuedPath);
+
+        // Running this again wont enqueue new core dumps as we are still processing the one enqueued previously
+        enqueuedPath = coredumpHandler.getCoredumpToProcess(crashPathOnHost, processingDir);
+        assertEquals(Optional.of(processingDir.resolve("id-123")), enqueuedPath);
+        verify(coredumpIdSupplier, times(1)).get();
+    }
+
+    @Test
+    public void get_metadata_test() throws IOException {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("bin_path", "/bin/bash");
+        metadata.put("backtrace", Arrays.asList("call 1", "function 2", "something something"));
+
+        Map<String, Object> attributes = ImmutableMap.of(
+                "hostname", "host123.yahoo.com",
+                "vespa_version", "6.48.4",
+                "kernel_version", "3.10.0-862.9.1.el7.x86_64",
+                "docker_image", "vespa/ci:6.48.4");
+
+        String expectedMetadataStr = "{\"fields\":{" +
+                "\"hostname\":\"host123.yahoo.com\"," +
+                "\"kernel_version\":\"3.10.0-862.9.1.el7.x86_64\"," +
+                "\"backtrace\":[\"call 1\",\"function 2\",\"something something\"]," +
+                "\"vespa_version\":\"6.48.4\"," +
+                "\"bin_path\":\"/bin/bash\"," +
+                "\"docker_image\":\"vespa/ci:6.48.4\"" +
+                "}}";
+
+
+        Path coredumpDirectoryInContainer = Paths.get("/var/crash/id-123");
+        Path coredumpDirectory = context.pathOnHostFromPathInNode(coredumpDirectoryInContainer);
+        Files.createDirectories(coredumpDirectory);
+        Files.createFile(coredumpDirectory.resolve("dump_core.456"));
+        when(coreCollector.collect(eq(context), eq(coredumpDirectoryInContainer.resolve("dump_core.456"))))
+                .thenReturn(metadata);
+
+        assertEquals(expectedMetadataStr, coredumpHandler.getMetadata(context, coredumpDirectory, attributes));
+        verify(coreCollector, times(1)).collect(any(), any());
+
+        // Calling it again will simply read the previously generated metadata from disk
+        assertEquals(expectedMetadataStr, coredumpHandler.getMetadata(context, coredumpDirectory, attributes));
+        verify(coreCollector, times(1)).collect(any(), any());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void cant_get_metadata_if_no_core_file() throws IOException {
+        coredumpHandler.getMetadata(context, fileSystem.getPath("/fake/path"), Collections.emptyMap());
+    }
+
+    @Test
+    public void process_single_coredump_test() throws IOException {
+        Path coredumpDirectory = fileSystem.getPath("/path/to/coredump/proccessing/id-123");
+        Files.createDirectories(coredumpDirectory);
+        Files.write(coredumpDirectory.resolve("metadata.json"), "metadata".getBytes());
+        Files.createFile(coredumpDirectory.resolve("dump_bash.core.431"));
+        assertFolderContents(coredumpDirectory, "metadata.json", "dump_bash.core.431");
+
+        terminal.interceptCommand("/usr/bin/lz4 -f /path/to/coredump/proccessing/id-123/dump_bash.core.431 " +
+                "/path/to/coredump/proccessing/id-123/dump_bash.core.431.lz4 2>&1",
+                commandLine -> {
+                    uncheck(() -> Files.createFile(fileSystem.getPath(commandLine.getArguments().get(3))));
+                    return new TestChildProcess2(0, "");
+                });
+        coredumpHandler.processAndReportSingleCoredump(context, coredumpDirectory, Collections.emptyMap());
+        verify(coreCollector, never()).collect(any(), any());
+        verify(coredumpReporter, times(1)).reportCoredump(eq("id-123"), eq("metadata"));
+        assertFalse(Files.exists(coredumpDirectory));
+        assertFolderContents(doneCoredumpsPath, "id-123");
+        assertFolderContents(doneCoredumpsPath.resolve("id-123"), "metadata.json", "dump_bash.core.431.lz4");
+    }
 
     @Before
     public void setup() throws IOException {
-        crashPath = folder.newFolder("crash").toPath();
-        donePath = folder.newFolder("done").toPath();
-        processingPath = CoredumpHandler.getProcessingCoredumpsPath(crashPath);
-
-        coredumpHandler = new CoredumpHandler(coreCollector, coredumpReporter, donePath);
+        Files.createDirectories(donePath);
     }
 
-    @Test
-    public void ignoresIncompleteCoredumps() throws IOException {
-        Path coredumpPath = createCoredump(".core.dump", Instant.now());
-        coredumpHandler.enqueueCoredumps(crashPath);
-
-        // The 'processing' directory should be empty
-        assertFolderContents(processingPath);
-
-        // The 'crash' directory should have 'processing' and the incomplete core dump in it
-        assertFolderContents(crashPath, processingPath.getFileName().toString(), coredumpPath.getFileName().toString());
+    @After
+    public void teardown() {
+        terminal.verifyAllCommandsExecuted();
     }
 
-    @Test
-    public void startProcessingTest() throws IOException {
-        Path coredumpPath = createCoredump("core.dump", Instant.now());
-        coredumpHandler.enqueueCoredumps(crashPath);
-
-        // Contents of 'crash' should be only the 'processing' directory
-        assertFolderContents(crashPath, processingPath.getFileName().toString());
-
-        // The 'processing' directory should have 1 directory inside for the core.dump we just created
-        List<Path> processedCoredumps = Files.list(processingPath).collect(Collectors.toList());
-        assertEquals(processedCoredumps.size(), 1);
-
-        // Inside the coredump directory, there should be 1 file: core.dump
-        assertFolderContents(processedCoredumps.get(0), coredumpPath.getFileName().toString());
-    }
-
-    @Test
-    public void limitToProcessingOneCoredumpAtTheTimeTest() throws IOException {
-        final String oldestCoredump = "core.dump0";
-        final Instant startTime = Instant.now();
-        createCoredump(oldestCoredump, startTime.minusSeconds(3600));
-        createCoredump("core.dump1", startTime.minusSeconds(1000));
-        createCoredump("core.dump2", startTime);
-        coredumpHandler.enqueueCoredumps(crashPath);
-
-        List<Path> processingCoredumps = Files.list(processingPath).collect(Collectors.toList());
-        assertEquals(1, processingCoredumps.size());
-
-        // Make sure that the 1 coredump that we are processing is the oldest one
-        Set<String> filenamesInProcessingDirectory = Files.list(processingCoredumps.get(0))
-                .map(file -> file.getFileName().toString())
+    private static void assertFolderContents(Path pathToFolder, String... filenames) {
+        Set<String> expectedContentsOfFolder = new HashSet<>(Arrays.asList(filenames));
+        Set<String> actualContentsOfFolder = new UnixPath(pathToFolder)
+                .listContentsOfDirectory().stream()
+                .map(unixPath -> unixPath.toPath().getFileName().toString())
                 .collect(Collectors.toSet());
-        assertEquals(Collections.singleton(oldestCoredump), filenamesInProcessingDirectory);
-
-        // Running enqueueCoredumps should not start processing any new coredumps as we already are processing one
-        coredumpHandler.enqueueCoredumps(crashPath);
-        assertEquals(processingCoredumps, Files.list(processingPath).collect(Collectors.toList()));
-        filenamesInProcessingDirectory = Files.list(processingCoredumps.get(0))
-                .map(file -> file.getFileName().toString())
-                .collect(Collectors.toSet());
-        assertEquals(Collections.singleton(oldestCoredump), filenamesInProcessingDirectory);
-    }
-
-    @Test
-    public void coredumpMetadataCollectAndWriteTest() throws IOException {
-        createCoredump("core.dump", Instant.now());
-        coredumpHandler.enqueueCoredumps(crashPath);
-        Path processingCoredumpPath = Files.list(processingPath).findFirst().orElseThrow(() ->
-                new RuntimeException("Expected to find directory with coredump in processing dir"));
-        when(coreCollector.collect(eq(processingCoredumpPath.resolve("core.dump")))).thenReturn(metadata);
-
-        // Inside 'processing' directory, there should be a new directory containing 'core.dump' file
-        String returnedMetadata = coredumpHandler.collectMetadata(processingCoredumpPath, attributes);
-        String metadataFileContents = new String(Files.readAllBytes(
-                processingCoredumpPath.resolve(CoredumpHandler.METADATA_FILE_NAME)));
-        assertEquals(expectedMetadataFileContents, metadataFileContents);
-        assertEquals(expectedMetadataFileContents, returnedMetadata);
-    }
-
-    @Test
-    public void coredumpMetadataReadIfExistsTest() throws IOException {
-        final String documentId = "UIDD-ABCD-EFGH";
-        Path metadataPath = createProcessedCoredump(documentId);
-
-        verifyZeroInteractions(coreCollector);
-        String returnedMetadata = coredumpHandler.collectMetadata(metadataPath.getParent(), attributes);
-        assertEquals(expectedMetadataFileContents, returnedMetadata);
-    }
-
-    @Test
-    public void reportSuccessCoredumpTest() throws IOException {
-        final String documentId = "UIDD-ABCD-EFGH";
-        createProcessedCoredump(documentId);
-
-        coredumpHandler.processAndReportCoredumps(crashPath, attributes);
-        verify(coredumpReporter).reportCoredump(eq(documentId), eq(expectedMetadataFileContents));
-
-        // The coredump should not have been moved out of 'processing' and into 'done' as the report failed
-        assertFolderContents(processingPath);
-        assertFolderContents(donePath.resolve(documentId), CoredumpHandler.METADATA_FILE_NAME);
-    }
-
-    @Test
-    public void reportFailCoredumpTest() throws IOException {
-        final String documentId = "UIDD-ABCD-EFGH";
-        Path metadataPath = createProcessedCoredump(documentId);
-
-        doThrow(new RuntimeException()).when(coredumpReporter).reportCoredump(any(), any());
-        coredumpHandler.processAndReportCoredumps(crashPath, attributes);
-        verify(coredumpReporter).reportCoredump(eq(documentId), eq(expectedMetadataFileContents));
-
-        // The coredump should not have been moved out of 'processing' and into 'done' as the report failed
-        assertFolderContents(donePath);
-        assertFolderContents(metadataPath.getParent(), CoredumpHandler.METADATA_FILE_NAME);
-    }
-
-    private static void assertFolderContents(Path pathToFolder, String... filenames) throws IOException {
-        Set<Path> expectedContentsOfFolder = Arrays.stream(filenames)
-                .map(pathToFolder::resolve)
-                .collect(Collectors.toSet());
-        Set<Path> actualContentsOfFolder = Files.list(pathToFolder).collect(Collectors.toSet());
         assertEquals(expectedContentsOfFolder, actualContentsOfFolder);
-    }
-
-    private Path createCoredump(String coredumpName, Instant lastModified) throws IOException {
-        Path coredumpPath = crashPath.resolve(coredumpName);
-        coredumpPath.toFile().createNewFile();
-        coredumpPath.toFile().setLastModified(lastModified.toEpochMilli());
-        return coredumpPath;
-    }
-
-    private Path createProcessedCoredump(String documentId) throws IOException {
-        Path coredumpPath = processingPath
-                .resolve(documentId)
-                .resolve(CoredumpHandler.METADATA_FILE_NAME);
-        coredumpPath.getParent().toFile().mkdirs();
-        return Files.write(coredumpPath, expectedMetadataFileContents.getBytes());
     }
 }

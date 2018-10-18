@@ -30,7 +30,7 @@ import com.yahoo.text.Utf8;
 /**
  * Check the legacy sync default renderer doesn't spontaneously combust.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class SyncDefaultRendererTestCase {
 
@@ -58,11 +58,11 @@ public class SyncDefaultRendererTestCase {
 
     @SuppressWarnings("deprecation")
     @Test
-    public final void testRenderWriterResult() throws IOException, InterruptedException, ExecutionException {
+    public final void testRenderWriterResult() throws InterruptedException, ExecutionException {
         Query q = new Query("/?query=a&tracelevel=5&reportCoverage=true");
         q.getPresentation().setTiming(true);
         Result r = new Result(q);
-        r.setCoverage(new Coverage(500, 1, true));
+        r.setCoverage(new Coverage(500, 1));
 
         TimeTracker t = new TimeTracker(new Chain<Searcher>(
                 new UselessSearcher("first"), new UselessSearcher("second"),
@@ -77,7 +77,6 @@ public class SyncDefaultRendererTestCase {
         t.sampleSearchReturn(1, true, null);
         t.sampleSearchReturn(0, true, null);
         r.getElapsedTime().add(t);
-        r.getTemplating().setRenderer(d);
         FastHit h = new FastHit("http://localhost/", .95);
         h.setField("$a", "Hello, world.");
         h.setField("b", "foo");

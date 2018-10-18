@@ -25,6 +25,24 @@ class ExpressionAssert {
         assertVerifyCtxThrows(new VerificationContext().setValue(valueBefore), exp, expectedException);
     }
 
+    interface CreateExpression {
+        Expression create();
+    }
+    public static void assertVerifyThrows(DataType valueBefore, CreateExpression createExp, String expectedException) {
+        assertVerifyCtxThrows(new VerificationContext().setValue(valueBefore), createExp, expectedException);
+    }
+
+    public static void assertVerifyCtxThrows(VerificationContext ctx, CreateExpression createExp, String expectedException) {
+        try {
+            Expression exp = createExp.create();
+            exp.verify(ctx);
+            fail();
+        } catch (VerificationException e) {
+            if (!Pattern.matches(expectedException, e.getMessage())) {
+                assertEquals(expectedException, e.getMessage());
+            }
+        }
+    }
     public static void assertVerifyCtxThrows(VerificationContext ctx, Expression exp, String expectedException) {
         try {
             exp.verify(ctx);

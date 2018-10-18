@@ -44,16 +44,16 @@ public class IfThenTestCase {
         assertVerify(DataType.STRING, exp, DataType.STRING);
         assertVerifyThrows(null, exp, "Expected string input, got null.");
         assertVerifyThrows(DataType.INT, exp, "Expected string input, got int.");
-        assertVerifyThrows(null, newRequiredInput(DataType.INT, Comparator.EQ, DataType.STRING,
+        assertVerifyThrows(null, () -> newRequiredInput(DataType.INT, Comparator.EQ, DataType.STRING,
                                                   DataType.STRING, DataType.STRING),
                            "Operands require conflicting input types, int vs string.");
-        assertVerifyThrows(null, newRequiredInput(DataType.STRING, Comparator.EQ, DataType.INT,
+        assertVerifyThrows(null, () -> newRequiredInput(DataType.STRING, Comparator.EQ, DataType.INT,
                                                   DataType.STRING, DataType.STRING),
                            "Operands require conflicting input types, string vs int.");
-        assertVerifyThrows(null, newRequiredInput(DataType.STRING, Comparator.EQ, DataType.STRING,
+        assertVerifyThrows(null, () -> newRequiredInput(DataType.STRING, Comparator.EQ, DataType.STRING,
                                                   DataType.INT, DataType.STRING),
                            "Operands require conflicting input types, string vs int.");
-        assertVerifyThrows(null, newRequiredInput(DataType.STRING, Comparator.EQ, DataType.STRING,
+        assertVerifyThrows(null, () -> newRequiredInput(DataType.STRING, Comparator.EQ, DataType.STRING,
                                                   DataType.STRING, DataType.INT),
                            "Operands require conflicting input types, string vs int.");
     }
@@ -262,12 +262,11 @@ public class IfThenTestCase {
                                      new Field("ifFalse", DataType.INT));
     }
 
-    private static Expression newRequiredInput(DataType lhs, Comparator cmp, DataType rhs, DataType ifTrue,
-                                               DataType ifFalse) {
-        return new IfThenExpression(new SimpleExpression().setRequiredInput(lhs), cmp,
-                                    new SimpleExpression().setRequiredInput(rhs),
-                                    new SimpleExpression().setRequiredInput(ifTrue),
-                                    ifFalse != null ? new SimpleExpression().setRequiredInput(ifFalse) : null);
+    private static Expression newRequiredInput(DataType lhs, Comparator cmp, DataType rhs, DataType ifTrue, DataType ifFalse) {
+        return new IfThenExpression(new SimpleExpression(lhs), cmp,
+                                    new SimpleExpression(rhs),
+                                    new SimpleExpression(ifTrue),
+                                    ifFalse != null ? new SimpleExpression(ifFalse) : null);
     }
 
     private static class MyFieldValue extends FieldValue {

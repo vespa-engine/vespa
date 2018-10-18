@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
-import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.SearchCluster.Group;
 
@@ -23,8 +22,6 @@ public class LoadBalancer {
     // TODO: consider the options in com.yahoo.vespa.model.content.TuningDispatch
 
     private static final Logger log = Logger.getLogger(LoadBalancer.class.getName());
-
-    private static final CompoundName QUERY_NODE_GROUP_AFFINITY = new CompoundName("dispatch.group.affinity");
 
     private final List<GroupSchedule> scoreboard;
     private int needle = 0;
@@ -54,16 +51,7 @@ public class LoadBalancer {
             return Optional.empty();
         }
 
-        Integer groupAffinity = query.properties().getInteger(QUERY_NODE_GROUP_AFFINITY);
-        if (groupAffinity != null) {
-            Optional<Group> previouslyChosen = allocateFromGroup(groupAffinity);
-            if (previouslyChosen.isPresent()) {
-                return previouslyChosen;
-            }
-        }
-        Optional<Group> allocatedGroup = allocateNextGroup();
-        allocatedGroup.ifPresent(group -> query.properties().set(QUERY_NODE_GROUP_AFFINITY, group.id()));
-        return allocatedGroup;
+        return allocateNextGroup();
     }
 
     /**
@@ -81,18 +69,6 @@ public class LoadBalancer {
                 }
             }
         }
-    }
-
-    private Optional<Group> allocateFromGroup(int groupId) {
-        synchronized (this) {
-            for (GroupSchedule schedule : scoreboard) {
-                if (schedule.group.id() == groupId) {
-                    schedule.adjustScore(1);
-                    return Optional.of(schedule.group);
-                }
-            }
-        }
-        return Optional.empty();
     }
 
     private Optional<Group> allocateNextGroup() {
@@ -139,11 +115,11 @@ public class LoadBalancer {
         }
 
         public boolean isPreferredOver(GroupSchedule other) {
-            if (! group.hasSufficientCoverage()) {
-                return false;
-            }
             if (other == null) {
                 return true;
+            }
+            if (! group.hasSufficientCoverage()) {
+                return false;
             }
             return this.score < other.score;
         }

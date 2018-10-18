@@ -24,7 +24,8 @@ public class ProcessExecuter {
     public Pair<Integer, String> exec(String command) throws IOException {
         StringTokenizer tok = new StringTokenizer(command);
         List<String> tokens = new ArrayList<>();
-        while (tok.hasMoreElements()) tokens.add(tok.nextToken());
+        while (tok.hasMoreElements())
+            tokens.add(tok.nextToken());
         return exec(tokens.toArray(new String[0]));
     }
     
@@ -43,10 +44,10 @@ public class ProcessExecuter {
         InputStream is = p.getInputStream();
         while (true) {
             int b = is.read();
-            if (b==-1) break;
+            if (b == -1) break;
             ret.append((char)b);
         }
-        int rc=0;
+        int rc = 0;
         try {
             rc = p.waitFor();
         } catch (InterruptedException e) {

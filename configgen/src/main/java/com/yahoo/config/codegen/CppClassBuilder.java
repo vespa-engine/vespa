@@ -72,13 +72,14 @@ public class CppClassBuilder implements ClassBuilder {
     String readFile(File f) throws IOException {
         if (!f.isFile()) return null;
         StringBuilder sb = new StringBuilder();
-        BufferedReader sr = new BufferedReader(new FileReader(f));
-        while (true) {
-            String line = sr.readLine();
-            if (line == null) break;
-            sb.append(line).append("\n");
+        try (BufferedReader sr = new BufferedReader(new FileReader(f))) {
+            while (true) {
+                String line = sr.readLine();
+                if (line == null) break;
+                sb.append(line).append("\n");
+            }
+            return sb.toString();
         }
-        return sb.toString();
     }
 
     void writeFile(File f, String content) throws IOException {

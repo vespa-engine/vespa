@@ -4,6 +4,8 @@ package com.yahoo.storage.searcher;
 import com.yahoo.document.DocumentId;
 import com.yahoo.search.result.Hit;
 
+@Deprecated // OK
+// TODO: Remove on Vespa 7
 public class DocumentRemoveHit extends Hit {
 
     private final DocumentId idOfRemovedDoc;

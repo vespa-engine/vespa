@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -107,15 +108,13 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
     }
 
     @Override
-    public Docker.CreateContainerCommand withVolume(String path, String volumePath) {
-        assert path.indexOf(':') == -1;
+    public Docker.CreateContainerCommand withVolume(Path path, Path volumePath) {
         volumeBindSpecs.add(path + ":" + volumePath + ":Z");
         return this;
     }
 
     @Override
-    public Docker.CreateContainerCommand withSharedVolume(String path, String volumePath) {
-        assert path.indexOf(':') == -1;
+    public Docker.CreateContainerCommand withSharedVolume(Path path, Path volumePath) {
         volumeBindSpecs.add(path + ":" + volumePath + ":z");
         return this;
     }

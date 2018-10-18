@@ -38,8 +38,10 @@ import java.util.logging.Logger;
  *
  * @author Arne Bergene Fossaa
  * @author bratseth
+ * @deprecated
  */
-@Deprecated
+// TODO: Remove on Vespa 7
+@Deprecated // OK
 public abstract class HTTPProviderSearcher extends HTTPSearcher {
 
     private final Counter emptyResults;
@@ -89,7 +91,7 @@ public abstract class HTTPProviderSearcher extends HTTPSearcher {
     }
 
     /** @deprecated this method does nothing */
-    @Deprecated
+    @Deprecated // OK
     protected void configureCache(final QrBinaryCacheConfig cacheConfig,final QrBinaryCacheRegionConfig regionConfig) {
     }
 
@@ -253,7 +255,7 @@ public abstract class HTTPProviderSearcher extends HTTPSearcher {
     /**
      * @deprecated the cache key is ignored as there is no built-in caching support
      */
-    @Deprecated
+    @Deprecated // OK
     public abstract Map<String, String> getCacheKey(Query q);
 
 }

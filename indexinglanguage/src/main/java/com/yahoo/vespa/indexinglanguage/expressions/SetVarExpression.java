@@ -2,16 +2,16 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 
 /**
  * @author Simon Thoresen Hult
  */
-public class SetVarExpression extends Expression {
+public final class SetVarExpression extends Expression {
 
     private final String varName;
 
     public SetVarExpression(String varName) {
+        super(UnresolvedDataType.INSTANCE);
         this.varName = varName;
     }
 
@@ -33,11 +33,6 @@ public class SetVarExpression extends Expression {
                                                   "', " + prev.getName() + " vs " + next.getName() + ".");
         }
         context.setVariable(varName, next);
-    }
-
-    @Override
-    public DataType requiredInputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

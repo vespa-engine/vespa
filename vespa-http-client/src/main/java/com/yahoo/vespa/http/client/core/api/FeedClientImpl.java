@@ -12,6 +12,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -28,7 +29,7 @@ public class FeedClientImpl implements FeedClient {
 
     public FeedClientImpl(
             SessionParams sessionParams, ResultCallback resultCallback, ScheduledThreadPoolExecutor timeoutExecutor) {
-        this.closeTimeoutMs = (1 + sessionParams.getConnectionParams().getMaxRetries()) * (
+        this.closeTimeoutMs = (10 + 3 * sessionParams.getConnectionParams().getMaxRetries()) * (
                 sessionParams.getFeedParams().getServerTimeout(TimeUnit.MILLISECONDS) +
                 sessionParams.getFeedParams().getClientTimeout(TimeUnit.MILLISECONDS));
         this.operationProcessor = new OperationProcessor(
@@ -59,15 +60,14 @@ public class FeedClientImpl implements FeedClient {
 
     @Override
     public void close() {
-        Instant lastResultReceived = Instant.now();
-        long lastNumberOfResults = operationProcessor.getIncompleteResultQueueSize();
+        Instant lastOldestResultReceivedAt = Instant.now();
+        Optional<String> oldestIncompleteId = operationProcessor.oldestIncompleteResultId();
 
-        while (waitForOperations(lastResultReceived, lastNumberOfResults, sleepTimeMs, closeTimeoutMs)) {
-            long results = operationProcessor.getIncompleteResultQueueSize();
-            if (results != lastNumberOfResults) {
-                lastResultReceived = Instant.now();
-            }
-            lastNumberOfResults = results;
+        while (oldestIncompleteId.isPresent() && waitForOperations(lastOldestResultReceivedAt, sleepTimeMs, closeTimeoutMs)) {
+            Optional<String> oldestIncompleteIdNow = operationProcessor.oldestIncompleteResultId();
+            if ( ! oldestIncompleteId.equals(oldestIncompleteIdNow))
+                lastOldestResultReceivedAt = Instant.now();
+            oldestIncompleteId = oldestIncompleteIdNow;
         }
         operationProcessor.close();
     }
@@ -78,10 +78,7 @@ public class FeedClientImpl implements FeedClient {
     }
 
     // On return value true, wait more. Public for testing.
-    public static boolean waitForOperations(Instant lastResultReceived, long lastNumberOfResults, long sleepTimeMs, long closeTimeoutMs) {
-        if (lastNumberOfResults == 0) {
-            return false;
-        }
+    public static boolean waitForOperations(Instant lastResultReceived, long sleepTimeMs, long closeTimeoutMs) {
         if (lastResultReceived.plusMillis(closeTimeoutMs).isBefore(Instant.now())) {
             return false;
         }

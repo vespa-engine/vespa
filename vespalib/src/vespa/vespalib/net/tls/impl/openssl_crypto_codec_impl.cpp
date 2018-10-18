@@ -145,8 +145,9 @@ vespalib::string ssl_error_from_stack() {
 
 } // anon ns
 
-OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(::SSL_CTX& ctx, Mode mode)
-    : _ssl(::SSL_new(&ctx)),
+OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx, Mode mode)
+    : _ctx(std::move(ctx)),
+      _ssl(::SSL_new(_ctx->native_context())),
       _mode(mode)
 {
     if (!_ssl) {
@@ -191,6 +192,8 @@ OpenSslCryptoCodecImpl::OpenSslCryptoCodecImpl(::SSL_CTX& ctx, Mode mode)
         ::SSL_set_accept_state(_ssl.get());
     }
 }
+
+OpenSslCryptoCodecImpl::~OpenSslCryptoCodecImpl() = default;
 
 // TODO remove spammy logging once code is stable
 

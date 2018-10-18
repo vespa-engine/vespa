@@ -97,7 +97,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
         totalHitCount += result.getTotalHitCount();
         deepHitCount += result.getDeepHitCount();
         timeAccountant.merge(result.getElapsedTime());
-        boolean create=true;
+        boolean create = true;
         if (result.getCoverage(!create) != null || getCoverage(!create) != null)
             getCoverage(create).merge(result.getCoverage(create));
     }
@@ -228,7 +228,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
 
         resultClone.hits = hits.clone();
 
-        resultClone.getTemplating().setRenderer(null); // TODO: Kind of wrong
+        resultClone.getTemplating().setRenderer(null); // TODO: Remove on Vespa 7
         resultClone.setElapsedTime(new ElapsedTime());
         return resultClone;
     }
@@ -315,16 +315,8 @@ public final class Result extends com.yahoo.processing.Response implements Clone
      * @return the coverage information of this, or null if none and create is false
      */
     public Coverage getCoverage(boolean create) {
-        if (coverage == null && create) {
-            if (hits.getError() == null) {
-                // No error here implies full coverage.
-                // Don't count this as a result set if there's no data - avoid counting empty results made
-                // to simplify code paths
-                coverage = new Coverage(0L, 0, true, (hits().size()==0 ? 0 : 1));
-            } else {
-                coverage = new Coverage(0L, 0, false);
-            }
-        }
+        if (coverage == null && create)
+            coverage = new Coverage(0L, 0, 0, (hits().size() == 0 ? 0 : 1));
         return coverage;
     }
 
@@ -350,7 +342,10 @@ public final class Result extends com.yahoo.processing.Response implements Clone
      * result rendering.
      *
      * @return helper object for result rendering
+     * @deprecated use renderers
      */
+    // TODO: Remove on Vespa 7
+    @Deprecated// OK (But wait for deprecated handlers in vespaclient-container-plugin to be removed)
     public Templating getTemplating() {
         return templating;
     }

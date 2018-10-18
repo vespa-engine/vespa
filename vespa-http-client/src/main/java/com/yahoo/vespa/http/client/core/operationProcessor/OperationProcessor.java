@@ -18,8 +18,11 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -35,7 +38,7 @@ import java.util.logging.Logger;
 public class OperationProcessor {
 
     private static final Logger log = Logger.getLogger(OperationProcessor.class.getName());
-    private final Map<String, DocumentSendInfo> docSendInfoByOperationId = new HashMap<>();
+    private final Map<String, DocumentSendInfo> docSendInfoByOperationId = new LinkedHashMap<>();
     private final ArrayListMultimap<String, Document> blockedDocumentsByDocumentId = ArrayListMultimap.create();
     private final Set<String> inflightDocumentIds = new HashSet<>();
     private final int numDestinations;
@@ -53,7 +56,7 @@ public class OperationProcessor {
     private final boolean blockOperationsToSameDocument;
     private int traceCounter = 0;
     private final boolean traceToStderr;
-    private final String clientId = new BigInteger(130, random).toString(32);;
+    private final String clientId = new BigInteger(130, random).toString(32);
 
     public OperationProcessor(
             IncompleteResultsThrottler incompleteResultsThrottler,
@@ -100,6 +103,15 @@ public class OperationProcessor {
     public int getIncompleteResultQueueSize() {
         synchronized (monitor) {
             return docSendInfoByOperationId.size();
+        }
+    }
+
+    /** Returns the id of the oldest operation to be sent. */
+    public Optional<String> oldestIncompleteResultId() {
+        synchronized (monitor) {
+            return docSendInfoByOperationId.isEmpty()
+                    ? Optional.empty()
+                    : Optional.of(docSendInfoByOperationId.keySet().iterator().next());
         }
     }
 
@@ -150,7 +162,8 @@ public class OperationProcessor {
     }
 
     private Result process(EndpointResult endpointResult, int clusterId) {
-
+        Result result;
+        Document blockedDocumentToSend = null;
         synchronized (monitor) {
             if (!docSendInfoByOperationId.containsKey(endpointResult.getOperationId())) {
                 log.finer("Received out-of-order or too late result, discarding: " + endpointResult);
@@ -172,7 +185,7 @@ public class OperationProcessor {
                 return null;
             }
 
-            Result result = documentSendInfo.createResult();
+            result = documentSendInfo.createResult();
             docSendInfoByOperationId.remove(endpointResult.getOperationId());
 
             String documentId = documentSendInfo.getDocument().getDocumentId();
@@ -184,10 +197,13 @@ public class OperationProcessor {
             if (blockedDocuments.isEmpty()) {
                 inflightDocumentIds.remove(documentId);
             } else {
-                sendToClusters(blockedDocuments.remove(0));
+                blockedDocumentToSend = blockedDocuments.remove(0);
             }
-            return result;
         }
+        if (blockedDocumentToSend != null) {
+            sendToClusters(blockedDocumentToSend);
+        }
+        return result;
     }
 
     public void resultReceived(EndpointResult endpointResult, int clusterId) {
