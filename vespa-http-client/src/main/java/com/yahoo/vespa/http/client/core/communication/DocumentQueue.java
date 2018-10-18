@@ -38,10 +38,10 @@ class DocumentQueue {
         }
     }
 
-    void put(Document document, boolean self) throws InterruptedException {
+    void put(Document document, boolean calledFromIoThreadGroup) throws InterruptedException {
         document.resetQueueTime();
         synchronized (queue) {
-            while (!closed && (queue.size() >= maxSize) && !self) {
+            while (!closed && (queue.size() >= maxSize) && !calledFromIoThreadGroup) {
                 queue.wait();
             }
             if (closed) {

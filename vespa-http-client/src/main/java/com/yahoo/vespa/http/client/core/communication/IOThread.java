@@ -36,6 +36,7 @@ class IOThread implements Runnable, AutoCloseable {
     private final DocumentQueue documentQueue;
     private final EndpointResultQueue resultQueue;
     private final Thread thread;
+    private final ThreadGroup ioThreadGroup;
     private final int clusterId;
     private final CountDownLatch running = new CountDownLatch(1);
     private final CountDownLatch stopSignal = new CountDownLatch(1);
@@ -56,6 +57,7 @@ class IOThread implements Runnable, AutoCloseable {
     private final AtomicInteger lastGatewayProcessTimeMillis = new AtomicInteger(0);
 
     IOThread(
+            ThreadGroup ioThreadGroup,
             EndpointResultQueue endpointResultQueue,
             GatewayConnection client,
             int clusterId,
@@ -72,7 +74,8 @@ class IOThread implements Runnable, AutoCloseable {
         this.maxChunkSizeBytes = maxChunkSizeBytes;
         this.maxInFlightRequests = maxInFlightRequests;
         this.gatewayThrottler = new GatewayThrottler(maxSleepTimeMs);
-        thread = new Thread(this, "IOThread " + endpoint);
+        this.thread = new Thread(ioThreadGroup, this, "IOThread " + endpoint);
+        this.ioThreadGroup = ioThreadGroup;
         thread.setDaemon(true);
         this.localQueueTimeOut = localQueueTimeOut;
         thread.start();
@@ -165,7 +168,7 @@ class IOThread implements Runnable, AutoCloseable {
 
 
     public void post(final Document document) throws InterruptedException {
-        documentQueue.put(document, Thread.currentThread() == thread);
+        documentQueue.put(document, Thread.currentThread().getThreadGroup() == ioThreadGroup);
     }
 
     @Override

@@ -87,6 +87,7 @@ public class ClusterConnection implements AutoCloseable {
                     documentQueue = new DocumentQueue(clientQueueSizePerCluster / cluster.getEndpoints().size());
                 }
                 final IOThread ioThread = new IOThread(
+                        operationProcessor.getIoThreadGroup(),
                         endpointResultQueue,
                         gatewayConnection,
                         clusterId,

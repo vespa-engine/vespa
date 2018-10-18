@@ -16,9 +16,7 @@ import com.yahoo.vespa.http.client.core.communication.ClusterConnection;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +54,7 @@ public class OperationProcessor {
     private final boolean blockOperationsToSameDocument;
     private int traceCounter = 0;
     private final boolean traceToStderr;
+    private final ThreadGroup ioThreadGroup;
     private final String clientId = new BigInteger(130, random).toString(32);
 
     public OperationProcessor(
@@ -68,6 +67,7 @@ public class OperationProcessor {
         this.incompleteResultsThrottler = incompleteResultsThrottler;
         this.timeoutExecutor = timeoutExecutor;
         this.blockOperationsToSameDocument = sessionParams.getConnectionParams().isEnableV3Protocol();
+        this.ioThreadGroup = new ThreadGroup("operationprocessor");
 
         if (sessionParams.getClusters().isEmpty()) {
             throw new IllegalArgumentException("Cannot feed to 0 clusters.");
@@ -98,6 +98,10 @@ public class OperationProcessor {
         minTimeBetweenRetriesMs = sessionParams.getConnectionParams().getMinTimeBetweenRetriesMs();
         traceEveryXOperation = sessionParams.getConnectionParams().getTraceEveryXOperation();
         traceToStderr = sessionParams.getConnectionParams().getPrintTraceToStdErr();
+    }
+
+    public ThreadGroup getIoThreadGroup() {
+        return ioThreadGroup;
     }
 
     public int getIncompleteResultQueueSize() {
