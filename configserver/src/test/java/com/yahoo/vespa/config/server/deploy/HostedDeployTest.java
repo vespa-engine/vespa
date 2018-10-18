@@ -103,14 +103,13 @@ public class HostedDeployTest {
                                          createHost("host2", "6.2.0"),
                                          createHost("host3")); //Use a host with no version as well
         InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
-        ManualClock clock = new ManualClock("2016-10-09T00:00:00");
 
-        CountingModelFactory factory600 = DeployTester.createModelFactory(Version.fromString("6.0.0"), clock);
-        CountingModelFactory factory610 = DeployTester.createModelFactory(Version.fromString("6.1.0"), clock);
-        CountingModelFactory factory620 = DeployTester.createModelFactory(Version.fromString("6.2.0"), clock);
-        CountingModelFactory factory700 = DeployTester.createModelFactory(Version.fromString("7.0.0"), clock);
-        CountingModelFactory factory710 = DeployTester.createModelFactory(Version.fromString("7.1.0"), clock);
-        CountingModelFactory factory720 = DeployTester.createModelFactory(Version.fromString("7.2.0"), clock);
+        CountingModelFactory factory600 = DeployTester.createModelFactory(Version.fromString("6.0.0"));
+        CountingModelFactory factory610 = DeployTester.createModelFactory(Version.fromString("6.1.0"));
+        CountingModelFactory factory620 = DeployTester.createModelFactory(Version.fromString("6.2.0"));
+        CountingModelFactory factory700 = DeployTester.createModelFactory(Version.fromString("7.0.0"));
+        CountingModelFactory factory710 = DeployTester.createModelFactory(Version.fromString("7.1.0"));
+        CountingModelFactory factory720 = DeployTester.createModelFactory(Version.fromString("7.2.0"));
         List<ModelFactory> modelFactories = Arrays.asList(factory600,
                                                           factory610,
                                                           factory620,
@@ -118,8 +117,7 @@ public class HostedDeployTest {
                                                           factory710,
                                                           factory720);
 
-        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(),
-                                               clock, new Zone(Environment.dev, RegionName.defaultName()), provisioner);
+        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), Clock.systemUTC(), provisioner);
         // Deploy with version that does not exist on hosts, the model for this version should also be created
         tester.deployApp("src/test/apps/hosted/", "7.0.0", Instant.now());
         assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
@@ -131,6 +129,33 @@ public class HostedDeployTest {
         assertTrue(factory700.creationCount() > 0);
         assertFalse(factory710.creationCount() > 0);
         assertTrue("Newest is always included", factory720.creationCount() > 0);
+    }
+
+
+    /** Test that only the minimal set of models are created (the wanted version and the latest version per major, since nodes are without version) */
+    @Test
+    public void testCreateOnlyNeededModelVersionsNewNodes() {
+        List<Host> hosts = Arrays.asList(createHost("host1"), createHost("host2"), createHost("host3"));
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
+
+        CountingModelFactory factory600 = DeployTester.createModelFactory(Version.fromString("6.0.0"));
+        CountingModelFactory factory610 = DeployTester.createModelFactory(Version.fromString("6.1.0"));
+        CountingModelFactory factory700 = DeployTester.createModelFactory(Version.fromString("7.0.0"));
+        CountingModelFactory factory710 = DeployTester.createModelFactory(Version.fromString("7.1.0"));
+        CountingModelFactory factory720 = DeployTester.createModelFactory(Version.fromString("7.2.0"));
+        List<ModelFactory> modelFactories = Arrays.asList(factory600, factory610, factory700, factory710, factory720);
+
+        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), Clock.systemUTC(), provisioner);
+        // Deploy with version that does not exist on hosts, the model for this version should also be created
+        tester.deployApp("src/test/apps/hosted/", "7.0.0", Instant.now());
+        assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+
+        // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
+        assertFalse(factory600.creationCount() > 0); // latest on major version 6
+        assertTrue("Newest per major version is always included", factory610.creationCount() > 0);
+        assertTrue(factory700.creationCount() > 0);
+        assertFalse(factory710.creationCount() > 0);
+        assertTrue("Newest per major version is always included", factory720.creationCount() > 0);
     }
 
     /**
