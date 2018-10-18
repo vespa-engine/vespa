@@ -5,12 +5,12 @@
   <parent>
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
-    <version>6-SNAPSHOT</version>
+    <version>7-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>vespa-documentgen-plugin</artifactId>
   <packaging>maven-plugin</packaging>
-  <version>6-SNAPSHOT</version>
+  <version>7-SNAPSHOT</version>
   <name>Vespa DocumentGen Plugin</name>
   <dependencies>
     <dependency>
