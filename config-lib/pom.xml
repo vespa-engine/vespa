@@ -8,12 +8,12 @@
   <parent>
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
-    <version>6-SNAPSHOT</version>
+    <version>7-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>config-lib</artifactId>
   <packaging>container-plugin</packaging>
-  <version>6-SNAPSHOT</version>
+  <version>7-SNAPSHOT</version>
   <name>${project.artifactId}</name>
   <dependencies>
     <dependency>
