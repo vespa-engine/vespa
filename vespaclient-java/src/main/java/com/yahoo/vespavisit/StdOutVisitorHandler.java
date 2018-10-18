@@ -219,7 +219,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
             out.println("]");
         }
 
-        public void onMapVisitorData(Map<String, String> data) {
+        private void onMapVisitorData(Map<String, String> data) {
             for (String key : data.keySet()) {
                 if (doStatistics) {
                     Integer i = statisticsMap.get(key);
@@ -234,7 +234,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
             }
         }
 
-        public void onDocumentList(BucketId bucketId, List<DocumentListEntry> documents) {
+        private void onDocumentList(BucketId bucketId, List<DocumentListEntry> documents) {
             out.println("Got document list of bucket " + bucketId.toString());
             for (DocumentListEntry entry : documents) {
                 entry.getDocument().setLastModified(entry.getTimestamp());
@@ -242,7 +242,7 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
             }
         }
 
-        public void onEmptyBuckets(List<BucketId> bucketIds) {
+        private void onEmptyBuckets(List<BucketId> bucketIds) {
             StringBuilder buckets = new StringBuilder();
             for(BucketId bid : bucketIds) {
                 buckets.append(" ");
