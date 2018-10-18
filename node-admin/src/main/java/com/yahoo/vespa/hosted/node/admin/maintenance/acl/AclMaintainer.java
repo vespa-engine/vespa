@@ -2,11 +2,10 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
 import com.google.common.net.InetAddresses;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.dockerapi.Container;
-import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddresses;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
@@ -31,23 +30,21 @@ import java.util.stream.Collectors;
  * @author mpolden
  * @author smorgrav
  */
-public class AclMaintainer implements Runnable {
+public class AclMaintainer {
 
     private static final PrefixLogger log = PrefixLogger.getNodeAdminLogger(AclMaintainer.class);
 
     private final DockerOperations dockerOperations;
     private final NodeRepository nodeRepository;
     private final IPAddresses ipAddresses;
-    private final String nodeAdminHostname;
-    private final Environment environment;
+    private final String hostHostname;
 
     public AclMaintainer(DockerOperations dockerOperations, NodeRepository nodeRepository,
-                         String nodeAdminHostname, IPAddresses ipAddresses, Environment environment) {
+                         HostName hostHostname, IPAddresses ipAddresses) {
         this.dockerOperations = dockerOperations;
         this.nodeRepository = nodeRepository;
         this.ipAddresses = ipAddresses;
-        this.nodeAdminHostname = nodeAdminHostname;
-        this.environment = environment;
+        this.hostHostname = hostHostname.value();
     }
 
     private void applyRedirect(Container container, InetAddress address) {
@@ -68,21 +65,18 @@ public class AclMaintainer implements Runnable {
     }
 
     private synchronized void configureAcls() {
-        if (environment.getDockerNetworking() != DockerNetworking.NPT) return;
-
         log.info("Configuring ACLs"); // Needed to potentially nail down when ACL maintainer stopped working
         Map<String, Container> runningContainers = dockerOperations
                 .getAllManagedContainers().stream()
                 .filter(container -> container.state.isRunning())
                 .collect(Collectors.toMap(container -> container.hostname, container -> container));
 
-        nodeRepository.getAcls(nodeAdminHostname).entrySet().stream()
+        nodeRepository.getAcls(hostHostname).entrySet().stream()
                 .filter(entry -> runningContainers.containsKey(entry.getKey()))
                 .forEach(entry -> apply(runningContainers.get(entry.getKey()), entry.getValue()));
     }
 
-    @Override
-    public void run() {
+    public void converge() {
         try {
             configureAcls();
         } catch (Throwable t) {

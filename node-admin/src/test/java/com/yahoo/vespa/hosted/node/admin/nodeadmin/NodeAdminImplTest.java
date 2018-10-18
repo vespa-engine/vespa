@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -37,10 +38,9 @@ public class NodeAdminImplTest {
     // Trick to allow mocking of typed interface without casts/warnings.
     private interface NodeAgentFactory extends Function<String, NodeAgent> {}
     private final Function<String, NodeAgent> nodeAgentFactory = mock(NodeAgentFactory.class);
-    private final Runnable aclMaintainer = mock(Runnable.class);
     private final ManualClock clock = new ManualClock();
 
-    private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(nodeAgentFactory, aclMaintainer,
+    private final NodeAdminImpl nodeAdmin = new NodeAdminImpl(nodeAgentFactory, Optional.empty(),
             new MetricReceiverWrapper(MetricReceiver.nullImplementation), clock);
 
     @Test

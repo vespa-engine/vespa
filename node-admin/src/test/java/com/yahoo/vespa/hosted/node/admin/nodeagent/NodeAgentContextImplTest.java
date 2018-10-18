@@ -1,13 +1,9 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
 import java.nio.file.FileSystem;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static org.junit.Assert.assertEquals;
 
@@ -16,7 +12,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class NodeAgentContextImplTest {
     private final FileSystem fileSystem = TestFileSystem.create();
-    private final NodeAgentContext context = nodeAgentFromHostname(fileSystem, "container-1.domain.tld");
+    private final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-1.domain.tld")
+            .fileSystem(fileSystem).build();
 
     @Test
     public void path_on_host_from_path_in_node_test() {
@@ -70,19 +67,5 @@ public class NodeAgentContextImplTest {
     @Test(expected=IllegalArgumentException.class)
     public void path_under_vespa_home_must_be_relative() {
         context.pathInNodeUnderVespaHome("/home");
-    }
-
-
-    public static NodeAgentContext nodeAgentFromHostname(String hostname) {
-        FileSystem fileSystem = TestFileSystem.create();
-        return nodeAgentFromHostname(fileSystem, hostname);
-    }
-
-    public static NodeAgentContext nodeAgentFromHostname(FileSystem fileSystem, String hostname) {
-        final Path vespaHomeInContainer = Paths.get("/opt/vespa");
-        final Path containerStoragePath = fileSystem.getPath("/home/docker");
-
-        return new NodeAgentContextImpl(hostname, NodeType.tenant, new AthenzService("domain", "service"),
-                containerStoragePath, vespaHomeInContainer);
     }
 }

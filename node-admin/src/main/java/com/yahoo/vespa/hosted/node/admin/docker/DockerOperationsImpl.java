@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.component.Environment;
+import com.yahoo.vespa.hosted.node.admin.component.ContainerEnvironmentResolver;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
@@ -46,13 +46,19 @@ public class DockerOperationsImpl implements DockerOperations {
     private static final String IPV4_NPT_PREFIX = "172.17.0.0";
 
     private final Docker docker;
-    private final Environment environment;
     private final ProcessExecuter processExecuter;
+    private final ContainerEnvironmentResolver containerEnvironmentResolver;
+    private final List<String> configServerHostnames;
+    private final IPAddresses ipAddresses;
 
-    public DockerOperationsImpl(Docker docker, Environment environment, ProcessExecuter processExecuter) {
+    public DockerOperationsImpl(Docker docker, ProcessExecuter processExecuter,
+                                ContainerEnvironmentResolver containerEnvironmentResolver,
+                                List<String> configServerHostnames, IPAddresses ipAddresses) {
         this.docker = docker;
-        this.environment = environment;
         this.processExecuter = processExecuter;
+        this.containerEnvironmentResolver = containerEnvironmentResolver;
+        this.configServerHostnames = configServerHostnames;
+        this.ipAddresses = ipAddresses;
     }
 
     @Override
@@ -60,11 +66,11 @@ public class DockerOperationsImpl implements DockerOperations {
         context.log(logger, "Creating container");
 
         // IPv6 - Assume always valid
-        Inet6Address ipV6Address = environment.getIpAddresses().getIPv6Address(node.getHostname()).orElseThrow(
+        Inet6Address ipV6Address = ipAddresses.getIPv6Address(node.getHostname()).orElseThrow(
                 () -> new RuntimeException("Unable to find a valid IPv6 address for " + node.getHostname() +
                         ". Missing an AAAA DNS entry?"));
 
-        String configServers = String.join(",", environment.getConfigServerHostNames());
+        String configServers = String.join(",", configServerHostnames);
 
         Docker.CreateContainerCommand command = docker.createContainerCommand(
                 node.getWantedDockerImage().get(),
@@ -73,8 +79,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 node.getHostname())
                 .withManagedBy(MANAGER_NAME)
                 .withEnvironment("VESPA_CONFIGSERVERS", configServers)
-                .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS",
-                        environment.getContainerEnvironmentResolver().createSettings(environment, node))
+                .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS", containerEnvironmentResolver.createSettings(node))
                 .withUlimit("nofile", 262_144, 262_144)
                 .withUlimit("nproc", 32_768, 409_600)
                 .withUlimit("core", -1, -1)
@@ -82,7 +87,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withAddCapability("SYS_ADMIN"); // Needed for perf
 
 
-        DockerNetworking networking = environment.getDockerNetworking();
+        DockerNetworking networking = context.dockerNetworking();
         command.withNetworkMode(networking.getDockerNetworkMode());
 
         if (networking == DockerNetworking.NPT) {
@@ -91,7 +96,7 @@ public class DockerOperationsImpl implements DockerOperations {
             command.withIpAddress(ipV6Local);
 
             // IPv4 - Only present for some containers
-            Optional<InetAddress> ipV4Local = environment.getIpAddresses().getIPv4Address(node.getHostname())
+            Optional<InetAddress> ipV4Local = ipAddresses.getIPv4Address(node.getHostname())
                     .map(ipV4Address -> {
                         InetAddress ipV4Prefix = InetAddresses.forString(IPV4_NPT_PREFIX);
                         return IPAddresses.prefixTranslate(ipV4Address, ipV4Prefix, 2);
@@ -265,7 +270,6 @@ public class DockerOperationsImpl implements DockerOperations {
         // Paths unique to each container
         List<Path> paths = new ArrayList<>(Arrays.asList(
                 Paths.get("/etc/yamas-agent"),
-                Paths.get("/etc/filebeat"),
                 context.pathInNodeUnderVespaHome("logs/daemontools_y"),
                 context.pathInNodeUnderVespaHome("logs/jdisc_core"),
                 context.pathInNodeUnderVespaHome("logs/langdetect/"),

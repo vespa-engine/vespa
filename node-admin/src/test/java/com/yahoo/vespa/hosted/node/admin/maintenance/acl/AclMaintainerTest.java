@@ -1,14 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.acl;
 
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.component.Environment;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
-import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
@@ -32,21 +31,18 @@ import static org.mockito.Mockito.when;
 
 public class AclMaintainerTest {
 
-    private static final String NODE_ADMIN_HOSTNAME = "node-admin.region-1.yahoo.com";
-
+    private final HostName hostHostname = HostName.from("node-admin.region-1.yahoo.com");
     private final IPAddressesMock ipAddresses = new IPAddressesMock();
     private final DockerOperations dockerOperations = mock(DockerOperations.class);
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Map<String, Container> containers = new HashMap<>();
     private final List<Container> containerList = new ArrayList<>();
-    private final Environment env = mock(Environment.class);
     private final AclMaintainer aclMaintainer =
-            new AclMaintainer(dockerOperations, nodeRepository, NODE_ADMIN_HOSTNAME, ipAddresses, env);
+            new AclMaintainer(dockerOperations, nodeRepository, hostHostname, ipAddresses);
 
     @Before
     public void before() {
         when(dockerOperations.getAllManagedContainers()).thenReturn(containerList);
-        when(env.getDockerNetworking()).thenReturn(DockerNetworking.NPT);
     }
 
     @Test
@@ -54,14 +50,14 @@ public class AclMaintainerTest {
         Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
         Map<String, Acl> acls = makeAcl(container.hostname, "4321", "2001::1");
 
-        when(nodeRepository.getAcls(NODE_ADMIN_HOSTNAME)).thenReturn(acls);
+        when(nodeRepository.getAcls(hostHostname.value())).thenReturn(acls);
 
         whenListRules(container.name, "filter", IPVersion.IPv6, "");
         whenListRules(container.name, "filter", IPVersion.IPv4, "");
         whenListRules(container.name, "nat", IPVersion.IPv4, "");
         whenListRules(container.name, "nat", IPVersion.IPv6, "");
 
-        aclMaintainer.run();
+        aclMaintainer.converge();
 
         verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("iptables-restore"), anyVararg()); //we don;t have a ip4 address for the container so no redirect either
         verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables-restore"), anyVararg());
@@ -72,14 +68,14 @@ public class AclMaintainerTest {
         Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
         Map<String, Acl> acls = makeAcl(container.hostname, "4321", "2001::1");
 
-        when(nodeRepository.getAcls(NODE_ADMIN_HOSTNAME)).thenReturn(acls);
+        when(nodeRepository.getAcls(hostHostname.value())).thenReturn(acls);
 
         whenListRules(container.name, "filter", IPVersion.IPv6, "");
         whenListRules(container.name, "filter", IPVersion.IPv4, "");
         whenListRules(container.name, "nat", IPVersion.IPv4, "");
         whenListRules(container.name, "nat", IPVersion.IPv6, "");
 
-        aclMaintainer.run();
+        aclMaintainer.converge();
 
         verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("iptables-restore"), anyVararg()); //we don;t have a ip4 address for the container so no redirect either
         verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables-restore"), anyVararg());
@@ -90,9 +86,9 @@ public class AclMaintainerTest {
         Container container = addContainer("container1", "container1.host.com", Container.State.EXITED);
         Map<String, Acl> acls = makeAcl(container.hostname, "4321", "2001::1");
 
-        when(nodeRepository.getAcls(NODE_ADMIN_HOSTNAME)).thenReturn(acls);
+        when(nodeRepository.getAcls(hostHostname.value())).thenReturn(acls);
 
-        aclMaintainer.run();
+        aclMaintainer.converge();
 
         verify(dockerOperations, never()).executeCommandInNetworkNamespace(eq(container.name), anyVararg());
     }
@@ -102,7 +98,7 @@ public class AclMaintainerTest {
         Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
         Map<String, Acl> acls = makeAcl(container.hostname, "4321,2345,22", "2001::1", "fd01:1234::4321");
 
-        when(nodeRepository.getAcls(NODE_ADMIN_HOSTNAME)).thenReturn(acls);
+        when(nodeRepository.getAcls(hostHostname.value())).thenReturn(acls);
 
         String IPV6 = "-P INPUT ACCEPT\n" +
                 "-P FORWARD ACCEPT\n" +
@@ -125,7 +121,7 @@ public class AclMaintainerTest {
         whenListRules(container.name, "filter", IPVersion.IPv4, ""); //IPv4 will then differ from wanted
         whenListRules(container.name, "nat", IPVersion.IPv6, NATv6);
 
-        aclMaintainer.run();
+        aclMaintainer.converge();
 
         verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("iptables-restore"), anyVararg());
         verify(dockerOperations, never()).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables-restore"), anyVararg());
@@ -136,7 +132,7 @@ public class AclMaintainerTest {
         Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
         Map<String, Acl> acls = makeAcl(container.hostname, "22,4443,2222", "2001::1", "192.64.13.2");
 
-        when(nodeRepository.getAcls(NODE_ADMIN_HOSTNAME)).thenReturn(acls);
+        when(nodeRepository.getAcls(hostHostname.value())).thenReturn(acls);
 
         String IPV4_FILTER = "-P INPUT ACCEPT\n" +
                 "-P FORWARD ACCEPT\n" +
@@ -168,7 +164,7 @@ public class AclMaintainerTest {
         whenListRules(container.name, "nat", IPVersion.IPv6, IPV6_NAT);
         whenListRules(container.name, "filter", IPVersion.IPv4, IPV4_FILTER);
 
-        aclMaintainer.run();
+        aclMaintainer.converge();
 
         verify(dockerOperations, never()).executeCommandInNetworkNamespace(any(), eq("ip6tables-restore"), anyVararg());
         verify(dockerOperations, never()).executeCommandInNetworkNamespace(any(), eq("iptables-restore"), anyVararg());
@@ -179,7 +175,7 @@ public class AclMaintainerTest {
     public void rollback_is_attempted_when_applying_acl_fail() {
         Container container = addContainer("container1", "container1.host.com", Container.State.RUNNING);
         Map<String, Acl> acls = makeAcl(container.hostname, "4321", "2001::1");
-        when(nodeRepository.getAcls(NODE_ADMIN_HOSTNAME)).thenReturn(acls);
+        when(nodeRepository.getAcls(hostHostname.value())).thenReturn(acls);
 
         String IPV6_NAT = "-P PREROUTING ACCEPT\n" +
                 "-P INPUT ACCEPT\n" +
@@ -199,7 +195,7 @@ public class AclMaintainerTest {
                 eq(container.name),
                 eq("iptables-restore"), anyVararg())).thenThrow(new RuntimeException("iptables restore failed"));
 
-        aclMaintainer.run();
+        aclMaintainer.converge();
 
         verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name),
                 eq("ip6tables"), eq("-F"), eq("-t"), eq("filter"));
