@@ -1,0 +1,9 @@
+# Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.hosted.controller.tls.config
+
+# Path to the CA trust store
+caTrustStore       string
+
+# Secret store key names for certificate and private key
+certificateSecret  string default=vespa_hosted.tls.cert
+privateKeySecret   string default=vespa_hosted.tls.key
