@@ -87,10 +87,10 @@ public class HostedDeployTest {
     @Test
     public void testDeployMultipleVersions() {
         ManualClock clock = new ManualClock("2016-10-09T00:00:00");
-        List<ModelFactory> modelFactories = new ArrayList<>();
-        modelFactories.add(DeployTester.createModelFactory(Version.fromString("6.1.0"), clock));
-        modelFactories.add(DeployTester.createModelFactory(Version.fromString("6.2.0"), clock));
-        modelFactories.add(DeployTester.createModelFactory(Version.fromString("7.0.0"), clock));
+        List<ModelFactory> modelFactories =
+                Arrays.asList(DeployTester.createModelFactory(Version.fromString("6.1.0"), clock),
+                              DeployTester.createModelFactory(Version.fromString("6.2.0"), clock),
+                              DeployTester.createModelFactory(Version.fromString("7.0.0"), clock));
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), clock, Zone.defaultZone());
         tester.deployApp("src/test/apps/hosted/", "6.2.0", Instant.now());
         assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
@@ -99,10 +99,9 @@ public class HostedDeployTest {
     /** Test that only the minimal set of models are created (model versions used on hosts, the wanted version and the latest version) */
     @Test
     public void testCreateOnlyNeededModelVersions() {
-        List<Host> hosts = new ArrayList<>();
-        hosts.add(createHost("host1", "6.0.0"));
-        hosts.add(createHost("host2", "6.0.2"));
-        hosts.add(createHost("host3", "7.1.0"));
+        List<Host> hosts = Arrays.asList(createHost("host1", "6.0.0"),
+                                         createHost("host2", "6.2.0"),
+                                         createHost("host3")); //Use a host with no version as well
         InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
         ManualClock clock = new ManualClock("2016-10-09T00:00:00");
 
@@ -112,13 +111,12 @@ public class HostedDeployTest {
         CountingModelFactory factory700 = DeployTester.createModelFactory(Version.fromString("7.0.0"), clock);
         CountingModelFactory factory710 = DeployTester.createModelFactory(Version.fromString("7.1.0"), clock);
         CountingModelFactory factory720 = DeployTester.createModelFactory(Version.fromString("7.2.0"), clock);
-        List<ModelFactory> modelFactories = new ArrayList<>();
-        modelFactories.add(factory600);
-        modelFactories.add(factory610);
-        modelFactories.add(factory620);
-        modelFactories.add(factory700);
-        modelFactories.add(factory710);
-        modelFactories.add(factory720);
+        List<ModelFactory> modelFactories = Arrays.asList(factory600,
+                                                          factory610,
+                                                          factory620,
+                                                          factory700,
+                                                          factory710,
+                                                          factory720);
 
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(),
                                                clock, new Zone(Environment.dev, RegionName.defaultName()), provisioner);
@@ -131,7 +129,7 @@ public class HostedDeployTest {
         assertFalse(factory610.creationCount() > 0);
         assertTrue(factory620.creationCount() > 0);
         assertTrue(factory700.creationCount() > 0);
-        assertTrue(factory710.creationCount() > 0);
+        assertFalse(factory710.creationCount() > 0);
         assertTrue("Newest is always included", factory720.creationCount() > 0);
     }
 
@@ -148,13 +146,12 @@ public class HostedDeployTest {
 
         CountingModelFactory factory700 = DeployTester.createModelFactory(Version.fromString("7.0.0"), clock);
         CountingModelFactory factory720 = DeployTester.createModelFactory(Version.fromString("7.2.0"), clock);
-        List<ModelFactory> modelFactories = new ArrayList<>();
-        modelFactories.add(factory700);
-        modelFactories.add(factory720);
+        List<ModelFactory> modelFactories = Arrays.asList(factory700, factory720);
 
         DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(),
                                                clock, new Zone(Environment.dev, RegionName.defaultName()), provisioner);
         tester.deployApp("src/test/apps/hosted-routing-app/", "7.2.0", Instant.now());
+        assertFalse(factory700.creationCount() > 0);
         assertTrue("Newest is always included", factory720.creationCount() > 0);
     }
 
@@ -224,6 +221,10 @@ public class HostedDeployTest {
 
     @Test
     public void testThatConfigChangeActionsAreCollectedFromAllModels() {
+        List<Host> hosts = Arrays.asList(createHost("host1", "6.1.0"),
+                                         createHost("host2", "6.2.0"),
+                                         createHost("host3", "6.2.0"));
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
         List<ServiceInfo> services = Collections.singletonList(
                 new ServiceInfo("serviceName", "serviceType", null, new HashMap<>(), "configId", "hostName"));
 
@@ -231,7 +232,7 @@ public class HostedDeployTest {
                 new ConfigChangeActionsModelFactory(Version.fromIntValues(6, 1, 0), new MockRestartAction("change", services)),
                 new ConfigChangeActionsModelFactory(Version.fromIntValues(6, 2, 0), new MockRestartAction("other change", services)));
 
-        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig());
+        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), Clock.systemUTC(), provisioner);
         PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.2.0", Instant.now());
 
         assertEquals(3, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());

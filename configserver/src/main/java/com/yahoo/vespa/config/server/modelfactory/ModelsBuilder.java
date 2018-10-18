@@ -148,7 +148,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             return allApplicationVersions;
 
         // load old model versions
-        versions = versionsToBuild(versions, wantedNodeVespaVersion, allocatedHosts.get());
+        versions = versionsToBuild(versions, wantedNodeVespaVersion, latest.getMajor(), allocatedHosts.get());
         // TODO: We use the allocated hosts from the newest version when building older model versions.
         // This is correct except for the case where an old model specifies a cluster which the new version
         // does not. In that case we really want to extend the set of allocated hosts to include those of that
@@ -169,16 +169,14 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         return allApplicationVersions;
     }
 
-    private Set<Version> versionsToBuild(Set<Version> versions, com.yahoo.component.Version wantedVersion, AllocatedHosts allocatedHosts) {
+    private Set<Version> versionsToBuild(Set<Version> versions, com.yahoo.component.Version wantedVersion, int majorVersion, AllocatedHosts allocatedHosts) {
         if (configserverConfig.buildMinimalSetOfConfigModels())
             versions = keepThoseUsedOn(allocatedHosts, versions);
 
         // Make sure we build wanted version if we are building models for this major version and we are on hosted vespa
         // If not on hosted vespa, we do not want to try to build this version, since we have only one version (the latest)
-        // Also handle the case where there are no allocated hosts in the zone, so versions is empty
-        Version wanted = Version.fromIntValues(wantedVersion.getMajor(), wantedVersion.getMinor(), wantedVersion.getMicro());
-        if (hosted && (versions.isEmpty() || wantedVersion.getMajor() == findLatest(versions).getMajor()))
-            versions.add(wanted);
+        if (hosted && wantedVersion.getMajor() == majorVersion)
+            versions.add(Version.fromIntValues(wantedVersion.getMajor(), wantedVersion.getMinor(), wantedVersion.getMicro()));
 
         return versions;
     }
@@ -204,7 +202,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     private boolean mayBeUsedOn(AllocatedHosts hosts, Version version) {
         com.yahoo.component.Version v = new com.yahoo.component.Version(version.toString());
         return hosts.getHosts().stream()
-                               .anyMatch(host -> ! host.version().isPresent() || host.version().get().equals(v));
+                               .anyMatch(host -> host.version().isPresent() && host.version().get().equals(v));
     }
 
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
