@@ -8,8 +8,6 @@ import com.yahoo.document.json.JsonWriter;
 import com.yahoo.document.serialization.XmlStream;
 import com.yahoo.documentapi.AckToken;
 import com.yahoo.documentapi.DumpVisitorDataHandler;
-import com.yahoo.documentapi.ProgressToken;
-import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorDataHandler;
 import com.yahoo.documentapi.messagebus.protocol.DocumentListEntry;
 import com.yahoo.documentapi.messagebus.protocol.DocumentListMessage;
@@ -31,7 +29,7 @@ import java.util.logging.Logger;
  * Due to java not being able to inherit two classes, and neither being an
  * interface this had to be implemented by creating a wrapper class.
  *
- * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
+ * @author Thomas Gundersen
  */
 public class StdOutVisitorHandler extends VdsVisitHandler {
     private static final Logger log = Logger.getLogger(
@@ -251,42 +249,6 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
             }
             statisticsMap.dumpAll();
             super.onDone();
-        }
-    }
-
-    class ControlHandler extends VisitorControlHandler {
-        public void onProgress(ProgressToken token) {
-            if (showProgress) {
-                synchronized (printLock) {
-                    if (lastLineIsProgress) {
-                        System.err.print('\r');
-                    }
-                    System.err.format("%.1f %% finished.",
-                                      token.percentFinished());
-                    lastLineIsProgress = true;
-                }
-            }
-            super.onProgress(token);
-        }
-
-        public void onDone(CompletionCode code, String message) {
-            if (lastLineIsProgress) {
-                System.err.print('\n');
-                lastLineIsProgress = false;
-            }
-            if (code != CompletionCode.SUCCESS) {
-                if (code == CompletionCode.ABORTED) {
-                    System.err.println("Visitor aborted: " + message);
-                } else if (code == CompletionCode.TIMEOUT) {
-                    System.err.println("Visitor timed out: " + message);
-                } else {
-                    System.err.println("Visitor aborted due to unknown issue "
-                                     + code + ": " + message);
-                }
-            } else if (showProgress) {
-                System.err.println("Completed visiting.");
-            }
-            super.onDone(code, message);
         }
     }
 }
