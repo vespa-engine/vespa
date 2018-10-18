@@ -39,6 +39,7 @@ public class DeploymentSpec {
     /** The empty deployment spec, specifying no zones or rotation, and defaults for all settings */
     public static final DeploymentSpec empty = new DeploymentSpec(Optional.empty(),
                                                                   UpgradePolicy.defaultPolicy,
+                                                                  Optional.empty(),
                                                                   Collections.emptyList(),
                                                                   Collections.emptyList(),
                                                                   "<deployment version='1.0'/>",
@@ -47,6 +48,7 @@ public class DeploymentSpec {
     
     private final Optional<String> globalServiceId;
     private final UpgradePolicy upgradePolicy;
+    private final Optional<Integer> majorVersion;
     private final List<ChangeBlocker> changeBlockers;
     private final List<Step> steps;
     private final String xmlForm;
@@ -55,15 +57,21 @@ public class DeploymentSpec {
 
     public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
                           List<ChangeBlocker> changeBlockers, List<Step> steps) {
-        this(globalServiceId, upgradePolicy, changeBlockers, steps, null, Optional.empty(), Optional.empty());
+        this(globalServiceId, upgradePolicy, Optional.empty(), changeBlockers, steps, null, Optional.empty(), Optional.empty());
     }
 
-    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy,
+    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, Optional<Integer> majorVersion,
+                          List<ChangeBlocker> changeBlockers, List<Step> steps) {
+        this(globalServiceId, upgradePolicy, majorVersion, changeBlockers, steps, null, Optional.empty(), Optional.empty());
+    }
+
+    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, Optional<Integer> majorVersion,
                           List<ChangeBlocker> changeBlockers, List<Step> steps, String xmlForm,
                           Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService) {
         validateTotalDelay(steps);
         this.globalServiceId = globalServiceId;
         this.upgradePolicy = upgradePolicy;
+        this.majorVersion = majorVersion;
         this.changeBlockers = changeBlockers;
         this.steps = ImmutableList.copyOf(completeSteps(new ArrayList<>(steps)));
         this.xmlForm = xmlForm;
@@ -165,6 +173,9 @@ public class DeploymentSpec {
 
     /** Returns the upgrade policy of this, which is defaultPolicy if none is specified */
     public UpgradePolicy upgradePolicy() { return upgradePolicy; }
+
+    /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
+    public Optional<Integer> majorVersion() { return majorVersion; }
 
     /** Returns whether upgrade can occur at the given instant */
     public boolean canUpgradeAt(Instant instant) {

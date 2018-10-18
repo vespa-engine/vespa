@@ -30,12 +30,27 @@ public class DeploymentSpecTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals(specXml, spec.xmlForm());
         assertEquals(1, spec.steps().size());
+        assertFalse(spec.majorVersion().isPresent());
         assertTrue(spec.steps().get(0).deploysTo(Environment.test));
         assertTrue(spec.includes(Environment.test, Optional.empty()));
         assertFalse(spec.includes(Environment.test, Optional.of(RegionName.from("region1"))));
         assertFalse(spec.includes(Environment.staging, Optional.empty()));
         assertFalse(spec.includes(Environment.prod, Optional.empty()));
         assertFalse(spec.globalServiceId().isPresent());
+    }
+
+    @Test
+    public void testSpecPinningMajorVersion() {
+        String specXml = "<deployment version='1.0' major-version='6'>" +
+                         "   <test/>" +
+                         "</deployment>";
+
+        StringReader r = new StringReader(specXml);
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(specXml, spec.xmlForm());
+        assertEquals(1, spec.steps().size());
+        assertTrue(spec.majorVersion().isPresent());
+        assertEquals(6, (int)spec.majorVersion().get());
     }
 
     @Test

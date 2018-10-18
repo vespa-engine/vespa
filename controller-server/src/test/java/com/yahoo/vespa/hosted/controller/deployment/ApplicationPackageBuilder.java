@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -30,11 +31,17 @@ public class ApplicationPackageBuilder {
     private final StringBuilder validationOverridesBody = new StringBuilder();
     private final StringBuilder blockChange = new StringBuilder();
 
+    private Optional<Integer> majorVersion = Optional.empty();
     private String upgradePolicy = null;
     private Environment environment = Environment.prod;
     private String globalServiceId = null;
     private String athenzIdentityAttributes = null;
     private String searchDefinition = "search test { }";
+
+    public ApplicationPackageBuilder majorVersion(int majorVersion) {
+        this.majorVersion = Optional.of(majorVersion);
+        return this;
+    }
 
     public ApplicationPackageBuilder upgradePolicy(String upgradePolicy) {
         this.upgradePolicy = upgradePolicy;
@@ -108,6 +115,7 @@ public class ApplicationPackageBuilder {
     private byte[] deploymentSpec() {
         StringBuilder xml = new StringBuilder();
         xml.append("<deployment version='1.0' ");
+        majorVersion.ifPresent(v -> xml.append("major-version='").append(v).append("' "));
         if(athenzIdentityAttributes != null) {
             xml.append(athenzIdentityAttributes);
         }

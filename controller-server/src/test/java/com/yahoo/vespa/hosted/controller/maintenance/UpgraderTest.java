@@ -890,6 +890,40 @@ public class UpgraderTest {
     }
 
     @Test
+    public void testPinningMajorVersion() {
+        Version version = Version.fromString("6.2");
+        tester.upgradeSystem(version);
+
+        ApplicationPackage version6ApplicationPackage = new ApplicationPackageBuilder()
+                                                                .majorVersion(6)
+                                                                .upgradePolicy("default")
+                                                                .environment(Environment.prod)
+                                                                .region("us-west-1")
+                                                                .build();
+
+        // Setup applications
+        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
+        Application default0 = tester.createAndDeploy("default0", 2, version6ApplicationPackage);
+
+        // New major version is released
+        version = Version.fromString("7.0");
+        tester.upgradeSystem(version);
+        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
+        tester.triggerUntilQuiescence();
+
+        // ... canary upgrade to it
+        assertEquals(2, tester.buildService().jobs().size());
+        tester.completeUpgrade(canary0, version, "canary");
+        assertEquals(0, tester.buildService().jobs().size());
+        tester.computeVersionStatus();
+
+        // The other application does not because it has pinned to major version 6
+        tester.upgrader().maintain();
+        tester.triggerUntilQuiescence();
+        assertEquals(0, tester.buildService().jobs().size());
+    }
+
+    @Test
     public void testAllowApplicationChangeDuringFailingUpgrade() {
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
