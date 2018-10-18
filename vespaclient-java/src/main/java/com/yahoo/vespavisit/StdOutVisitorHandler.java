@@ -215,10 +215,6 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
             }
         }
 
-        private void writeFeedEnd() {
-            out.println("]");
-        }
-
         private void onMapVisitorData(Map<String, String> data) {
             for (String key : data.keySet()) {
                 if (doStatistics) {
@@ -253,8 +249,8 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
 
         @Override
         public synchronized void onDone() {
-            if (jsonOutput) {
-                writeFeedEnd();
+            if (jsonOutput && !printIds) {
+                out.println("]");
             }
             statisticsMap.dumpAll();
             super.onDone();
