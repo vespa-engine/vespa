@@ -3,7 +3,6 @@ package com.yahoo.search.dispatch;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.compress.Compressor;
-import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.processing.request.CompoundName;
@@ -52,9 +51,8 @@ public class RpcResourcePool {
         if (query.properties().getBoolean(dispatchSummaries, true)
             && ! searcher.summaryNeedsQuery(query)
             && query.getRanking().getLocation() == null
-            && ! searcher.getCacheControl().useCache(query)
-            && ! legacyEmulationConfigIsSet(documentDb)) {
-
+            && ! searcher.getCacheControl().useCache(query))
+        {
             return Optional.of(new RpcFillInvoker(this, documentDb));
         } else {
             return Optional.empty();
@@ -64,17 +62,6 @@ public class RpcResourcePool {
     // for testing
     public FillInvoker getFillInvoker(DocumentDatabase documentDb) {
         return new RpcFillInvoker(this, documentDb);
-    }
-
-    private boolean legacyEmulationConfigIsSet(DocumentDatabase db) {
-        LegacyEmulationConfig config = db.getDocsumDefinitionSet().legacyEmulationConfig();
-        if (config.forceFillEmptyFields())
-            return true;
-        if (config.stringBackedFeatureData())
-            return true;
-        if (config.stringBackedStructuredData())
-            return true;
-        return false;
     }
 
     public Compressor compressor() {
