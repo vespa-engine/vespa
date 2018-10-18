@@ -55,7 +55,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
         }
         if (! hostname.contains(".")) {
             deployLogger.log(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
-                    "since it is not a canonical hostname");
+                                            "since it is not a canonical hostname");
         }
     }
 
