@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImplTest;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestChildProcess2;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
@@ -47,8 +47,7 @@ import static org.mockito.Mockito.when;
 public class CoredumpHandlerTest {
     private final FileSystem fileSystem = TestFileSystem.create();
     private final Path donePath = fileSystem.getPath("/home/docker/dumps");
-    private final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld")
-            .fileSystem(fileSystem).build();
+    private final NodeAgentContext context = NodeAgentContextImplTest.nodeAgentFromHostname(fileSystem, "container-123.domain.tld");
     private final Path crashPathInContainer = Paths.get("/var/crash");
     private final Path doneCoredumpsPath = fileSystem.getPath("/home/docker/dumps");
 

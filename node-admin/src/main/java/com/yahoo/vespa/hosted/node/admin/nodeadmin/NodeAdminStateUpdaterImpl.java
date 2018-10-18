@@ -1,11 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
-import com.yahoo.config.provision.HostName;
+import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.concurrent.classlock.ClassLock;
+import com.yahoo.concurrent.classlock.ClassLocking;
+import com.yahoo.concurrent.classlock.LockInterruptException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
@@ -19,7 +24,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -45,34 +54,55 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     private RuntimeException lastConvergenceException;
 
     private final Logger log = Logger.getLogger(NodeAdminStateUpdater.class.getName());
+    private final ScheduledExecutorService specVerifierScheduler =
+            Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("specverifier"));
     private final Thread loopThread;
 
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final NodeAdmin nodeAdmin;
     private final Clock clock;
-    private final String hostHostname;
+    private final String dockerHostHostName;
     private final Duration nodeAdminConvergeStateInterval;
 
+    private final Optional<ClassLocking> classLocking;
+    private Optional<ClassLock> classLock = Optional.empty();
     private Instant lastTick;
 
     public NodeAdminStateUpdaterImpl(
             NodeRepository nodeRepository,
             Orchestrator orchestrator,
+            StorageMaintainer storageMaintainer,
             NodeAdmin nodeAdmin,
-            HostName hostHostname,
+            String dockerHostHostName,
             Clock clock,
-            Duration nodeAdminConvergeStateInterval) {
+            Duration nodeAdminConvergeStateInterval,
+            Optional<ClassLocking> classLocking) {
+        log.info(objectToString() + ": Creating object");
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.nodeAdmin = nodeAdmin;
-        this.hostHostname = hostHostname.value();
+        this.dockerHostHostName = dockerHostHostName;
         this.clock = clock;
         this.nodeAdminConvergeStateInterval = nodeAdminConvergeStateInterval;
+        this.classLocking = classLocking;
         this.lastTick = clock.instant();
 
         this.loopThread = new Thread(() -> {
+            if (classLocking.isPresent()) {
+                log.info(objectToString() + ": Acquiring lock");
+                try {
+                    classLock = Optional.of(classLocking.get().lockWhile(NodeAdminStateUpdater.class, () -> !terminated.get()));
+                } catch (LockInterruptException e) {
+                    classLock = Optional.empty();
+                    return;
+                }
+            }
+
+            log.info(objectToString() + ": Starting threads and schedulers");
             nodeAdmin.start();
+            specVerifierScheduler.scheduleWithFixedDelay(() ->
+                    updateHardwareDivergence(storageMaintainer), 5, 60, TimeUnit.MINUTES);
 
             while (! terminated.get()) {
                 tick();
@@ -81,16 +111,39 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
         this.loopThread.setName("tick-NodeAdminStateUpdater");
     }
 
+    private String objectToString() {
+        return this.getClass().getSimpleName() + "@" + Integer.toString(System.identityHashCode(this));
+    }
+
     @Override
     public Map<String, Object> getDebugPage() {
         Map<String, Object> debug = new LinkedHashMap<>();
         synchronized (monitor) {
-            debug.put("hostHostname", hostHostname);
+            debug.put("dockerHostHostName", dockerHostHostName);
             debug.put("wantedState", wantedState);
             debug.put("currentState", currentState);
             debug.put("NodeAdmin", nodeAdmin.debugInfo());
         }
         return debug;
+    }
+
+    private void updateHardwareDivergence(StorageMaintainer maintainer) {
+        if (currentState != RESUMED) return;
+
+        try {
+            NodeSpec node = nodeRepository.getNode(dockerHostHostName);
+            if (node.getState() == Node.State.parked) return;
+            String hardwareDivergence = maintainer.getHardwareDivergence(node);
+
+            // Only update hardware divergence if there is a change.
+            if (!node.getHardwareDivergence().orElse("null").equals(hardwareDivergence)) {
+                NodeAttributes nodeAttributes = new NodeAttributes().withHardwareDivergence(hardwareDivergence);
+                log.info("Updating hardware divergence to " + hardwareDivergence);
+                nodeRepository.updateNodeAttributes(dockerHostHostName, nodeAttributes);
+            }
+        } catch (RuntimeException e) {
+            log.log(Level.WARNING, "Failed to report hardware divergence", e);
+        }
     }
 
     @Override
@@ -186,13 +239,13 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             throw new ConvergenceException("NodeAdmin is not yet " + (wantFrozen ? "frozen" : "unfrozen"));
         }
 
-        boolean hostIsActiveInNR = nodeRepository.getNode(hostHostname).getState() == Node.State.active;
+        boolean hostIsActiveInNR = nodeRepository.getNode(dockerHostHostName).getState() == Node.State.active;
         switch (wantedState) {
             case RESUMED:
-                if (hostIsActiveInNR) orchestrator.resume(hostHostname);
+                if (hostIsActiveInNR) orchestrator.resume(dockerHostHostName);
                 break;
             case SUSPENDED_NODE_ADMIN:
-                if (hostIsActiveInNR) orchestrator.suspend(hostHostname);
+                if (hostIsActiveInNR) orchestrator.suspend(dockerHostHostName);
                 break;
             case SUSPENDED:
                 // Fetch active nodes from node repo before suspending nodes.
@@ -204,9 +257,9 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
                 List<String> nodesInActiveState = getNodesInActiveState();
 
                 List<String> nodesToSuspend = new ArrayList<>(nodesInActiveState);
-                if (hostIsActiveInNR) nodesToSuspend.add(hostHostname);
+                if (hostIsActiveInNR) nodesToSuspend.add(dockerHostHostName);
                 if (!nodesToSuspend.isEmpty()) {
-                    orchestrator.suspend(hostHostname, nodesToSuspend);
+                    orchestrator.suspend(dockerHostHostName, nodesToSuspend);
                     log.info("Orchestrator allows suspension of " + nodesToSuspend);
                 }
 
@@ -228,7 +281,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
 
     private void fetchContainersToRunFromNodeRepository() {
         try {
-            final List<NodeSpec> containersToRun = nodeRepository.getNodes(hostHostname);
+            final List<NodeSpec> containersToRun = nodeRepository.getNodes(dockerHostHostName);
             nodeAdmin.refreshContainersToRun(containersToRun);
         } catch (Exception e) {
             log.log(LogLevel.WARNING, "Failed to update which containers should be running", e);
@@ -236,7 +289,7 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     }
 
     private List<String> getNodesInActiveState() {
-        return nodeRepository.getNodes(hostHostname)
+        return nodeRepository.getNodes(dockerHostHostName)
                              .stream()
                              .filter(node -> node.getState() == Node.State.active)
                              .map(NodeSpec::getHostname)
@@ -248,22 +301,33 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
     }
 
     public void stop() {
+        log.info(objectToString() + ": Stop called");
         if (!terminated.compareAndSet(false, true)) {
             throw new RuntimeException("Can not re-stop a node agent.");
         }
 
+        classLocking.ifPresent(ClassLocking::interrupt);
+
         // First we need to stop NodeAdminStateUpdaterImpl thread to make sure no new NodeAgents are spawned
         signalWorkToBeDone();
+        specVerifierScheduler.shutdown();
 
         do {
             try {
                 loopThread.join();
+                specVerifierScheduler.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
             } catch (InterruptedException e1) {
                 log.info("Interrupted while waiting for NodeAdminStateUpdater thread and specVerfierScheduler to shutdown");
             }
-        } while (loopThread.isAlive());
+        } while (loopThread.isAlive() || !specVerifierScheduler.isTerminated());
 
         // Finally, stop NodeAdmin and all the NodeAgents
         nodeAdmin.stop();
+
+        classLock.ifPresent(lock -> {
+            log.info(objectToString() + ": Releasing lock");
+            lock.close();
+        });
+        log.info(objectToString() + ": Stop complete");
     }
 }
