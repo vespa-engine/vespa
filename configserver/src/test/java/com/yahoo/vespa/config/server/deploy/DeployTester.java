@@ -15,12 +15,10 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.HostSpec;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
@@ -31,6 +29,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.session.LocalSession;
@@ -60,12 +59,11 @@ import java.util.Optional;
 public class DeployTester {
 
     private static final TenantName tenantName = TenantName.from("deploytester");
+    private static final ApplicationId applicationId = ApplicationId.from(tenantName.value(), "myApp", "default");
 
     private final Clock clock;
     private final TenantRepository tenantRepository;
     private final ApplicationRepository applicationRepository;
-
-    private ApplicationId id;
 
     public DeployTester() {
         this(Collections.singletonList(createModelFactory(Clock.systemUTC())));
@@ -148,30 +146,33 @@ public class DeployTester {
 
     /** Create a model factory which always fails validation */
     public static ModelFactory createFailingModelFactory(Version version) { return new FailingModelFactory(version); }
-    
+
+
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public ApplicationId deployApp(String applicationPath, String appName, Instant now) {
-        return deployApp(applicationPath, appName, null, now);
+    public PrepareResult deployApp(String applicationPath) {
+        return deployApp(applicationPath, null, Instant.now());
     }
 
     /**
      * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
      */
-    public ApplicationId deployApp(String applicationPath, String appName, String vespaVersion, Instant now)  {
-        Tenant tenant = tenant();
-        TimeoutBudget timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
-        ApplicationId id = ApplicationId.from(tenant.getName(), ApplicationName.from(appName), InstanceName.defaultName());
-        PrepareParams.Builder paramsBuilder = new PrepareParams.Builder().applicationId(id);
+    public PrepareResult deployApp(String applicationPath, Instant now) {
+        return deployApp(applicationPath, null, now);
+    }
+
+    /**
+     * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
+     */
+    public PrepareResult deployApp(String applicationPath, String vespaVersion, Instant now)  {
+        PrepareParams.Builder paramsBuilder = new PrepareParams.Builder()
+                .applicationId(applicationId)
+                .timeoutBudget(new TimeoutBudget(clock, Duration.ofSeconds(60)));
         if (vespaVersion != null)
             paramsBuilder.vespaVersion(vespaVersion);
 
-        long sessionId = applicationRepository.createSession(id, timeoutBudget, new File(applicationPath));
-        applicationRepository.prepare(tenant, sessionId, paramsBuilder.build(), now);
-        applicationRepository.activate(tenant, sessionId, timeoutBudget, false, false);
-        this.id = id;
-        return id;
+        return applicationRepository.deploy(new File(applicationPath), paramsBuilder.build(), false, false, now);
     }
 
     public AllocatedHosts getAllocatedHostsOf(ApplicationId applicationId) {
@@ -181,10 +182,10 @@ public class DeployTester {
         return session.getAllocatedHosts();
     }
 
-    public ApplicationId applicationId() { return id; }
+    public ApplicationId applicationId() { return applicationId; }
 
     public Optional<com.yahoo.config.provision.Deployment> redeployFromLocalActive() {
-        return redeployFromLocalActive(id);
+        return applicationRepository.deployFromLocalActive(applicationId);
     }
 
     public Optional<com.yahoo.config.provision.Deployment> redeployFromLocalActive(ApplicationId id) {

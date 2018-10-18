@@ -280,7 +280,7 @@ public class ApplicationRepositoryTest {
                                                .configDefinitionsDir(Files.createTempDir().getAbsolutePath())
                                                .sessionLifetime(60));
         DeployTester tester = new DeployTester(configserverConfig, clock);
-        tester.deployApp("src/test/apps/app", "myapp", Instant.now()); // session 2 (numbering starts at 2)
+        tester.deployApp("src/test/apps/app", clock.instant()); // session 2 (numbering starts at 2)
 
         clock.advance(Duration.ofSeconds(10));
         Optional<Deployment> deployment2 = tester.redeployFromLocalActive();

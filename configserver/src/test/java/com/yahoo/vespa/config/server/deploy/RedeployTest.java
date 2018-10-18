@@ -28,7 +28,7 @@ public class RedeployTest {
     @Test
     public void testRedeploy() {
         DeployTester tester = new DeployTester();
-        tester.deployApp("src/test/apps/app", "myapp", Instant.now());
+        tester.deployApp("src/test/apps/app");
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
 
         assertTrue(deployment.isPresent());

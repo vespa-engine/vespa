@@ -125,4 +125,9 @@ public class AllocatedHosts {
         return hosts.hashCode();
     }
 
+    @Override
+    public String toString() {
+        return hosts.toString();
+    }
+
 }

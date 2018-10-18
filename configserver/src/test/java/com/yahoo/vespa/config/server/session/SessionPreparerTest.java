@@ -1,12 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
-import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.application.provider.*;
 import com.yahoo.config.provision.ApplicationName;
@@ -23,8 +20,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
-import com.yahoo.vespa.config.server.configchange.MockRestartAction;
-import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
@@ -45,7 +40,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.*;
@@ -60,7 +54,6 @@ public class SessionPreparerTest {
     private static final File testApp = new File("src/test/apps/app");
     private static final File invalidTestApp = new File("src/test/apps/illegalApp");
     private static final Version version123 = Version.fromIntValues(1, 2, 3);
-    private static final Version version124 = Version.fromIntValues(1, 2, 4);
     private static final Version version321 = Version.fromIntValues(3, 2, 1);
     private static final Version version323 = Version.fromIntValues(3, 2, 3);
 
@@ -186,18 +179,6 @@ public class SessionPreparerTest {
         assertThat(zkc.readApplicationId(), is(origId));
     }
 
-    @Test
-    public void require_that_config_change_actions_are_collected_from_all_models() throws IOException {
-        ServiceInfo service = new ServiceInfo("serviceName", "serviceType", null, new HashMap<>(), "configId", "hostName");
-        ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(Arrays.asList(
-                new ConfigChangeActionsModelFactory(version123, new MockRestartAction("change", Arrays.asList(service))),
-                new ConfigChangeActionsModelFactory(version124, new MockRestartAction("other change", Arrays.asList(service)))));
-        preparer = createPreparer(modelFactoryRegistry, HostProvisionerProvider.empty());
-        List<RestartActions.Entry> actions = prepare(testApp).getRestartActions().getEntries();
-        assertThat(actions.size(), is(1));
-        assertThat(actions.get(0).getMessages(), equalTo(ImmutableSet.of("change", "other change")));
-    }
-
     private Set<Rotation> readRotationsFromZK(ApplicationId applicationId) {
         return new Rotations(curator, tenantPath).readRotationsFromZooKeeper(applicationId);
     }
@@ -278,17 +259,4 @@ public class SessionPreparerTest {
                                   ApplicationName.from(applicationName), InstanceName.defaultName());
     }
 
-    private static class ConfigChangeActionsModelFactory extends TestModelFactory {
-        private final ConfigChangeAction action;
-        ConfigChangeActionsModelFactory(Version vespaVersion, ConfigChangeAction action) {
-            super(vespaVersion);
-            this.action = action;
-        }
-
-        @Override
-        public ModelCreateResult createAndValidateModel(ModelContext modelContext, ValidationParameters validationParameters) {
-            ModelCreateResult result = super.createAndValidateModel(modelContext, validationParameters);
-            return new ModelCreateResult(result.getModel(), Arrays.asList(action));
-        }
-    }
 }

@@ -7,7 +7,6 @@ import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Version;
@@ -57,7 +56,7 @@ public class ConfigServerBootstrapTest {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(true, "host0", "host1", "host3");
         DeployTester tester = new DeployTester(configserverConfig, provisioner);
-        tester.deployApp("src/test/apps/hosted/", "myApp", "4.5.6", Instant.now());
+        tester.deployApp("src/test/apps/hosted/");
 
         File versionFile = temporaryFolder.newFile();
         VersionState versionState = new VersionState(versionFile);
@@ -66,12 +65,7 @@ public class ConfigServerBootstrapTest {
         RpcServer rpcServer = createRpcServer(configserverConfig);
         VipStatus vipStatus = new VipStatus();
         // Take a host away so that there are too few for the application, to verify we can still bootstrap
-        ClusterSpec contentCluster = ClusterSpec.from(ClusterSpec.Type.content,
-                                                      ClusterSpec.Id.from("music"),
-                                                      ClusterSpec.Group.from(0),
-                                                      new com.yahoo.component.Version(4, 5, 6),
-                                                      false);
-        provisioner.allocations().get(contentCluster).remove(0);
+        provisioner.allocations().values().iterator().next().remove(0);
         ConfigServerBootstrap bootstrap = new ConfigServerBootstrap(tester.applicationRepository(), rpcServer, versionState, createStateMonitor(), vipStatus);
         assertFalse(vipStatus.isInRotation());
         waitUntil(rpcServer::isRunning, "failed waiting for Rpc server running");
@@ -88,7 +82,7 @@ public class ConfigServerBootstrapTest {
     public void testBootstrapWhenRedeploymentFails() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         DeployTester tester = new DeployTester(configserverConfig);
-        tester.deployApp("src/test/apps/hosted/", "myApp", "4.5.6", Instant.now());
+        tester.deployApp("src/test/apps/hosted/");
 
         File versionFile = temporaryFolder.newFile();
         VersionState versionState = new VersionState(versionFile);
@@ -123,14 +117,16 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrapNonHostedOneConfigModel() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfigNonHosted(temporaryFolder);
-        List<ModelFactory> modelFactories = Collections.singletonList(DeployTester.createModelFactory(Version.fromString("1.2.3")));
-        List<Host> hosts = Arrays.asList(createHost("host1", "1.2.3"), createHost("host2", "1.2.3"), createHost("host3", "1.2.3"));
+        String vespaVersion = "1.2.3";
+        List<ModelFactory> modelFactories = Collections.singletonList(DeployTester.createModelFactory(Version.fromString(vespaVersion)));
+        List<Host> hosts = createHosts(vespaVersion);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
         Curator curator = new MockCurator();
         DeployTester tester = new DeployTester(modelFactories, configserverConfig,
                                                Clock.systemUTC(), new Zone(Environment.dev, RegionName.defaultName()),
                                                provisioner, curator);
-        ApplicationId app = tester.deployApp("src/test/apps/app/", "myApp", "1.2.3", Instant.now());
+        tester.deployApp("src/test/apps/app/", vespaVersion, Instant.now());
+        ApplicationId applicationId = tester.applicationId();
 
         File versionFile = temporaryFolder.newFile();
         VersionState versionState = new VersionState(versionFile);
@@ -139,7 +135,7 @@ public class ConfigServerBootstrapTest {
         // Ugly hack, but I see no other way of doing it:
         // Manipulate application version in zookeeper so that it is an older version than the model we know, which is
         // the case when upgrading on non-hosted installations
-        curator.set(Path.fromString("/config/v2/tenants/" + app.tenant().value() + "/sessions/2/version"), Utf8.toBytes("1.2.2"));
+        curator.set(Path.fromString("/config/v2/tenants/" + applicationId.tenant().value() + "/sessions/2/version"), Utf8.toBytes("1.2.2"));
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
         VipStatus vipStatus = new VipStatus();
@@ -187,6 +183,10 @@ public class ConfigServerBootstrapTest {
                                               .multitenant(hosted)
                                               .maxDurationOfBootstrap(1) /* seconds */
                                               .sleepTimeWhenRedeployingFails(0)); /* seconds */
+    }
+
+    private List<Host> createHosts(String vespaVersion) {
+        return Arrays.asList(createHost("host1", vespaVersion), createHost("host2", vespaVersion), createHost("host3", vespaVersion));
     }
 
     private Host createHost(String hostname, String version) {
