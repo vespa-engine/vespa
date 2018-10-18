@@ -134,8 +134,8 @@ public class NodeAgentImpl implements NodeAgent {
             try {
                 while (!terminated.get()) tick();
             } catch (Throwable t) {
-                context.log(logger, LogLevel.ERROR, "Unhandled throwable, taking down system.", t);
-                System.exit(234);
+                numberOfUnhandledException++;
+                context.log(logger, LogLevel.ERROR, "Unhandled throwable, ignoring", t);
             }
         });
         this.loopThread.setName("tick-" + context.hostname());
