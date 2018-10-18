@@ -160,9 +160,13 @@ StartCommand() {
         -XX:+HeapDumpOnOutOfMemoryError \
         -XX:HeapDumpPath="$VESPA_HOME/var/crash" \
         -XX:+ExitOnOutOfMemoryError \
+        --illegal-access=warn \
+        --add-opens=java.base/java.lang=ALL-UNNAMED \
+        --add-opens=java.base/java.net=ALL-UNNAMED \
+        --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED \
         -Djava.library.path="$VESPA_HOME/lib64" \
         -Djava.awt.headless=true \
-	-Dsun.rmi.dgc.client.gcInterval=3600000 \
+        -Dsun.rmi.dgc.client.gcInterval=3600000 \
         -Dsun.net.client.defaultConnectTimeout=5000 \
         -Dsun.net.client.defaultReadTimeout=60000 \
         -Djavax.net.ssl.keyStoreType=JKS \
