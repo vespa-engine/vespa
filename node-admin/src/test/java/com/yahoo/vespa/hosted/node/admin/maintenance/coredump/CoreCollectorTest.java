@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
-import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImplTest;
+import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -27,7 +27,7 @@ public class CoreCollectorTest {
     private final String GDB_PATH = "/my/path/to/gdb";
     private final DockerOperations docker = mock(DockerOperations.class);
     private final CoreCollector coreCollector = new CoreCollector(docker, Paths.get(GDB_PATH));
-    private final NodeAgentContext context = NodeAgentContextImplTest.nodeAgentFromHostname("container-123.domain.tld");
+    private final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld").build();
 
     private final Path TEST_CORE_PATH = Paths.get("/tmp/core.1234");
     private final Path TEST_BIN_PATH = Paths.get("/usr/bin/program");
