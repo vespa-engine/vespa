@@ -47,14 +47,20 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
                                 boolean showProgress, boolean showStatistics, boolean doStatistics,
                                 boolean abortOnClusterDown, int processtime, boolean jsonOutput)
     {
-        super(showProgress, showStatistics, abortOnClusterDown);
+        this(printIds, indentXml, showProgress, showStatistics, doStatistics, abortOnClusterDown, processtime, jsonOutput, createStdOutPrintStream());
+    }
 
+    StdOutVisitorHandler(boolean printIds, boolean indentXml,
+                         boolean showProgress, boolean showStatistics, boolean doStatistics,
+                         boolean abortOnClusterDown, int processtime, boolean jsonOutput, PrintStream out)
+    {
+        super(showProgress, showStatistics, abortOnClusterDown);
         this.printIds = printIds;
         this.indentXml = indentXml;
         this.processTimeMilliSecs = processtime;
         this.jsonOutput = jsonOutput;
-        this.out = createStdOutPrintStream();
-        dataHandler = new DataHandler(doStatistics);
+        this.out = out;
+        this.dataHandler = new DataHandler(doStatistics);
     }
 
     private static PrintStream createStdOutPrintStream() {
