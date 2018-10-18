@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -34,7 +33,6 @@ import java.util.regex.Pattern;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameMatches;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.olderThan;
-import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.ifExists;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
 
 /**
@@ -126,10 +124,6 @@ public class StorageMaintainer {
 
         // Write config and restart yamas-agent
         Path yamasAgentFolder = context.pathOnHostFromPathInNode("/etc/yamas-agent");
-
-        // TODO: Remove after 6.301
-        ifExists(() -> Files.setPosixFilePermissions(yamasAgentFolder, PosixFilePermissions.fromString("rw-r--r--")));
-
         configs.forEach(s -> uncheck(() -> s.writeTo(yamasAgentFolder)));
         dockerOperations.executeCommandInContainerAsRoot(context, "service", "yamas-agent", "restart");
     }
