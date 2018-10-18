@@ -196,10 +196,10 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
 
     /** Returns the subset of the given versions which are in use on these hosts */
     private Set<Version> keepThoseUsedOn(AllocatedHosts hosts, Set<Version> versions) {
-        return versions.stream().filter(version -> mayBeUsedOn(hosts, version)).collect(Collectors.toSet());
+        return versions.stream().filter(version -> isUsedOn(hosts, version)).collect(Collectors.toSet());
     }
 
-    private boolean mayBeUsedOn(AllocatedHosts hosts, Version version) {
+    private boolean isUsedOn(AllocatedHosts hosts, Version version) {
         com.yahoo.component.Version v = new com.yahoo.component.Version(version.toString());
         return hosts.getHosts().stream()
                                .anyMatch(host -> host.version().isPresent() && host.version().get().equals(v));
