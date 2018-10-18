@@ -145,9 +145,11 @@ public interface ApplicationPackage {
 
     /** Returns the major version this application is valid for, or empty if it is valid for all versions */
     default Optional<Integer> getMajorVersion() {
-        Element servicesElement = XML.getDocument(getServices()).getDocumentElement();
-        if (servicesElement == null) return Optional.empty();
-        String majorVersionString = servicesElement.getAttribute("major-version");
+        if ( ! getDeployment().isPresent()) return Optional.empty();
+
+        Element deployElement = XML.getDocument(getDeployment().get()).getDocumentElement();
+        if (deployElement == null) return Optional.empty();
+        String majorVersionString = deployElement.getAttribute("major-version");
         if (majorVersionString == null || majorVersionString.isEmpty())
             return Optional.empty();
         try {
