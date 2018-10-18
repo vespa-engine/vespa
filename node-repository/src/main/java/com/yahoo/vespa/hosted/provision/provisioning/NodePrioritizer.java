@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
  * @author smorgrav
  */
 public class NodePrioritizer {
+
     private final static Logger log = Logger.getLogger(NodePrioritizer.class.getName());
 
     private final Map<Node, PrioritizableNode> nodes = new HashMap<>();
@@ -265,4 +266,5 @@ public class NodePrioritizer {
         // To get a stable algorithm - choose lexicographical from hostname
         return a.hostname().compareTo(b.hostname());
     }
+
 }

@@ -34,6 +34,7 @@ public class StringFieldValue extends FieldValue {
             return new StringFieldValue();
         }
     }
+
     public static PrimitiveDataType.Factory getFactory() { return new Factory(); }
     public static final int classId = registerClass(Ids.document + 15, StringFieldValue.class);
     private String value;
@@ -52,7 +53,7 @@ public class StringFieldValue extends FieldValue {
      *                                  {@link Text#isTextCharacter(int)}
      */
     public StringFieldValue(String value) {
-        if (value==null) throw new IllegalArgumentException("Value cannot be null");
+        if (value == null) throw new IllegalArgumentException("Value cannot be null");
         setValue(value);
     }
 
@@ -60,7 +61,7 @@ public class StringFieldValue extends FieldValue {
         OptionalInt illegalCodePoint = Text.validateTextString(value);
         if (illegalCodePoint.isPresent()) {
             throw new IllegalArgumentException("The string field value contains illegal code point 0x" +
-                    Integer.toHexString(illegalCodePoint.getAsInt()).toUpperCase());
+                                               Integer.toHexString(illegalCodePoint.getAsInt()).toUpperCase());
         }
     }
 
@@ -149,10 +150,7 @@ public class StringFieldValue extends FieldValue {
         return ImmutableList.copyOf(spanTrees.values());
     }
 
-    /**
-     *
-     * @return The map of spantrees. Might be null.
-     */
+    /** Returns the map of spantrees. Might be null. */
     public final Map<String, SpanTree> getSpanTreeMap() {
         return spanTrees;
     }
@@ -193,7 +191,7 @@ public class StringFieldValue extends FieldValue {
      * Removes the span tree associated with the given name.
      *
      * @param name the name of the span tree to remove
-     * @return the span tree previously associated with the given name, or null if it did not exist.
+     * @return the span tree previously associated with the given name, or null if it did not exist
      */
     public SpanTree removeSpanTree(String name) {
         if (spanTrees == null) {
@@ -206,20 +204,12 @@ public class StringFieldValue extends FieldValue {
         return tree;
     }
 
-    /**
-     * Returns the String value wrapped by this StringFieldValue.
-     *
-     * @return the String value wrapped by this StringFieldValue.
-     */
+    /** Returns the String value wrapped by this StringFieldValue */
     public String getString() {
         return value;
     }
 
-    /**
-     * Returns the String value wrapped by this StringFieldValue.
-     *
-     * @return the String value wrapped by this StringFieldValue.
-     */
+    /** Returns the String value wrapped by this StringFieldValue */
     @Override
     public Object getWrappedValue() {
         return value;
@@ -228,7 +218,7 @@ public class StringFieldValue extends FieldValue {
     /**
      * Prints XML in Vespa Document XML format for this StringFieldValue.
      *
-     * @param xml the stream to print to.
+     * @param xml the stream to print to
      */
     @Override
     public void printXml(XmlStream xml) {
