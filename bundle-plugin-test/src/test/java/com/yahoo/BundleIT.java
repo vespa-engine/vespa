@@ -109,15 +109,15 @@ public class BundleIT {
         assertThat(bundleClassPath, containsString(".,"));
         // If bundle-plugin-test is compiled in a mvn command that also built jrt,
         // the jrt artifact is jrt.jar, otherwise the installed and versioned artifact
-        // is used: jrt-6-SNAPSHOT.jar.
+        // is used: jrt-7-SNAPSHOT.jar.
         assertThat(bundleClassPath, anyOf(
-                containsString("dependencies/jrt-6-SNAPSHOT.jar"),
+                containsString("dependencies/jrt-7-SNAPSHOT.jar"),
                 containsString("dependencies/jrt.jar")));
     }
 
     @Test
     public void require_that_component_jar_file_contains_compile_artifacts() {
-        ZipEntry versionedEntry = jarFile.getEntry("dependencies/jrt-6-SNAPSHOT.jar");
+        ZipEntry versionedEntry = jarFile.getEntry("dependencies/jrt-7-SNAPSHOT.jar");
         ZipEntry unversionedEntry = jarFile.getEntry("dependencies/jrt.jar");
         if (versionedEntry == null) {
             assertNotNull(unversionedEntry);
