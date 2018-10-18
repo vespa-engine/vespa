@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>parent</artifactId>
     <packaging>pom</packaging>
-    <version>6-SNAPSHOT</version>
+    <version>7-SNAPSHOT</version>
     <name>parent</name>
     <description>Parent artifact for all Vespa maven projects.</description>
     <url>https://github.com/vespa-engine</url>
@@ -12,7 +12,7 @@
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>container-dependency-versions</artifactId>
-        <version>6-SNAPSHOT</version>
+        <version>7-SNAPSHOT</version>
         <relativePath>../container-dependency-versions/pom.xml</relativePath>
     </parent>
 
