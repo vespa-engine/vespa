@@ -45,15 +45,15 @@ public class GenerateBundleClassPathMappingsMojo extends AbstractMojo {
           "bundleSymbolicName": "bundle-plugin-test",
           "classPathElements": [
               "/Users/tonyv/Repos/vespa/bundle-plugin-test/target/classes",
-              "/Users/tonyv/.m2/repository/com/yahoo/vespa/jrt/6-SNAPSHOT/jrt-6-SNAPSHOT.jar",
-              "/Users/tonyv/.m2/repository/com/yahoo/vespa/annotations/6-SNAPSHOT/annotations-6-SNAPSHOT.jar"
+              "/Users/tonyv/.m2/repository/com/yahoo/vespa/jrt/7-SNAPSHOT/jrt-7-SNAPSHOT.jar",
+              "/Users/tonyv/.m2/repository/com/yahoo/vespa/annotations/7-SNAPSHOT/annotations-7-SNAPSHOT.jar"
           ]
       },
       "providedDependencies": [
           {
               "bundleSymbolicName": "jrt",
               "classPathElements": [
-                  "/Users/tonyv/.m2/repository/com/yahoo/vespa/jrt/6-SNAPSHOT/jrt-6-SNAPSHOT.jar"
+                  "/Users/tonyv/.m2/repository/com/yahoo/vespa/jrt/7-SNAPSHOT/jrt-7-SNAPSHOT.jar"
               ]
           }
       ]
