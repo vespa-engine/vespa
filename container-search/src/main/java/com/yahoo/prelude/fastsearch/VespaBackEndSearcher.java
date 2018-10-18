@@ -177,7 +177,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
         if (documentdbInfoConfig != null) {
             for (DocumentdbInfoConfig.Documentdb docDb : documentdbInfoConfig.documentdb()) {
-                DocumentDatabase db = new DocumentDatabase(docDb, clusterParams.emulation);
+                DocumentDatabase db = new DocumentDatabase(docDb);
                 if (documentDbs.isEmpty()) {
                     defaultDocumentDb = db;
                 }
