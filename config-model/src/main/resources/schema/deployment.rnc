@@ -4,6 +4,7 @@
 
 start = element deployment {
    attribute version { "1.0" } &
+   attribute major-version { text }? &
    attribute athenz-domain { xsd:string }? &
    attribute athenz-service { xsd:string }? &
    Upgrade? &
