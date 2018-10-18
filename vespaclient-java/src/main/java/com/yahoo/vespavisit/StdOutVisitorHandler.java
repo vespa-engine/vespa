@@ -18,6 +18,7 @@ import com.yahoo.messagebus.Message;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,16 +53,16 @@ public class StdOutVisitorHandler extends VdsVisitHandler {
         this.indentXml = indentXml;
         this.processTimeMilliSecs = processtime;
         this.jsonOutput = jsonOutput;
-        String charset = "UTF-8";
-        try {
-            out = new PrintStream(System.out, true, charset);
-        } catch (java.io.UnsupportedEncodingException e) {
-            System.out.println(charset + " is an unsupported encoding, " +
-                               "using default instead.");
-            out = System.out;
-        }
-
+        this.out = createStdOutPrintStream();
         dataHandler = new DataHandler(doStatistics);
+    }
+
+    private static PrintStream createStdOutPrintStream() {
+        try {
+            return new PrintStream(System.out, true, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // Will not happen - UTF-8 is always supported
+        }
     }
 
     @Override
