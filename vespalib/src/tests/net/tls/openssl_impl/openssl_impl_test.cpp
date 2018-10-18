@@ -18,12 +18,12 @@ using namespace vespalib::net::tls::impl;
 
 const char* decode_state_to_str(DecodeResult::State state) noexcept {
     switch (state) {
-        case DecodeResult::State::Failed: return "Broken";
-        case DecodeResult::State::OK:     return "OK";
-        case DecodeResult::State::NeedsMorePeerData: return "NeedsMorePeerData";
-        default:
-            abort();
+    case DecodeResult::State::Failed: return "Broken";
+    case DecodeResult::State::OK:     return "OK";
+    case DecodeResult::State::NeedsMorePeerData: return "NeedsMorePeerData";
+    case DecodeResult::State::Closed: return "Closed";
     }
+    abort();
 }
 
 const char* hs_state_to_str(HandshakeResult::State state) noexcept {
@@ -31,9 +31,8 @@ const char* hs_state_to_str(HandshakeResult::State state) noexcept {
     case HandshakeResult::State::Failed: return "Broken";
     case HandshakeResult::State::Done:   return "Done";
     case HandshakeResult::State::NeedsMorePeerData: return "NeedsMorePeerData";
-    default:
-        abort();
     }
+    abort();
 }
 
 void print_handshake_result(const char* mode, const HandshakeResult& res) {
@@ -130,6 +129,37 @@ struct Fixture {
                                size_t max_bytes_consumed = UINT64_MAX) {
         auto res = do_decode(*server, client_to_server, out, max_bytes_produced, max_bytes_consumed);
         print_decode_result("server", res);
+        return res;
+    }
+
+    DecodeResult client_decode_ignore_plaintext_output() {
+        vespalib::string dummy_decoded;
+        constexpr size_t dummy_max_decoded = 100;
+        return client_decode(dummy_decoded, dummy_max_decoded);
+    }
+
+    DecodeResult server_decode_ignore_plaintext_output() {
+        vespalib::string dummy_decoded;
+        constexpr size_t dummy_max_decoded = 100;
+        return server_decode(dummy_decoded, dummy_max_decoded);
+    }
+
+    EncodeResult do_half_close(CryptoCodec& codec, Output& buffer) {
+        auto out = buffer.reserve(codec.min_encode_buffer_size());
+        auto enc_res = codec.half_close(out.data, out.size);
+        buffer.commit(enc_res.bytes_produced);
+        return enc_res;
+    }
+
+    EncodeResult client_half_close() {
+        auto res = do_half_close(*client, client_to_server);
+        print_encode_result("client", res);
+        return res;
+    }
+
+    EncodeResult server_half_close() {
+        auto res = do_half_close(*server, server_to_client);
+        print_encode_result("server", res);
         return res;
     }
 
@@ -243,6 +273,33 @@ TEST_F("Encodes larger than max frame size are split up", Fixture) {
 TEST_F("client without a certificate is rejected by server", Fixture) {
     f.client = f.create_openssl_codec(f.create_options_without_own_peer_cert(), CryptoCodec::Mode::Client);
     EXPECT_FALSE(f.handshake());
+}
+
+void check_half_close_encoded_ok(const EncodeResult& close_res) {
+    EXPECT_FALSE(close_res.failed);
+    EXPECT_GREATER(close_res.bytes_produced, 0u);
+    EXPECT_EQUAL(close_res.bytes_consumed, 0u);
+}
+
+void check_decode_peer_is_reported_closed(const DecodeResult& decoded) {
+    EXPECT_TRUE(decoded.closed());
+    EXPECT_GREATER(decoded.bytes_consumed, 0u);
+    EXPECT_EQUAL(decoded.bytes_produced, 0u);
+}
+
+TEST_F("Both peers can half-close their connections", Fixture) {
+    ASSERT_TRUE(f.handshake());
+    auto close_res = f.client_half_close();
+    check_half_close_encoded_ok(close_res);
+
+    auto decoded = f.server_decode_ignore_plaintext_output();
+    check_decode_peer_is_reported_closed(decoded);
+
+    close_res = f.server_half_close();
+    check_half_close_encoded_ok(close_res);
+
+    decoded = f.client_decode_ignore_plaintext_output();
+    check_decode_peer_is_reported_closed(decoded);
 }
 
 // Certificate note: public keys must be of the same type as those

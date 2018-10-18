@@ -58,9 +58,12 @@ public:
                         char* ciphertext, size_t ciphertext_size) noexcept override;
     DecodeResult decode(const char* ciphertext, size_t ciphertext_size,
                         char* plaintext, size_t plaintext_size) noexcept override;
+    EncodeResult half_close(char* ciphertext, size_t ciphertext_size) noexcept override;
 private:
     HandshakeResult do_handshake_and_consume_peer_input_bytes() noexcept;
     DecodeResult drain_and_produce_plaintext_from_ssl(char* plaintext, size_t plaintext_size) noexcept;
+    // Precondition: read_result < 0
+    DecodeResult remap_ssl_read_failure_to_decode_result(int read_result) noexcept;
 };
 
 }
