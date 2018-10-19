@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container.search;
 import com.yahoo.binaryprefix.BinaryPrefix;
 import com.yahoo.binaryprefix.BinaryScaledAmount;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.lang.SettableOptional;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
@@ -47,7 +48,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private SemanticRules semanticRules;
     private PageTemplates pageTemplates;
     private final ContainerCluster owningCluster;
-    private final Optional<Integer> memoryPercentage;
+    private final SettableOptional<Integer> memoryPercentage;
 
     public ContainerSearch(ContainerCluster cluster, SearchChains chains, Options options) {
         super(chains);
@@ -200,6 +201,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     public Options getOptions() {
         return options;
     }
+    public Optional<Integer> getMemoryPercentage() { return memoryPercentage.asOptional(); }
 
     /**
      * Struct that encapsulates qrserver options.

@@ -82,6 +82,7 @@ public class ModelProvisioningTest {
                         "  <nodes count=\"3\"/>" +
                         "</jdisc>" +
                         "<jdisc id='mydisc2' version='1.0'>" +
+                        "  <search/>" +
                         "  <document-processing/>" +
                         "  <handler id='myHandler'>" +
                         "    <component id='injected' />" +
@@ -131,13 +132,17 @@ public class ModelProvisioningTest {
         assertThat(model.getContainerClusters().get("mydisc").getContainers().get(0).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
         assertThat(model.getContainerClusters().get("mydisc").getContainers().get(1).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
         assertThat(model.getContainerClusters().get("mydisc").getContainers().get(2).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
-        assertThat(model.getContainerClusters().get("mydisc").getMemoryPercentage(), is(Optional.empty()));
+        assertThat(model.getContainerClusters().get("mydisc").getMemoryPercentage().asOptional(), is(Optional.empty()));
 
         assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(0).getJvmArgs(), is("-verbosegc"));
         assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(1).getJvmArgs(), is("-verbosegc"));
         assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(0).getPreLoad(), is("lib/blablamalloc.so"));
         assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(1).getPreLoad(), is("lib/blablamalloc.so"));
-        assertThat(model.getContainerClusters().get("mydisc2").getMemoryPercentage(), is(Optional.of(45)));
+        assertThat(model.getContainerClusters().get("mydisc2").getMemoryPercentage().asOptional(), is(Optional.of(45)));
+        QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
+        model.getContainerClusters().get("mydisc2").getConfig(qrStartBuilder);
+        QrStartConfig qrsStartConfig = new QrStartConfig(qrStartBuilder);
+        assertEquals(45, qrsStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         
         HostSystem hostSystem = model.getHostSystem();
         assertNotNull(hostSystem.getHostByHostname("myhost0"));

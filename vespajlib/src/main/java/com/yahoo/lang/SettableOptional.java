@@ -37,6 +37,10 @@ public final class SettableOptional<T> {
     public void set(T value) {
         this.value = value;
     }
+
+    public void set(Optional<T> value) {
+        this.value = value.isPresent() ? value.get() : null;
+    }
     
     public Optional<T> asOptional() {
         if (value == null) return Optional.empty();

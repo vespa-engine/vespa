@@ -33,6 +33,7 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
+import com.yahoo.lang.SettableOptional;
 import com.yahoo.metrics.simple.runtime.MetricProperties;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
@@ -181,7 +182,7 @@ public final class ContainerCluster
     private Zone zone;
     
     private Optional<String> hostClusterId = Optional.empty();
-    private Optional<Integer> memoryPercentage = Optional.empty();
+    private final SettableOptional<Integer> memoryPercentage = new SettableOptional<>();
 
     private static class AcceptAllVerifier implements ContainerClusterVerifier {
         @Override
@@ -783,13 +784,13 @@ public final class ContainerCluster
      */
     public Optional<String> getHostClusterId() { return hostClusterId; }
 
-    public void setMemoryPercentage(Optional<Integer> memoryPercentage) { this.memoryPercentage = memoryPercentage; }
+    public void setMemoryPercentage(Optional<Integer> memoryPercentage) { this.memoryPercentage.set(memoryPercentage); }
 
     /** 
      * Returns the percentage of host physical memory this application has specified for nodes in this cluster,
      * or empty if this is not specified by the application.
      */
-    public Optional<Integer> getMemoryPercentage() { return memoryPercentage; }
+    public SettableOptional<Integer> getMemoryPercentage() { return memoryPercentage; }
 
     boolean messageBusEnabled() { return messageBusEnabled; }
 
