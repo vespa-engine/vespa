@@ -29,7 +29,6 @@ import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerComponent;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerConfigurer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerClusterVerifier;
-import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
 import com.yahoo.vespa.model.container.Container;
@@ -727,17 +726,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                         removedtags("thread").
                         tags("disk"));
 
-        Metrics userMetrics = getRoot().getAdmin().getUserMetrics();
-        Map<String, MetricsConsumer> consumers = userMetrics.getConsumers();
-        if (consumers != null) {
-            for (Map.Entry<String, MetricsConsumer> e : consumers.entrySet()) {
-                MetricsmanagerConfig.Consumer.Builder b = getMetricBuilder(e.getKey(), builder);
-                for (Metric m : e.getValue().getMetrics().values()) {
-                    b.addedmetrics(m.name);
-                }
-            }
-        }
-        consumers = getRoot().getAdmin().getLegacyUserMetricsConsumers();
+        Map<String, MetricsConsumer> consumers = getRoot().getAdmin().getLegacyUserMetricsConsumers();
         if (consumers != null) {
            for (Map.Entry<String, MetricsConsumer> e : consumers.entrySet()) {
                 MetricsmanagerConfig.Consumer.Builder b = getMetricBuilder(e.getKey(), builder);
