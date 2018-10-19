@@ -11,6 +11,7 @@ import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PhraseItem;
+import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.RegExpItem;
@@ -320,12 +321,14 @@ public class YqlParserTestCase {
 
     @Test
     public void testRaw() {
+        // Default: Not raw, for comparison
         Item root = parse("select foo from bar where baz contains (\"yoni jo dima\");").getRoot();
-        assertTrue(root instanceof WordItem);
-        assertFalse(root instanceof ExactStringItem);
-        assertEquals("yoni jo dima", ((WordItem)root).getWord());
+        assertEquals("baz:'yoni jo dima'", root.toString());
+        assertFalse(root instanceof WordItem);
+        assertTrue(root instanceof PhraseSegmentItem);
 
         root = parse("select foo from bar where baz contains ([{\"grammar\":\"raw\"}]\"yoni jo dima\");").getRoot();
+        assertEquals("baz:yoni jo dima", root.toString());
         assertTrue(root instanceof WordItem);
         assertFalse(root instanceof ExactStringItem);
         assertEquals("yoni jo dima", ((WordItem)root).getWord());
@@ -735,37 +738,11 @@ public class YqlParserTestCase {
 
     @Test
     public void testSegmenting() {
-        assertParse("select * from bar where ([{\"segmenter\": {\"version\": \"58.67.49\", \"backend\": " +
-                    "\"yell\"}}] title contains \"madonna\");",
-                    "title:madonna");
-        assertEquals("yell", parser.getSegmenterBackend());
-        assertEquals(new Version("58.67.49"), parser.getSegmenterVersion());
+        assertParse("select * from bar where title contains 'foo.bar';",
+                    "title:'foo bar'");
 
-        assertParse("select * from bar where ([{\"segmenter\": {\"version\": \"8.7.3\", \"backend\": " +
-                    "\"yell\"}}]([{\"targetNumHits\": 9999438}] weakAnd(format contains \"online\", title contains " +
-                    "\"madonna\")));",
-                    "WAND(9999438) format:online title:madonna");
-        assertEquals("yell", parser.getSegmenterBackend());
-        assertEquals(new Version("8.7.3"), parser.getSegmenterVersion());
-
-        assertParse("select * from bar where [{\"segmenter\": {\"version\": \"18.47.39\", \"backend\": " +
-                    "\"yell\"}}] ([{\"targetNumHits\": 99909438}] weakAnd(format contains \"online\", title contains " +
-                    "\"madonna\"));",
-                    "WAND(99909438) format:online title:madonna");
-        assertEquals("yell", parser.getSegmenterBackend());
-        assertEquals(new Version("18.47.39"), parser.getSegmenterVersion());
-
-        assertParse("select * from bar where [{\"targetNumHits\": 99909438}] weakAnd(format contains " +
-                    "\"online\", title contains \"madonna\");",
-                    "WAND(99909438) format:online title:madonna");
-        assertNull(parser.getSegmenterBackend());
-        assertNull(parser.getSegmenterVersion());
-
-        assertParse("select * from bar where [{\"segmenter\": {\"version\": \"58.67.49\", \"backend\": " +
-                    "\"yell\"}}](title contains \"madonna\") order by shoesize;",
-                    "title:madonna");
-        assertEquals("yell", parser.getSegmenterBackend());
-        assertEquals(new Version("58.67.49"), parser.getSegmenterVersion());
+        assertParse("select * from bar where title contains 'foo&123';",
+                    "title:'foo 123'");
     }
 
     @Test
