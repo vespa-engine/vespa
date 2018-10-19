@@ -21,7 +21,7 @@ public final class SettableOptional<T> {
 
     /** Creates a new settable optional with the given value, or an empty */
     public SettableOptional(Optional<T> value) {
-        this.value = value.isPresent() ? value.get() : null;
+        this.value = value.orElse(null);
     }
 
     public boolean isPresent() {
@@ -36,6 +36,10 @@ public final class SettableOptional<T> {
 
     public void set(T value) {
         this.value = value;
+    }
+
+    public void set(Optional<T> value) {
+        this.value = value.orElse(null);
     }
     
     public Optional<T> asOptional() {
