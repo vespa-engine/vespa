@@ -77,7 +77,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>security-utils</artifactId>
+      <artifactId>vespajlib</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
