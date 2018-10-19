@@ -96,15 +96,19 @@ ssize_t
 CryptoCodecAdapter::read(char *buf, size_t len)
 {
     auto drain_res = drain(buf, len);
-    if (drain_res != 0) {
+    if ((drain_res != 0) || _got_tls_close) {
         return drain_res;
     }
     auto fill_res = fill_input();
     if (fill_res <= 0) {
+        if (fill_res == 0) {
+            fill_res = -1;
+            errno = EIO;
+        }
         return fill_res;
     }
     drain_res = drain(buf, len);
-    if (drain_res != 0) {
+    if ((drain_res != 0) || _got_tls_close) {
         return drain_res;
     }
     errno = EWOULDBLOCK;
@@ -119,6 +123,9 @@ CryptoCodecAdapter::drain(char *buf, size_t len)
     if (res.failed()) {
         errno = EIO;
         return -1;        
+    }
+    if (res.closed()) {
+        _got_tls_close = true;
     }
     _input.evict(res.bytes_consumed);
     return res.bytes_produced;
@@ -161,6 +168,30 @@ CryptoCodecAdapter::flush()
         }
     }
     return 0; // done
+}
+
+ssize_t
+CryptoCodecAdapter::half_close()
+{
+    auto flush_res = flush_all();
+    if ((flush_res < 0)) {
+        return flush_res;
+    }
+    if (!_encoded_tls_close) {
+        auto dst = _output.reserve(_codec->min_encode_buffer_size());
+        auto res = _codec->half_close(dst.data, dst.size);
+        if (res.failed) {
+            errno = EIO;
+            return -1;
+        }
+        _output.commit(res.bytes_produced);
+        _encoded_tls_close = true;
+    }
+    flush_res = flush_all();
+    if ((flush_res < 0)) {
+        return flush_res;
+    }
+    return _socket.half_close();
 }
 
 } // namespace vespalib::net::tls

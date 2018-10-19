@@ -78,6 +78,7 @@ public:
     }
     ssize_t write(const char *buf, size_t len) override { return _socket.write(buf, len); }
     ssize_t flush() override { return 0; }
+    ssize_t half_close() override { return _socket.half_close(); }
 };
 
 } // namespace vespalib::<unnamed>

@@ -42,11 +42,37 @@ vespalib::string read_bytes(SyncCryptoSocket &socket, size_t wanted_bytes) {
     return vespalib::string(data.data, wanted_bytes);
 }
 
+void read_EOF(SyncCryptoSocket &socket) {
+    char buf[16];
+    auto res = socket.read(buf, sizeof(buf));
+    ASSERT_EQUAL(res, 0);
+}
+
 //-----------------------------------------------------------------------------
 
 void write_bytes(SyncCryptoSocket &socket, const vespalib::string &message) {
     auto res = socket.write(message.data(), message.size());
     ASSERT_EQUAL(size_t(res), message.size());
+}
+
+void write_EOF(SyncCryptoSocket &socket) {
+    ASSERT_EQUAL(socket.half_close(), 0);
+}
+
+//-----------------------------------------------------------------------------
+
+void verify_graceful_shutdown(SyncCryptoSocket &socket, bool is_server) {
+    if(is_server) {
+        TEST_DO(write_EOF(socket));
+        TEST_DO(read_EOF(socket));
+        TEST_DO(read_EOF(socket));
+        TEST_DO(read_EOF(socket));
+    } else {
+        TEST_DO(read_EOF(socket));
+        TEST_DO(read_EOF(socket));
+        TEST_DO(read_EOF(socket));
+        TEST_DO(write_EOF(socket));
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -73,6 +99,7 @@ void verify_crypto_socket(SocketPair &sockets, CryptoEngine &engine, bool is_ser
     SyncCryptoSocket::UP my_socket = SyncCryptoSocket::create(engine, std::move(my_handle), is_server);
     ASSERT_TRUE(my_socket);
     TEST_DO(verify_socket_io(*my_socket, is_server));
+    TEST_DO(verify_graceful_shutdown(*my_socket, is_server));
 }
 
 //-----------------------------------------------------------------------------

@@ -76,6 +76,11 @@ void flush(CryptoSocket &socket) {
     ASSERT_TRUE((res == 0) || is_blocked(res));
 }
 
+void half_close(CryptoSocket &socket) {
+    auto res = socket.half_close();
+    ASSERT_TRUE((res == 0) || is_blocked(res));
+}
+
 //-----------------------------------------------------------------------------
 
 vespalib::string read_bytes(CryptoSocket &socket, SmartBuffer &read_buffer, size_t wanted_bytes) {
@@ -86,7 +91,25 @@ vespalib::string read_bytes(CryptoSocket &socket, SmartBuffer &read_buffer, size
         drain(socket, read_buffer);
     }
     auto data = read_buffer.obtain();
-    return vespalib::string(data.data, wanted_bytes);
+    vespalib::string message(data.data, wanted_bytes);
+    read_buffer.evict(message.size());
+    return message;
+}
+
+//-----------------------------------------------------------------------------
+
+void read_EOF(CryptoSocket &socket, SmartBuffer &read_buffer) {
+    ASSERT_EQUAL(read_buffer.obtain().size, 0u);
+    SingleFdSelector selector(socket.get_fd());
+    ASSERT_TRUE(selector.wait_readable());
+    size_t chunk_size = std::max(size_t(4096), socket.min_read_buffer_size());
+    auto chunk = read_buffer.reserve(chunk_size);
+    auto res = socket.read(chunk.data, chunk.size);
+    while (is_blocked(res)) {
+        ASSERT_TRUE(selector.wait_readable());
+        res = socket.read(chunk.data, chunk.size);
+    }
+    ASSERT_EQUAL(res, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -101,6 +124,35 @@ void write_bytes(CryptoSocket &socket, const vespalib::string &message) {
         ASSERT_TRUE(selector.wait_writable());
         write(socket, write_buffer);
         flush(socket);
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+void write_EOF(CryptoSocket &socket) {
+    SingleFdSelector selector(socket.get_fd());
+    ASSERT_TRUE(selector.wait_writable());
+    auto res = socket.half_close();
+    while (is_blocked(res)) {
+        ASSERT_TRUE(selector.wait_writable());
+        res = socket.half_close();
+    }
+    ASSERT_EQUAL(res, 0);
+}
+
+//-----------------------------------------------------------------------------
+
+void verify_graceful_shutdown(CryptoSocket &socket, SmartBuffer &read_buffer, bool is_server) {
+    if(is_server) {
+        TEST_DO(write_EOF(socket));
+        TEST_DO(read_EOF(socket, read_buffer));
+        TEST_DO(read_EOF(socket, read_buffer));
+        TEST_DO(read_EOF(socket, read_buffer));
+    } else {
+        TEST_DO(read_EOF(socket, read_buffer));
+        TEST_DO(read_EOF(socket, read_buffer));
+        TEST_DO(read_EOF(socket, read_buffer));
+        TEST_DO(write_EOF(socket));
     }
 }
 
@@ -153,6 +205,7 @@ void verify_crypto_socket(SocketPair &sockets, CryptoEngine &engine, bool is_ser
     TEST_DO(verify_handshake(*my_socket));
     drain(*my_socket, read_buffer);
     TEST_DO(verify_socket_io(*my_socket, read_buffer, is_server));
+    TEST_DO(verify_graceful_shutdown(*my_socket, read_buffer, is_server));
 }
 
 //-----------------------------------------------------------------------------

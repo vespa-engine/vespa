@@ -79,6 +79,16 @@ SyncCryptoSocket::write(const char *buf, size_t len)
     return written;
 }
 
+ssize_t
+SyncCryptoSocket::half_close()
+{
+    auto half_close_res = _socket->half_close();
+    while (is_blocked(half_close_res, errno)) {
+        half_close_res = _socket->half_close();
+    }
+    return half_close_res;
+}
+
 SyncCryptoSocket::UP
 SyncCryptoSocket::create(CryptoEngine &engine, SocketHandle socket, bool is_server)
 {

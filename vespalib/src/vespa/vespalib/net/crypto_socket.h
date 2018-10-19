@@ -88,6 +88,43 @@ struct CryptoSocket {
      **/
     virtual ssize_t flush() = 0;
 
+    /**
+     * Signal the end of outgoing data. Note that this might require
+     * writing data to the underlying socket to notify the client that
+     * no more data will be sent. This function should be treated as a
+     * combination of write and flush and should be re-tried after the
+     * socket becomes writable if EWOULDBLOCK is returned. Neither
+     * write nor flush should be called after this function is
+     * called. When this function indicates success (returns 0) all
+     * pending data has been written to the underlying socket and the
+     * write aspect of the socket has been shut down. Performing
+     * half_close on one end of a connection will eventually lead to
+     * the other end receiving EOF after all application data has been
+     * read. Note that closing the socket immediately after performing
+     * half_close might still result in data loss since there is no
+     * way of knowing when the data has actually been sent on the
+     * network.
+     *
+     * Ideal graceful shutdown is initiated by one end performing
+     * half_close on the connection. When the other end receives EOF
+     * it performs half_close on its end of the connection. When both
+     * ends have received EOF the sockets can be closed. The ideal
+     * scenario is broken by two things: (1) the two generals paradox,
+     * which proves that both endpoints coming to an agreement about
+     * the connection being gracefully shut down is not possible. (2)
+     * clients tend to do random things with the connection, leaving
+     * it up to the server to be the more responsible party.
+     *
+     * Real-life graceful-ish shutdown (server-side) should be
+     * performed by doing half_close on the server end of the
+     * connection. Any incoming data should be read in the hope of
+     * getting EOF. The socket should be closed when either EOF is
+     * reached, a read error occurred (typically connection reset by
+     * peer or similar) or a timeout is reached (application
+     * equivalent of the linger option on the socket).
+     **/
+    virtual ssize_t half_close() = 0;
+
     virtual ~CryptoSocket();
 };
 
