@@ -55,15 +55,15 @@ import static org.junit.Assert.fail;
 /**
  * Specification for the conversion of YQL+ expressions to Vespa search queries.
  *
- * @author steinar
- * @author stiankri
+ * @author Steinar Knutsen
+ * @author Stian Kristoffersen
  */
 public class YqlParserTestCase {
 
     private final YqlParser parser = new YqlParser(new ParserEnvironment());
 
     @Test
-    public void requireThatDefaultsAreSane() {
+    public void testParserDefaults() {
         assertTrue(parser.isQueryParser());
         assertNull(parser.getDocTypes());
     }
@@ -76,7 +76,7 @@ public class YqlParserTestCase {
     }
 
     @Test
-    public void requireThatGroupingStepCanBeParsed() {
+    public void testGroupingStep() {
         assertParse("select foo from bar where baz contains 'cox';",
                     "baz:cox");
         assertEquals("[]",
@@ -98,7 +98,7 @@ public class YqlParserTestCase {
     }
 
     @Test
-    public void requireThatGroupingContinuationCanBeParsed() {
+    public void testGroupingContinuation() {
         assertParse("select foo from bar where baz contains 'cox' " +
                     "| [{ 'continuations': ['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]all(group(a) each(output(count())));",
                     "baz:cox");
@@ -770,9 +770,8 @@ public class YqlParserTestCase {
 
     @Test
     public void testNegativeHitLimit() {
-        assertParse(
-                "select * from sources * where [{\"hitLimit\": -38}]range(foo, 0, 1);",
-                "foo:[0;1;-38]");
+        assertParse("select * from sources * where [{\"hitLimit\": -38}]range(foo, 0, 1);",
+                    "foo:[0;1;-38]");
     }
 
     @Test
@@ -830,26 +829,26 @@ public class YqlParserTestCase {
 
     @Test
     public void testMoreInheritedAnnotations() {
-        final String yqlQuery = "select * from sources * where "
-                + "([{\"ranked\": false}](foo contains \"a\" "
-                + "and ([{\"ranked\": true}](bar contains \"b\" "
-                + "or ([{\"ranked\": false}](foo contains \"c\" "
-                + "and foo contains ([{\"ranked\": true}]\"d\")))))));";
+        String yqlQuery = "select * from sources * where " +
+                          "([{\"ranked\": false}](foo contains \"a\" " +
+                          "and ([{\"ranked\": true}](bar contains \"b\" " +
+                          "or ([{\"ranked\": false}](foo contains \"c\" " +
+                          "and foo contains ([{\"ranked\": true}]\"d\")))))));";
         QueryTree x = parse(yqlQuery);
         List<IndexedItem> terms = QueryTree.getPositiveTerms(x);
         assertEquals(4, terms.size());
         for (IndexedItem term : terms) {
             switch (term.getIndexedString()) {
-            case "a":
-            case "c":
-                assertFalse(((Item) term).isRanked());
-                break;
-            case "b":
-            case "d":
-                assertTrue(((Item) term).isRanked());
-                break;
-            default:
-                fail();
+                case "a":
+                case "c":
+                    assertFalse(((Item) term).isRanked());
+                    break;
+                case "b":
+                case "d":
+                    assertTrue(((Item) term).isRanked());
+                    break;
+                default:
+                    fail();
             }
         }
     }
@@ -921,8 +920,8 @@ public class YqlParserTestCase {
     private void checkWordAlternativesContent(WordAlternativesItem alternatives) {
         boolean seenTree = false;
         boolean seenForest = false;
-        final String forest = "trees";
-        final String tree = "tree";
+        String forest = "trees";
+        String tree = "tree";
         assertEquals(2, alternatives.getAlternatives().size());
         for (WordAlternativesItem.Alternative alternative : alternatives.getAlternatives()) {
             if (tree.equals(alternative.word)) {

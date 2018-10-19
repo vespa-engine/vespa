@@ -14,9 +14,10 @@ import com.yahoo.search.query.parser.ParserEnvironment;
  * Check rules for resegmenting words in YQL+ when segmenter is deemed
  * incompatible. The class under testing is {@link YqlParser}.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class ResegmentingTestCase {
+
     private YqlParser parser;
 
     @Before

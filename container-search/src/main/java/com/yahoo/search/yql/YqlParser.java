@@ -1310,22 +1310,18 @@ public class YqlParser implements Parser {
             wordData = normalizer.normalize(wordData);
         }
         boolean fromQuery = getAnnotation(ast, IMPLICIT_TRANSFORMS,
-                Boolean.class, Boolean.TRUE, IMPLICIT_TRANSFORMS_DESCRIPTION);
-        boolean prefixMatch = getAnnotation(ast, PREFIX, Boolean.class,
-                Boolean.FALSE,
-                "setting for whether to use prefix match of input data");
-        boolean suffixMatch = getAnnotation(ast, SUFFIX, Boolean.class,
-                Boolean.FALSE,
-                "setting for whether to use suffix match of input data");
-        boolean substrMatch = getAnnotation(ast, SUBSTRING, Boolean.class,
-                Boolean.FALSE,
-                "setting for whether to use substring match of input data");
-        Preconditions.checkArgument((prefixMatch ? 1 : 0)
-                + (substrMatch ? 1 : 0) + (suffixMatch ? 1 : 0) < 2,
-                "Only one of prefix, substring and suffix can be set.");
-        @NonNull
-        final TaggableItem wordItem;
+                                          Boolean.class, Boolean.TRUE, IMPLICIT_TRANSFORMS_DESCRIPTION);
+        boolean prefixMatch = getAnnotation(ast, PREFIX, Boolean.class, Boolean.FALSE,
+                                            "setting for whether to use prefix match of input data");
+        boolean suffixMatch = getAnnotation(ast, SUFFIX, Boolean.class, Boolean.FALSE,
+                                            "setting for whether to use suffix match of input data");
+        boolean substrMatch = getAnnotation(ast, SUBSTRING, Boolean.class, Boolean.FALSE,
+                                            "setting for whether to use substring match of input data");
+        Preconditions.checkArgument((prefixMatch ? 1 : 0) +
+                                    (substrMatch ? 1 : 0) + (suffixMatch ? 1 : 0) < 2,
+                                    "Only one of prefix, substring and suffix can be set.");
 
+        TaggableItem wordItem;
         if (exactMatch) {
             wordItem = new ExactStringItem(wordData, fromQuery);
         } else if (prefixMatch) {
@@ -1363,7 +1359,7 @@ public class YqlParser implements Parser {
 
     @SuppressWarnings({"deprecation"})
     private boolean shouldResegmentWord(String field, boolean fromQuery) {
-        return resegment && fromQuery &&  ! indexFactsSession.getIndex(field).isAttribute();
+        return resegment && fromQuery && ! indexFactsSession.getIndex(field).isAttribute();
     }
 
     @NonNull
@@ -1404,8 +1400,7 @@ public class YqlParser implements Parser {
         return parent == EquivItem.class;
     }
 
-    private void prepareWord(String field, OperatorNode<ExpressionOperator> ast, boolean fromQuery,
-                             WordItem wordItem) {
+    private void prepareWord(String field, OperatorNode<ExpressionOperator> ast, boolean fromQuery, WordItem wordItem) {
         wordItem.setIndexName(field);
         wordStyleSettings(ast, wordItem);
         if (shouldResegmentWord(field, fromQuery)) {
@@ -1421,10 +1416,12 @@ public class YqlParser implements Parser {
         {
             Map<?, ?> connectivity = getAnnotation(ast, CONNECTIVITY, Map.class, null, "connectivity settings");
             if (connectivity != null) {
-                connectedItems.add(new ConnectedItem(out, getMapValue(
-                        CONNECTIVITY, connectivity, CONNECTION_ID,
-                        Integer.class), getMapValue(CONNECTIVITY, connectivity,
-                        CONNECTION_WEIGHT, Number.class).doubleValue()));
+                connectedItems.add(new ConnectedItem(out,
+                                                     getMapValue(CONNECTIVITY, connectivity, CONNECTION_ID,
+                                                                 Integer.class), getMapValue(CONNECTIVITY,
+                                                                                             connectivity,
+                                                                                             CONNECTION_WEIGHT,
+                                                                                             Number.class).doubleValue()));
             }
             Number significance = getAnnotation(ast, SIGNIFICANCE, Number.class, null, "term significance");
             if (significance != null) {
