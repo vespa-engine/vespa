@@ -107,6 +107,7 @@
         <module>searchcore</module>
         <module>searchlib</module>
         <module>searchsummary</module>
+        <module>security-utils</module>
         <module>serviceview</module>
         <module>service-monitor</module>
         <module>simplemetrics</module>
