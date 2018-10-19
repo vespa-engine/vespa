@@ -293,7 +293,6 @@ public final class ContainerCluster
     private void addJaxProviders() {
         addSimpleComponent(com.yahoo.container.xml.providers.DatatypeFactoryProvider.class);
         addSimpleComponent(com.yahoo.container.xml.providers.DocumentBuilderFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.JAXBContextFactoryProvider.class);
         addSimpleComponent(com.yahoo.container.xml.providers.SAXParserFactoryProvider.class);
         addSimpleComponent(com.yahoo.container.xml.providers.SchemaFactoryProvider.class);
         addSimpleComponent(com.yahoo.container.xml.providers.TransformerFactoryProvider.class);
