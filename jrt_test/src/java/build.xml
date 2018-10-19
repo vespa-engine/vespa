@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project basedir="." default="all" name="jrt-test">
+    <!-- Written to assume that classpath is rooted in the current directory. -->
+    <!-- So this should be OK if you make this script in the root of a filesystem. -->
+    <!-- If not, just change src.dir to be the root of your sources' package tree -->
+    <!-- and use e.g. View over a Filesystem to mount that subdirectory with all capabilities. -->
+    <!-- The idea is that both Ant and NetBeans have to know what the package root is -->
+    <!-- for the classes in your application. -->
+
+    <!-- Don't worry if you don't know the Ant syntax completely or need help on some tasks! -->
+    <!-- The standard Ant documentation can be downloaded from AutoUpdate and -->
+    <!-- and then you can access the Ant manual in the online help. -->
+
+    <property file="build.inc" />
+
+    <target name="init">
+        <property location="classes" name="classes.dir"/>
+        <property location="." name="src.dir"/>
+        <property location="doc/api" name="javadoc.dir"/>
+        <property name="project.name" value="${ant.project.name}"/>
+        <property location="${project.name}.jar" name="jar"/>
+    </target>
+
+    <target depends="init" name="compile">
+        <!-- Both srcdir and destdir should be package roots. -->
+        <mkdir dir="${classes.dir}"/>
+        <javac debug="true" deprecation="true" destdir="${classes.dir}" srcdir="${src.dir}">
+	    <classpath>
+	    <pathelement location="${JRT_DIR}/lib/jars/jrt.jar"/>
+	    </classpath>
+            <!-- To add something to the classpath: -->
+            <!-- <classpath><pathelement location="${mylib}"/></classpath> -->
+            <!-- To exclude some files: -->
+            <!-- <exclude name="com/foo/SomeFile.java"/><exclude name="com/foo/somepackage/"/> -->
+        </javac>
+    </target>
+
+    <target depends="init,compile" name="jar">
+        <!-- To make a standalone app, insert into <jar>: -->
+        <!-- <manifest><attribute name="Main-Class" value="com.foo.Main"/></manifest> -->
+        <jar basedir="${classes.dir}" compress="true" jarfile="${jar}"/>
+    </target>
+
+    <target depends="init,jar" description="Build everything." name="all"/>
+
+    <target depends="init" description="Javadoc for my API." name="javadoc">
+        <mkdir dir="${javadoc.dir}"/>
+        <javadoc destdir="${javadoc.dir}" packagenames="*">
+            <sourcepath>
+                <pathelement location="${src.dir}"/>
+            </sourcepath>
+        </javadoc>
+    </target>
+
+    <target depends="init" description="Clean all build products." name="clean">
+        <delete dir="${classes.dir}"/>
+        <delete dir="${javadoc.dir}"/>
+        <delete file="${jar}"/>
+    </target>
+
+</project>

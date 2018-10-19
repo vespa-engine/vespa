@@ -3,7 +3,6 @@
 unset VESPA_LOG_TARGET
 CLASSPATH=@PROJECT_SOURCE_DIR@/jrt/target/jrt.jar
 CLASSPATH=$CLASSPATH:@PROJECT_SOURCE_DIR@/vespajlib/target/vespajlib.jar
-CLASSPATH=$CLASSPATH:@PROJECT_SOURCE_DIR@/security-utils/target/security-utils.jar
 CLASSPATH=$CLASSPATH:@CMAKE_CURRENT_SOURCE_DIR@/../java/classes
 CLASSPATH=$CLASSPATH:.
 if [ $# -lt 1 ]; then
