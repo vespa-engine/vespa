@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -77,8 +78,8 @@ public class ControllerSslContextFactoryProvider extends AbstractComponent imple
     }
 
     /** Get certificate from secret store */
-    private X509Certificate certificate() {
-        return X509CertificateUtils.fromPem(secretStore.getSecret(config.certificateSecret()));
+    private List<X509Certificate> certificate() {
+        return X509CertificateUtils.certificateListFromPem(secretStore.getSecret(config.certificateSecret()));
     }
 
 }
