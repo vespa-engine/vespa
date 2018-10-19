@@ -28,6 +28,7 @@ public:
     ~SyncCryptoSocket();
     ssize_t read(char *buf, size_t len);
     ssize_t write(const char *buf, size_t len);
+    ssize_t half_close();
     static UP create(CryptoEngine &engine, SocketHandle socket, bool is_server);
 };
 
