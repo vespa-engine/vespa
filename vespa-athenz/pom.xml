@@ -23,14 +23,14 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
-
-        <!-- test -->
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container-test</artifactId>
+            <artifactId>security-utils</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
+            <scope>provided</scope>
         </dependency>
+
+        <!-- test -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
