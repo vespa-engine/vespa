@@ -658,7 +658,43 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    public void testConfiguredMetrics() throws Exception {
+    public void testConfiguredLegacyUserMetrics() throws Exception {
+        testConfiguredMetrics("  <metric-consumers>" +
+                "    <consumer name=\"foobar\">" +
+                "      <metric name=\"storage.foo.bar\"/>" +
+                "    </consumer>" +
+                "    <consumer name=\"log\">" +
+                "      <metric name=\"extralogmetric\"/>" +
+                "      <metric name=\"extralogmetric3\"/>" +
+                "    </consumer>" +
+                "    <consumer name=\"fleetcontroller\">" +
+                "      <metric name=\"extraextra\"/>" +
+                "    </consumer>" +
+                "  </metric-consumers>",
+                "");
+    }
+
+    @Test
+    public void testConfiguredUserMetrics() throws Exception {
+        testConfiguredMetrics("  <metrics>" +
+                "    <consumer id=\"foobar\">" +
+                "      <metric id=\"storage.foo.bar\"/>" +
+                "    </consumer>" +
+                "    <consumer id=\"log\">" +
+                "      <metric id=\"extralogmetric\"/>" +
+                "      <metric id=\"extralogmetric3\"/>" +
+                "    </consumer>" +
+                "    <consumer id=\"fleetcontroller\">" +
+                "      <metric id=\"extraextra\"/>" +
+                "    </consumer>" +
+                "  </metrics>",
+                ", feed.operations.rate, " +
+                        "content.proton.resource_usage.feeding_blocked.last, " +
+                        "cpu.util, cpu.sys.util, disk.limit, disk.used, disk.util, mem.limit, mem.used, mem.util, " +
+                        "cpu.busy.pct, mem.used.pct, mem.active.kb, mem.total.kb, used.kb");
+    }
+
+    private void testConfiguredMetrics(String userMetricsConfig, String defaultUserMetrics) throws Exception {
         String xml = "" +
             "<services>" +
             "<content version=\"1.0\" id=\"storage\">\n" +
@@ -674,18 +710,7 @@ public class ContentClusterTest extends ContentBaseTest {
             "<admin version=\"2.0\">" +
             "  <logserver hostalias=\"node0\"/>" +
             "  <adminserver hostalias=\"node0\"/>" +
-            "  <metric-consumers>" +
-            "    <consumer name=\"foobar\">" +
-            "      <metric name=\"storage.foo.bar\"/>" +
-            "    </consumer>" +
-            "    <consumer name=\"log\">" +
-            "      <metric name=\"extralogmetric\"/>" +
-            "      <metric name=\"extralogmetric3\"/>" +
-            "    </consumer>" +
-            "    <consumer name=\"fleetcontroller\">" +
-            "      <metric name=\"extraextra\"/>" +
-            "    </consumer>" +
-            "  </metric-consumers>" +
+                userMetricsConfig +
             "</admin>" +
             "</services>";
 
@@ -698,10 +723,10 @@ public class ContentClusterTest extends ContentBaseTest {
             model.getConfig(builder, "storage/storage/0");
             MetricsmanagerConfig config = new MetricsmanagerConfig(builder);
 
-            assertEquals("[storage.foo.bar]", getConsumer("foobar", config).addedmetrics().toString());
+            assertEquals("[storage.foo.bar" + defaultUserMetrics + "]", getConsumer("foobar", config).addedmetrics().toString());
             String expected =
                     "[extralogmetric\n" +
-                    "extralogmetric3\n" +
+                    "extralogmetric3" + defaultUserMetrics.replaceAll(", ", "\n") + "\n" +
                     "vds.filestor.alldisks.allthreads.put.sum\n" +
                     "vds.filestor.alldisks.allthreads.get.sum\n" +
                     "vds.filestor.alldisks.allthreads.remove.sum\n" +
@@ -718,7 +743,7 @@ public class ContentClusterTest extends ContentBaseTest {
             assertEquals(expected, actual);
             assertEquals("[logdefault]", getConsumer("log", config).tags().toString());
             expected =
-                    "[extraextra\n" +
+                    "[extraextra" + defaultUserMetrics.replaceAll(", ", "\n") + "\n" +
                     "vds.datastored.alldisks.docs\n" +
                     "vds.datastored.alldisks.bytes\n" +
                     "vds.datastored.alldisks.buckets]";
@@ -731,10 +756,10 @@ public class ContentClusterTest extends ContentBaseTest {
             model.getConfig(builder, "storage/distributor/0");
             MetricsmanagerConfig config = new MetricsmanagerConfig(builder);
 
-            assertEquals("[storage.foo.bar]", getConsumer("foobar", config).addedmetrics().toString());
-            assertEquals("[extralogmetric, extralogmetric3, vds.distributor.docsstored, vds.distributor.bytesstored, vds.idealstate.delete_bucket.done_ok, vds.idealstate.merge_bucket.done_ok, vds.idealstate.split_bucket.done_ok, vds.idealstate.join_bucket.done_ok, vds.idealstate.buckets_rechecking]", getConsumer("log", config).addedmetrics().toString());
+            assertEquals("[storage.foo.bar" + defaultUserMetrics + "]", getConsumer("foobar", config).addedmetrics().toString());
+            assertEquals("[extralogmetric, extralogmetric3" + defaultUserMetrics + ", vds.distributor.docsstored, vds.distributor.bytesstored, vds.idealstate.delete_bucket.done_ok, vds.idealstate.merge_bucket.done_ok, vds.idealstate.split_bucket.done_ok, vds.idealstate.join_bucket.done_ok, vds.idealstate.buckets_rechecking]", getConsumer("log", config).addedmetrics().toString());
             assertEquals("[logdefault]", getConsumer("log", config).tags().toString());
-            assertEquals("[extraextra]", getConsumer("fleetcontroller", config).addedmetrics().toString());
+            assertEquals("[extraextra" + defaultUserMetrics + "]", getConsumer("fleetcontroller", config).addedmetrics().toString());
         }
     }
 
