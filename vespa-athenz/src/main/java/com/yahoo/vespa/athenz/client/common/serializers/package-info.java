@@ -3,6 +3,6 @@
  * @author bjorncs
  */
 @ExportPackage
-package com.yahoo.vespa.athenz.client.zts.bindings.serializers;
+package com.yahoo.vespa.athenz.client.common.serializers;
 
 import com.yahoo.osgi.annotation.ExportPackage;

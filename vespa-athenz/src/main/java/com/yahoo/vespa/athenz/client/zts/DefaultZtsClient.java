@@ -1,16 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zts;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.api.ZToken;
-import com.yahoo.vespa.athenz.client.zts.bindings.ErrorResponseEntity;
+import com.yahoo.vespa.athenz.client.common.ClientBase;
 import com.yahoo.vespa.athenz.client.zts.bindings.IdentityRefreshRequestEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.IdentityResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.InstanceIdentityCredentials;
@@ -22,25 +19,13 @@ import com.yahoo.vespa.athenz.client.zts.bindings.RoleTokenResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.bindings.TenantDomainsResponseEntity;
 import com.yahoo.vespa.athenz.client.zts.utils.IdentityCsrGenerator;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
-import com.yahoo.vespa.athenz.identity.ServiceIdentitySslSocketFactory;
 import com.yahoo.security.Pkcs10Csr;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.eclipse.jetty.http.HttpStatus;
 
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
@@ -56,12 +41,9 @@ import static java.util.stream.Collectors.toList;
  * @author bjorncs
  * @author mortent
  */
-public class DefaultZtsClient implements ZtsClient {
-
-    private static final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+public class DefaultZtsClient extends ClientBase implements ZtsClient {
 
     private final URI ztsUrl;
-    private final CloseableHttpClient client;
     private final AthenzIdentity identity;
 
     public DefaultZtsClient(URI ztsUrl, AthenzIdentity identity, SSLContext sslContext) {
@@ -73,9 +55,9 @@ public class DefaultZtsClient implements ZtsClient {
     }
 
     private DefaultZtsClient(URI ztsUrl, AthenzIdentity identity, Supplier<SSLContext> sslContextSupplier) {
+        super("vespa-zts-client", sslContextSupplier, ZtsClientException::new);
         this.ztsUrl = addTrailingSlash(ztsUrl);
         this.identity = identity;
-        this.client = createHttpClient(sslContextSupplier);
     }
 
     @Override
@@ -91,7 +73,7 @@ public class DefaultZtsClient implements ZtsClient {
                 .setUri(ztsUrl.resolve("instance/"))
                 .setEntity(toJsonStringEntity(payload))
                 .build();
-        return execute(request, DefaultZtsClient::getInstanceIdentity);
+        return execute(request, this::getInstanceIdentity);
     }
 
     @Override
@@ -111,7 +93,7 @@ public class DefaultZtsClient implements ZtsClient {
                 .setUri(uri)
                 .setEntity(toJsonStringEntity(payload))
                 .build();
-        return execute(request, DefaultZtsClient::getInstanceIdentity);
+        return execute(request, this::getInstanceIdentity);
     }
 
     @Override
@@ -189,28 +171,11 @@ public class DefaultZtsClient implements ZtsClient {
         });
     }
 
-    private <T> T execute(HttpUriRequest request, ResponseHandler<T> responseHandler) {
-        try {
-            return client.execute(request, responseHandler);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private static InstanceIdentity getInstanceIdentity(HttpResponse response) throws IOException {
+    private InstanceIdentity getInstanceIdentity(HttpResponse response) throws IOException {
         InstanceIdentityCredentials entity = readEntity(response, InstanceIdentityCredentials.class);
         return entity.getServiceToken() != null
                     ? new InstanceIdentity(entity.getX509Certificate(), new NToken(entity.getServiceToken()))
                     : new InstanceIdentity(entity.getX509Certificate());
-    }
-
-    private static <T> T readEntity(HttpResponse response, Class<T> entityType) throws IOException {
-        if (HttpStatus.isSuccess(response.getStatusLine().getStatusCode())) {
-            return objectMapper.readValue(response.getEntity().getContent(), entityType);
-        } else {
-            ErrorResponseEntity errorEntity = objectMapper.readValue(response.getEntity().getContent(), ErrorResponseEntity.class);
-            throw new ZtsClientException(errorEntity.code, errorEntity.description);
-        }
     }
 
     private static URI addTrailingSlash(URI ztsUrl) {
@@ -218,36 +183,6 @@ public class DefaultZtsClient implements ZtsClient {
             return ztsUrl;
         else
             return URI.create(ztsUrl.toString() + '/');
-    }
-
-    private static StringEntity toJsonStringEntity(Object entity) {
-        try {
-            return new StringEntity(objectMapper.writeValueAsString(entity), ContentType.APPLICATION_JSON);
-        } catch (JsonProcessingException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private static CloseableHttpClient createHttpClient(Supplier<SSLContext> sslContextSupplier) {
-        return HttpClientBuilder.create()
-                .setRetryHandler(new DefaultHttpRequestRetryHandler(3, /*requestSentRetryEnabled*/true))
-                .setUserAgent("vespa-zts-client")
-                .setSSLSocketFactory(new SSLConnectionSocketFactory(new ServiceIdentitySslSocketFactory(sslContextSupplier), (HostnameVerifier)null))
-                .setDefaultRequestConfig(RequestConfig.custom()
-                                                 .setConnectTimeout((int)Duration.ofSeconds(10).toMillis())
-                                                 .setConnectionRequestTimeout((int)Duration.ofSeconds(10).toMillis())
-                                                 .setSocketTimeout((int)Duration.ofSeconds(20).toMillis())
-                                                 .build())
-                .build();
-    }
-
-    @Override
-    public void close() {
-        try {
-            this.client.close();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
 }

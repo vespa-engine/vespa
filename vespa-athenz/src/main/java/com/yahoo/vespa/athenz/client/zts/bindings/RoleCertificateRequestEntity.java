@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.yahoo.vespa.athenz.client.zts.bindings.serializers.Pkcs10CsrSerializer;
+import com.yahoo.vespa.athenz.client.common.serializers.Pkcs10CsrSerializer;
 import com.yahoo.security.Pkcs10Csr;
 
 import java.io.IOException;
