@@ -307,7 +307,7 @@ public class Environment {
                                    Optional.ofNullable(pathResolver).orElseGet(PathResolver::new),
                                    logstashNodes,
                                    nodeType,
-                                   Optional.ofNullable(containerEnvironmentResolver).orElseGet(DefaultContainerEnvironmentResolver::new),
+                                   Optional.ofNullable(containerEnvironmentResolver).orElseGet(() -> node -> ""),
                                    certificateDnsSuffix,
                                    ztsUri,
                                    nodeAthenzIdentity,
