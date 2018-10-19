@@ -33,6 +33,7 @@
 
     <properties>
         <vespaversion>${project.version}</vespaversion>
+        <test_framework_version>${project.version}</test_framework_version>
         <target_jdk_version>1.8</target_jdk_version>
         <compiler_plugin_version>3.8.0</compiler_plugin_version>
         <surefire_version>2.22.0</surefire_version> <!-- NOTE bjorncs 15.06.2017: Version 2.20 has OoM issues -->
@@ -56,7 +57,7 @@
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>tenant-cd</artifactId>
-            <version>${vespaversion}</version>
+            <version>${test_framework_version}</version>
             <scope>test</scope>
         </dependency>
 
