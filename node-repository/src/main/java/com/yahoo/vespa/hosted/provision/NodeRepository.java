@@ -290,7 +290,8 @@ public class NodeRepository extends AbstractComponent {
             }
             Optional<Node> existing = getNode(node.hostname());
             if (existing.isPresent())
-                throw new IllegalArgumentException("Cannot add " + node.hostname() + ": A node with this name already exists");
+                throw new IllegalArgumentException("Cannot add " + node.hostname() + ": A node with this name already exists (" +
+                                                           node + ", " + node.history() + ")");
         }
         try (Mutex lock = lockUnallocated()) {
             return db.addNodesInState(nodes, Node.State.reserved);
