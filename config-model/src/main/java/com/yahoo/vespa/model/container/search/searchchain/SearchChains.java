@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search.searchchain;
 
-import com.yahoo.binaryprefix.BinaryScaledAmount;
 import com.yahoo.collections.CollectionUtil;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -26,31 +25,17 @@ public class SearchChains extends Chains<SearchChain> {
         super(parent, subId);
     }
 
-    public void initialize(Map<String, ? extends AbstractSearchCluster> searchClustersByName, BinaryScaledAmount totalProviderCacheSize) {
+    public void initialize(Map<String, ? extends AbstractSearchCluster> searchClustersByName) {
         LocalClustersCreator.addDefaultLocalProviders(this, searchClustersByName.keySet());
         VespaSearchChainsCreator.addVespaSearchChains(this);
 
         validateSourceGroups(); //must be done before initializing searchers since they are used by FederationSearchers.
-        initializeComponents(searchClustersByName, totalProviderCacheSize);
+        initializeComponents(searchClustersByName);
     }
 
-    private void initializeComponents(Map<String, ? extends AbstractSearchCluster> searchClustersByName,
-                                      BinaryScaledAmount totalProviderCacheSize) {
+    private void initializeComponents(Map<String, ? extends AbstractSearchCluster> searchClustersByName) {
         setSearchClusterForLocalProvider(searchClustersByName);
-        setCacheSizeForHttpProviders(totalProviderCacheSize);
         initializeComponents();
-    }
-
-    private void setCacheSizeForHttpProviders(BinaryScaledAmount totalProviderCacheSize) {
-        double totalCacheWeight = 0;
-        for (HttpProvider provider : httpProviders()) {
-            totalCacheWeight += provider.getCacheWeight();
-        }
-
-        final BinaryScaledAmount cacheUnit = totalProviderCacheSize.divide(totalCacheWeight);
-        for (HttpProvider provider : httpProviders()) {
-            provider.setCacheSize(cacheUnit.multiply(provider.getCacheWeight()));
-        }
     }
 
     private void setSearchClusterForLocalProvider(Map<String, ? extends AbstractSearchCluster> clusterIndexByName) {
@@ -81,7 +66,7 @@ public class SearchChains extends Chains<SearchChain> {
         super.validate();
     }
 
-    public SourceGroupRegistry allSourceGroups() {
+    SourceGroupRegistry allSourceGroups() {
         return sourceGroups;
     }
 
