@@ -505,7 +505,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         memoryPercentage = memoryPercentage.substring(0, memoryPercentage.length()-1).trim();
 
         try {
-            cluster.setMemoryPercentage(Optional.of(Integer.parseInt(memoryPercentage)));
+            cluster.setMemoryPercentage(Integer.parseInt(memoryPercentage));
         }
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("The memory percentage given for nodes in " + cluster +
