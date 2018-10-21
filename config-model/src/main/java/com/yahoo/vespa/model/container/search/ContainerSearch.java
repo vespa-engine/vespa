@@ -48,13 +48,11 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private SemanticRules semanticRules;
     private PageTemplates pageTemplates;
     private final ContainerCluster owningCluster;
-    private final SettableOptional<Integer> memoryPercentage;
 
     public ContainerSearch(ContainerCluster cluster, SearchChains chains, Options options) {
         super(chains);
         this.options = options;
         this.owningCluster = cluster;
-        this.memoryPercentage = cluster.getMemoryPercentage();
         cluster.addComponent(getFS4ResourcePool());
     }
 
@@ -88,10 +86,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         }
     }
 
-    public void setTotalCacheSize(BinaryScaledAmount totalCacheSize) {
-        this.totalCacheSize = totalCacheSize;
-    }
-
     public void setQueryProfiles(QueryProfiles queryProfiles) {
         this.queryProfiles = queryProfiles;
     }
@@ -122,14 +116,10 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     @Override
     public void getConfig(QrStartConfig.Builder qsB) {
     	QrStartConfig.Jvm.Builder internalBuilder = new QrStartConfig.Jvm.Builder();
-        if (memoryPercentage.isPresent()) {
-            internalBuilder.heapSizeAsPercentageOfPhysicalMemory(memoryPercentage.get());
-        }
-    	else if (owningCluster.isHostedVespa()) {
-            if (owningCluster.getHostClusterId().isPresent())
-                internalBuilder.heapSizeAsPercentageOfPhysicalMemory(17);
-            else
-                internalBuilder.heapSizeAsPercentageOfPhysicalMemory(60);
+        if (owningCluster.getMemoryPercentage().isPresent()) {
+            internalBuilder.heapSizeAsPercentageOfPhysicalMemory(owningCluster.getMemoryPercentage().get());
+        } else if (owningCluster.isHostedVespa()) {
+            internalBuilder.heapSizeAsPercentageOfPhysicalMemory(owningCluster.getHostClusterId().isPresent() ? 17 : 60);
         }
         qsB.jvm(internalBuilder.directMemorySizeCache(totalCacheSizeMb()));
     }
@@ -201,7 +191,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     public Options getOptions() {
         return options;
     }
-    public Optional<Integer> getMemoryPercentage() { return memoryPercentage.asOptional(); }
 
     /**
      * Struct that encapsulates qrserver options.
