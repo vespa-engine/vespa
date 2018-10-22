@@ -1,10 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
-import com.yahoo.log.LogLevel;
-
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 /**
  * A session supporting receiving and replying to messages. A destination is expected to reply to every message
@@ -14,7 +11,6 @@ import java.util.logging.Logger;
  */
 public final class DestinationSession implements MessageHandler {
 
-    private static Logger log = Logger.getLogger(DestinationSession.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final String name;
     private final boolean broadcastName;

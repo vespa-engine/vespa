@@ -24,7 +24,7 @@ public class SendProxy implements MessageHandler, ReplyHandler {
     private final Resender resender;
     private Message msg = null;
     private boolean logTrace = false;
-    private long sendTime = 0;
+    private final long sendTime;
 
     /**
      * Constructs a new instance of this class to maintain sending of a single message.

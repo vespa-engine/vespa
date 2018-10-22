@@ -20,9 +20,7 @@ public class MbusClientProvider implements Provider<MbusClient> {
 
     private final MbusClient client;
 
-    private static MbusClient createSourceClient(
-            SessionCache sessionCache,
-            boolean setAllPassThrottlePolicy) {
+    private static MbusClient createSourceClient(SessionCache sessionCache, boolean setAllPassThrottlePolicy) {
         final SourceSessionParams sourceSessionParams = new SourceSessionParams();
         if (setAllPassThrottlePolicy) {
             sourceSessionParams.setThrottlePolicy(new AllPassThrottlePolicy());

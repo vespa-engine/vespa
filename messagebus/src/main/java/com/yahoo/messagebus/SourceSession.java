@@ -1,16 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RoutingTable;
-import com.yahoo.text.Utf8String;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 /**
  * <p>A session supporting sending new messages.</p>
@@ -19,7 +16,6 @@ import java.util.logging.Logger;
  */
 public final class SourceSession implements ReplyHandler, MessageBus.SendBlockedMessages {
 
-    private static Logger log = Logger.getLogger(SourceSession.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final CountDownLatch done = new CountDownLatch(1);
     private final Object lock = new Object();
@@ -210,7 +206,7 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
         }
     }
 
-    Reply createSendTimedoutReply(Message msg, Error error) {
+    private Reply createSendTimedoutReply(Message msg, Error error) {
         Reply reply = new EmptyReply();
         reply.setMessage(msg);
         reply.addError(error);
@@ -247,12 +243,7 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
 
     private void expireStalledBlockedMessages() {
         synchronized (lock) {
-            final Iterator<BlockedMessage> each = blockedQ.iterator();
-            while (each.hasNext()) {
-                if (each.next().notifyIfExpired()) {
-                    each.remove();
-                }
-            }
+            blockedQ.removeIf(BlockedMessage::notifyIfExpired);
         }
     }
 

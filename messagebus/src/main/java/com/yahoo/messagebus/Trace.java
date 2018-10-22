@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus;
 
-import java.util.Date;
-
 /**
  * A Trace object contains ad-hoc string notes organized in a strict-loose tree. A Trace object consists of a trace
  * level indicating which trace notes should be included and a TraceTree object containing the tree structure and

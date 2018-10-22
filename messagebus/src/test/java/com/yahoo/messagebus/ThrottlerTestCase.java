@@ -133,8 +133,8 @@ public class ThrottlerTestCase {
         CustomTimer timer = new CustomTimer();
         DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
 
-        policy.setWindowSizeIncrement(5);
-        policy.setResizeRate(1);
+        policy.setWindowSizeIncrement(5)
+              .setResizeRate(1);
 
         double windowSize = getWindowSize(policy, timer, 100);
         assertTrue(windowSize >= 90 && windowSize <= 110);
@@ -157,8 +157,8 @@ public class ThrottlerTestCase {
         CustomTimer timer = new CustomTimer();
         DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
 
-        policy.setWindowSizeIncrement(5);
-        policy.setResizeRate(1);
+        policy.setWindowSizeIncrement(5)
+              .setResizeRate(1);
 
         double windowSize = getWindowSize(policy, timer, 100);
         assertTrue(windowSize >= 90 && windowSize <= 110);
@@ -183,9 +183,9 @@ public class ThrottlerTestCase {
         CustomTimer timer = new CustomTimer();
         DynamicThrottlePolicy policy = new DynamicThrottlePolicy(timer);
 
-        policy.setWindowSizeIncrement(5);
-        policy.setResizeRate(1);
-        policy.setMinWindowSize(150);
+        policy.setWindowSizeIncrement(5)
+              .setResizeRate(1)
+              .setMinWindowSize(150);
 
         double windowSize = getWindowSize(policy, timer, 200);
         assertTrue(windowSize >= 150 && windowSize <= 210);

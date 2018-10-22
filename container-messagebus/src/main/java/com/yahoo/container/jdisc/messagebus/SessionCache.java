@@ -13,10 +13,16 @@ import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.SharedResource;
 import com.yahoo.log.LogLevel;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.ConfigAgent;
+import com.yahoo.messagebus.DynamicThrottlePolicy;
+import com.yahoo.messagebus.IntermediateSessionParams;
+import com.yahoo.messagebus.MessageBusParams;
+import com.yahoo.messagebus.Protocol;
+import com.yahoo.messagebus.SourceSessionParams;
+import com.yahoo.messagebus.StaticThrottlePolicy;
+import com.yahoo.messagebus.ThrottlePolicy;
 import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
-import com.yahoo.messagebus.shared.SharedDestinationSession;
 import com.yahoo.messagebus.shared.SharedIntermediateSession;
 import com.yahoo.messagebus.shared.SharedMessageBus;
 import com.yahoo.messagebus.shared.SharedSourceSession;
@@ -45,16 +51,11 @@ public final class SessionCache extends AbstractComponent {
     private final DocumentTypeManager documentTypeManager;
 
     // initialized in start()
-    private ConfigAgent configAgent;
     private SharedMessageBus messageBus;
 
     private final Object intermediateLock = new Object();
     private final Map<String, SharedIntermediateSession> intermediates = new HashMap<>();
     private final IntermediateSessionCreator intermediatesCreator = new IntermediateSessionCreator();
-
-    private final Object destinationLock = new Object();
-    private final Map<String, SharedDestinationSession> destinations = new HashMap<>();
-    private final DestinationSessionCreator destinationsCreator = new DestinationSessionCreator();
 
     private final Object sourceLock = new Object();
     private final Map<SourceSessionKey, SharedSourceSession> sources = new HashMap<>();
@@ -86,7 +87,7 @@ public final class SessionCache extends AbstractComponent {
         DocumentProtocol protocol = new DocumentProtocol(documentTypeManager, identity, loadTypeSet);
         messageBus = createSharedMessageBus(mbusConfig, slobrokConfigId, identity, protocol);
         // TODO: stop doing subscriptions to config when that is to be solved in slobrok as well
-        configAgent = new ConfigAgent(messagebusConfigId, messageBus.messageBus());
+        ConfigAgent configAgent = new ConfigAgent(messagebusConfigId, messageBus.messageBus());
         configAgent.subscribe();
     }
 
@@ -128,22 +129,13 @@ public final class SessionCache extends AbstractComponent {
                 (((double) (maxPendingSize / 1024L)) / 1024.0d) + " pending megabytes."));
     }
 
-    public ReferencedResource<SharedIntermediateSession> retainIntermediate(final IntermediateSessionParams p) {
+    ReferencedResource<SharedIntermediateSession> retainIntermediate(final IntermediateSessionParams p) {
         synchronized (this) {
             if (!isStarted()) {
                 start();
             }
         }
         return intermediatesCreator.retain(intermediateLock, intermediates, p);
-    }
-
-    public ReferencedResource<SharedDestinationSession> retainDestination(final DestinationSessionParams p) {
-        synchronized (this) {
-            if (!isStarted()) {
-                start();
-            }
-        }
-        return destinationsCreator.retain(destinationLock, destinations, p);
     }
 
     public ReferencedResource<SharedSourceSession> retainSource(final SourceSessionParams p) {
@@ -192,25 +184,6 @@ public final class SessionCache extends AbstractComponent {
             return session;
         }
 
-    }
-
-    private class DestinationSessionCreator
-            extends SessionCreator<DestinationSessionParams, String, SharedDestinationSession> {
-        @Override
-        SharedDestinationSession create(final DestinationSessionParams p) {
-            log.log(LogLevel.DEBUG, "Creating new destination session " + p.getName() + "");
-            return messageBus.newDestinationSession(p);
-        }
-
-        @Override
-        String buildKey(final DestinationSessionParams p) {
-            return p.getName();
-        }
-
-        @Override
-        void logReuse(final SharedDestinationSession session) {
-            log.log(LogLevel.DEBUG, "Reusing destination session " + session.name() + "");
-        }
     }
 
     private class SourceSessionCreator
@@ -366,8 +339,7 @@ public final class SessionCache extends AbstractComponent {
 
     }
 
-    static class UnknownThrottlePolicySignature extends
-            ThrottlePolicySignature {
+    static class UnknownThrottlePolicySignature extends ThrottlePolicySignature {
         private final ThrottlePolicy policy;
 
         UnknownThrottlePolicySignature(final ThrottlePolicy policy) {
@@ -395,15 +367,12 @@ public final class SessionCache extends AbstractComponent {
             policy = createSignature(p.getThrottlePolicy());
         }
 
-        private static ThrottlePolicySignature createSignature(
-                final ThrottlePolicy policy) {
+        private static ThrottlePolicySignature createSignature(final ThrottlePolicy policy) {
             final Class<?> policyClass = policy.getClass();
             if (policyClass == DynamicThrottlePolicy.class) {
-                return new DynamicThrottlePolicySignature(
-                        (DynamicThrottlePolicy) policy);
+                return new DynamicThrottlePolicySignature((DynamicThrottlePolicy) policy);
             } else if (policyClass == StaticThrottlePolicy.class) {
-                return new StaticThrottlePolicySignature(
-                        (StaticThrottlePolicy) policy);
+                return new StaticThrottlePolicySignature((StaticThrottlePolicy) policy);
             } else {
                 return new UnknownThrottlePolicySignature(policy);
             }
@@ -411,18 +380,14 @@ public final class SessionCache extends AbstractComponent {
 
         @Override
         public String toString() {
-            return "SourceSessionKey{" +
-                   "timeout=" + timeout +
-                   ", policy=" + policy +
-                   '}';
+            return "SourceSessionKey{" + "timeout=" + timeout + ", policy=" + policy + '}';
         }
 
         @Override
         public int hashCode() {
             final int prime = 31;
             int result = 1;
-            result = prime * result
-                    + ((policy == null) ? 0 : policy.hashCode());
+            result = prime * result + ((policy == null) ? 0 : policy.hashCode());
             long temp;
             temp = Double.doubleToLongBits(timeout);
             result = prime * result + (int) (temp ^ (temp >>> 32));
