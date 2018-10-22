@@ -65,7 +65,7 @@ public class ControllerSslContextFactoryProvider extends AbstractComponent imple
 
         // Key store containing key pair from secret store
         factory.setKeyStore(KeyStoreBuilder.withType(KeyStoreType.JKS)
-                                           .withKeyEntry(getClass().getSimpleName(), privateKey(), certificate())
+                                           .withKeyEntry(getClass().getSimpleName(), privateKey(), certificates())
                                            .build());
 
         factory.setKeyStorePassword("");
@@ -77,8 +77,11 @@ public class ControllerSslContextFactoryProvider extends AbstractComponent imple
         return KeyUtils.fromPemEncodedPrivateKey(secretStore.getSecret(config.privateKeySecret()));
     }
 
-    /** Get certificate from secret store */
-    private List<X509Certificate> certificate() {
+    /**
+     * Get certificate from secret store. If certificate secret contains multiple certificates, e.g. intermediate
+     * certificates, the entire chain will be read
+     */
+    private List<X509Certificate> certificates() {
         return X509CertificateUtils.certificateListFromPem(secretStore.getSecret(config.certificateSecret()));
     }
 
