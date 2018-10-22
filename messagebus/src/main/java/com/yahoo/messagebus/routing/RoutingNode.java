@@ -183,7 +183,7 @@ public class RoutingNode implements ReplyHandler {
     }
 
     /**
-     * This method mergs this node as ready for merge. If it has a parent routing node, its pending member is
+     * This method markss this node as ready for merge. If it has a parent routing node, its pending member is
      * decremented. If this causes the parent's pending count to reach zero, its {@link #notifyMerge()} method is
      * invoked. A special flag is used to make sure that failed resending avoids notifying parents of previously
      * resolved branches of the tree.
@@ -205,7 +205,7 @@ public class RoutingNode implements ReplyHandler {
 
     /**
      * This method merges the content of all its children, and invokes itself on the parent node. If not all children
-     * are ready for merg, this method does nothing. The rationale for this is that the last child to receive a reply
+     * are ready for merge, this method does nothing. The rationale for this is that the last child to receive a reply
      * will propagate the merge upwards. Once this method reaches the root node, the reply is either scheduled for
      * resending or passed to the owning reply handler.
      */
