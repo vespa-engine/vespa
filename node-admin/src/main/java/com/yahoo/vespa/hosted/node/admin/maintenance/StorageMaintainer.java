@@ -111,8 +111,8 @@ public class StorageMaintainer {
             //routing-configage
             Path routingAgeCheckPath = context.pathInNodeUnderVespaHome("libexec/yamas2/yms_check_file_age.py");
             SecretAgentCheckConfig routingAgeSchedule = new SecretAgentCheckConfig("routing-configage", 60,
-                    routingAgeCheckPath, "-f", context.pathInNodeUnderVespaHome("var/vespa-hosted/routing/nginx.conf").toString(),
-                    "-m", "90", "-a", "routing-configage");
+                    routingAgeCheckPath, "-f", context.pathInNodeUnderVespaHome("var/vespa-hosted/routing/nginx.conf.tmp").toString(),
+                    "-m", "1", "-a", "routing-configage", "--ignore_file_not_found");
             configs.add(annotatedCheck(context, node, routingAgeSchedule));
 
             //ssl-check
