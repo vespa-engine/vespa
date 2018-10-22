@@ -53,67 +53,73 @@ public class MetricForwardingApiHandler extends LoggingRequestHandler {
 
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
-        if (path.matches("/metricforwarding/v1/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/clusterutilization")) return updateClusterUtilization(request, path.get("tenant"), path.get("application"), path.get("environment"), path.get("region"), path.get("instance"));
-        if (path.matches("/metricforwarding/v1/tenant/{tenant}/application/{application}/instance/{instance}/deploymentmetrics")) return updateDeploymentMetrics(request, path.get("tenant"), path.get("application"), path.get("instance"));
+        if (path.matches("/metricforwarding/v1/clusterutilization")) return updateClusterUtilization(request);
+        if (path.matches("/metricforwarding/v1/deploymentmetrics")) return updateDeploymentMetrics(request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse updateClusterUtilization(HttpRequest request, String tenantName, String applicationName, String environment, String region, String instance) {
+    private HttpResponse updateClusterUtilization(HttpRequest request) {
         try {
-            ZoneId zoneId = ZoneId.from(environment, region);
-            ApplicationId id = ApplicationId.from(tenantName, applicationName, instance);
-            Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization = getClusterUtilizationsFromRequest(request);
-            controller.applications().lockIfPresent(id, lockedApplication ->
-                    controller.applications().store(lockedApplication.withClusterUtilization(zoneId, clusterUtilization)));
-        } catch (IOException e) {
-            ErrorResponse.badRequest("Unable to parse request for metrics - " + e.getMessage());
-        }
-        return new StringResponse("Added cluster utilization metrics for " + tenantName + "." + applicationName);
-    }
-
-    private HttpResponse updateDeploymentMetrics(HttpRequest request, String tenantName, String applicationName, String instance) {
-        try {
-            ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instance);
             Slime slime = SlimeUtils.jsonToSlime(IOUtils.readBytes(request.getData(), 1000 * 1000));
-
-            MetricsService.ApplicationMetrics applicationMetrics = getApplicationMetricsFromSlime(slime);
-            ApplicationController applications = controller.applications();
-            applications.lockIfPresent(applicationId, lockedApplication ->
-                    applications.store(lockedApplication.with(applicationMetrics)));
-
-            Map<HostName, RotationStatus> rotationStatusMap = getRotationStatusFromSlime(slime);
-            applications.lockIfPresent(applicationId, lockedApplication ->
-                    applications.store(lockedApplication.withRotationStatus(rotationStatusMap)));
-
-            for (Map.Entry<ZoneId, DeploymentMetrics> entry : getDeploymentMetricsFromSlime(slime).entrySet()) {
-                applications.lockIfPresent(applicationId, lockedApplication ->
-                        applications.store(lockedApplication.with(entry.getKey(), entry.getValue())
-                                .recordActivityAt(controller.clock().instant(), entry.getKey())));
-            }
-
+            Inspector inspector = slime.get();
+            inspector.traverse((ArrayTraverser) (index, entry) -> {
+                ApplicationId applicationId = ApplicationId.fromSerializedForm(entry.field("applicationId").asString());
+                entry.field("deployments").traverse((ArrayTraverser) (i, deployment) -> {
+                    ZoneId zoneId = ZoneId.from(deployment.field("zoneId").asString());
+                    Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization = getClusterUtilizationsFromInspector(deployment.field("clusterUtil"));
+                    controller.applications().lockIfPresent(applicationId, lockedApplication ->
+                            controller.applications().store(lockedApplication.withClusterUtilization(zoneId, clusterUtilization)));
+                });
+            });
         } catch (IOException e) {
             ErrorResponse.badRequest("Unable to parse request for metrics - " + e.getMessage());
         }
-        return new StringResponse("Added deployment metrics for " + tenantName + "." + applicationName);
+        return new StringResponse("Added cluster utilization metrics");
     }
 
-    private Map<ClusterSpec.Id, ClusterUtilization> getClusterUtilizationsFromRequest(HttpRequest request) throws IOException {
-        Slime slime = SlimeUtils.jsonToSlime(IOUtils.readBytes(request.getData(), 1000*1000));
+    private HttpResponse updateDeploymentMetrics(HttpRequest request) {
+        try {
+            Slime slime = SlimeUtils.jsonToSlime(IOUtils.readBytes(request.getData(), 1000 * 1000));
+            Inspector inspector = slime.get();
+            inspector.traverse((ArrayTraverser) (index, applicationEntry) -> {
+                ApplicationId applicationId = ApplicationId.fromSerializedForm(applicationEntry.field("applicationId").asString());
+                MetricsService.ApplicationMetrics applicationMetrics = getApplicationMetricsFromInspector(applicationEntry);
+                ApplicationController applications = controller.applications();
+                applications.lockIfPresent(applicationId, lockedApplication ->
+                        applications.store(lockedApplication.with(applicationMetrics)));
+
+                Map<HostName, RotationStatus> rotationStatusMap = getRotationStatusFromInspector(applicationEntry);
+                applications.lockIfPresent(applicationId, lockedApplication ->
+                        applications.store(lockedApplication.withRotationStatus(rotationStatusMap)));
+
+                for (Map.Entry<ZoneId, DeploymentMetrics> entry : getDeploymentMetricsFromInspector(applicationEntry).entrySet()) {
+                    applications.lockIfPresent(applicationId, lockedApplication ->
+                            applications.store(lockedApplication.with(entry.getKey(), entry.getValue())
+                                    .recordActivityAt(controller.clock().instant(), entry.getKey())));
+                }
+            });
+        } catch (IOException e) {
+            ErrorResponse.badRequest("Unable to parse request for metrics - " + e.getMessage());
+        }
+        return new StringResponse("Added deployment metrics");
+    }
+
+    private Map<ClusterSpec.Id, ClusterUtilization> getClusterUtilizationsFromInspector(Inspector inspector) {
         Map<ClusterSpec.Id, ClusterUtilization> clusterUtilizationMap = new HashMap<>();
-        slime.get().traverse((ArrayTraverser) (index, entry) -> {
+        inspector.traverse((ArrayTraverser) (index, entry) -> {
             ClusterSpec.Id id = ClusterSpec.Id.from(entry.field("clusterSpecId").asString());
             double memory = entry.field("memory").asDouble();
             double cpu = entry.field("cpu").asDouble();
             double disk = entry.field("disk").asDouble();
-            double diskBusy = entry.field("diskbusy").asDouble();
+            double diskBusy = entry.field("diskBusy").asDouble();
             clusterUtilizationMap.put(id, new ClusterUtilization(memory, cpu, disk, diskBusy));
         });
         return clusterUtilizationMap;
     }
 
-    private Map<ZoneId, DeploymentMetrics> getDeploymentMetricsFromSlime(Slime slime){
+    private Map<ZoneId, DeploymentMetrics> getDeploymentMetricsFromInspector(Inspector inspector){
         Map<ZoneId, DeploymentMetrics> deploymentMetricsMap = new HashMap<>();
-        Inspector inspector = slime.get().field("deploymentMetrics");
+        inspector = inspector.field("deploymentMetrics");
         inspector.traverse((ArrayTraverser) (index, entry) -> {
             ZoneId zoneId = ZoneId.from(entry.field("zoneId").asString());
             double queriesPerSecond = entry.field("queriesPerSecond").asDouble();
@@ -127,16 +133,16 @@ public class MetricForwardingApiHandler extends LoggingRequestHandler {
         return deploymentMetricsMap;
     }
 
-    private MetricsService.ApplicationMetrics getApplicationMetricsFromSlime(Slime slime){
-        Inspector inspector = slime.get().field("applicationMetrics");
+    private MetricsService.ApplicationMetrics getApplicationMetricsFromInspector(Inspector inspector){
+        inspector = inspector.field("applicationMetrics");
         double queryServiceQuality = inspector.field("queryServiceQuality").asDouble();
         double writeServiceQuality = inspector.field("writeServiceQuality").asDouble();
         return new MetricsService.ApplicationMetrics(queryServiceQuality, writeServiceQuality);
     }
 
-    private Map<HostName, RotationStatus> getRotationStatusFromSlime(Slime slime) {
+    private Map<HostName, RotationStatus> getRotationStatusFromInspector(Inspector inspector) {
         Map<HostName, RotationStatus> rotationStatusMap = new HashMap<>();
-        Inspector inspector = slime.get().field("rotationStatus");
+        inspector = inspector.field("rotationStatus");
         inspector.traverse((ArrayTraverser) (index, entry) -> {
             HostName hostName = HostName.from(entry.field("hostname").asString());
             RotationStatus rotationStatus = RotationStatus.valueOf(entry.field("rotationStatus").asString());
@@ -144,5 +150,4 @@ public class MetricForwardingApiHandler extends LoggingRequestHandler {
         });
         return rotationStatusMap;
     }
-
 }
