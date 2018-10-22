@@ -89,7 +89,7 @@ public class ContainerClusterTest {
     }
 
     private ContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster) {
-        return createContainerCluster(root, isCombinedCluster, null, Optional.empty());
+        return createContainerCluster(root, isCombinedCluster, Optional.empty(), Optional.empty());
     }
 
     private ContainerCluster createClusterControllerCluster(MockRoot root) {
@@ -97,10 +97,11 @@ public class ContainerClusterTest {
     }
 
     private ContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster, ContainerClusterVerifier extraComponents) {
-        return createContainerCluster(root, isCombinedCluster, null, Optional.of(extraComponents));
+        return createContainerCluster(root, isCombinedCluster, Optional.empty(), Optional.of(extraComponents));
     }
 
-    private ContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster, Integer memoryPercentage) {
+    private ContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster,
+                                                    Optional<Integer> memoryPercentage) {
         return createContainerCluster(root, isCombinedCluster, memoryPercentage, Optional.empty());
     }
     private MockRoot createRoot(boolean isHosted) {
@@ -108,7 +109,7 @@ public class ContainerClusterTest {
         return new MockRoot("foo", state);
     }
     private ContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster,
-                                                    Integer memoryPercentage, Optional<ContainerClusterVerifier> extraComponents) {
+                                                    Optional<Integer> memoryPercentage, Optional<ContainerClusterVerifier> extraComponents) {
 
         ContainerCluster cluster = extraComponents.isPresent()
                 ? new ContainerCluster(root, "container0", "container1", extraComponents.get(), root.getDeployState())
@@ -120,7 +121,7 @@ public class ContainerClusterTest {
         return cluster;
     }
     private void verifyHeapSizeAsPercentageOfPhysicalMemory(boolean isHosted, boolean isCombinedCluster, 
-                                                            Integer explicitMemoryPercentage,
+                                                            Optional<Integer> explicitMemoryPercentage, 
                                                             int expectedMemoryPercentage) {
         ContainerCluster cluster = createContainerCluster(createRoot(isHosted), isCombinedCluster, explicitMemoryPercentage);
         QrStartConfig.Builder qsB = new QrStartConfig.Builder();
@@ -133,14 +134,14 @@ public class ContainerClusterTest {
     public void requireThatHeapSizeAsPercentageOfPhysicalMemoryForHostedAndNot() {
         boolean hosted = true;
         boolean combined = true; // a cluster running on content nodes (only relevant with hosted)
-        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, ! combined, null, 60);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted,   combined, null, 17);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(! hosted, ! combined, null, 0);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, ! combined, Optional.empty(), 60);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted,   combined, Optional.empty(), 17);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(! hosted, ! combined, Optional.empty(), 0);
         
         // Explicit value overrides all defaults
-        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, ! combined, 67, 67);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted,   combined, 68, 68);
-        verifyHeapSizeAsPercentageOfPhysicalMemory(! hosted, ! combined, 69, 69);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted, ! combined, Optional.of(67), 67);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(  hosted,   combined, Optional.of(68), 68);
+        verifyHeapSizeAsPercentageOfPhysicalMemory(! hosted, ! combined, Optional.of(69), 69);
     }
 
     private void verifyJvmArgs(boolean isHosted, boolean hasDocproc, String expectedArgs, String jvmArgs) {

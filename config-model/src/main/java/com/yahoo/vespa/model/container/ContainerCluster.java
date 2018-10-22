@@ -33,6 +33,7 @@ import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig;
+import com.yahoo.lang.SettableOptional;
 import com.yahoo.metrics.simple.runtime.MetricProperties;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
@@ -166,7 +167,7 @@ public final class ContainerCluster
 
     private final List<String> serviceAliases = new ArrayList<>();
     private final List<String> endpointAliases = new ArrayList<>();
-    private final ComponentGroup<Component<?, ?>> componentGroup;
+    protected final ComponentGroup<Component<?, ?>> componentGroup;
     private final ConfigProducerGroup<RestApi> restApiGroup;
     private final ConfigProducerGroup<Servlet> servletGroup;
     private final ContainerClusterVerifier clusterVerifier;
@@ -180,8 +181,8 @@ public final class ContainerCluster
     /** The zone this is deployed in, or the default zone if not on hosted Vespa */
     private Zone zone;
     
-    private String hostClusterId = null;
-    private Integer memoryPercentage = null;
+    private Optional<String> hostClusterId = Optional.empty();
+    private final SettableOptional<Integer> memoryPercentage = new SettableOptional<>();
 
     private static class AcceptAllVerifier implements ContainerClusterVerifier {
         @Override
@@ -325,7 +326,7 @@ public final class ContainerCluster
         return componentGroup.removeComponent(componentId);
     }
 
-    private void addSimpleComponent(Class<?> clazz) {
+    public void addSimpleComponent(Class<?> clazz) {
         addSimpleComponent(clazz.getName());
     }
 
@@ -412,7 +413,7 @@ public final class ContainerCluster
         addComponent(processingHandler);
     }
 
-    ProcessingChains getProcessingChains() {
+    public ProcessingChains getProcessingChains() {
         return processingChains;
     }
 
@@ -774,22 +775,22 @@ public final class ContainerCluster
     /** The configured endpoint aliases (fqdn) for the service in this cluster */
     public List<String> endpointAliases() { return endpointAliases; }
     
-    public void setHostClusterId(String clusterId) { hostClusterId = clusterId; }
+    public void setHostClusterId(String clusterId) { hostClusterId = Optional.ofNullable(clusterId); }
 
     /** 
      * Returns the id of the content cluster which hosts this container cluster, if any.
      * This is only set with hosted clusters where this container cluster is set up to run on the nodes
      * of a content cluster.
      */
-    public Optional<String> getHostClusterId() { return Optional.ofNullable(hostClusterId); }
+    public Optional<String> getHostClusterId() { return hostClusterId; }
 
-    public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage; }
+    public void setMemoryPercentage(Optional<Integer> memoryPercentage) { this.memoryPercentage.set(memoryPercentage); }
 
     /** 
      * Returns the percentage of host physical memory this application has specified for nodes in this cluster,
      * or empty if this is not specified by the application.
      */
-    public Optional<Integer> getMemoryPercentage() { return Optional.ofNullable(memoryPercentage); }
+    public SettableOptional<Integer> getMemoryPercentage() { return memoryPercentage; }
 
     boolean messageBusEnabled() { return messageBusEnabled; }
 
