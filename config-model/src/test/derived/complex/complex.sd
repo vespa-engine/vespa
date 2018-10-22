@@ -41,7 +41,6 @@ search complex {
     field prefixenabled type string {
       indexing: index | attribute
       index: prefix
-      attribute: prefetch
       attribute: huge
       normalizing: none
       stemming: shortest
@@ -58,12 +57,10 @@ search complex {
 
     field fleeting type array<float> {
       indexing: index | attribute
-      attribute: prefetch
     }
 
     field fleeting2 type float {
       indexing: index | attribute
-      attribute: prefetch
     }
 
     field foundat type long {

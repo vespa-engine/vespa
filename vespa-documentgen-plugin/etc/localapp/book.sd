@@ -27,12 +27,10 @@ search book {
 
       field mywsfloat type weightedset<float> {
         indexing: attribute
-        attribute: prefetch
       }
 
       field myarrayint type array<int> {
         indexing: attribute
-        attribute: prefetch
       }
 
       field mytriplearray type array<array<array<int>>> {}
