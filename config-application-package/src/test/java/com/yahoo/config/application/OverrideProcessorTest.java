@@ -34,13 +34,17 @@ public class OverrideProcessorTest {
                 "  </admin>" +
                 "  <content id=\"foo\" version=\"1.0\">" +
                 "    <redundancy>1</redundancy>" +
-                "    <documents>" +
+                "    <documents deploy:environment='staging prod'>" +
                 "      <document mode='index' type='music'/>\n" +
                 "      <document type='music2' mode='index' />\n" +
                 "      <document deploy:environment='prod' deploy:region='us-east-3' mode='index' type='music'/>\n" +
                 "      <document deploy:environment='prod' deploy:region='us-east-3' mode='index' type='music2'/>\n" +
                 "      <document deploy:environment='prod' mode='index' type='music3'/>\n" +
                 "      <document deploy:environment='prod' deploy:region='us-west' mode='index' type='music4'/>\n" +
+                "    </documents>" +
+                "    <documents>" +
+                "      <document mode='store-only' type='music'/>\n" +
+                "      <document type='music2' mode='streaming' />\n" +
                 "    </documents>" +
                 "    <nodes>" +
                 "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
@@ -73,7 +77,7 @@ public class OverrideProcessorTest {
 
 
     @Test
-    public void testParsingDefault() throws IOException, SAXException, XMLStreamException, ParserConfigurationException, TransformerException {
+    public void testParsingDefault() throws TransformerException {
         String expected = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
                 "  <admin version=\"2.0\">" +
@@ -82,8 +86,8 @@ public class OverrideProcessorTest {
                 "  <content id=\"foo\" version=\"1.0\">" +
                 "    <redundancy>1</redundancy>" +
                 "    <documents>" +
-                "      <document mode=\"index\" type=\"music\"/>" +
-                "      <document mode=\"index\" type=\"music2\"/>" +
+                "      <document mode=\"store-only\" type=\"music\"/>" +
+                "      <document mode=\"streaming\" type=\"music2\"/>" +
                 "    </documents>" +
                 "    <nodes>" +
                 "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
@@ -101,7 +105,7 @@ public class OverrideProcessorTest {
     }
 
     @Test
-    public void testParsingEnvironmentAndRegion() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingEnvironmentAndRegion() throws TransformerException {
         String expected = 
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
@@ -133,7 +137,7 @@ public class OverrideProcessorTest {
     }
 
     @Test
-    public void testParsingEnvironmentUnknownRegion() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingEnvironmentUnknownRegion() throws TransformerException {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                         "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
@@ -143,7 +147,9 @@ public class OverrideProcessorTest {
                         "  <content id=\"foo\" version=\"1.0\">" +
                         "    <redundancy>1</redundancy>" +
                         "    <documents>" +
-                        "      <document mode=\"index\" type=\"music3\"/>" +
+                        "      <document mode='index' type='music'/>\n" +
+                        "      <document type='music2' mode='index' />\n" +
+                        "      <document mode='index' type='music3'/>" +
                         "    </documents>" +
                         "    <nodes>" +
                         "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
@@ -164,7 +170,7 @@ public class OverrideProcessorTest {
     }
 
     @Test
-    public void testParsingEnvironmentNoRegion() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingEnvironmentNoRegion() throws TransformerException {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                         "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
@@ -174,7 +180,9 @@ public class OverrideProcessorTest {
                         "  <content id=\"foo\" version=\"1.0\">" +
                         "    <redundancy>1</redundancy>" +
                         "    <documents>" +
-                        "      <document mode=\"index\" type=\"music3\"/>" +
+                        "      <document mode='index' type='music'/>\n" +
+                        "      <document type='music2' mode='index' />\n" +
+                        "      <document mode='index' type='music3'/>" +
                         "    </documents>" +
                         "    <nodes>" +
                         "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
@@ -195,7 +203,7 @@ public class OverrideProcessorTest {
     }
 
     @Test
-    public void testParsingUnknownEnvironment() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingDevEnvironment() throws TransformerException {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                         "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
@@ -205,8 +213,8 @@ public class OverrideProcessorTest {
                         "  <content id=\"foo\" version=\"1.0\">" +
                         "    <redundancy>1</redundancy>" +
                         "    <documents>" +
-                        "      <document mode=\"index\" type=\"music\"/>" +
-                        "      <document mode=\"index\" type=\"music2\"/>" +
+                        "      <document mode=\"store-only\" type=\"music\"/>" +
+                        "      <document mode=\"streaming\" type=\"music2\"/>" +
                         "    </documents>" +
                         "    <nodes>" +
                         "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
@@ -224,7 +232,7 @@ public class OverrideProcessorTest {
     }
 
     @Test
-    public void testParsingUnknownEnvironmentUnknownRegion() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingTestEnvironmentUnknownRegion() throws TransformerException {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                         "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
@@ -234,8 +242,8 @@ public class OverrideProcessorTest {
                         "  <content id=\"foo\" version=\"1.0\">" +
                         "    <redundancy>1</redundancy>" +
                         "    <documents>" +
-                        "      <document mode=\"index\" type=\"music\"/>" +
-                        "      <document mode=\"index\" type=\"music2\"/>" +
+                        "      <document mode=\"store-only\" type=\"music\"/>" +
+                        "      <document mode=\"streaming\" type=\"music2\"/>" +
                         "    </documents>" +
                         "    <nodes>" +
                         "      <node distribution-key=\"0\" hostalias=\"node0\"/>" +
@@ -253,7 +261,7 @@ public class OverrideProcessorTest {
     }
 
     @Test
-    public void testParsingInheritEnvironment() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingInheritEnvironment() throws TransformerException {
         String expected =
                 "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                         "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
@@ -263,8 +271,8 @@ public class OverrideProcessorTest {
                         "  <content id=\"foo\" version=\"1.0\">" +
                         "    <redundancy>1</redundancy>" +
                         "    <documents>" +
-                        "      <document mode=\"index\" type=\"music\"/>" +
-                        "      <document mode=\"index\" type=\"music2\"/>" +
+                        "      <document mode='index' type='music'/>\n" +
+                        "      <document type='music2' mode='index' />\n" +
                         "    </documents>" +
                         "    <nodes>" +
                 // node1 is specified for us-west but does not match because region overrides implies environment=prod
@@ -284,7 +292,7 @@ public class OverrideProcessorTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testParsingDifferentEnvInParentAndChild() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingDifferentEnvInParentAndChild() throws TransformerException {
         String in = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                     "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
                     "  <admin deploy:environment=\"prod\" version=\"2.0\">" +
@@ -296,7 +304,7 @@ public class OverrideProcessorTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testParsingDifferentRegionInParentAndChild() throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void testParsingDifferentRegionInParentAndChild() throws TransformerException {
         String in = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>" +
                 "<services xmlns:deploy=\"vespa\" xmlns:preprocess=\"?\" version=\"1.0\">" +
                 "  <admin deploy:region=\"us-west\" version=\"2.0\">" +

@@ -101,18 +101,17 @@ class OverrideProcessor implements PreProcessor {
         retainMostSpecificEnvironmentAndRegion(parent, children, context);
     }
 
-    /**
-     * Ensures that environment and region does not change from something non-default to something else.
-     */
     private void checkConsistentInheritance(List<Element> children, Context context) {
         for (Element child : children) {
             Set<Environment> environments = getEnvironments(child);
             Set<RegionName> regions = getRegions(child);
-            if ( ! environments.isEmpty() &&  ! context.environments.isEmpty() && !environments.equals(context.environments)) {
-                throw new IllegalArgumentException("Environments in child (" + environments + ") differs from that inherited from parent (" + context.environments + ") at " + child);
+            if ( ! environments.isEmpty() &&  ! context.environments.isEmpty() && ! context.environments.containsAll(environments)) {
+                throw new IllegalArgumentException("Environments in child (" + environments +
+                                                   ") are not a subset of those of the parent (" + context.environments + ") at " + child);
             }
-            if ( ! regions.isEmpty() && ! context.regions.isEmpty() && ! regions.equals(context.regions)) {
-                throw new IllegalArgumentException("Regions in child (" + regions + ") differs from that inherited from parent (" + context.regions + ") at " + child);
+            if ( ! regions.isEmpty() && ! context.regions.isEmpty() && ! context.regions.containsAll(regions)) {
+                throw new IllegalArgumentException("Regions in child (" + regions +
+                                                   ") are not a subset of those of the parent (" + context.regions + ") at " + child);
             }
         }
     }
