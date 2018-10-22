@@ -18,8 +18,10 @@ import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.collections.LazySet;
+import com.yahoo.collections.Tuple2;
 import com.yahoo.component.Version;
 import com.yahoo.language.Language;
+import com.yahoo.language.Linguistics;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.process.Normalizer;
 import com.yahoo.language.process.Segmenter;
@@ -115,6 +117,9 @@ public class YqlParser implements Parser {
     private static final String NORMALIZE_CASE_DESCRIPTION = "setting for whether to do case normalization if field implies it";
     private static final String ORIGIN_DESCRIPTION = "string origin for a term";
     private static final String RANKED_DESCRIPTION = "setting for whether to use term for ranking";
+    private static final String SEGMENTER_BACKEND = "backend";
+    private static final String SEGMENTER = "segmenter";
+    private static final String SEGMENTER_VERSION = "version";
     private static final String STEM_DESCRIPTION = "setting for whether to use stem if field implies it";
     private static final String USE_POSITION_DATA_DESCRIPTION = "setting for whether to use position data for ranking this item";
     private static final String USER_INPUT_ALLOW_EMPTY = "allowEmpty";
@@ -185,6 +190,8 @@ public class YqlParser implements Parser {
     private final Detector detector;
     private final Set<String> yqlSources = LazySet.newHashSet();
     private final Set<String> yqlSummaryFields = LazySet.newHashSet();
+    private final String localSegmenterBackend;
+    private final Version localSegmenterVersion;
     private Integer hits;
     private Integer offset;
     private Integer timeout;
@@ -194,7 +201,10 @@ public class YqlParser implements Parser {
     private IndexNameExpander indexNameExpander = new IndexNameExpander();
     private Set<String> docTypes;
     private Sorting sorting;
+    private String segmenterBackend;
+    private Version segmenterVersion;
     private boolean queryParser = true;
+    private boolean resegment = false;
     private final Deque<OperatorNode<?>> annotationStack = new ArrayDeque<>();
     private final ParserEnvironment environment;
 
@@ -228,6 +238,10 @@ public class YqlParser implements Parser {
         segmenter = environment.getLinguistics().getSegmenter();
         detector = environment.getLinguistics().getDetector();
         this.environment = environment;
+
+        Tuple2<String, Version> version = environment.getLinguistics().getVersion(Linguistics.Component.SEGMENTER);
+        localSegmenterBackend = version.first;
+        localSegmenterVersion = version.second;
     }
 
     @NonNull
@@ -247,7 +261,10 @@ public class YqlParser implements Parser {
         currentlyParsing = query;
         docTypes = null;
         sorting = null;
+        segmenterBackend = null;
+        segmenterVersion = null;
         // queryParser set prior to calling this
+        resegment = false;
         return buildTree(parseYqlProgram());
     }
 
@@ -270,10 +287,30 @@ public class YqlParser implements Parser {
                                     filterPart.getArguments().length);
         populateYqlSources(filterPart.<OperatorNode<?>> getArgument(0));
         OperatorNode<ExpressionOperator> filterExpression = filterPart.getArgument(1);
+        populateLinguisticsAnnotations(filterExpression);
         Item root = convertExpression(filterExpression);
         connectItems();
         userQuery = null;
         return new QueryTree(root);
+    }
+
+    private void populateLinguisticsAnnotations(OperatorNode<ExpressionOperator> filterExpression) {
+        Map<?, ?> segmenter = getAnnotation(filterExpression, SEGMENTER, 
+                                            Map.class, null, "segmenter engine and version");
+        if (segmenter == null) {
+            segmenterVersion = null;
+            segmenterBackend = null;
+            resegment = false;
+        } else {
+            segmenterBackend = getMapValue(SEGMENTER, segmenter, SEGMENTER_BACKEND, String.class);
+            try {
+                segmenterVersion = new Version(getMapValue(SEGMENTER, segmenter, SEGMENTER_VERSION, String.class));
+            } catch (RuntimeException e) {
+                segmenterVersion = null;
+            }
+            resegment = ! localSegmenterBackend.equals(segmenterBackend) || 
+                        ! localSegmenterVersion.equals(segmenterVersion);
+        }
     }
 
     private void populateYqlSources(OperatorNode<?> filterArgs) {
@@ -577,7 +614,8 @@ public class YqlParser implements Parser {
         }
         phrase.setIndexName(field);
 
-        if (getAnnotation(ast, IMPLICIT_TRANSFORMS, Boolean.class, Boolean.TRUE, IMPLICIT_TRANSFORMS_DESCRIPTION)) {
+        if (resegment
+            && getAnnotation(ast, IMPLICIT_TRANSFORMS, Boolean.class, Boolean.TRUE, IMPLICIT_TRANSFORMS_DESCRIPTION)) {
             words = segmenter.segment(origin.getValue(), currentlyParsing.getLanguage());
         }
 
@@ -681,16 +719,16 @@ public class YqlParser implements Parser {
         return Language.ENGLISH;
     }
 
-    private String getStringContents(OperatorNode<ExpressionOperator> operator) {
-        switch (operator.getOperator()) {
+    private String getStringContents(OperatorNode<ExpressionOperator> propertySniffer) {
+        switch (propertySniffer.getOperator()) {
             case LITERAL: 
-                return operator.getArgument(0, String.class);
+                return propertySniffer.getArgument(0, String.class);
             case VARREF:
                 Preconditions.checkState(userQuery != null,
                                          "properties must be available when trying to fetch user input");
-                return userQuery.properties().getString(operator.getArgument(0, String.class));
+                return userQuery.properties().getString(propertySniffer.getArgument(0, String.class));
             default:
-                throw newUnexpectedArgumentException(operator.getOperator(),
+                throw newUnexpectedArgumentException(propertySniffer.getOperator(),
                                                      ExpressionOperator.LITERAL, ExpressionOperator.VARREF);
         }
     }
@@ -1272,20 +1310,22 @@ public class YqlParser implements Parser {
             wordData = normalizer.normalize(wordData);
         }
         boolean fromQuery = getAnnotation(ast, IMPLICIT_TRANSFORMS,
-                                          Boolean.class, Boolean.TRUE, IMPLICIT_TRANSFORMS_DESCRIPTION);
-        boolean prefixMatch = getAnnotation(ast, PREFIX, Boolean.class, Boolean.FALSE,
-                                            "setting for whether to use prefix match of input data");
-        boolean suffixMatch = getAnnotation(ast, SUFFIX, Boolean.class, Boolean.FALSE,
-                                            "setting for whether to use suffix match of input data");
-        boolean substrMatch = getAnnotation(ast, SUBSTRING, Boolean.class, Boolean.FALSE,
-                                            "setting for whether to use substring match of input data");
-        String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
-                                       Query.Type.ALL.toString(), "grammar for handling word input");
-        Preconditions.checkArgument((prefixMatch ? 1 : 0) +
-                                    (substrMatch ? 1 : 0) + (suffixMatch ? 1 : 0) < 2,
-                                    "Only one of prefix, substring and suffix can be set.");
+                Boolean.class, Boolean.TRUE, IMPLICIT_TRANSFORMS_DESCRIPTION);
+        boolean prefixMatch = getAnnotation(ast, PREFIX, Boolean.class,
+                Boolean.FALSE,
+                "setting for whether to use prefix match of input data");
+        boolean suffixMatch = getAnnotation(ast, SUFFIX, Boolean.class,
+                Boolean.FALSE,
+                "setting for whether to use suffix match of input data");
+        boolean substrMatch = getAnnotation(ast, SUBSTRING, Boolean.class,
+                Boolean.FALSE,
+                "setting for whether to use substring match of input data");
+        Preconditions.checkArgument((prefixMatch ? 1 : 0)
+                + (substrMatch ? 1 : 0) + (suffixMatch ? 1 : 0) < 2,
+                "Only one of prefix, substring and suffix can be set.");
+        @NonNull
+        final TaggableItem wordItem;
 
-        TaggableItem wordItem;
         if (exactMatch) {
             wordItem = new ExactStringItem(wordData, fromQuery);
         } else if (prefixMatch) {
@@ -1300,21 +1340,21 @@ public class YqlParser implements Parser {
                     wordItem = new WordItem(wordData, fromQuery);
                     break;
                 case POSSIBLY:
-                    if (shouldSegment(field, fromQuery) && ! grammar.equals(USER_INPUT_RAW)) {
-                        wordItem = segment(field, ast, wordData, fromQuery, parent, language);
+                    if (shouldResegmentWord(field, fromQuery)) {
+                        wordItem = resegment(field, ast, wordData, fromQuery, parent, language);
                     } else {
                         wordItem = new WordItem(wordData, fromQuery);
                     }
                     break;
                 case ALWAYS:
-                    wordItem = segment(field, ast, wordData, fromQuery, parent, language);
+                    wordItem = resegment(field, ast, wordData, fromQuery, parent, language);
                     break;
                 default:
                     throw new IllegalArgumentException("Unexpected segmenting rule: " + segmentPolicy);
             }
         }
         if (wordItem instanceof WordItem) {
-            prepareWord(field, ast, (WordItem) wordItem);
+            prepareWord(field, ast, fromQuery, (WordItem) wordItem);
         }
         if (language != Language.ENGLISH) // mark the language used, unless it's the default
             ((Item)wordItem).setLanguage(language);
@@ -1322,13 +1362,13 @@ public class YqlParser implements Parser {
     }
 
     @SuppressWarnings({"deprecation"})
-    private boolean shouldSegment(String field, boolean fromQuery) {
-        return fromQuery && ! indexFactsSession.getIndex(field).isAttribute();
+    private boolean shouldResegmentWord(String field, boolean fromQuery) {
+        return resegment && fromQuery &&  ! indexFactsSession.getIndex(field).isAttribute();
     }
 
     @NonNull
-    private TaggableItem segment(String field, OperatorNode<ExpressionOperator> ast, String wordData,
-                                 boolean fromQuery, Class<?> parent, Language language) {
+    private TaggableItem resegment(String field, OperatorNode<ExpressionOperator> ast, String wordData,
+                                   boolean fromQuery, Class<?> parent, Language language) {
         String toSegment = wordData;
         Substring s = getOrigin(ast);
         Language usedLanguage = language == null ? currentlyParsing.getLanguage() : language;
@@ -1347,7 +1387,7 @@ public class YqlParser implements Parser {
             ((PhraseSegmentItem) wordItem).setIndexName(field);
             for (String w : words) {
                 WordItem segment = new WordItem(w, fromQuery);
-                prepareWord(field, ast, segment);
+                prepareWord(field, ast, fromQuery, segment);
                 ((PhraseSegmentItem) wordItem).addItem(segment);
             }
             ((PhraseSegmentItem) wordItem).lock();
@@ -1364,9 +1404,16 @@ public class YqlParser implements Parser {
         return parent == EquivItem.class;
     }
 
-    private void prepareWord(String field, OperatorNode<ExpressionOperator> ast, WordItem wordItem) {
+    private void prepareWord(String field, OperatorNode<ExpressionOperator> ast, boolean fromQuery,
+                             WordItem wordItem) {
         wordItem.setIndexName(field);
         wordStyleSettings(ast, wordItem);
+        if (shouldResegmentWord(field, fromQuery)) {
+            // force re-stemming, new case normalization, etc
+            wordItem.setStemmed(false);
+            wordItem.setLowercased(false);
+            wordItem.setNormalizable(true);
+        }
     }
 
     @NonNull
@@ -1374,12 +1421,10 @@ public class YqlParser implements Parser {
         {
             Map<?, ?> connectivity = getAnnotation(ast, CONNECTIVITY, Map.class, null, "connectivity settings");
             if (connectivity != null) {
-                connectedItems.add(new ConnectedItem(out,
-                                                     getMapValue(CONNECTIVITY, connectivity, CONNECTION_ID,
-                                                                 Integer.class), getMapValue(CONNECTIVITY,
-                                                                                             connectivity,
-                                                                                             CONNECTION_WEIGHT,
-                                                                                             Number.class).doubleValue()));
+                connectedItems.add(new ConnectedItem(out, getMapValue(
+                        CONNECTIVITY, connectivity, CONNECTION_ID,
+                        Integer.class), getMapValue(CONNECTIVITY, connectivity,
+                        CONNECTION_WEIGHT, Number.class).doubleValue()));
             }
             Number significance = getAnnotation(ast, SIGNIFICANCE, Number.class, null, "term significance");
             if (significance != null) {
@@ -1666,6 +1711,14 @@ public class YqlParser implements Parser {
         }
         out.append(", got ").append(actual).append(".");
         return new IllegalArgumentException(out.toString());
+    }
+
+    String getSegmenterBackend() {
+        return segmenterBackend;
+    }
+
+    Version getSegmenterVersion() {
+        return segmenterVersion;
     }
 
     private static final class ConnectedItem {
