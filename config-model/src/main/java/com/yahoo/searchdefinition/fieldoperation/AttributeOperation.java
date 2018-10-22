@@ -17,7 +17,6 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
     private Boolean fastSearch;
     private Boolean fastAccess;
     private Boolean mutable;
-    private Boolean prefetch;
     private Boolean enableBitVectors;
     private Boolean enableOnlyBitVector;
     //TODO: Husk sorting!!
@@ -71,14 +70,6 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
     }
     public void setMutable(Boolean mutable) {
         this.mutable = mutable;
-    }
-
-    public Boolean getPrefetch() {
-        return prefetch;
-    }
-
-    public void setPrefetch(Boolean prefetch) {
-        this.prefetch = prefetch;
     }
 
     public Boolean getEnableBitVectors() {
@@ -149,9 +140,6 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
         }
         if (mutable != null) {
             attribute.setMutable(mutable);
-        }
-        if (prefetch != null) {
-            attribute.setPrefetch(prefetch);
         }
         if (enableBitVectors != null) {
             attribute.setEnableBitVectors(enableBitVectors);
