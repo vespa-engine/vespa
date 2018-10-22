@@ -445,6 +445,29 @@ public class ControllerTest {
                    tester.applications().require(app.id()).deploymentJobs().jobStatus().isEmpty());
     }
 
+    @Test
+    public void testSuspension() {
+        DeploymentTester tester = new DeploymentTester();
+        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                                                        .environment(Environment.prod)
+                                                        .region("corp-us-east-1")
+                                                        .region("us-east-3")
+                                                        .build();
+        SourceRevision source = new SourceRevision("repo", "master", "commit1");
+
+        ApplicationVersion applicationVersion = ApplicationVersion.from(source, 101);
+        runDeployment(tester, app.id(), applicationVersion, applicationPackage, source,101);
+
+        DeploymentId deployment1 = new DeploymentId(app.id(), ZoneId.from(Environment.prod, RegionName.from("corp-us-east-1")));
+        DeploymentId deployment2 = new DeploymentId(app.id(), ZoneId.from(Environment.prod, RegionName.from("us-east-3")));
+        assertFalse(tester.configServer().isSuspended(deployment1));
+        assertFalse(tester.configServer().isSuspended(deployment2));
+        tester.configServer().setSuspended(deployment1, true);
+        assertTrue(tester.configServer().isSuspended(deployment1));
+        assertFalse(tester.configServer().isSuspended(deployment2));
+    }
+
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {
         Version next = Version.fromString("6.2");
         tester.upgradeSystem(next);
