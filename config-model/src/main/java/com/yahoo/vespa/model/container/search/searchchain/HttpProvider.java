@@ -28,20 +28,6 @@ public class HttpProvider extends Provider implements ProviderConfig.Producer,
     @SuppressWarnings("deprecation")
     private final com.yahoo.search.searchchain.model.federation.HttpProviderSpec providerSpec;
 
-    //TODO: For backward compatibility only, eliminate this later
-    private BinaryScaledAmount cacheSize;
-
-    public double getCacheWeight() {
-        return providerSpec.cacheWeight;
-    }
-
-    /**
-     * TODO: remove, for backward compatibility only.
-     */
-    public void setCacheSize(BinaryScaledAmount cacheSize) {
-        this.cacheSize = cacheSize;
-    }
-
     /*
      * Config producer for the contained http searcher..
      */
@@ -101,9 +87,7 @@ public class HttpProvider extends Provider implements ProviderConfig.Producer,
     }
 
     public int cacheSizeMB() {
-        return providerSpec.cacheSizeMB != null ?
-                providerSpec.cacheSizeMB :
-                (int) cacheSize.as(BinaryPrefix.mega);
+        return providerSpec.cacheSizeMB != null ? providerSpec.cacheSizeMB : 0;
     }
 
     @Override
