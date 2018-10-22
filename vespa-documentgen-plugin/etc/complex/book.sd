@@ -27,14 +27,12 @@ search book {
 
       field mywsfloat type weightedset<float> {
         indexing: attribute
-        attribute: prefetch
       }
 
       field mynestedwsfloat type weightedset<float> {}
 
       field myarrayint type array<int> {
         indexing: attribute
-        attribute: prefetch
       }
 
       field stringmap type map<string, string> {
