@@ -298,8 +298,6 @@ TOKEN :
 | < MUTABLE: "mutable" >
 | < FASTSEARCH: "fast-search" >
 | < HUGE: "huge" >
-| < PREFETCH: "prefetch" >
-| < NOPREFETCH: "no-prefetch" >
 | < TENSOR_TYPE: "tensor(" (~["(",")"])+ ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
@@ -1209,15 +1207,6 @@ Object attributeSetting(FieldOperationContainer field, AttributeOperation attrib
       | <MUTABLE>             { attribute.setMutable(true); }
       | <ENABLEBITVECTORS>    { attribute.setEnableBitVectors(true); }
       | <ENABLEONLYBITVECTOR> { attribute.setEnableOnlyBitVector(true); }
-
-      | <NOPREFETCH> {
-          deployLogger.log(Level.WARNING, field + ": 'attribute : no-prefetch' is deprecated and has no effect.");
-          attribute.setPrefetch(false);
-      }
-      | <PREFETCH> {
-          deployLogger.log(Level.WARNING, field + ": 'attribute : prefetch' is deprecated and has no effect.");
-          attribute.setPrefetch(true);
-      }
       | sorting(field, attributeName)
       | <ALIAS> { String alias; String aliasedName=attributeName; } [aliasedName = identifier()] <COLON> alias = identifier() {
           attribute.setDoAlias(true);
@@ -2550,14 +2539,12 @@ String identifier() : { }
       | <MUTABLE>
       | <NEVER>
       | <NONE>
-      | <NOPREFETCH>
       | <NORMAL>
       | <NORMALIZING>
       | <OFF>
       | <ON>
       | <ONDEMAND>
       | <ORDER>
-      | <PREFETCH>
       | <PREFIX>
       | <PRIMARY>
       | <PROPERTIES>
