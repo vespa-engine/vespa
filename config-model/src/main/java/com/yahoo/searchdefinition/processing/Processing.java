@@ -39,7 +39,6 @@ public class Processing {
                 MutableAttributes::new,
                 CreatePositionZCurve::new,
                 WordMatch::new,
-                DeprecateAttributePrefetch::new,
                 ImportedFieldsResolver::new,
                 ImplicitSummaries::new,
                 ImplicitSummaryFields::new,
