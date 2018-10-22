@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final NodeRepositoryMock nodeRepository = new NodeRepositoryMock();
     private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
     private final Version initialVersion = new Version(6, 1, 0);
+    private final Set<DeploymentId> suspendedApplications = new HashSet<>();
 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
@@ -153,6 +155,13 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return Optional.ofNullable(applications.get(id));
     }
 
+    public void setSuspended(DeploymentId deployment, boolean suspend) {
+        if (suspend)
+            suspendedApplications.add(deployment);
+        else
+            suspendedApplications.remove(deployment);
+    }
+
     @Override
     public NodeRepositoryMock nodeRepository() {
         return nodeRepository;
@@ -233,6 +242,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             }
 
         };
+    }
+
+    @Override
+    public boolean isSuspended(DeploymentId deployment) {
+        return suspendedApplications.contains(deployment);
     }
 
     @Override
