@@ -8,8 +8,10 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -296,7 +298,7 @@ public class DeploymentTrigger {
                 for (Step step : steps.production()) {
                     List<JobType> stepJobs = steps.toJobs(step);
                     List<JobType> remainingJobs = stepJobs.stream().filter(job -> !isComplete(change, application, job)).collect(toList());
-                    if (!remainingJobs.isEmpty()) { // Step is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
+                    if (!remainingJobs.isEmpty()) { // Change is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
                         for (JobType job : remainingJobs) {
                             Versions versions = Versions.from(change, application, deploymentFor(application, job),
                                                               controller.systemVersion());
@@ -339,7 +341,12 @@ public class DeploymentTrigger {
     /** Returns whether given job should be triggered */
     private boolean canTrigger(JobType job, Versions versions, Application application, List<JobType> parallelJobs) {
         if (jobStateOf(application, job) != idle) return false;
-        if (parallelJobs != null && !parallelJobs.containsAll(runningProductionJobs(application))) return false;
+
+        // Are we already running jobs which are not in the set which can run in parallel with this?
+        if (parallelJobs != null && ! parallelJobs.containsAll(runningProductionJobs(application))) return false;
+
+        // Are there another suspended deployment such that we shouldn't simultaneously change this?
+        if (job.isProduction() && isSuspendedInAnotherZone(application, job.zone(controller.system()))) return false;
 
         return triggerAt(clock.instant(), job, versions, application);
     }
@@ -347,6 +354,15 @@ public class DeploymentTrigger {
     /** Returns whether given job should be triggered */
     private boolean canTrigger(JobType job, Versions versions, Application application) {
         return canTrigger(job, versions, application, null);
+    }
+
+    private boolean isSuspendedInAnotherZone(Application application, ZoneId zone) {
+        for (Deployment deployment : application.deployments().values()) {
+            if ( ! deployment.zone().equals(zone)
+                 && controller.applications().isSuspended(new DeploymentId(application.id(), deployment.zone())))
+                return true;
+        }
+        return false;
     }
 
     /** Returns whether job can trigger at given instant */
