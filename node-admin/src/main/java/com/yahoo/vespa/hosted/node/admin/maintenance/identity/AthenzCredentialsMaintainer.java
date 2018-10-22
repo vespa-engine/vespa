@@ -70,7 +70,7 @@ public class AthenzCredentialsMaintainer {
     private final CsrGenerator csrGenerator;
 
     // Used as an optimization to ensure ZTS is not DDoS'ed on continuously failing refresh attempts
-    private Map<ContainerName, Instant> lastRefreshAttempt = new ConcurrentHashMap<>();
+    private final Map<ContainerName, Instant> lastRefreshAttempt = new ConcurrentHashMap<>();
 
     public AthenzCredentialsMaintainer(URI ztsEndpoint,
                                        Path trustStorePath,
