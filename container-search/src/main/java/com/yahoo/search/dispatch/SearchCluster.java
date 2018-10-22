@@ -153,6 +153,9 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     /** Returns the groups of this cluster as an immutable map indexed by group id */
     public ImmutableMap<Integer, Group> groups() { return groups; }
 
+    /** Returns the groups of this cluster as an immutable list in introduction order */
+    public ImmutableList<Group> orderedGroups() { return orderedGroups; }
+
     /** Returns the n'th (zero-indexed) group in the cluster if possible */
     public Optional<Group> group(int n) {
         if (orderedGroups.size() > n) {

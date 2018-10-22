@@ -5,7 +5,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.SearchCluster.Group;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -33,10 +32,9 @@ public class LoadBalancer {
         }
         this.scoreboard = new ArrayList<>(searchCluster.groups().size());
 
-        for (Group group : searchCluster.groups().values()) {
+        for (Group group : searchCluster.orderedGroups()) {
             scoreboard.add(new GroupSchedule(group));
         }
-        Collections.shuffle(scoreboard);
     }
 
     /**
@@ -74,16 +72,18 @@ public class LoadBalancer {
     private Optional<Group> allocateNextGroup() {
         synchronized (this) {
             GroupSchedule bestSchedule = null;
+            int bestIndex = needle;
 
             int index = needle;
             for (int i = 0; i < scoreboard.size(); i++) {
                 GroupSchedule sched = scoreboard.get(index);
                 if (sched.isPreferredOver(bestSchedule)) {
                     bestSchedule = sched;
+                    bestIndex = index;
                 }
                 index = nextScoreboardIndex(index);
             }
-            needle = nextScoreboardIndex(needle);
+            needle = nextScoreboardIndex(bestIndex);
 
             Group ret = null;
             if (bestSchedule != null) {
@@ -118,9 +118,18 @@ public class LoadBalancer {
             if (other == null) {
                 return true;
             }
-            if (! group.hasSufficientCoverage()) {
-                return false;
+
+            // different coverage
+            if (this.group.hasSufficientCoverage() != other.group.hasSufficientCoverage()) {
+                if (! this.group.hasSufficientCoverage()) {
+                    // this doesn't have coverage, other does
+                    return false;
+                } else {
+                    // other doesn't have coverage, this does
+                    return true;
+                }
             }
+
             return this.score < other.score;
         }
 
