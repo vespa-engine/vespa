@@ -354,6 +354,31 @@ public class Backend implements ConnectionFactory {
     }
 
     /**
+     * Attempt to establish a connection without sending messages and then
+     * return it to the pool. The assumption is that if the probing is
+     * successful, the connection will be used soon after. There should be
+     * minimal overhead since the connection is cached.
+     */
+    public boolean probeConnection() {
+        if (shutdownInitiated) {
+            return false;
+        }
+
+        FS4Connection connection = null;
+        try {
+            connection = getConnection();
+        } catch (IOException ignored) {
+            // connection is null
+        } finally {
+            if (connection != null) {
+                returnConnection(connection);
+            }
+        }
+
+        return connection != null;
+    }
+
+    /**
      * This method should be used to ensure graceful shutdown of the backend.
      */
     public void shutdown() {

@@ -39,12 +39,11 @@ public class FS4SearchInvoker extends SearchInvoker {
     private Query query = null;
     private QueryPacket queryPacket = null;
 
-    public FS4SearchInvoker(VespaBackEndSearcher searcher, Query query, FS4ResourcePool fs4ResourcePool, SearchCluster.Node node) {
+    public FS4SearchInvoker(VespaBackEndSearcher searcher, Query query, FS4Channel channel, SearchCluster.Node node) {
         this.searcher = searcher;
         this.node = Optional.of(node);
+        this.channel = channel;
 
-        Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port());
-        this.channel = backend.openChannel();
         channel.setQuery(query);
     }
 
