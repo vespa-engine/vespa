@@ -58,13 +58,13 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
     private static Logger log = Logger.getLogger(MessageBus.class.getName());
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final ProtocolRepository protocolRepository = new ProtocolRepository();
-    private final AtomicReference<Map<String, RoutingTable>> tablesRef = new AtomicReference<Map<String, RoutingTable>>(null);
-    private final CopyOnWriteHashMap<String, MessageHandler> sessions = new CopyOnWriteHashMap<String, MessageHandler>();
+    private final AtomicReference<Map<String, RoutingTable>> tablesRef = new AtomicReference<>(null);
+    private final CopyOnWriteHashMap<String, MessageHandler> sessions = new CopyOnWriteHashMap<>();
     private final Network net;
     private final Messenger msn;
     private final Resender resender;
-    private int maxPendingCount = 0;
-    private int maxPendingSize = 0;
+    private int maxPendingCount;
+    private int maxPendingSize;
     private int pendingCount = 0;
     private int pendingSize = 0;
     private final Thread careTaker = new Thread(this::sendBlockedMessages);
@@ -440,7 +440,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
 
     @Override
     public void setupRouting(RoutingSpec spec) {
-        Map<String, RoutingTable> tables = new HashMap<String, RoutingTable>();
+        Map<String, RoutingTable> tables = new HashMap<>();
         for (int i = 0, len = spec.getNumTables(); i < len; ++i) {
             RoutingTableSpec table = spec.getTable(i);
             String name = table.getProtocol();
@@ -479,7 +479,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      *
      * @return The pending size.
      */
-    public synchronized int getPendingSize() {
+    synchronized int getPendingSize() {
         return pendingSize;
     }
 
@@ -509,14 +509,6 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      */
     public void setMaxPendingSize(int maxSize) {
         maxPendingSize = maxSize;
-    }
-
-    /**
-     * Gets maximum combined size of messages that can be received without
-     * being replied to yet.
-     */
-    public int getMaxPendingSize() {
-        return maxPendingSize;
     }
 
     /**
