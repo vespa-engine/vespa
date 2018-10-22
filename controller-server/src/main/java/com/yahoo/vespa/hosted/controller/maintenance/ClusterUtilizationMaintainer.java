@@ -56,7 +56,7 @@ public class ClusterUtilizationMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
-            String uri = baseUris.get(0) + "metricforwarding/v1/clusterutilization";
+            String uri = baseUris.get(0) + "metricforwarding/v1/clusterutilization"; // For now, we only feed to one controller
             Slime slime = getMetricSlime();
             ByteArrayEntity entity = new ByteArrayEntity(SlimeUtils.toJsonBytes(slime));
             HttpPost httpPost = new HttpPost(uri);
@@ -77,8 +77,10 @@ public class ClusterUtilizationMaintainer extends Maintainer {
             Cursor deploymentArray = applicationCursor.setArray("deployments");
             for (Deployment deployment : application.deployments().values()) {
                 Cursor deploymentEntry = deploymentArray.addObject();
+                deploymentEntry.setString("zoneId", deployment.zone().value());
+                Cursor clusterArray = deploymentEntry.setArray("clusterUtil");
                 Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization = getUpdatedClusterUtilizations(application.id(), deployment.zone());
-                fillClusterUtilization(deploymentEntry, clusterUtilization);
+                fillClusterUtilization(clusterArray, clusterUtilization);
             }
         }
         return slime;
@@ -87,7 +89,7 @@ public class ClusterUtilizationMaintainer extends Maintainer {
     private void fillClusterUtilization(Cursor cursor, Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization) {
         for (Map.Entry<ClusterSpec.Id, ClusterUtilization> entry : clusterUtilization.entrySet()) {
             Cursor clusterUtilCursor = cursor.addObject();
-            clusterUtilCursor.setString("clusterId", entry.getKey().value());
+            clusterUtilCursor.setString("clusterSpecId", entry.getKey().value());
             clusterUtilCursor.setDouble("cpu", entry.getValue().getCpu());
             clusterUtilCursor.setDouble("memory", entry.getValue().getMemory());
             clusterUtilCursor.setDouble("disk", entry.getValue().getDisk());

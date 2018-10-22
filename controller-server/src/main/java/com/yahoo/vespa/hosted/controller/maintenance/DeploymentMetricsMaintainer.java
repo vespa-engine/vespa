@@ -69,7 +69,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                 applicationCursor.setString("applicationId", application.id().serializedForm());
                 Cursor applicationMetrics = applicationCursor.setObject("applicationMetrics");
                 fillApplicationMetrics(applicationMetrics, application);
-                Cursor rotationStatus = applicationCursor.setObject("rotationStatus");
+                Cursor rotationStatus = applicationCursor.setArray("rotationStatus");
                 fillRotationStatus(rotationStatus, application);
                 Cursor deploymentArray = applicationCursor.setArray("deploymentMetrics");
                 for (Deployment deployment : application.deployments().values()) {
@@ -116,10 +116,9 @@ public class DeploymentMetricsMaintainer extends Maintainer {
 
     private void fillRotationStatus(Cursor rotationStatusCursor, Application application) {
         Map<HostName, RotationStatus> rotationStatus = rotationStatus(application);
-        Cursor array = rotationStatusCursor.addArray();
         for (Map.Entry<HostName, RotationStatus> entry : rotationStatus.entrySet()) {
-            Cursor rotationStatusEntry = array.addObject();
-            rotationStatusEntry.setString("hostName", entry.getKey().value());
+            Cursor rotationStatusEntry = rotationStatusCursor.addObject();
+            rotationStatusEntry.setString("hostname", entry.getKey().value());
             rotationStatusEntry.setString("rotationStatus", entry.getValue().toString());
         }
     }
@@ -136,7 +135,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     }
 
     private void feedMetrics(Slime slime) throws IOException {
-        String uri = baseUris.get(0) + "metricforwarding/v1/deploymentmetrics/";
+        String uri = baseUris.get(0) + "/metricforwarding/v1/deploymentmetrics/"; // For now, we only feed to one controller
         CloseableHttpClient httpClient = HttpClientBuilder.create().build();
         HttpPost httpPost = new HttpPost(uri);
         httpPost.setEntity(new ByteArrayEntity(SlimeUtils.toJsonBytes(slime)));
