@@ -75,7 +75,7 @@ public class CapacityPolicies {
         if (canFail &&
                 nodeCount == 1 &&
                 Arrays.asList(ClusterSpec.Type.container, ClusterSpec.Type.content).contains(clusterType) &&
-                zone.environment().isProduction() && zone.system() != SystemName.cd)
+                zone.environment().isProduction())
             throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy");
         return nodeCount;
     }
