@@ -87,7 +87,7 @@ search types {
 
     field arrarr type array<array<array<string>>> {header}
     field maparr type array<map<string, string>> {header}
-    field complexarray type array< map<array<array<string>>, int> > {body}
+    field complexarray type array< map<int, array<array<string>>> > {body}
 
     struct mystruct {
       field bytearr type array<byte>{}

@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.ArrayDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.DataType;
 import com.yahoo.document.MapDataType;
@@ -26,20 +27,30 @@ public class DisallowComplexMapAndWsetKeyTypes extends Processor {
     public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
-    	// TODO also traverse struct types to search for bad map or wset types there. Do this after document manager is fixed, do
-    	// not start using the static stuff on SDDocumentTypes any more.
+    	// TODO also traverse struct types to search for bad map or wset types.
+        // Do this after document manager is fixed, do not start using the static stuff on SDDocumentTypes any more.
         for (SDField field : search.allConcreteFields()) {
-            if (field.getDataType() instanceof WeightedSetDataType) {
-                DataType nestedType = ((WeightedSetDataType)field.getDataType()).getNestedType();
-                if ( ! (nestedType instanceof PrimitiveDataType)) {
-                    fail(search, field, "Weighted set must have a primitive key type.");
-                }
-            } else if (field.getDataType() instanceof MapDataType) {
-                if ( ! (((MapDataType)field.getDataType()).getKeyType() instanceof PrimitiveDataType)) {
-                    fail(search, field, "Map key type must be a primitive type");
-                }
-            }
+            checkFieldType(field, field.getDataType());
         }
+    }
+
+    private void checkFieldType(SDField field, DataType dataType) {
+        if (dataType instanceof ArrayDataType) {
+            DataType nestedType = ((ArrayDataType) dataType).getNestedType();
+            checkFieldType(field, nestedType);
+        } else if (dataType instanceof WeightedSetDataType) {
+            DataType nestedType = ((WeightedSetDataType) dataType).getNestedType();
+            if ( ! (nestedType instanceof PrimitiveDataType)) {
+                fail(search, field, "Weighted set must have a primitive key type.");
+            }
+        } else if (dataType instanceof MapDataType) {
+            DataType keyType = ((MapDataType) dataType).getKeyType();
+            if ( ! (keyType instanceof PrimitiveDataType)) {
+                fail(search, field, "Map key type must be a primitive type.");
+            }
+            checkFieldType(field, ((MapDataType) dataType).getValueType());
+        }
+
     }
 
 }
