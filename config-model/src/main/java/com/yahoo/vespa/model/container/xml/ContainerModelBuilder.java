@@ -136,7 +136,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         model.setCluster(cluster);
     }
 
-    protected void addBundlesForPlatformComponents(ContainerCluster cluster) {
+    private void addBundlesForPlatformComponents(ContainerCluster cluster) {
         for (Component<?, ?> component : cluster.getAllComponents()) {
             String componentClass = component.model.bundleInstantiationSpec.getClassName();
             BundleMapper.getBundlePath(componentClass).
@@ -252,15 +252,15 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addConfiguredComponents(deployState, cluster, spec, "component");
     }
 
-    protected void setDefaultMetricConsumerFactory(ContainerCluster cluster) {
+    private void setDefaultMetricConsumerFactory(ContainerCluster cluster) {
         cluster.setDefaultMetricConsumerFactory(MetricDefaultsConfig.Factory.Enum.STATE_MONITOR);
     }
 
-    protected void addDefaultHandlers(ContainerCluster cluster) {
+    private void addDefaultHandlers(ContainerCluster cluster) {
         addDefaultHandlersExceptStatus(cluster);
     }
 
-    protected void addStatusHandlers(ContainerCluster cluster, ConfigModelContext configModelContext) {
+    private void addStatusHandlers(ContainerCluster cluster, ConfigModelContext configModelContext) {
         if (configModelContext.getDeployState().isHosted()) {
             String name = "status.html";
             Optional<String> statusFile = Optional.ofNullable(System.getenv(HOSTED_VESPA_STATUS_FILE_INSTALL_SETTING));
@@ -281,7 +281,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addVipHandler();
     }
 
-    protected static void addDefaultHandlersExceptStatus(ContainerCluster cluster) {
+    private static void addDefaultHandlersExceptStatus(ContainerCluster cluster) {
         cluster.addDefaultRootHandler();
         cluster.addMetricStateHandler();
         cluster.addApplicationStatusHandler();
@@ -313,7 +313,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return components;
     }
 
-    protected void addAccessLogs(DeployState deployState, ContainerCluster cluster, Element spec) {
+    private void addAccessLogs(DeployState deployState, ContainerCluster cluster, Element spec) {
         List<Element> accessLogElements = getAccessLogElements(spec);
 
         for (Element accessLog : accessLogElements) {
@@ -324,12 +324,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.addDefaultSearchAccessLog();
     }
 
-    protected final List<Element> getAccessLogElements(Element spec) {
+    private List<Element> getAccessLogElements(Element spec) {
         return XML.getChildren(spec, "accesslog");
     }
 
 
-    protected final void addHttp(DeployState deployState, Element spec, ContainerCluster cluster) {
+    private void addHttp(DeployState deployState, Element spec, ContainerCluster cluster) {
         Element httpElement = XML.getChild(spec, "http");
         if (httpElement != null) {
             cluster.setHttp(buildHttp(deployState, cluster, httpElement));
@@ -345,7 +345,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return http;
     }
 
-    protected void addRestApis(DeployState deployState, Element spec, ContainerCluster cluster) {
+    private void addRestApis(DeployState deployState, Element spec, ContainerCluster cluster) {
         for (Element restApiElem : XML.getChildren(spec, "rest-api")) {
             cluster.addRestApi(
                     new RestApiBuilder().build(deployState, cluster, restApiElem));
@@ -505,7 +505,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         memoryPercentage = memoryPercentage.substring(0, memoryPercentage.length()-1).trim();
 
         try {
-            cluster.setMemoryPercentage(Optional.of(Integer.parseInt(memoryPercentage)));
+            cluster.setMemoryPercentage(Integer.parseInt(memoryPercentage));
         }
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("The memory percentage given for nodes in " + cluster +
@@ -758,13 +758,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    public static void addConfiguredComponents(DeployState deployState, ContainerCluster cluster, Element spec, String componentName) {
+    private static void addConfiguredComponents(DeployState deployState, ContainerCluster cluster, Element spec, String componentName) {
         for (Element node : XML.getChildren(spec, componentName)) {
             cluster.addComponent(new DomComponentBuilder().build(deployState, cluster, node));
         }
     }
 
-    public static void validateAndAddConfiguredComponents(DeployState deployState, ContainerCluster cluster, Element spec, String componentName, Consumer<Element> elementValidator) {
+    private static void validateAndAddConfiguredComponents(DeployState deployState, ContainerCluster cluster, Element spec, String componentName, Consumer<Element> elementValidator) {
         for (Element node : XML.getChildren(spec, componentName)) {
             elementValidator.accept(node); // throws exception here if something is wrong
             cluster.addComponent(new DomComponentBuilder().build(deployState, cluster, node));
