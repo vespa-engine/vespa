@@ -69,6 +69,7 @@ public class Messenger implements Runnable {
     public void deliverMessage(final Message msg, final MessageHandler handler) {
         if (destroyed.get()) {
             msg.discard();
+            return;
         }
         try {
             sendExecutor.execute(new MessageTask(msg, handler));
