@@ -9,6 +9,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.http.CompressedApplicationInputStreamTest;
 import com.yahoo.vespa.config.server.http.HandlerTest;
@@ -227,6 +228,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
                 SessionCreateHandler.testOnlyContext(),
                 new ApplicationRepository(tenantRepository,
                                           new SessionHandlerTest.MockProvisioner(),
+                                          new OrchestratorMock(),
                                           clock),
                 tenantRepository,
                 componentRegistry.getConfigserverConfig());

@@ -53,6 +53,7 @@ import com.yahoo.vespa.config.server.session.SilentDeployLogger;
 import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.io.File;
 import java.io.IOException;
@@ -94,31 +95,36 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final DeployLogger logger = new SilentDeployLogger();
     private final ConfigserverConfig configserverConfig;
     private final FileDistributionStatus fileDistributionStatus;
+    private final Orchestrator orchestrator;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
                                  HostProvisionerProvider hostProvisionerProvider,
                                  ConfigConvergenceChecker configConvergenceChecker,
                                  HttpProxy httpProxy, 
-                                 ConfigserverConfig configserverConfig) {
+                                 ConfigserverConfig configserverConfig,
+                                 Orchestrator orchestrator) {
         this(tenantRepository, hostProvisionerProvider.getHostProvisioner(),
-             configConvergenceChecker, httpProxy, configserverConfig, Clock.systemUTC(), new FileDistributionStatus());
+             configConvergenceChecker, httpProxy, configserverConfig, orchestrator,
+             Clock.systemUTC(), new FileDistributionStatus());
     }
 
     // For testing
     public ApplicationRepository(TenantRepository tenantRepository,
                                  Provisioner hostProvisioner,
+                                 Orchestrator orchestrator,
                                  Clock clock) {
-        this(tenantRepository, hostProvisioner, clock, new ConfigserverConfig(new ConfigserverConfig.Builder()));
+        this(tenantRepository, hostProvisioner, orchestrator, clock, new ConfigserverConfig(new ConfigserverConfig.Builder()));
     }
 
     // For testing
     public ApplicationRepository(TenantRepository tenantRepository,
                                  Provisioner hostProvisioner,
+                                 Orchestrator orchestrator,
                                  Clock clock,
                                  ConfigserverConfig configserverConfig) {
         this(tenantRepository, Optional.of(hostProvisioner), new ConfigConvergenceChecker(), new HttpProxy(new SimpleHttpFetcher()),
-             configserverConfig, clock, new FileDistributionStatus());
+             configserverConfig, orchestrator, clock, new FileDistributionStatus());
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
@@ -126,6 +132,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   ConfigConvergenceChecker configConvergenceChecker,
                                   HttpProxy httpProxy,
                                   ConfigserverConfig configserverConfig,
+                                  Orchestrator orchestrator,
                                   Clock clock,
                                   FileDistributionStatus fileDistributionStatus) {
         this.tenantRepository = tenantRepository;
@@ -134,6 +141,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.httpProxy = httpProxy;
         this.clock = clock;
         this.configserverConfig = configserverConfig;
+        this.orchestrator = orchestrator;
         this.fileDistributionStatus = fileDistributionStatus;
     }
 
@@ -385,6 +393,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public void restart(ApplicationId applicationId, HostFilter hostFilter) {
         hostProvisioner.ifPresent(provisioner -> provisioner.restart(applicationId, hostFilter));
+    }
+
+    public boolean isSuspended(ApplicationId application) {
+        return orchestrator.getAllSuspendedApplications().contains(application);
     }
 
     public HttpResponse filedistributionStatus(ApplicationId applicationId, Duration timeout) {

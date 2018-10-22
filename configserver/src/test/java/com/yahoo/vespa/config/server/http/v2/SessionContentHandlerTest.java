@@ -10,6 +10,7 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
@@ -169,7 +170,10 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     private SessionContentHandler createHandler() {
         return new SessionContentHandler(
                 SessionContentHandler.testOnlyContext(),
-                new ApplicationRepository(tenantRepository, new SessionHandlerTest.MockProvisioner(), clock),
+                new ApplicationRepository(tenantRepository,
+                                          new SessionHandlerTest.MockProvisioner(),
+                                          new OrchestratorMock(),
+                                          clock),
                 tenantRepository);
     }
 }

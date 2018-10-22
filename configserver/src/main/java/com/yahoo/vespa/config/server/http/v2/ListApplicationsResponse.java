@@ -15,10 +15,11 @@ import java.util.Collection;
  * Response that lists applications.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ListApplicationsResponse extends HttpResponse {
+
     private final Slime slime = new Slime();
+
     public ListApplicationsResponse(int status, Collection<String> applications) {
         super(status);
         Cursor array = slime.setArray();
@@ -36,4 +37,5 @@ public class ListApplicationsResponse extends HttpResponse {
     public String getContentType() {
         return HttpConfigResponse.JSON_CONTENT_TYPE;
     }
+
 }

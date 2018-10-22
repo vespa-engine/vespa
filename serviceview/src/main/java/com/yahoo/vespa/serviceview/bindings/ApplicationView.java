@@ -6,8 +6,10 @@ import java.util.List;
 /**
  * All clusters of a deployed application.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class ApplicationView {
+
     public List<ClusterView> clusters;
+
 }

@@ -28,9 +28,9 @@ import java.time.Duration;
  * Operations on applications (delete, wait for config convergence, restart, application content etc.)
  *
  * @author hmusum
- * @since 5.4
  */
 public class ApplicationHandler extends HttpHandler {
+
     private final Zone zone;
     private final ApplicationRepository applicationRepository;
 
@@ -102,6 +102,10 @@ public class ApplicationHandler extends HttpHandler {
             return applicationRepository.getLogs(applicationId, apiParams);
         }
 
+        if (isIsSuspendedRequest(request)) {
+            return new ApplicationSuspendedResponse(applicationRepository.isSuspended(applicationId));
+        }
+
         return new GetApplicationResponse(Response.Status.OK, applicationRepository.getApplicationGeneration(applicationId));
     }
 
@@ -148,6 +152,11 @@ public class ApplicationHandler extends HttpHandler {
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*",
                 "http://*/application/v2/tenant/*/application/*/logs",
                 "http://*/application/v2/tenant/*/application/*");
+    }
+
+    private static boolean isIsSuspendedRequest(HttpRequest request) {
+        return getBindingMatch(request).groupCount() == 4 &&
+               request.getUri().getPath().endsWith("/suspended");
     }
 
     private static boolean isLogRequest(HttpRequest request) {
@@ -228,4 +237,12 @@ public class ApplicationHandler extends HttpHandler {
             object.setLong("generation", generation);
         }
     }
+
+    private static class ApplicationSuspendedResponse extends JSONResponse {
+        ApplicationSuspendedResponse(boolean suspended) {
+            super(Response.Status.OK);
+            object.setBool("suspended", suspended);
+        }
+    }
+
 }

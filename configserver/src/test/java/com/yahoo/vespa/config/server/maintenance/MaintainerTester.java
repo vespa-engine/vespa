@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.maintenance;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
@@ -21,7 +22,10 @@ class MaintainerTester {
         curator = new MockCurator();
         GlobalComponentRegistry componentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
         tenantRepository = new TenantRepository(componentRegistry, false);
-        applicationRepository = new ApplicationRepository(tenantRepository, new SessionHandlerTest.MockProvisioner(), Clock.systemUTC());
+        applicationRepository = new ApplicationRepository(tenantRepository,
+                                                          new SessionHandlerTest.MockProvisioner(),
+                                                          new OrchestratorMock(),
+                                                          Clock.systemUTC());
     }
 
     Curator curator() { return curator; }
