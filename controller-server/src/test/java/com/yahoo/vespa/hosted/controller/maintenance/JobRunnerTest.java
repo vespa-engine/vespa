@@ -82,7 +82,7 @@ public class JobRunnerTest {
                                          phasedExecutor(phaser), stepRunner);
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
-        jobs.submit(id, versions.targetApplication().source().get(), new byte[0], new byte[0]);
+        jobs.submit(id, versions.targetApplication().source().get(), 2, new byte[0], new byte[0]);
 
         jobs.start(id, systemTest, versions);
         try {
@@ -113,7 +113,7 @@ public class JobRunnerTest {
                                          inThreadExecutor(), mappedRunner(outcomes));
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
-        jobs.submit(id, versions.targetApplication().source().get(), new byte[0], new byte[0]);
+        jobs.submit(id, versions.targetApplication().source().get(), 2, new byte[0], new byte[0]);
         Supplier<Run> run = () -> jobs.last(id, systemTest).get();
 
         jobs.start(id, systemTest, versions);
@@ -197,7 +197,7 @@ public class JobRunnerTest {
                                          Executors.newFixedThreadPool(32), waitingRunner(barrier));
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
-        jobs.submit(id, versions.targetApplication().source().get(), new byte[0], new byte[0]);
+        jobs.submit(id, versions.targetApplication().source().get(), 2, new byte[0], new byte[0]);
 
         RunId runId = new RunId(id, systemTest, 1);
         jobs.start(id, systemTest, versions);
@@ -233,7 +233,7 @@ public class JobRunnerTest {
                                          inThreadExecutor(), (id, step) -> Optional.of(running));
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
-        jobs.submit(id, versions.targetApplication().source().get(), new byte[0], new byte[0]);
+        jobs.submit(id, versions.targetApplication().source().get(), 2, new byte[0], new byte[0]);
 
         for (int i = 0; i < jobs.historyLength(); i++) {
             jobs.start(id, systemTest, versions);
@@ -261,7 +261,7 @@ public class JobRunnerTest {
                                          inThreadExecutor(), mappedRunner(outcomes));
 
         ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
-        jobs.submit(id, versions.targetApplication().source().get(), new byte[0], new byte[0]);
+        jobs.submit(id, versions.targetApplication().source().get(), 2, new byte[0], new byte[0]);
 
         jobs.start(id, systemTest, versions);
         tester.clock().advance(JobRunner.jobTimeout.plus(Duration.ofSeconds(1)));

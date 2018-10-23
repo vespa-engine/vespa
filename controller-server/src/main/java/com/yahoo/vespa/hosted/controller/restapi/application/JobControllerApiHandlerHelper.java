@@ -394,9 +394,12 @@ class JobControllerApiHandlerHelper {
      * @return Response with the new application version
      */
     static HttpResponse submitResponse(JobController jobController, String tenant, String application,
-                                       SourceRevision sourceRevision, byte[] appPackage, byte[] testPackage) {
+                                       SourceRevision sourceRevision, long projectId, byte[] appPackage, byte[] testPackage) {
         ApplicationVersion version = jobController.submit(ApplicationId.from(tenant, application, "default"),
-                sourceRevision, appPackage, testPackage);
+                                                          sourceRevision,
+                                                          projectId,
+                                                          appPackage,
+                                                          testPackage);
 
         Slime slime = new Slime();
         Cursor responseObject = slime.setObject();

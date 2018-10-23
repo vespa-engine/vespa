@@ -174,7 +174,7 @@ public class DeploymentTrigger {
         log.log(LogLevel.INFO, String.format("Triggering %s: %s", job, job.triggering));
         try {
             applications().lockOrThrow(job.applicationId(), application -> {
-                if (application.get().deploymentJobs().builtInternally())
+                if (application.get().deploymentJobs().deployedInternally())
                     jobs.start(job.applicationId(), job.jobType, new Versions(job.triggering.platform(),
                                                                               job.triggering.application(),
                                                                               job.triggering.sourcePlatform(),
@@ -199,7 +199,7 @@ public class DeploymentTrigger {
     public List<JobType> forceTrigger(ApplicationId applicationId, JobType jobType, String user) {
         Application application = applications().require(applicationId);
         if (jobType == component) {
-            if (application.deploymentJobs().builtInternally())
+            if (application.deploymentJobs().deployedInternally())
                 throw new IllegalArgumentException(applicationId + " has no component job we can trigger.");
 
             buildService.trigger(BuildJob.of(applicationId, application.deploymentJobs().projectId().getAsLong(), jobType.jobName()));
@@ -395,7 +395,7 @@ public class DeploymentTrigger {
     }
 
     private JobState jobStateOf(Application application, JobType jobType) {
-        if (application.deploymentJobs().builtInternally()) {
+        if (application.deploymentJobs().deployedInternally()) {
             Optional<Run> run = controller.jobController().last(application.id(), jobType);
             return run.isPresent() && ! run.get().hasEnded() ? JobState.running : JobState.idle;
         }

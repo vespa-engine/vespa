@@ -395,6 +395,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .steps(application.deploymentSpec())
                 .sortedJobs(application.deploymentJobs().jobStatus().values());
 
+        object.setBool("deployedInternally", application.deploymentJobs().deployedInternally());
         Cursor deploymentsArray = object.setArray("deploymentJobs");
         for (JobStatus job : jobStatus) {
             Cursor jobObject = deploymentsArray.addObject();
@@ -1235,6 +1236,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
         SourceRevision sourceRevision = toSourceRevision(submitOptions).orElseThrow(() ->
                 new IllegalArgumentException("Must specify 'repository', 'branch', and 'commit'"));
+        long projectId = Math.max(1, submitOptions.field("projectId").asLong());
 
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
         if ( ! applicationPackage.deploymentSpec().athenzDomain().isPresent())
@@ -1242,8 +1244,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         verifyApplicationIdentityConfiguration(tenant, Optional.of(applicationPackage));
 
         return JobControllerApiHandlerHelper.submitResponse(controller.jobController(), tenant, application,
-                sourceRevision,
-                applicationPackage.zippedContent(),
-                dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
+                                                            sourceRevision,
+                                                            projectId,
+                                                            applicationPackage.zippedContent(),
+                                                            dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
     }
 }

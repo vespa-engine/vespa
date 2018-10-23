@@ -432,7 +432,7 @@ public class InternalStepRunner implements StepRunner {
     private DeploymentJobs.JobReport report(Run run) {
         return new DeploymentJobs.JobReport(run.id().application(),
                                             run.id().type(),
-                                            1,
+                                            controller.applications().require(run.id().application()).deploymentJobs().projectId().orElse(1),
                                             run.id().number(),
                                             Optional.empty(),
                                             run.hasFailed() ? Optional.of(DeploymentJobs.JobError.unknown) : Optional.empty());
