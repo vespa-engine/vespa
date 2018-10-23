@@ -1930,10 +1930,10 @@ Test::testAttributeMapLookup()
     ctx.add(StringAttrBuilder("key3").add("k3").add("k2").sp());
     testAggregationSimple(ctx, SumAggregationResult(), Int64ResultNode(10 + undefinedInteger), "smap{\"k1\"}.weight");
     testAggregationSimple(ctx, SumAggregationResult(), Int64ResultNode(20 + undefinedInteger), "smap{\"k2\"}.weight");
-    testAggregationSimple(ctx, SumAggregationResult(), Int64ResultNode(2 * undefinedInteger), "smap{\"k5\"}.weight");
+    testAggregationSimple(ctx, SumAggregationResult(), Int64ResultNode(0), "smap{\"k5\"}.weight");
     testAggregationSimple(ctx, SumAggregationResult(), Int64ResultNode(210), "smap{attribute(key1)}.weight");
     testAggregationSimple(ctx, SumAggregationResult(), Int64ResultNode(120), "smap{attribute(key2)}.weight");
-    testAggregationSimple(ctx, SumAggregationResult(), Int64ResultNode(2 * undefinedInteger), "smap{attribute(key3)}.weight");
+    testAggregationSimple(ctx, SumAggregationResult(), Int64ResultNode(0), "smap{attribute(key3)}.weight");
     testAggregationSimple(ctx, MinAggregationResult(), Int64ResultNode(10), "smap{attribute(key1)}.weight");
     testAggregationSimple(ctx, MinAggregationResult(), Int64ResultNode(20), "smap{attribute(key2)}.weight");
     testAggregationSimple(ctx, MaxAggregationResult(), Int64ResultNode(200), "smap{attribute(key1)}.weight");
