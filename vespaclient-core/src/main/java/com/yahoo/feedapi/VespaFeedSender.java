@@ -3,10 +3,6 @@ package com.yahoo.feedapi;
 
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
-import java.util.Date;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
-
 /**
  * Wrapper class for SimpleFeedAccess to send various XML operations.
  */

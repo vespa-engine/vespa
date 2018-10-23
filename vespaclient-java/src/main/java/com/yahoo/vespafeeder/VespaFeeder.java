@@ -13,8 +13,14 @@ import com.yahoo.log.LogSetup;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.vespaclient.ClusterList;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -82,7 +88,7 @@ public class VespaFeeder {
         if (args.getFiles().isEmpty()) {
             InputStreamRequest req = new InputStreamRequest(input);
             setProperties(req, input);
-            FeedResponse response = (FeedResponse)handler.handle(req.toRequest(), createProgressCallback(output));
+            FeedResponse response = (FeedResponse)handler.handle(req.toRequest(), createProgressCallback(output), args.getNumThreads());
             if ( ! response.isSuccess()) {
                 throw renderErrors(response.getErrorList());
             }
@@ -100,7 +106,7 @@ public class VespaFeeder {
                 final BufferedInputStream inputSnooper = new BufferedInputStream(new FileInputStream(fileName));
                 setProperties(req, inputSnooper);
                 inputSnooper.close();
-                FeedResponse response = (FeedResponse)handler.handle(req.toRequest(), createProgressCallback(output));
+                FeedResponse response = (FeedResponse)handler.handle(req.toRequest(), createProgressCallback(output), args.getNumThreads());
                 if (!response.isSuccess()) {
                     throw renderErrors(response.getErrorList());
                 }

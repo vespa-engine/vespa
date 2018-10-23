@@ -24,11 +24,11 @@ public abstract class Feeder {
 
     protected final InputStream stream;
     protected final DocumentTypeManager docMan;
-    protected List<String> errors = new LinkedList<String>();
-    protected boolean doAbort = true;
-    protected boolean createIfNonExistent = false;
-    protected final VespaFeedSender sender;
-    private final int MAX_ERRORS = 10;
+    protected List<String> errors = new LinkedList<>();
+    private boolean doAbort = true;
+    private boolean createIfNonExistent = false;
+    private final VespaFeedSender sender;
+    private static final int MAX_ERRORS = 10;
 
     protected Feeder(DocumentTypeManager docMan, VespaFeedSender sender, InputStream stream) {
         this.docMan = docMan;
@@ -44,7 +44,7 @@ public abstract class Feeder {
         this.createIfNonExistent = value;
     }
 
-    public void addException(Exception e) {
+    private void addException(Exception e) {
         String message;
         if (e.getMessage() != null) {
             message = e.getMessage().replaceAll("\"", "'");
@@ -69,7 +69,7 @@ public abstract class Feeder {
     protected abstract FeedReader createReader() throws Exception;
 
     public List<String> parse() {
-        FeedReader reader = null;
+        FeedReader reader;
 
         try {
             reader = createReader();
