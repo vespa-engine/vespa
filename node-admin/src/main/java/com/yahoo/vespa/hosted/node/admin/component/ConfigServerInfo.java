@@ -2,8 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.component;
 
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.utils.AthenzIdentities;
-import com.yahoo.vespa.hosted.node.admin.config.ConfigServerConfig;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -23,12 +21,6 @@ public class ConfigServerInfo {
     private final URI loadBalancerEndpoint;
     private final Map<String, URI> configServerURIs;
     private final AthenzService configServerIdentity;
-
-    // TODO: Remove
-    public ConfigServerInfo(ConfigServerConfig config) {
-        this(config.loadBalancerHost(), config.hosts(), config.scheme(), config.port(),
-                (AthenzService) AthenzIdentities.from(config.configserverAthenzIdentity()));
-    }
 
     public ConfigServerInfo(String loadBalancerHostName, List<String> configServerHostNames,
                             String scheme, int port, AthenzService configServerAthenzIdentity) {
