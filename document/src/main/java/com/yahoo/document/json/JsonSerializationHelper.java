@@ -2,11 +2,9 @@
 package com.yahoo.document.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.Field;
 import com.yahoo.document.PositionDataType;
-import com.yahoo.document.PrimitiveDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.ByteFieldValue;
 import com.yahoo.document.datatypes.CollectionFieldValue;
@@ -188,12 +186,7 @@ public class JsonSerializationHelper {
             generator.writeStartObject();
 
             for (Map.Entry<K, V> entry : map.entrySet()) {
-                K key = entry.getKey();
-                DataType keyType = key.getDataType();
-                if ( ! (keyType instanceof PrimitiveDataType)) {
-                    throw new IllegalArgumentException("Can't use complex types as keys for map fields. Type: " + keyType);
-                }
-                generator.writeFieldName(key.toString());
+                generator.writeFieldName(entry.getKey().toString());
                 entry.getValue().serialize(null, fieldWriter);
             }
 
