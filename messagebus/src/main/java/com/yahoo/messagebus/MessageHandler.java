@@ -15,5 +15,5 @@ public interface MessageHandler {
      *
      * @param message The message that arrived.
      */
-    public void handleMessage(Message message);
+    void handleMessage(Message message);
 }

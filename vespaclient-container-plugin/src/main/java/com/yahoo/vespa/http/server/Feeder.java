@@ -13,7 +13,6 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
-import com.yahoo.documentapi.metrics.DocumentOperationType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.log.LogLevel;
@@ -55,26 +54,26 @@ public class Feeder implements Runnable {
 
     protected static final Logger log = Logger.getLogger(Feeder.class.getName());
 
-    final InputStream requestInputStream;
-    final DocumentTypeManager docTypeManager;
-    final BlockingQueue<OperationStatus> operations;
-    final BlockingQueue<OperationStatus> feedReplies;
-    int numPending;
+    private final InputStream requestInputStream;
+    private final DocumentTypeManager docTypeManager;
+    private final BlockingQueue<OperationStatus> operations;
+    private final BlockingQueue<OperationStatus> feedReplies;
+    private int numPending;
     final FeederSettings settings;
-    final String clientId;
-    final ReferencedResource<SharedSourceSession> sourceSession;
-    final FeedHandler handler;
-    final Metric metric;
-    final Metric.Context metricContext;
+    private final String clientId;
+    private final ReferencedResource<SharedSourceSession> sourceSession;
+    private final FeedHandler handler;
+    private final Metric metric;
+    private final Metric.Context metricContext;
     private long prevOpsPerSecTime; // previous measurement time of OPS
     private double operationsForOpsPerSec;
     private final ReplyHandler feedReplyHandler;
-    protected final static String EOF = "End of stream";
-    protected final boolean sessionIdWasGeneratedJustNow;
+    private final static String EOF = "End of stream";
+    private final boolean sessionIdWasGeneratedJustNow;
     private final CountDownLatch requestReceived = new CountDownLatch(1);
     private final FeedReaderFactory feedReaderFactory;
 
-    public Feeder(InputStream requestInputStream,
+    Feeder(InputStream requestInputStream,
                   FeedReaderFactory feedReaderFactory,
                   DocumentTypeManager docTypeManager,
                   BlockingQueue<OperationStatus> operations,
@@ -83,7 +82,7 @@ public class Feeder implements Runnable {
                   String clientId, boolean sessionIdWasGeneratedJustNow, SourceSessionParams sessionParams,
                   SessionCache sessionCache,
                   FeedHandler handler, Metric metric, ReplyHandler feedReplyHandler,
-                  String localHostname) throws Exception {
+                  String localHostname) {
         super();
         this.feedReaderFactory = feedReaderFactory;
         if (storedState == null) {
@@ -117,14 +116,14 @@ public class Feeder implements Runnable {
         this.metric = metric;
         this.feedReplyHandler = feedReplyHandler;
     }
-    protected void examineClientId(String clientId, String localHostname) {
+    private void examineClientId(String clientId, String localHostname) {
         if (!clientId.contains("#")) {
             throw new UnknownClientException("Got request from client with id '" + clientId +
                                              "', but found no session for this client. " +
                                              "This is expected during upgrades of gateways and infrastructure nodes.");
         }
         int hashPos = clientId.indexOf("#");
-        String supposedHostname = clientId.substring(hashPos + 1, clientId.length());
+        String supposedHostname = clientId.substring(hashPos + 1);
         if (supposedHostname.isEmpty()) {
             throw new UnknownClientException("Got request from client with id '" + clientId +
                                              "', but found no session for this client. Possible session " +
@@ -192,7 +191,7 @@ public class Feeder implements Runnable {
         }
     }
 
-    protected boolean handshake() throws IOException {
+    private boolean handshake() throws IOException {
         if (sessionIdWasGeneratedJustNow) {
             if (log.isLoggable(LogLevel.DEBUG)) {
                 log.log(LogLevel.DEBUG, "Handshake completed for client " + clientId + ".");
@@ -203,7 +202,7 @@ public class Feeder implements Runnable {
         return false;
     }
 
-    void feed() throws InterruptedException {
+    private void feed() throws InterruptedException {
         while (true) {
             Result result;
             String operationId;
@@ -297,10 +296,7 @@ public class Feeder implements Runnable {
     }
 
     private void updateMetrics(Message m) {
-        metric.set(
-                MetricNames.PENDING,
-                Double.valueOf(sourceSession.getResource().session().getPendingCount()),
-                null);
+        metric.set(MetricNames.PENDING, sourceSession.getResource().session().getPendingCount(), null);
 
         metric.add(MetricNames.NUM_OPERATIONS, 1, metricContext);
 
@@ -351,7 +347,7 @@ public class Feeder implements Runnable {
     }
 
     private void setMessageParameters(Tuple2<String, Message> msg) {
-        msg.second.setContext(new ReplyContext(msg.first, feedReplies, DocumentOperationType.fromMessage(msg.second)));
+        msg.second.setContext(new ReplyContext(msg.first, feedReplies));
         if (settings.traceLevel != null) {
             msg.second.getTrace().setLevel(settings.traceLevel);
         }
@@ -374,7 +370,7 @@ public class Feeder implements Runnable {
         }
     }
 
-    protected void getNextOperation(VespaXMLFeedReader.Operation op) throws Exception {
+    private void getNextOperation(VespaXMLFeedReader.Operation op) throws Exception {
         int length = readByteLength();
 
         try (InputStream limitedInputStream = new ByteLimitedInputStream(requestInputStream, length)){
@@ -383,7 +379,7 @@ public class Feeder implements Runnable {
         }
     }
 
-    protected String getNextOperationId() throws IOException {
+    private String getNextOperationId() throws IOException {
         return readOperationId();
     }
 
@@ -460,7 +456,7 @@ public class Feeder implements Runnable {
     }
 
 
-    void flushResponseQueue() throws InterruptedException {
+    private void flushResponseQueue() throws InterruptedException {
         OperationStatus status = feedReplies.poll();
         while (status != null) {
             decreasePending(status);
@@ -468,14 +464,14 @@ public class Feeder implements Runnable {
         }
     }
 
-    void putClient() {
+    private void putClient() {
         handler.putClient(clientId,
                           new ClientState(numPending,
                                           feedReplies, sourceSession, metricContext,
                                           prevOpsPerSecTime, operationsForOpsPerSec));
     }
 
-    void drain() throws InterruptedException {
+    private void drain() throws InterruptedException {
         if (settings.drain) {
             while (numPending > 0) {
                 OperationStatus o = feedReplies.take();
