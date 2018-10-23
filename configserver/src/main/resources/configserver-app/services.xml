@@ -192,5 +192,7 @@
     <preprocess:include file='configserver-config.xml' required='false' />
 
     <preprocess:include file='configserver-components.xml' required='false' />
+
+    <preprocess:include file='zookeeper-server-config.xml' required='false' />
   </jdisc>
 </services>
