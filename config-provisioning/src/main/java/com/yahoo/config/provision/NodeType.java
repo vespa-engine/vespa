@@ -9,43 +9,53 @@ package com.yahoo.config.provision;
 public enum NodeType {
 
     /** A node to be assigned to a tenant to run application workloads */
-    tenant(false, "Tenant node"),
+    tenant(null, "Tenant node"),
 
     /** A host of a set of (Docker) tenant nodes */
-    host(true, "Tenant docker host"),
+    host(tenant, "Tenant docker host"),
 
     /** Nodes running the shared proxy layer */
-    proxy(false, "Proxy node"),
+    proxy(null, "Proxy node"),
 
     /** A host of a (Docker) proxy node */
-    proxyhost(true, "Proxy docker host"),
+    proxyhost(proxy, "Proxy docker host"),
 
     /** A config server */
-    config(false, "Config server"),
+    config(null, "Config server"),
 
     /** A host of a (Docker) config server node */
-    confighost(true, "Config docker host"),
+    confighost(config, "Config docker host"),
 
     /** A controller */
-    controller(false, "Controller"),
+    controller(null, "Controller"),
 
     /** A host of a (Docker) controller node */
-    controllerhost(true, "Controller host");
+    controllerhost(controller, "Controller host");
 
-    private final boolean isDockerHost;
+    private final NodeType childNodeType;
     private final String description;
 
-    NodeType(boolean isDockerHost, String description) {
-        this.isDockerHost = isDockerHost;
+    NodeType(NodeType childNodeType, String description) {
+        this.childNodeType = childNodeType;
         this.description = description;
     }
 
     public boolean isDockerHost() {
-        return isDockerHost;
+        return childNodeType != null;
     }
 
     public String description() {
         return description;
     }
 
+    /**
+     * @return {@link NodeType} of the node(s) that run on this host
+     * @throws IllegalStateException if this type is not a host
+     */
+    public NodeType childNodeType() {
+        if (! isDockerHost())
+            throw new IllegalStateException(this + " has no children");
+
+        return childNodeType;
+    }
 }

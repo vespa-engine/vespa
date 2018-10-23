@@ -304,9 +304,9 @@ public class DockerOperationsImpl implements DockerOperations {
                 context.pathInNodeUnderVespaHome("tmp"),
                 context.pathInNodeUnderVespaHome("var/container-data")));
 
-        if (context.nodeType() == NodeType.proxyhost)
+        if (context.nodeType() == NodeType.proxy)
             paths.add(context.pathInNodeUnderVespaHome("var/vespa-hosted/routing"));
-        if (context.nodeType() == NodeType.host)
+        if (context.nodeType() == NodeType.tenant)
             paths.add(varLibSia);
 
         paths.forEach(path -> command.withVolume(context.pathOnHostFromPathInNode(path), path));
@@ -316,18 +316,18 @@ public class DockerOperationsImpl implements DockerOperations {
         if (isInfrastructureHost(context.nodeType()))
             command.withSharedVolume(varLibSia, varLibSia);
 
-        if (context.nodeType() == NodeType.proxyhost || context.nodeType() == NodeType.controllerhost)
+        if (context.nodeType() == NodeType.proxy || context.nodeType() == NodeType.controller)
             command.withSharedVolume(Paths.get("/opt/yahoo/share/ssl/certs"), Paths.get("/opt/yahoo/share/ssl/certs"));
 
-        if (context.nodeType() == NodeType.host)
+        if (context.nodeType() == NodeType.tenant)
             command.withSharedVolume(Paths.get("/var/zpe"), context.pathInNodeUnderVespaHome("var/zpe"));
     }
 
     /** Returns whether given nodeType is a Docker host for infrastructure nodes */
     private static boolean isInfrastructureHost(NodeType nodeType) {
-        return nodeType == NodeType.confighost ||
-                nodeType == NodeType.proxyhost ||
-                nodeType == NodeType.controllerhost;
+        return nodeType == NodeType.config ||
+                nodeType == NodeType.proxy ||
+                nodeType == NodeType.controller;
     }
 
 }
