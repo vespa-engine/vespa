@@ -35,5 +35,4 @@ public interface Timer {
     default Instant currentTime() {
         return Instant.ofEpochMilli(currentTimeMillis());
     }
-
 }

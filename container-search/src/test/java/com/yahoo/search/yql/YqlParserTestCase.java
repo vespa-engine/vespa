@@ -11,7 +11,6 @@ import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.PhraseItem;
-import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.RegExpItem;
@@ -56,15 +55,15 @@ import static org.junit.Assert.fail;
 /**
  * Specification for the conversion of YQL+ expressions to Vespa search queries.
  *
- * @author Steinar Knutsen
- * @author Stian Kristoffersen
+ * @author steinar
+ * @author stiankri
  */
 public class YqlParserTestCase {
 
     private final YqlParser parser = new YqlParser(new ParserEnvironment());
 
     @Test
-    public void testParserDefaults() {
+    public void requireThatDefaultsAreSane() {
         assertTrue(parser.isQueryParser());
         assertNull(parser.getDocTypes());
     }
@@ -77,7 +76,7 @@ public class YqlParserTestCase {
     }
 
     @Test
-    public void testGroupingStep() {
+    public void requireThatGroupingStepCanBeParsed() {
         assertParse("select foo from bar where baz contains 'cox';",
                     "baz:cox");
         assertEquals("[]",
@@ -99,7 +98,7 @@ public class YqlParserTestCase {
     }
 
     @Test
-    public void testGroupingContinuation() {
+    public void requireThatGroupingContinuationCanBeParsed() {
         assertParse("select foo from bar where baz contains 'cox' " +
                     "| [{ 'continuations': ['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]all(group(a) each(output(count())));",
                     "baz:cox");
@@ -321,14 +320,12 @@ public class YqlParserTestCase {
 
     @Test
     public void testRaw() {
-        // Default: Not raw, for comparison
         Item root = parse("select foo from bar where baz contains (\"yoni jo dima\");").getRoot();
-        assertEquals("baz:'yoni jo dima'", root.toString());
-        assertFalse(root instanceof WordItem);
-        assertTrue(root instanceof PhraseSegmentItem);
+        assertTrue(root instanceof WordItem);
+        assertFalse(root instanceof ExactStringItem);
+        assertEquals("yoni jo dima", ((WordItem)root).getWord());
 
         root = parse("select foo from bar where baz contains ([{\"grammar\":\"raw\"}]\"yoni jo dima\");").getRoot();
-        assertEquals("baz:yoni jo dima", root.toString());
         assertTrue(root instanceof WordItem);
         assertFalse(root instanceof ExactStringItem);
         assertEquals("yoni jo dima", ((WordItem)root).getWord());
@@ -738,17 +735,44 @@ public class YqlParserTestCase {
 
     @Test
     public void testSegmenting() {
-        assertParse("select * from bar where title contains 'foo.bar';",
-                    "title:'foo bar'");
+        assertParse("select * from bar where ([{\"segmenter\": {\"version\": \"58.67.49\", \"backend\": " +
+                    "\"yell\"}}] title contains \"madonna\");",
+                    "title:madonna");
+        assertEquals("yell", parser.getSegmenterBackend());
+        assertEquals(new Version("58.67.49"), parser.getSegmenterVersion());
 
-        assertParse("select * from bar where title contains 'foo&123';",
-                    "title:'foo 123'");
+        assertParse("select * from bar where ([{\"segmenter\": {\"version\": \"8.7.3\", \"backend\": " +
+                    "\"yell\"}}]([{\"targetNumHits\": 9999438}] weakAnd(format contains \"online\", title contains " +
+                    "\"madonna\")));",
+                    "WAND(9999438) format:online title:madonna");
+        assertEquals("yell", parser.getSegmenterBackend());
+        assertEquals(new Version("8.7.3"), parser.getSegmenterVersion());
+
+        assertParse("select * from bar where [{\"segmenter\": {\"version\": \"18.47.39\", \"backend\": " +
+                    "\"yell\"}}] ([{\"targetNumHits\": 99909438}] weakAnd(format contains \"online\", title contains " +
+                    "\"madonna\"));",
+                    "WAND(99909438) format:online title:madonna");
+        assertEquals("yell", parser.getSegmenterBackend());
+        assertEquals(new Version("18.47.39"), parser.getSegmenterVersion());
+
+        assertParse("select * from bar where [{\"targetNumHits\": 99909438}] weakAnd(format contains " +
+                    "\"online\", title contains \"madonna\");",
+                    "WAND(99909438) format:online title:madonna");
+        assertNull(parser.getSegmenterBackend());
+        assertNull(parser.getSegmenterVersion());
+
+        assertParse("select * from bar where [{\"segmenter\": {\"version\": \"58.67.49\", \"backend\": " +
+                    "\"yell\"}}](title contains \"madonna\") order by shoesize;",
+                    "title:madonna");
+        assertEquals("yell", parser.getSegmenterBackend());
+        assertEquals(new Version("58.67.49"), parser.getSegmenterVersion());
     }
 
     @Test
     public void testNegativeHitLimit() {
-        assertParse("select * from sources * where [{\"hitLimit\": -38}]range(foo, 0, 1);",
-                    "foo:[0;1;-38]");
+        assertParse(
+                "select * from sources * where [{\"hitLimit\": -38}]range(foo, 0, 1);",
+                "foo:[0;1;-38]");
     }
 
     @Test
@@ -806,26 +830,26 @@ public class YqlParserTestCase {
 
     @Test
     public void testMoreInheritedAnnotations() {
-        String yqlQuery = "select * from sources * where " +
-                          "([{\"ranked\": false}](foo contains \"a\" " +
-                          "and ([{\"ranked\": true}](bar contains \"b\" " +
-                          "or ([{\"ranked\": false}](foo contains \"c\" " +
-                          "and foo contains ([{\"ranked\": true}]\"d\")))))));";
+        final String yqlQuery = "select * from sources * where "
+                + "([{\"ranked\": false}](foo contains \"a\" "
+                + "and ([{\"ranked\": true}](bar contains \"b\" "
+                + "or ([{\"ranked\": false}](foo contains \"c\" "
+                + "and foo contains ([{\"ranked\": true}]\"d\")))))));";
         QueryTree x = parse(yqlQuery);
         List<IndexedItem> terms = QueryTree.getPositiveTerms(x);
         assertEquals(4, terms.size());
         for (IndexedItem term : terms) {
             switch (term.getIndexedString()) {
-                case "a":
-                case "c":
-                    assertFalse(((Item) term).isRanked());
-                    break;
-                case "b":
-                case "d":
-                    assertTrue(((Item) term).isRanked());
-                    break;
-                default:
-                    fail();
+            case "a":
+            case "c":
+                assertFalse(((Item) term).isRanked());
+                break;
+            case "b":
+            case "d":
+                assertTrue(((Item) term).isRanked());
+                break;
+            default:
+                fail();
             }
         }
     }
@@ -897,8 +921,8 @@ public class YqlParserTestCase {
     private void checkWordAlternativesContent(WordAlternativesItem alternatives) {
         boolean seenTree = false;
         boolean seenForest = false;
-        String forest = "trees";
-        String tree = "tree";
+        final String forest = "trees";
+        final String tree = "tree";
         assertEquals(2, alternatives.getAlternatives().size());
         for (WordAlternativesItem.Alternative alternative : alternatives.getAlternatives()) {
             if (tree.equals(alternative.word)) {
