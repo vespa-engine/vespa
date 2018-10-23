@@ -230,7 +230,7 @@ public class InternalDeploymentTester {
      * Creates and submits a new application, and then starts the job of the given type.
      */
     public RunId newRun(JobType type) {
-        assertFalse(app().deploymentJobs().builtInternally()); // Use this only once per test.
+        assertFalse(app().deploymentJobs().deployedInternally()); // Use this only once per test.
         newSubmission();
         tester.readyJobTrigger().maintain();
 

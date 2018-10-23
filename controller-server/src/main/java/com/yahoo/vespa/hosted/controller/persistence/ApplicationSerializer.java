@@ -235,7 +235,7 @@ public class ApplicationSerializer {
         deploymentJobs.projectId().ifPresent(projectId -> cursor.setLong(projectIdField, projectId));
         jobStatusToSlime(deploymentJobs.jobStatus().values(), cursor.setArray(jobStatusField));
         deploymentJobs.issueId().ifPresent(jiraIssueId -> cursor.setString(issueIdField, jiraIssueId.value()));
-        cursor.setBool(builtInternallyField, deploymentJobs.builtInternally());
+        cursor.setBool(builtInternallyField, deploymentJobs.deployedInternally());
     }
 
     private void jobStatusToSlime(Collection<JobStatus> jobStatuses, Cursor jobStatusArray) {

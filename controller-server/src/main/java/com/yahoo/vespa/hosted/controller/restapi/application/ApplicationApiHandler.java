@@ -395,6 +395,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .steps(application.deploymentSpec())
                 .sortedJobs(application.deploymentJobs().jobStatus().values());
 
+        object.setBool("deployedInternally", application.deploymentJobs().deployedInternally());
         Cursor deploymentsArray = object.setArray("deploymentJobs");
         for (JobStatus job : jobStatus) {
             Cursor jobObject = deploymentsArray.addObject();

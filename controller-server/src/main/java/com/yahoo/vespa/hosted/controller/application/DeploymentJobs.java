@@ -114,7 +114,7 @@ public class DeploymentJobs {
 
     public Optional<IssueId> issueId() { return issueId; }
 
-    public boolean builtInternally() { return builtInternally; }
+    public boolean deployedInternally() { return builtInternally; }
 
     private static OptionalLong requireId(OptionalLong id, String message) {
         Objects.requireNonNull(id, message);
