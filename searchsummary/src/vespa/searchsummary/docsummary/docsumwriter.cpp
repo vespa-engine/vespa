@@ -3,6 +3,7 @@
 #include "docsumwriter.h"
 #include "docsumstate.h"
 #include "docsum_field_writer_state.h"
+#include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
@@ -78,8 +79,8 @@ DynamicDocsumWriter::resolveInputClass(ResolveClassInfo &rci, uint32_t id) const
     }
 }
 
-constexpr uint32_t default_32bits_int = (uint32_t)std::numeric_limits<int32_t>::min();
-constexpr uint64_t default_64bits_int = (uint64_t)std::numeric_limits<int64_t>::min();
+constexpr uint32_t default_32bits_int = search::attribute::getUndefined<int32_t>();
+constexpr uint64_t default_64bits_int = search::attribute::getUndefined<int64_t>();
 
 static void convertEntry(GetDocsumsState *state,
                          const ResConfigEntry *resCfg,
