@@ -4,11 +4,11 @@ package com.yahoo.container.handler;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import javax.xml.bind.DatatypeConverter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Base64;
 
 public class LogReader {
 
@@ -29,7 +29,7 @@ public class LogReader {
         for(File child : files) {
             long logTime = Files.readAttributes(child.toPath(), BasicFileAttributes.class).creationTime().toMillis();
             if(child.isFile() && earliestLogThreshold < logTime && logTime < latestLogThreshold) {
-                json.put(filename + child.getName(), DatatypeConverter.printBase64Binary(Files.readAllBytes(child.toPath())));
+                json.put(filename + child.getName(), Base64.getEncoder().encodeToString(Files.readAllBytes(child.toPath())));
             }
             else if (!child.isFile()){
                 traverse_folder(child, json, filename + child.getName() + "-");

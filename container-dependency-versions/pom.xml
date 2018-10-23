@@ -185,31 +185,6 @@
                 <artifactId>javax.ws.rs-api</artifactId>
                 <version>${javax.ws.rs-api.version}</version>
             </dependency>
-
-            <!-- TODO: upgrade jaxb artifacts to >=2.3.0.
-            See https://stackoverflow.com/questions/50237516/proper-fix-for-java-10-complaining-about-illegal-reflection-access-by-jaxb-impl  -->
-            <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-                <version>${jaxb.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-core</artifactId>
-                <version>${jaxb.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
-                <version>${jaxb.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.activation</groupId>
-                <artifactId>javax.activation</artifactId>
-                <version>1.2.0</version>
-            </dependency>
-            <!-- jaxb end -->
-
             <dependency>
                 <groupId>net.jcip</groupId>
                 <artifactId>jcip-annotations</artifactId>
@@ -465,7 +440,6 @@
         <findbugs.version>1.3.9</findbugs.version>
         <guava.version>20.0</guava.version>
         <guice.version>3.0</guice.version>
-        <jaxb.version>2.3.0</jaxb.version>
         <jetty.version>9.4.12.v20180830</jetty.version>
         <slf4j.version>1.7.5</slf4j.version>
 

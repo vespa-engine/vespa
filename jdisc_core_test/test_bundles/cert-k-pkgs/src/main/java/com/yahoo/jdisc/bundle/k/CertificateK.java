@@ -168,20 +168,4 @@ public class CertificateK {
     private final org.xml.sax.ext.Attributes2Impl attributes2 = null;
     private final org.xml.sax.helpers.AttributesImpl attributes = null;
 
-
-    // Packages made invisible from Java 9
-
-    // Added as dep in jdisc_core: com.sun.activation:javax.activation (OSGi bundle)
-    private final com.sun.activation.viewers.ImageViewer imageViewer = null;
-    private final com.sun.activation.registries.MimeTypeFile mimeTypeFile = null;
-    private final javax.activation.CommandInfo commandInfo = null;
-
-    // Added as dep in jdisc_core: javax.xml.bind:jaxb-api (OSGi bundle)
-    private final javax.xml.bind.DataBindingException dataBindingException = null;
-    private final javax.xml.bind.annotation.DomHandler<?,?> domHandler = null;
-    private final javax.xml.bind.annotation.adapters.CollapsedStringAdapter collapsedStringAdapter = null;
-    private final javax.xml.bind.attachment.AttachmentMarshaller attachmentMarshaller = null;
-    private final javax.xml.bind.helpers.AbstractMarshallerImpl abstractMarshaller = null;
-    private final javax.xml.bind.util.JAXBResult jaxbResult = null;
-
 }
