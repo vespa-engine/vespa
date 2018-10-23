@@ -479,7 +479,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      *
      * @return The pending size.
      */
-    synchronized int getPendingSize() {
+    public synchronized int getPendingSize() {
         return pendingSize;
     }
 
@@ -509,6 +509,14 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      */
     public void setMaxPendingSize(int maxSize) {
         maxPendingSize = maxSize;
+    }
+
+    /**
+     * Gets maximum combined size of messages that can be received without
+     * being replied to yet.
+     */
+    public int getMaxPendingSize() {
+        return maxPendingSize;
     }
 
     /**
