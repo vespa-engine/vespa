@@ -290,14 +290,16 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
             if (dataType instanceof CollectionDataType) {
                 dataType = ((CollectionDataType)dataType).getNestedType();
             }
-            SDDocumentType subType = sdoc != null ? sdoc.getType(dataType.getName()) : null;
-            if (subType == null) {
-                throw new IllegalArgumentException("Could not find struct '" + dataType.getName() + "'.");
-            }
-            for (Field field : subType.fieldSet()) {
-                SDField subField = new SDField(sdoc, name.concat(".").concat(field.getName()), field.getDataType(),
-                                               isHeader, subType, new Matching(), true, recursion + 1);
-                structFields.put(field.getName(), subField);
+            if (dataType instanceof StructDataType) {
+                SDDocumentType subType = sdoc != null ? sdoc.getType(dataType.getName()) : null;
+                if (subType == null) {
+                    throw new IllegalArgumentException("Could not find struct '" + dataType.getName() + "'.");
+                }
+                for (Field field : subType.fieldSet()) {
+                    SDField subField = new SDField(sdoc, name.concat(".").concat(field.getName()), field.getDataType(),
+                                                   isHeader, subType, new Matching(), true, recursion + 1);
+                    structFields.put(field.getName(), subField);
+                }
             }
         }
     }
@@ -305,41 +307,43 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     public void populateWithStructMatching(SDDocumentType sdoc, String name, DataType dataType,
                                            Matching superFieldMatching) {
         DataType dt = getFirstStructOrMapRecursive();
-        if (dt != null) {
-            if (dataType instanceof MapDataType) {
-                MapDataType mdt = (MapDataType) dataType;
+        if (dt == null) {
+            return;
+        }
+        if (dataType instanceof MapDataType) {
+            MapDataType mdt = (MapDataType) dataType;
 
-                Matching keyFieldMatching = new Matching();
-                if (superFieldMatching != null) {
-                    keyFieldMatching.merge(superFieldMatching);
-                }
-                SDField keyField = structFields.get(name.concat(".key"));
-                if (keyField != null) {
-                    keyField.populateWithStructMatching(sdoc, name.concat(".key"), mdt.getKeyType(), keyFieldMatching);
-                    keyField.setMatching(keyFieldMatching);
-                }
+            Matching keyFieldMatching = new Matching();
+            if (superFieldMatching != null) {
+                keyFieldMatching.merge(superFieldMatching);
+            }
+            SDField keyField = structFields.get(name.concat(".key"));
+            if (keyField != null) {
+                keyField.populateWithStructMatching(sdoc, name.concat(".key"), mdt.getKeyType(), keyFieldMatching);
+                keyField.setMatching(keyFieldMatching);
+            }
 
-                Matching valueFieldMatching = new Matching();
-                if (superFieldMatching != null) {
-                    valueFieldMatching.merge(superFieldMatching);
-                }
-                SDField valueField = structFields.get(name.concat(".value"));
-                if (valueField != null) {
-                    valueField.populateWithStructMatching(sdoc, name.concat(".value"), mdt.getValueType(),
-                                                          valueFieldMatching);
-                    valueField.setMatching(valueFieldMatching);
-                }
+            Matching valueFieldMatching = new Matching();
+            if (superFieldMatching != null) {
+                valueFieldMatching.merge(superFieldMatching);
+            }
+            SDField valueField = structFields.get(name.concat(".value"));
+            if (valueField != null) {
+                valueField.populateWithStructMatching(sdoc, name.concat(".value"), mdt.getValueType(),
+                                                      valueFieldMatching);
+                valueField.setMatching(valueFieldMatching);
+            }
 
-            } else {
-
-                if (dataType instanceof CollectionDataType) {
-                    dataType = ((CollectionDataType)dataType).getNestedType();
-                }
+        } else {
+            if (dataType instanceof CollectionDataType) {
+                dataType = ((CollectionDataType)dataType).getNestedType();
+            }
+            if (dataType instanceof StructDataType) {
                 SDDocumentType subType = sdoc != null ? sdoc.getType(dataType.getName()) : null;
                 if (subType != null) {
                     for (Field f : subType.fieldSet()) {
                         if (f instanceof SDField) {
-                            SDField field = (SDField)f;
+                            SDField field = (SDField) f;
                             Matching subFieldMatching = new Matching();
                             if (superFieldMatching != null) {
                                 subFieldMatching.merge(superFieldMatching);
@@ -348,11 +352,11 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
                             SDField subField = structFields.get(field.getName());
                             if (subField != null) {
                                 subField.populateWithStructMatching(sdoc, name.concat(".").concat(field.getName()), field.getDataType(),
-                                                                    subFieldMatching);
+                                        subFieldMatching);
                                 subField.setMatching(subFieldMatching);
                             }
                         } else {
-                             throw new IllegalArgumentException("Field in struct is not SDField " + f.getName());
+                            throw new IllegalArgumentException("Field in struct is not SDField " + f.getName());
                         }
                     }
                 } else {

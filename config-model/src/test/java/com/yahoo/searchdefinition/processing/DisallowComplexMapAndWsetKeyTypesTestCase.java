@@ -26,6 +26,11 @@ public class DisallowComplexMapAndWsetKeyTypesTestCase {
         testFieldType("array<map<mystruct,string>>");
     }
 
+    @Test
+    public void requireThatNestedComplexValuesForMapSucceed() throws ParseException {
+        testFieldType("array<map<string,mystruct>>");
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void requireThatNestedComplexTypesForWsetFail() throws ParseException {
         testFieldType("array<weightedset<mystruct>>");
