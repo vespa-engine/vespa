@@ -24,6 +24,7 @@ public class Messenger implements Runnable {
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final List<Task> children = new ArrayList<>();
     private final Queue<Task> queue = new ArrayDeque<>();
+
     private final Thread thread = new Thread(this, "Messenger");
 
     public Messenger() {
@@ -38,7 +39,7 @@ public class Messenger implements Runnable {
      *
      * @param task The task to add.
      */
-    public void addRecurrentTask(final Task task) {
+    void addRecurrentTask(final Task task) {
         children.add(task);
     }
 
@@ -61,7 +62,11 @@ public class Messenger implements Runnable {
      * @param handler The handler to send to.
      */
     public void deliverMessage(final Message msg, final MessageHandler handler) {
-        enqueue(new MessageTask(msg, handler));
+        if (destroyed.get()) {
+            msg.discard();
+        } else {
+            handler.handleMessage(msg);
+        }
     }
 
     /**
@@ -194,38 +199,13 @@ public class Messenger implements Runnable {
         /**
          * <p>This method is called when being executed.</p>
          */
-        public void run();
+        void run();
 
         /**
          * <p>This method is called for all tasks, even if {@link #run()} was
          * never called.</p>
          */
-        public void destroy();
-    }
-
-    private static class MessageTask implements Task {
-
-        final MessageHandler handler;
-        Message msg;
-
-        MessageTask(final Message msg, final MessageHandler handler) {
-            this.msg = msg;
-            this.handler = handler;
-        }
-
-        @Override
-        public void run() {
-            final Message msg = this.msg;
-            this.msg = null;
-            handler.handleMessage(msg);
-        }
-
-        @Override
-        public void destroy() {
-            if (msg != null) {
-                msg.discard();
-            }
-        }
+        void destroy();
     }
 
     private static class ReplyTask implements Task {

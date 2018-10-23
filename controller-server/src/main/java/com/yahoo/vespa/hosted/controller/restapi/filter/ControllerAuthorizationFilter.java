@@ -128,20 +128,21 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     private static boolean isTenantAdminOperation(Path path, Method method) {
         if (isHostedOperatorOperation(path, method)) return false;
         return path.matches("/application/v4/tenant/{tenant}") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/dev/{*}") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/perf/{*}") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override");
+               path.matches("/application/v4/tenant/{tenant}/application/{application}") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{job}") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/dev/{*}") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/perf/{*}") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override");
     }
 
     private static boolean isTenantPipelineOperation(Path path, Method method) {
         if (isTenantAdminOperation(path, method)) return false;
         return path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/submit") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/promote") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/prod/{*}") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/test/{*}") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/staging/{*}");
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/submit") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/promote") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/prod/{*}") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/test/{*}") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/staging/{*}");
     }
 
     private void verifyIsHostedOperator(AthenzPrincipal principal) {

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
@@ -13,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -31,7 +33,9 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -110,6 +114,68 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
 
         tester.assertRunning(productionUsWest1, app.id());
+    }
+
+    @Test
+    public void abortsInternalJobsOnNewApplicationChange() {
+        InternalDeploymentTester iTester = new InternalDeploymentTester();
+        tester = iTester.tester();
+
+        Application app = iTester.app();
+        ApplicationPackage applicationPackage = InternalDeploymentTester.applicationPackage;
+
+        tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
+        tester.deployAndNotify(app, true, systemTest);
+        tester.deployAndNotify(app, true, stagingTest);
+        tester.assertRunning(productionUsCentral1, app.id());
+
+        // Jobs run externally are not affected.
+        tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        tester.assertRunning(productionUsCentral1, app.id());
+
+        tester.applications().deploymentTrigger().cancelChange(app.id(), false);
+        tester.deployAndNotify(app, false, systemTest);
+        tester.deployAndNotify(app, false, stagingTest);
+        tester.deployAndNotify(app, false, productionUsCentral1);
+        assertEquals(Change.empty(), tester.application(app.id()).change());
+        tester.assertNotRunning(systemTest, app.id());
+        tester.assertNotRunning(stagingTest, app.id());
+        tester.assertNotRunning(productionUsCentral1, app.id());
+
+        RunId id = iTester.newRun(productionUsCentral1);
+        assertTrue(iTester.jobs().active(id).isPresent());
+
+        // Jobs run internally are aborted.
+        iTester.newSubmission();
+        assertTrue(iTester.jobs().active(id).isPresent());
+        iTester.runner().run();
+        assertFalse(iTester.jobs().active(id).isPresent());
+
+        tester.readyJobTrigger().maintain();
+        assertEquals(EnumSet.of(systemTest, stagingTest), iTester.jobs().active().stream()
+                                                                 .map(run -> run.id().type())
+                                                                 .collect(Collectors.toCollection(() -> EnumSet.noneOf(JobType.class))));
+
+        iTester.runJob(JobType.systemTest);
+        iTester.runJob(JobType.stagingTest);
+        tester.readyJobTrigger().maintain();
+        iTester.runJob(JobType.productionUsCentral1);
+        tester.readyJobTrigger().maintain();
+        iTester.runJob(JobType.productionUsWest1);
+        iTester.runJob(JobType.productionUsEast3);
+        assertEquals(Change.empty(), iTester.app().change());
+
+        tester.upgradeSystem(new Version("8.9"));
+        iTester.runJob(JobType.systemTest);
+        iTester.runJob(JobType.stagingTest);
+        tester.readyJobTrigger().maintain();
+
+        // Jobs run internally are not aborted when the new submission is delayed.
+        iTester.newSubmission();
+        iTester.runner().run();
+        assertEquals(EnumSet.of(productionUsCentral1), iTester.jobs().active().stream()
+                                                              .map(run -> run.id().type())
+                                                              .collect(Collectors.toCollection(() -> EnumSet.noneOf(JobType.class))));
     }
 
     @Test
@@ -798,6 +864,7 @@ public class DeploymentTriggerTest {
         assertTrue("All jobs consumed", tester.buildService().jobs().isEmpty());
         assertFalse("No failures", tester.application(app.id()).deploymentJobs().hasFailures());
     }
+
     @Test
     public void testRetriesJobsFailingForCurrentChange() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()

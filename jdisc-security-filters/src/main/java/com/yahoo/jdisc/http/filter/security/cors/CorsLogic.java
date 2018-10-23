@@ -2,12 +2,9 @@
 package com.yahoo.jdisc.http.filter.security.cors;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.jdisc.HeaderFields;
-import com.yahoo.jdisc.Response;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -24,7 +21,7 @@ class CorsLogic {
 
     static final Map<String, String> ACCESS_CONTROL_HEADERS = ImmutableMap.of(
             "Access-Control-Max-Age", CORS_PREFLIGHT_REQUEST_CACHE_TTL,
-            "Access-Control-Allow-Headers", "Origin,Content-Type,Accept,Yahoo-Principal-Auth",
+            "Access-Control-Allow-Headers", "Origin,Content-Type,Accept,Yahoo-Principal-Auth,Okta-Identity-Token,Okta-Access-Token,Okta-Refresh-Token",
             "Access-Control-Allow-Methods", "OPTIONS,GET,PUT,DELETE,POST",
             "Access-Control-Allow-Credentials", "true"
     );

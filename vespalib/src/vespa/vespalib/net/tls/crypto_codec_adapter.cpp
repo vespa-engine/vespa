@@ -174,7 +174,7 @@ ssize_t
 CryptoCodecAdapter::half_close()
 {
     auto flush_res = flush_all();
-    if ((flush_res < 0)) {
+    if (flush_res < 0) {
         return flush_res;
     }
     if (!_encoded_tls_close) {
@@ -188,7 +188,7 @@ CryptoCodecAdapter::half_close()
         _encoded_tls_close = true;
     }
     flush_res = flush_all();
-    if ((flush_res < 0)) {
+    if (flush_res < 0) {
         return flush_res;
     }
     return _socket.half_close();

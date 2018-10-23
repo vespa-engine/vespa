@@ -76,10 +76,6 @@ public class HttpProviderSpec {
     public final Integer ycaRetryWait;
     public final Node ycaProxy;
 
-    //TODO:remove this
-    public final double cacheWeight;
-
-
     public static BundleInstantiationSpecification toBundleInstantiationSpecification(Type type) {
         return BundleInstantiationSpecification.getInternalSearcherSpecificationFromStrings(type.className, null);
     }
@@ -103,9 +99,6 @@ public class HttpProviderSpec {
                             Integer cacheSizeMB,
                             ConnectionParameters connectionParameters) {
 
-        final double defaultCacheWeight = 1.0d;
-        this.cacheWeight = (cacheWeight != null) ? cacheWeight : defaultCacheWeight;
-
         this.path = path;
         this.nodes = unmodifiable(nodes);
         this.ycaApplicationId = ycaApplicationId;
@@ -119,7 +112,7 @@ public class HttpProviderSpec {
 
     private List<HttpProviderSpec.Node> unmodifiable(List<HttpProviderSpec.Node> nodes) {
         return nodes == null ?
-                Collections.<HttpProviderSpec.Node>emptyList() :
+                Collections.emptyList() :
                 Collections.unmodifiableList(new ArrayList<>(nodes));
     }
 }

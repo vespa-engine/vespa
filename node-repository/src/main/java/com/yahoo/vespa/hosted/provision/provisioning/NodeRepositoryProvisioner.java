@@ -13,6 +13,7 @@ import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
@@ -73,8 +74,9 @@ public class NodeRepositoryProvisioner implements Provisioner {
             throw new IllegalArgumentException("Requested " + requestedCapacity.nodeCount() + " nodes in " + wantedGroups + " groups, " +
                                                "which doesn't allow the nodes to be divided evenly into groups");
 
-        log.log(LogLevel.DEBUG, () -> "Received deploy prepare request for " + requestedCapacity + " in " +
-                                      wantedGroups + " groups for application " + application + ", cluster " + cluster);
+        log.log(zone.system() == SystemName.cd ? Level.INFO : LogLevel.DEBUG,
+                () -> "Received deploy prepare request for " + requestedCapacity + " in " +
+                        wantedGroups + " groups for application " + application + ", cluster " + cluster);
 
         int effectiveGroups;
         NodeSpec requestedNodes;

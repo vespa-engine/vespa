@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import com.yahoo.search.config.IndexInfoConfig;
@@ -19,6 +20,8 @@ import com.yahoo.container.QrSearchersConfig;
  * @author bratseth
  */
 public final class IndexModel {
+
+    private static final Logger log = Logger.getLogger(IndexModel.class.getName());
 
     // Copied from MasterClustersInfoUpdater. It's a temporary workaround for IndexFacts
     private Map<String, List<String>> masterClusters;
@@ -112,8 +115,15 @@ public final class IndexModel {
                 union.getOrCreateIndex(index.getName());
                 for (String command : index.allCommands())
                     union.addCommand(index.getName(), command);
-                for (String alias : index.aliases())
-                    union.addAlias(alias, index.getName());
+                for (String alias : index.aliases()) {
+                    try {
+                        union.addAlias(alias, index.getName());
+                    }
+                    catch (IllegalArgumentException e) {
+                        log.fine("Conflicting alias '" + alias  + " of " + index + " in " + sd +
+                                 " will not take effect for queries which does not specify that search definition");
+                    }
+                }
             }
 
         }

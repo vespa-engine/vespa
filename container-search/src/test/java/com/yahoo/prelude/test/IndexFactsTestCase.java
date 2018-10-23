@@ -244,30 +244,6 @@ public class IndexFactsTestCase {
         assertTrue(session.getIndex("e").isExact());
     }
 
-    @Test
-    public void testOverlappingAliases() {
-        IndexInfoConfig cfg = new IndexInfoConfig(new IndexInfoConfig.Builder()
-                .indexinfo(
-                        new Indexinfo.Builder()
-                                .name("music2")
-                                .command(
-                                        new Command.Builder().indexname(
-                                                "btitle").command("index"))
-                                .alias(new Alias.Builder().alias("title")
-                                        .indexname("btitle"))).indexinfo(
-                        new Indexinfo.Builder().name("music").command(
-                                new Command.Builder().indexname("title")
-                                        .command("index"))));
-        try {
-            new IndexModel(cfg, (QrSearchersConfig) null);
-            fail("Excepted exception"); // (This is validated at deploy time)
-        }
-        catch (IllegalArgumentException e) {
-            assertEquals("Tried adding the alias 'title' for the index name 'btitle' when the name 'title' already maps to 'title'",
-                         e.getMessage());
-        }
-    }
-
     private Query newQuery(String queryString, IndexFacts indexFacts) {
         Query query = new Query(queryString);
         query.getModel().setExecution(new Execution(new Execution.Context(null, indexFacts, null, null, null)));
@@ -328,6 +304,22 @@ public class IndexFactsTestCase {
         assertTrue(session2.getIndex("url").isUriIndex());
         assertEquals("url:\"https foo bar\"", query1.getModel().getQueryTree().toString());
         assertEquals("url:\"https foo bar\"", query2.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    public void testConflictingAliases() {
+        SearchDefinition first = new SearchDefinition("first");
+        Index field1 = new Index("field1");
+        first.addIndex(field1);
+
+        SearchDefinition second = new SearchDefinition("second");
+        Index field2 = new Index("field2");
+        field2.addAlias("field1");
+        second.addIndex(field2);
+
+        // Alias to field1 conflics with field1 in the "union" search definition.
+        // Should not produce an exception (but a log message):
+        new IndexFacts(new IndexModel(Collections.emptyMap(), ImmutableList.of(first, second)));
     }
     
 }

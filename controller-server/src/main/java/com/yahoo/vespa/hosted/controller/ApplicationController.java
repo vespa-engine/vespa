@@ -323,7 +323,7 @@ public class ApplicationController {
                         ? triggered.sourceApplication().orElse(triggered.application())
                         : triggered.application();
 
-                if (application.get().deploymentJobs().builtInternally()) {
+                if (application.get().deploymentJobs().deployedInternally()) {
                     applicationPackage = new ApplicationPackage(applicationStore.getApplicationPackage(application.get().id(), applicationVersion.id()));
                 } else {
                     applicationPackage = new ApplicationPackage(artifactRepository.getApplicationPackage(application.get().id(), applicationVersion.id()));
@@ -332,7 +332,7 @@ public class ApplicationController {
             }
 
             // Update application with information from application package
-            if ( ! preferOldestVersion && ! application.get().deploymentJobs().builtInternally())
+            if ( ! preferOldestVersion && ! application.get().deploymentJobs().deployedInternally())
                 application = storeWithUpdatedConfig(application, applicationPackage);
 
             // Assign global rotation

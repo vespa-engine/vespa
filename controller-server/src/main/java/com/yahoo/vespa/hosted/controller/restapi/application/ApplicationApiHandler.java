@@ -212,6 +212,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.abortJobResponse(controller.jobController(), appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deactivate(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override"))
             return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true, request);
@@ -396,6 +397,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .steps(application.deploymentSpec())
                 .sortedJobs(application.deploymentJobs().jobStatus().values());
 
+        object.setBool("deployedInternally", application.deploymentJobs().deployedInternally());
         Cursor deploymentsArray = object.setArray("deploymentJobs");
         for (JobStatus job : jobStatus) {
             Cursor jobObject = deploymentsArray.addObject();
@@ -1246,6 +1248,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
         SourceRevision sourceRevision = toSourceRevision(submitOptions).orElseThrow(() ->
                 new IllegalArgumentException("Must specify 'repository', 'branch', and 'commit'"));
+        long projectId = Math.max(1, submitOptions.field("projectId").asLong());
 
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
         if ( ! applicationPackage.deploymentSpec().athenzDomain().isPresent())
@@ -1253,9 +1256,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         verifyApplicationIdentityConfiguration(tenant, Optional.of(applicationPackage));
 
         return JobControllerApiHandlerHelper.submitResponse(controller.jobController(), tenant, application,
-                sourceRevision,
-                applicationPackage.zippedContent(),
-                dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
+                                                            sourceRevision,
+                                                            projectId,
+                                                            applicationPackage.zippedContent(),
+                                                            dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
     }
 
 }

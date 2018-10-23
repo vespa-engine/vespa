@@ -27,11 +27,6 @@ public interface ConfigServer {
         PrepareResponse prepareResponse();
     }
 
-    // TODO: Deprecated, remove when implementations have been removed
-    default PreparedApplication prepare(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames, Set<String> rotationNames, byte[] content) {
-        return deploy(deployment, deployOptions, rotationCnames, rotationNames, content);
-    }
-
     PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames, Set<String> rotationNames, byte[] content);
 
     void restart(DeploymentId deployment, Optional<Hostname> hostname) throws NoInstanceException;

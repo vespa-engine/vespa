@@ -133,7 +133,7 @@ public class JobController {
     /** Returns a list of all application which have registered. */
     public List<ApplicationId> applications() {
         return copyOf(controller.applications().asList().stream()
-                                .filter(application -> application.deploymentJobs().builtInternally())
+                                .filter(application -> application.deploymentJobs().deployedInternally())
                                 .map(Application::id)
                                 .iterator());
     }
@@ -212,11 +212,11 @@ public class JobController {
     /**
      * Accepts and stores a new application package and test jar pair under a generated application version key.
      */
-    public ApplicationVersion submit(ApplicationId id, SourceRevision revision,
+    public ApplicationVersion submit(ApplicationId id, SourceRevision revision, long projectId,
                                      byte[] packageBytes, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
-            if ( ! application.get().deploymentJobs().builtInternally()) {
+            if ( ! application.get().deploymentJobs().deployedInternally()) {
                 // Copy all current packages to the new application store
                 application.get().deployments().values().stream()
                            .map(Deployment::applicationVersion)
@@ -239,7 +239,7 @@ public class JobController {
 
             controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(packageBytes));
 
-            notifyOfNewSubmission(id, revision, run);
+            notifyOfNewSubmission(id, projectId, revision, run);
         });
         return version.get();
     }
@@ -247,7 +247,7 @@ public class JobController {
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions) {
         controller.applications().lockIfPresent(id, application -> {
-            if ( ! application.get().deploymentJobs().builtInternally())
+            if ( ! application.get().deploymentJobs().deployedInternally())
                 throw new IllegalArgumentException(id + " is not built here!");
 
             locked(id, type, __ -> {
@@ -330,10 +330,10 @@ public class JobController {
     }
 
     // TODO jvenstad: Find a more appropriate way of doing this when this is the only build service.
-    private void notifyOfNewSubmission(ApplicationId id, SourceRevision revision, long number) {
+    private void notifyOfNewSubmission(ApplicationId id, long projectId, SourceRevision revision, long number) {
         DeploymentJobs.JobReport report = new DeploymentJobs.JobReport(id,
                                                                        JobType.component,
-                                                                       1,
+                                                                       projectId,
                                                                        number,
                                                                        Optional.of(revision),
                                                                        Optional.empty());
