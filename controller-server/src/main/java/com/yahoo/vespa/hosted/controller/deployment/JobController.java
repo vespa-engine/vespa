@@ -212,7 +212,7 @@ public class JobController {
     /**
      * Accepts and stores a new application package and test jar pair under a generated application version key.
      */
-    public ApplicationVersion submit(ApplicationId id, SourceRevision revision,
+    public ApplicationVersion submit(ApplicationId id, SourceRevision revision, long projectId,
                                      byte[] packageBytes, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
@@ -239,7 +239,7 @@ public class JobController {
 
             controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(packageBytes));
 
-            notifyOfNewSubmission(id, revision, run);
+            notifyOfNewSubmission(id, projectId, revision, run);
         });
         return version.get();
     }
@@ -330,10 +330,10 @@ public class JobController {
     }
 
     // TODO jvenstad: Find a more appropriate way of doing this when this is the only build service.
-    private void notifyOfNewSubmission(ApplicationId id, SourceRevision revision, long number) {
+    private void notifyOfNewSubmission(ApplicationId id, long projectId, SourceRevision revision, long number) {
         DeploymentJobs.JobReport report = new DeploymentJobs.JobReport(id,
                                                                        JobType.component,
-                                                                       1,
+                                                                       projectId,
                                                                        number,
                                                                        Optional.of(revision),
                                                                        Optional.empty());
