@@ -106,9 +106,14 @@ public class DeploymentTrigger {
                 triggering = JobRun.triggering(application.get().oldestDeployedPlatform().orElse(controller.systemVersion()), applicationVersion,
                                                Optional.empty(), Optional.empty(), "Application commit", clock.instant());
                 if (report.success()) {
-                    if (acceptNewApplicationVersion(application.get()))
+                    if (acceptNewApplicationVersion(application.get())) {
                         application = application.withChange(application.get().change().with(applicationVersion))
                                                  .withOutstandingChange(Change.empty());
+                        if (application.get().deploymentJobs().deployedInternally())
+                            for (Run run : jobs.active())
+                                if (run.id().application().equals(report.applicationId()))
+                                    jobs.abort(run.id());
+                    }
                     else
                         application = application.withOutstandingChange(Change.of(applicationVersion));
                 }
