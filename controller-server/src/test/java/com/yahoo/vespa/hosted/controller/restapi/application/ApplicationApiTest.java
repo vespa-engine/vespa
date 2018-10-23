@@ -419,6 +419,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(createApplicationSubmissionData(packageWithService)),
                               "{\"version\":\"1.0.43-d00d\"}");
 
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job/production-us-west-1", DELETE)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Nothing to abort.\"}");
+
         // PUT (create) the authenticated user
         byte[] data = new byte[0];
         tester.assertResponse(request("/application/v4/user?user=new_user&domain=by", PUT)
