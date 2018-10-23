@@ -27,11 +27,13 @@ public interface ConfigServer {
         PrepareResponse prepareResponse();
     }
 
-    PreparedApplication deploy(DeploymentId applicationInstance, DeployOptions deployOptions, Set<String> rotationCnames, Set<String> rotationNames, byte[] content);
+    PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationCnames, Set<String> rotationNames, byte[] content);
 
-    void restart(DeploymentId applicationInstance, Optional<Hostname> hostname) throws NoInstanceException;
+    void restart(DeploymentId deployment, Optional<Hostname> hostname) throws NoInstanceException;
 
-    void deactivate(DeploymentId applicationInstance) throws NoInstanceException;
+    void deactivate(DeploymentId deployment) throws NoInstanceException;
+
+    boolean isSuspended(DeploymentId deployment) throws NoInstanceException;
 
     ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName, String environment, String region);
 

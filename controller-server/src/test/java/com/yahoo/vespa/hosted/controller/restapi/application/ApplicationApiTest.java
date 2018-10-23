@@ -361,6 +361,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "{\"error-code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"No node with the hostname host1 is known.\"}", 500);
 
+        // GET suspended
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/suspended", GET)
+                                      .userIdentity(USER_ID),
+                              new File("suspended.json"));
+
         // GET services
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/service", GET)
                                       .userIdentity(USER_ID),

@@ -23,7 +23,7 @@ public class Deployment {
     private final ApplicationVersion applicationVersion;
     private final Version version;
     private final Instant deployTime;
-    private final Map<Id, ClusterUtilization> clusterUtils;
+    private final Map<Id, ClusterUtilization> clusterUtilization;
     private final Map<Id, ClusterInfo> clusterInfo;
     private final DeploymentMetrics metrics;
     private final DeploymentActivity activity;
@@ -34,14 +34,14 @@ public class Deployment {
     }
 
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime,
-                      Map<Id, ClusterUtilization> clusterUtils, Map<Id, ClusterInfo> clusterInfo,
+                      Map<Id, ClusterUtilization> clusterUtilization, Map<Id, ClusterInfo> clusterInfo,
                       DeploymentMetrics metrics,
                       DeploymentActivity activity) {
         this.zone = Objects.requireNonNull(zone, "zone cannot be null");
         this.applicationVersion = Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
         this.version = Objects.requireNonNull(version, "version cannot be null");
         this.deployTime = Objects.requireNonNull(deployTime, "deployTime cannot be null");
-        this.clusterUtils = Objects.requireNonNull(clusterUtils, "clusterUtils cannot be null");
+        this.clusterUtilization = Objects.requireNonNull(clusterUtilization, "clusterUtilization cannot be null");
         this.clusterInfo = Objects.requireNonNull(clusterInfo, "clusterInfo cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "deploymentMetrics cannot be null");
         this.activity = Objects.requireNonNull(activity, "activity cannot be null");
@@ -74,11 +74,11 @@ public class Deployment {
 
     /** Returns utilization of the clusters allocated to this */
     public Map<Id, ClusterUtilization> clusterUtils() {
-        return clusterUtils;
+        return clusterUtilization;
     }
 
     public Deployment recordActivityAt(Instant instant) {
-        return new Deployment(zone, applicationVersion, version, deployTime, clusterUtils, clusterInfo, metrics,
+        return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
                               activity.recordAt(instant, metrics));
     }
 
@@ -88,12 +88,12 @@ public class Deployment {
     }
 
     public Deployment withClusterInfo(Map<Id, ClusterInfo> newClusterInfo) {
-        return new Deployment(zone, applicationVersion, version, deployTime, clusterUtils, newClusterInfo, metrics,
+        return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, newClusterInfo, metrics,
                               activity);
     }
 
     public Deployment withMetrics(DeploymentMetrics metrics) {
-        return new Deployment(zone, applicationVersion, version, deployTime, clusterUtils, clusterInfo, metrics,
+        return new Deployment(zone, applicationVersion, version, deployTime, clusterUtilization, clusterInfo, metrics,
                               activity);
     }
 
@@ -105,12 +105,12 @@ public class Deployment {
     public DeploymentCost calculateCost() {
 
         Map<String, ClusterCost> costClusters = new HashMap<>();
-        for (Id clusterId : clusterUtils.keySet()) {
+        for (Id clusterId : clusterUtilization.keySet()) {
 
             // Only include cluster cost if we have both cluster utilization and cluster info
             if (clusterInfo.containsKey(clusterId)) {
                 costClusters.put(clusterId.value(), new ClusterCost(clusterInfo.get(clusterId),
-                        clusterUtils.get(clusterId)));
+                                                                    clusterUtilization.get(clusterId)));
             }
         }
 

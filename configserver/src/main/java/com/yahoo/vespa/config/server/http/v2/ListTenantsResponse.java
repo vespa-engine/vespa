@@ -11,7 +11,6 @@ import com.yahoo.vespa.config.server.http.SessionResponse;
  * Tenant list response
  * 
  * @author vegardh
- *
  */
 public class ListTenantsResponse extends SessionResponse {
 

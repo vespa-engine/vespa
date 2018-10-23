@@ -23,9 +23,9 @@ import java.util.List;
  * Handler for listing currently active applications for a tenant.
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class ListApplicationsHandler extends HttpHandler {
+
     private final TenantRepository tenantRepository;
     private final Zone zone;
 
@@ -40,7 +40,7 @@ public class ListApplicationsHandler extends HttpHandler {
     @Override
     public HttpResponse handleGET(HttpRequest request) {
         TenantName tenantName = Utils.getTenantNameFromApplicationsRequest(request);
-        final String urlBase = Utils.getUrlBase(request, "/application/v2/tenant/" + tenantName + "/application/");
+        String urlBase = Utils.getUrlBase(request, "/application/v2/tenant/" + tenantName + "/application/");
 
         List<ApplicationId> applicationIds = listApplicationIds(tenantName);
         Collection<String> applicationUrls = Collections2.transform(applicationIds, new Function<ApplicationId, String>() {
@@ -67,4 +67,5 @@ public class ListApplicationsHandler extends HttpHandler {
         sb.append("/instance/").append(id.instance().value());
         return sb.toString();
     }
+
 }

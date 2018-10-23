@@ -29,6 +29,7 @@ import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
@@ -122,7 +123,11 @@ public class DeployTester {
         catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
-        applicationRepository = new ApplicationRepository(tenantRepository, new ProvisionerAdapter(provisioner), clock, configserverConfig);
+        applicationRepository = new ApplicationRepository(tenantRepository,
+                                                          new ProvisionerAdapter(provisioner),
+                                                          new OrchestratorMock(),
+                                                          clock,
+                                                          configserverConfig);
     }
 
     public Tenant tenant() {

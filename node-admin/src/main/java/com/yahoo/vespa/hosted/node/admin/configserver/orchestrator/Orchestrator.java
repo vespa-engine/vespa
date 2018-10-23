@@ -9,23 +9,28 @@ import java.util.List;
  * @author bakksjo
  */
 public interface Orchestrator {
+
     /**
-     * Invokes orchestrator suspend of a host.
-     * @throws OrchestratorException if suspend was denied.
+     * Suspends a host.
+     *
+     * @throws OrchestratorException if suspend was denied
      * @throws OrchestratorNotFoundException if host is unknown to the orchestrator
      */
     void suspend(String hostName);
 
     /**
-     * Invokes orchestrator resume of a host.
+     * Resumes a host.
+     *
      * @throws OrchestratorException if resume was denied
      * @throws OrchestratorNotFoundException if host is unknown to the orchestrator
      */
     void resume(String hostName);
 
     /**
-     * Invokes orchestrator suspend hosts.
-     * @throws OrchestratorException if batch suspend was denied.
+     * Suspends a list of nodes on a parent.
+     *
+     * @throws OrchestratorException if batch suspend was denied
      */
     void suspend(String parentHostName, List<String> hostNames);
+
 }

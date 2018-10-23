@@ -610,6 +610,19 @@ public class ApplicationController {
         }
     }
 
+    /**
+     * Asks the config server whether this deployment is currently <i>suspended</i>:
+     * Not in a state where it should receive traffic.
+     */
+    public boolean isSuspended(DeploymentId deploymentId) {
+        try {
+            return configServer.isSuspended(deploymentId);
+        }
+        catch (NoInstanceException e) {
+            throw new IllegalArgumentException("Could not check suspension of " + deploymentId + ": No such deployment");
+        }
+    }
+
     /** Deactivate application in the given zone */
     public void deactivate(ApplicationId application, ZoneId zone) {
         lockOrThrow(application, lockedApplication -> store(deactivate(lockedApplication, zone)));

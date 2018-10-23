@@ -16,6 +16,7 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.HttpProxy;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.StaticResponse;
@@ -72,7 +73,9 @@ public class ApplicationHandlerTest {
         tenantRepository.addTenant(TenantBuilder.create(componentRegistry, foobar));
         provisioner = new SessionHandlerTest.MockProvisioner();
         applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          provisioner, Clock.systemUTC());
+                                                          provisioner,
+                                                          new OrchestratorMock(),
+                                                          Clock.systemUTC());
         listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
                                                               tenantRepository,
                                                               Zone.defaultZone());
@@ -150,7 +153,8 @@ public class ApplicationHandlerTest {
                                                                                 HostProvisionerProvider.withProvisioner(provisioner),
                                                                                 new ConfigConvergenceChecker(stateApiFactory),
                                                                                 mockHttpProxy,
-                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()));
+                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()),
+                                                                                new OrchestratorMock());
         ApplicationHandler mockHandler = createApplicationHandler(applicationRepository);
         when(mockHttpProxy.get(any(), eq(host), eq("container-clustercontroller"), eq("clustercontroller-status/v1/clusterName1")))
                 .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));

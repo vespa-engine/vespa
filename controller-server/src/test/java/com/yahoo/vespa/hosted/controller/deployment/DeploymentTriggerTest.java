@@ -11,6 +11,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -301,6 +302,49 @@ public class DeploymentTriggerTest {
         assertEquals(1, tester.buildService().jobs().size());
         tester.deployAndNotify(application, applicationPackage, true, JobType.productionEuWest1);
         assertTrue("All jobs consumed", tester.buildService().jobs().isEmpty());
+    }
+
+    @Test
+    public void testNoOtherChangesDuringSuspension() {
+        // Application is deployed in 3 regions:
+        Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                                                        .environment(Environment.prod)
+                                                        .region("us-central-1")
+                                                        .parallel("us-west-1", "us-east-3")
+                                                        .build();
+        tester.jobCompletion(component)
+              .application(application)
+              .uploadArtifact(applicationPackage)
+              .submit();
+        tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
+        tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
+        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
+        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsWest1);
+        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsEast3);
+
+        // The first production zone is suspended:
+        tester.configServer().setSuspended(new DeploymentId(application.id(), JobType.productionUsCentral1.zone(tester.controller().system())), true);
+
+        // A new change needs to be pushed out, but should not go beyond the suspended zone:
+        tester.jobCompletion(component)
+              .application(application)
+              .nextBuildNumber()
+              .sourceRevision(new SourceRevision("repository1", "master", "cafed00d"))
+              .uploadArtifact(applicationPackage)
+              .submit();
+        tester.deployAndNotify(application, applicationPackage, true, JobType.systemTest);
+        tester.deployAndNotify(application, applicationPackage, true, JobType.stagingTest);
+        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsCentral1);
+        tester.triggerUntilQuiescence();
+        tester.assertNotRunning(JobType.productionUsEast3, application.id());
+        tester.assertNotRunning(JobType.productionUsWest1, application.id());
+
+        // The zone is unsuspended so jobs start:
+        tester.configServer().setSuspended(new DeploymentId(application.id(), JobType.productionUsCentral1.zone(tester.controller().system())), false);
+        tester.triggerUntilQuiescence();
+        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsWest1);
+        tester.deployAndNotify(application, applicationPackage, true, JobType.productionUsEast3);
     }
 
     @Test
