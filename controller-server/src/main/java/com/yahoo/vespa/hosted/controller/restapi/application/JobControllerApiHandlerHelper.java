@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
+import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.net.URI;
@@ -404,6 +405,20 @@ class JobControllerApiHandlerHelper {
         Slime slime = new Slime();
         Cursor responseObject = slime.setObject();
         responseObject.setString("version", version.id());
+        return new SlimeJsonResponse(slime);
+    }
+
+    /** Aborts any job of the given type. */
+    static HttpResponse abortJobResponse(JobController jobs, ApplicationId id, JobType type) {
+        Slime slime = new Slime();
+        Cursor responseObject = slime.setObject();
+        Optional<Run> run = jobs.last(id, type).flatMap(last -> jobs.active(last.id()));
+        if (run.isPresent()) {
+            jobs.abort(run.get().id());
+            responseObject.setString("message", "Aborting " + run);
+        }
+        else
+            responseObject.setString("message", "Nothing to abort.");
         return new SlimeJsonResponse(slime);
     }
 
