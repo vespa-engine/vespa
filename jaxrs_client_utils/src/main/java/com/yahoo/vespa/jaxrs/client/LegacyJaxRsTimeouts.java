@@ -15,10 +15,6 @@ public class LegacyJaxRsTimeouts implements JaxRsTimeouts {
     private static final Duration READ_TIMEOUT = Duration.ofSeconds(30);
 
     @Override
-    public void prepareForImmediateJaxRsCall() {
-    }
-
-    @Override
     public Duration getConnectTimeout() {
         return CONNECT_TIMEOUT;
     }

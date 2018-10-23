@@ -7,18 +7,16 @@ import java.time.Duration;
  */
 public interface JaxRsTimeouts {
     /**
-     * Prepare for a single imminent JAX-RS call.
+     * The connect timeout.
      *
-     * The instance may typically set and validate the connect- and read- timeouts to be called soon,
-     * or throw a timeout exception if there's insufficient time for a remote call.
-     *
-     * @throws RuntimeException on timeout
+     * Throws com.google.common.util.concurrent.UncheckedTimeoutException on timeout.
      */
-    void prepareForImmediateJaxRsCall();
-
-    /** The connect timeout. */
     Duration getConnectTimeout();
 
-    /** The read timeout. */
+    /**
+     * The read timeout.
+     *
+     * Throws com.google.common.util.concurrent.UncheckedTimeoutException on timeout.
+     */
     Duration getReadTimeout();
 }

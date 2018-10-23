@@ -23,10 +23,9 @@ public class ClusterControllerClientTimeoutsTest {
     private static final Duration MINIMUM_TIME_LEFT = IN_PROCESS_OVERHEAD_PER_CALL
             .plus(CONNECT_TIMEOUT)
             .plus(NETWORK_OVERHEAD_PER_CALL)
-            .plus(MIN_SERVER_TIMEOUT)
-            .plus(Duration.ofMillis(1));
+            .plus(MIN_SERVER_TIMEOUT);
     static {
-        assertEquals(Duration.ofMillis(161), MINIMUM_TIME_LEFT);
+        assertEquals(Duration.ofMillis(160), MINIMUM_TIME_LEFT);
     }
 
     // The minimum time left (= original time) which is required to allow any requests to the CC.
@@ -34,7 +33,7 @@ public class ClusterControllerClientTimeoutsTest {
             .multipliedBy(NUM_CALLS)
             .plus(IN_PROCESS_OVERHEAD);
     static {
-        assertEquals(Duration.ofMillis(422), MINIMUM_ORIGINAL_TIMEOUT);
+        assertEquals(Duration.ofMillis(420), MINIMUM_ORIGINAL_TIMEOUT);
     }
 
     private final ManualClock clock = new ManualClock();
@@ -56,7 +55,6 @@ public class ClusterControllerClientTimeoutsTest {
 
     @Test
     public void makes2RequestsWithMaxProcessingTime() {
-        timeouts.prepareForImmediateJaxRsCall();
         assertEquals(Duration.ofMillis(50), timeouts.getConnectTimeout());
         assertEquals(Duration.ofMillis(1350), timeouts.getReadTimeout());
         assertEquals(Duration.ofMillis(1300), timeouts.getServerTimeout());
@@ -67,7 +65,6 @@ public class ClusterControllerClientTimeoutsTest {
         assertEquals(1450, maxProcessingTime.toMillis());
         clock.advance(maxProcessingTime);
 
-        timeouts.prepareForImmediateJaxRsCall();
         assertEquals(Duration.ofMillis(50), timeouts.getConnectTimeout());
         assertEquals(Duration.ofMillis(1350), timeouts.getReadTimeout());
         assertEquals(Duration.ofMillis(1300), timeouts.getServerTimeout());
@@ -75,7 +72,7 @@ public class ClusterControllerClientTimeoutsTest {
         clock.advance(maxProcessingTime);
 
         try {
-            timeouts.prepareForImmediateJaxRsCall();
+            timeouts.getServerTimeout();
             fail();
         } catch (UncheckedTimeoutException e) {
             assertEquals(
@@ -86,7 +83,6 @@ public class ClusterControllerClientTimeoutsTest {
 
     @Test
     public void makesAtLeast3RequestsWithShortProcessingTime() {
-        timeouts.prepareForImmediateJaxRsCall();
         assertEquals(Duration.ofMillis(50), timeouts.getConnectTimeout());
         assertEquals(Duration.ofMillis(1350), timeouts.getReadTimeout());
         assertEquals(Duration.ofMillis(1300), timeouts.getServerTimeout());
@@ -94,14 +90,12 @@ public class ClusterControllerClientTimeoutsTest {
         Duration shortPocessingTime = Duration.ofMillis(200);
         clock.advance(shortPocessingTime);
 
-        timeouts.prepareForImmediateJaxRsCall();
         assertEquals(Duration.ofMillis(50), timeouts.getConnectTimeout());
         assertEquals(Duration.ofMillis(1350), timeouts.getReadTimeout());
         assertEquals(Duration.ofMillis(1300), timeouts.getServerTimeout());
 
         clock.advance(shortPocessingTime);
 
-        timeouts.prepareForImmediateJaxRsCall();
         assertEquals(Duration.ofMillis(50), timeouts.getConnectTimeout());
         assertEquals(Duration.ofMillis(1350), timeouts.getReadTimeout());
         assertEquals(Duration.ofMillis(1300), timeouts.getServerTimeout());
@@ -112,7 +106,7 @@ public class ClusterControllerClientTimeoutsTest {
         clock.advance(Duration.ofSeconds(4));
 
         try {
-            timeouts.prepareForImmediateJaxRsCall();
+            timeouts.getServerTimeout();
             fail();
         } catch (UncheckedTimeoutException e) {
             assertEquals(
@@ -125,11 +119,11 @@ public class ClusterControllerClientTimeoutsTest {
     public void justTooLittleTime() {
         clock.advance(originalTimeout.minus(MINIMUM_TIME_LEFT).plus(Duration.ofMillis(1)));
         try {
-            timeouts.prepareForImmediateJaxRsCall();
+            timeouts.getServerTimeout();
             fail();
         } catch (UncheckedTimeoutException e) {
             assertEquals(
-                    "Too little time left (PT0.16S) to call content cluster 'clustername', original timeout was PT3S",
+                    "Server would be given too little time to complete: PT0.009S. Original timeout was PT3S",
                     e.getMessage());
         }
     }
@@ -137,18 +131,18 @@ public class ClusterControllerClientTimeoutsTest {
     @Test
     public void justEnoughTime() {
         clock.advance(originalTimeout.minus(MINIMUM_TIME_LEFT));
-        timeouts.prepareForImmediateJaxRsCall();
+        timeouts.getServerTimeout();
     }
 
     @Test
     public void justTooLittleInitialTime() {
         makeTimeouts(MINIMUM_ORIGINAL_TIMEOUT.minus(Duration.ofMillis(1)));
         try {
-            timeouts.prepareForImmediateJaxRsCall();
+            timeouts.getServerTimeout();
             fail();
         } catch (UncheckedTimeoutException e) {
             assertEquals(
-                    "Too little time left (PT0.421S) to call content cluster 'clustername', original timeout was PT0.421S",
+                    "Server would be given too little time to complete: PT0.0095S. Original timeout was PT0.419S",
                     e.getMessage());
         }
     }
@@ -156,6 +150,6 @@ public class ClusterControllerClientTimeoutsTest {
     @Test
     public void justEnoughInitialTime() {
         makeTimeouts(MINIMUM_ORIGINAL_TIMEOUT);
-        timeouts.prepareForImmediateJaxRsCall();
+        timeouts.getServerTimeout();
     }
 }

@@ -57,9 +57,6 @@ public class ClusterControllerClientTimeouts implements JaxRsTimeouts {
     private final TimeBudget timeBudget;
     private final Duration maxClientTimeout;
 
-    private Duration serverTimeout;
-    private Duration readTimeout;
-
     /**
      * Creates a timeouts instance.
      *
@@ -79,7 +76,12 @@ public class ClusterControllerClientTimeouts implements JaxRsTimeouts {
     }
 
     @Override
-    public void prepareForImmediateJaxRsCall() {
+    public Duration getConnectTimeout() {
+        return CONNECT_TIMEOUT;
+    }
+
+    @Override
+    public Duration getReadTimeout() {
         Duration timeLeft = timeBudget.timeLeft().get();
         if (timeLeft.toMillis() <= 0) {
             throw new UncheckedTimeoutException("Exceeded the timeout " + timeBudget.originalTimeout().get() +
@@ -90,25 +92,20 @@ public class ClusterControllerClientTimeouts implements JaxRsTimeouts {
         verifyPositive(timeLeft, maxClientTimeout);
 
         // clientTimeout = overheadPerCall + connectTimeout + readTimeout
-        readTimeout = clientTimeout.minus(IN_PROCESS_OVERHEAD_PER_CALL).minus(CONNECT_TIMEOUT);
+        Duration readTimeout = clientTimeout.minus(IN_PROCESS_OVERHEAD_PER_CALL).minus(CONNECT_TIMEOUT);
         verifyPositive(timeLeft, readTimeout);
 
-        // readTimeout = networkOverhead + serverTimeout
-        serverTimeout = readTimeout.minus(NETWORK_OVERHEAD_PER_CALL);
-        verifyLargerThan(timeLeft, serverTimeout, MIN_SERVER_TIMEOUT);
-    }
-
-    @Override
-    public Duration getConnectTimeout() {
-        return CONNECT_TIMEOUT;
-    }
-
-    @Override
-    public Duration getReadTimeout() {
         return readTimeout;
     }
 
     public Duration getServerTimeout() {
+        // readTimeout = networkOverhead + serverTimeout
+        Duration serverTimeout = getReadTimeout().minus(NETWORK_OVERHEAD_PER_CALL);
+        if (serverTimeout.toMillis() < MIN_SERVER_TIMEOUT.toMillis()) {
+            throw new UncheckedTimeoutException("Server would be given too little time to complete: " +
+                    serverTimeout + ". Original timeout was " + timeBudget.originalTimeout().get());
+        }
+
         return serverTimeout;
     }
 
@@ -116,14 +113,13 @@ public class ClusterControllerClientTimeouts implements JaxRsTimeouts {
         return a.compareTo(b) < 0 ? a : b;
     }
 
-    private void verifyLargerThan(Duration timeLeft, Duration availableDuration, Duration minExclusiveDuration) {
-        long excessMillis = availableDuration.minus(minExclusiveDuration).toMillis();
-        if (excessMillis <= 0) {
+    private void verifyLargerThan(Duration timeLeft, Duration availableDuration) {
+        if (availableDuration.toMillis() <= 0) {
             throw new UncheckedTimeoutException("Too little time left (" + timeLeft +
                     ") to call content cluster '" + clusterName +
                     "', original timeout was " + timeBudget.originalTimeout().get());
         }
     }
 
-    private void verifyPositive(Duration timeLeft, Duration duration) { verifyLargerThan(timeLeft, duration, Duration.ZERO); }
+    private void verifyPositive(Duration timeLeft, Duration duration) { verifyLargerThan(timeLeft, duration); }
 }
