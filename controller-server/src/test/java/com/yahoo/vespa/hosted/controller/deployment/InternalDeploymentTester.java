@@ -109,7 +109,7 @@ public class InternalDeploymentTester {
         ApplicationVersion applicationVersion = newSubmission();
 
         assertFalse(app().deployments().values().stream()
-                                .anyMatch(deployment -> deployment.applicationVersion().equals(applicationVersion)));
+                         .anyMatch(deployment -> deployment.applicationVersion().equals(applicationVersion)));
         assertEquals(applicationVersion, app().change().application().get());
         assertFalse(app().change().platform().isPresent());
 
@@ -128,7 +128,7 @@ public class InternalDeploymentTester {
     public void deployNewPlatform(Version version) {
         tester.upgradeSystem(version);
         assertFalse(app().deployments().values().stream()
-                                .anyMatch(deployment -> deployment.version().equals(version)));
+                         .anyMatch(deployment -> deployment.version().equals(version)));
         assertEquals(version, app().change().platform().get());
         assertFalse(app().change().application().isPresent());
 
