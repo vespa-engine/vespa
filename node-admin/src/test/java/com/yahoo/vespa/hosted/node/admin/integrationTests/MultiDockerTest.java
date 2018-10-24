@@ -3,10 +3,16 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 
 /**
  * @author freva
@@ -14,13 +20,13 @@ import org.junit.Test;
 public class MultiDockerTest {
 
     @Test
-    public void test() throws InterruptedException {
-        try (DockerTester dockerTester = new DockerTester()) {
-            addAndWaitForNode(dockerTester, "host1.test.yahoo.com", new DockerImage("image1"));
+    public void test() {
+        try (DockerTester tester = new DockerTester()) {
+            addAndWaitForNode(tester, "host1.test.yahoo.com", new DockerImage("image1"));
             NodeSpec nodeSpec2 = addAndWaitForNode(
-                    dockerTester, "host2.test.yahoo.com", new DockerImage("image2"));
+                    tester, "host2.test.yahoo.com", new DockerImage("image2"));
 
-            dockerTester.addChildNodeRepositoryNode(
+            tester.addChildNodeRepositoryNode(
                     new NodeSpec.Builder(nodeSpec2)
                             .state(Node.State.dirty)
                             .minCpuCores(1)
@@ -28,66 +34,37 @@ public class MultiDockerTest {
                             .minDiskAvailableGb(1)
                             .build());
 
-            // Wait until it is marked ready
-            while (dockerTester.nodeRepositoryMock.getOptionalNode(nodeSpec2.getHostname())
-                    .filter(node -> node.getState() != Node.State.ready).isPresent()) {
-                Thread.sleep(10);
-            }
+            tester.inOrder(tester.docker).deleteContainer(eq(new ContainerName("host2")));
+            tester.inOrder(tester.storageMaintainer).archiveNodeStorage(
+                    argThat(context -> context.containerName().equals(new ContainerName("host2"))));
+            tester.inOrder(tester.nodeRepository).setNodeState(eq(nodeSpec2.getHostname()), eq(Node.State.ready));
 
-            addAndWaitForNode(dockerTester, "host3.test.yahoo.com", new DockerImage("image1"));
-
-            dockerTester.callOrderVerifier.assertInOrder(
-                    "createContainerCommand with DockerImage { imageId=image1 }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
-                    "executeInContainer host1 as root, args: [" + DockerTester.NODE_PROGRAM + ", resume]",
-
-                    "createContainerCommand with DockerImage { imageId=image2 }, HostName: host2.test.yahoo.com, ContainerName { name=host2 }",
-                    "executeInContainer host2 as root, args: [" + DockerTester.NODE_PROGRAM + ", resume]",
-
-                    "stopContainer with ContainerName { name=host2 }",
-                    "deleteContainer with ContainerName { name=host2 }",
-
-                    "createContainerCommand with DockerImage { imageId=image1 }, HostName: host3.test.yahoo.com, ContainerName { name=host3 }",
-                    "executeInContainer host3 as root, args: [" + DockerTester.NODE_PROGRAM + ", resume]");
-
-            dockerTester.callOrderVerifier.assertInOrderWithAssertMessage(
-                    "Maintainer did not receive call to delete application storage",
-                    "deleteContainer with ContainerName { name=host2 }",
-                    "DeleteContainerStorage with ContainerName { name=host2 }");
-
-            dockerTester.callOrderVerifier.assertInOrder(
-                    "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1}",
-                    "updateNodeAttributes with HostName: host2.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image2}",
-                    "setNodeState host2.test.yahoo.com to ready",
-                    "updateNodeAttributes with HostName: host3.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image1}");
+            addAndWaitForNode(tester, "host3.test.yahoo.com", new DockerImage("image1"));
         }
     }
 
-    private NodeSpec addAndWaitForNode(DockerTester tester, String hostName, DockerImage dockerImage) throws InterruptedException {
+    private NodeSpec addAndWaitForNode(DockerTester tester, String hostName, DockerImage dockerImage) {
         NodeSpec nodeSpec = new NodeSpec.Builder()
                 .hostname(hostName)
                 .wantedDockerImage(dockerImage)
-                .wantedVespaVersion("1.2.3")
                 .state(Node.State.active)
                 .nodeType(NodeType.tenant)
                 .flavor("docker")
                 .wantedRestartGeneration(1L)
                 .currentRestartGeneration(1L)
-                .minCpuCores(1)
-                .minMainMemoryAvailableGb(1)
+                .minCpuCores(2)
+                .minMainMemoryAvailableGb(4)
                 .minDiskAvailableGb(1)
                 .build();
 
         tester.addChildNodeRepositoryNode(nodeSpec);
 
-        // Wait for node admin to be notified with node repo state and the docker container has been started
-        while (tester.nodeAdmin.getNumberOfNodeAgents() + 1 != tester.nodeRepositoryMock.getNumberOfContainerSpecs()) {
-            Thread.sleep(10);
-        }
-
         ContainerName containerName = ContainerName.fromHostname(hostName);
-        tester.callOrderVerifier.assertInOrder(
-                "createContainerCommand with " + dockerImage + ", HostName: " + hostName + ", " + containerName,
-                "executeInContainer " + containerName.asString() + " as root, args: [" + DockerTester.NODE_PROGRAM + ", resume]");
+        tester.inOrder(tester.docker).createContainerCommand(
+                eq(dockerImage), eq(ContainerResources.from(2, 4)), eq(containerName), eq(hostName));
+        tester.inOrder(tester.docker).executeInContainerAsUser(
+                eq(containerName), eq("root"), any(), eq(DockerTester.NODE_PROGRAM), eq("resume"));
+        tester.inOrder(tester.nodeRepository).updateNodeAttributes(eq(hostName), eq(new NodeAttributes().withDockerImage(dockerImage)));
 
         return nodeSpec;
     }

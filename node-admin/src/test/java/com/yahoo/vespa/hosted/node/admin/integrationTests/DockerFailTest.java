@@ -3,10 +3,16 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /**
  * @author freva
@@ -14,11 +20,15 @@ import org.junit.Test;
 public class DockerFailTest {
 
     @Test
-    public void dockerFailTest() throws Exception {
-        try (DockerTester dockerTester = new DockerTester()) {
-            NodeSpec nodeSpec = new NodeSpec.Builder()
-                    .hostname("host1.test.yahoo.com")
-                    .wantedDockerImage(new DockerImage("dockerImage"))
+    public void dockerFailTest() {
+        try (DockerTester tester = new DockerTester()) {
+            final DockerImage dockerImage = new DockerImage("dockerImage");
+            final ContainerName containerName = new ContainerName("host1");
+            final String hostname = "host1.test.yahoo.com";
+            tester.addChildNodeRepositoryNode(new NodeSpec.Builder()
+                    .hostname(hostname)
+                    .wantedDockerImage(dockerImage)
+                    .currentDockerImage(dockerImage)
                     .state(Node.State.active)
                     .nodeType(NodeType.tenant)
                     .flavor("docker")
@@ -27,24 +37,22 @@ public class DockerFailTest {
                     .minCpuCores(1)
                     .minMainMemoryAvailableGb(1)
                     .minDiskAvailableGb(1)
-                    .build();
-            dockerTester.addChildNodeRepositoryNode(nodeSpec);
+                    .build());
 
-            // Wait for node admin to be notified with node repo state and the docker container has been started
-            while (dockerTester.nodeAdmin.getNumberOfNodeAgents() == 0) {
-                Thread.sleep(10);
-            }
+            tester.inOrder(tester.docker).createContainerCommand(
+                    eq(dockerImage), eq(ContainerResources.from(1, 1)), eq(containerName), eq(hostname));
+            tester.inOrder(tester.docker).executeInContainerAsUser(
+                    eq(containerName), eq("root"), any(), eq(DockerTester.NODE_PROGRAM), eq("resume"));
 
-            dockerTester.callOrderVerifier.assertInOrder(1200,
-                    "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
-                    "executeInContainer host1 as root, args: [" + DockerTester.NODE_PROGRAM + ", resume]");
+            tester.docker.deleteContainer(new ContainerName("host1"));
 
-            dockerTester.dockerMock.deleteContainer(new ContainerName("host1"));
+            tester.inOrder(tester.docker).deleteContainer(eq(containerName));
+            tester.inOrder(tester.docker).createContainerCommand(
+                    eq(dockerImage), eq(ContainerResources.from(1, 1)), eq(containerName), eq(hostname));
+            tester.inOrder(tester.docker).executeInContainerAsUser(
+                    eq(containerName), eq("root"), any(), eq(DockerTester.NODE_PROGRAM), eq("resume"));
 
-            dockerTester.callOrderVerifier.assertInOrder(
-                    "deleteContainer with ContainerName { name=host1 }",
-                    "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
-                    "executeInContainer host1 as root, args: [" + DockerTester.NODE_PROGRAM + ", resume]");
+            verify(tester.nodeRepository, never()).updateNodeAttributes(any(), any());
         }
     }
 }
