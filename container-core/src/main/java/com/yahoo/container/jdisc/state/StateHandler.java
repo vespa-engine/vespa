@@ -54,11 +54,15 @@ public class StateHandler extends AbstractRequestHandler {
         this.monitor = monitor;
         this.timer = timer;
         this.config = buildConfigOutput(config);
+        snapshotPreprocessor = getSnapshotPreprocessor(preprocessors, presentation);
+    }
+
+    static SnapshotProvider getSnapshotPreprocessor(ComponentRegistry<SnapshotProvider> preprocessors, MetricsPresentationConfig presentation) {
         List<SnapshotProvider> allPreprocessors = preprocessors.allComponents();
         if (presentation.slidingwindow() && allPreprocessors.size() > 0) {
-            snapshotPreprocessor = allPreprocessors.get(0);
+            return allPreprocessors.get(0);
         } else {
-            snapshotPreprocessor = null;
+            return null;
         }
     }
 
@@ -298,7 +302,7 @@ public class StateHandler extends AbstractRequestHandler {
     }
 
     /** Produces a flat list of metric entries from a snapshot (which organizes metrics by dimensions) */
-    private static List<Tuple> flattenAllMetrics(MetricSnapshot snapshot) {
+    static List<Tuple> flattenAllMetrics(MetricSnapshot snapshot) {
         List<Tuple> metrics = new ArrayList<>();
         for (Map.Entry<MetricDimensions, MetricSet> snapshotEntry : snapshot) {
             for (Map.Entry<String, MetricValue> metricSetEntry : snapshotEntry.getValue()) {
@@ -308,7 +312,7 @@ public class StateHandler extends AbstractRequestHandler {
         return metrics;
     }
 
-    private static class Tuple {
+    static class Tuple {
 
         final MetricDimensions dim;
         final String key;
