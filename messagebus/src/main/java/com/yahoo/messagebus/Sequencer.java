@@ -19,7 +19,7 @@ public class Sequencer implements MessageHandler, ReplyHandler {
 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final MessageHandler sender;
-    private final Map<Long, Queue<Message>> seqMap = new HashMap<Long, Queue<Message>>();
+    private final Map<Long, Queue<Message>> seqMap = new HashMap<>();
 
     /**
      * Constructs a new sequencer on top of the given async sender.
