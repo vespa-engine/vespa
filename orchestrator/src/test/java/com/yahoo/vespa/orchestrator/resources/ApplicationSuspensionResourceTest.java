@@ -17,31 +17,31 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.URI;
-import java.nio.file.Paths;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
 /**
- * Tests the implementation of the orchestrators ApplicationAPI.
+ * Tests the implementation of the orchestrator Application API.
  *
  * @author smorgrav
  */
 public class ApplicationSuspensionResourceTest {
 
-    static final String BASE_PATH = "/orchestrator/v1/suspensions/applications";
-    static final String RESOURCE_1 = "mediasearch:imagesearch:default";
-    static final String RESOURCE_2 = "test-tenant-id:application:instance";
-    static final String INVALID_RESOURCE_NAME = "something_without_colons";
+    private static final String BASE_PATH = "/orchestrator/v1/suspensions/applications";
+    private static final String RESOURCE_1 = "mediasearch:imagesearch:default";
+    private static final String RESOURCE_2 = "test-tenant-id:application:instance";
+    private static final String INVALID_RESOURCE_NAME = "something_without_colons";
 
-    Application jdiscApplication;
-    WebTarget webTarget;
+    private Application jdiscApplication;
+    private WebTarget webTarget;
 
     @Before
     public void setup() throws Exception {
-        jdiscApplication = Application.fromApplicationPackage(Paths.get("src/test/application"),
-                Networking.enable);
+        jdiscApplication = Application.fromServicesXml(servicesXml(), Networking.enable);
         Client client = ClientBuilder.newClient();
 
         JettyHttpServer serverProvider = (JettyHttpServer) Container.get().getServerProviderRegistry().allComponents().get(0);
@@ -50,7 +50,7 @@ public class ApplicationSuspensionResourceTest {
     }
 
     @After
-    public void teardown() throws Exception {
+    public void teardown() {
         jdiscApplication.close();
         webTarget = null;
     }
@@ -63,26 +63,26 @@ public class ApplicationSuspensionResourceTest {
     }
 
     @Test
-    public void get_all_suspended_applications_return_empty_list_initially() throws Exception {
+    public void get_all_suspended_applications_return_empty_list_initially() {
         Response reply = webTarget.request().get();
         assertEquals(200, reply.getStatus());
         assertEquals("[]", reply.readEntity(String.class));
     }
 
     @Test
-    public void invalid_application_id_throws_http_400() throws Exception {
-        Response reply = webTarget.request().post(Entity.entity(INVALID_RESOURCE_NAME,MediaType.APPLICATION_JSON_TYPE));
+    public void invalid_application_id_throws_http_400() {
+        Response reply = webTarget.request().post(Entity.entity(INVALID_RESOURCE_NAME, MediaType.APPLICATION_JSON_TYPE));
         assertEquals(400, reply.getStatus());
     }
 
     @Test
-    public void get_application_status_returns_404_for_notsuspended_and_204_for_suspended() throws Exception {
+    public void get_application_status_returns_404_for_not_suspended_and_204_for_suspended() {
         // Get on application that is not suspended
         Response reply = webTarget.path(RESOURCE_1).request().get();
         assertEquals(404, reply.getStatus());
 
         // Post application
-        reply = webTarget.request().post(Entity.entity(RESOURCE_1,MediaType.APPLICATION_JSON_TYPE));
+        reply = webTarget.request().post(Entity.entity(RESOURCE_1, MediaType.APPLICATION_JSON_TYPE));
         assertEquals(204, reply.getStatus());
 
         // Get on the application that now should be in suspended
@@ -90,15 +90,14 @@ public class ApplicationSuspensionResourceTest {
         assertEquals(204, reply.getStatus());
     }
 
-
     @Test
-    public void delete_works_on_suspended_and_not_suspended_applications() throws Exception {
+    public void delete_works_on_suspended_and_not_suspended_applications() {
         // Delete an application that is not suspended
         Response reply = webTarget.path(RESOURCE_1).request().delete();
         assertEquals(204, reply.getStatus());
 
         // Put application in suspend
-        reply = webTarget.request().post(Entity.entity(RESOURCE_1,MediaType.APPLICATION_JSON_TYPE));
+        reply = webTarget.request().post(Entity.entity(RESOURCE_1, MediaType.APPLICATION_JSON_TYPE));
         assertEquals(204, reply.getStatus());
 
         // Check that it is in suspend
@@ -115,15 +114,15 @@ public class ApplicationSuspensionResourceTest {
     }
 
     @Test
-    public void list_applications_returns_the_correct_list_of_suspended_applications() throws Exception {
+    public void list_applications_returns_the_correct_list_of_suspended_applications() {
         // Test that initially we have the empty set
         Response reply = webTarget.request(MediaType.APPLICATION_JSON).get();
         assertEquals(200, reply.getStatus());
         assertEquals("[]", reply.readEntity(String.class));
 
         // Add a couple of applications to maintenance
-        webTarget.request().post(Entity.entity(RESOURCE_1,MediaType.APPLICATION_JSON_TYPE));
-        webTarget.request().post(Entity.entity(RESOURCE_2,MediaType.APPLICATION_JSON_TYPE));
+        webTarget.request().post(Entity.entity(RESOURCE_1, MediaType.APPLICATION_JSON_TYPE));
+        webTarget.request().post(Entity.entity(RESOURCE_2, MediaType.APPLICATION_JSON_TYPE));
         assertEquals(200, reply.getStatus());
 
         // Test that we get them back
@@ -140,4 +139,39 @@ public class ApplicationSuspensionResourceTest {
         assertEquals(1, responses.size());
         assertEquals(RESOURCE_2, responses.iterator().next());
     }
+
+    private String servicesXml() {
+        int port = 0;
+        do {
+            try {
+                ServerSocket socket = new ServerSocket(0);
+                port = socket.getLocalPort();
+                socket.close();
+                System.out.println("Using port " + port);
+            } catch (IOException e) {
+                // ignore
+            }
+        } while (port == 0);
+
+        return "<services>\n" +
+                "    <jdisc version=\"1.0\" jetty=\"true\">\n" +
+                "        <config name=\"container.handler.threadpool\">\n" +
+                "            <maxthreads>10</maxthreads>\n" +
+                "        </config>\n" +
+                "        <component id=\"com.yahoo.vespa.orchestrator.status.InMemoryStatusService\" bundle=\"orchestrator\" />\n" +
+                "        <component id=\"com.yahoo.vespa.orchestrator.DummyInstanceLookupService\" bundle=\"orchestrator\" />\n" +
+                "        <component id=\"com.yahoo.vespa.orchestrator.OrchestratorImpl\" bundle=\"orchestrator\" />\n" +
+                "        <component id=\"com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock\" bundle=\"orchestrator\" />\n" +
+                "\n" +
+                "        <rest-api path=\"orchestrator\">\n" +
+                "            <components bundle=\"orchestrator\" />\n" +
+                "        </rest-api>\n" +
+                "\n" +
+                "        <http>\n" +
+                "            <server id=\"foo\" port=\"" + port + "\"/>\n" +
+                "        </http>\n" +
+                "    </jdisc>\n" +
+                "</services>\n";
+    }
+
 }
