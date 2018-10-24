@@ -362,7 +362,7 @@ public class DeploymentTrigger {
     }
 
     private boolean isSuspendedInAnotherZone(Application application, ZoneId zone) {
-        for (Deployment deployment : application.deployments().values()) {
+        for (Deployment deployment : application.productionDeployments().values()) {
             if ( ! deployment.zone().equals(zone)
                  && controller.applications().isSuspended(new DeploymentId(application.id(), deployment.zone())))
                 return true;
