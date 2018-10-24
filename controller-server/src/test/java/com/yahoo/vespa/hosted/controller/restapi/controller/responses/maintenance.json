@@ -13,6 +13,9 @@
       "name": "ContactInformationMaintainer"
     },
     {
+      "name": "DatabaseMaintainer"
+    },
+    {
       "name": "DefaultOsUpgrader"
     },
     {
