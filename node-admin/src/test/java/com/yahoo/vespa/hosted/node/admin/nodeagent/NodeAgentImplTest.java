@@ -87,17 +87,12 @@ public class NodeAgentImplTest {
 
     @Test
     public void upToDateContainerIsUntouched() {
-        final long restartGeneration = 1;
-        final long rebootGeneration = 0;
         final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .state(Node.State.active)
                 .wantedVespaVersion(vespaVersion)
                 .vespaVersion(vespaVersion)
-                .wantedRestartGeneration(restartGeneration)
-                .currentRestartGeneration(restartGeneration)
-                .wantedRebootGeneration(rebootGeneration)
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
@@ -120,17 +115,12 @@ public class NodeAgentImplTest {
 
     @Test
     public void verifyRemoveOldFilesIfDiskFull() {
-        final long restartGeneration = 1;
-        final long rebootGeneration = 0;
         final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .state(Node.State.active)
                 .wantedVespaVersion(vespaVersion)
                 .vespaVersion(vespaVersion)
-                .wantedRestartGeneration(restartGeneration)
-                .currentRestartGeneration(restartGeneration)
-                .wantedRebootGeneration(rebootGeneration)
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
@@ -181,14 +171,12 @@ public class NodeAgentImplTest {
     @Test
     public void absentContainerCausesStart() {
         final Optional<Long> restartGeneration = Optional.of(1L);
-        final long rebootGeneration = 0;
         final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .state(Node.State.active)
                 .wantedVespaVersion(vespaVersion)
                 .wantedRestartGeneration(restartGeneration.get())
                 .currentRestartGeneration(restartGeneration.get())
-                .wantedRebootGeneration(rebootGeneration)
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
@@ -210,26 +198,19 @@ public class NodeAgentImplTest {
         inOrder.verify(aclMaintainer, times(1)).converge();
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
-                hostName, new NodeAttributes()
-                        .withRestartGeneration(restartGeneration)
-                        .withRebootGeneration(rebootGeneration)
-                        .withDockerImage(dockerImage));
+                hostName, new NodeAttributes().withDockerImage(dockerImage));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
     @Test
     public void containerIsNotStoppedIfNewImageMustBePulled() {
         final DockerImage newDockerImage = new DockerImage("new-image");
-        final long wantedRestartGeneration = 2;
-        final long currentRestartGeneration = 1;
         final NodeSpec node = nodeBuilder
                 .wantedDockerImage(newDockerImage)
                 .currentDockerImage(dockerImage)
                 .state(Node.State.active)
                 .wantedVespaVersion(vespaVersion)
                 .vespaVersion(vespaVersion)
-                .wantedRestartGeneration(wantedRestartGeneration)
-                .currentRestartGeneration(currentRestartGeneration)
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
@@ -250,16 +231,12 @@ public class NodeAgentImplTest {
 
     @Test
     public void containerIsRestartedIfFlavorChanged() {
-        final long wantedRestartGeneration = 1;
-        final long currentRestartGeneration = 1;
         NodeSpec.Builder specBuilder = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .state(Node.State.active)
                 .wantedVespaVersion(vespaVersion)
-                .vespaVersion(vespaVersion)
-                .wantedRestartGeneration(wantedRestartGeneration)
-                .currentRestartGeneration(currentRestartGeneration);
+                .vespaVersion(vespaVersion);
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
         NodeSpec firstSpec = specBuilder.build();
@@ -316,15 +293,12 @@ public class NodeAgentImplTest {
 
     @Test
     public void failedNodeRunningContainerShouldStillBeRunning() {
-        final long restartGeneration = 1;
         final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .state(Node.State.failed)
                 .wantedVespaVersion(vespaVersion)
                 .vespaVersion(vespaVersion)
-                .wantedRestartGeneration(restartGeneration)
-                .currentRestartGeneration(restartGeneration)
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
@@ -340,13 +314,8 @@ public class NodeAgentImplTest {
 
     @Test
     public void readyNodeLeadsToNoAction() {
-        final long restartGeneration = 1;
-        final long rebootGeneration = 0;
         final NodeSpec node = nodeBuilder
                 .state(Node.State.ready)
-                .wantedRestartGeneration(restartGeneration)
-                .currentRestartGeneration(restartGeneration)
-                .wantedRebootGeneration(rebootGeneration)
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(null,false);
@@ -368,18 +337,12 @@ public class NodeAgentImplTest {
 
     @Test
     public void inactiveNodeRunningContainerShouldStillBeRunning() {
-        final long restartGeneration = 1;
-        final long rebootGeneration = 0;
-
         final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .state(Node.State.inactive)
                 .wantedVespaVersion(vespaVersion)
                 .vespaVersion(vespaVersion)
-                .wantedRestartGeneration(restartGeneration)
-                .currentRestartGeneration(restartGeneration)
-                .wantedRebootGeneration(rebootGeneration)
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
@@ -397,16 +360,10 @@ public class NodeAgentImplTest {
 
     @Test
     public void reservedNodeDoesNotUpdateNodeRepoWithVersion() {
-        final long restartGeneration = 1;
-        final long rebootGeneration = 0;
-
         final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .state(Node.State.reserved)
                 .wantedVespaVersion(vespaVersion)
-                .wantedRestartGeneration(restartGeneration)
-                .currentRestartGeneration(restartGeneration)
-                .wantedRebootGeneration(rebootGeneration)
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(null, false);
@@ -450,10 +407,7 @@ public class NodeAgentImplTest {
         verify(orchestrator, never()).suspend(any(String.class));
         // current Docker image and vespa version should be cleared
         verify(nodeRepository, times(1)).updateNodeAttributes(
-                any(String.class), eq(new NodeAttributes()
-                        .withRestartGeneration(wantedRestartGeneration)
-                        .withRebootGeneration(0L)
-                        .withDockerImage(new DockerImage(""))));
+                eq(hostName), eq(new NodeAttributes().withDockerImage(new DockerImage(""))));
     }
 
     @Test
@@ -503,14 +457,11 @@ public class NodeAgentImplTest {
 
     @Test
     public void resumeProgramRunsUntilSuccess() {
-        final long restartGeneration = 1;
         final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .currentDockerImage(dockerImage)
                 .state(Node.State.active)
                 .vespaVersion(vespaVersion)
-                .wantedRestartGeneration(restartGeneration)
-                .currentRestartGeneration(restartGeneration)
                 .build();
 
         NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
@@ -569,15 +520,10 @@ public class NodeAgentImplTest {
 
     @Test
     public void start_container_subtask_failure_leads_to_container_restart() {
-        final long restartGeneration = 1;
-        final long rebootGeneration = 0;
         final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)
                 .state(Node.State.active)
                 .wantedVespaVersion(vespaVersion)
-                .wantedRestartGeneration(restartGeneration)
-                .currentRestartGeneration(restartGeneration)
-                .wantedRebootGeneration(rebootGeneration)
                 .build();
 
         NodeAgentImpl nodeAgent = spy(makeNodeAgent(null, false));
@@ -694,7 +640,6 @@ public class NodeAgentImplTest {
 
     @Test
     public void testRunningConfigServer() {
-        final long rebootGeneration = 0;
         final NodeSpec node = nodeBuilder
                 .nodeType(NodeType.config)
                 .wantedDockerImage(dockerImage)
@@ -720,9 +665,7 @@ public class NodeAgentImplTest {
         inOrder.verify(aclMaintainer, times(1)).converge();
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
-                hostName, new NodeAttributes()
-                        .withRebootGeneration(rebootGeneration)
-                        .withDockerImage(dockerImage));
+                hostName, new NodeAttributes().withDockerImage(dockerImage));
         inOrder.verify(orchestrator).resume(hostName);
     }
 
