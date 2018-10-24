@@ -110,7 +110,8 @@ public class ZooKeeperServerTest {
             "dataDir=" + getDefaults().underVespaHome("var/zookeeper") + "\n" +
             "clientPort=2181\n" +
             "autopurge.purgeInterval=1\n" +
-            "autopurge.snapRetainCount=15\n";
+            "autopurge.snapRetainCount=15\n" +
+            "4lw.commands.whitelist=conf,cons,crst,dump,envi,mntr,ruok,srst,srvr,stat,wchs\n";
         validateConfigFile(cfgFile, expected);
     }
 
@@ -125,6 +126,7 @@ public class ZooKeeperServerTest {
                         "clientPort=2181\n" +
                         "autopurge.purgeInterval=1\n" +
                         "autopurge.snapRetainCount=15\n" +
+                        "4lw.commands.whitelist=conf,cons,crst,dump,envi,mntr,ruok,srst,srvr,stat,wchs\n" +
                         "server.1=foo:321:123\n" +
                         "server.2=bar:432:234\n" +
                         "server.3=baz:543:345\n";
