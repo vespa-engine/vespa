@@ -31,7 +31,6 @@ public class LocalAsyncSession implements AsyncSession {
 
     private final List<Response> responses = new LinkedList<>();
     private final ResponseHandler handler;
-    private final LocalDocumentAccess access;
     private final SyncSession syncSession;
     private long requestId = 0;
     private Random random = new Random();
@@ -42,7 +41,6 @@ public class LocalAsyncSession implements AsyncSession {
     }
 
     public LocalAsyncSession(AsyncParameters params, LocalDocumentAccess access) {
-        this.access = access;
         this.handler = params.getResponseHandler();
         random.setSeed(System.currentTimeMillis());
         syncSession = access.createSyncSession(new SyncParameters.Builder().build());

@@ -6,7 +6,15 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentType;
-import com.yahoo.documentapi.*;
+import com.yahoo.documentapi.AsyncParameters;
+import com.yahoo.documentapi.AsyncSession;
+import com.yahoo.documentapi.DocumentAccess;
+import com.yahoo.documentapi.DocumentResponse;
+import com.yahoo.documentapi.Response;
+import com.yahoo.documentapi.ResponseHandler;
+import com.yahoo.documentapi.Result;
+import com.yahoo.documentapi.SyncParameters;
+import com.yahoo.documentapi.SyncSession;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -16,7 +24,10 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * These tests should work with all implementations (who choose to implement these features) To test a certain

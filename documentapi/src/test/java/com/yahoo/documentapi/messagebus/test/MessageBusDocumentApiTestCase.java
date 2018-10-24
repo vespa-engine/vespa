@@ -2,7 +2,10 @@
 package com.yahoo.documentapi.messagebus.test;
 
 import com.yahoo.document.select.parser.ParseException;
-import com.yahoo.documentapi.*;
+import com.yahoo.documentapi.DocumentAccess;
+import com.yahoo.documentapi.ProgressToken;
+import com.yahoo.documentapi.VisitorParameters;
+import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply;
@@ -19,10 +22,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**

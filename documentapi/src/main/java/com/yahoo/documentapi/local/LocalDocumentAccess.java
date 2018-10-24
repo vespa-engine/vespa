@@ -3,10 +3,21 @@ package com.yahoo.documentapi.local;
 
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
-import com.yahoo.documentapi.*;
+import com.yahoo.documentapi.AsyncParameters;
+import com.yahoo.documentapi.AsyncSession;
+import com.yahoo.documentapi.DocumentAccess;
+import com.yahoo.documentapi.DocumentAccessParams;
+import com.yahoo.documentapi.SubscriptionParameters;
+import com.yahoo.documentapi.SubscriptionSession;
+import com.yahoo.documentapi.SyncParameters;
+import com.yahoo.documentapi.SyncSession;
+import com.yahoo.documentapi.VisitorDestinationParameters;
+import com.yahoo.documentapi.VisitorDestinationSession;
+import com.yahoo.documentapi.VisitorParameters;
+import com.yahoo.documentapi.VisitorSession;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The main class of the local implementation of the document api
@@ -15,7 +26,7 @@ import java.util.Map;
  */
 public class LocalDocumentAccess extends DocumentAccess {
 
-    Map<DocumentId, Document> documents = new LinkedHashMap<DocumentId, Document>();
+    Map<DocumentId, Document> documents = new ConcurrentHashMap<>();
 
     public LocalDocumentAccess(DocumentAccessParams params) {
         super(params);

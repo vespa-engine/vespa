@@ -11,9 +11,9 @@ package com.yahoo.documentapi;
  */
 public class Response {
 
-    private long requestId;
-    private String textMessage = null;
-    private boolean success = true;
+    private final long requestId;
+    private final String textMessage;
+    private final boolean success;
 
     /** Creates a successful response containing no information */
     public Response(long requestId) {
