@@ -292,6 +292,37 @@ public class NodeAgentImplTest {
     }
 
     @Test
+    public void recreatesContainerIfRebootWanted() {
+        final long wantedRebootGeneration = 2;
+        final long currentRebootGeneration = 1;
+        final NodeSpec node = nodeBuilder
+                .wantedDockerImage(dockerImage)
+                .currentDockerImage(dockerImage)
+                .state(Node.State.active)
+                .wantedVespaVersion(vespaVersion)
+                .vespaVersion(vespaVersion)
+                .wantedRebootGeneration(wantedRebootGeneration)
+                .currentRebootGeneration(currentRebootGeneration)
+                .build();
+
+        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
+
+        when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
+        when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
+        when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
+
+        nodeAgent.converge();
+
+        verify(orchestrator, times(1)).suspend(eq(hostName));
+        verify(dockerOperations, times(1)).removeContainer(eq(context), any());
+        verify(dockerOperations, times(1)).createContainer(eq(context), eq(node), any());
+        verify(dockerOperations, times(1)).startContainer(eq(context));
+        verify(orchestrator, times(1)).resume(eq(hostName));
+        verify(nodeRepository, times(1)).updateNodeAttributes(eq(hostName), eq(new NodeAttributes()
+                .withRebootGeneration(wantedRebootGeneration)));
+    }
+
+    @Test
     public void failedNodeRunningContainerShouldStillBeRunning() {
         final NodeSpec node = nodeBuilder
                 .wantedDockerImage(dockerImage)

@@ -358,6 +358,11 @@ public class NodeAgentImpl implements NodeAgent {
                     wantedContainerResources + ", actual: " + existingContainer.resources);
         }
 
+        if (node.getCurrentRebootGeneration() < node.getWantedRebootGeneration()) {
+            return Optional.of(String.format("Container reboot wanted. Current: %d, Wanted: %d",
+                    node.getCurrentRebootGeneration(), node.getWantedRebootGeneration()));
+        }
+
         if (containerState == STARTING) return Optional.of("Container failed to start");
         return Optional.empty();
     }
