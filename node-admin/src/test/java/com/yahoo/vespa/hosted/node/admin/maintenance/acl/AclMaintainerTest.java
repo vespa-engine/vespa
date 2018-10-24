@@ -20,9 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.anyVararg;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -59,8 +58,8 @@ public class AclMaintainerTest {
 
         aclMaintainer.converge();
 
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("iptables-restore"), anyVararg()); //we don;t have a ip4 address for the container so no redirect either
-        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables-restore"), anyVararg());
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("iptables-restore"), any()); //we don;t have a ip4 address for the container so no redirect either
+        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables-restore"), any());
     }
 
     @Test
@@ -77,8 +76,8 @@ public class AclMaintainerTest {
 
         aclMaintainer.converge();
 
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("iptables-restore"), anyVararg()); //we don;t have a ip4 address for the container so no redirect either
-        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables-restore"), anyVararg());
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("iptables-restore"), any()); //we don;t have a ip4 address for the container so no redirect either
+        verify(dockerOperations, times(2)).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables-restore"), any());
     }
 
     @Test
@@ -90,7 +89,7 @@ public class AclMaintainerTest {
 
         aclMaintainer.converge();
 
-        verify(dockerOperations, never()).executeCommandInNetworkNamespace(eq(container.name), anyVararg());
+        verify(dockerOperations, never()).executeCommandInNetworkNamespace(eq(container.name), any());
     }
 
     @Test
@@ -123,8 +122,8 @@ public class AclMaintainerTest {
 
         aclMaintainer.converge();
 
-        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("iptables-restore"), anyVararg());
-        verify(dockerOperations, never()).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables-restore"), anyVararg());
+        verify(dockerOperations, times(1)).executeCommandInNetworkNamespace(eq(container.name), eq("iptables-restore"), any());
+        verify(dockerOperations, never()).executeCommandInNetworkNamespace(eq(container.name), eq("ip6tables-restore"), any());
     }
 
     @Test
@@ -166,8 +165,8 @@ public class AclMaintainerTest {
 
         aclMaintainer.converge();
 
-        verify(dockerOperations, never()).executeCommandInNetworkNamespace(any(), eq("ip6tables-restore"), anyVararg());
-        verify(dockerOperations, never()).executeCommandInNetworkNamespace(any(), eq("iptables-restore"), anyVararg());
+        verify(dockerOperations, never()).executeCommandInNetworkNamespace(any(), eq("ip6tables-restore"), any());
+        verify(dockerOperations, never()).executeCommandInNetworkNamespace(any(), eq("iptables-restore"), any());
     }
 
 
@@ -189,11 +188,11 @@ public class AclMaintainerTest {
 
         when(dockerOperations.executeCommandInNetworkNamespace(
                 eq(container.name),
-                eq("ip6tables-restore"), anyVararg())).thenThrow(new RuntimeException("iptables restore failed"));
+                eq("ip6tables-restore"), any())).thenThrow(new RuntimeException("iptables restore failed"));
 
         when(dockerOperations.executeCommandInNetworkNamespace(
                 eq(container.name),
-                eq("iptables-restore"), anyVararg())).thenThrow(new RuntimeException("iptables restore failed"));
+                eq("iptables-restore"), any())).thenThrow(new RuntimeException("iptables restore failed"));
 
         aclMaintainer.converge();
 
