@@ -146,6 +146,7 @@ public class ApplicationHandler extends HttpHandler {
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/content/*",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/filedistributionstatus",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart",
+                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/suspended",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*",
@@ -155,7 +156,7 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private static boolean isIsSuspendedRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 4 &&
+        return getBindingMatch(request).groupCount() == 7 &&
                request.getUri().getPath().endsWith("/suspended");
     }
 
