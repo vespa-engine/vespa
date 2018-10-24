@@ -12,11 +12,12 @@ import com.yahoo.document.DocumentId;
 public class DocumentIdResponse extends Response {
 
     /** The document id of this response, if any */
-    private DocumentId documentId = null;
+    private final DocumentId documentId;
 
     /** Creates a successful response */
     public DocumentIdResponse(long requestId) {
         super(requestId);
+        documentId = null;
     }
 
     /**
@@ -37,6 +38,7 @@ public class DocumentIdResponse extends Response {
      */
     public DocumentIdResponse(long requestId, String textMessage, boolean success) {
         super(requestId, textMessage, success);
+        documentId = null;
     }
 
     /**

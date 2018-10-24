@@ -2,7 +2,6 @@
 package com.yahoo.documentapi;
 
 import com.yahoo.document.Document;
-import com.yahoo.component.Version;
 
 /**
  * The asynchronous response to a document put or get operation.
@@ -13,11 +12,12 @@ import com.yahoo.component.Version;
 public class DocumentResponse extends Response {
 
     /** The document of this response, if any */
-    private Document document = null;
+    private final Document document;
 
     /** Creates a successful response */
     public DocumentResponse(long requestId) {
         super(requestId);
+        document = null;
     }
 
     /**
@@ -38,6 +38,7 @@ public class DocumentResponse extends Response {
      */
     public DocumentResponse(long requestId, String textMessage, boolean success) {
         super(requestId, textMessage, success);
+        document = null;
     }
 
     /**
