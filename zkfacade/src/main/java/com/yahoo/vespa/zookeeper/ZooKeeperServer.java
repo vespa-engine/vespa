@@ -83,6 +83,10 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
         sb.append("clientPort=").append(config.clientPort()).append("\n");
         sb.append("autopurge.purgeInterval=").append(config.autopurge().purgeInterval()).append("\n");
         sb.append("autopurge.snapRetainCount=").append(config.autopurge().snapRetainCount()).append("\n");
+        // See http://zookeeper.apache.org/doc/r3.4.13/zookeeperAdmin.html#sc_zkCommands
+        // Includes all available commands in 3.4, except 'wchc' and 'wchp'
+        // Mandatory when using ZooKeeper 3.5
+        sb.append("4lw.commands.whitelist=conf,cons,crst,dump,envi,mntr,ruok,srst,srvr,stat,wchs").append("\n");
         if (config.server().size() > 1) {
             ensureThisServerIsRepresented(config.myid(), config.server());
             for (ZookeeperServerConfig.Server server : config.server()) {
