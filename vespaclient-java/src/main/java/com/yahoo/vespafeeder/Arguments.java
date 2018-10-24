@@ -39,14 +39,15 @@ public class Arguments {
     }
 
     private FeederConfig.Builder feederConfigBuilder = new FeederConfig.Builder();
-    private List<String> files = new ArrayList<String>();
+    private List<String> files = new ArrayList<>();
     private String dumpDocumentsFile = null;
     private String mode = "standard";
     private boolean validateOnly = false;
     private boolean verbose = false;
-    SessionFactory sessionFactory = null;
+    SessionFactory sessionFactory;
     MessagePropertyProcessor propertyProcessor = null;
     private String priority = null;
+    private int numThreads = 1;
 
     public MessagePropertyProcessor getPropertyProcessor() {
         return propertyProcessor;
@@ -83,6 +84,7 @@ public class Arguments {
                 "                                feeding them.\n" +
                 "  --dumpDocuments <filename>    Specify a file where documents in the put are serialized.\n" +
                 "  --priority arg                Specify priority of sent messages (see documentation for priority values)\n" +
+                "  --numthreads arg              Specify how many threads to use for sending. Default is 1.\n" +
                 "  --create-if-non-existent      Enable setting of create-if-non-existent to true on all document updates in the given xml feed.\n" +
                 "  -v [ --verbose ]              Enable verbose output of progress.\n");
     }
@@ -152,6 +154,8 @@ public class Arguments {
                 verbose = true;
             } else if ("--priority".equals(arg)) {
                 priority = getParam(args, arg);
+            } else if ("--numthreads".equals(arg)) {
+                numThreads = Integer.parseInt(getParam(args, arg));
             } else {
                 files.add(arg);
             }
@@ -181,6 +185,10 @@ public class Arguments {
 
     public String getPriority() {
         return priority;
+    }
+
+    public int getNumThreads() {
+        return numThreads;
     }
 
     public SessionFactory getSessionFactory() {

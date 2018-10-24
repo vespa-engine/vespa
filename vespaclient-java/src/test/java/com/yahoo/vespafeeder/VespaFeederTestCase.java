@@ -68,6 +68,14 @@ public class VespaFeederTestCase {
     }
 
     @Test
+    public void requireThatnumThreadsBeParsed() throws Exception {
+        String argsS="--numthreads 5";
+        Arguments arguments = new Arguments(argsS.split(" "), DummySessionFactory.createWithAutoReply());
+        assertEquals(5, arguments.getNumThreads());
+        assertEquals(1, new Arguments("".split(" "), DummySessionFactory.createWithAutoReply()).getNumThreads());
+    }
+
+    @Test
     public void testHelp() throws Exception {
         String argsS="-h";
 

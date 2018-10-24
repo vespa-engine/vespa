@@ -15,5 +15,5 @@ public interface SimpleFeedAccess {
     void remove(DocumentId docId, TestAndSetCondition condition);
     void update(DocumentUpdate update, TestAndSetCondition condition);
     boolean isAborted();
-
+    void close();
 }
