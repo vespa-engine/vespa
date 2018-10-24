@@ -5,13 +5,10 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.documentapi.Response;
-import com.yahoo.documentapi.Result;
 import com.yahoo.documentapi.SyncSession;
-import com.yahoo.documentapi.messagebus.protocol.*;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
 /**
  * @author bratseth
