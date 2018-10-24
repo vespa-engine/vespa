@@ -145,6 +145,7 @@ public class Dispatcher extends AbstractComponent {
                 return invoker;
             } else {
                 // invoker could not be produced (likely connectivity issue)
+                searchCluster.groupConnectionFailure(group);
                 loadBalancer.releaseGroup(group);
                 if (tried == null) {
                     tried = new HashSet<>();

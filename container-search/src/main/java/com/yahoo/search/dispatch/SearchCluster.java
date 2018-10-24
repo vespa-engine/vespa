@@ -216,6 +216,10 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
             vipStatus.removeFromRotation(this);
     }
 
+    public void groupConnectionFailure(Group group) {
+        group.setHasSufficientCoverage(false); // will be reset after next ping iteration
+    }
+
     private void updateSufficientCoverage(Group group, boolean sufficientCoverage) {
         // update VIP status if we direct dispatch to this group and coverage status changed
         if (usesDirectDispatchTo(group) && sufficientCoverage != group.hasSufficientCoverage()) {
