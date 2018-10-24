@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
@@ -602,12 +603,7 @@ public class ApplicationController {
      * @param hostname If non-empty, restart will only be scheduled for this host
      */
     public void restart(DeploymentId deploymentId, Optional<Hostname> hostname) {
-        try {
-            configServer.restart(deploymentId, hostname);
-        }
-        catch (NoInstanceException e) {
-            throw new IllegalArgumentException("Could not restart " + deploymentId + ": No such deployment");
-        }
+        configServer.restart(deploymentId, hostname);
     }
 
     /**
@@ -618,8 +614,10 @@ public class ApplicationController {
         try {
             return configServer.isSuspended(deploymentId);
         }
-        catch (NoInstanceException e) {
-            throw new IllegalArgumentException("Could not check suspension of " + deploymentId + ": No such deployment");
+        catch (ConfigServerException e) {
+            if (e.getErrorCode() == ConfigServerException.ErrorCode.NOT_FOUND)
+                return false;
+            throw e;
         }
     }
 
