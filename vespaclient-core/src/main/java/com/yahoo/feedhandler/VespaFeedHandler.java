@@ -123,6 +123,9 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
         public boolean isAborted() {
             return simpleFeedAccess.isAborted();
         }
+        void  close() {
+            executor.shutdown();
+        }
     }
 
     public HttpResponse handle(HttpRequest request, RouteMetricSet.ProgressCallback callback, int numThreads) {
@@ -162,6 +165,9 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
             }
 
             sender.done();
+            if (feedAccess instanceof ThreadedFeedAccess) {
+                ((ThreadedFeedAccess)feedAccess).close();
+            }
 
             if (asynchronous) {
                 return response;
