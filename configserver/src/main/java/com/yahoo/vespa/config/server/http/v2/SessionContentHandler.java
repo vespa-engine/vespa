@@ -18,17 +18,16 @@ import com.yahoo.vespa.config.server.http.Utils;
  * in the session's application package
  *
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class SessionContentHandler extends SessionHandler {
+
     private final TenantRepository tenantRepository;
     private final ContentHandler contentHandler = new ContentHandler();
 
     @Inject
     public SessionContentHandler(SessionHandler.Context ctx,
                                  ApplicationRepository applicationRepository,
-                                 TenantRepository tenantRepository)
-    {
+                                 TenantRepository tenantRepository) {
         super(ctx, applicationRepository);
         this.tenantRepository = tenantRepository;
     }
@@ -53,7 +52,7 @@ public class SessionContentHandler extends SessionHandler {
     }
 
     private SessionContentRequestV2 getContentRequest(HttpRequest request) {
-        final TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
+        TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
         validateRequest(tenantName);
         long sessionId = getSessionIdV2(request);
         String contentPath = SessionContentRequestV2.getContentPath(request);

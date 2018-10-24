@@ -60,10 +60,12 @@ public class ApplicationHandlerTest {
     private final static TenantName mytenantName = TenantName.from("mytenant");
     private final static TenantName foobar = TenantName.from("foobar");
     private final static ApplicationId applicationId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
+
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
     private SessionHandlerTest.MockProvisioner provisioner;
     private MockStateApiFactory stateApiFactory = new MockStateApiFactory();
+    private OrchestratorMock orchestrator;
 
     @Before
     public void setup() {
@@ -72,9 +74,10 @@ public class ApplicationHandlerTest {
         tenantRepository.addTenant(TenantBuilder.create(componentRegistry, mytenantName));
         tenantRepository.addTenant(TenantBuilder.create(componentRegistry, foobar));
         provisioner = new SessionHandlerTest.MockProvisioner();
+        orchestrator = new OrchestratorMock();
         applicationRepository = new ApplicationRepository(tenantRepository,
                                                           provisioner,
-                                                          new OrchestratorMock(),
+                                                          orchestrator,
                                                           Clock.systemUTC());
         listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
                                                               tenantRepository,
@@ -135,6 +138,14 @@ public class ApplicationHandlerTest {
         restart(applicationId, Zone.defaultZone());
         assertTrue(provisioner.restarted);
         assertEquals(applicationId, provisioner.lastApplicationId);
+    }
+
+    @Test
+    public void testSuspended() throws Exception {
+        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        assertSuspended(false, applicationId, Zone.defaultZone());
+        orchestrator.suspend(applicationId);
+        assertSuspended(true, applicationId, Zone.defaultZone());
     }
 
     @Test
@@ -239,6 +250,12 @@ public class ApplicationHandlerTest {
 
     private void assertApplicationGeneration(ApplicationId applicationId, Zone zone, long expectedGeneration, boolean fullAppIdInUrl) throws IOException {
         assertApplicationGeneration(toUrlPath(applicationId, zone, fullAppIdInUrl), expectedGeneration);
+    }
+
+    private void assertSuspended(boolean expectedValue, ApplicationId application, Zone zone) throws IOException {
+        String restartUrl = toUrlPath(application, zone, true) + "/suspended";
+        HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(restartUrl, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "{\"suspended\":" + expectedValue + "}");
     }
 
     private String toUrlPath(ApplicationId application, Zone zone, boolean fullAppIdInUrl) {

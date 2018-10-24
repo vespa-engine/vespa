@@ -13,7 +13,6 @@ import static org.junit.Assert.*;
  * Base class for handler tests
  *
  * @author hmusum
- * @since 5.1.14
  */
 public class HandlerTest {
 
@@ -49,4 +48,5 @@ public class HandlerTest {
     public static void assertHttpStatusCodeAndMessage(HttpResponse response, int statusCode, String contentType, String message) throws IOException {
         assertHttpStatusCodeErrorCodeAndMessage(response, statusCode, null, contentType, message);
     }
+
 }
