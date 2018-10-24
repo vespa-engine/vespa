@@ -46,9 +46,9 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     private static final Logger log = Logger.getLogger(SearchCluster.class.getName());
 
     /** The min active docs a group must have to be considered up, as a % of the average active docs of the other groups */
-    public final double minActivedocsCoveragePercentage;
-    public final double minGroupCoverage;
-    public final int maxNodesDownPerGroup;
+    private final double minActivedocsCoveragePercentage;
+    private final double minGroupCoverage;
+    private final int maxNodesDownPerGroup;
     private final int size;
     private final ImmutableMap<Integer, Group> groups;
     private final ImmutableMultimap<String, Node> nodesByHost;
