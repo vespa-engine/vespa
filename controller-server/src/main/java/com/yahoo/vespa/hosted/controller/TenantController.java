@@ -3,13 +3,14 @@ package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
+import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -41,12 +42,16 @@ public class TenantController {
 
     private final Controller controller;
     private final CuratorDb curator;
-    private final AthenzClientFactory athenzClientFactory;
+    private final ZmsClientFacade zmsClient;
+    private final ZtsClient ztsClient;
+    private final AthenzService controllerIdentity;
 
     public TenantController(Controller controller, CuratorDb curator, AthenzClientFactory athenzClientFactory) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
         this.curator = Objects.requireNonNull(curator, "curator must be non-null");
-        this.athenzClientFactory = Objects.requireNonNull(athenzClientFactory, "athenzClientFactory must be non-null");
+        this.controllerIdentity = athenzClientFactory.getControllerIdentity();
+        this.zmsClient = new ZmsClientFacade(athenzClientFactory.createZmsClient(), controllerIdentity);
+        this.ztsClient = athenzClientFactory.createZtsClient();
 
         // Update serialization format of all tenants
         Once.after(Duration.ofMinutes(1), () -> {
@@ -84,13 +89,11 @@ public class TenantController {
     /** Returns a list of all tenants accessible by the given user */
     public List<Tenant> asList(UserId user) {
         AthenzUser athenzUser = AthenzUser.fromUserId(user.id());
-        try (ZtsClient ztsClient = athenzClientFactory.createZtsClientWithServicePrincipal()) {
-            Set<AthenzDomain> userDomains = new HashSet<>(ztsClient.getTenantDomains(athenzClientFactory.getControllerIdentity(), athenzUser, "admin"));
+            Set<AthenzDomain> userDomains = new HashSet<>(ztsClient.getTenantDomains(controllerIdentity, athenzUser, "admin"));
             return asList().stream()
                            .filter(tenant -> isUser(tenant, user) ||
                                              userDomains.stream().anyMatch(domain -> inDomain(tenant, domain)))
                            .collect(Collectors.toList());
-        }
     }
 
     /**
@@ -124,7 +127,7 @@ public class TenantController {
     }
 
     /** Create an Athenz tenant */
-    public void create(AthenzTenant tenant, NToken token) {
+    public void create(AthenzTenant tenant, OktaAccessToken token) {
         try (Lock lock = lock(tenant.name())) {
             requireNonExistent(tenant.name());
             AthenzDomain domain = tenant.domain();
@@ -136,7 +139,7 @@ public class TenantController {
                                                    existingTenantWithDomain.get().name().value() +
                                                    "'");
             }
-            athenzClientFactory.createZmsClientWithAuthorizedServiceToken(token).createTenant(domain);
+            zmsClient.createTenant(domain, token);
             curator.writeTenant(tenant);
         }
     }
@@ -169,7 +172,7 @@ public class TenantController {
     }
 
     /** Update Athenz domain for tenant. Returns the updated tenant which must be explicitly stored */
-    public LockedTenant withDomain(LockedTenant tenant, AthenzDomain newDomain, NToken token) {
+    public LockedTenant withDomain(LockedTenant tenant, AthenzDomain newDomain, OktaAccessToken token) {
         AthenzDomain existingDomain = tenant.get().domain();
         if (existingDomain.equals(newDomain)) return tenant;
         Optional<Tenant> existingTenantWithNewDomain = tenantIn(newDomain);
@@ -177,12 +180,11 @@ public class TenantController {
             throw new IllegalArgumentException("Could not set domain of " + tenant + " to '" + newDomain +
                                                "':" + existingTenantWithNewDomain.get() + " already has this domain");
 
-        ZmsClient zmsClient = athenzClientFactory.createZmsClientWithAuthorizedServiceToken(token);
-        zmsClient.createTenant(newDomain);
+        zmsClient.createTenant(newDomain, token);
         List<Application> applications = controller.applications().asList(tenant.get().name());
-        applications.forEach(a -> zmsClient.addApplication(newDomain, new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(a.id().application().value())));
-        applications.forEach(a -> zmsClient.deleteApplication(existingDomain, new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(a.id().application().value())));
-        zmsClient.deleteTenant(existingDomain);
+        applications.forEach(a -> zmsClient.addApplication(newDomain, new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(a.id().application().value()), token));
+        applications.forEach(a -> zmsClient.deleteApplication(existingDomain, new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(a.id().application().value()), token));
+        zmsClient.deleteTenant(existingDomain, token);
         log.info("Set Athenz domain for '" + tenant + "' from '" + existingDomain + "' to '" + newDomain + "'");
 
         return tenant.with(newDomain);
@@ -196,10 +198,10 @@ public class TenantController {
     }
 
     /** Delete an Athenz tenant */
-    public void deleteTenant(AthenzTenant tenant, NToken nToken) {
+    public void deleteTenant(AthenzTenant tenant, OktaAccessToken token) {
         try (Lock lock = lock(tenant.name())) {
             deleteTenant(tenant.name());
-            athenzClientFactory.createZmsClientWithAuthorizedServiceToken(nToken).deleteTenant(tenant.domain());
+            zmsClient.deleteTenant(tenant.domain(), token);
         }
     }
 

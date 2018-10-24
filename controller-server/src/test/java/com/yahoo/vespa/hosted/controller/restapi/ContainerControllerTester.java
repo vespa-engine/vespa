@@ -6,16 +6,16 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.TestIdentities;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAthenzIdentities;
+import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -77,9 +77,9 @@ public class ContainerControllerTester {
         controller().tenants().create(AthenzTenant.create(TenantName.from(tenant), domain1,
                                                           new Property("property1"),
                                                           Optional.of(new PropertyId("1234"))),
-                                      TestIdentities.userNToken);
+                                      new OktaAccessToken("okta-token"));
         ApplicationId app = ApplicationId.from(tenant, application, "default");
-        return controller().applications().createApplication(app, Optional.of(TestIdentities.userNToken));
+        return controller().applications().createApplication(app, Optional.of(new OktaAccessToken("okta-token")));
     }
 
     public Application deploy(Application application, ApplicationPackage applicationPackage, ZoneId zone) {

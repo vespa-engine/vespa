@@ -8,6 +8,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.Slime;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
@@ -247,14 +248,14 @@ public final class ControllerTester {
                                                   Optional.ofNullable(propertyId)
                                                           .map(Object::toString)
                                                           .map(PropertyId::new));
-        controller().tenants().create(tenant, TestIdentities.userNToken);
+        controller().tenants().create(tenant, new OktaAccessToken("okta-token"));
         assertNotNull(controller().tenants().tenant(name));
         return name;
     }
 
     public Application createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {
         ApplicationId applicationId = ApplicationId.from(tenant.value(), applicationName, instanceName);
-        controller().applications().createApplication(applicationId, Optional.of(TestIdentities.userNToken));
+        controller().applications().createApplication(applicationId, Optional.of(new OktaAccessToken("okta-token")));
         controller().applications().lockOrThrow(applicationId, lockedApplication ->
                 controller().applications().store(lockedApplication.withProjectId(OptionalLong.of(projectId))));
         return controller().applications().require(applicationId);

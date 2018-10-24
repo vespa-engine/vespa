@@ -24,7 +24,8 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.api.OktaAccessToken;
+import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -46,7 +47,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Logs;
@@ -65,6 +65,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
+import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
@@ -109,7 +110,7 @@ import java.util.stream.Collectors;
 public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
-    private final AthenzClientFactory athenzClientFactory;
+    private final ZmsClientFacade zmsClient;
 
     @Inject
     public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
@@ -117,7 +118,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                  AthenzClientFactory athenzClientFactory) {
         super(parentCtx);
         this.controller = controller;
-        this.athenzClientFactory = athenzClientFactory;
+        this.zmsClient = new ZmsClientFacade(athenzClientFactory.createZmsClient(), athenzClientFactory.getControllerIdentity());
     }
 
     @Override
@@ -675,7 +676,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if ( ! tenant.isPresent()) return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
 
         Inspector requestData = toSlime(request.getData()).get();
-        NToken token = requireNToken(request, "Could not update " + tenantName);
+        OktaAccessToken token = requireOktaAccessToken(request, "Could not update " + tenantName);
 
         controller.tenants().lockOrThrow(tenant.get().name(), lockedTenant -> {
             lockedTenant = lockedTenant.with(new Property(mandatory("property", requestData).asString()));
@@ -702,17 +703,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                   new Property(mandatory("property", requestData).asString()),
                                                   optional("propertyId", requestData).map(PropertyId::new));
         throwIfNotAthenzDomainAdmin(tenant.domain(), request);
-        controller.tenants().create(tenant, requireNToken(request, "Could not create " + tenantName));
+        controller.tenants().create(tenant, requireOktaAccessToken(request, "Could not create " + tenantName));
         return tenant(tenant, request, true);
     }
 
     private HttpResponse createApplication(String tenantName, String applicationName, HttpRequest request) {
         Application application;
         try {
-            application = controller.applications().createApplication(ApplicationId.from(tenantName, applicationName, "default"), getUserPrincipal(request).getNToken());
+            application = controller.applications().createApplication(ApplicationId.from(tenantName, applicationName, "default"), getOktaAccessToken(request));
         }
-        catch (ZmsException e) { // TODO: Push conversion down
-            if (e.getCode() == com.yahoo.jdisc.Response.Status.FORBIDDEN)
+        catch (ZmsClientException e) { // TODO: Push conversion down
+            if (e.getErrorCode() == com.yahoo.jdisc.Response.Status.FORBIDDEN)
                 throw new ForbiddenException("Not authorized to create application", e);
             else
                 throw e;
@@ -828,7 +829,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         if (tenant.get() instanceof AthenzTenant) {
             controller.tenants().deleteTenant((AthenzTenant) tenant.get(),
-                                              requireNToken(request, "Could not delete " + tenantName));
+                                              requireOktaAccessToken(request, "Could not delete " + tenantName));
         } else if (tenant.get() instanceof UserTenant) {
             controller.tenants().deleteTenant((UserTenant) tenant.get());
         } else {
@@ -842,7 +843,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
-        controller.applications().deleteApplication(id, getUserPrincipal(request).getNToken());
+        controller.applications().deleteApplication(id, getOktaAccessToken(request));
         return new EmptyJsonResponse(); // TODO: Replicates current behavior but should return a message response instead
     }
 
@@ -1019,8 +1020,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private void throwIfNotAthenzDomainAdmin(AthenzDomain tenantDomain, HttpRequest request) {
         AthenzIdentity identity = getUserPrincipal(request).getIdentity();
-        boolean isDomainAdmin = athenzClientFactory.createZmsClientWithServicePrincipal()
-                .isDomainAdmin(identity, tenantDomain);
+        boolean isDomainAdmin = zmsClient.isDomainAdmin(identity, tenantDomain);
         if ( ! isDomainAdmin) {
             throw new ForbiddenException(
                     String.format("The user '%s' is not admin in Athenz domain '%s'", identity.getFullName(), tenantDomain.getName()));
@@ -1212,9 +1212,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         throw new IllegalArgumentException("Unknown tenant type: " + tenant.getClass().getSimpleName());
     }
 
-    private static NToken requireNToken(HttpRequest request, String message) {
-        return getUserPrincipal(request).getNToken().orElseThrow(() -> new IllegalArgumentException(
-                message + ": No NToken provided"));
+    private static OktaAccessToken requireOktaAccessToken(HttpRequest request, String message) {
+        return getOktaAccessToken(request)
+                .orElseThrow(() -> new IllegalArgumentException(message + ": No Okta Access Token provided"));
+    }
+
+    private static Optional<OktaAccessToken> getOktaAccessToken(HttpRequest request) {
+        return Optional.ofNullable(request.getHeader(OktaAccessToken.HTTP_HEADER_NAME))
+                .map(OktaAccessToken::new);
     }
 
     private static ApplicationId appIdFromPath(Path path) {

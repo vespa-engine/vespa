@@ -9,7 +9,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
@@ -43,6 +42,7 @@ import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
@@ -93,7 +93,7 @@ public class ApplicationController {
     private final ArtifactRepository artifactRepository;
     private final ApplicationStore applicationStore;
     private final RotationRepository rotationRepository;
-    private final AthenzClientFactory zmsClientFactory;
+    private final ZmsClientFacade zmsClient;
     private final NameService nameService;
     private final ConfigServer configServer;
     private final RoutingGenerator routingGenerator;
@@ -108,7 +108,7 @@ public class ApplicationController {
                           RoutingGenerator routingGenerator, BuildService buildService, Clock clock) {
         this.controller = controller;
         this.curator = curator;
-        this.zmsClientFactory = zmsClientFactory;
+        this.zmsClient = new ZmsClientFacade(zmsClientFactory.createZmsClient(), zmsClientFactory.getControllerIdentity());
         this.nameService = nameService;
         this.configServer = configServer;
         this.routingGenerator = routingGenerator;
@@ -250,7 +250,7 @@ public class ApplicationController {
      *
      * @throws IllegalArgumentException if the application already exists
      */
-    public Application createApplication(ApplicationId id, Optional<NToken> token) {
+    public Application createApplication(ApplicationId id, Optional<OktaAccessToken> token) {
         if ( ! (id.instance().isDefault())) // TODO: Support instances properly
             throw new IllegalArgumentException("Only the instance name 'default' is supported at the moment");
         if (id.instance().isTester())
@@ -269,11 +269,10 @@ public class ApplicationController {
                 throw new IllegalArgumentException("Could not create '" + id + "': Application " + dashToUnderscore(id) + " already exists");
             if (id.instance().isDefault() && tenant.get() instanceof AthenzTenant) { // Only create the athenz application for "default" instances.
                 if ( ! token.isPresent())
-                    throw new IllegalArgumentException("Could not create '" + id + "': No NToken provided");
+                    throw new IllegalArgumentException("Could not create '" + id + "': No Okta Access Token provided");
 
-                ZmsClient zmsClient = zmsClientFactory.createZmsClientWithAuthorizedServiceToken(token.get());
                 zmsClient.addApplication(((AthenzTenant) tenant.get()).domain(),
-                                         new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
+                                         new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()), token.get());
             }
             LockedApplication application = new LockedApplication(new Application(id, clock.instant()), lock);
             store(application);
@@ -531,7 +530,7 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application has deployments or the caller is not authorized
      * @throws NotExistsException if no instances of the application exist
      */
-    public void deleteApplication(ApplicationId applicationId, Optional<NToken> token) {
+    public void deleteApplication(ApplicationId applicationId, Optional<OktaAccessToken> token) {
         // Find all instances of the application
         List<ApplicationId> instances = asList(applicationId.tenant()).stream()
                                                                       .map(Application::id)
@@ -548,13 +547,12 @@ public class ApplicationController {
 
             Tenant tenant = controller.tenants().tenant(id.tenant()).get();
             if (tenant instanceof AthenzTenant && ! token.isPresent())
-                throw new IllegalArgumentException("Could not delete '" + application + "': No NToken provided");
+                throw new IllegalArgumentException("Could not delete '" + application + "': No Okta Access Token provided");
 
             // Only delete in Athenz once
             if (id.instance().isDefault() && tenant instanceof AthenzTenant) {
-                zmsClientFactory.createZmsClientWithAuthorizedServiceToken(token.get())
-                                .deleteApplication(((AthenzTenant) tenant).domain(),
-                                                   new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()));
+                zmsClient.deleteApplication(((AthenzTenant) tenant).domain(),
+                                                   new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()), token.get());
             }
             curator.removeApplication(id);
 

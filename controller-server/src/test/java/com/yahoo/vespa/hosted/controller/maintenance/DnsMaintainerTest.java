@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
@@ -88,7 +88,7 @@ public class DnsMaintainerTest {
         tester.deployAndNotify(application, applicationPackage, true, systemTest);
         tester.applications().deactivate(application.id(), ZoneId.from(Environment.test, RegionName.from("us-east-1")));
         tester.applications().deactivate(application.id(), ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
-        tester.applications().deleteApplication(application.id(), Optional.of(new NToken("ntoken")));
+        tester.applications().deleteApplication(application.id(), Optional.of(new OktaAccessToken("okta-token")));
 
         // DnsMaintainer removes records
         dnsMaintainer.maintain();

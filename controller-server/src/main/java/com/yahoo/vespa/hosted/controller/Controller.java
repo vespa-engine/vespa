@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.github.GitHub;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.CloudName;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
@@ -74,7 +75,7 @@ public class Controller extends AbstractComponent {
     private final ConfigServer configServer;
     private final MetricsService metricsService;
     private final Chef chef;
-    private final AthenzClientFactory athenzClientFactory;
+    private final ZmsClientFacade zmsClient;
 
     /**
      * Creates a controller 
@@ -114,7 +115,7 @@ public class Controller extends AbstractComponent {
         this.metricsService = Objects.requireNonNull(metricsService, "MetricsService cannot be null");
         this.chef = Objects.requireNonNull(chef, "Chef cannot be null");
         this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
-        this.athenzClientFactory = Objects.requireNonNull(athenzClientFactory, "AthenzClientFactory cannot be null");
+        this.zmsClient = new ZmsClientFacade(athenzClientFactory.createZmsClient(), athenzClientFactory.getControllerIdentity());
 
         jobController = new JobController(this, runDataStore, Objects.requireNonNull(testerCloud));
         applicationController = new ApplicationController(this, curator, athenzClientFactory,
@@ -144,7 +145,7 @@ public class Controller extends AbstractComponent {
     public JobController jobController() { return jobController; }
 
     public List<AthenzDomain> getDomainList(String prefix) {
-        return athenzClientFactory.createZmsClientWithServicePrincipal().getDomainList(prefix);
+        return zmsClient.getDomainList(prefix);
     }
 
     /**

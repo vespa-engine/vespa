@@ -13,7 +13,6 @@ import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
-import com.yahoo.vespa.athenz.api.NToken;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.yolean.chain.Before;
 
@@ -24,7 +23,6 @@ import com.yahoo.yolean.chain.Before;
 public class AthenzFilterMock implements SecurityRequestFilter {
 
     public static final String IDENTITY_HEADER_NAME = "Athenz-Identity";
-    public static final String ATHENZ_NTOKEN_HEADER_NAME = "Athenz-NToken";
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -32,7 +30,6 @@ public class AthenzFilterMock implements SecurityRequestFilter {
     public void filter(DiscFilterRequest request, ResponseHandler handler) {
         if (request.getMethod().equalsIgnoreCase("OPTIONS")) return;
         String identityName = request.getHeader(IDENTITY_HEADER_NAME);
-        String nToken = request.getHeader(ATHENZ_NTOKEN_HEADER_NAME);
         if (identityName == null) {
             Response response = new Response(HttpResponse.Status.UNAUTHORIZED);
             response.headers().put("Content-Type", "application/json");
@@ -45,10 +42,7 @@ public class AthenzFilterMock implements SecurityRequestFilter {
             }
         } else {
             AthenzIdentity identity = AthenzIdentities.from(identityName);
-            AthenzPrincipal principal =
-                    nToken == null ?
-                            new AthenzPrincipal(identity) :
-                            new AthenzPrincipal(identity, new NToken(nToken));
+            AthenzPrincipal principal = new AthenzPrincipal(identity);
             request.setUserPrincipal(principal);
         }
     }
