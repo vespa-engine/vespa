@@ -46,7 +46,9 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     private static final Logger log = Logger.getLogger(SearchCluster.class.getName());
 
     /** The min active docs a group must have to be considered up, as a % of the average active docs of the other groups */
-    private double minActivedocsCoveragePercentage;
+    public final double minActivedocsCoveragePercentage;
+    public final double minGroupCoverage;
+    public final int maxNodesDownPerGroup;
     private final int size;
     private final ImmutableMap<Integer, Group> groups;
     private final ImmutableMultimap<String, Node> nodesByHost;
@@ -67,15 +69,16 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     // Only needed until query requests are moved to rpc
     private final FS4ResourcePool fs4ResourcePool;
 
-    public SearchCluster(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool,
-                         int containerClusterSize, VipStatus vipStatus) {
-        this(dispatchConfig.minActivedocsPercentage(), toNodes(dispatchConfig), fs4ResourcePool,
-             containerClusterSize, vipStatus);
+    public SearchCluster(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize, VipStatus vipStatus) {
+        this(dispatchConfig.minActivedocsPercentage(), dispatchConfig.minGroupCoverage(), dispatchConfig.maxNodesDownPerGroup(),
+                toNodes(dispatchConfig), fs4ResourcePool, containerClusterSize, vipStatus);
     }
 
-    public SearchCluster(double minActivedocsCoverage, List<Node> nodes, FS4ResourcePool fs4ResourcePool,
-                         int containerClusterSize, VipStatus vipStatus) {
+    public SearchCluster(double minActivedocsCoverage, double minGroupCoverage, int maxNodesDownPerGroup, List<Node> nodes, FS4ResourcePool fs4ResourcePool,
+            int containerClusterSize, VipStatus vipStatus) {
         this.minActivedocsCoveragePercentage = minActivedocsCoverage;
+        this.minGroupCoverage = minGroupCoverage;
+        this.maxNodesDownPerGroup = maxNodesDownPerGroup;
         this.size = nodes.size();
         this.fs4ResourcePool = fs4ResourcePool;
         this.vipStatus = vipStatus;
@@ -257,25 +260,52 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
      */
     @Override
     public void pingIterationCompleted() {
-        // Update active documents per group and use it to decide if the group should be active
-        for (Group group : groups.values())
+        int numGroups = orderedGroups.size();
+        if (numGroups == 1) {
+            Group group = groups.values().iterator().next();
             group.aggregateActiveDocuments();
-        if (groups.size() == 1) {
-            updateSufficientCoverage(groups.values().iterator().next(), true); // by definition
-        } else {
-            for (Group currentGroup : groups.values()) {
-                long sumOfAactiveDocumentsInOtherGroups = 0;
-                for (Group otherGroup : groups.values())
-                    if (otherGroup != currentGroup)
-                        sumOfAactiveDocumentsInOtherGroups += otherGroup.getActiveDocuments();
-                long averageDocumentsInOtherGroups = sumOfAactiveDocumentsInOtherGroups / (groups.size() - 1);
-                if (averageDocumentsInOtherGroups == 0)
-                    updateSufficientCoverage(currentGroup, true); // no information about any group; assume coverage
-                else
-                    updateSufficientCoverage(currentGroup,
-                                             100 * (double) currentGroup.getActiveDocuments() / averageDocumentsInOtherGroups > minActivedocsCoveragePercentage);
+            updateSufficientCoverage(group, true); // by definition
+            return;
+        }
+
+        // Update active documents per group and use it to decide if the group should be active
+
+        long[] activeDocumentsInGroup = new long[numGroups];
+        long sumOfActiveDocuments = 0;
+        for(int i = 0; i < numGroups; i++) {
+            Group group = orderedGroups.get(i);
+            group.aggregateActiveDocuments();
+            activeDocumentsInGroup[i] = group.getActiveDocuments();
+            sumOfActiveDocuments += activeDocumentsInGroup[i];
+        }
+
+        for (int i = 0; i < numGroups; i++) {
+            Group group = orderedGroups.get(i);
+            long activeDocuments = activeDocumentsInGroup[i];
+            long averageDocumentsInOtherGroups = (sumOfActiveDocuments - activeDocuments) / (numGroups - 1);
+            boolean sufficientCoverage = true;
+
+            if (averageDocumentsInOtherGroups > 0) {
+                double coverage = 100.0 * (double) activeDocuments / averageDocumentsInOtherGroups;
+                sufficientCoverage = coverage >= minActivedocsCoveragePercentage;
+            }
+            if (sufficientCoverage) {
+                sufficientCoverage = isNodeCoverageSufficient(group);
+            }
+            updateSufficientCoverage(group, sufficientCoverage);
+        }
+    }
+
+    private boolean isNodeCoverageSufficient(Group group) {
+        int nodesUp = 0;
+        for (Node node : group.nodes()) {
+            if (node.isWorking()) {
+                nodesUp++;
             }
         }
+        int nodes = group.nodes().size();
+        int nodesAllowedDown = maxNodesDownPerGroup + (int) (((double) nodes * (100.0 - minGroupCoverage)) / 100.0);
+        return nodesUp + nodesAllowedDown >= nodes;
     }
 
     private Pong getPong(FutureTask<Pong> futurePong, Node node) {
@@ -349,8 +379,11 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
 
         void aggregateActiveDocuments() {
             long activeDocumentsInGroup = 0;
-            for (Node node : nodes)
-                activeDocumentsInGroup += node.getActiveDocuments();
+            for (Node node : nodes) {
+                if (node.isWorking()) {
+                    activeDocumentsInGroup += node.getActiveDocuments();
+                }
+            }
             activeDocuments.set(activeDocumentsInGroup);
 
         }

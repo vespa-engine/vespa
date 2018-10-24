@@ -44,14 +44,15 @@ public class Dispatcher extends AbstractComponent {
 
     public Dispatcher(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize, VipStatus vipStatus) {
         this.searchCluster = new SearchCluster(dispatchConfig, fs4ResourcePool, containerClusterSize, vipStatus);
-        this.loadBalancer = new LoadBalancer(searchCluster);
+        this.loadBalancer = new LoadBalancer(searchCluster,
+                dispatchConfig.distributionPolicy() == DispatchConfig.DistributionPolicy.ROUNDROBIN);
         this.rpcResourcePool = new RpcResourcePool(dispatchConfig);
     }
 
     /** For testing */
     public Dispatcher(Map<Integer, Client.NodeConnection> nodeConnections, Client client) {
         this.searchCluster = null;
-        this.loadBalancer = new LoadBalancer(searchCluster);
+        this.loadBalancer = new LoadBalancer(searchCluster, true);
         this.rpcResourcePool = new RpcResourcePool(client, nodeConnections);
     }
 

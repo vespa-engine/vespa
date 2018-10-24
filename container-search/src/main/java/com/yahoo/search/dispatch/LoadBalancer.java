@@ -5,6 +5,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.dispatch.SearchCluster.Group;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -18,14 +19,13 @@ import java.util.logging.Logger;
  */
 public class LoadBalancer {
     // The implementation here is a simplistic least queries in flight + round-robin load balancer
-    // TODO: consider the options in com.yahoo.vespa.model.content.TuningDispatch
 
     private static final Logger log = Logger.getLogger(LoadBalancer.class.getName());
 
     private final List<GroupSchedule> scoreboard;
     private int needle = 0;
 
-    public LoadBalancer(SearchCluster searchCluster) {
+    public LoadBalancer(SearchCluster searchCluster, boolean roundRobin) {
         if (searchCluster == null) {
             this.scoreboard = null;
             return;
@@ -34,6 +34,11 @@ public class LoadBalancer {
 
         for (Group group : searchCluster.orderedGroups()) {
             scoreboard.add(new GroupSchedule(group));
+        }
+
+        if(! roundRobin) {
+            // TODO - More randomness could be desirable
+            Collections.shuffle(scoreboard);
         }
     }
 
