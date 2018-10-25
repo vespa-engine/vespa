@@ -27,6 +27,7 @@ import static com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester.c
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author mpolden
@@ -181,10 +182,6 @@ public class AclProvisioningTest {
         return allocateNodes(Capacity.fromNodeCount(nodeCount), tester.makeApplicationId());
     }
 
-    private List<Node> allocateNodes(NodeType nodeType, ApplicationId applicationId) {
-        return allocateNodes(Capacity.fromRequiredNodeType(nodeType), applicationId);
-    }
-
     private List<Node> allocateNodes(Capacity capacity, ApplicationId applicationId) {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
                                                   Version.fromString("6.42"), false);
@@ -194,18 +191,10 @@ public class AclProvisioningTest {
     }
 
     private static void assertAcls(List<List<Node>> expected, NodeAcl actual) {
-        assertAcls(expected, Collections.emptyList(), Collections.singletonList(actual));
+        assertAcls(expected, Collections.singletonList(actual));
     }
 
-    private static void assertAcls(List<List<Node>> expected, List<NodeAcl> actual) {
-        assertAcls(expected, Collections.emptyList(), actual);
-    }
-
-    private static void assertAcls(List<List<Node>> expected, List<String> expectedNetworks, NodeAcl actual) {
-        assertAcls(expected, expectedNetworks, Collections.singletonList(actual));
-    }
-
-    private static void assertAcls(List<List<Node>> expectedNodes, List<String> expectedNetworks, List<NodeAcl> actual) {
+    private static void assertAcls(List<List<Node>> expectedNodes, List<NodeAcl> actual) {
         Set<Node> expectedTrustedNodes = expectedNodes.stream()
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
@@ -214,10 +203,9 @@ public class AclProvisioningTest {
                 .collect(Collectors.toSet());
         assertEquals(expectedTrustedNodes, actualTrustedNodes);
 
-        Set<String> expectedTrustedNetworks = new HashSet<>(expectedNetworks);
         Set<String> actualTrustedNetworks = actual.stream()
                 .flatMap(acl -> acl.trustedNetworks().stream())
                 .collect(Collectors.toSet());
-        assertEquals(expectedTrustedNetworks, actualTrustedNetworks);
+        assertTrue("No networks are trusted", actualTrustedNetworks.isEmpty());
     }
 }
