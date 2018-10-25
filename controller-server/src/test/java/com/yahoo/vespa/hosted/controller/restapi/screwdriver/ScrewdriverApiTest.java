@@ -8,10 +8,8 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
-import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import org.junit.Test;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -23,18 +21,6 @@ import java.util.OptionalLong;
 public class ScrewdriverApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/screwdriver/responses/";
-
-    @Test
-    public void testGetReleaseStatus() throws Exception {
-        ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
-        tester.containerTester().assertResponse(authenticatedRequest("http://localhost:8080/screwdriver/v1/release/vespa"),
-                                                "{\"error-code\":\"NOT_FOUND\",\"message\":\"Information about the current system version is not available at this time\"}",
-                                                404);
-
-        tester.controller().updateVersionStatus(VersionStatus.compute(tester.controller()));
-        tester.containerTester().assertResponse(authenticatedRequest("http://localhost:8080/screwdriver/v1/release/vespa"),
-                                                new File("release-response.json"), 200);
-    }
 
     @Test
     public void testTriggerJobForApplication() {
