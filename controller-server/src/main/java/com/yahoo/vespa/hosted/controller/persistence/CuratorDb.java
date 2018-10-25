@@ -410,7 +410,8 @@ public class CuratorDb {
 
     public LongStream getLogChunkIds(ApplicationId id, JobType type) {
         return curator.getChildren(runsPath(id, type).append("logs")).stream()
-                      .mapToLong(Long::parseLong);
+                      .mapToLong(Long::parseLong)
+                      .sorted();
     }
 
     // -------------- Provisioning (called by internal code) ------------------

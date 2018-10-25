@@ -572,12 +572,10 @@ public class InternalStepRunner implements StepRunner {
 
         private final RunId id;
         private final Step step;
-        private final String prefix;
 
         private DualLogger(RunId id, Step step) {
             this.id = id;
             this.step = step;
-            this.prefix = id + " at " + step + ":  ";
         }
 
         private void log(String message) {
@@ -589,7 +587,7 @@ public class InternalStepRunner implements StepRunner {
         }
 
         private void log(Level level, String message, Throwable thrown) {
-            logger.log(level, message, thrown);
+            logger.log(level, id + " at " + step + ": " + message, thrown);
 
             if (thrown != null) {
                 ByteArrayOutputStream traceBuffer = new ByteArrayOutputStream();
