@@ -453,10 +453,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     static boolean incompatibleGCOptions(String jvmargs) {
         Pattern gcAlgorithm = Pattern.compile("-XX:[-+]Use.+GC");
-        if (gcAlgorithm.matcher(jvmargs).find()) {
-            return true;
-        }
-        return false;
+        Pattern cmsArgs = Pattern.compile("-XX:[-+]*CMS");
+        return (gcAlgorithm.matcher(jvmargs).find() ||cmsArgs.matcher(jvmargs).find());
     }
     private void addNodesFromXml(ContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         Element nodesElement = XML.getChild(containerElement, "nodes");

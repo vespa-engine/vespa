@@ -74,6 +74,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertFalse(ContainerModelBuilder.incompatibleGCOptions("UseG1GC"));
         assertTrue(ContainerModelBuilder.incompatibleGCOptions("-XX:+UseG1GC"));
         assertTrue(ContainerModelBuilder.incompatibleGCOptions("abc -XX:+UseParNewGC xyz"));
+        assertTrue(ContainerModelBuilder.incompatibleGCOptions("-XX:CMSInitiatingOccupancyFraction=19"));
     }
 
     @Test
