@@ -62,10 +62,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .addHeader(creatOktaAccessTokenHeader(token))
                 .setEntity(toJsonStringEntity(new TenancyRequestEntity(tenantDomain, providerService, Collections.emptyList())))
                 .build();
-        execute(request, response -> {
-            readEntity(response, String.class);
-            return response.getStatusLine().getStatusCode();
-        });
+        execute(request, response -> readEntity(response, Void.class));
     }
 
     @Override
@@ -75,7 +72,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .setUri(uri)
                 .addHeader(creatOktaAccessTokenHeader(token))
                 .build();
-        execute(request, response -> readEntity(response, String.class));
+        execute(request, response -> readEntity(response, Void.class));
     }
 
     @Override
@@ -86,7 +83,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .addHeader(creatOktaAccessTokenHeader(token))
                 .setEntity(toJsonStringEntity(new ProviderResourceGroupRolesRequestEntity(providerService, tenantDomain, roleActions, resourceGroup)))
                 .build();
-        execute(request, response -> readEntity(response, String.class)); // The ZMS API will return a json object that is similar to ProviderResourceGroupRolesRequestEntity
+        execute(request, response -> readEntity(response, Void.class)); // Note: The ZMS API will actually return a json object that is similar to ProviderResourceGroupRolesRequestEntity
     }
 
     @Override
@@ -96,7 +93,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .setUri(uri)
                 .addHeader(creatOktaAccessTokenHeader(token))
                 .build();
-        execute(request, response -> readEntity(response, String.class));
+        execute(request, response -> readEntity(response, Void.class));
     }
 
     @Override
