@@ -87,7 +87,7 @@ public class ModelProvisioningTest {
                         "  <handler id='myHandler'>" +
                         "    <component id='injected' />" +
                         "  </handler>" +
-                        "  <nodes count='2' allocated-memory='45%' jvmargs='-verbosegc' preload='lib/blablamalloc.so'/>" +
+                        "  <nodes count='2' allocated-memory='45%' gcopts='-XX:+UseParNewGC' jvmargs='-verbosegc' preload='lib/blablamalloc.so'/>" +
                         "</jdisc>" +
                         "</services>";
         String hosts ="<hosts>"
@@ -112,35 +112,38 @@ public class ModelProvisioningTest {
                 + "</hosts>";
         VespaModelCreatorWithMockPkg creator = new VespaModelCreatorWithMockPkg(null, services);
         VespaModel model = creator.create(new DeployState.Builder().modelHostProvisioner(new InMemoryProvisioner(Hosts.readFrom(new StringReader(hosts)), true)));
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().size(), is(3));
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(0).getConfigId(), is("mydisc/container.0"));
-        assertTrue(model.getContainerClusters().get("mydisc").getContainers().get(0).isInitialized());
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(1).getConfigId(), is("mydisc/container.1"));
-        assertTrue(model.getContainerClusters().get("mydisc").getContainers().get(1).isInitialized());
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(2).getConfigId(), is("mydisc/container.2"));
-        assertTrue(model.getContainerClusters().get("mydisc").getContainers().get(2).isInitialized());
+        ContainerCluster mydisc = model.getContainerClusters().get("mydisc");
+        ContainerCluster mydisc2 = model.getContainerClusters().get("mydisc2");
+        assertThat(mydisc.getContainers().size(), is(3));
+        assertThat(mydisc.getContainers().get(0).getConfigId(), is("mydisc/container.0"));
+        assertTrue(mydisc.getContainers().get(0).isInitialized());
+        assertThat(mydisc.getContainers().get(1).getConfigId(), is("mydisc/container.1"));
+        assertTrue(mydisc.getContainers().get(1).isInitialized());
+        assertThat(mydisc.getContainers().get(2).getConfigId(), is("mydisc/container.2"));
+        assertTrue(mydisc.getContainers().get(2).isInitialized());
 
-        assertThat(model.getContainerClusters().get("mydisc2").getContainers().size(), is(2));
-        assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(0).getConfigId(), is("mydisc2/container.0"));
-        assertTrue(model.getContainerClusters().get("mydisc2").getContainers().get(0).isInitialized());
-        assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(1).getConfigId(), is("mydisc2/container.1"));
-        assertTrue(model.getContainerClusters().get("mydisc2").getContainers().get(1).isInitialized());
+        assertThat(mydisc2.getContainers().size(), is(2));
+        assertThat(mydisc2.getContainers().get(0).getConfigId(), is("mydisc2/container.0"));
+        assertTrue(mydisc2.getContainers().get(0).isInitialized());
+        assertThat(mydisc2.getContainers().get(1).getConfigId(), is("mydisc2/container.1"));
+        assertTrue(mydisc2.getContainers().get(1).isInitialized());
 
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(0).getJvmArgs(), is(""));
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(1).getJvmArgs(), is(""));
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(2).getJvmArgs(), is(""));
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(0).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(1).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
-        assertThat(model.getContainerClusters().get("mydisc").getContainers().get(2).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
-        assertThat(model.getContainerClusters().get("mydisc").getMemoryPercentage(), is(Optional.empty()));
+        assertThat(mydisc.getContainers().get(0).getJvmArgs(), is(""));
+        assertThat(mydisc.getContainers().get(1).getJvmArgs(), is(""));
+        assertThat(mydisc.getContainers().get(2).getJvmArgs(), is(""));
+        assertThat(mydisc.getContainers().get(0).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
+        assertThat(mydisc.getContainers().get(1).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
+        assertThat(mydisc.getContainers().get(2).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
+        assertThat(mydisc.getMemoryPercentage(), is(Optional.empty()));
 
-        assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(0).getJvmArgs(), is("-verbosegc"));
-        assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(1).getJvmArgs(), is("-verbosegc"));
-        assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(0).getPreLoad(), is("lib/blablamalloc.so"));
-        assertThat(model.getContainerClusters().get("mydisc2").getContainers().get(1).getPreLoad(), is("lib/blablamalloc.so"));
-        assertThat(model.getContainerClusters().get("mydisc2").getMemoryPercentage(), is(Optional.of(45)));
+        assertThat(mydisc2.getContainers().get(0).getJvmArgs(), is("-verbosegc"));
+        assertThat(mydisc2.getContainers().get(1).getJvmArgs(), is("-verbosegc"));
+        assertThat(mydisc2.getContainers().get(0).getPreLoad(), is("lib/blablamalloc.so"));
+        assertThat(mydisc2.getContainers().get(1).getPreLoad(), is("lib/blablamalloc.so"));
+        assertThat(mydisc2.getMemoryPercentage(), is(Optional.of(45)));
+        assertThat(mydisc2.getGCOpts(), is(Optional.of("-XX:+UseParNewGC")));
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
-        model.getContainerClusters().get("mydisc2").getConfig(qrStartBuilder);
+        mydisc2.getConfig(qrStartBuilder);
         QrStartConfig qrsStartConfig = new QrStartConfig(qrStartBuilder);
         assertEquals(45, qrsStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         

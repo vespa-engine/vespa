@@ -1,6 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search;
 
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
@@ -26,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author gjoranv
@@ -54,6 +59,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         this.options = options;
         this.owningCluster = cluster;
         cluster.addComponent(getFS4ResourcePool());
+
     }
 
     private Component<?, ComponentModel> getFS4ResourcePool() {
@@ -113,6 +119,20 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         if (pageTemplates!=null) pageTemplates.getConfig(builder);
     }
 
+    private String buildGCOpts(Zone zone) {
+        Optional<String> gcopts = owningCluster.getGCOpts();
+        if (gcopts.isPresent()) {
+            return gcopts.get();
+        } else if (zone.system() == SystemName.dev) {
+            return ContainerCluster.G1GC;
+        } else if (owningCluster.isHostedVespa()) {
+            return ((zone.environment() != Environment.prod) || RegionName.from("us-east-3").equals(zone.region()))
+                    ? ContainerCluster.G1GC : ContainerCluster.CMS;
+        } else {
+            return ContainerCluster.CMS;
+        }
+    }
+
     @Override
     public void getConfig(QrStartConfig.Builder qsB) {
     	QrStartConfig.Jvm.Builder internalBuilder = new QrStartConfig.Jvm.Builder();
@@ -122,6 +142,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
             internalBuilder.heapSizeAsPercentageOfPhysicalMemory(owningCluster.getHostClusterId().isPresent() ? 17 : 60);
         }
         qsB.jvm(internalBuilder.directMemorySizeCache(totalCacheSizeMb()));
+        qsB.jvm.gcopts(buildGCOpts(owningCluster.getZone()));
     }
 
     private int totalCacheSizeMb() {
@@ -192,6 +213,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
      * Struct that encapsulates qrserver options.
      */
     public static class Options {
-        public Map<String, QrsCache> cacheSettings = new LinkedHashMap<>();
+        Map<String, QrsCache> cacheSettings = new LinkedHashMap<>();
     }
 }

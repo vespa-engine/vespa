@@ -2,6 +2,7 @@
 service.attlist &= attribute hostalias { xsd:NCName }
 service.attlist &= attribute baseport { xsd:unsignedShort }?
 service.attlist &= attribute jvmargs { text }?
+service.attlist &= attribute gcopts { text }?
 # preload is for internal use only
 service.attlist &= attribute preload { text }?
 
