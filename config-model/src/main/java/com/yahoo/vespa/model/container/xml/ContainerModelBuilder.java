@@ -76,6 +76,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -449,6 +451,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addContainers(Collections.singleton(container));
     }
 
+    static boolean incompatibleGCOptions(String jvmargs) {
+        Pattern gcAlgorithm = Pattern.compile("-XX:[-+]Use.+GC");
+        if (gcAlgorithm.matcher(jvmargs).find()) {
+            return true;
+        }
+        return false;
+    }
     private void addNodesFromXml(ContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         if (nodesElement == null) { // default single node on localhost
@@ -460,8 +469,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
         else {
             List<Container> nodes = createNodes(cluster, nodesElement, context);
-            cluster.setGCOpts(nodesElement.getAttribute(VespaDomBuilder.GCOPTS_ATTRIB_NAME));
-            applyNodesTagJvmArgs(nodes, nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME));
+            String jvmArgs = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
+            String gcopts = nodesElement.getAttribute(VespaDomBuilder.GCOPTS_ATTRIB_NAME);
+            if (incompatibleGCOptions(jvmArgs)) {
+                context.getDeployLogger().log(Level.WARNING, "You need to move out your GC related options from 'jvmargs' to 'gcopts'");
+            } else {
+                cluster.setGCOpts(gcopts);
+            }
+            applyNodesTagJvmArgs(nodes, jvmArgs);
             applyRoutingAliasProperties(nodes, cluster);
             applyDefaultPreload(nodes, nodesElement);
             applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
