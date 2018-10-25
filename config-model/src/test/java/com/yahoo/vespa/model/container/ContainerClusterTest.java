@@ -194,14 +194,19 @@ public class ContainerClusterTest {
     private void verifyGCOpts(boolean isHosted, Zone zone, String expected) {
         verifyGCOpts(isHosted, null, zone, expected);
         verifyGCOpts(isHosted, "-XX:+UseG1GC", zone, "-XX:+UseG1GC");
+        Zone DEV = new Zone(SystemName.dev, zone.environment(), zone.region());
+        verifyGCOpts(isHosted, null, DEV, ContainerCluster.G1GC);
+        verifyGCOpts(isHosted, "-XX:+UseConcMarkSweepGC", DEV, "-XX:+UseConcMarkSweepGC");
+
     }
 
     @Test
     public void requireThatGCOptsIsHonoured() {
-        verifyGCOpts(false, Zone.defaultZone(),"-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1");
-        verifyGCOpts(false, new Zone(Environment.prod, RegionName.from("us-east-3")), "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1");
-        verifyGCOpts(true, Zone.defaultZone(), "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1");
-        verifyGCOpts(true, new Zone(Environment.prod, RegionName.from("us-east-3")), "-XX:-UseConcMarkSweepGC -XX:+UseG1GC -XX:MaxTenuringThreshold=15");
+        final Zone US_EAST_3 = new Zone(Environment.prod, RegionName.from("us-east-3"));
+        verifyGCOpts(false, Zone.defaultZone(),ContainerCluster.CMS);
+        verifyGCOpts(false, US_EAST_3, ContainerCluster.CMS);
+        verifyGCOpts(true, Zone.defaultZone(), ContainerCluster.CMS);
+        verifyGCOpts(true, US_EAST_3, ContainerCluster.G1GC);
     }
 
     @Test
