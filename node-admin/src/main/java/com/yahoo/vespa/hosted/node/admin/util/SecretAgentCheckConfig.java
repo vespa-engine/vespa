@@ -40,6 +40,12 @@ public class SecretAgentCheckConfig {
         return this;
     }
 
+    public SecretAgentCheckConfig withTags(Map<String, Object> tags) {
+        this.tags.clear();
+        this.tags.putAll(tags);
+        return this;
+    }
+
     public void setTags(Map<String, Object> tags) {
         this.tags.clear();
         this.tags.putAll(tags);
