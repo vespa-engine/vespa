@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
-import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -44,7 +43,6 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
     /** File an ownership issue with the owners of all applications we know about. */
     private void confirmApplicationOwnerships() {
         ApplicationList.from(controller().applications().asList())
-                       .notPullRequest()
                        .withProjectId()
                        .hasProductionDeployment()
                        .asList()

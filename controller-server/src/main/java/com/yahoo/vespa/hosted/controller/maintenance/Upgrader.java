@@ -92,7 +92,6 @@ public class Upgrader extends Maintainer {
     private ApplicationList applications() { return ApplicationList.from(controller().applications().asList()); }
 
     private void upgrade(ApplicationList applications, Version version) {
-        applications = applications.notPullRequest(); // Pull requests are deployed as separate applications to test then deleted; No need to upgrade
         applications = applications.hasProductionDeployment();
         applications = applications.onLowerVersionThan(version);
         applications = applications.allowMajorVersion(version.getMajor());

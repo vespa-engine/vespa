@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
-import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -57,7 +56,6 @@ public class DeploymentIssueReporter extends Maintainer {
     private List<Application> applications() {
         return ApplicationList.from(controller().applications().asList())
                               .withProjectId()
-                              .notPullRequest()
                               .asList();
     }
 

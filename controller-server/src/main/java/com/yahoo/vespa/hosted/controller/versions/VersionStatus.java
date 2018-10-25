@@ -188,7 +188,6 @@ public class VersionStatus {
         }
 
         ApplicationList applicationList = ApplicationList.from(applications)
-                                                         .notPullRequest()
                                                          .hasProductionDeployment();
         for (Application application : applicationList.asList()) {
             // Note that each version deployed on this application in production exists
