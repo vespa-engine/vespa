@@ -6,7 +6,6 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
-import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
@@ -48,7 +47,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     protected void maintain() {
         AtomicInteger failures = new AtomicInteger(0);
         AtomicReference<Exception> lastException = new AtomicReference<>(null);
-        List<Application> applicationList = ApplicationList.from(applications.asList()).notPullRequest().asList();
+        List<Application> applicationList = applications.asList();
 
         // Run parallel stream inside a custom ForkJoinPool so that we can control the number of threads used
         ForkJoinPool pool = new ForkJoinPool(applicationsToUpdateInParallel);

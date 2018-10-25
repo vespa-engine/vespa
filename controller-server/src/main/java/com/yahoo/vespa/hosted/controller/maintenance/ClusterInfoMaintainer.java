@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 
@@ -89,7 +88,7 @@ public class ClusterInfoMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        for (Application application : ApplicationList.from(controller().applications().asList()).notPullRequest().asList()) {
+        for (Application application : controller().applications().asList()) {
             for (Deployment deployment : application.deployments().values()) {
                 DeploymentId deploymentId = new DeploymentId(application.id(), deployment.zone());
                 try {

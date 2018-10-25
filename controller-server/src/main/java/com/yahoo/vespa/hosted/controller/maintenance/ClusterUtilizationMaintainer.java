@@ -3,11 +3,10 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
-import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 
@@ -44,7 +43,7 @@ public class ClusterUtilizationMaintainer extends Maintainer {
 
     @Override
     protected void maintain() {
-        for (Application application : ApplicationList.from(controller().applications().asList()).notPullRequest().asList()) {
+        for (Application application : controller().applications().asList()) {
             for (Deployment deployment : application.deployments().values()) {
 
                 Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization = getUpdatedClusterUtilizations(application.id(), deployment.zone());

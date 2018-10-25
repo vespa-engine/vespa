@@ -275,7 +275,6 @@ public class DeploymentTrigger {
     /** Returns the set of all jobs which have changes to propagate from the upstream steps. */
     private List<Job> computeReadyJobs() {
         return ApplicationList.from(applications().asList())
-                              .notPullRequest()
                               .withProjectId()
                               .deploying()
                               .idList().stream()
