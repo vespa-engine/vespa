@@ -13,7 +13,6 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import org.junit.Test;
@@ -63,15 +62,15 @@ public class IndexingProcessorTestCase {
         assertTrue(output instanceof DocumentUpdate);
         DocumentUpdate docUpdate = (DocumentUpdate) output;
 
-        assertEquals(3, docUpdate.getFieldUpdates().size());
+        assertEquals(3, docUpdate.fieldUpdates().size());
         {
-            FieldUpdate fieldUpdate = docUpdate.getFieldUpdate(0);
+            FieldUpdate fieldUpdate = docUpdate.getFieldUpdate("song");
             assertEquals("song", fieldUpdate.getField().getName());
             assertEquals(1, fieldUpdate.getValueUpdates().size());
             ValueUpdate<?> valueUpdate = fieldUpdate.getValueUpdate(0);
             assertTrue(valueUpdate instanceof AssignValueUpdate);
             assertEquals(new StringFieldValue("isbnmarker"), valueUpdate.getValue());
-            fieldUpdate = docUpdate.getFieldUpdate(1);
+            fieldUpdate = docUpdate.getFieldUpdate("title");
             assertEquals("title", fieldUpdate.getField().getName());
             assertEquals(1, fieldUpdate.getValueUpdates().size());
             valueUpdate = fieldUpdate.getValueUpdate(0);
@@ -80,14 +79,14 @@ public class IndexingProcessorTestCase {
         }
 
         {
-            FieldUpdate fieldUpdate = docUpdate.getFieldUpdate(1);
+            FieldUpdate fieldUpdate = docUpdate.getFieldUpdate("title");
             ValueUpdate<?> valueUpdate = fieldUpdate.getValueUpdate(0);
             assertEquals("title", fieldUpdate.getField().getName());
             assertTrue(valueUpdate instanceof AssignValueUpdate);
             assertEquals(new StringFieldValue("69"), valueUpdate.getValue());
         }
         {
-            FieldUpdate fieldUpdate = docUpdate.getFieldUpdate(2);
+            FieldUpdate fieldUpdate = docUpdate.getFieldUpdate("isbn");
             ValueUpdate<?> valueUpdate = fieldUpdate.getValueUpdate(0);
             assertEquals("isbn", fieldUpdate.getField().getName());
             assertTrue(valueUpdate instanceof AssignValueUpdate);

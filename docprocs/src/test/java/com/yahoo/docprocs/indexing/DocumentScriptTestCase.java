@@ -187,8 +187,8 @@ public class DocumentScriptTestCase {
 
         FieldPathUpdate executeWithUpdateAndExpectFieldPath(String fieldName, FieldPathUpdate updateIn) {
             DocumentUpdate update = executeWithUpdate(fieldName, updateIn);
-            assertEquals(1, update.getFieldPathUpdates().size());
-            return update.getFieldPathUpdates().get(0);
+            assertEquals(1, update.fieldPathUpdates().size());
+            return update.fieldPathUpdates().iterator().next();
         }
     }
 
@@ -229,10 +229,10 @@ public class DocumentScriptTestCase {
         StringFieldValue newTitleValue = new StringFieldValue("iron moose 4, moose with a vengeance");
         DocumentUpdate update = f.executeWithUpdate("structfield", new AssignFieldPathUpdate(f.type, "structfield.title", newTitleValue));
 
-        assertEquals(1, update.getFieldPathUpdates().size());
-        assertEquals(0, update.getFieldUpdates().size());
-        assertTrue(update.getFieldPathUpdates().get(0) instanceof AssignFieldPathUpdate);
-        AssignFieldPathUpdate assignUpdate = (AssignFieldPathUpdate)update.getFieldPathUpdates().get(0);
+        assertEquals(1, update.fieldPathUpdates().size());
+        assertEquals(0, update.fieldUpdates().size());
+        assertTrue(update.fieldPathUpdates().iterator().next() instanceof AssignFieldPathUpdate);
+        AssignFieldPathUpdate assignUpdate = (AssignFieldPathUpdate)update.fieldPathUpdates().iterator().next();
         assertEquals("structfield.title", assignUpdate.getOriginalFieldPath());
         assertEquals(newTitleValue, assignUpdate.getFieldValue());
     }

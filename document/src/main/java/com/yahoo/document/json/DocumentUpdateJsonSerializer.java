@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -105,11 +106,11 @@ public class DocumentUpdateJsonSerializer
                 }
 
                 generator.writeObjectFieldStart("fields");
-                for (FieldUpdate up : update.getFieldUpdates()) {
+                for (FieldUpdate up : update.fieldUpdates()) {
                     up.serialize(this);
                 }
 
-                update.getFieldPathUpdates().stream()
+                update.fieldPathUpdates().stream()
                         .collect(Collectors.groupingBy(FieldPathUpdate::getFieldPath))
                         .forEach((fieldPath, fieldPathUpdates) ->
                                 wrapIOException(() -> write(fieldPath, fieldPathUpdates, generator)));
@@ -120,7 +121,7 @@ public class DocumentUpdateJsonSerializer
             });
         }
 
-        private void write(FieldPath fieldPath, List<FieldPathUpdate> fieldPathUpdates, JsonGenerator generator) throws IOException {
+        private void write(FieldPath fieldPath, Collection<FieldPathUpdate> fieldPathUpdates, JsonGenerator generator) throws IOException {
             generator.writeObjectFieldStart(fieldPath.toString());
 
             for (FieldPathUpdate update : fieldPathUpdates) {
