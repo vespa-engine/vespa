@@ -22,8 +22,8 @@ public class LoadBalancerTest {
     @Test
     public void requreThatLoadBalancerServesSingleNodeSetups() {
         Node n1 = new SearchCluster.Node(0, "test-node1", 0, 0);
-        SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1), null, 1, null);
-        LoadBalancer lb = new LoadBalancer(cluster);
+        SearchCluster cluster = new SearchCluster(88.0, 99.0, 0, Arrays.asList(n1), null, 1, null);
+        LoadBalancer lb = new LoadBalancer(cluster, true);
 
         Optional<Group> grp = lb.takeGroupForQuery(new Query());
         Group group = grp.orElseGet(() -> {
@@ -36,8 +36,8 @@ public class LoadBalancerTest {
     public void requreThatLoadBalancerServesMultiGroupSetups() {
         Node n1 = new SearchCluster.Node(0, "test-node1", 0, 0);
         Node n2 = new SearchCluster.Node(1, "test-node2", 1, 1);
-        SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1, n2), null, 1, null);
-        LoadBalancer lb = new LoadBalancer(cluster);
+        SearchCluster cluster = new SearchCluster(88.0, 99.0, 0, Arrays.asList(n1, n2), null, 1, null);
+        LoadBalancer lb = new LoadBalancer(cluster, true);
 
         Optional<Group> grp = lb.takeGroupForQuery(new Query());
         Group group = grp.orElseGet(() -> {
@@ -52,8 +52,8 @@ public class LoadBalancerTest {
         Node n2 = new SearchCluster.Node(1, "test-node2", 1, 0);
         Node n3 = new SearchCluster.Node(0, "test-node3", 0, 1);
         Node n4 = new SearchCluster.Node(1, "test-node4", 1, 1);
-        SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1, n2, n3, n4), null, 2, null);
-        LoadBalancer lb = new LoadBalancer(cluster);
+        SearchCluster cluster = new SearchCluster(88.0, 99.0, 0, Arrays.asList(n1, n2, n3, n4), null, 2, null);
+        LoadBalancer lb = new LoadBalancer(cluster, true);
 
         Optional<Group> grp = lb.takeGroupForQuery(new Query());
         assertThat(grp.isPresent(), is(true));
@@ -63,8 +63,8 @@ public class LoadBalancerTest {
     public void requreThatLoadBalancerReturnsDifferentGroups() {
         Node n1 = new SearchCluster.Node(0, "test-node1", 0, 0);
         Node n2 = new SearchCluster.Node(1, "test-node2", 1, 1);
-        SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1, n2), null, 1, null);
-        LoadBalancer lb = new LoadBalancer(cluster);
+        SearchCluster cluster = new SearchCluster(88.0, 99.0, 0, Arrays.asList(n1, n2), null, 1, null);
+        LoadBalancer lb = new LoadBalancer(cluster, true);
 
         // get first group
         Optional<Group> grp = lb.takeGroupForQuery(new Query());
@@ -83,8 +83,8 @@ public class LoadBalancerTest {
     public void requreThatLoadBalancerReturnsGroupWithShortestQueue() {
         Node n1 = new SearchCluster.Node(0, "test-node1", 0, 0);
         Node n2 = new SearchCluster.Node(1, "test-node2", 1, 1);
-        SearchCluster cluster = new SearchCluster(88.0, Arrays.asList(n1, n2), null, 1, null);
-        LoadBalancer lb = new LoadBalancer(cluster);
+        SearchCluster cluster = new SearchCluster(88.0, 99.0, 0, Arrays.asList(n1, n2), null, 1, null);
+        LoadBalancer lb = new LoadBalancer(cluster, true);
 
         // get first group
         Optional<Group> grp = lb.takeGroupForQuery(new Query());

@@ -19,24 +19,27 @@ import java.util.logging.Logger;
  */
 public class LoadBalancer {
     // The implementation here is a simplistic least queries in flight + round-robin load balancer
-    // TODO: consider the options in com.yahoo.vespa.model.content.TuningDispatch
 
     private static final Logger log = Logger.getLogger(LoadBalancer.class.getName());
 
     private final List<GroupSchedule> scoreboard;
     private int needle = 0;
 
-    public LoadBalancer(SearchCluster searchCluster) {
+    public LoadBalancer(SearchCluster searchCluster, boolean roundRobin) {
         if (searchCluster == null) {
             this.scoreboard = null;
             return;
         }
         this.scoreboard = new ArrayList<>(searchCluster.groups().size());
 
-        for (Group group : searchCluster.groups().values()) {
+        for (Group group : searchCluster.orderedGroups()) {
             scoreboard.add(new GroupSchedule(group));
         }
-        Collections.shuffle(scoreboard);
+
+        if(! roundRobin) {
+            // TODO - More randomness could be desirable
+            Collections.shuffle(scoreboard);
+        }
     }
 
     /**
@@ -74,16 +77,18 @@ public class LoadBalancer {
     private Optional<Group> allocateNextGroup() {
         synchronized (this) {
             GroupSchedule bestSchedule = null;
+            int bestIndex = needle;
 
             int index = needle;
             for (int i = 0; i < scoreboard.size(); i++) {
                 GroupSchedule sched = scoreboard.get(index);
                 if (sched.isPreferredOver(bestSchedule)) {
                     bestSchedule = sched;
+                    bestIndex = index;
                 }
                 index = nextScoreboardIndex(index);
             }
-            needle = nextScoreboardIndex(needle);
+            needle = nextScoreboardIndex(bestIndex);
 
             Group ret = null;
             if (bestSchedule != null) {
@@ -118,9 +123,18 @@ public class LoadBalancer {
             if (other == null) {
                 return true;
             }
-            if (! group.hasSufficientCoverage()) {
-                return false;
+
+            // different coverage
+            if (this.group.hasSufficientCoverage() != other.group.hasSufficientCoverage()) {
+                if (! this.group.hasSufficientCoverage()) {
+                    // this doesn't have coverage, other does
+                    return false;
+                } else {
+                    // other doesn't have coverage, this does
+                    return true;
+                }
             }
+
             return this.score < other.score;
         }
 
