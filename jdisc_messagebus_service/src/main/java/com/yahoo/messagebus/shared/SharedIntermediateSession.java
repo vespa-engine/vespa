@@ -4,8 +4,16 @@ package com.yahoo.messagebus.shared;
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.log.LogLevel;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.EmptyReply;
 import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.IntermediateSession;
+import com.yahoo.messagebus.IntermediateSessionParams;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageHandler;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.ReplyHandler;
+import com.yahoo.messagebus.Result;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
@@ -19,7 +27,6 @@ public class SharedIntermediateSession extends AbstractResource
 
     private static final Logger log = Logger.getLogger(SharedIntermediateSession.class.getName());
     private final AtomicReference<MessageHandler> msgHandler = new AtomicReference<>();
-    private final SharedMessageBus mbus;
     private final IntermediateSession session;
     private final ResourceReference mbusReference;
 
@@ -27,7 +34,6 @@ public class SharedIntermediateSession extends AbstractResource
         if (params.getReplyHandler() != null) {
             throw new IllegalArgumentException("Reply handler must be null.");
         }
-        this.mbus = mbus;
         this.msgHandler.set(params.getMessageHandler());
         this.session = mbus.messageBus().createIntermediateSession(params.setReplyHandler(this)
                                                                          .setMessageHandler(this));
