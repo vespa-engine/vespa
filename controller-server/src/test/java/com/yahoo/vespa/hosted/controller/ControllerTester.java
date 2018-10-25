@@ -23,7 +23,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.github.GitHubMock;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
@@ -78,7 +80,8 @@ public final class ControllerTester {
     private final MockBuildService buildService;
     private final MetricsServiceMock metricsService;
     private final RoutingGeneratorMock routingGenerator;
-    private final MockOrganization organization;
+    private final MockContactRetriever contactRetriever;
+    private final MockIssueHandler issueHandler;
 
     private Controller controller;
 
@@ -88,7 +91,7 @@ public final class ControllerTester {
              new ZoneRegistryMock(), new GitHubMock(), curatorDb, rotationsConfig,
              new MemoryNameService(), new ArtifactRepositoryMock(), new ApplicationStoreMock(),
              new MemoryEntityService(), new MockBuildService(),
-             metricsService, new RoutingGeneratorMock(), new MockOrganization(clock));
+             metricsService, new RoutingGeneratorMock(), new MockContactRetriever(), new MockIssueHandler(clock));
     }
 
     public ControllerTester(ManualClock clock) {
@@ -114,7 +117,7 @@ public final class ControllerTester {
                              ApplicationStoreMock appStoreMock,
                              EntityService entityService, MockBuildService buildService,
                              MetricsServiceMock metricsService, RoutingGeneratorMock routingGenerator,
-                             MockOrganization organization) {
+                             MockContactRetriever contactRetriever, MockIssueHandler issueHandler) {
         this.athenzDb = athenzDb;
         this.clock = clock;
         this.configServer = configServer;
@@ -129,7 +132,8 @@ public final class ControllerTester {
         this.buildService = buildService;
         this.metricsService = metricsService;
         this.routingGenerator = routingGenerator;
-        this.organization = organization;
+        this.contactRetriever = contactRetriever;
+        this.issueHandler = issueHandler;
         this.controller = createController(curator, rotationsConfig, configServer, clock, gitHub, zoneRegistry,
                                            athenzDb, nameService, artifactRepository, appStoreMock, entityService, buildService,
                                            metricsService, routingGenerator);
@@ -178,8 +182,8 @@ public final class ControllerTester {
 
     public RoutingGeneratorMock routingGenerator() { return routingGenerator; }
 
-    public MockOrganization organization() {
-        return organization;
+    public MockContactRetriever contactRetriever() {
+        return contactRetriever;
     }
 
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
@@ -240,17 +244,21 @@ public final class ControllerTester {
         return domain;
     }
 
-    public TenantName createTenant(String tenantName, String domainName, Long propertyId) {
+    public TenantName createTenant(String tenantName, String domainName, Long propertyId, Optional<Contact> contact) {
         TenantName name = TenantName.from(tenantName);
         Optional<Tenant> existing = controller().tenants().tenant(name);
         if (existing.isPresent()) return name;
         AthenzTenant tenant = AthenzTenant.create(name, createDomain(domainName), new Property("app1Property"),
                                                   Optional.ofNullable(propertyId)
                                                           .map(Object::toString)
-                                                          .map(PropertyId::new));
+                                                          .map(PropertyId::new), contact);
         controller().tenants().create(tenant, new OktaAccessToken("okta-token"));
         assertNotNull(controller().tenants().tenant(name));
         return name;
+    }
+
+    public TenantName createTenant(String tenantName, String domainName, Long propertyId) {
+        return createTenant(tenantName, domainName, propertyId, Optional.empty());
     }
 
     public Application createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {

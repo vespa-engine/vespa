@@ -12,7 +12,8 @@ import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
-import com.yahoo.vespa.hosted.controller.tenant.Contact;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
 import java.net.URI;
@@ -37,8 +38,15 @@ public class TenantSerializer {
     private static final String issueTrackerUrlField = "issueTrackerUrl";
     private static final String personsField = "persons";
     private static final String personField = "person";
+    private static final String queueField = "queue";
+    private static final String componentField = "component";
 
-    public Slime toSlime(AthenzTenant tenant) {
+    public Slime toSlime(Tenant tenant) {
+        if (tenant instanceof AthenzTenant) return toSlime((AthenzTenant) tenant);
+        return toSlime((UserTenant) tenant);
+    }
+
+    private Slime toSlime(AthenzTenant tenant) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString(nameField, tenant.name().value());
@@ -46,26 +54,20 @@ public class TenantSerializer {
         root.setString(propertyField, tenant.property().id());
         tenant.propertyId().ifPresent(propertyId -> root.setString(propertyIdField, propertyId.id()));
         tenant.contact().ifPresent(contact -> {
-            Cursor contactObject = root.setObject(contactField);
-            contactObject.setString(contactUrlField, contact.url().toString());
-            contactObject.setString(propertyUrlField, contact.propertyUrl().toString());
-            contactObject.setString(issueTrackerUrlField, contact.issueTrackerUrl().toString());
-            Cursor personsArray = contactObject.setArray(personsField);
-            contact.persons().forEach(personList -> {
-                Cursor personArray = personsArray.addArray();
-                personList.forEach(person -> {
-                    Cursor personObject = personArray.addObject();
-                    personObject.setString(personField, person);
-                });
-            });
+            Cursor contactCursor = root.setObject(contactField);
+            writeContact(contact, contactCursor);
         });
         return slime;
     }
 
-    public Slime toSlime(UserTenant tenant) {
+    private Slime toSlime(UserTenant tenant) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         root.setString(nameField, tenant.name().value());
+        tenant.contact().ifPresent(contact -> {
+            Cursor contactCursor = root.setObject(contactField);
+            writeContact(contact, contactCursor);
+        });
         return slime;
     }
 
@@ -82,17 +84,42 @@ public class TenantSerializer {
     public UserTenant userTenantFrom(Slime slime) {
         Inspector root = slime.get();
         TenantName name = TenantName.from(root.field(nameField).asString());
-        return new UserTenant(name);
+        Optional<Contact> contact = contactFrom(root.field(contactField));
+        return new UserTenant(name, contact);
     }
 
     private Optional<Contact> contactFrom(Inspector object) {
         if (!object.valid()) {
             return Optional.empty();
         }
-        return Optional.of(new Contact(URI.create(object.field(contactUrlField).asString()),
-                                       URI.create(object.field(propertyUrlField).asString()),
-                                       URI.create(object.field(issueTrackerUrlField).asString()),
-                                       personsFrom(object.field(personsField))));
+        URI contactUrl = URI.create(object.field(contactUrlField).asString());
+        URI propertyUrl = URI.create(object.field(propertyUrlField).asString());
+        URI issueTrackerUrl = URI.create(object.field(issueTrackerUrlField).asString());
+        List<List<String>> persons = personsFrom(object.field(personsField));
+        String queue = object.field(queueField).asString();
+        Optional<String> component = object.field(componentField).valid() ? Optional.of(object.field(componentField).asString()) : Optional.empty();
+        return Optional.of(new Contact(contactUrl,
+                                        propertyUrl,
+                                        issueTrackerUrl,
+                                        persons,
+                                        queue,
+                                        component));
+    }
+
+    private void writeContact(Contact contact, Cursor contactCursor) {
+        contactCursor.setString(contactUrlField, contact.url().toString());
+        contactCursor.setString(propertyUrlField, contact.propertyUrl().toString());
+        contactCursor.setString(issueTrackerUrlField, contact.issueTrackerUrl().toString());
+        Cursor personsArray = contactCursor.setArray(personsField);
+        contact.persons().forEach(personList -> {
+            Cursor personArray = personsArray.addArray();
+            personList.forEach(person -> {
+                Cursor personObject = personArray.addObject();
+                personObject.setString(personField, person);
+            });
+        });
+        contactCursor.setString(queueField, contact.queue());
+        contact.component().ifPresent(component -> contactCursor.setString(componentField, component));
     }
 
     private List<List<String>> personsFrom(Inspector array) {

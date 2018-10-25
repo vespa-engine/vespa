@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import com.google.inject.Inject;
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
 import java.net.URI;
@@ -13,34 +12,32 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * @author jvenstad
  */
-public class MockOrganization extends AbstractComponent implements Organization {
+public class MockIssueHandler implements IssueHandler {
 
     private final Clock clock;
     private final AtomicLong counter = new AtomicLong();
     private final Map<IssueId, MockIssue> issues = new HashMap<>();
-    private final Map<PropertyId, PropertyInfo> properties = new HashMap<>();
 
     @Inject
     @SuppressWarnings("unused")
-    public MockOrganization() {
+    public MockIssueHandler() {
         this(Clock.systemUTC());
     }
 
-    public MockOrganization(Clock clock) {
+    public MockIssueHandler(Clock clock) {
         this.clock = clock;
     }
 
     @Override
     public IssueId file(Issue issue) {
-        if ( ! properties.containsKey(issue.propertyId()))
-            throw new NoSuchElementException("Unknown property '" + issue.propertyId() + "'!");
+        if (!issue.assignee().isPresent()) throw new RuntimeException();
         IssueId issueId = IssueId.from("" + counter.incrementAndGet());
         issues.put(issueId, new MockIssue(issue));
         return issueId;
@@ -49,9 +46,9 @@ public class MockOrganization extends AbstractComponent implements Organization 
     @Override
     public Optional<IssueId> findBySimilarity(Issue issue) {
         return issues.entrySet().stream()
-                     .filter(entry -> entry.getValue().issue.summary().equals(issue.summary()))
-                     .findFirst()
-                     .map(Map.Entry::getKey);
+                .filter(entry -> entry.getValue().issue.summary().equals(issue.summary()))
+                .findFirst()
+                .map(Map.Entry::getKey);
     }
 
     @Override
@@ -87,62 +84,55 @@ public class MockOrganization extends AbstractComponent implements Organization 
     }
 
     @Override
-    public List<? extends List<? extends User>> contactsFor(PropertyId propertyId) {
-        return properties.getOrDefault(propertyId, new PropertyInfo()).contacts;
+    public Optional<User> escalate(IssueId issueId, Contact contact) {
+        List<List<User>> contacts = getContactUsers(contact);
+        Optional<User> assignee = assigneeOf(issueId);
+        int assigneeLevel = -1;
+        if (assignee.isPresent())
+            for (int level = contacts.size(); --level > assigneeLevel; )
+                if (contacts.get(level).contains(assignee.get()))
+                    assigneeLevel = level;
+
+        for (int level = assigneeLevel + 1; level < contacts.size(); level++)
+            for (User target : contacts.get(level))
+                if (reassign(issueId, target))
+                    return Optional.of(target);
+
+        return Optional.empty();
     }
 
-    @Override
-    public URI issueCreationUri(PropertyId propertyId) {
-        return properties.getOrDefault(propertyId, new PropertyInfo()).issueUrl;
-    }
-
-    @Override
-    public URI contactsUri(PropertyId propertyId) {
-        return properties.getOrDefault(propertyId, new PropertyInfo()).contactsUrl;
-    }
-
-    @Override
-    public URI propertyUri(PropertyId propertyId) {
-        return properties.getOrDefault(propertyId, new PropertyInfo()).propertyUrl;
-    }
-
-    public Map<IssueId, MockIssue> issues() {
-        return Collections.unmodifiableMap(issues);
-    }
-
-    public MockOrganization close(IssueId issueId) {
+    public MockIssueHandler close(IssueId issueId) {
         issues.get(issueId).open = false;
         touch(issueId);
         return this;
     }
 
-    public MockOrganization setContactsFor(PropertyId propertyId, List<List<User>> contacts) {
-        properties.get(propertyId).contacts = contacts;
-        return this;
+    public Map<IssueId, MockIssue> issues() {
+        return issues;
     }
 
-    public MockOrganization setPropertyUrl(PropertyId propertyId, URI url) {
-        properties.get(propertyId).propertyUrl = url;
-        return this;
+    private List<List<User>> getContactUsers(Contact contact) {
+        return contact.persons().stream()
+                .map(userList ->
+                        userList.stream().map(user ->
+                                user.split(" ")[0])
+                                .map(User::from)
+                                .collect(Collectors.toList())
+                ).collect(Collectors.toList());
     }
 
-    public MockOrganization setContactsUrl(PropertyId propertyId, URI url) {
-        properties.get(propertyId).contactsUrl = url;
-        return this;
-    }
-
-    public MockOrganization setIssueUrl(PropertyId propertyId, URI url) {
-        properties.get(propertyId).issueUrl = url;
-        return this;
-    }
-
-    public MockOrganization addProperty(PropertyId propertyId) {
-        properties.put(propertyId, new PropertyInfo());
-        return this;
-    }
 
     private void touch(IssueId issueId) {
         issues.get(issueId).updated = clock.instant();
+    }
+
+    private class PropertyInfo {
+
+        private List<List<User>> contacts = Collections.emptyList();
+        private URI issueUrl = URI.create("issues.tld");
+        private URI contactsUrl = URI.create("contacts.tld");
+        private URI propertyUrl = URI.create("properties.tld");
+
     }
 
     public class MockIssue {
@@ -165,14 +155,4 @@ public class MockOrganization extends AbstractComponent implements Organization 
 
     }
 
-    private class PropertyInfo {
-
-        private List<List<User>> contacts = Collections.emptyList();
-        private URI issueUrl = URI.create("issues.tld");
-        private URI contactsUrl = URI.create("contacts.tld");
-        private URI propertyUrl = URI.create("properties.tld");
-
-    }
-
 }
-

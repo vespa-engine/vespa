@@ -280,16 +280,12 @@ public class CuratorDb {
 
     // -------------- Tenant --------------------------------------------------
 
-    public void writeTenant(UserTenant tenant) {
+    public void writeTenant(Tenant tenant) {
         curator.set(tenantPath(tenant.name()), asJson(tenantSerializer.toSlime(tenant)));
     }
 
     public Optional<UserTenant> readUserTenant(TenantName name) {
         return readSlime(tenantPath(name)).map(tenantSerializer::userTenantFrom);
-    }
-
-    public void writeTenant(AthenzTenant tenant) {
-        curator.set(tenantPath(tenant.name()), asJson(tenantSerializer.toSlime(tenant)));
     }
 
     public Optional<AthenzTenant> readAthenzTenant(TenantName name) {

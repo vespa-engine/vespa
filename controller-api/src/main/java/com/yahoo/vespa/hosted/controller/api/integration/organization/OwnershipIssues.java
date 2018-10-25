@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
 import java.util.Optional;
 
@@ -19,31 +18,21 @@ import java.util.Optional;
 public interface OwnershipIssues {
 
     /**
-     * Ensure ownership of the given application has been recently confirmed by the given property.
-     *
-     * @param issueId ID of the previous ownership issue filed for the given application.
-     * @param applicationId ID of the application for which to file an issue.
-     * @param propertyId ID of the property responsible for the given application.
-     * @return ID of the created issue, if one was created.
-     */
-    Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationId applicationId, PropertyId propertyId);
-
-    /**
      * Ensure ownership of the given application has been recently confirmed by the given user.
      *
      * @param issueId ID of the previous ownership issue filed for the given application.
      * @param applicationId ID of the application for which to file an issue.
-     * @param owner ID of the user responsible for the given application.
+     * @param asignee Issue asignee
+     * @param contact Contact info for the application tenant
      * @return ID of the created issue, if one was created.
      */
-    Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationId applicationId, User owner);
+    Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationId applicationId, User asignee, Contact contact);
 
     /**
      * Make sure the given ownership confirmation request is acted upon, unless it is already acknowledged.
-     *
      * @param issueId ID of the ownership issue to escalate.
-     * @param propertyId ID of the property responsible for the issue, if any.
+     * @param contact Contact information of application tenant
      */
-    void ensureResponse(IssueId issueId, Optional<PropertyId> propertyId);
+    void ensureResponse(IssueId issueId, Optional<Contact> contact);
 
 }

@@ -17,7 +17,7 @@ import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
-import com.yahoo.vespa.hosted.controller.tenant.Contact;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
@@ -117,6 +117,8 @@ public class ContactInfoHandler extends LoggingRequestHandler {
                 sublist.addString(person);
             }
         }
+        cursor.setString("queue", contact.queue());
+        contact.component().ifPresent(component -> cursor.setString("component", component));
         return slime;
     }
 
@@ -125,6 +127,8 @@ public class ContactInfoHandler extends LoggingRequestHandler {
         URI propertyUrl = URI.create(inspector.field("propertyUrl").asString());
         URI url = URI.create(inspector.field("url").asString());
         URI issueTrackerUrl = URI.create(inspector.field("issueTrackerUrl").asString());
+        String queue = inspector.field("queue").asString();
+        Optional<String> component = inspector.field("component").valid() ? Optional.of(inspector.field("component").asString()) : Optional.empty();
         Inspector personInspector = inspector.field("persons");
         List<List<String>> personList = new ArrayList<>();
         personInspector.traverse((ArrayTraverser) (index, entry) -> {
@@ -134,7 +138,7 @@ public class ContactInfoHandler extends LoggingRequestHandler {
             });
             personList.add(subList);
         });
-        return new Contact(url, propertyUrl, issueTrackerUrl, personList);
+        return new Contact(url, propertyUrl, issueTrackerUrl, personList, queue, component);
     }
 
 }

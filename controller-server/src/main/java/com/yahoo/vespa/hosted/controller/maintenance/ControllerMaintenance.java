@@ -4,12 +4,12 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
 import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.api.integration.chef.Chef;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryClientInterface;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Organization;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.maintenance.config.MaintainerConfig;
@@ -54,7 +54,7 @@ public class ControllerMaintenance extends AbstractComponent {
                                  JobControl jobControl, Metric metric, Chef chefClient,
                                  DeploymentIssues deploymentIssues, OwnershipIssues ownershipIssues,
                                  NameService nameService, NodeRepositoryClientInterface nodeRepositoryClient,
-                                 Organization organization) {
+                                 ContactRetriever contactRetriever) {
         Duration maintenanceInterval = Duration.ofMinutes(maintainerConfig.intervalMinutes());
         this.jobControl = jobControl;
         deploymentExpirer = new DeploymentExpirer(controller, maintenanceInterval, jobControl);
@@ -73,7 +73,7 @@ public class ControllerMaintenance extends AbstractComponent {
         jobRunner = new JobRunner(controller, Duration.ofMinutes(2), jobControl);
         osUpgraders = osUpgraders(controller, jobControl);
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
-        contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, organization);
+        contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, contactRetriever);
     }
 
     public Upgrader upgrader() { return upgrader; }

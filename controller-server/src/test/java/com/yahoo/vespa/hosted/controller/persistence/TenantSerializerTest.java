@@ -6,7 +6,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
-import com.yahoo.vespa.hosted.controller.tenant.Contact;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import org.junit.Test;
 
@@ -57,24 +57,30 @@ public class TenantSerializerTest {
                                                new AthenzDomain("domain1"),
                                                new Property("property1"),
                                                Optional.of(new PropertyId("1")),
-                                               Optional.of(new Contact(
-                                                       URI.create("http://contact1.test"),
-                                                       URI.create("http://property1.test"),
-                                                       URI.create("http://issue-tracker-1.test"),
-                                                       Arrays.asList(
-                                                               Collections.singletonList("person1"),
-                                                               Collections.singletonList("person2")
-                                                       )
-                                               )));
+                                               Optional.of(contact()));
         AthenzTenant serialized = serializer.athenzTenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.contact(), serialized.contact());
     }
 
     @Test
     public void user_tenant() {
-        UserTenant tenant = UserTenant.create("by-foo");
+        UserTenant tenant = UserTenant.create("by-foo", Optional.of(contact()));
         UserTenant serialized = serializer.userTenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
+        assertEquals(contact(), serialized.contact().get());
     }
 
+    private Contact contact() {
+        return new Contact(
+                URI.create("http://contact1.test"),
+                URI.create("http://property1.test"),
+                URI.create("http://issue-tracker-1.test"),
+                Arrays.asList(
+                        Collections.singletonList("person1"),
+                        Collections.singletonList("person2")
+                ),
+                "queue",
+                Optional.empty()
+        );
+    }
 }

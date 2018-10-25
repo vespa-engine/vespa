@@ -7,6 +7,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -18,7 +19,6 @@ import com.yahoo.yolean.Exceptions;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -113,20 +113,13 @@ public class DeploymentIssueReporter extends Maintainer {
         return User.from(tenant.name().value().replaceFirst(Tenant.userPrefix, ""));
     }
 
-    private PropertyId propertyIdFor(AthenzTenant tenant) {
-        return tenant.propertyId()
-                     .orElseThrow(() -> new NoSuchElementException("No PropertyId is listed for non-user tenant " +
-                                                                   tenant));
-    }
-
     /** File an issue for applicationId, if it doesn't already have an open issue associated with it. */
     private void fileDeploymentIssueFor(ApplicationId applicationId) {
         try {
             Tenant tenant = ownerOf(applicationId);
+            User asignee = userFor(tenant);
             Optional<IssueId> ourIssueId = controller().applications().require(applicationId).deploymentJobs().issueId();
-            IssueId issueId = tenant instanceof AthenzTenant
-                              ? deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, propertyIdFor((AthenzTenant) tenant))
-                              : deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, userFor(tenant));
+            IssueId issueId = deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, asignee, tenant.contact().get());
             store(applicationId, issueId);
         }
         catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
@@ -138,12 +131,11 @@ public class DeploymentIssueReporter extends Maintainer {
     private void escalateInactiveDeploymentIssues(Collection<Application> applications) {
         applications.forEach(application -> application.deploymentJobs().issueId().ifPresent(issueId -> {
             try {
-                Optional<PropertyId> propertyId = Optional.of(application.id())
-                                                          .map(this::ownerOf)
-                                                          .filter(t -> t instanceof AthenzTenant)
-                                                          .map(AthenzTenant.class::cast)
-                                                          .flatMap(AthenzTenant::propertyId);
-                deploymentIssues.escalateIfInactive(issueId, propertyId, maxInactivity);
+                AthenzTenant tenant = Optional.of(application.id())
+                        .map(this::ownerOf)
+                        .filter(t -> t instanceof AthenzTenant)
+                        .map(AthenzTenant.class::cast).orElseThrow(RuntimeException::new);
+                deploymentIssues.escalateIfInactive(issueId, maxInactivity, tenant.contact());
             }
             catch (RuntimeException e) {
                 log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
@@ -155,5 +147,4 @@ public class DeploymentIssueReporter extends Maintainer {
         controller().applications().lockIfPresent(id, application ->
                 controller().applications().store(application.withDeploymentIssueId(issueId)));
     }
-
 }
