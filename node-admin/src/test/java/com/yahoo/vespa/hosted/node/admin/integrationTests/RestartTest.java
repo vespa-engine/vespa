@@ -2,10 +2,18 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
+
+import java.util.Optional;
+
+import static com.yahoo.vespa.hosted.node.admin.integrationTests.DockerTester.NODE_PROGRAM;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 /**
  * Tests that different wanted and current restart generation leads to execution of restart command
@@ -15,46 +23,35 @@ import org.junit.Test;
 public class RestartTest {
 
     @Test
-    public void test() throws InterruptedException {
-        try (DockerTester dockerTester = new DockerTester()) {
+    public void test() {
+        try (DockerTester tester = new DockerTester()) {
+            String hostname = "host1.test.yahoo.com";
+            DockerImage dockerImage = new DockerImage("dockerImage:1.2.3");
 
-            long wantedRestartGeneration = 1;
-            long currentRestartGeneration = wantedRestartGeneration;
-            dockerTester.addChildNodeRepositoryNode(createNodeRepositoryNode(wantedRestartGeneration, currentRestartGeneration));
+            tester.addChildNodeRepositoryNode(new NodeSpec.Builder()
+                    .hostname(hostname)
+                    .state(Node.State.active)
+                    .wantedDockerImage(dockerImage)
+                    .nodeType(NodeType.tenant)
+                    .flavor("docker")
+                    .wantedRestartGeneration(1)
+                    .currentRestartGeneration(1)
+                    .build());
 
-            // Wait for node admin to be notified with node repo state and the docker container has been started
-            while (dockerTester.nodeAdmin.getNumberOfNodeAgents() == 0) {
-                Thread.sleep(10);
-            }
+            tester.inOrder(tester.docker).createContainerCommand(
+                    eq(dockerImage), any(), eq(new ContainerName("host1")), eq(hostname));
+            tester.inOrder(tester.nodeRepository).updateNodeAttributes(
+                    eq(hostname), eq(new NodeAttributes().withDockerImage(dockerImage)));
 
-            // Check that the container is started and NodeRepo has received the PATCH update
-            dockerTester.callOrderVerifier.assertInOrder(
-                    "createContainerCommand with DockerImage { imageId=image:1.2.3 }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
-                    "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=0, dockerImage=image:1.2.3}");
+            // Increment wantedRestartGeneration to 2 in node-repo
+            tester.addChildNodeRepositoryNode(new NodeSpec.Builder(tester.nodeRepository.getNode(hostname))
+                    .wantedRestartGeneration(2).build());
 
-            wantedRestartGeneration = 2;
-            currentRestartGeneration = 1;
-            dockerTester.addChildNodeRepositoryNode(createNodeRepositoryNode(wantedRestartGeneration, currentRestartGeneration));
-
-            dockerTester.callOrderVerifier.assertInOrder(
-                    "Suspend for host1.test.yahoo.com",
-                    "executeInContainer host1 as root, args: [" + DockerTester.NODE_PROGRAM + ", restart-vespa]");
+            tester.inOrder(tester.orchestrator).suspend(eq(hostname));
+            tester.inOrder(tester.docker).executeInContainerAsUser(
+                    eq(new ContainerName("host1")), any(), any(), eq(NODE_PROGRAM), eq("restart-vespa"));
+            tester.inOrder(tester.nodeRepository).updateNodeAttributes(
+                    eq(hostname), eq(new NodeAttributes().withRestartGeneration(Optional.of(2L))));
         }
-    }
-
-    private NodeSpec createNodeRepositoryNode(long wantedRestartGeneration, long currentRestartGeneration) {
-        return new NodeSpec.Builder()
-                .hostname("host1.test.yahoo.com")
-                .state(Node.State.active)
-                .wantedDockerImage(new DockerImage("image:1.2.3"))
-                .wantedVespaVersion("1.2.3")
-                .nodeType(NodeType.tenant)
-                .flavor("docker")
-                .wantedRestartGeneration(wantedRestartGeneration)
-                .currentRestartGeneration(currentRestartGeneration)
-                .minCpuCores(1)
-                .minMainMemoryAvailableGb(1)
-                .minDiskAvailableGb(1)
-                .build();
     }
 }

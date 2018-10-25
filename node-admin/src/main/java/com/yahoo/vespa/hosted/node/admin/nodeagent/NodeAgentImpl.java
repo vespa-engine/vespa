@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -236,26 +237,33 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void updateNodeRepoWithCurrentAttributes(final NodeSpec node) {
-        final NodeAttributes currentNodeAttributes = new NodeAttributes()
-                .withRestartGeneration(node.getCurrentRestartGeneration())
-                .withRebootGeneration(node.getCurrentRebootGeneration())
-                .withDockerImage(node.getCurrentDockerImage().orElse(new DockerImage("")));
+        final NodeAttributes currentNodeAttributes = new NodeAttributes();
+        final NodeAttributes newNodeAttributes = new NodeAttributes();
 
-        final NodeAttributes wantedNodeAttributes = new NodeAttributes()
-                .withRestartGeneration(node.getWantedRestartGeneration())
-                // update reboot gen with wanted gen if set, we ignore reboot for Docker nodes but
-                // want the two to be equal in node repo
-                .withRebootGeneration(node.getWantedRebootGeneration())
-                .withDockerImage(node.getWantedDockerImage().filter(n -> containerState == UNKNOWN).orElse(new DockerImage("")));
+        if (!Objects.equals(node.getCurrentRestartGeneration(), node.getWantedRestartGeneration())) {
+            currentNodeAttributes.withRestartGeneration(node.getCurrentRestartGeneration());
+            newNodeAttributes.withRestartGeneration(node.getWantedRestartGeneration());
+        }
 
-        publishStateToNodeRepoIfChanged(currentNodeAttributes, wantedNodeAttributes);
+        if (!Objects.equals(node.getCurrentRebootGeneration(), node.getWantedRebootGeneration())) {
+            currentNodeAttributes.withRebootGeneration(node.getCurrentRebootGeneration());
+            newNodeAttributes.withRebootGeneration(node.getWantedRebootGeneration());
+        }
+
+        Optional<DockerImage> actualDockerImage = node.getWantedDockerImage().filter(n -> containerState == UNKNOWN);
+        if (!Objects.equals(node.getCurrentDockerImage(), actualDockerImage)) {
+            currentNodeAttributes.withDockerImage(node.getCurrentDockerImage().orElse(new DockerImage("")));
+            newNodeAttributes.withDockerImage(actualDockerImage.orElse(new DockerImage("")));
+        }
+
+        publishStateToNodeRepoIfChanged(currentNodeAttributes, newNodeAttributes);
     }
 
-    private void publishStateToNodeRepoIfChanged(NodeAttributes currentAttributes, NodeAttributes wantedAttributes) {
-        if (!currentAttributes.equals(wantedAttributes)) {
+    private void publishStateToNodeRepoIfChanged(NodeAttributes currentAttributes, NodeAttributes newAttributes) {
+        if (!currentAttributes.equals(newAttributes)) {
             context.log(logger, "Publishing new set of attributes to node repo: %s -> %s",
-                    currentAttributes, wantedAttributes);
-            nodeRepository.updateNodeAttributes(context.hostname().value(), wantedAttributes);
+                    currentAttributes, newAttributes);
+            nodeRepository.updateNodeAttributes(context.hostname().value(), newAttributes);
         }
     }
 
@@ -285,8 +293,8 @@ public class NodeAgentImpl implements NodeAgent {
     private Optional<String> shouldRestartServices(NodeSpec node) {
         if (!node.getWantedRestartGeneration().isPresent()) return Optional.empty();
 
-        if (!node.getCurrentRestartGeneration().isPresent() ||
-                node.getCurrentRestartGeneration().get() < node.getWantedRestartGeneration().get()) {
+        // Restart generation is only optional because it does not exist for unallocated nodes
+        if (node.getCurrentRestartGeneration().get() < node.getWantedRestartGeneration().get()) {
             return Optional.of("Restart requested - wanted restart generation has been bumped: "
                     + node.getCurrentRestartGeneration().get() + " -> " + node.getWantedRestartGeneration().get());
         }
@@ -348,6 +356,11 @@ public class NodeAgentImpl implements NodeAgent {
         if (!wantedContainerResources.equals(existingContainer.resources)) {
             return Optional.of("Container should be running with different resource allocation, wanted: " +
                     wantedContainerResources + ", actual: " + existingContainer.resources);
+        }
+
+        if (node.getCurrentRebootGeneration() < node.getWantedRebootGeneration()) {
+            return Optional.of(String.format("Container reboot wanted. Current: %d, Wanted: %d",
+                    node.getCurrentRebootGeneration(), node.getWantedRebootGeneration()));
         }
 
         if (containerState == STARTING) return Optional.of("Container failed to start");
@@ -465,7 +478,6 @@ public class NodeAgentImpl implements NodeAgent {
         final NodeSpec node = optionalNode.orElseThrow(() ->
                 new IllegalStateException(String.format("Node '%s' missing from node repository", context.hostname())));
         expectNodeNotInNodeRepo = false;
-
 
         Optional<Container> container = getContainer();
         if (!node.equals(lastNode)) {

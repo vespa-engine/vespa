@@ -130,6 +130,6 @@ public class NodeAttributes {
                         wantToDeprovision.map(depr -> "wantToDeprovision=" + depr))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
-                .collect(Collectors.joining(", ", "NodeAttributes{", "}"));
+                .collect(Collectors.joining(", ", "{", "}"));
     }
 }
