@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  */
 public class BufferedLogStore {
 
-    static final int chunkSize = 1 << 17;
+    static final int chunkSize = 1 << 13;
 
     private final CuratorDb buffer;
     private final RunDataStore store;
