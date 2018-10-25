@@ -179,10 +179,11 @@ public class ContainerClusterTest {
         verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmArgs());
     }
 
-    private void verifyGCOpts(boolean isHosted, Zone zone, String expected) {
+    private void verifyGCOpts(boolean isHosted, String override, Zone zone, String expected) {
         MockRoot root = createRoot(isHosted, zone);
         ContainerCluster cluster = createContainerCluster(root, false);
         addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+        cluster.setGCOpts(override);
         assertEquals(1, cluster.getContainers().size());
         QrStartConfig.Builder qsB = new QrStartConfig.Builder();
         cluster.getSearch().getConfig(qsB);
@@ -190,9 +191,14 @@ public class ContainerClusterTest {
         assertEquals(expected, qsC.jvm().gcopts());
     }
 
+    private void verifyGCOpts(boolean isHosted, Zone zone, String expected) {
+        verifyGCOpts(isHosted, null, zone, expected);
+        verifyGCOpts(isHosted, "-XX:+UseG1GC", zone, "-XX:+UseG1GC");
+    }
+
     @Test
     public void requireThatGCOptsIsHonoured() {
-        verifyGCOpts(false, Zone.defaultZone(), "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1");
+        verifyGCOpts(false, Zone.defaultZone(),"-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1");
         verifyGCOpts(false, new Zone(Environment.prod, RegionName.from("us-east-3")), "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1");
         verifyGCOpts(true, Zone.defaultZone(), "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1");
         verifyGCOpts(true, new Zone(Environment.prod, RegionName.from("us-east-3")), "-XX:-UseConcMarkSweepGC -XX:+UseG1GC -XX:MaxTenuringThreshold=15");

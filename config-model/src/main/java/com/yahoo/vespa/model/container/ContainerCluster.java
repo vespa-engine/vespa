@@ -181,6 +181,7 @@ public final class ContainerCluster
     private Zone zone;
     
     private String hostClusterId = null;
+    private String gcopts = null;
     private Integer memoryPercentage = null;
 
     private static class AcceptAllVerifier implements ContainerClusterVerifier {
@@ -784,6 +785,8 @@ public final class ContainerCluster
     public Optional<String> getHostClusterId() { return Optional.ofNullable(hostClusterId); }
 
     public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage; }
+    public void setGCOpts(String gcopts) { this.gcopts = gcopts; }
+    public Optional<String> getGCOpts() { return Optional.ofNullable(gcopts); }
 
     /** 
      * Returns the percentage of host physical memory this application has specified for nodes in this cluster,

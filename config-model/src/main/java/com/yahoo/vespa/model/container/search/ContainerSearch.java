@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author gjoranv
@@ -125,7 +126,10 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
             internalBuilder.heapSizeAsPercentageOfPhysicalMemory(owningCluster.getHostClusterId().isPresent() ? 17 : 60);
         }
         qsB.jvm(internalBuilder.directMemorySizeCache(totalCacheSizeMb()));
-        if (owningCluster.isHostedVespa()) {
+        Optional<String> gcopts = owningCluster.getGCOpts();
+        if (gcopts.isPresent()) {
+            qsB.jvm.gcopts(gcopts.get());
+        } else if (owningCluster.isHostedVespa()) {
             if ((owningCluster.getZone().environment() != Environment.prod) || RegionName.from("us-east-3").equals(owningCluster.getZone().region())) {
                 qsB.jvm.gcopts("-XX:-UseConcMarkSweepGC -XX:+UseG1GC -XX:MaxTenuringThreshold=15");
             } else {
