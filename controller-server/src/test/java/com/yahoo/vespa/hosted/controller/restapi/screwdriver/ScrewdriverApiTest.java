@@ -20,11 +20,9 @@ import java.util.OptionalLong;
  */
 public class ScrewdriverApiTest extends ControllerContainerTest {
 
-    private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/screwdriver/responses/";
-
     @Test
     public void testTriggerJobForApplication() {
-        ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
+        ContainerControllerTester tester = new ContainerControllerTester(container, null);
         tester.containerTester().computeVersionStatus();
 
         Application app = tester.createApplication();
