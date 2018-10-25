@@ -354,7 +354,7 @@ public class RestApiTest {
 
     @Test
     public void acl_request_by_docker_host() throws Exception {
-        assertFile(new Request("http://localhost:8080/nodes/v2/acl/dockerhost1.yahoo.com"), "acl-docker-host.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/acl/dockerhost1.yahoo.com?children=true"), "acl-docker-host.json");
     }
 
     @Test
