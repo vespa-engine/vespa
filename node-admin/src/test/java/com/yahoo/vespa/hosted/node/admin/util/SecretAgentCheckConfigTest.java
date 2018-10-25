@@ -36,7 +36,7 @@ public class SecretAgentCheckConfigTest {
                 "  interval: 60\n" +
                 "  user: nobody\n" +
                 "  check: /some/test\n" +
-                "  args: \n" +
+                "  args:\n" +
                 "    - arg1\n" +
                 "    - arg2 with space\n" +
                 "  tags:\n" +

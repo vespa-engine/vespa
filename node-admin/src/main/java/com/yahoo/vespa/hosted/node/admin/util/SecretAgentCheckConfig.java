@@ -63,14 +63,17 @@ public class SecretAgentCheckConfig {
                 .append("  check: ").append(checkExecutable.toFile()).append("\n");
 
         if (arguments.length > 0) {
-            stringBuilder.append("  args: \n");
+            stringBuilder.append("  args:\n");
             for (String arg : arguments) {
                 stringBuilder.append("    - ").append(arg).append("\n");
             }
         }
 
-        if (!tags.isEmpty()) stringBuilder.append("  tags:\n");
-        tags.forEach((key, value) -> stringBuilder.append("    ").append(key).append(": ").append(value).append("\n"));
+        if (!tags.isEmpty()) {
+            stringBuilder.append("  tags:\n");
+            tags.forEach((key, value) ->
+                    stringBuilder.append("    ").append(key).append(": ").append(value).append("\n"));
+        }
 
         return stringBuilder.toString();
     }
