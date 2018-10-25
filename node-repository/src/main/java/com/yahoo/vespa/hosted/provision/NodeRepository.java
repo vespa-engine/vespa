@@ -177,7 +177,6 @@ public class NodeRepository extends AbstractComponent {
      */
     private NodeAcl getNodeAcl(Node node, NodeList candidates) {
         Set<Node> trustedNodes = new TreeSet<>(Comparator.comparing(Node::hostname));
-        Set<String> trustedNetworks = new HashSet<>();
         Set<Integer> trustedPorts = new HashSet<>();
 
         // For all cases below, trust:
@@ -223,23 +222,9 @@ public class NodeRepository extends AbstractComponent {
                 trustedPorts.add(4443);
                 break;
 
-            case host:
-                // Docker hosts trust:
-                // - config servers
-                // - Docker bridge network. This is only needed for macvlan networks - for nated networks this is
-                // handled elsewhere.
-                trustedNodes.addAll(candidates.nodeType(NodeType.config).asList());
-                trustedNetworks.add("172.17.0.0/16");
-                break;
-
             case controller:
-            case controllerhost:
-                // Controllers and their hosts trust:
-                // - all controllers
-                // - all controllerhosts
+                // Controllers:
                 // - port 4443 (HTTPS) from the world
-                trustedNodes.addAll(candidates.nodeType(NodeType.controller).asList());
-                trustedNodes.addAll(candidates.nodeType(NodeType.controllerhost).asList());
                 trustedPorts.add(4443);
                 break;
 
@@ -249,7 +234,7 @@ public class NodeRepository extends AbstractComponent {
                                 node.hostname(), node.type()));
         }
 
-        return new NodeAcl(node, trustedNodes, trustedNetworks, trustedPorts);
+        return new NodeAcl(node, trustedNodes, Collections.emptySet(), trustedPorts);
     }
 
     /**

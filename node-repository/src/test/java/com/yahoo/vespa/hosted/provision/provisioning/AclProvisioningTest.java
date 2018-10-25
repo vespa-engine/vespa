@@ -35,8 +35,6 @@ public class AclProvisioningTest {
 
     private ProvisioningTester tester;
 
-    private final List<String> dockerBridgeNetwork = Collections.singletonList("172.17.0.0/16");
-
     @Before
     public void before() {
         this.tester = new ProvisioningTester(Zone.defaultZone(), createConfig());
@@ -127,44 +125,6 @@ public class AclProvisioningTest {
     }
 
     @Test
-    public void trusted_nodes_for_docker_host() {
-        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
-
-        // Populate repo
-        tester.makeReadyNodes(2, "default", NodeType.host);
-
-        // Deploy zone application
-        ApplicationId zoneApplication = tester.makeApplicationId();
-        allocateNodes(Capacity.fromRequiredNodeType(NodeType.host), zoneApplication);
-
-        List<Node> dockerHostNodes = tester.nodeRepository().getNodes(zoneApplication);
-        List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodes.get(0), false);
-
-        // Trusted nodes is all Docker hosts and all config servers
-        assertAcls(Arrays.asList(dockerHostNodes, configServers), dockerBridgeNetwork, acls.get(0));
-    }
-
-
-    @Test
-    public void trusted_nodes_for_docker_hosts_nodes_in_zone_application() {
-        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
-        ApplicationId applicationId = tester.makeApplicationId(); // use same id for both allocate calls below
-
-        // Populate repo
-        tester.makeReadyNodes(2, "default", NodeType.host);
-
-        // Allocate 2 Docker hosts
-        List<Node> activeDockerHostNodes = allocateNodes(NodeType.host, applicationId);
-        assertEquals(2, activeDockerHostNodes.size());
-
-        // Check trusted nodes for all nodes
-        activeDockerHostNodes.forEach(node -> {
-            List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
-            assertAcls(Arrays.asList(activeDockerHostNodes, configServers), dockerBridgeNetwork, nodeAcls);
-        });
-    }
-
-    @Test
     public void trusted_nodes_for_children_of_docker_host() {
         List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
@@ -190,26 +150,17 @@ public class AclProvisioningTest {
     }
 
     @Test
-    public void trusted_nodes_for_controllers_and_hosts() {
-        List<Node> controllers = tester.makeReadyNodes(3, "default", NodeType.controller);
-        List<Node> controllerHosts = tester.makeReadyNodes(3, "default", NodeType.controllerhost);
-        List<List<Node>> controllersAndHosts = Arrays.asList(controllers, controllerHosts);
+    public void trusted_nodes_for_controllers() {
+        tester.makeReadyNodes(3, "default", NodeType.controller);
 
         // Allocate
         ApplicationId controllerApplication = tester.makeApplicationId();
-        allocateNodes(Capacity.fromRequiredNodeType(NodeType.controller), controllerApplication);
-
-        ApplicationId controllerHostApplication = tester.makeApplicationId();
-        allocateNodes(Capacity.fromRequiredNodeType(NodeType.controllerhost), controllerHostApplication);
+        List<Node> controllers = allocateNodes(Capacity.fromRequiredNodeType(NodeType.controller), controllerApplication);
 
         // Controllers and hosts all trust each other
         List<NodeAcl> controllerAcls = tester.nodeRepository().getNodeAcls(controllers.get(0), false);
-        assertAcls(controllersAndHosts, controllerAcls);
+        assertAcls(Collections.singletonList(controllers), controllerAcls);
         assertEquals(ImmutableSet.of(22, 4443), controllerAcls.get(0).trustedPorts());
-
-        List<NodeAcl> controllerHostAcls = tester.nodeRepository().getNodeAcls(controllerHosts.get(0), false);
-        assertAcls(controllersAndHosts, controllerHostAcls);
-        assertEquals(ImmutableSet.of(22, 4443), controllerHostAcls.get(0).trustedPorts());
     }
 
     @Test
