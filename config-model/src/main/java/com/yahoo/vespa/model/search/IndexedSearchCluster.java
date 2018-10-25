@@ -409,13 +409,13 @@ public class IndexedSearchCluster extends SearchCluster
             if (tuning.dispatch.minGroupCoverage != null)
                 builder.minGroupCoverage(tuning.dispatch.minGroupCoverage);
             if (tuning.dispatch.policy != null) {
-                switch(tuning.dispatch.policy) {
-                case RANDOM:
-                    builder.distributionPolicy(DistributionPolicy.RANDOM);
-                    break;
-                case ROUNDROBIN:
-                    builder.distributionPolicy(DistributionPolicy.ROUNDROBIN);
-                    break;
+                switch (tuning.dispatch.policy) {
+                    case RANDOM:
+                        builder.distributionPolicy(DistributionPolicy.RANDOM);
+                        break;
+                    case ROUNDROBIN:
+                        builder.distributionPolicy(DistributionPolicy.ROUNDROBIN);
+                        break;
                 }
             }
             builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());

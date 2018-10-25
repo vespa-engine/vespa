@@ -46,6 +46,13 @@ public class FS4InvokerFactory {
         return new FS4SearchInvoker(searcher, query, backend.openChannel(), node);
     }
 
+    /**
+     * Create a {@link SearchInvoker} for a list of content nodes.
+     *
+     * @param query the search query being processed
+     * @param nodes pre-selected list of content nodes
+     * @return Optional containing the SearchInvoker or <i>empty</i> if some node in the list is invalid
+     */
     public Optional<SearchInvoker> getSearchInvoker(Query query, List<SearchCluster.Node> nodes) {
         Map<Integer, SearchInvoker> invokers = new HashMap<>();
         for (SearchCluster.Node node : nodes) {
@@ -69,6 +76,12 @@ public class FS4InvokerFactory {
         return new FS4FillInvoker(searcher, query, fs4ResourcePool, node.hostname(), node.fs4port(), node.key());
     }
 
+    /**
+     * Create a {@link FillInvoker} for a the hits in a {@link Result}.
+     *
+     * @param result the Result containing hits that need to be filled
+     * @return Optional containing the FillInvoker or <i>empty</i> if some hit is from an unknown content node
+     */
     public Optional<FillInvoker> getFillInvoker(Result result) {
         Collection<Integer> requiredNodes = requiredFillNodes(result);
 
