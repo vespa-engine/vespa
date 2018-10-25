@@ -60,7 +60,11 @@ public abstract class ClientBase implements AutoCloseable {
 
     protected <T> T readEntity(HttpResponse response, Class<T> entityType) throws IOException {
         if (HttpStatus.isSuccess(response.getStatusLine().getStatusCode())) {
-            return objectMapper.readValue(response.getEntity().getContent(), entityType);
+            if (entityType.equals(Void.class)) {
+                return null;
+            } else {
+                return objectMapper.readValue(response.getEntity().getContent(), entityType);
+            }
         } else {
             ErrorResponseEntity errorEntity = objectMapper.readValue(response.getEntity().getContent(), ErrorResponseEntity.class);
             throw exceptionFactory.createException(errorEntity.code, errorEntity.description);
