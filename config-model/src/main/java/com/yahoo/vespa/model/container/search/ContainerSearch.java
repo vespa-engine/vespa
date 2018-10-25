@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search;
 
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
@@ -54,6 +56,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         this.options = options;
         this.owningCluster = cluster;
         cluster.addComponent(getFS4ResourcePool());
+
     }
 
     private Component<?, ComponentModel> getFS4ResourcePool() {
@@ -122,6 +125,15 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
             internalBuilder.heapSizeAsPercentageOfPhysicalMemory(owningCluster.getHostClusterId().isPresent() ? 17 : 60);
         }
         qsB.jvm(internalBuilder.directMemorySizeCache(totalCacheSizeMb()));
+        if (owningCluster.isHostedVespa()) {
+            if ((owningCluster.getZone().environment() != Environment.prod) || RegionName.from("us-east-3").equals(owningCluster.getZone().region())) {
+                qsB.jvm.gcopts("-XX:-UseConcMarkSweepGC -XX:+UseG1GC -XX:MaxTenuringThreshold=15");
+            } else {
+                qsB.jvm.gcopts("-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1");
+            }
+        } else {
+            qsB.jvm.gcopts("-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1");
+        }
     }
 
     private int totalCacheSizeMb() {

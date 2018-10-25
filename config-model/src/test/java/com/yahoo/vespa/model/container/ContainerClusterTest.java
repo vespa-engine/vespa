@@ -107,6 +107,10 @@ public class ContainerClusterTest {
         DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(isHosted).build()).build();
         return new MockRoot("foo", state);
     }
+    private MockRoot createRoot(boolean isHosted, Zone zone) {
+        DeployState state = new DeployState.Builder().zone(zone).properties(new DeployProperties.Builder().hostedVespa(isHosted).build()).build();
+        return new MockRoot("foo", state);
+    }
     private ContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster,
                                                     Integer memoryPercentage, Optional<ContainerClusterVerifier> extraComponents) {
 
@@ -154,6 +158,7 @@ public class ContainerClusterTest {
             assertEquals(expectedArgs, jvmArgs);
         }
     }
+
     private void verifyJvmArgs(boolean isHosted, boolean hasDocProc) {
         MockRoot root = createRoot(isHosted);
         ContainerCluster cluster = createContainerCluster(root, false);
@@ -172,6 +177,25 @@ public class ContainerClusterTest {
         verifyJvmArgs(isHosted, hasDocProc, "ignored initial override", container.getJvmArgs());
         container.setJvmArgs(null);
         verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmArgs());
+    }
+
+    private void verifyGCOpts(boolean isHosted, Zone zone, String expected) {
+        MockRoot root = createRoot(isHosted, zone);
+        ContainerCluster cluster = createContainerCluster(root, false);
+        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+        assertEquals(1, cluster.getContainers().size());
+        QrStartConfig.Builder qsB = new QrStartConfig.Builder();
+        cluster.getSearch().getConfig(qsB);
+        QrStartConfig qsC= new QrStartConfig(qsB);
+        assertEquals(expected, qsC.jvm().gcopts());
+    }
+
+    @Test
+    public void requireThatGCOptsIsHonoured() {
+        verifyGCOpts(false, Zone.defaultZone(), "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1");
+        verifyGCOpts(false, new Zone(Environment.prod, RegionName.from("us-east-3")), "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1");
+        verifyGCOpts(true, Zone.defaultZone(), "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1");
+        verifyGCOpts(true, new Zone(Environment.prod, RegionName.from("us-east-3")), "-XX:-UseConcMarkSweepGC -XX:+UseG1GC -XX:MaxTenuringThreshold=15");
     }
 
     @Test

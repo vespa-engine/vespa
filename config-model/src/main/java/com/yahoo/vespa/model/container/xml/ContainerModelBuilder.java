@@ -461,6 +461,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         else {
             List<Container> nodes = createNodes(cluster, nodesElement, context);
             applyNodesTagJvmArgs(nodes, nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME));
+            applyNodesTagGCOpts(nodes, nodesElement.getAttribute(VespaDomBuilder.GCOPTS_ATTRIB_NAME));
             applyRoutingAliasProperties(nodes, cluster);
             applyDefaultPreload(nodes, nodesElement);
             applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
@@ -660,6 +661,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void applyNodesTagJvmArgs(List<Container> containers, String nodesTagJvnArgs) {
+        for (Container container: containers) {
+            if (container.getAssignedJvmArgs().isEmpty())
+                container.prependJvmArgs(nodesTagJvnArgs);
+        }
+    }
+    private void applyNodesTagGCOpts(List<Container> containers, String nodesTagJvnArgs) {
         for (Container container: containers) {
             if (container.getAssignedJvmArgs().isEmpty())
                 container.prependJvmArgs(nodesTagJvnArgs);
