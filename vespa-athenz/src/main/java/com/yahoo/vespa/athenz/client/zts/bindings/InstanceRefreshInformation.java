@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.yahoo.vespa.athenz.client.zts.bindings.serializers.Pkcs10CsrSerializer;
+import com.yahoo.vespa.athenz.client.common.serializers.Pkcs10CsrSerializer;
 import com.yahoo.security.Pkcs10Csr;
 
 /**

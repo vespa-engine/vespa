@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.yahoo.vespa.athenz.client.zts.bindings.serializers.X509CertificateDeserializer;
+import com.yahoo.vespa.athenz.client.common.serializers.X509CertificateDeserializer;
 
 import java.security.cert.X509Certificate;
 import java.time.Instant;
