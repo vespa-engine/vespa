@@ -48,7 +48,6 @@ public class ControllerMaintenance extends AbstractComponent {
     private final OsVersionStatusUpdater osVersionStatusUpdater;
     private final JobRunner jobRunner;
     private final ContactInformationMaintainer contactInformationMaintainer;
-    private final DatabaseMaintainer databaseMaintainer;
 
     @SuppressWarnings("unused") // instantiated by Dependency Injection
     public ControllerMaintenance(MaintainerConfig maintainerConfig, ApiAuthorityConfig apiAuthorityConfig, Controller controller, CuratorDb curator,
@@ -75,7 +74,6 @@ public class ControllerMaintenance extends AbstractComponent {
         osUpgraders = osUpgraders(controller, jobControl);
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl, organization, apiAuthorityConfig);
-        databaseMaintainer = new DatabaseMaintainer(controller, maintenanceInterval, jobControl);
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -102,7 +100,6 @@ public class ControllerMaintenance extends AbstractComponent {
         osVersionStatusUpdater.deconstruct();
         jobRunner.deconstruct();
         contactInformationMaintainer.deconstruct();
-        databaseMaintainer.deconstruct();
     }
 
     /** Create one OS upgrader per cloud found in the zone registry of controller */
