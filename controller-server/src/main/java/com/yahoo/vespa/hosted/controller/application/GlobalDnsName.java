@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 
 import java.net.URI;
 
@@ -24,7 +23,7 @@ public class GlobalDnsName {
     private final URI secureUrl;
     private final URI oathUrl;
 
-    public GlobalDnsName(ApplicationId application, RotationId id, SystemName system) {
+    public GlobalDnsName(ApplicationId application, SystemName system) {
         this.url = URI.create(String.format("http://%s%s.%s.%s:%d/",
                                             getSystemPart(system, "."),
                                             sanitize(application.application().value()),

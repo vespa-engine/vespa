@@ -192,7 +192,7 @@ public class Application {
 
     /** Returns the global rotation dns name, if present */
     public Optional<GlobalDnsName> globalDnsName(SystemName system) {
-        return rotation.map(rotation -> new GlobalDnsName(id, rotation, system));
+        return rotation.map(ignored -> new GlobalDnsName(id, system));
     }
 
     /** Returns the status of the global rotation assigned to this. Wil be empty if this does not have a global rotation. */
@@ -205,7 +205,6 @@ public class Application {
         // Rotation status only contains VIP host names, one per zone in the system. The only way to map VIP hostname to
         // this deployment, and thereby determine rotation status, is to check if VIP hostname contains the
         // deployment's environment and region.
-        // TODO: change this map to be indexed by zones, then?
         return rotationStatus.entrySet().stream()
                              .filter(kv -> kv.getKey().value().contains(deployment.zone().value()))
                              .map(Map.Entry::getValue)

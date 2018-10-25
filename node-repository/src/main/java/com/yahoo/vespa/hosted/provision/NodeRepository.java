@@ -177,23 +177,22 @@ public class NodeRepository extends AbstractComponent {
      */
     private NodeAcl getNodeAcl(Node node, NodeList candidates) {
         Set<Node> trustedNodes = new TreeSet<>(Comparator.comparing(Node::hostname));
-        Set<String> trustedNetworks = new HashSet<>();
         Set<Integer> trustedPorts = new HashSet<>();
 
         // For all cases below, trust:
         // - nodes in same application
-        // - config servers
         // - ssh
         node.allocation().ifPresent(allocation -> trustedNodes.addAll(candidates.owner(allocation.owner()).asList()));
-        trustedNodes.addAll(candidates.nodeType(NodeType.config).asList());
         trustedPorts.add(22);
 
         switch (node.type()) {
             case tenant:
                 // Tenant nodes in other states than ready, trust:
+                // - config servers
                 // - proxy nodes
                 // - parent (Docker) hosts of already trusted nodes. This is needed in a transition period, while
                 //   we migrate away from IPv4-only nodes
+                trustedNodes.addAll(candidates.nodeType(NodeType.config).asList());
                 trustedNodes.addAll(candidates.parentsOf(trustedNodes).asList()); // TODO: Remove when we no longer have IPv4-only nodes
                 trustedNodes.addAll(candidates.nodeType(NodeType.proxy).asList());
                 if (node.state() == Node.State.ready) {
@@ -206,24 +205,27 @@ public class NodeRepository extends AbstractComponent {
                 break;
 
             case config:
-                // Config servers trust all nodes
+                // Config servers trust:
+                // - all nodes
+                // - port 4443 from the world
                 trustedNodes.addAll(candidates.asList());
-
-                // And all connections on 4443
                 trustedPorts.add(4443);
                 break;
 
             case proxy:
-                // Accept connections from the world on 443 (for dashboard app), 4080 (insecure tb removed), and 4443
+                // Proxy nodes trust:
+                // - config servers
+                // - all connections from the world on 443 (for dashboard app), 4080 (insecure tb removed), and 4443
+                trustedNodes.addAll(candidates.nodeType(NodeType.config).asList());
                 trustedPorts.add(443);
                 trustedPorts.add(4080);
                 trustedPorts.add(4443);
                 break;
 
-            case host:
-                // This is only needed for macvlan networks - for nated networks this is handled elsewhere.
-                // Docker bridge network
-                trustedNetworks.add("172.17.0.0/16");
+            case controller:
+                // Controllers:
+                // - port 4443 (HTTPS) from the world
+                trustedPorts.add(4443);
                 break;
 
             default:
@@ -232,7 +234,7 @@ public class NodeRepository extends AbstractComponent {
                                 node.hostname(), node.type()));
         }
 
-        return new NodeAcl(node, trustedNodes, trustedNetworks, trustedPorts);
+        return new NodeAcl(node, trustedNodes, Collections.emptySet(), trustedPorts);
     }
 
     /**
