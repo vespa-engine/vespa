@@ -186,24 +186,27 @@
                 <version>${javax.ws.rs-api.version}</version>
             </dependency>
 
-            <!-- TODO: upgrade jaxb artifacts to >=2.3.0.
-            See https://stackoverflow.com/questions/50237516/proper-fix-for-java-10-complaining-about-illegal-reflection-access-by-jaxb-impl  -->
+            <!-- jaxb start -->
             <dependency>
+                <!-- Needed by felix -->
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
                 <version>${jaxb.version}</version>
             </dependency>
             <dependency>
+                <!-- Needed by jersey -->
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-core</artifactId>
                 <version>${jaxb.version}</version>
             </dependency>
             <dependency>
+                <!-- Needed by jersey -->
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-impl</artifactId>
                 <version>${jaxb.version}</version>
             </dependency>
             <dependency>
+                <!-- Needed by jersey -->
                 <groupId>com.sun.activation</groupId>
                 <artifactId>javax.activation</artifactId>
                 <version>1.2.0</version>
