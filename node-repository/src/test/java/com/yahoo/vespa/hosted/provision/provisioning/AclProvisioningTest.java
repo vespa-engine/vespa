@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
@@ -164,7 +165,7 @@ public class AclProvisioningTest {
     }
 
     @Test
-    public void trusted_nodes_for_child_nodes_of_docker_host() {
+    public void trusted_nodes_for_children_of_docker_host() {
         List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
@@ -186,6 +187,29 @@ public class AclProvisioningTest {
             assertEquals(dockerHostNodeUnderTest.hostname(), dockerNode.parentHostname().get());
             assertAcls(Arrays.asList(configServers, dockerNodes), nodeAcl);
         }
+    }
+
+    @Test
+    public void trusted_nodes_for_controllers_and_hosts() {
+        List<Node> controllers = tester.makeReadyNodes(3, "default", NodeType.controller);
+        List<Node> controllerHosts = tester.makeReadyNodes(3, "default", NodeType.controllerhost);
+        List<List<Node>> controllersAndHosts = Arrays.asList(controllers, controllerHosts);
+
+        // Allocate
+        ApplicationId controllerApplication = tester.makeApplicationId();
+        allocateNodes(Capacity.fromRequiredNodeType(NodeType.controller), controllerApplication);
+
+        ApplicationId controllerHostApplication = tester.makeApplicationId();
+        allocateNodes(Capacity.fromRequiredNodeType(NodeType.controllerhost), controllerHostApplication);
+
+        // Controllers and hosts all trust each other
+        List<NodeAcl> controllerAcls = tester.nodeRepository().getNodeAcls(controllers.get(0), false);
+        assertAcls(controllersAndHosts, controllerAcls);
+        assertEquals(ImmutableSet.of(22, 4443), controllerAcls.get(0).trustedPorts());
+
+        List<NodeAcl> controllerHostAcls = tester.nodeRepository().getNodeAcls(controllerHosts.get(0), false);
+        assertAcls(controllersAndHosts, controllerHostAcls);
+        assertEquals(ImmutableSet.of(22, 4443), controllerHostAcls.get(0).trustedPorts());
     }
 
     @Test
