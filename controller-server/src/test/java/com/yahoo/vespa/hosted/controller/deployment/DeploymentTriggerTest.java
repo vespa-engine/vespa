@@ -954,25 +954,6 @@ public class DeploymentTriggerTest {
     }
 
     @Test
-    public void ignoresPullRequestInstances() throws Exception {
-        tester.controllerTester().zoneRegistry().setSystemName(SystemName.cd);
-
-        // Current system version, matches version in test data
-        Version version = Version.fromString("6.42.1");
-        tester.upgradeSystem(version);
-        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
-
-        // Load test data data
-        byte[] json = Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/maintenance/testdata/pr-instance-with-dead-locked-job.json"));
-        Slime slime = SlimeUtils.jsonToSlime(json);
-        tester.controllerTester().createApplication(slime);
-
-        // Failure redeployer does not restart deployment
-        tester.readyJobTrigger().maintain();
-        assertTrue("No jobs scheduled", tester.buildService().jobs().isEmpty());
-    }
-
-    @Test
     public void applicationWithoutProjectIdIsNotTriggered() throws Exception {
         // Current system version, matches version in test data
         Version version = Version.fromString("6.42.1");
