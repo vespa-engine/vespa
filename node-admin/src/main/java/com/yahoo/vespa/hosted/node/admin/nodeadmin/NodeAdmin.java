@@ -5,7 +5,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 
 /**
  * NodeAdmin manages the life cycle of NodeAgents.
@@ -45,12 +44,6 @@ public interface NodeAdmin {
      * @param nodes List of hostnames to suspend
      */
     void stopNodeAgentServices(List<String> nodes);
-
-    /**
-     * Returns a map containing all relevant NodeAdmin variables and their current values.
-     * Do not try to parse output or use in tests.
-     */
-    Map<String, Object> debugInfo();
 
     /**
      * Start node-admin schedulers.

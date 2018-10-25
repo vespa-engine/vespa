@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.provider;
 import javax.annotation.concurrent.ThreadSafe;
 
 @ThreadSafe
-public interface NodeAdminStateUpdater extends NodeAdminDebugHandler {
+public interface NodeAdminStateUpdater {
     enum State { TRANSITIONING, RESUMED, SUSPENDED_NODE_ADMIN, SUSPENDED}
 
     /**

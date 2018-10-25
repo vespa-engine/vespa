@@ -15,9 +15,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
@@ -79,18 +77,6 @@ public class NodeAdminStateUpdaterImpl implements NodeAdminStateUpdater {
             }
         });
         this.loopThread.setName("tick-NodeAdminStateUpdater");
-    }
-
-    @Override
-    public Map<String, Object> getDebugPage() {
-        Map<String, Object> debug = new LinkedHashMap<>();
-        synchronized (monitor) {
-            debug.put("hostHostname", hostHostname);
-            debug.put("wantedState", wantedState);
-            debug.put("currentState", currentState);
-            debug.put("NodeAdmin", nodeAdmin.debugInfo());
-        }
-        return debug;
     }
 
     @Override
