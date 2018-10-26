@@ -36,35 +36,35 @@ public abstract class VespaFeedHandlerBase extends ThreadedHttpRequestHandler {
                                 SlobroksConfig slobroksConfig,
                                 ClusterListConfig clusterListConfig,
                                 Executor executor,
-                                Metric metric) {
+                                Metric metric) throws Exception {
         this(FeedContext.getInstance(feederConfig, loadTypeConfig, documentmanagerConfig, 
                                      slobroksConfig, clusterListConfig, metric), 
              executor, (long)feederConfig.timeout() * 1000);
     }
 
-    VespaFeedHandlerBase(FeedContext context, Executor executor) {
+    public VespaFeedHandlerBase(FeedContext context, Executor executor) throws Exception {
         this(context, executor, context.getPropertyProcessor().getDefaultTimeoutMillis());
     }
 
-    private VespaFeedHandlerBase(FeedContext context, Executor executor, long defaultTimeoutMillis) {
+    public VespaFeedHandlerBase(FeedContext context, Executor executor, long defaultTimeoutMillis) throws Exception {
         super(executor, context.getMetricAPI());
         this.context = context;
         this.defaultTimeoutMillis = defaultTimeoutMillis;
     }
 
-    SharedSender getSharedSender(String route) {
+    public SharedSender getSharedSender(String route) {
         return context.getSharedSender(route);
     }
 
-    DocprocService getDocprocChain(HttpRequest request) {
+    public DocprocService getDocprocChain(HttpRequest request) {
         return context.getPropertyProcessor().getDocprocChain(request);
     }
 
-    ComponentRegistry<DocprocService> getDocprocServiceRegistry(HttpRequest request) {
+    public ComponentRegistry<DocprocService> getDocprocServiceRegistry(HttpRequest request) {
         return context.getPropertyProcessor().getDocprocServiceRegistry(request);
     }
 
-    MessagePropertyProcessor getPropertyProcessor() {
+    public MessagePropertyProcessor getPropertyProcessor() {
         return context.getPropertyProcessor();
     }
 
@@ -74,7 +74,7 @@ public abstract class VespaFeedHandlerBase extends ThreadedHttpRequestHandler {
      *         original data stream.
      * @throws IllegalArgumentException if GZIP stream creation failed
      */
-    InputStream getRequestInputStream(HttpRequest request) {
+    public InputStream getRequestInputStream(HttpRequest request) {
         if ("gzip".equals(request.getHeader("Content-Encoding"))) {
             try {
                 return new GZIPInputStream(request.getData());
@@ -86,7 +86,7 @@ public abstract class VespaFeedHandlerBase extends ThreadedHttpRequestHandler {
         }
     }
 
-    DocumentTypeManager getDocumentTypeManager() {
+    protected DocumentTypeManager getDocumentTypeManager() {
         return context.getDocumentTypeManager();
     }
 
@@ -94,7 +94,7 @@ public abstract class VespaFeedHandlerBase extends ThreadedHttpRequestHandler {
         return context.getMetrics();
     }
 
-    long getTimeoutMillis(HttpRequest request) {
+    protected long getTimeoutMillis(HttpRequest request) {
         return ParameterParser.asMilliSeconds(request.getProperty("timeout"), defaultTimeoutMillis);
     }
     
