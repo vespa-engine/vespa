@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl.State.RESUMED;
-import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl.State.SUSPENDED;
-import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl.State.SUSPENDED_NODE_ADMIN;
+import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.RESUMED;
+import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED;
+import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,17 +32,17 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Basic test of NodeAdminStateUpdaterImpl
+ * Basic test of NodeAdminStateUpdater
  *
  * @author freva
  */
-public class NodeAdminStateUpdaterImplTest {
+public class NodeAdminStateUpdaterTest {
     private final NodeRepository nodeRepository = mock(NodeRepository.class);
     private final Orchestrator orchestrator = mock(Orchestrator.class);
     private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
     private final HostName hostHostname = HostName.from("basehost1.test.yahoo.com");
 
-    private final NodeAdminStateUpdaterImpl refresher = spy(new NodeAdminStateUpdaterImpl(
+    private final NodeAdminStateUpdater refresher = spy(new NodeAdminStateUpdater(
             nodeRepository, orchestrator, nodeAdmin, hostHostname));
 
 
@@ -160,7 +160,7 @@ public class NodeAdminStateUpdaterImplTest {
         verify(orchestrator, times(1)).suspend(eq(hostHostname.value()), eq(activeHostnames));
     }
 
-    private void assertResumeStateError(NodeAdminStateUpdaterImpl.State targetState, String reason) {
+    private void assertResumeStateError(NodeAdminStateUpdater.State targetState, String reason) {
         try {
             refresher.converge(targetState);
             fail("Expected set resume state to fail with \"" + reason + "\", but it succeeded without error");

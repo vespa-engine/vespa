@@ -14,17 +14,17 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl.State.RESUMED;
-import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl.State.SUSPENDED_NODE_ADMIN;
-import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl.State.TRANSITIONING;
+import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.RESUMED;
+import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.SUSPENDED_NODE_ADMIN;
+import static com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater.State.TRANSITIONING;
 
 /**
  * Pulls information from node repository and forwards containers to run to node admin.
  *
  * @author dybis, stiankri
  */
-public class NodeAdminStateUpdaterImpl {
-    private static final Logger log = Logger.getLogger(NodeAdminStateUpdaterImpl.class.getName());
+public class NodeAdminStateUpdater {
+    private static final Logger log = Logger.getLogger(NodeAdminStateUpdater.class.getName());
     private static final Duration FREEZE_CONVERGENCE_TIMEOUT = Duration.ofMinutes(5);
 
     private final NodeRepository nodeRepository;
@@ -36,7 +36,7 @@ public class NodeAdminStateUpdaterImpl {
 
     private State currentState = SUSPENDED_NODE_ADMIN;
 
-    public NodeAdminStateUpdaterImpl(
+    public NodeAdminStateUpdater(
             NodeRepository nodeRepository,
             Orchestrator orchestrator,
             NodeAdmin nodeAdmin,

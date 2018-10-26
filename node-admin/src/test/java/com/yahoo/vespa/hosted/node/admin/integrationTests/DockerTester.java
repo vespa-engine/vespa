@@ -14,7 +14,7 @@ import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
 import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
-import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdater;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
@@ -60,11 +60,11 @@ public class DockerTester implements AutoCloseable {
     final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
     final InOrder inOrder = Mockito.inOrder(docker, nodeRepository, orchestrator, storageMaintainer);
 
-    final NodeAdminStateUpdaterImpl nodeAdminStateUpdaterImpl;
+    final NodeAdminStateUpdater nodeAdminStateUpdater;
     final NodeAdminImpl nodeAdmin;
 
     private boolean terminated = false;
-    private volatile NodeAdminStateUpdaterImpl.State wantedState = NodeAdminStateUpdaterImpl.State.RESUMED;
+    private volatile NodeAdminStateUpdater.State wantedState = NodeAdminStateUpdater.State.RESUMED;
 
 
     DockerTester() {
@@ -97,15 +97,15 @@ public class DockerTester implements AutoCloseable {
                 new NodeAgentContextImpl.Builder(hostName).fileSystem(fileSystem).build(), nodeRepository,
                 orchestrator, dockerOperations, storageMaintainer, clock, INTERVAL, Optional.empty(), Optional.empty());
         nodeAdmin = new NodeAdminImpl(nodeAgentFactory, Optional.empty(), mr, Clock.systemUTC());
-        nodeAdminStateUpdaterImpl = new NodeAdminStateUpdaterImpl(nodeRepository, orchestrator,
+        nodeAdminStateUpdater = new NodeAdminStateUpdater(nodeRepository, orchestrator,
                 nodeAdmin, HOST_HOSTNAME);
 
         this.loopThread = new Thread(() -> {
-            nodeAdminStateUpdaterImpl.start();
+            nodeAdminStateUpdater.start();
 
             while (! terminated) {
                 try {
-                    nodeAdminStateUpdaterImpl.converge(wantedState);
+                    nodeAdminStateUpdater.converge(wantedState);
                 } catch (RuntimeException e) {
                     log.info(e.getMessage());
                 }
@@ -126,7 +126,7 @@ public class DockerTester implements AutoCloseable {
                 .build());
     }
 
-    void setWantedState(NodeAdminStateUpdaterImpl.State wantedState) {
+    void setWantedState(NodeAdminStateUpdater.State wantedState) {
         this.wantedState = wantedState;
     }
 
