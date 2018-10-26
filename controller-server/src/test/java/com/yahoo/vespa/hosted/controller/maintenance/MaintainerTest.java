@@ -32,6 +32,11 @@ public class MaintainerTest {
         assertEquals(1, executions.get());
     }
 
+    @Test
+    public void staggering() {
+        System.err.println(3 * 2 / 3);
+    }
+
     private Maintainer maintainerIn(SystemName system, AtomicInteger executions) {
         return new Maintainer(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                               "MockMaintainer", EnumSet.of(system)) {

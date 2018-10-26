@@ -45,7 +45,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         this.permittedSystems = ImmutableSet.copyOf(permittedSystems);
 
         service = new ScheduledThreadPoolExecutor(1);
-        service.scheduleAtFixedRate(this, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
+        service.scheduleAtFixedRate(this, staggeredDelay(controller, interval), interval.toMillis(), TimeUnit.MILLISECONDS);
         jobControl.started(name());
     }
     
@@ -89,6 +89,14 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     @Override
     public final String toString() {
         return name();
+    }
+
+    private static long staggeredDelay(Controller controller, Duration interval) {
+        int indexInCluster = 1 + controller.curator().cluster().indexOf(controller.hostname());
+        long intervalMillis = Math.max(1, interval.toMillis());
+        long nextCycleStart = ((controller.clock().millis() / intervalMillis) + 1) * intervalMillis;
+        long staggeredStart = nextCycleStart + intervalMillis * indexInCluster / Math.max(1, controller.curator().cluster().size());
+        return staggeredStart - controller.clock().millis();
     }
 
 }
