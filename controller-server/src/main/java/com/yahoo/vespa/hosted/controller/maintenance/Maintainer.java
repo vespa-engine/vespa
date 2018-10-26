@@ -3,12 +3,14 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 
 import java.time.Duration;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -38,6 +40,9 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     }
 
     public Maintainer(Controller controller, Duration interval, JobControl jobControl, String name, Set<SystemName> permittedSystems) {
+        if (interval.isNegative() || interval.isZero())
+            throw new IllegalArgumentException("Interval must be positive, but was " + interval);
+
         this.controller = controller;
         this.maintenanceInterval = interval;
         this.jobControl = jobControl;
@@ -92,11 +97,12 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     }
 
     private static long staggeredDelay(Controller controller, Duration interval) {
-        int indexInCluster = 1 + controller.curator().cluster().indexOf(controller.hostname());
-        long intervalMillis = Math.max(1, interval.toMillis());
-        long nextCycleStart = ((controller.clock().millis() / intervalMillis) + 1) * intervalMillis;
-        long staggeredStart = nextCycleStart + intervalMillis * indexInCluster / Math.max(1, controller.curator().cluster().size());
-        return staggeredStart - controller.clock().millis();
+        List<HostName> cluster = controller.curator().cluster();
+        if ( ! cluster.contains(controller.hostname()))
+            return interval.toMillis();
+
+        long timeUntilNextRun = Math.floorMod(-controller.clock().millis(), interval.toMillis() / cluster.size());
+        return timeUntilNextRun + (1 + cluster.indexOf(controller.hostname())) * interval.toMillis() / cluster.size();
     }
 
 }
