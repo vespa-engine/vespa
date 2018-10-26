@@ -1,10 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.search;
 
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
@@ -16,7 +12,6 @@ import com.yahoo.vespa.model.container.search.searchchain.HttpProvider;
 import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
@@ -30,7 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @author gjoranv
@@ -41,7 +35,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     	IndexInfoConfig.Producer,
     	IlscriptsConfig.Producer,
     	QrSearchersConfig.Producer,
-    	QrStartConfig.Producer,
     	QueryProfilesConfig.Producer,
         SemanticRulesConfig.Producer,
     	PageTemplatesConfig.Producer {
@@ -52,12 +45,10 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
     private PageTemplates pageTemplates;
-    private final ContainerCluster owningCluster;
 
     public ContainerSearch(ContainerCluster cluster, SearchChains chains, Options options) {
         super(chains);
         this.options = options;
-        this.owningCluster = cluster;
         cluster.addComponent(getFS4ResourcePool());
 
     }
@@ -119,33 +110,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         if (pageTemplates!=null) pageTemplates.getConfig(builder);
     }
 
-    private String buildGCOpts(Zone zone) {
-        Optional<String> gcopts = owningCluster.getGCOpts();
-        if (gcopts.isPresent()) {
-            return gcopts.get();
-        } else if (zone.system() == SystemName.dev) {
-            return ContainerCluster.G1GC;
-        } else if (owningCluster.isHostedVespa()) {
-            return ((zone.environment() != Environment.prod) || RegionName.from("us-east-3").equals(zone.region()))
-                    ? ContainerCluster.G1GC : ContainerCluster.CMS;
-        } else {
-            return ContainerCluster.CMS;
-        }
-    }
-
-    @Override
-    public void getConfig(QrStartConfig.Builder qsB) {
-    	QrStartConfig.Jvm.Builder internalBuilder = new QrStartConfig.Jvm.Builder();
-        if (owningCluster.getMemoryPercentage().isPresent()) {
-            internalBuilder.heapSizeAsPercentageOfPhysicalMemory(owningCluster.getMemoryPercentage().get());
-        } else if (owningCluster.isHostedVespa()) {
-            internalBuilder.heapSizeAsPercentageOfPhysicalMemory(owningCluster.getHostClusterId().isPresent() ? 17 : 60);
-        }
-        qsB.jvm(internalBuilder.directMemorySizeCache(totalCacheSizeMb()));
-        qsB.jvm.gcopts(buildGCOpts(owningCluster.getZone()));
-    }
-
-    private int totalCacheSizeMb() {
+    public int totalCacheSizeMb() {
         return totalHttpProviderCacheSize();
     }
 

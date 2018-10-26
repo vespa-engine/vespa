@@ -128,7 +128,7 @@ public class ContainerClusterTest {
                                                             int expectedMemoryPercentage) {
         ContainerCluster cluster = createContainerCluster(createRoot(isHosted), isCombinedCluster, explicitMemoryPercentage);
         QrStartConfig.Builder qsB = new QrStartConfig.Builder();
-        cluster.getSearch().getConfig(qsB);
+        cluster.getConfig(qsB);
         QrStartConfig qsC= new QrStartConfig(qsB);
         assertEquals(expectedMemoryPercentage, qsC.jvm().heapSizeAsPercentageOfPhysicalMemory());
     }
@@ -186,7 +186,7 @@ public class ContainerClusterTest {
         cluster.setGCOpts(override);
         assertEquals(1, cluster.getContainers().size());
         QrStartConfig.Builder qsB = new QrStartConfig.Builder();
-        cluster.getSearch().getConfig(qsB);
+        cluster.getConfig(qsB);
         QrStartConfig qsC= new QrStartConfig(qsB);
         assertEquals(expected, qsC.jvm().gcopts());
     }
