@@ -9,6 +9,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -50,7 +51,8 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         this.permittedSystems = ImmutableSet.copyOf(permittedSystems);
 
         service = new ScheduledThreadPoolExecutor(1);
-        service.scheduleAtFixedRate(this, staggeredDelay(controller, interval), interval.toMillis(), TimeUnit.MILLISECONDS);
+        long delay = staggeredDelay(controller.curator().cluster(), controller.hostname(), controller.clock().instant(), interval);
+        service.scheduleAtFixedRate(this, delay, interval.toMillis(), TimeUnit.MILLISECONDS);
         jobControl.started(name());
     }
     
@@ -96,13 +98,13 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         return name();
     }
 
-    private static long staggeredDelay(Controller controller, Duration interval) {
-        List<HostName> cluster = controller.curator().cluster();
-        if ( ! cluster.contains(controller.hostname()))
+    static long staggeredDelay(List<HostName> cluster, HostName host, Instant now, Duration interval) {
+        if ( ! cluster.contains(host))
             return interval.toMillis();
 
-        long timeUntilNextRun = Math.floorMod(-controller.clock().millis(), interval.toMillis() / cluster.size());
-        return timeUntilNextRun + (1 + cluster.indexOf(controller.hostname())) * interval.toMillis() / cluster.size();
+        long offset = cluster.indexOf(host) * interval.toMillis() / cluster.size();
+        long timeUntilNextRun = Math.floorMod(offset - now.toEpochMilli(), interval.toMillis());
+        return timeUntilNextRun + interval.toMillis() / cluster.size();
     }
 
 }
