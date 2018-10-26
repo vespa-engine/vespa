@@ -1,7 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib;
 
-import com.yahoo.document.*;
+import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentRemove;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.DocumentTypeManagerConfigurer;
+import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FloatFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.serialization.DocumentSerializer;
@@ -33,8 +40,9 @@ public class DocumentListTestCase {
         put3.getDocument().setFieldValue("bodyfloat", new FloatFieldValue(5.5f));
 
 
+        Field bodystringField = bmType.getField("bodystring");
         DocumentUpdate docUp = new DocumentUpdate(docMan.getDocumentType("benchmark"), new DocumentId("userdoc:foo:99999999:4"));
-        docUp.addFieldUpdate(FieldUpdate.createAssign(docUp.getType().getField("bodystring"), new StringFieldValue("ballooooo")));
+        docUp.addFieldUpdate(FieldUpdate.createAssign(bodystringField, new StringFieldValue("ballooooo")));
 
         List<Entry> entries = new ArrayList<>();
         entries.add(Entry.create(put1));
@@ -91,7 +99,7 @@ public class DocumentListTestCase {
         assertFalse(entry4.isRemoveEntry());
         assertTrue(entry4.isUpdateEntry());
         assertTrue(entry4.getDocumentOperation() instanceof DocumentUpdate);
-        assertEquals(new StringFieldValue("ballooooo"),((DocumentUpdate) entry4.getDocumentOperation()).getFieldUpdate(0).getValueUpdate(0).getValue());
+        assertEquals(new StringFieldValue("ballooooo"),((DocumentUpdate) entry4.getDocumentOperation()).getFieldUpdate(bodystringField).getValueUpdate(0).getValue());
     }
 
     @Test

@@ -26,17 +26,17 @@ public class VespaDocumentSerializerHead extends VespaDocumentSerializer42 {
 
         update.getDocumentType().serialize(this);
 
-        putInt(null, update.getFieldUpdates().size());
+        putInt(null, update.fieldUpdates().size());
 
-        for (FieldUpdate up : update.getFieldUpdates()) {
+        for (FieldUpdate up : update.fieldUpdates()) {
             up.serialize(this);
         }
 
         DocumentUpdateFlags flags = new DocumentUpdateFlags();
         flags.setCreateIfNonExistent(update.getCreateIfNonExistent());
-        putInt(null, flags.injectInto(update.getFieldPathUpdates().size()));
+        putInt(null, flags.injectInto(update.fieldPathUpdates().size()));
 
-        for (FieldPathUpdate up : update.getFieldPathUpdates()) {
+        for (FieldPathUpdate up : update.fieldPathUpdates()) {
             up.serialize(this);
         }
     }

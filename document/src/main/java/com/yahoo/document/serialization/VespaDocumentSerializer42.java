@@ -2,18 +2,61 @@
 package com.yahoo.document.serialization;
 
 import com.yahoo.compress.Compressor;
-import com.yahoo.document.*;
-import com.yahoo.document.annotation.*;
-import com.yahoo.document.datatypes.*;
+
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.CollectionDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentId;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.DocumentUpdate;
+import com.yahoo.document.Field;
+import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.document.annotation.AlternateSpanList;
+import com.yahoo.document.annotation.Annotation;
+import com.yahoo.document.annotation.AnnotationReference;
+import com.yahoo.document.annotation.Span;
+import com.yahoo.document.annotation.SpanList;
+import com.yahoo.document.annotation.SpanNode;
+import com.yahoo.document.annotation.SpanTree;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.ByteFieldValue;
+import com.yahoo.document.datatypes.CollectionFieldValue;
+import com.yahoo.document.datatypes.DoubleFieldValue;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.FloatFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
+import com.yahoo.document.datatypes.PredicateFieldValue;
+import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.ReferenceFieldValue;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.Struct;
+import com.yahoo.document.datatypes.StructuredFieldValue;
+import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.predicate.BinaryFormat;
-import com.yahoo.document.update.*;
+import com.yahoo.document.update.AddValueUpdate;
+import com.yahoo.document.update.ArithmeticValueUpdate;
+import com.yahoo.document.update.AssignValueUpdate;
+import com.yahoo.document.update.ClearValueUpdate;
+import com.yahoo.document.update.FieldUpdate;
+import com.yahoo.document.update.MapValueUpdate;
+import com.yahoo.document.update.RemoveValueUpdate;
+import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.FieldBase;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import static com.yahoo.text.Utf8.calculateBytePositions;
@@ -563,9 +606,9 @@ public class VespaDocumentSerializer42 extends BufferSerializer implements Docum
         putByte(null, contents);
         update.getDocumentType().serialize(this);
 
-        putInt(null, update.getFieldUpdates().size());
+        putInt(null, update.fieldUpdates().size());
 
-        for (FieldUpdate up : update.getFieldUpdates()) {
+        for (FieldUpdate up : update.fieldUpdates()) {
             up.serialize(this);
         }
     }

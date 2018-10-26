@@ -28,7 +28,6 @@ public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer42 {
         int size = getInt(null);
 
         for (int i = 0; i < size; i++) {
-            // TODO: Should use checked method, but doesn't work according to test now.
             update.addFieldUpdate(new FieldUpdate(this, update.getDocumentType(), 8));
         }
 
