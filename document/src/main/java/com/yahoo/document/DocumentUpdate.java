@@ -279,9 +279,8 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
 
     /**
      * Assigns the field updates of this document update.
-     * This document update receives ownership of the list - it can not be subsequently used
-     * by the caller. Also note that there no assumptions can be made on the order of items
-     * after this call. They might have been joined if for the same field or reordered.
+     * Also note that no assumptions can be made on the order of item after this call.
+     * They might have been joined if for the same field or reordered.
      *
      * @param fieldUpdates the new list of updates of this
      * @throws NullPointerException if the argument passed is null
@@ -378,9 +377,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      */
     @Deprecated
     public FieldUpdate removeFieldUpdate(int index) {
-        FieldUpdate prev = getFieldUpdate(index);
-        fieldUpdates.remove(index);
-        return removeFieldUpdate(prev.getField());
+        return fieldUpdates.remove(index);
     }
 
     public FieldUpdate removeFieldUpdate(Field field) {
@@ -391,7 +388,8 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
                 return fieldUpdate;
             }
         }
-        return null;    }
+        return null;
+    }
 
     public FieldUpdate removeFieldUpdate(String fieldName) {
         Field field = documentType.getField(fieldName);
@@ -448,7 +446,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
         string.append(docId);
         string.append("': ");
         string.append("create-if-non-existent=");
-        string.append(createIfNonExistent);
+        string.append(getCreateIfNonExistent());
         string.append(": ");
         string.append("[");
 
