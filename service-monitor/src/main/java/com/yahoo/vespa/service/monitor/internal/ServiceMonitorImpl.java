@@ -25,8 +25,8 @@ public class ServiceMonitorImpl implements ServiceMonitor {
                               SlobrokMonitorManagerImpl slobrokMonitorManager,
                               HealthMonitorManager healthMonitorManager,
                               Metric metric,
-                              Timer timer) {
-        Zone zone = superModelProvider.getZone();
+                              Timer timer,
+                              Zone zone) {
         ServiceMonitorMetrics metrics = new ServiceMonitorMetrics(metric, timer);
 
         DuperModel duperModel = new DuperModel(configserverConfig);

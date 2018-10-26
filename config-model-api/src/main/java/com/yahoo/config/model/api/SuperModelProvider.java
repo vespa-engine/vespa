@@ -13,6 +13,6 @@ public interface SuperModelProvider {
      */
     SuperModel snapshot(SuperModelListener listener);
 
-    // TODO: Remove - clients of SuperModel should get zone from elsewhere.
+    // TODO: Remove when 6.306 is latest version in use
     Zone getZone();
 }
