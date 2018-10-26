@@ -240,10 +240,10 @@ public class StorageMaintainer {
     }
 
     private Map<String, Object> getCoredumpNodeAttributes(NodeAgentContext context, NodeSpec node, Optional<Container> container) {
-        Map<String, Object> attributes = new HashMap<>();
+        Map<String, String> attributes = new HashMap<>();
         attributes.put("hostname", node.getHostname());
-        attributes.put("region", context.zoneId().regionName());
-        attributes.put("environment", context.zoneId().environment());
+        attributes.put("region", context.zoneId().regionName().value());
+        attributes.put("environment", context.zoneId().environment().value());
         attributes.put("flavor", node.getFlavor());
         attributes.put("kernel_version", System.getProperty("os.version"));
 
