@@ -162,6 +162,14 @@ public class CoredumpHandlerTest {
         coredumpHandler.getMetadata(context, fileSystem.getPath("/fake/path"), Collections.emptyMap());
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void fails_to_get_core_file_if_only_compressed() throws IOException {
+        Path coredumpDirectory = fileSystem.getPath("/path/to/coredump/proccessing/id-123");
+        Files.createDirectories(coredumpDirectory);
+        Files.createFile(coredumpDirectory.resolve("dump_bash.core.431.lz4"));
+        coredumpHandler.findCoredumpFileInProcessingDirectory(coredumpDirectory);
+    }
+
     @Test
     public void process_single_coredump_test() throws IOException {
         Path coredumpDirectory = fileSystem.getPath("/path/to/coredump/proccessing/id-123");

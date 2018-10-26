@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
@@ -19,6 +20,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameEndsWith;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameMatches;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameStartsWith;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
@@ -154,6 +156,7 @@ public class CoredumpHandler {
         Path compressedCoreFile = coreFile.getParent().resolve(coreFile.getFileName() + ".lz4");
         terminal.newCommandLine(context)
                 .add(LZ4_PATH, "-f", coreFile.toString(), compressedCoreFile.toString())
+                .setTimeout(Duration.ofMinutes(30))
                 .execute();
         Files.delete(coreFile);
 
@@ -161,9 +164,9 @@ public class CoredumpHandler {
         Files.move(coredumpDirectory, newCoredumpDirectory);
     }
 
-    private Path findCoredumpFileInProcessingDirectory(Path coredumpProccessingDirectory) {
+    Path findCoredumpFileInProcessingDirectory(Path coredumpProccessingDirectory) {
         return FileFinder.files(coredumpProccessingDirectory)
-                .match(nameStartsWith(COREDUMP_FILENAME_PREFIX))
+                .match(nameStartsWith(COREDUMP_FILENAME_PREFIX).and(nameEndsWith(".lz4").negate()))
                 .maxDepth(1)
                 .stream()
                 .map(FileFinder.FileAttributes::path)
