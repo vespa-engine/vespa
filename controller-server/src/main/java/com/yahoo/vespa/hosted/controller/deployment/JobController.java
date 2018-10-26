@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
@@ -102,13 +103,20 @@ public class JobController {
         }
     }
 
-    /** Stores the given log record for the given run and step. */
-    public void log(RunId id, Step step, Level level, String message) {
+    /** Stores the given log records for the given run and step. */
+    public void log(RunId id, Step step, Level level, List<String> messages) {
         locked(id, __ -> {
-            LogEntry entry = new LogEntry(0, controller.clock().millis(), LogEntry.typeOf(level), message);
-            logs.append(id.application(), id.type(), step, Collections.singletonList(entry));
+            List<LogEntry> entries = messages.stream()
+                                             .map(message -> new LogEntry(0, controller.clock().millis(), LogEntry.typeOf(level), message))
+                                             .collect(Collectors.toList());
+            logs.append(id.application(), id.type(), step, entries);
             return __;
         });
+    }
+
+    /** Stores the given log record for the given run and step. */
+    public void log(RunId id, Step step, Level level, String message) {
+        log(id, step, level, Collections.singletonList(message));
     }
 
     /** Fetches any new test log entries, and records the id of the last of these, for continuation. */

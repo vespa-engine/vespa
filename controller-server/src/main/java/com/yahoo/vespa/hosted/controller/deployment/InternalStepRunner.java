@@ -40,6 +40,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -276,15 +277,17 @@ public class InternalStepRunner implements StepRunner {
 
     private boolean nodesConverged(ApplicationId id, JobType type, Version target, DualLogger logger) {
         List<Node> nodes = controller.configServer().nodeRepository().list(type.zone(controller.system()), id, ImmutableSet.of(active, reserved));
-        for (Node node : nodes)
-            logger.log(String.format("%70s: %-16s%-25s%-32s%s",
+        List<String> statuses = nodes.stream()
+                .map(node -> String.format("%70s: %-16s%-25s%-32s%s",
                                            node.hostname(),
                                            node.serviceState(),
                                            node.wantedVersion() + (node.currentVersion().equals(node.wantedVersion()) ? "" : " <-- " + node.currentVersion()),
                                            node.restartGeneration() == node.wantedRestartGeneration() ? ""
                                                    : "restart pending (" + node.wantedRestartGeneration() + " <-- " + node.restartGeneration() + ")",
                                            node.rebootGeneration() == node.wantedRebootGeneration() ? ""
-                                                   : "reboot pending (" + node.wantedRebootGeneration() + " <-- " + node.rebootGeneration() + ")"));
+                                                   : "reboot pending (" + node.wantedRebootGeneration() + " <-- " + node.rebootGeneration() + ")"))
+                .collect(Collectors.toList());
+        logger.log(statuses);
 
         return nodes.stream().allMatch(node ->    node.currentVersion().equals(target)
                                                && node.restartGeneration() == node.wantedRestartGeneration()
@@ -298,13 +301,16 @@ public class InternalStepRunner implements StepRunner {
             return false;
         }
         logger.log("Wanted config generation is " + convergence.get().wantedGeneration());
-        for (ServiceConvergence.Status serviceStatus : convergence.get().services())
-            if (serviceStatus.currentGeneration() != convergence.get().wantedGeneration())
-                logger.log(String.format("%70s: %11s on port %4d has %s",
-                                         serviceStatus.host().value(),
-                                         serviceStatus.type(),
-                                         serviceStatus.port(),
-                                         serviceStatus.currentGeneration() == -1 ? "(unknown)" : Long.toString(serviceStatus.currentGeneration())));
+        List<String> statuses = convergence.get().services().stream()
+                .filter(serviceStatus -> serviceStatus.currentGeneration() != convergence.get().wantedGeneration())
+                .map(serviceStatus -> String.format("%70s: %11s on port %4d has %s",
+                                                    serviceStatus.host().value(),
+                                                    serviceStatus.type(),
+                                                    serviceStatus.port(),
+                                                    serviceStatus.currentGeneration() == -1 ? "(unknown)" : Long.toString(serviceStatus.currentGeneration())))
+                .collect(Collectors.toList());
+        logger.log(statuses);
+
         return convergence.get().converged();
     }
 
@@ -578,8 +584,12 @@ public class InternalStepRunner implements StepRunner {
             this.step = step;
         }
 
-        private void log(String message) {
-            log(DEBUG, message);
+        private void log(String... messages) {
+            log(Arrays.asList(messages));
+        }
+
+        private void log(List<String> messages) {
+            controller.jobController().log(id, step, DEBUG, messages);
         }
 
         private void log(Level level, String message) {
