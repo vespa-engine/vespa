@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.network.IPVersion;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

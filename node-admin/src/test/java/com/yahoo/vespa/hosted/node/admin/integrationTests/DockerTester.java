@@ -9,8 +9,10 @@ import com.yahoo.system.ProcessExecuter;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.metrics.MetricReceiverWrapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperationsImpl;
+import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgent;
@@ -19,6 +21,8 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.network.IPAddressesMock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.test.file.TestFileSystem;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
@@ -30,8 +34,10 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.when;
 
 /**
@@ -45,16 +51,19 @@ public class DockerTester implements AutoCloseable {
     static final String NODE_PROGRAM = PATH_TO_VESPA_HOME.resolve("bin/vespa-nodectl").toString();
     static final HostName HOST_HOSTNAME = HostName.from("host.test.yahoo.com");
 
-    final CallOrderVerifier callOrderVerifier = new CallOrderVerifier();
-    final Docker dockerMock = new DockerMock(callOrderVerifier);
-    final NodeRepoMock nodeRepositoryMock = new NodeRepoMock(callOrderVerifier);
+    final Docker docker = spy(new DockerMock());
+    final NodeRepoMock nodeRepository = spy(new NodeRepoMock());
+    final Orchestrator orchestrator = mock(Orchestrator.class);
+    final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
+    final InOrder inOrder = Mockito.inOrder(docker, nodeRepository, orchestrator, storageMaintainer);
+
     final NodeAdminStateUpdaterImpl nodeAdminStateUpdater;
     final NodeAdminImpl nodeAdmin;
-    private final OrchestratorMock orchestratorMock = new OrchestratorMock(callOrderVerifier);
-    private final FileSystem fileSystem = TestFileSystem.create();
 
 
     DockerTester() {
+        when(storageMaintainer.getDiskUsageFor(any())).thenReturn(Optional.empty());
+
         IPAddressesMock ipAddresses = new IPAddressesMock();
         ipAddresses.addAddress(HOST_HOSTNAME.value(), "1.1.1.1");
         ipAddresses.addAddress(HOST_HOSTNAME.value(), "f000::");
@@ -71,25 +80,25 @@ public class DockerTester implements AutoCloseable {
                 .wantedRestartGeneration(1L)
                 .currentRestartGeneration(1L)
                 .build();
-        nodeRepositoryMock.updateNodeRepositoryNode(hostSpec);
+        nodeRepository.updateNodeRepositoryNode(hostSpec);
 
         Clock clock = Clock.systemUTC();
-        DockerOperations dockerOperations = new DockerOperationsImpl(dockerMock, processExecuter, node -> "", Collections.emptyList(), ipAddresses);
-        StorageMaintainerMock storageMaintainer = new StorageMaintainerMock(dockerOperations, callOrderVerifier);
+        FileSystem fileSystem = TestFileSystem.create();
+        DockerOperations dockerOperations = new DockerOperationsImpl(docker, processExecuter, node -> "", Collections.emptyList(), ipAddresses);
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(
-                new NodeAgentContextImpl.Builder(hostName).fileSystem(fileSystem).build(), nodeRepositoryMock,
-                orchestratorMock, dockerOperations, storageMaintainer, clock, NODE_AGENT_SCAN_INTERVAL, Optional.empty(), Optional.empty());
+                new NodeAgentContextImpl.Builder(hostName).fileSystem(fileSystem).build(), nodeRepository,
+                orchestrator, dockerOperations, storageMaintainer, clock, NODE_AGENT_SCAN_INTERVAL, Optional.empty(), Optional.empty());
         nodeAdmin = new NodeAdminImpl(nodeAgentFactory, Optional.empty(), mr, Clock.systemUTC());
-        nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(nodeRepositoryMock, orchestratorMock,
+        nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(nodeRepository, orchestrator,
                 nodeAdmin, HOST_HOSTNAME, clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL);
         nodeAdminStateUpdater.start();
     }
 
     /** Adds a node to node-repository mock that is running on this host */
     void addChildNodeRepositoryNode(NodeSpec nodeSpec) {
-        nodeRepositoryMock.updateNodeRepositoryNode(new NodeSpec.Builder(nodeSpec)
+        nodeRepository.updateNodeRepositoryNode(new NodeSpec.Builder(nodeSpec)
                 .parentHostname(HOST_HOSTNAME.value())
                 .build());
     }
@@ -97,5 +106,9 @@ public class DockerTester implements AutoCloseable {
     @Override
     public void close() {
         nodeAdminStateUpdater.stop();
+    }
+
+    public <T> T inOrder(T t) {
+        return inOrder.verify(t, timeout(1000));
     }
 }

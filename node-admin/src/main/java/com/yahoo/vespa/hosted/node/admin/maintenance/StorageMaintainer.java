@@ -24,6 +24,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,71 +56,81 @@ public class StorageMaintainer {
 
     public void writeMetricsConfig(NodeAgentContext context, NodeSpec node) {
         List<SecretAgentCheckConfig> configs = new ArrayList<>();
+        Map<String, Object> tags = generateTags(context, node);
 
         // host-life
         Path hostLifeCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_host_life");
-        SecretAgentCheckConfig hostLifeSchedule = new SecretAgentCheckConfig("host-life", 60, hostLifeCheckPath);
-        configs.add(annotatedCheck(context, node, hostLifeSchedule));
+        configs.add(new SecretAgentCheckConfig("host-life", 60, hostLifeCheckPath).withTags(tags));
 
         // ntp
         Path ntpCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_ntp");
-        SecretAgentCheckConfig ntpSchedule = new SecretAgentCheckConfig("ntp", 60, ntpCheckPath);
-        configs.add(annotatedCheck(context, node, ntpSchedule));
+        configs.add(new SecretAgentCheckConfig("ntp", 60, ntpCheckPath).withTags(tags));
 
         // coredumps (except for the done coredumps which is handled by the host)
         Path coredumpCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_coredumps");
-        SecretAgentCheckConfig coredumpSchedule = new SecretAgentCheckConfig("system-coredumps-processing", 300,
-                coredumpCheckPath, "--application", "system-coredumps-processing", "--lastmin",
-                "129600", "--crit", "1", "--coredir", context.pathInNodeUnderVespaHome("var/crash/processing").toString());
-        configs.add(annotatedCheck(context, node, coredumpSchedule));
+        configs.add(new SecretAgentCheckConfig("system-coredumps-processing", 300, coredumpCheckPath,
+                "--application", "system-coredumps-processing",
+                "--lastmin", "129600",
+                "--crit", "1",
+                "--coredir", context.pathInNodeUnderVespaHome("var/crash/processing").toString())
+                .withTags(tags));
 
         // athenz certificate check
         Path athenzCertExpiryCheckPath = context.pathInNodeUnderVespaHome("libexec64/yms/yms_check_athenz_certs");
-        SecretAgentCheckConfig athenzCertExpirySchedule = new SecretAgentCheckConfig("athenz-certificate-expiry", 60,
-                 athenzCertExpiryCheckPath, "--threshold", "20")
-                .withRunAsUser("root");
-        configs.add(annotatedCheck(context, node, athenzCertExpirySchedule));
+        configs.add(new SecretAgentCheckConfig("athenz-certificate-expiry", 60, athenzCertExpiryCheckPath,
+                "--threshold", "20")
+                .withRunAsUser("root")
+                .withTags(tags));
 
         if (context.nodeType() != NodeType.config) {
             // vespa-health
             Path vespaHealthCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa_health");
-            SecretAgentCheckConfig vespaHealthSchedule = new SecretAgentCheckConfig("vespa-health", 60, vespaHealthCheckPath, "all");
-            configs.add(annotatedCheck(context, node, vespaHealthSchedule));
+            configs.add(new SecretAgentCheckConfig("vespa-health", 60, vespaHealthCheckPath, "all").withTags(tags));
 
             // vespa
             Path vespaCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa");
             SecretAgentCheckConfig vespaSchedule = new SecretAgentCheckConfig("vespa", 60, vespaCheckPath, "all");
-            configs.add(annotatedCheck(context, node, vespaSchedule));
+            if (isConfigserverLike(context.nodeType())) {
+                Map<String, Object> tagsWithoutNameSpace = new LinkedHashMap<>(tags);
+                tagsWithoutNameSpace.remove("namespace");
+                vespaSchedule.withTags(tagsWithoutNameSpace);
+            }
+            configs.add(vespaSchedule);
         }
 
-        if (context.nodeType() == NodeType.config) {
+        if (context.nodeType() == NodeType.config || context.nodeType() == NodeType.controller) {
             // configserver
             Path configServerCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_ymonsb2");
-            SecretAgentCheckConfig configServerSchedule = new SecretAgentCheckConfig("configserver", 60,
-                    configServerCheckPath, "-zero", "configserver");
-            configs.add(annotatedCheck(context, node, configServerSchedule));
+            configs.add(new SecretAgentCheckConfig(SecretAgentCheckConfig.nodeTypeToRole(context.nodeType()), 60, configServerCheckPath,
+                    "-zero", "configserver")
+                    .withTags(tags));
 
             //zkbackupage
             Path zkbackupCheckPath = context.pathInNodeUnderVespaHome("libexec/yamas2/yms_check_file_age.py");
-            SecretAgentCheckConfig zkbackupSchedule = new SecretAgentCheckConfig("zkbackupage", 300,
-                    zkbackupCheckPath, "-f", context.pathInNodeUnderVespaHome("var/vespa-hosted/zkbackup.stat").toString(),
-                    "-m", "150", "-a", "config-zkbackupage");
-            configs.add(annotatedCheck(context, node, zkbackupSchedule));
+            configs.add(new SecretAgentCheckConfig("zkbackupage", 300, zkbackupCheckPath,
+                    "-f", context.pathInNodeUnderVespaHome("var/vespa-hosted/zkbackup.stat").toString(),
+                    "-m", "150",
+                    "-a", "config-zkbackupage")
+                    .withTags(tags));
         }
 
         if (context.nodeType() == NodeType.proxy) {
             //routing-configage
             Path routingAgeCheckPath = context.pathInNodeUnderVespaHome("libexec/yamas2/yms_check_file_age.py");
-            SecretAgentCheckConfig routingAgeSchedule = new SecretAgentCheckConfig("routing-configage", 60,
-                    routingAgeCheckPath, "-f", context.pathInNodeUnderVespaHome("var/vespa-hosted/routing/nginx.conf.tmp").toString(),
-                    "-m", "1", "-a", "routing-configage", "--ignore_file_not_found");
-            configs.add(annotatedCheck(context, node, routingAgeSchedule));
+            configs.add(new SecretAgentCheckConfig("routing-configage", 60, routingAgeCheckPath,
+                    "-f", context.pathInNodeUnderVespaHome("var/vespa-hosted/routing/nginx.conf.tmp").toString(),
+                    "-m", "1",
+                    "-a", "routing-configage",
+                    "--ignore_file_not_found")
+                    .withTags(tags));
 
             //ssl-check
             Path sslCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_ssl_status");
-            SecretAgentCheckConfig sslSchedule = new SecretAgentCheckConfig("ssl-status", 300,
-                    sslCheckPath, "-e", "localhost", "-p", "4443", "-t", "30");
-            configs.add(annotatedCheck(context, node, sslSchedule));
+            configs.add(new SecretAgentCheckConfig("ssl-status", 300, sslCheckPath,
+                    "-e", "localhost",
+                    "-p", "4443",
+                    "-t", "30")
+                    .withTags(tags));
         }
 
         // Write config and restart yamas-agent
@@ -128,26 +139,36 @@ public class StorageMaintainer {
         dockerOperations.executeCommandInContainerAsRoot(context, "service", "yamas-agent", "restart");
     }
 
-    private SecretAgentCheckConfig annotatedCheck(NodeAgentContext context, NodeSpec node, SecretAgentCheckConfig check) {
-        check.withTag("namespace", "Vespa")
-                .withTag("role", SecretAgentCheckConfig.nodeTypeToRole(node.getNodeType()))
-                .withTag("flavor", node.getFlavor())
-                .withTag("canonicalFlavor", node.getCanonicalFlavor())
-                .withTag("state", node.getState().toString())
-                .withTag("zone", String.format("%s.%s", context.zoneId().environment().value(), context.zoneId().regionName().value()));
-        node.getParentHostname().ifPresent(parent -> check.withTag("parentHostname", parent));
-        node.getOwner().ifPresent(owner -> check
-                .withTag("tenantName", owner.getTenant())
-                .withTag("app", owner.getApplication() + "." + owner.getInstance())
-                .withTag("applicationName", owner.getApplication())
-                .withTag("instanceName", owner.getInstance())
-                .withTag("applicationId", owner.getTenant() + "." + owner.getApplication() + "." + owner.getInstance()));
-        node.getMembership().ifPresent(membership -> check
-                .withTag("clustertype", membership.getClusterType())
-                .withTag("clusterid", membership.getClusterId()));
-        node.getVespaVersion().ifPresent(version -> check.withTag("vespaVersion", version));
+    private Map<String, Object> generateTags(NodeAgentContext context, NodeSpec node) {
+        Map<String, String> tags = new LinkedHashMap<>();
+        tags.put("namespace", "Vespa");
+        tags.put("role", SecretAgentCheckConfig.nodeTypeToRole(node.getNodeType()));
+        tags.put("zone", String.format("%s.%s", context.zoneId().environment().value(), context.zoneId().regionName().value()));
+        node.getVespaVersion().ifPresent(version -> tags.put("vespaVersion", version));
 
-        return check;
+        if (! isConfigserverLike(context.nodeType())) {
+            tags.put("flavor", node.getFlavor());
+            tags.put("canonicalFlavor", node.getCanonicalFlavor());
+            tags.put("state", node.getState().toString());
+            node.getParentHostname().ifPresent(parent -> tags.put("parentHostname", parent));
+            node.getOwner().ifPresent(owner -> {
+                tags.put("tenantName", owner.getTenant());
+                tags.put("app", owner.getApplication() + "." + owner.getInstance());
+                tags.put("applicationName", owner.getApplication());
+                tags.put("instanceName", owner.getInstance());
+                tags.put("applicationId", owner.getTenant() + "." + owner.getApplication() + "." + owner.getInstance());
+            });
+            node.getMembership().ifPresent(membership -> {
+                tags.put("clustertype", membership.getClusterType());
+                tags.put("clusterid", membership.getClusterId());
+            });
+        }
+
+        return Collections.unmodifiableMap(tags);
+    }
+
+    private boolean isConfigserverLike(NodeType nodeType) {
+        return nodeType == NodeType.config || nodeType == NodeType.controller;
     }
 
     public Optional<Long> getDiskUsageFor(NodeAgentContext context) {

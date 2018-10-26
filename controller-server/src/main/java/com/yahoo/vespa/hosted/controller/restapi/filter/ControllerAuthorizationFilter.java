@@ -9,16 +9,17 @@ import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.cors.CorsFilterConfig;
 import com.yahoo.jdisc.http.filter.security.cors.CorsRequestFilterBase;
 import com.yahoo.log.LogLevel;
+import com.yahoo.restapi.Path;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
-import com.yahoo.restapi.Path;
+import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
@@ -40,7 +41,7 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.HEAD;
 import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
 import static com.yahoo.jdisc.http.HttpRequest.Method.POST;
 import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
-import static com.yahoo.vespa.hosted.controller.api.integration.athenz.HostedAthenzIdentities.SCREWDRIVER_DOMAIN;
+import static com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities.SCREWDRIVER_DOMAIN;
 
 /**
  * A security filter protects all controller apis.
@@ -55,7 +56,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
     private static final Logger log = Logger.getLogger(ControllerAuthorizationFilter.class.getName());
 
-    private final AthenzClientFactory clientFactory;
+    private final ZmsClientFacade zmsClient;
     private final TenantController tenantController;
 
     @Inject
@@ -63,7 +64,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
                                          Controller controller,
                                          CorsFilterConfig corsConfig) {
         super(corsConfig);
-        this.clientFactory = clientFactory;
+        this.zmsClient = new ZmsClientFacade(clientFactory.createZmsClient(), clientFactory.getControllerIdentity());
         this.tenantController = controller.tenants();
     }
 
@@ -71,7 +72,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
                                   TenantController tenantController,
                                   Set<String> allowedUrls) {
         super(allowedUrls);
-        this.clientFactory = clientFactory;
+        this.zmsClient = new ZmsClientFacade(clientFactory.createZmsClient(), clientFactory.getControllerIdentity());;
         this.tenantController = tenantController;
     }
 
@@ -128,20 +129,21 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     private static boolean isTenantAdminOperation(Path path, Method method) {
         if (isHostedOperatorOperation(path, method)) return false;
         return path.matches("/application/v4/tenant/{tenant}") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/dev/{*}") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/perf/{*}") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override");
+               path.matches("/application/v4/tenant/{tenant}/application/{application}") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{job}") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/dev/{*}") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/perf/{*}") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override");
     }
 
     private static boolean isTenantPipelineOperation(Path path, Method method) {
         if (isTenantAdminOperation(path, method)) return false;
         return path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/submit") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/promote") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/prod/{*}") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/test/{*}") ||
-                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/staging/{*}");
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/submit") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/promote") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/prod/{*}") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/test/{*}") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/staging/{*}");
     }
 
     private void verifyIsHostedOperator(AthenzPrincipal principal) {
@@ -151,8 +153,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     }
 
     private boolean isHostedOperator(AthenzIdentity identity) {
-        return clientFactory.createZmsClientWithServicePrincipal()
-                .hasHostedOperatorAccess(identity);
+        return zmsClient.hasHostedOperatorAccess(identity);
     }
 
     private void verifyIsTenantAdmin(AthenzPrincipal principal, TenantName name) {
@@ -166,8 +167,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
     private boolean isTenantAdmin(AthenzIdentity identity, Tenant tenant) {
         if (tenant instanceof AthenzTenant) {
-            return clientFactory.createZmsClientWithServicePrincipal()
-                                .hasTenantAdminAccess(identity, ((AthenzTenant) tenant).domain());
+            return zmsClient.hasTenantAdminAccess(identity, ((AthenzTenant) tenant).domain());
         } else if (tenant instanceof UserTenant) {
             if (!(identity instanceof AthenzUser)) {
                 return false;
@@ -210,13 +210,13 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
 
     private boolean hasDeployerAccess(AthenzIdentity identity, AthenzDomain tenantDomain, ApplicationName application) {
         try {
-            return clientFactory.createZmsClientWithServicePrincipal()
+            return zmsClient
                     .hasApplicationAccess(
                             identity,
                             ApplicationAction.deploy,
                             tenantDomain,
                             new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(application.value()));
-        } catch (ZmsException e) {
+        } catch (ZmsClientException e) {
             throw new InternalServerErrorException("Failed to authorize operation:  (" + e.getMessage() + ")", e);
         }
     }

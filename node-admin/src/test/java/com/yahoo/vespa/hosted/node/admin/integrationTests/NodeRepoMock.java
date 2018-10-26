@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttribu
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,13 +24,6 @@ public class NodeRepoMock implements NodeRepository {
     private static final Object monitor = new Object();
 
     private final Map<String, NodeSpec> nodeRepositoryNodesByHostname = new HashMap<>();
-    private final Map<String, Acl> acls = new HashMap<>();
-
-    private final CallOrderVerifier callOrderVerifier;
-
-    public NodeRepoMock(CallOrderVerifier callOrderVerifier) {
-        this.callOrderVerifier = callOrderVerifier;
-    }
 
     @Override
     public void addNodes(List<AddNode> nodes) { }
@@ -52,15 +46,15 @@ public class NodeRepoMock implements NodeRepository {
 
     @Override
     public Map<String, Acl> getAcls(String hostname) {
-        synchronized (monitor) {
-            return acls;
-        }
+        return Collections.emptyMap();
     }
 
     @Override
     public void updateNodeAttributes(String hostName, NodeAttributes nodeAttributes) {
         synchronized (monitor) {
-            callOrderVerifier.add("updateNodeAttributes with HostName: " + hostName + ", " + nodeAttributes);
+            updateNodeRepositoryNode(new NodeSpec.Builder(getNode(hostName))
+                    .updateFromNodeAttributes(nodeAttributes)
+                    .build());
         }
     }
 
@@ -70,7 +64,6 @@ public class NodeRepoMock implements NodeRepository {
             updateNodeRepositoryNode(new NodeSpec.Builder(getNode(hostName))
                     .state(nodeState)
                     .build());
-            callOrderVerifier.add("setNodeState " + hostName + " to " + nodeState);
         }
     }
 
@@ -79,13 +72,9 @@ public class NodeRepoMock implements NodeRepository {
 
     }
 
-    public void updateNodeRepositoryNode(NodeSpec nodeSpec) {
-        nodeRepositoryNodesByHostname.put(nodeSpec.getHostname(), nodeSpec);
-    }
-
-    public int getNumberOfContainerSpecs() {
+    void updateNodeRepositoryNode(NodeSpec nodeSpec) {
         synchronized (monitor) {
-            return nodeRepositoryNodesByHostname.size();
+            nodeRepositoryNodesByHostname.put(nodeSpec.getHostname(), nodeSpec);
         }
     }
 }

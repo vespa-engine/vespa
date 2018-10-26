@@ -133,6 +133,7 @@
       <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/content/*</binding>
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/filedistributionstatus</binding>
       <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/filedistributionstatus</binding>
+      <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/suspended</binding>
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart</binding>
       <binding>https://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart</binding>
       <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/converge</binding>
@@ -192,5 +193,7 @@
     <preprocess:include file='configserver-config.xml' required='false' />
 
     <preprocess:include file='configserver-components.xml' required='false' />
+
+    <preprocess:include file='zookeeper-server-config.xml' required='false' />
   </jdisc>
 </services>

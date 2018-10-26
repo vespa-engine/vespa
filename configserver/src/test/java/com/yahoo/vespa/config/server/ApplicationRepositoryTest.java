@@ -19,6 +19,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.io.IOUtils;
 import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
@@ -76,6 +77,7 @@ public class ApplicationRepositoryTest {
     private ApplicationRepository applicationRepository;
     private TenantRepository tenantRepository;
     private SessionHandlerTest.MockProvisioner  provisioner;
+    private OrchestratorMock orchestrator;
     private TimeoutBudget timeoutBudget;
 
     @Rule
@@ -90,8 +92,9 @@ public class ApplicationRepositoryTest {
         tenantRepository.addTenant(tenant1);
         tenantRepository.addTenant(tenant2);
         tenantRepository.addTenant(tenant3);
+        orchestrator = new OrchestratorMock();
         provisioner = new SessionHandlerTest.MockProvisioner();
-        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, clock);
+        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, orchestrator, clock);
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
     }
 
@@ -115,6 +118,14 @@ public class ApplicationRepositoryTest {
         PrepareResult result = deployApp(testApp);
         assertTrue(result.configChangeActions().getRefeedActions().isEmpty());
         assertTrue(result.configChangeActions().getRestartActions().isEmpty());
+    }
+
+    @Test
+    public void testSuspension() {
+        deployApp(testApp);
+        assertFalse(applicationRepository.isSuspended(applicationId()));
+        orchestrator.suspend(applicationId());
+        assertTrue(applicationRepository.isSuspended(applicationId()));
     }
 
     @Test
@@ -197,7 +208,7 @@ public class ApplicationRepositoryTest {
 
         tenantRepository.addTenant(tenant1);
         Provisioner provisioner = new SessionHandlerTest.MockProvisioner();
-        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, clock);
+        applicationRepository = new ApplicationRepository(tenantRepository, provisioner, orchestrator, clock);
         timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
 
         // TODO: Deploy an app with a bundle or file that will be a file reference, too much missing in test setup to get this working now

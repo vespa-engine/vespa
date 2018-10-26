@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.log.LogLevel;
@@ -23,28 +21,17 @@ import java.util.stream.Collectors;
  */
 public class ZooKeeperServer extends AbstractComponent implements Runnable {
 
-    /** 
-     * The set of hosts which can access the ZooKeeper server in this VM, or empty
-     * to allow access from anywhere.
-     * This belongs logically to the server instance and is final, but must be static to make it accessible
-     * from RestrictedServerCnxnFactory, which is created by ZK through reflection.
-     */
-    private static ImmutableSet<String> allowedClientHostnames = ImmutableSet.of();
-
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ZooKeeperServer.class.getName());
     private static final String ZOOKEEPER_JMX_LOG4J_DISABLE = "zookeeper.jmx.log4j.disable";
     static final String ZOOKEEPER_JUTE_MAX_BUFFER = "jute.maxbuffer";
     private final Thread zkServerThread;
     private final ZookeeperServerConfig zookeeperServerConfig;
 
-    ZooKeeperServer(ZookeeperServerConfig zookeeperServerConfig, ConfigserverConfig configserverConfig, boolean startServer) {
+    ZooKeeperServer(ZookeeperServerConfig zookeeperServerConfig, boolean startServer) {
         this.zookeeperServerConfig = zookeeperServerConfig;
         System.setProperty("zookeeper.jmx.log4j.disable", "true");
         System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, "" + zookeeperServerConfig.juteMaxBuffer());
         System.setProperty("zookeeper.serverCnxnFactory", "com.yahoo.vespa.zookeeper.RestrictedServerCnxnFactory");
-
-        if (configserverConfig.hostedVespa()) // restrict access to config servers only
-            allowedClientHostnames =  ImmutableSet.copyOf(zookeeperServerHostnames(zookeeperServerConfig));
 
         writeConfigToDisk(zookeeperServerConfig);
         zkServerThread = new Thread(this, "zookeeper server");
@@ -54,13 +41,10 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     }
 
     @Inject
-    public ZooKeeperServer(ZookeeperServerConfig zookeeperServerConfig, ConfigserverConfig configserverConfig) {
-        this(zookeeperServerConfig, configserverConfig, true);
+    public ZooKeeperServer(ZookeeperServerConfig zookeeperServerConfig) {
+        this(zookeeperServerConfig, true);
     }
 
-    /** Returns the hosts which are allowed to access this ZooKeeper server, or empty to allow access from anywhere */
-    public static ImmutableSet<String> getAllowedClientHostnames() { return allowedClientHostnames; }
-    
     private void writeConfigToDisk(ZookeeperServerConfig config) {
        String configFilePath = getDefaults().underVespaHome(config.zooKeeperConfigFile());
        new File(configFilePath).getParentFile().mkdirs();
@@ -83,6 +67,10 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
         sb.append("clientPort=").append(config.clientPort()).append("\n");
         sb.append("autopurge.purgeInterval=").append(config.autopurge().purgeInterval()).append("\n");
         sb.append("autopurge.snapRetainCount=").append(config.autopurge().snapRetainCount()).append("\n");
+        // See http://zookeeper.apache.org/doc/r3.4.13/zookeeperAdmin.html#sc_zkCommands
+        // Includes all available commands in 3.4, except 'wchc' and 'wchp'
+        // Mandatory when using ZooKeeper 3.5
+        sb.append("4lw.commands.whitelist=conf,cons,crst,dump,envi,mntr,ruok,srst,srvr,stat,wchs").append("\n");
         if (config.server().size() > 1) {
             ensureThisServerIsRepresented(config.myid(), config.server());
             for (ZookeeperServerConfig.Server server : config.server()) {

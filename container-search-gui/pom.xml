@@ -58,7 +58,9 @@
         </dependency>
     </dependencies>
     <build>
+
         <plugins>
+            <!-- TODO: alternative solution. For now, don't call out during build.
             <plugin>
                 <groupId>com.googlecode.maven-download-plugin</groupId>
                 <artifactId>download-maven-plugin</artifactId>
@@ -77,6 +79,7 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
             <plugin>
                 <groupId>com.yahoo.vespa</groupId>
                 <artifactId>bundle-plugin</artifactId>

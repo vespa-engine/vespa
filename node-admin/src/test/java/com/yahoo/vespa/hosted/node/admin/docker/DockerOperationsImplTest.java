@@ -28,9 +28,8 @@ import java.util.OptionalLong;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.AdditionalMatchers.aryEq;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyVararg;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -50,7 +49,7 @@ public class DockerOperationsImplTest {
         final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld").build();
         final ProcessResult actualResult = new ProcessResult(0, "output", "errors");
 
-        when(docker.executeInContainerAsUser(any(), any(), any(), anyVararg()))
+        when(docker.executeInContainerAsUser(any(), any(), any(), any()))
                 .thenReturn(actualResult); // output from node program
 
         ProcessResult result = dockerOperations.executeNodeCtlInContainer(context, "start");
@@ -71,7 +70,7 @@ public class DockerOperationsImplTest {
         final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld").build();
         final ProcessResult actualResult = new ProcessResult(3, "output", "errors");
 
-        when(docker.executeInContainerAsUser(any(), any(), any(), anyVararg()))
+        when(docker.executeInContainerAsUser(any(), any(), any(), any()))
                 .thenReturn(actualResult); // output from node program
 
         dockerOperations.executeNodeCtlInContainer(context, "start");

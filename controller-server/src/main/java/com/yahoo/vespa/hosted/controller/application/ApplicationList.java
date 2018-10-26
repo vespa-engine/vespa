@@ -139,14 +139,6 @@ public class ApplicationList {
                                                                          .anyMatch(d -> d.version().isBefore(version))));
     }
 
-    /**
-     * Returns the subset of applications which are not pull requests:
-     * Pull requests changes the application instance name to (default-pr)?[pull-request-number]
-     */
-    public ApplicationList notPullRequest() {
-        return listOf(list.stream().filter(a -> ! a.id().instance().value().matches("^(default-pr)?\\d+$")));
-    }
-
     /** Returns the subset of applications which have a project ID */
     public ApplicationList withProjectId() {
         return listOf(list.stream().filter(a -> a.deploymentJobs().projectId().isPresent()));

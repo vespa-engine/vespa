@@ -16,7 +16,8 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * This class is created by zookeeper by reflection, see the ZooKeeperServer constructor.
+ * This class is created by zookeeper by reflection, see the ZooKeeperServer constructor. It will only work
+ * when using ZooKeeper 3.4
  * 
  * @author bratseth
  */
@@ -66,9 +67,8 @@ public class RestrictedServerCnxnFactory extends NIOServerCnxnFactory {
         String environmentAllowedZooKeeperClients = System.getenv("vespa_zkfacade__restrict");
         if (environmentAllowedZooKeeperClients != null) 
             return ImmutableSet.copyOf(toHostnameSet(environmentAllowedZooKeeperClients));
-
-        // No environment setting -> use static field
-        return ZooKeeperServer.getAllowedClientHostnames();
+        else
+            return ImmutableSet.of();
     }
 
     private Set<String> toHostnameSet(String hostnamesString) {

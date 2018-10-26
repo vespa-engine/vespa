@@ -14,6 +14,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.SessionResponse;
 import com.yahoo.vespa.config.server.tenant.Tenant;
@@ -38,7 +39,10 @@ public class TenantHandlerTest {
     public void setup() {
         tenantRepository = new TenantRepository(new TestComponentRegistry.Builder().curator(new MockCurator()).build());
         ApplicationRepository applicationRepository =
-                new ApplicationRepository(tenantRepository, new SessionHandlerTest.MockProvisioner(), Clock.systemUTC());
+                new ApplicationRepository(tenantRepository,
+                                          new SessionHandlerTest.MockProvisioner(),
+                                          new OrchestratorMock(),
+                                          Clock.systemUTC());
         handler = new TenantHandler(TenantHandler.testOnlyContext(), tenantRepository, applicationRepository);
     }
 

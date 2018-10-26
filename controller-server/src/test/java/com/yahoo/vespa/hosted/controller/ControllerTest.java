@@ -11,7 +11,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -153,7 +153,7 @@ public class ControllerTest {
                 .region("deep-space-9")
                 .build();
         try {
-            tester.controller().jobController().submit(app1.id(), BuildJob.defaultSourceRevision, applicationPackage.zippedContent(), new byte[0]);
+            tester.controller().jobController().submit(app1.id(), BuildJob.defaultSourceRevision, 2, applicationPackage.zippedContent(), new byte[0]);
             fail("Expected exception due to illegal deployment spec.");
         }
         catch (IllegalArgumentException e) {
@@ -320,7 +320,7 @@ public class ControllerTest {
             tester.deployAndNotify(app1, applicationPackage, true, systemTest);
             tester.applications().deactivate(app1.id(), ZoneId.from(Environment.test, RegionName.from("us-east-1")));
             tester.applications().deactivate(app1.id(), ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
-            tester.applications().deleteApplication(app1.id(), Optional.of(new NToken("ntoken")));
+            tester.applications().deleteApplication(app1.id(), Optional.of(new OktaAccessToken("okta-token")));
             try (RotationLock lock = tester.applications().rotationRepository().lock()) {
                 assertTrue("Rotation is unassigned",
                            tester.applications().rotationRepository().availableRotations(lock)
@@ -443,6 +443,29 @@ public class ControllerTest {
 
         assertTrue("No job status added",
                    tester.applications().require(app.id()).deploymentJobs().jobStatus().isEmpty());
+    }
+
+    @Test
+    public void testSuspension() {
+        DeploymentTester tester = new DeploymentTester();
+        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                                                        .environment(Environment.prod)
+                                                        .region("corp-us-east-1")
+                                                        .region("us-east-3")
+                                                        .build();
+        SourceRevision source = new SourceRevision("repo", "master", "commit1");
+
+        ApplicationVersion applicationVersion = ApplicationVersion.from(source, 101);
+        runDeployment(tester, app.id(), applicationVersion, applicationPackage, source,101);
+
+        DeploymentId deployment1 = new DeploymentId(app.id(), ZoneId.from(Environment.prod, RegionName.from("corp-us-east-1")));
+        DeploymentId deployment2 = new DeploymentId(app.id(), ZoneId.from(Environment.prod, RegionName.from("us-east-3")));
+        assertFalse(tester.configServer().isSuspended(deployment1));
+        assertFalse(tester.configServer().isSuspended(deployment2));
+        tester.configServer().setSuspended(deployment1, true);
+        assertTrue(tester.configServer().isSuspended(deployment1));
+        assertFalse(tester.configServer().isSuspended(deployment2));
     }
 
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {

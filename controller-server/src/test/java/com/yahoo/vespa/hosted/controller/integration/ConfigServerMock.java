@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final NodeRepositoryMock nodeRepository = new NodeRepositoryMock();
     private final Map<DeploymentId, ServiceConvergence> serviceStatus = new HashMap<>();
     private final Version initialVersion = new Version(6, 1, 0);
+    private final Set<DeploymentId> suspendedApplications = new HashSet<>();
 
     private Version lastPrepareVersion = null;
     private RuntimeException prepareException = null;
@@ -153,6 +155,13 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return Optional.ofNullable(applications.get(id));
     }
 
+    public void setSuspended(DeploymentId deployment, boolean suspend) {
+        if (suspend)
+            suspendedApplications.add(deployment);
+        else
+            suspendedApplications.remove(deployment);
+    }
+
     @Override
     public NodeRepositoryMock nodeRepository() {
         return nodeRepository;
@@ -236,6 +245,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
+    public boolean isSuspended(DeploymentId deployment) {
+        return suspendedApplications.contains(deployment);
+    }
+
+    @Override
     public void restart(DeploymentId deployment, Optional<Hostname> hostname) {
         nodeRepository().requestRestart(deployment, hostname.map(Identifier::id).map(HostName::from));
     }
@@ -252,17 +266,21 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     @Override
     public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
                                               String environment, String region) {
+        String cfgHostname = String.format("https://cfg.%s.%s.test.vip:4443", environment, region);
+        String cfgServiceUrlPrefix = String.format("%s/serviceview/v1/tenant/%s/application/%s/environment/%s/region/%s/instance/%s/service",
+                                                   cfgHostname, tenantName, applicationName,
+                                                   environment, region, instanceName);
         ApplicationView applicationView = new ApplicationView();
         ClusterView cluster = new ClusterView();
         cluster.name = "cluster1";
         cluster.type = "content";
-        cluster.url = "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/service/container-clustercontroller-6s8slgtps7ry8uh6lx21ejjiv/cluster/v2/cluster1";
+        cluster.url = cfgServiceUrlPrefix + "/container-clustercontroller-6s8slgtps7ry8uh6lx21ejjiv/cluster/v2/cluster1";
         ServiceView service = new ServiceView();
         service.configId = "cluster1/storage/0";
         service.host = "host1";
         service.serviceName = "storagenode";
         service.serviceType = "storagenode";
-        service.url = "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/service/storagenode-awe3slno6mmq2fye191y324jl/state/v1/";
+        service.url = cfgServiceUrlPrefix + "/storagenode-awe3slno6mmq2fye191y324jl/state/v1/";
         cluster.services = new ArrayList<>();
         cluster.services.add(service);
         applicationView.clusters = new ArrayList<>();

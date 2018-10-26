@@ -2,9 +2,9 @@
 package com.yahoo.prelude.fastsearch;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.CloseableInvoker;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.InterleavedFillInvoker;
 import com.yahoo.search.dispatch.InterleavedSearchInvoker;
@@ -12,7 +12,6 @@ import com.yahoo.search.dispatch.SearchCluster;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.result.Hit;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,31 +42,64 @@ public class FS4InvokerFactory {
     }
 
     public SearchInvoker getSearchInvoker(Query query, SearchCluster.Node node) {
-        return new FS4SearchInvoker(searcher, query, fs4ResourcePool, node);
+        Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port());
+        return new FS4SearchInvoker(searcher, query, backend.openChannel(), node);
     }
 
+    /**
+     * Create a {@link SearchInvoker} for a list of content nodes.
+     *
+     * @param query the search query being processed
+     * @param nodes pre-selected list of content nodes
+     * @return Optional containing the SearchInvoker or <i>empty</i> if some node in the list is invalid
+     */
     public Optional<SearchInvoker> getSearchInvoker(Query query, List<SearchCluster.Node> nodes) {
-        return getInvoker(nodes, node -> getSearchInvoker(query, node), InterleavedSearchInvoker::new);
+        Map<Integer, SearchInvoker> invokers = new HashMap<>();
+        for (SearchCluster.Node node : nodes) {
+            if (node.isWorking()) {
+                Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port());
+                if (backend.probeConnection()) {
+                    invokers.put(node.key(), new FS4SearchInvoker(searcher, query, backend.openChannel(), node));
+                } else {
+                    return Optional.empty();
+                }
+            }
+        }
+        if (invokers.size() == 1) {
+            return Optional.of(invokers.values().iterator().next());
+        } else {
+            return Optional.of(new InterleavedSearchInvoker(invokers));
+        }
     }
 
     public FillInvoker getFillInvoker(Query query, SearchCluster.Node node) {
         return new FS4FillInvoker(searcher, query, fs4ResourcePool, node.hostname(), node.fs4port(), node.key());
     }
 
+    /**
+     * Create a {@link FillInvoker} for a the hits in a {@link Result}.
+     *
+     * @param result the Result containing hits that need to be filled
+     * @return Optional containing the FillInvoker or <i>empty</i> if some hit is from an unknown content node
+     */
     public Optional<FillInvoker> getFillInvoker(Result result) {
         Collection<Integer> requiredNodes = requiredFillNodes(result);
-        List<SearchCluster.Node> nodes = new ArrayList<>(requiredNodes.size());
 
+        Query query = result.getQuery();
+        Map<Integer, FillInvoker> invokers = new HashMap<>();
         for (Integer distKey : requiredNodes) {
             SearchCluster.Node node = nodesByKey.get(distKey);
             if (node == null) {
                 return Optional.empty();
             }
-            nodes.add(node);
+            invokers.put(distKey, getFillInvoker(query, node));
         }
 
-        Query query = result.getQuery();
-        return getInvoker(nodes, node -> getFillInvoker(query, node), InterleavedFillInvoker::new);
+        if (invokers.size() == 1) {
+            return Optional.of(invokers.values().iterator().next());
+        } else {
+            return Optional.of(new InterleavedFillInvoker(invokers));
+        }
     }
 
     private static Collection<Integer> requiredFillNodes(Result result) {
@@ -80,41 +112,5 @@ public class FS4InvokerFactory {
             }
         }
         return requiredNodes;
-    }
-
-    @FunctionalInterface
-    private interface InvokerConstructor<INVOKER> {
-        INVOKER construct(SearchCluster.Node node);
-    }
-
-    @FunctionalInterface
-    private interface ClusterInvokerConstructor<CLUSTERINVOKER extends INVOKER, INVOKER> {
-        CLUSTERINVOKER construct(Map<Integer, INVOKER> subinvokers);
-    }
-
-    /* Get an invocation object for the provided collection of nodes. If only one
-       node is used, only the single-node invoker is used. For multiple nodes, each
-       gets a single-node invoker and they are all wrapped into a cluster invoker.
-       The functional interfaces are used to allow code reuse with SearchInvokers
-       and FillInvokers even though they don't share much class hierarchy. */
-    private <INVOKER extends CloseableInvoker, CLUSTERINVOKER extends INVOKER> Optional<INVOKER> getInvoker(
-            Collection<SearchCluster.Node> nodes, InvokerConstructor<INVOKER> singleNodeCtor,
-            ClusterInvokerConstructor<CLUSTERINVOKER, INVOKER> clusterCtor) {
-        if (nodes.size() == 1) {
-            SearchCluster.Node node = nodes.iterator().next();
-            return Optional.of(singleNodeCtor.construct(node));
-        } else {
-            Map<Integer, INVOKER> nodeInvokers = new HashMap<>();
-            for (SearchCluster.Node node : nodes) {
-                if (node.isWorking()) {
-                    nodeInvokers.put(node.key(), singleNodeCtor.construct(node));
-                }
-            }
-            if (nodeInvokers.size() == 1) {
-                return Optional.of(nodeInvokers.values().iterator().next());
-            } else {
-                return Optional.of(clusterCtor.construct(nodeInvokers));
-            }
-        }
     }
 }

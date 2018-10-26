@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
@@ -26,6 +27,7 @@ import static com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester.c
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author mpolden
@@ -33,8 +35,6 @@ import static org.junit.Assert.assertFalse;
 public class AclProvisioningTest {
 
     private ProvisioningTester tester;
-
-    private final List<String> dockerBridgeNetwork = Collections.singletonList("172.17.0.0/16");
 
     @Before
     public void before() {
@@ -126,45 +126,7 @@ public class AclProvisioningTest {
     }
 
     @Test
-    public void trusted_nodes_for_docker_host() {
-        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
-
-        // Populate repo
-        tester.makeReadyNodes(2, "default", NodeType.host);
-
-        // Deploy zone application
-        ApplicationId zoneApplication = tester.makeApplicationId();
-        allocateNodes(Capacity.fromRequiredNodeType(NodeType.host), zoneApplication);
-
-        List<Node> dockerHostNodes = tester.nodeRepository().getNodes(zoneApplication);
-        List<NodeAcl> acls = tester.nodeRepository().getNodeAcls(dockerHostNodes.get(0), false);
-
-        // Trusted nodes is all Docker hosts and all config servers
-        assertAcls(Arrays.asList(dockerHostNodes, configServers), dockerBridgeNetwork, acls.get(0));
-    }
-
-
-    @Test
-    public void trusted_nodes_for_docker_hosts_nodes_in_zone_application() {
-        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
-        ApplicationId applicationId = tester.makeApplicationId(); // use same id for both allocate calls below
-
-        // Populate repo
-        tester.makeReadyNodes(2, "default", NodeType.host);
-
-        // Allocate 2 Docker hosts
-        List<Node> activeDockerHostNodes = allocateNodes(NodeType.host, applicationId);
-        assertEquals(2, activeDockerHostNodes.size());
-
-        // Check trusted nodes for all nodes
-        activeDockerHostNodes.forEach(node -> {
-            List<NodeAcl> nodeAcls = tester.nodeRepository().getNodeAcls(node, false);
-            assertAcls(Arrays.asList(activeDockerHostNodes, configServers), dockerBridgeNetwork, nodeAcls);
-        });
-    }
-
-    @Test
-    public void trusted_nodes_for_child_nodes_of_docker_host() {
+    public void trusted_nodes_for_children_of_docker_host() {
         List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
@@ -189,6 +151,20 @@ public class AclProvisioningTest {
     }
 
     @Test
+    public void trusted_nodes_for_controllers() {
+        tester.makeReadyNodes(3, "default", NodeType.controller);
+
+        // Allocate
+        ApplicationId controllerApplication = tester.makeApplicationId();
+        List<Node> controllers = allocateNodes(Capacity.fromRequiredNodeType(NodeType.controller), controllerApplication);
+
+        // Controllers and hosts all trust each other
+        List<NodeAcl> controllerAcls = tester.nodeRepository().getNodeAcls(controllers.get(0), false);
+        assertAcls(Collections.singletonList(controllers), controllerAcls);
+        assertEquals(ImmutableSet.of(22, 4443), controllerAcls.get(0).trustedPorts());
+    }
+
+    @Test
     public void resolves_hostnames_from_connection_spec() {
         tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
@@ -206,10 +182,6 @@ public class AclProvisioningTest {
         return allocateNodes(Capacity.fromNodeCount(nodeCount), tester.makeApplicationId());
     }
 
-    private List<Node> allocateNodes(NodeType nodeType, ApplicationId applicationId) {
-        return allocateNodes(Capacity.fromRequiredNodeType(nodeType), applicationId);
-    }
-
     private List<Node> allocateNodes(Capacity capacity, ApplicationId applicationId) {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test"),
                                                   Version.fromString("6.42"), false);
@@ -219,18 +191,10 @@ public class AclProvisioningTest {
     }
 
     private static void assertAcls(List<List<Node>> expected, NodeAcl actual) {
-        assertAcls(expected, Collections.emptyList(), Collections.singletonList(actual));
+        assertAcls(expected, Collections.singletonList(actual));
     }
 
-    private static void assertAcls(List<List<Node>> expected, List<NodeAcl> actual) {
-        assertAcls(expected, Collections.emptyList(), actual);
-    }
-
-    private static void assertAcls(List<List<Node>> expected, List<String> expectedNetworks, NodeAcl actual) {
-        assertAcls(expected, expectedNetworks, Collections.singletonList(actual));
-    }
-
-    private static void assertAcls(List<List<Node>> expectedNodes, List<String> expectedNetworks, List<NodeAcl> actual) {
+    private static void assertAcls(List<List<Node>> expectedNodes, List<NodeAcl> actual) {
         Set<Node> expectedTrustedNodes = expectedNodes.stream()
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
@@ -239,10 +203,9 @@ public class AclProvisioningTest {
                 .collect(Collectors.toSet());
         assertEquals(expectedTrustedNodes, actualTrustedNodes);
 
-        Set<String> expectedTrustedNetworks = new HashSet<>(expectedNetworks);
         Set<String> actualTrustedNetworks = actual.stream()
                 .flatMap(acl -> acl.trustedNetworks().stream())
                 .collect(Collectors.toSet());
-        assertEquals(expectedTrustedNetworks, actualTrustedNetworks);
+        assertTrue("No networks are trusted", actualTrustedNetworks.isEmpty());
     }
 }

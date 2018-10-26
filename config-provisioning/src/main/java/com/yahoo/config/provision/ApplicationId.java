@@ -9,7 +9,6 @@ import com.yahoo.cloud.config.ApplicationIdConfig;
  * @author Ulf Lilleengen
  * @author vegard
  * @author bratseth
- * @since 5.1
  */
 public final class ApplicationId implements Comparable<ApplicationId> {
 

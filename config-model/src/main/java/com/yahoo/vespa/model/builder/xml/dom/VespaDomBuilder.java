@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 public class VespaDomBuilder extends VespaModelBuilder {
 
     public static final String JVMARGS_ATTRIB_NAME = "jvmargs";
+    public static final String GCOPTS_ATTRIB_NAME = "gcopts";
     public static final String PRELOAD_ATTRIB_NAME = "preload";        // Intended for vespa engineers
     public static final String MMAP_NOCORE_LIMIT = "mmap-core-limit";  // Intended for vespa engineers
     public static final String CORE_ON_OOM = "core-on-oom";            // Intended for vespa engineers

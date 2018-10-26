@@ -28,6 +28,7 @@ import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
+import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.Container;
@@ -66,6 +67,46 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  */
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
+
+    @Test
+    public void detect_conflicting_gcoptions_in_jvmargs() {
+        assertFalse(ContainerModelBuilder.incompatibleGCOptions(""));
+        assertFalse(ContainerModelBuilder.incompatibleGCOptions("UseG1GC"));
+        assertTrue(ContainerModelBuilder.incompatibleGCOptions("-XX:+UseG1GC"));
+        assertTrue(ContainerModelBuilder.incompatibleGCOptions("abc -XX:+UseParNewGC xyz"));
+        assertTrue(ContainerModelBuilder.incompatibleGCOptions("-XX:CMSInitiatingOccupancyFraction=19"));
+    }
+
+    @Test
+    public void honours_gcopts() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<jdisc version='1.0'>",
+                "  <search/>",
+                "  <nodes gcopts='-XX:+UseG1GC'>",
+                "    <node hostalias='mockhost'/>",
+                "  </nodes>",
+                "</jdisc>" );
+        createModel(root, clusterElem);
+        QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
+        root.getConfig(qrStartBuilder, "jdisc/container.0");
+        QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
+        assertEquals("-XX:+UseG1GC", qrStartConfig.jvm().gcopts());
+    }
+
+    @Test
+    public void ignores_gcopts_on_conflicting_jvargs() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<jdisc version='1.0'>",
+                "  <nodes gcopts='-XX:+UseG1GC' jvmargs='-XX:+UseParNewGC'>",
+                "    <node hostalias='mockhost'/>",
+                "  </nodes>",
+                "</jdisc>" );
+        createModel(root, clusterElem);
+        QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
+        root.getConfig(qrStartBuilder, "jdisc/container.0");
+        QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
+        assertEquals(ContainerCluster.CMS, qrStartConfig.jvm().gcopts());
+    }
 
     @Test
     public void default_port_is_4080() throws Exception {

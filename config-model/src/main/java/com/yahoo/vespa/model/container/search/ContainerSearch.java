@@ -12,7 +12,6 @@ import com.yahoo.vespa.model.container.search.searchchain.HttpProvider;
 import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
@@ -36,7 +35,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     	IndexInfoConfig.Producer,
     	IlscriptsConfig.Producer,
     	QrSearchersConfig.Producer,
-    	QrStartConfig.Producer,
     	QueryProfilesConfig.Producer,
         SemanticRulesConfig.Producer,
     	PageTemplatesConfig.Producer {
@@ -47,13 +45,12 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     private QueryProfiles queryProfiles;
     private SemanticRules semanticRules;
     private PageTemplates pageTemplates;
-    private final ContainerCluster owningCluster;
 
     public ContainerSearch(ContainerCluster cluster, SearchChains chains, Options options) {
         super(chains);
         this.options = options;
-        this.owningCluster = cluster;
         cluster.addComponent(getFS4ResourcePool());
+
     }
 
     private Component<?, ComponentModel> getFS4ResourcePool() {
@@ -113,18 +110,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         if (pageTemplates!=null) pageTemplates.getConfig(builder);
     }
 
-    @Override
-    public void getConfig(QrStartConfig.Builder qsB) {
-    	QrStartConfig.Jvm.Builder internalBuilder = new QrStartConfig.Jvm.Builder();
-        if (owningCluster.getMemoryPercentage().isPresent()) {
-            internalBuilder.heapSizeAsPercentageOfPhysicalMemory(owningCluster.getMemoryPercentage().get());
-        } else if (owningCluster.isHostedVespa()) {
-            internalBuilder.heapSizeAsPercentageOfPhysicalMemory(owningCluster.getHostClusterId().isPresent() ? 17 : 60);
-        }
-        qsB.jvm(internalBuilder.directMemorySizeCache(totalCacheSizeMb()));
-    }
-
-    private int totalCacheSizeMb() {
+    public int totalCacheSizeMb() {
         return totalHttpProviderCacheSize();
     }
 
@@ -192,6 +178,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
      * Struct that encapsulates qrserver options.
      */
     public static class Options {
-        public Map<String, QrsCache> cacheSettings = new LinkedHashMap<>();
+        Map<String, QrsCache> cacheSettings = new LinkedHashMap<>();
     }
 }

@@ -24,7 +24,6 @@ import com.yahoo.vespa.config.server.http.Utils;
  * Handler that activates a session given by tenant and id (PUT).
  *
  * @author vegardh
- * @since 5.1
  */
 public class SessionActiveHandler extends SessionHandler {
 

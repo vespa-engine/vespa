@@ -14,9 +14,11 @@ import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * A dispatcher communicates with search nodes to perform queries and fill hits.
@@ -42,14 +44,15 @@ public class Dispatcher extends AbstractComponent {
 
     public Dispatcher(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize, VipStatus vipStatus) {
         this.searchCluster = new SearchCluster(dispatchConfig, fs4ResourcePool, containerClusterSize, vipStatus);
-        this.loadBalancer = new LoadBalancer(searchCluster);
+        this.loadBalancer = new LoadBalancer(searchCluster,
+                dispatchConfig.distributionPolicy() == DispatchConfig.DistributionPolicy.ROUNDROBIN);
         this.rpcResourcePool = new RpcResourcePool(dispatchConfig);
     }
 
     /** For testing */
     public Dispatcher(Map<Integer, Client.NodeConnection> nodeConnections, Client client) {
         this.searchCluster = null;
-        this.loadBalancer = new LoadBalancer(searchCluster);
+        this.loadBalancer = new LoadBalancer(searchCluster, true);
         this.rpcResourcePool = new RpcResourcePool(client, nodeConnections);
     }
 
@@ -120,19 +123,37 @@ public class Dispatcher extends AbstractComponent {
             return invokerFactory.supply(query, Arrays.asList(node));
         }
 
-        Optional<SearchCluster.Group> groupInCluster = loadBalancer.takeGroupForQuery(query);
-        if (!groupInCluster.isPresent()) {
-            return Optional.empty();
-        }
-        SearchCluster.Group group = groupInCluster.get();
-        query.trace(false, 2, "Dispatching internally to ", group);
+        Set<Integer> tried = null;
+        int max = searchCluster.groups().size();
+        for (int attempt = 0; attempt < max; attempt++) {
+            Optional<SearchCluster.Group> groupInCluster = loadBalancer.takeGroupForQuery(query);
+            if (! groupInCluster.isPresent()) {
+                // No groups available
+                break;
+            }
+            SearchCluster.Group group = groupInCluster.get();
+            if (tried != null && tried.contains(group.id())) {
+                // bail out: LB is offering a previously discarded group
+                loadBalancer.releaseGroup(group);
+                break;
+            }
 
-        Optional<SearchInvoker> invoker = invokerFactory.supply(query, group.nodes());
-        if (invoker.isPresent()) {
-            invoker.get().teardown(() -> loadBalancer.releaseGroup(group));
-        } else {
-            loadBalancer.releaseGroup(group);
+            Optional<SearchInvoker> invoker = invokerFactory.supply(query, group.nodes());
+            if (invoker.isPresent()) {
+                query.trace(false, 2, "Dispatching internally to ", group);
+                invoker.get().teardown(() -> loadBalancer.releaseGroup(group));
+                return invoker;
+            } else {
+                // invoker could not be produced (likely connectivity issue)
+                searchCluster.groupConnectionFailure(group);
+                loadBalancer.releaseGroup(group);
+                if (tried == null) {
+                    tried = new HashSet<>();
+                }
+                tried.add(group.id());
+            }
         }
-        return invoker;
+
+        return Optional.empty();
     }
 }

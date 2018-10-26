@@ -16,6 +16,7 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.HttpProxy;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.StaticResponse;
@@ -59,10 +60,12 @@ public class ApplicationHandlerTest {
     private final static TenantName mytenantName = TenantName.from("mytenant");
     private final static TenantName foobar = TenantName.from("foobar");
     private final static ApplicationId applicationId = new ApplicationId.Builder().applicationName(ApplicationName.defaultName()).tenant(mytenantName).build();
+
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
     private SessionHandlerTest.MockProvisioner provisioner;
     private MockStateApiFactory stateApiFactory = new MockStateApiFactory();
+    private OrchestratorMock orchestrator;
 
     @Before
     public void setup() {
@@ -71,8 +74,11 @@ public class ApplicationHandlerTest {
         tenantRepository.addTenant(TenantBuilder.create(componentRegistry, mytenantName));
         tenantRepository.addTenant(TenantBuilder.create(componentRegistry, foobar));
         provisioner = new SessionHandlerTest.MockProvisioner();
+        orchestrator = new OrchestratorMock();
         applicationRepository = new ApplicationRepository(tenantRepository,
-                                                          provisioner, Clock.systemUTC());
+                                                          provisioner,
+                                                          orchestrator,
+                                                          Clock.systemUTC());
         listApplicationsHandler = new ListApplicationsHandler(ListApplicationsHandler.testOnlyContext(),
                                                               tenantRepository,
                                                               Zone.defaultZone());
@@ -135,6 +141,14 @@ public class ApplicationHandlerTest {
     }
 
     @Test
+    public void testSuspended() throws Exception {
+        applicationRepository.deploy(testApp, prepareParams(applicationId));
+        assertSuspended(false, applicationId, Zone.defaultZone());
+        orchestrator.suspend(applicationId);
+        assertSuspended(true, applicationId, Zone.defaultZone());
+    }
+
+    @Test
     public void testConverge() throws Exception {
         applicationRepository.deploy(testApp, prepareParams(applicationId));
         converge(applicationId, Zone.defaultZone());
@@ -150,7 +164,8 @@ public class ApplicationHandlerTest {
                                                                                 HostProvisionerProvider.withProvisioner(provisioner),
                                                                                 new ConfigConvergenceChecker(stateApiFactory),
                                                                                 mockHttpProxy,
-                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()));
+                                                                                new ConfigserverConfig(new ConfigserverConfig.Builder()),
+                                                                                new OrchestratorMock());
         ApplicationHandler mockHandler = createApplicationHandler(applicationRepository);
         when(mockHttpProxy.get(any(), eq(host), eq("container-clustercontroller"), eq("clustercontroller-status/v1/clusterName1")))
                 .thenReturn(new StaticResponse(200, "text/html", "<html>...</html>"));
@@ -235,6 +250,12 @@ public class ApplicationHandlerTest {
 
     private void assertApplicationGeneration(ApplicationId applicationId, Zone zone, long expectedGeneration, boolean fullAppIdInUrl) throws IOException {
         assertApplicationGeneration(toUrlPath(applicationId, zone, fullAppIdInUrl), expectedGeneration);
+    }
+
+    private void assertSuspended(boolean expectedValue, ApplicationId application, Zone zone) throws IOException {
+        String restartUrl = toUrlPath(application, zone, true) + "/suspended";
+        HttpResponse response = createApplicationHandler().handle(HttpRequest.createTestRequest(restartUrl, com.yahoo.jdisc.http.HttpRequest.Method.GET));
+        HandlerTest.assertHttpStatusCodeAndMessage(response, 200, "{\"suspended\":" + expectedValue + "}");
     }
 
     private String toUrlPath(ApplicationId application, Zone zone, boolean fullAppIdInUrl) {

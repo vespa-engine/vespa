@@ -15,6 +15,7 @@
       }
     }
   },
+  "deployedInternally": false,
   "deploymentJobs": [
     {
       "type": "component",

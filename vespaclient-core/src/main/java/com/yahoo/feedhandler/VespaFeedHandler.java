@@ -15,6 +15,7 @@ import com.yahoo.feedapi.FeedContext;
 import com.yahoo.feedapi.Feeder;
 import com.yahoo.feedapi.JsonFeeder;
 import com.yahoo.feedapi.MessagePropertyProcessor;
+import com.yahoo.feedapi.SimpleFeedAccess;
 import com.yahoo.feedapi.SingleSender;
 import com.yahoo.feedapi.XMLFeeder;
 import com.yahoo.jdisc.Metric;
@@ -63,10 +64,10 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
 
     @Override
     public HttpResponse handle(HttpRequest request) {
-        return handle(request, (RouteMetricSet.ProgressCallback)null);
+        return handle(request, null, 1);
     }
 
-    public HttpResponse handle(HttpRequest request, RouteMetricSet.ProgressCallback callback) {
+    public HttpResponse handle(HttpRequest request, RouteMetricSet.ProgressCallback callback, int numThreads) {
         if (request.getProperty("status") != null) {
             return new MetricResponse(context.getMetrics().getMetricSet());
         }
@@ -85,7 +86,7 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
             SingleSender sender = new SingleSender(response, getSharedSender(route), !asynchronous);
             sender.addMessageProcessor(properties);
             sender.addMessageProcessor(new DocprocMessageProcessor(getDocprocChain(request), getDocprocServiceRegistry(request)));
-
+            ThreadedFeedAccess feedAccess = new ThreadedFeedAccess(numThreads, sender);
             Feeder feeder = createFeeder(sender, request);
             feeder.setAbortOnDocumentError(properties.getAbortOnDocumentError());
             feeder.setCreateIfNonExistent(properties.getCreateIfNonExistent());
@@ -100,6 +101,7 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
             }
 
             sender.done();
+            feedAccess.close();
 
             if (asynchronous) {
                 return response;
@@ -116,7 +118,7 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
         }
     }
 
-    private Feeder createFeeder(SingleSender sender, HttpRequest request) {
+    private Feeder createFeeder(SimpleFeedAccess sender, HttpRequest request) {
         String contentType = request.getHeader("Content-Type");
         if (Boolean.valueOf(request.getProperty(JSON_INPUT)) || (contentType != null && contentType.startsWith("application/json"))) {
             return new JsonFeeder(getDocumentTypeManager(), sender, getRequestInputStream(request));

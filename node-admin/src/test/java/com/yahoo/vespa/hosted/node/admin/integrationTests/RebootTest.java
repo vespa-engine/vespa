@@ -2,16 +2,24 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.dockerapi.ContainerName;
+import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdmin;
 import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
-import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
 import com.yahoo.vespa.hosted.provision.Node;
-import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.OptionalLong;
+
+import static com.yahoo.vespa.hosted.node.admin.integrationTests.DockerTester.HOST_HOSTNAME;
+import static com.yahoo.vespa.hosted.node.admin.integrationTests.DockerTester.NODE_PROGRAM;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /**
  * Tests rebooting of Docker host
@@ -20,47 +28,33 @@ import static org.junit.Assert.assertTrue;
  */
 public class RebootTest {
 
+    private final String hostname = "host1.test.yahoo.com";
+    private final DockerImage dockerImage = new DockerImage("dockerImage");
+
     @Test
-    @Ignore
-    public void test() throws InterruptedException {
-        try (DockerTester dockerTester = new DockerTester()) {
+    public void test() {
+        try (DockerTester tester = new DockerTester()) {
+            tester.addChildNodeRepositoryNode(createNodeRepositoryNode());
 
-            dockerTester.addChildNodeRepositoryNode(createNodeRepositoryNode());
+            tester.inOrder(tester.docker).createContainerCommand(
+                    eq(dockerImage), eq(ContainerResources.from(0, 0)), eq(new ContainerName("host1")), eq(hostname));
 
-            // Wait for node admin to be notified with node repo state and the docker container has been started
-            while (dockerTester.nodeAdmin.getNumberOfNodeAgents() == 0) {
-                Thread.sleep(10);
-            }
+            try {
+                tester.nodeAdminStateUpdater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED);
+            } catch (RuntimeException ignored) { }
 
-            // Check that the container is started and NodeRepo has received the PATCH update
-            dockerTester.callOrderVerifier.assertInOrder(
-                    "createContainerCommand with DockerImage { imageId=dockerImage }, HostName: host1.test.yahoo.com, ContainerName { name=host1 }",
-                    "updateNodeAttributes with HostName: host1.test.yahoo.com, NodeAttributes{restartGeneration=1, rebootGeneration=null,  dockerImage=dockerImage, vespaVersion='null'}");
-
-            NodeAdminStateUpdaterImpl updater = dockerTester.nodeAdminStateUpdater;
-//            assertThat(updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED),
-//                       is(Optional.of("Not all node agents are frozen.")));
-
-            updater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED);
-
-            NodeAdmin nodeAdmin = dockerTester.nodeAdmin;
-            // Wait for node admin to be frozen
-            while ( ! nodeAdmin.isFrozen()) {
-                System.out.println("Node admin not frozen yet");
-                Thread.sleep(10);
-            }
-
-            assertTrue(nodeAdmin.setFrozen(false));
-
-            dockerTester.callOrderVerifier.assertInOrder(
-                    "executeInContainer with ContainerName { name=host1 }, args: [" + DockerTester.NODE_PROGRAM + ", stop]");
+            tester.inOrder(tester.orchestrator).suspend(
+                    eq(HOST_HOSTNAME.value()), eq(Arrays.asList(hostname, HOST_HOSTNAME.value())));
+            tester.inOrder(tester.docker).executeInContainerAsUser(
+                    eq(new ContainerName("host1")), eq("root"), eq(OptionalLong.empty()), eq(NODE_PROGRAM), eq("stop"));
+            assertTrue(tester.nodeAdmin.setFrozen(true));
         }
     }
 
     private NodeSpec createNodeRepositoryNode() {
         return new NodeSpec.Builder()
-                .hostname("host1.test.yahoo.com")
-                .wantedDockerImage(new DockerImage("dockerImage"))
+                .hostname(hostname)
+                .wantedDockerImage(dockerImage)
                 .state(Node.State.active)
                 .nodeType(NodeType.tenant)
                 .flavor("docker")

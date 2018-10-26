@@ -13,7 +13,6 @@ import java.net.InetAddress;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,12 +26,7 @@ import java.util.OptionalLong;
  */
 public class DockerMock implements Docker {
     private final Map<ContainerName, Container> containersByContainerName = new HashMap<>();
-    public final CallOrderVerifier callOrderVerifier;
     private static final Object monitor = new Object();
-
-    public DockerMock(CallOrderVerifier callOrderVerifier) {
-        this.callOrderVerifier = callOrderVerifier;
-    }
 
     @Override
     public CreateContainerCommand createContainerCommand(
@@ -41,8 +35,6 @@ public class DockerMock implements Docker {
             ContainerName containerName,
             String hostName) {
         synchronized (monitor) {
-            callOrderVerifier.add("createContainerCommand with " + dockerImage +
-                    ", HostName: " + hostName + ", " + containerName);
             containersByContainerName.put(
                     containerName, new Container(hostName, dockerImage, containerResources, containerName, Container.State.RUNNING, 2));
         }
@@ -64,15 +56,12 @@ public class DockerMock implements Docker {
 
     @Override
     public void startContainer(ContainerName containerName) {
-        synchronized (monitor) {
-            callOrderVerifier.add("startContainer with " + containerName);
-        }
+
     }
 
     @Override
     public void stopContainer(ContainerName containerName) {
         synchronized (monitor) {
-            callOrderVerifier.add("stopContainer with " + containerName);
             Container container = containersByContainerName.get(containerName);
             containersByContainerName.put(containerName,
                             new Container(container.hostname, container.image, container.resources, container.name, Container.State.EXITED, 0));
@@ -82,7 +71,6 @@ public class DockerMock implements Docker {
     @Override
     public void deleteContainer(ContainerName containerName) {
         synchronized (monitor) {
-            callOrderVerifier.add("deleteContainer with " + containerName);
             containersByContainerName.remove(containerName);
         }
     }
@@ -97,7 +85,6 @@ public class DockerMock implements Docker {
     @Override
     public boolean pullImageAsyncIfNeeded(DockerImage image) {
         synchronized (monitor) {
-            callOrderVerifier.add("pullImageAsyncIfNeeded with " + image);
             return false;
         }
     }
@@ -109,9 +96,6 @@ public class DockerMock implements Docker {
 
     @Override
     public ProcessResult executeInContainerAsUser(ContainerName containerName, String user, OptionalLong timeout, String... args) {
-        synchronized (monitor) {
-            callOrderVerifier.add("executeInContainer " + containerName.asString() + " as " + user + ", args: " + Arrays.toString(args));
-        }
         return new ProcessResult(0, null, "");
     }
 

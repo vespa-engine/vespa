@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
@@ -102,13 +103,20 @@ public class JobController {
         }
     }
 
-    /** Stores the given log record for the given run and step. */
-    public void log(RunId id, Step step, Level level, String message) {
+    /** Stores the given log records for the given run and step. */
+    public void log(RunId id, Step step, Level level, List<String> messages) {
         locked(id, __ -> {
-            LogEntry entry = new LogEntry(0, controller.clock().millis(), LogEntry.typeOf(level), message);
-            logs.append(id.application(), id.type(), step, Collections.singletonList(entry));
+            List<LogEntry> entries = messages.stream()
+                                             .map(message -> new LogEntry(0, controller.clock().millis(), LogEntry.typeOf(level), message))
+                                             .collect(Collectors.toList());
+            logs.append(id.application(), id.type(), step, entries);
             return __;
         });
+    }
+
+    /** Stores the given log record for the given run and step. */
+    public void log(RunId id, Step step, Level level, String message) {
+        log(id, step, level, Collections.singletonList(message));
     }
 
     /** Fetches any new test log entries, and records the id of the last of these, for continuation. */
@@ -133,7 +141,7 @@ public class JobController {
     /** Returns a list of all application which have registered. */
     public List<ApplicationId> applications() {
         return copyOf(controller.applications().asList().stream()
-                                .filter(application -> application.deploymentJobs().builtInternally())
+                                .filter(application -> application.deploymentJobs().deployedInternally())
                                 .map(Application::id)
                                 .iterator());
     }
@@ -212,11 +220,11 @@ public class JobController {
     /**
      * Accepts and stores a new application package and test jar pair under a generated application version key.
      */
-    public ApplicationVersion submit(ApplicationId id, SourceRevision revision,
+    public ApplicationVersion submit(ApplicationId id, SourceRevision revision, long projectId,
                                      byte[] packageBytes, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
-            if ( ! application.get().deploymentJobs().builtInternally()) {
+            if ( ! application.get().deploymentJobs().deployedInternally()) {
                 // Copy all current packages to the new application store
                 application.get().deployments().values().stream()
                            .map(Deployment::applicationVersion)
@@ -239,7 +247,7 @@ public class JobController {
 
             controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(packageBytes));
 
-            notifyOfNewSubmission(id, revision, run);
+            notifyOfNewSubmission(id, projectId, revision, run);
         });
         return version.get();
     }
@@ -247,7 +255,7 @@ public class JobController {
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions) {
         controller.applications().lockIfPresent(id, application -> {
-            if ( ! application.get().deploymentJobs().builtInternally())
+            if ( ! application.get().deploymentJobs().deployedInternally())
                 throw new IllegalArgumentException(id + " is not built here!");
 
             locked(id, type, __ -> {
@@ -330,10 +338,10 @@ public class JobController {
     }
 
     // TODO jvenstad: Find a more appropriate way of doing this when this is the only build service.
-    private void notifyOfNewSubmission(ApplicationId id, SourceRevision revision, long number) {
+    private void notifyOfNewSubmission(ApplicationId id, long projectId, SourceRevision revision, long number) {
         DeploymentJobs.JobReport report = new DeploymentJobs.JobReport(id,
                                                                        JobType.component,
-                                                                       1,
+                                                                       projectId,
                                                                        number,
                                                                        Optional.of(revision),
                                                                        Optional.empty());

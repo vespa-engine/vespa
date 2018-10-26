@@ -33,6 +33,7 @@ public interface Orchestrator {
 
     /**
      * Get orchestrator information related to a host.
+     *
      * @throws HostNameNotFoundException
      */
     Host getHost(HostName hostName) throws HostNameNotFoundException;
@@ -110,4 +111,5 @@ public interface Orchestrator {
      * @param appId Identifier of the application to resume
      */
     void suspend(ApplicationId appId) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException;
+
 }

@@ -23,6 +23,7 @@ import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.SuperModelGenerationCounter;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
 import com.yahoo.vespa.config.server.application.MemoryTenantApplications;
+import com.yahoo.vespa.config.server.application.OrchestratorMock;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
@@ -360,7 +361,10 @@ public class SessionActiveHandlerTest extends SessionHandlerTest {
 
     private SessionActiveHandler createHandler() {
         return new SessionActiveHandler(SessionActiveHandler.testOnlyContext(),
-                                        new ApplicationRepository(tenantRepository, hostProvisioner, clock),
+                                        new ApplicationRepository(tenantRepository,
+                                                                  hostProvisioner,
+                                                                  new OrchestratorMock(),
+                                                                  clock),
                                         tenantRepository,
                                         Zone.defaultZone());
     }

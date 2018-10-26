@@ -6,15 +6,14 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
-import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
-import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.InputStream;
@@ -64,11 +63,9 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
 
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri().getPath());
-        if (path.matches("/screwdriver/v1/release/vespa")) {
-            return vespaVersion();
-        }
-        if (path.matches("/screwdriver/v1/jobsToRun"))
+        if (path.matches("/screwdriver/v1/jobsToRun")) {
             return buildJobs(controller.applications().deploymentTrigger().jobsToRun());
+        }
         return notFound(request);
     }
 
@@ -94,19 +91,6 @@ public class ScrewdriverApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
         cursor.setString("message", "Triggered " + triggered + " for " + id);
-        return new SlimeJsonResponse(slime);
-    }
-
-    private HttpResponse vespaVersion() {
-        VespaVersion version = controller.versionStatus().version(controller.systemVersion());
-        if (version == null) 
-            return ErrorResponse.notFoundError("Information about the current system version is not available at this time");
-
-        Slime slime = new Slime();
-        Cursor cursor = slime.setObject();
-        cursor.setString("version", version.versionNumber().toString());
-        cursor.setString("sha", version.releaseCommit());
-        cursor.setLong("date", version.committedAt().toEpochMilli());
         return new SlimeJsonResponse(slime);
     }
 

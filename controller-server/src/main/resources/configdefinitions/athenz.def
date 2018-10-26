@@ -1,16 +1,8 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=vespa.hosted.controller.athenz.config
 
-# Principal header name
-principalHeaderName             string  default="Athenz-Principal-Auth"
-# TODO Remove once migrated to Okta
-
 # URL to ZMS API endpoint
 zmsUrl                          string
-
-# URL to legacy ZMS API endpoint
-legacyZmsUrl                    string
-# TODO Remove once migrated to Okta
 
 # URL to ZTS API endpoint
 ztsUrl                          string
@@ -18,27 +10,6 @@ ztsUrl                          string
 # Athenz domain for controller identity. The domain is also used for Athenz tenancy integration.
 domain                          string
 
-# Name of the internal user authentication passthru attribute
-userAuthenticationPassThruAttribute  string
-# TODO Remove once migrated to Okta
-
-# Path to Athenz CA JKS trust store
-athenzCaTrustStore              string
-
-# Certificate DNS domain
-certDnsDomain                   string
-
 # Athenz service name for controller identity
 service.name                    string
 
-# Athenz service public key id
-service.publicKeyId             string
-
-# Version of Athenz service private key
-service.privateKeyVersion       int
-
-# Name of Athenz service private key secret
-service.privateKeySecretName    string
-
-# Expiry of service principal token and certificate
-service.credentialsExpiryMinutes int   default=43200  # 30 days

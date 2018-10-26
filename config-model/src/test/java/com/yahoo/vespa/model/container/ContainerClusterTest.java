@@ -107,6 +107,10 @@ public class ContainerClusterTest {
         DeployState state = new DeployState.Builder().properties(new DeployProperties.Builder().hostedVespa(isHosted).build()).build();
         return new MockRoot("foo", state);
     }
+    private MockRoot createRoot(boolean isHosted, Zone zone) {
+        DeployState state = new DeployState.Builder().zone(zone).properties(new DeployProperties.Builder().hostedVespa(isHosted).build()).build();
+        return new MockRoot("foo", state);
+    }
     private ContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster,
                                                     Integer memoryPercentage, Optional<ContainerClusterVerifier> extraComponents) {
 
@@ -124,7 +128,7 @@ public class ContainerClusterTest {
                                                             int expectedMemoryPercentage) {
         ContainerCluster cluster = createContainerCluster(createRoot(isHosted), isCombinedCluster, explicitMemoryPercentage);
         QrStartConfig.Builder qsB = new QrStartConfig.Builder();
-        cluster.getSearch().getConfig(qsB);
+        cluster.getConfig(qsB);
         QrStartConfig qsC= new QrStartConfig(qsB);
         assertEquals(expectedMemoryPercentage, qsC.jvm().heapSizeAsPercentageOfPhysicalMemory());
     }
@@ -154,6 +158,7 @@ public class ContainerClusterTest {
             assertEquals(expectedArgs, jvmArgs);
         }
     }
+
     private void verifyJvmArgs(boolean isHosted, boolean hasDocProc) {
         MockRoot root = createRoot(isHosted);
         ContainerCluster cluster = createContainerCluster(root, false);
@@ -172,6 +177,36 @@ public class ContainerClusterTest {
         verifyJvmArgs(isHosted, hasDocProc, "ignored initial override", container.getJvmArgs());
         container.setJvmArgs(null);
         verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmArgs());
+    }
+
+    private void verifyGCOpts(boolean isHosted, String override, Zone zone, String expected) {
+        MockRoot root = createRoot(isHosted, zone);
+        ContainerCluster cluster = createContainerCluster(root, false);
+        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+        cluster.setGCOpts(override);
+        assertEquals(1, cluster.getContainers().size());
+        QrStartConfig.Builder qsB = new QrStartConfig.Builder();
+        cluster.getConfig(qsB);
+        QrStartConfig qsC= new QrStartConfig(qsB);
+        assertEquals(expected, qsC.jvm().gcopts());
+    }
+
+    private void verifyGCOpts(boolean isHosted, Zone zone, String expected) {
+        verifyGCOpts(isHosted, null, zone, expected);
+        verifyGCOpts(isHosted, "-XX:+UseG1GC", zone, "-XX:+UseG1GC");
+        Zone DEV = new Zone(SystemName.dev, zone.environment(), zone.region());
+        verifyGCOpts(isHosted, null, DEV, ContainerCluster.G1GC);
+        verifyGCOpts(isHosted, "-XX:+UseConcMarkSweepGC", DEV, "-XX:+UseConcMarkSweepGC");
+
+    }
+
+    @Test
+    public void requireThatGCOptsIsHonoured() {
+        final Zone US_EAST_3 = new Zone(Environment.prod, RegionName.from("us-east-3"));
+        verifyGCOpts(false, Zone.defaultZone(),ContainerCluster.CMS);
+        verifyGCOpts(false, US_EAST_3, ContainerCluster.CMS);
+        verifyGCOpts(true, Zone.defaultZone(), ContainerCluster.CMS);
+        verifyGCOpts(true, US_EAST_3, ContainerCluster.G1GC);
     }
 
     @Test

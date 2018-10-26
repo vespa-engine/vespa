@@ -72,4 +72,5 @@ public class OrchestratorMock implements Orchestrator {
     public void suspendAll(HostName parentHostname, List<HostName> hostNames) {
         hostNames.forEach(this::suspend);
     }
+
 }

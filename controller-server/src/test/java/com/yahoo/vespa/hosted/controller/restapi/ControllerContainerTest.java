@@ -7,7 +7,7 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import org.junit.After;
 import org.junit.Before;
@@ -15,7 +15,6 @@ import org.junit.Before;
 import java.io.UncheckedIOException;
 import java.nio.charset.CharacterCodingException;
 
-import static com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock.ATHENZ_NTOKEN_HEADER_NAME;
 import static com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock.IDENTITY_HEADER_NAME;
 import static org.junit.Assert.assertEquals;
 
@@ -96,6 +95,9 @@ public class ControllerContainerTest {
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.contactinfo.ContactInfoHandler'>\n" +
             "    <binding>http://*/contactinfo/v1/*</binding>\n" +
             "  </handler>\n" +
+            "  <handler id='com.yahoo.vespa.hosted.controller.restapi.metrics.MetricForwardingApiHandler'>\n" +
+            "    <binding>http://*/metricforwarding/v1/*</binding>\n" +
+            "  </handler>\n" +
             "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +
             "    <binding>http://*/deployment/v1/*</binding>\n" +
             "  </handler>\n" +
@@ -152,8 +154,8 @@ public class ControllerContainerTest {
         return request;
     }
 
-    protected static Request addNTokenToRequest(Request request, NToken nToken) {
-        request.getHeaders().put(ATHENZ_NTOKEN_HEADER_NAME, nToken.getRawToken());
+    protected static Request addOktaAccessToken(Request request, OktaAccessToken token) {
+        request.getHeaders().put(OktaAccessToken.HTTP_HEADER_NAME, token.token());
         return request;
     }
 

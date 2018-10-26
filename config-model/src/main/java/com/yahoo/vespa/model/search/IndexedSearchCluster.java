@@ -3,16 +3,17 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.config.search.AttributesConfig;
-import com.yahoo.vespa.config.search.DispatchConfig;
-import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.log.LogLevel;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.searchdefinition.DocumentOnlySearch;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
+import com.yahoo.vespa.config.search.AttributesConfig;
+import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.DispatchConfig.DistributionPolicy;
+import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.SimpleConfigProducer;
@@ -23,8 +24,11 @@ import com.yahoo.vespa.model.content.DispatchSpec;
 import com.yahoo.vespa.model.content.SearchCoverage;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -316,17 +320,17 @@ public class IndexedSearchCluster extends SearchCluster
 
     @Override
     public DerivedConfiguration getSdConfig() { return null; }
-    
+
     @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
         unionCfg.getConfig(builder);
     }
-    
+
     @Override
     public void getConfig(IlscriptsConfig.Builder builder) {
         unionCfg.getConfig(builder);
     }
-    
+
     @Override
     public void getConfig(AttributesConfig.Builder builder) {
         unionCfg.getConfig(builder);
@@ -402,6 +406,19 @@ public class IndexedSearchCluster extends SearchCluster
             nodeBuilder.fs4port(node.getDispatchPort());
             if (tuning.dispatch.minActiveDocsCoverage != null)
                 builder.minActivedocsPercentage(tuning.dispatch.minActiveDocsCoverage);
+            if (tuning.dispatch.minGroupCoverage != null)
+                builder.minGroupCoverage(tuning.dispatch.minGroupCoverage);
+            if (tuning.dispatch.policy != null) {
+                switch (tuning.dispatch.policy) {
+                    case RANDOM:
+                        builder.distributionPolicy(DistributionPolicy.RANDOM);
+                        break;
+                    case ROUNDROBIN:
+                        builder.distributionPolicy(DistributionPolicy.ROUNDROBIN);
+                        break;
+                }
+            }
+            builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());
             builder.node(nodeBuilder);
         }
     }

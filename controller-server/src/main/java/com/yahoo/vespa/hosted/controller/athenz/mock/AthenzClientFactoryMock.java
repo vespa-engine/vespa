@@ -3,11 +3,9 @@ package com.yahoo.vespa.hosted.controller.athenz.mock;
 
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 
 import java.util.logging.Level;
@@ -36,26 +34,18 @@ public class AthenzClientFactoryMock extends AbstractComponent implements Athenz
     }
 
     @Override
-    public AthenzIdentity getControllerIdentity() {
+    public AthenzService getControllerIdentity() {
         return new AthenzService("vespa.hosting");
     }
 
     @Override
-    public ZmsClient createZmsClientWithServicePrincipal() {
-        log("createZmsClientWithServicePrincipal()");
-        return new ZmsClientMock(athenz);
+    public ZmsClient createZmsClient() {
+        return new ZmsClientMock(athenz, getControllerIdentity());
     }
 
     @Override
-    public ZtsClient createZtsClientWithServicePrincipal() {
-        log("createZtsClientWithServicePrincipal()");
+    public ZtsClient createZtsClient() {
         return new ZtsClientMock(athenz);
-    }
-
-    @Override
-    public ZmsClient createZmsClientWithAuthorizedServiceToken(NToken authorizedServiceToken) {
-        log("createZmsClientWithAuthorizedServiceToken(authorizedServiceToken='%s')", authorizedServiceToken);
-        return new ZmsClientMock(athenz);
     }
 
     private static void log(String format, Object... args) {

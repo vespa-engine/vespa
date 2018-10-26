@@ -97,12 +97,10 @@ public class SingleSender implements SimpleFeedAccess {
         // empty
     }
 
-    public void waitForPending() {
-        waitForPending(-1);
-    }
-
     public boolean waitForPending(long timeoutMs) {
         return sender.waitForPending(owner, timeoutMs);
     }
 
+    @Override
+    public void close() { }
 }

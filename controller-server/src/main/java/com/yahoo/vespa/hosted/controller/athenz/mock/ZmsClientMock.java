@@ -1,18 +1,26 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.athenz.mock;
 
-import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsException;
+import com.yahoo.vespa.athenz.api.AthenzResourceName;
+import com.yahoo.vespa.athenz.api.AthenzRole;
+import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.api.OktaAccessToken;
+import com.yahoo.vespa.athenz.client.zms.RoleAction;
+import com.yahoo.vespa.athenz.client.zms.ZmsClient;
+import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
+import com.yahoo.vespa.hosted.controller.athenz.ApplicationAction;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author bjorncs
@@ -22,20 +30,24 @@ public class ZmsClientMock implements ZmsClient {
     private static final Logger log = Logger.getLogger(ZmsClientMock.class.getName());
 
     private final AthenzDbMock athenz;
+    private final AthenzService controllerIdentity;
+    private static final Pattern TENANT_RESOURCE_PATTERN = Pattern.compile("service\\.hosting\\.tenant\\.(?<tenantDomain>[\\w\\-_]+)\\..*");
+    private static final Pattern APPLICATION_RESOURCE_PATTERN = Pattern.compile("service\\.hosting\\.tenant\\.[\\w\\-_]+\\.res_group\\.(?<resourceGroup>[\\w\\-_]+)\\.wildcard");
 
-    public ZmsClientMock(AthenzDbMock athenz) {
+    public ZmsClientMock(AthenzDbMock athenz, AthenzService controllerIdentity) {
         this.athenz = athenz;
+        this.controllerIdentity = controllerIdentity;
     }
 
     @Override
-    public void createTenant(AthenzDomain tenantDomain) {
-        log("createTenant(tenantDomain='%s')", tenantDomain);
+    public void createTenancy(AthenzDomain tenantDomain, AthenzService providerService, OktaAccessToken token) {
+        log("createTenancy(tenantDomain='%s')", tenantDomain);
         getDomainOrThrow(tenantDomain, false).isVespaTenant = true;
     }
 
     @Override
-    public void deleteTenant(AthenzDomain tenantDomain) {
-        log("deleteTenant(tenantDomain='%s')", tenantDomain);
+    public void deleteTenancy(AthenzDomain tenantDomain, AthenzService providerService, OktaAccessToken token) {
+        log("deleteTenancy(tenantDomain='%s')", tenantDomain);
         AthenzDbMock.Domain domain = getDomainOrThrow(tenantDomain, false);
         domain.isVespaTenant = false;
         domain.applications.clear();
@@ -43,55 +55,80 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
-    public void addApplication(AthenzDomain tenantDomain, ApplicationId applicationName) {
-        log("addApplication(tenantDomain='%s', applicationName='%s')", tenantDomain, applicationName);
+    public void createProviderResourceGroup(AthenzDomain tenantDomain, AthenzService providerService, String resourceGroup, Set<RoleAction> roleActions, OktaAccessToken token) {
+        log("createProviderResourceGroup(tenantDomain='%s', resourceGroup='%s')", tenantDomain, resourceGroup);
         AthenzDbMock.Domain domain = getDomainOrThrow(tenantDomain, true);
-        if (!domain.applications.containsKey(applicationName)) {
-            domain.applications.put(applicationName, new AthenzDbMock.Application());
+        ApplicationId applicationId = new ApplicationId(resourceGroup);
+        if (!domain.applications.containsKey(applicationId)) {
+            domain.applications.put(applicationId, new AthenzDbMock.Application());
         }
     }
 
     @Override
-    public void deleteApplication(AthenzDomain tenantDomain, ApplicationId applicationName) {
-        log("addApplication(tenantDomain='%s', applicationName='%s')", tenantDomain, applicationName);
-        getDomainOrThrow(tenantDomain, true).applications.remove(applicationName);
+    public void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzService providerService, String resourceGroup, OktaAccessToken token) {
+        log("deleteProviderResourceGroup(tenantDomain='%s', resourceGroup='%s')", tenantDomain, resourceGroup);
+        getDomainOrThrow(tenantDomain, true).applications.remove(new ApplicationId(resourceGroup));
     }
 
     @Override
-    public boolean hasApplicationAccess(AthenzIdentity identity, ApplicationAction action, AthenzDomain tenantDomain, ApplicationId applicationName) {
-        log("hasApplicationAccess(principal='%s', action='%s', tenantDomain='%s', applicationName='%s')",
-            identity, action, tenantDomain, applicationName);
-        AthenzDbMock.Domain domain = getDomainOrThrow(tenantDomain, true);
-        AthenzDbMock.Application application = domain.applications.get(applicationName);
-        if (application == null) {
-            throw zmsException(400, "Application '%s' not found", applicationName);
+    public boolean getMembership(AthenzRole role, AthenzIdentity identity) {
+        if (role.roleName().equals("admin")) {
+            return getDomainOrThrow(role.domain(), false).admins.contains(identity);
         }
-        return isHostedOperator(identity) || domain.admins.contains(identity) || application.acl.get(action).contains(identity);
-    }
-
-    @Override
-    public boolean hasTenantAdminAccess(AthenzIdentity identity, AthenzDomain tenantDomain) {
-        log("hasTenantAdminAccess(principal='%s', tenantDomain='%s')", identity, tenantDomain);
-        return isHostedOperator(identity) || isDomainAdmin(identity, tenantDomain) ||
-                getDomainOrThrow(tenantDomain, true).tenantAdmins.contains(identity);
-    }
-
-    @Override
-    public boolean hasHostedOperatorAccess(AthenzIdentity identity) {
-        log("hasHostedOperatorAccess(identity='%s')", identity);
-        return isHostedOperator(identity);
-    }
-
-    @Override
-    public boolean isDomainAdmin(AthenzIdentity identity, AthenzDomain domain) {
-        log("isDomainAdmin(principal='%s', domain='%s')", identity, domain);
-        return getDomainOrThrow(domain, false).admins.contains(identity);
+        return false;
     }
 
     @Override
     public List<AthenzDomain> getDomainList(String prefix) {
         log("getDomainList()");
         return new ArrayList<>(athenz.domains.keySet());
+    }
+
+    @Override
+    public boolean hasAccess(AthenzResourceName resource, String action, AthenzIdentity identity) {
+        log("hasAccess(resource=%s, action=%s, identity=%s)", resource, action, identity);
+        if (resource.getDomain().equals(this.controllerIdentity.getDomain())) {
+            if (isHostedOperator(identity)) {
+                return true;
+            }
+            if (resource.getEntityName().startsWith("service.hosting.tenant.")) {
+                AthenzDomain tenantDomainName = getTenantDomain(resource);
+                AthenzDbMock.Domain tenantDomain = getDomainOrThrow(tenantDomainName, true);
+                if (tenantDomain.admins.contains(identity)) {
+                    return true;
+                }
+                if (resource.getEntityName().contains(".res_group.")) {
+                    ApplicationId applicationName = new ApplicationId(getResourceGroupName(resource));
+                    AthenzDbMock.Application application = tenantDomain.applications.get(applicationName);
+                    if (application == null) {
+                        throw zmsException(400, "Application '%s' not found", applicationName);
+                    }
+                    return application.acl.get(ApplicationAction.valueOf(action)).contains(identity);
+                }
+                return false;
+            }
+            return false;
+        }
+        return false;
+    }
+
+    @Override
+    public void close() {}
+
+    private static AthenzDomain getTenantDomain(AthenzResourceName resource) {
+        Matcher matcher = TENANT_RESOURCE_PATTERN.matcher(resource.getEntityName());
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException(resource.toResourceNameString());
+        }
+        return new AthenzDomain(matcher.group("tenantDomain"));
+    }
+
+    private static String getResourceGroupName(AthenzResourceName resource) {
+        Matcher matcher = APPLICATION_RESOURCE_PATTERN.matcher(resource.getEntityName());
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException(resource.toResourceNameString());
+        }
+        return matcher.group("resourceGroup");
     }
 
     private AthenzDbMock.Domain getDomainOrThrow(AthenzDomain domainName, boolean verifyVespaTenant) {
@@ -107,8 +144,8 @@ public class ZmsClientMock implements ZmsClient {
         return athenz.hostedOperators.contains(identity);
     }
 
-    private static ZmsException zmsException(int code, String message, Object... args) {
-        return new ZmsException(code, String.format(message, args));
+    private static ZmsClientException zmsException(int code, String message, Object... args) {
+        return new ZmsClientException(code, String.format(message, args));
     }
 
     private static void log(String format, Object... args) {

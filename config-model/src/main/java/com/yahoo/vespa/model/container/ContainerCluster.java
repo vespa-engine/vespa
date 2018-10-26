@@ -14,6 +14,9 @@ import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.ComponentsConfig;
@@ -140,6 +143,8 @@ public final class ContainerCluster
     public static final String STATE_HANDLER_CLASS = "com.yahoo.container.jdisc.state.StateHandler";
     public static final String STATISTICS_HANDLER_CLASS = "com.yahoo.container.config.StatisticsRequestHandler";
     public static final String SIMPLE_LINGUISTICS_PROVIDER = "com.yahoo.language.provider.SimpleLinguisticsProvider";
+    public static final String CMS = "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1";
+    static final String G1GC = "-XX:+UseG1GC -XX:MaxTenuringThreshold=15";
 
     public static final String ROOT_HANDLER_BINDING = "*://*/";
 
@@ -181,6 +186,7 @@ public final class ContainerCluster
     private Zone zone;
     
     private String hostClusterId = null;
+    private String gcopts = null;
     private Integer memoryPercentage = null;
 
     private static class AcceptAllVerifier implements ContainerClusterVerifier {
@@ -625,9 +631,33 @@ public final class ContainerCluster
     	if (containerSearch!=null) containerSearch.getConfig(builder);
     }
 
+    private String buildGCOpts(Zone zone) {
+        Optional<String> gcopts = getGCOpts();
+        if (gcopts.isPresent()) {
+            return gcopts.get();
+        } else if (zone.system() == SystemName.dev) {
+            return G1GC;
+        } else if (isHostedVespa()) {
+            return ((zone.environment() != Environment.prod) || RegionName.from("us-east-3").equals(zone.region()))
+                    ? G1GC : CMS;
+        } else {
+            return CMS;
+        }
+    }
+
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
-    	if (containerSearch!=null) containerSearch.getConfig(builder);
+        QrStartConfig.Jvm.Builder jvmBuilder = new QrStartConfig.Jvm.Builder();
+        if (getMemoryPercentage().isPresent()) {
+            jvmBuilder.heapSizeAsPercentageOfPhysicalMemory(getMemoryPercentage().get());
+        } else if (isHostedVespa()) {
+            jvmBuilder.heapSizeAsPercentageOfPhysicalMemory(getHostClusterId().isPresent() ? 17 : 60);
+        }
+    	if (containerSearch!=null) {
+            jvmBuilder.directMemorySizeCache(containerSearch.totalCacheSizeMb());
+        }
+        jvmBuilder.gcopts(buildGCOpts(getZone()));
+        builder.jvm(jvmBuilder);
     }
 
     @Override
@@ -784,6 +814,8 @@ public final class ContainerCluster
     public Optional<String> getHostClusterId() { return Optional.ofNullable(hostClusterId); }
 
     public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage; }
+    public void setGCOpts(String gcopts) { this.gcopts = gcopts; }
+    public Optional<String> getGCOpts() { return Optional.ofNullable(gcopts); }
 
     /** 
      * Returns the percentage of host physical memory this application has specified for nodes in this cluster,

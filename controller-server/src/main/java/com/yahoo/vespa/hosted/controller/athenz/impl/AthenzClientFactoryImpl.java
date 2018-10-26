@@ -2,47 +2,33 @@
 package com.yahoo.vespa.hosted.controller.athenz.impl;
 
 import com.google.inject.Inject;
-import com.yahoo.athenz.auth.Principal;
-import com.yahoo.athenz.auth.impl.PrincipalAuthority;
-import com.yahoo.athenz.auth.impl.SimplePrincipal;
-import com.yahoo.athenz.auth.token.PrincipalToken;
-import com.yahoo.athenz.auth.util.Crypto;
-import com.yahoo.athenz.zms.ZMSClient;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
-import com.yahoo.vespa.athenz.api.NToken;
+import com.yahoo.vespa.athenz.client.zms.DefaultZmsClient;
+import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
-import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClient;
 import com.yahoo.vespa.hosted.controller.athenz.config.AthenzConfig;
 
 import java.net.URI;
-import java.security.PrivateKey;
 
 /**
  * @author bjorncs
  */
 public class AthenzClientFactoryImpl implements AthenzClientFactory {
 
-    private final SecretStore secretStore;
     private final AthenzConfig config;
-    private final AthenzPrincipalAuthority athenzPrincipalAuthority;
     private final ServiceIdentityProvider identityProvider;
 
     @Inject
-    public AthenzClientFactoryImpl(SecretStore secretStore, ServiceIdentityProvider identityProvider, AthenzConfig config) {
-        this.secretStore = secretStore;
+    public AthenzClientFactoryImpl(ServiceIdentityProvider identityProvider, AthenzConfig config) {
         this.identityProvider = identityProvider;
         this.config = config;
-        this.athenzPrincipalAuthority = new AthenzPrincipalAuthority(config.principalHeaderName());
     }
 
     @Override
-    public AthenzIdentity getControllerIdentity() {
+    public AthenzService getControllerIdentity() {
         return identityProvider.identity();
     }
 
@@ -50,52 +36,16 @@ public class AthenzClientFactoryImpl implements AthenzClientFactory {
      * @return A ZMS client instance with the service identity as principal.
      */
     @Override
-    public ZmsClient createZmsClientWithServicePrincipal() {
-        return new ZmsClientImpl(new ZMSClient(config.zmsUrl(), identityProvider.getIdentitySslContext()), config);
+    public ZmsClient createZmsClient() {
+        return new DefaultZmsClient(URI.create(config.zmsUrl()), identityProvider);
     }
 
     /**
      * @return A ZTS client instance with the service identity as principal.
      */
     @Override
-    public ZtsClient createZtsClientWithServicePrincipal() {
+    public ZtsClient createZtsClient() {
         return new DefaultZtsClient(URI.create(config.ztsUrl()), identityProvider);
     }
-
-    /**
-     * @return A ZMS client created with a dual principal representing both the tenant admin and the service identity.
-     */
-    @Override
-    public ZmsClient createZmsClientWithAuthorizedServiceToken(NToken authorizedServiceToken) {
-        PrincipalToken signedToken = new PrincipalToken(authorizedServiceToken.getRawToken());
-        AthenzConfig.Service service = config.service();
-        signedToken.signForAuthorizedService(
-                config.domain() + "." + service.name(), service.publicKeyId(), getServicePrivateKey());
-
-        Principal dualPrincipal = SimplePrincipal.create(
-                AthenzIdentities.USER_PRINCIPAL_DOMAIN.getName(), signedToken.getName(), signedToken.getSignedToken(), athenzPrincipalAuthority);
-        return new ZmsClientImpl(new ZMSClient(config.legacyZmsUrl(), dualPrincipal), config);
-
-    }
-
-    private PrivateKey getServicePrivateKey() {
-        AthenzConfig.Service service = config.service();
-        String privateKey = secretStore.getSecret(service.privateKeySecretName(), service.privateKeyVersion()).trim();
-        return Crypto.loadPrivateKey(privateKey);
-    }
-
-    private static class AthenzPrincipalAuthority extends PrincipalAuthority {
-        private final String principalHeaderName;
-
-        public AthenzPrincipalAuthority(String principalHeaderName) {
-            this.principalHeaderName = principalHeaderName;
-        }
-
-        @Override
-        public String getHeader() {
-            return principalHeaderName;
-        }
-    }
-
 
 }

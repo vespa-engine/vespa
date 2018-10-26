@@ -6,18 +6,16 @@ import com.yahoo.docproc.CallStack;
 import com.yahoo.docproc.DocprocService;
 import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.Processing;
-import com.yahoo.document.*;
+import com.yahoo.document.DocumentOperation;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.routing.Route;
-import com.yahoo.vdslib.Entry;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class DocprocMessageProcessor implements MessageProcessor {
     private final DocprocService docproc;
@@ -31,7 +29,7 @@ public class DocprocMessageProcessor implements MessageProcessor {
     @Override
     public void process(Message m) {
         try {
-            List<DocumentOperation> documentBases = new ArrayList<DocumentOperation>();
+            List<DocumentOperation> documentBases = new ArrayList<>(1);
 
             if (m.getType() == DocumentProtocol.MESSAGE_PUTDOCUMENT) {
                 documentBases.add(((PutDocumentMessage) m).getDocumentPut());
@@ -49,7 +47,7 @@ public class DocprocMessageProcessor implements MessageProcessor {
         }
     }
 
-    public void processDocumentOperations(List<DocumentOperation> documentOperations, Message m) throws Exception {
+    private void processDocumentOperations(List<DocumentOperation> documentOperations, Message m) throws Exception {
         Processing processing = Processing.createProcessingFromDocumentOperations(docproc.getName(), documentOperations, new CallStack(docproc.getCallStack()));
         processing.setServiceName(docproc.getName());
         processing.setDocprocServiceRegistry(docprocServiceRegistry);
