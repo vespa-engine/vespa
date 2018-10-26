@@ -36,17 +36,17 @@ public abstract class VespaFeedHandlerBase extends ThreadedHttpRequestHandler {
                                 SlobroksConfig slobroksConfig,
                                 ClusterListConfig clusterListConfig,
                                 Executor executor,
-                                Metric metric) throws Exception {
+                                Metric metric) {
         this(FeedContext.getInstance(feederConfig, loadTypeConfig, documentmanagerConfig, 
                                      slobroksConfig, clusterListConfig, metric), 
              executor, (long)feederConfig.timeout() * 1000);
     }
 
-    public VespaFeedHandlerBase(FeedContext context, Executor executor) throws Exception {
+    public VespaFeedHandlerBase(FeedContext context, Executor executor) {
         this(context, executor, context.getPropertyProcessor().getDefaultTimeoutMillis());
     }
 
-    public VespaFeedHandlerBase(FeedContext context, Executor executor, long defaultTimeoutMillis) throws Exception {
+    public VespaFeedHandlerBase(FeedContext context, Executor executor, long defaultTimeoutMillis) {
         super(executor, context.getMetricAPI());
         this.context = context;
         this.defaultTimeoutMillis = defaultTimeoutMillis;
