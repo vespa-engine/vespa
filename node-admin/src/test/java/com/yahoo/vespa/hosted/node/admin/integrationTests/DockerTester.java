@@ -32,6 +32,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,11 +46,13 @@ import static org.mockito.Mockito.when;
  */
 // Need to deconstruct nodeAdminStateUpdater
 public class DockerTester implements AutoCloseable {
-    private static final Duration NODE_AGENT_SCAN_INTERVAL = Duration.ofMillis(100);
-    private static final Duration NODE_ADMIN_CONVERGE_STATE_INTERVAL = Duration.ofMillis(10);
+    private static final Logger log = Logger.getLogger(DockerTester.class.getName());
+    private static final Duration INTERVAL = Duration.ofMillis(10);
     private static final Path PATH_TO_VESPA_HOME = Paths.get("/opt/vespa");
     static final String NODE_PROGRAM = PATH_TO_VESPA_HOME.resolve("bin/vespa-nodectl").toString();
     static final HostName HOST_HOSTNAME = HostName.from("host.test.yahoo.com");
+
+    private final Thread loopThread;
 
     final Docker docker = spy(new DockerMock());
     final NodeRepoMock nodeRepository = spy(new NodeRepoMock());
@@ -57,8 +60,11 @@ public class DockerTester implements AutoCloseable {
     final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
     final InOrder inOrder = Mockito.inOrder(docker, nodeRepository, orchestrator, storageMaintainer);
 
-    final NodeAdminStateUpdaterImpl nodeAdminStateUpdater;
+    final NodeAdminStateUpdaterImpl nodeAdminStateUpdaterImpl;
     final NodeAdminImpl nodeAdmin;
+
+    private boolean terminated = false;
+    private volatile NodeAdminStateUpdaterImpl.State wantedState = NodeAdminStateUpdaterImpl.State.RESUMED;
 
 
     DockerTester() {
@@ -89,11 +95,28 @@ public class DockerTester implements AutoCloseable {
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(
                 new NodeAgentContextImpl.Builder(hostName).fileSystem(fileSystem).build(), nodeRepository,
-                orchestrator, dockerOperations, storageMaintainer, clock, NODE_AGENT_SCAN_INTERVAL, Optional.empty(), Optional.empty());
+                orchestrator, dockerOperations, storageMaintainer, clock, INTERVAL, Optional.empty(), Optional.empty());
         nodeAdmin = new NodeAdminImpl(nodeAgentFactory, Optional.empty(), mr, Clock.systemUTC());
-        nodeAdminStateUpdater = new NodeAdminStateUpdaterImpl(nodeRepository, orchestrator,
-                nodeAdmin, HOST_HOSTNAME, clock, NODE_ADMIN_CONVERGE_STATE_INTERVAL);
-        nodeAdminStateUpdater.start();
+        nodeAdminStateUpdaterImpl = new NodeAdminStateUpdaterImpl(nodeRepository, orchestrator,
+                nodeAdmin, HOST_HOSTNAME);
+
+        this.loopThread = new Thread(() -> {
+            nodeAdminStateUpdaterImpl.start();
+
+            while (! terminated) {
+                try {
+                    nodeAdminStateUpdaterImpl.converge(wantedState);
+                } catch (RuntimeException e) {
+                    log.info(e.getMessage());
+                }
+                try {
+                    Thread.sleep(INTERVAL.toMillis());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        loopThread.start();
     }
 
     /** Adds a node to node-repository mock that is running on this host */
@@ -103,12 +126,27 @@ public class DockerTester implements AutoCloseable {
                 .build());
     }
 
-    @Override
-    public void close() {
-        nodeAdminStateUpdater.stop();
+    void setWantedState(NodeAdminStateUpdaterImpl.State wantedState) {
+        this.wantedState = wantedState;
     }
 
-    public <T> T inOrder(T t) {
+    <T> T inOrder(T t) {
         return inOrder.verify(t, timeout(1000));
+    }
+
+    @Override
+    public void close() {
+        terminated = true;
+
+        do {
+            try {
+                loopThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        } while (loopThread.isAlive());
+
+        // Finally, stop NodeAdmin and all the NodeAgents
+        nodeAdmin.stop();
     }
 }

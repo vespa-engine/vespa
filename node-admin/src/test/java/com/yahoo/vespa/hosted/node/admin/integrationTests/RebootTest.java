@@ -6,7 +6,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
-import com.yahoo.vespa.hosted.node.admin.provider.NodeAdminStateUpdater;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.NodeAdminStateUpdaterImpl;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -16,10 +16,7 @@ import java.util.OptionalLong;
 import static com.yahoo.vespa.hosted.node.admin.integrationTests.DockerTester.HOST_HOSTNAME;
 import static com.yahoo.vespa.hosted.node.admin.integrationTests.DockerTester.NODE_PROGRAM;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
 /**
  * Tests rebooting of Docker host
@@ -40,7 +37,7 @@ public class RebootTest {
                     eq(dockerImage), eq(ContainerResources.from(0, 0)), eq(new ContainerName("host1")), eq(hostname));
 
             try {
-                tester.nodeAdminStateUpdater.setResumeStateAndCheckIfResumed(NodeAdminStateUpdater.State.SUSPENDED);
+                tester.setWantedState(NodeAdminStateUpdaterImpl.State.SUSPENDED);
             } catch (RuntimeException ignored) { }
 
             tester.inOrder(tester.orchestrator).suspend(
