@@ -42,7 +42,7 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
             return clusterControllerApi.apply(api -> api.setNodeState(
                     clusterName,
                     storageNodeIndex,
-                    timeouts.getServerTimeout().toMillis() / 1000.0f,
+                    timeouts.getServerTimeoutOrThrow().toMillis() / 1000.0f,
                     stateRequest),
                     timeouts);
         } catch (IOException | UncheckedTimeoutException e) {
@@ -72,7 +72,7 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
         try {
             return clusterControllerApi.apply(api -> api.setClusterState(
                     clusterName,
-                    timeouts.getServerTimeout().toMillis() / 1000.0f,
+                    timeouts.getServerTimeoutOrThrow().toMillis() / 1000.0f,
                     stateRequest),
                     timeouts);
         } catch (IOException | UncheckedTimeoutException e) {

@@ -55,7 +55,7 @@ public interface StatusService {
      */
     MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
             ApplicationInstanceReference applicationInstanceReference,
-            Duration timeoutSeconds);
+            Duration timeout);
 
     /**
      * Returns all application instances that are allowed to be down. The intention is to use this

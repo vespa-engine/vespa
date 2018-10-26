@@ -56,7 +56,7 @@ public class SetNodeStateRequestTest {
     }
 
     @Test
-    public void testProbing() throws StateRestApiException {
+    public void testProbingDoesntChangeState() throws StateRestApiException {
         probe = true;
         testSetStateRequest(
                 "maintenance",

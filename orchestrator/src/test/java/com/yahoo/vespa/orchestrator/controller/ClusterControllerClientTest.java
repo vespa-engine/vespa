@@ -32,7 +32,7 @@ public class ClusterControllerClientTest {
         OrchestratorContext context = mock(OrchestratorContext.class);
         ClusterControllerClientTimeouts timeouts = mock(ClusterControllerClientTimeouts.class);
         when(context.getClusterControllerTimeouts(any())).thenReturn(timeouts);
-        when(timeouts.getServerTimeout()).thenReturn(Duration.ofSeconds(1));
+        when(timeouts.getServerTimeoutOrThrow()).thenReturn(Duration.ofSeconds(1));
         clusterControllerClient.setNodeState(context, STORAGE_NODE_INDEX, wantedState);
 
         final ClusterControllerStateRequest expectedNodeStateRequest = new ClusterControllerStateRequest(

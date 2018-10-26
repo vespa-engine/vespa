@@ -79,8 +79,8 @@ public class RetryingJaxRsStrategy<T> implements JaxRsStrategy<T> {
             for (final HostName hostName : hostNames) {
                 URI uri = UriBuilder.fromPath(pathPrefix).port(port).scheme(scheme).host(hostName.s()).build();
                 JaxRsClientFactory.Params<T> params = new JaxRsClientFactory.Params<>(apiClass, uri);
-                params.setConnectTimeout(timeouts.getConnectTimeout());
-                params.setReadTimeout(timeouts.getReadTimeout());
+                params.setConnectTimeout(timeouts.getConnectTimeoutOrThrow());
+                params.setReadTimeout(timeouts.getReadTimeoutOrThrow());
                 final T jaxRsClient = jaxRsClientFactory.createClient(params);
                 try {
                     return function.apply(jaxRsClient);

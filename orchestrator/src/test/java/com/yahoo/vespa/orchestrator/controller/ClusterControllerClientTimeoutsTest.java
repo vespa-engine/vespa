@@ -55,24 +55,20 @@ public class ClusterControllerClientTimeoutsTest {
 
     @Test
     public void makes2RequestsWithMaxProcessingTime() {
-        assertEquals(Duration.ofMillis(50), timeouts.getConnectTimeout());
-        assertEquals(Duration.ofMillis(1350), timeouts.getReadTimeout());
-        assertEquals(Duration.ofMillis(1300), timeouts.getServerTimeout());
+        assertStandardTimeouts();
 
         Duration maxProcessingTime = IN_PROCESS_OVERHEAD_PER_CALL
                 .plus(CONNECT_TIMEOUT)
-                .plus(timeouts.getReadTimeout());
+                .plus(timeouts.getReadTimeoutOrThrow());
         assertEquals(1450, maxProcessingTime.toMillis());
         clock.advance(maxProcessingTime);
 
-        assertEquals(Duration.ofMillis(50), timeouts.getConnectTimeout());
-        assertEquals(Duration.ofMillis(1350), timeouts.getReadTimeout());
-        assertEquals(Duration.ofMillis(1300), timeouts.getServerTimeout());
+        assertStandardTimeouts();
 
         clock.advance(maxProcessingTime);
 
         try {
-            timeouts.getServerTimeout();
+            timeouts.getServerTimeoutOrThrow();
             fail();
         } catch (UncheckedTimeoutException e) {
             assertEquals(
@@ -83,22 +79,22 @@ public class ClusterControllerClientTimeoutsTest {
 
     @Test
     public void makesAtLeast3RequestsWithShortProcessingTime() {
-        assertEquals(Duration.ofMillis(50), timeouts.getConnectTimeout());
-        assertEquals(Duration.ofMillis(1350), timeouts.getReadTimeout());
-        assertEquals(Duration.ofMillis(1300), timeouts.getServerTimeout());
+        assertStandardTimeouts();
 
-        Duration shortPocessingTime = Duration.ofMillis(200);
-        clock.advance(shortPocessingTime);
+        Duration shortProcessingTime = Duration.ofMillis(200);
+        clock.advance(shortProcessingTime);
 
-        assertEquals(Duration.ofMillis(50), timeouts.getConnectTimeout());
-        assertEquals(Duration.ofMillis(1350), timeouts.getReadTimeout());
-        assertEquals(Duration.ofMillis(1300), timeouts.getServerTimeout());
+        assertStandardTimeouts();
 
-        clock.advance(shortPocessingTime);
+        clock.advance(shortProcessingTime);
 
-        assertEquals(Duration.ofMillis(50), timeouts.getConnectTimeout());
-        assertEquals(Duration.ofMillis(1350), timeouts.getReadTimeout());
-        assertEquals(Duration.ofMillis(1300), timeouts.getServerTimeout());
+        assertStandardTimeouts();
+    }
+
+    private void assertStandardTimeouts() {
+        assertEquals(Duration.ofMillis(50), timeouts.getConnectTimeoutOrThrow());
+        assertEquals(Duration.ofMillis(1350), timeouts.getReadTimeoutOrThrow());
+        assertEquals(Duration.ofMillis(1300), timeouts.getServerTimeoutOrThrow());
     }
 
     @Test
@@ -106,7 +102,7 @@ public class ClusterControllerClientTimeoutsTest {
         clock.advance(Duration.ofSeconds(4));
 
         try {
-            timeouts.getServerTimeout();
+            timeouts.getServerTimeoutOrThrow();
             fail();
         } catch (UncheckedTimeoutException e) {
             assertEquals(
@@ -119,7 +115,7 @@ public class ClusterControllerClientTimeoutsTest {
     public void justTooLittleTime() {
         clock.advance(originalTimeout.minus(MINIMUM_TIME_LEFT).plus(Duration.ofMillis(1)));
         try {
-            timeouts.getServerTimeout();
+            timeouts.getServerTimeoutOrThrow();
             fail();
         } catch (UncheckedTimeoutException e) {
             assertEquals(
@@ -131,14 +127,14 @@ public class ClusterControllerClientTimeoutsTest {
     @Test
     public void justEnoughTime() {
         clock.advance(originalTimeout.minus(MINIMUM_TIME_LEFT));
-        timeouts.getServerTimeout();
+        timeouts.getServerTimeoutOrThrow();
     }
 
     @Test
     public void justTooLittleInitialTime() {
         makeTimeouts(MINIMUM_ORIGINAL_TIMEOUT.minus(Duration.ofMillis(1)));
         try {
-            timeouts.getServerTimeout();
+            timeouts.getServerTimeoutOrThrow();
             fail();
         } catch (UncheckedTimeoutException e) {
             assertEquals(
@@ -150,6 +146,6 @@ public class ClusterControllerClientTimeoutsTest {
     @Test
     public void justEnoughInitialTime() {
         makeTimeouts(MINIMUM_ORIGINAL_TIMEOUT);
-        timeouts.getServerTimeout();
+        timeouts.getServerTimeoutOrThrow();
     }
 }
