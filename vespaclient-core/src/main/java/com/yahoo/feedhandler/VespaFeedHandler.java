@@ -48,17 +48,17 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
                             SlobroksConfig slobroksConfig,
                             ClusterListConfig clusterListConfig,
                             Executor executor,
-                            Metric metric) throws Exception {
+                            Metric metric)  {
         super(feederConfig, loadTypeConfig, documentmanagerConfig, slobroksConfig, clusterListConfig, executor, metric);
         this.maxBusyThreads = feederConfig.maxbusythreads();
     }
 
-    VespaFeedHandler(FeedContext context, Executor executor) throws Exception {
+    VespaFeedHandler(FeedContext context, Executor executor) {
         super(context, executor);
         this.maxBusyThreads = 32;
     }
 
-    public static VespaFeedHandler createFromContext(FeedContext context, Executor executor) throws Exception {
+    public static VespaFeedHandler createFromContext(FeedContext context, Executor executor) {
         return new VespaFeedHandler(context, executor);
     }
 
