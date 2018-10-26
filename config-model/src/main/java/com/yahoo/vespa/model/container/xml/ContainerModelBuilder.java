@@ -468,7 +468,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         else {
             List<Container> nodes = createNodes(cluster, nodesElement, context);
             String jvmArgs = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
-            String gcopts = nodesElement.getAttribute(VespaDomBuilder.GCOPTS_ATTRIB_NAME);
+            String gcopts = nodesElement.hasAttribute(VespaDomBuilder.GCOPTS_ATTRIB_NAME)
+                    ? nodesElement.getAttribute(VespaDomBuilder.GCOPTS_ATTRIB_NAME)
+                    : null;
             if (incompatibleGCOptions(jvmArgs)) {
                 context.getDeployLogger().log(Level.WARNING, "You need to move out your GC related options from 'jvmargs' to 'gcopts'");
             } else {

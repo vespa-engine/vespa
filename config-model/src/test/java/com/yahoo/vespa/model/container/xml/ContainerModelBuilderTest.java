@@ -97,7 +97,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     public void ignores_gcopts_on_conflicting_jvargs() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc version='1.0'>",
-                "  <search/>",
                 "  <nodes gcopts='-XX:+UseG1GC' jvmargs='-XX:+UseParNewGC'>",
                 "    <node hostalias='mockhost'/>",
                 "  </nodes>",

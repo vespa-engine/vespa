@@ -82,7 +82,6 @@ public class ModelProvisioningTest {
                         "  <nodes count=\"3\"/>" +
                         "</jdisc>" +
                         "<jdisc id='mydisc2' version='1.0'>" +
-                        "  <search/>" +
                         "  <document-processing/>" +
                         "  <handler id='myHandler'>" +
                         "    <component id='injected' />" +
@@ -1666,7 +1665,7 @@ public class ModelProvisioningTest {
 
     private int physicalMemoryPercentage(ContainerCluster cluster) {
         QrStartConfig.Builder b = new QrStartConfig.Builder();
-        cluster.getSearch().getConfig(b);
+        cluster.getConfig(b);
         return new QrStartConfig(b).jvm().heapSizeAsPercentageOfPhysicalMemory();
     }
 
