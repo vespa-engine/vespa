@@ -11,7 +11,6 @@ import com.yahoo.document.serialization.DocumentUpdateWriter;
 import com.yahoo.document.update.FieldUpdate;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /**
