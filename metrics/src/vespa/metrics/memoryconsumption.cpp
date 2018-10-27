@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "memoryconsumption.h"
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/stllike/hashtable.hpp>
 #include <sstream>
 
 namespace metrics {
@@ -16,7 +17,7 @@ MemoryConsumption::MemoryConsumption()
     _seenStrings->resize(1000);
 }
 
-MemoryConsumption::~MemoryConsumption() { }
+MemoryConsumption::~MemoryConsumption() = default;
 
 uint32_t
 MemoryConsumption::getStringMemoryUsage(const std::string& s, uint32_t& uniqueCount) {

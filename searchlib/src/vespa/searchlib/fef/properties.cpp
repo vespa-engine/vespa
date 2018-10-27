@@ -210,7 +210,7 @@ Properties::lookup(vespalib::stringref key) const
     if (key.empty()) {
         return Property();
     }
-    Map::const_iterator node = _data.find(key);
+    Map::const_iterator node = _data.find<vespalib::stringref>(key);
     if (node == _data.end()) {
         return Property();
     }

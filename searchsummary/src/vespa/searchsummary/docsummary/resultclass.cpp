@@ -2,6 +2,7 @@
 
 #include "resultclass.h"
 #include "resultconfig.h"
+#include <vespa/vespalib/stllike/hashtable.hpp>
 #include <cassert>
 #include <zlib.h>
 
@@ -18,8 +19,14 @@ ResultClass::ResultClass(const char *name, uint32_t id, util::StringEnum & field
 { }
 
 
-ResultClass::~ResultClass() { }
+ResultClass::~ResultClass() = default;
 
+int
+ResultClass::GetIndexFromName(const char* name) const
+{
+    NameIdMap::const_iterator found(_nameMap.find(name));
+    return (found != _nameMap.end()) ? found->second : -1;
+}
 
 bool
 ResultClass::AddConfigEntry(const char *name, ResType type)

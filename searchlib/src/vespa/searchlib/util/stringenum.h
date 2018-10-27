@@ -5,8 +5,7 @@
 #include <vector>
 #include <vespa/vespalib/stllike/hash_map.h>
 
-namespace search {
-namespace util {
+namespace search::util {
 
 /**
  * An object of this class represents an enumeration of a set of
@@ -35,29 +34,17 @@ public:
     /**
      * Create an empty string enumeration.
      **/
-    StringEnum()
-        : _numEntries(0),
-          _mapping(),
-          _reverseMap()
-    {
-    }
+    StringEnum();
 
     /**
      * Destructor.
      **/
     ~StringEnum();
 
-
     /**
      * Discard all entries held by this object.
      **/
-    void Clear()
-    {
-        _reverseMap.clear();
-        _mapping.clear();
-        _numEntries = 0;
-    }
-
+    void Clear();
 
     /**
      * Add a string to this enumeration. Equal strings will get the same
@@ -68,18 +55,7 @@ public:
      * @return the enumerated value for the given string.
      * @param str string you want to add.
      **/
-    int Add(const char *str)
-    {
-        Map::const_iterator found(_mapping.find(str));
-        if (found != _mapping.end()) {
-            return found->second;
-        } else {
-            int value = _numEntries++;
-            _mapping[str] = value;
-            return value;
-        }
-    }
-
+    int Add(const char *str);
 
     /**
      * Obtain the enumerated value for the given string.
@@ -87,12 +63,7 @@ public:
      * @return enumerated value or -1 if not present.
      * @param str the string to look up.
      **/
-    int Lookup(const char *str) const
-    {
-        Map::const_iterator found(_mapping.find(str));
-        return (found != _mapping.end()) ? found->second : -1;
-    }
-
+    int Lookup(const char *str) const;
 
     /**
      * Obtain the string for the given enumerated value.
@@ -100,17 +71,7 @@ public:
      * @return string or NULL if out of range.
      * @param value the enumerated value to look up.
      **/
-    const char *Lookup(uint32_t value) const
-    {
-        if (value >= _numEntries)
-            return NULL;
-
-        if (_numEntries > _reverseMap.size())
-            CreateReverseMapping();
-
-        return _reverseMap[value];
-    }
-
+    const char *Lookup(uint32_t value) const;
 
     /**
      * Obtain the number of entries currently present in this
@@ -141,5 +102,3 @@ public:
 };
 
 }
-}
-

@@ -6,6 +6,20 @@
 
 namespace vespalib {
 
+template<typename T, typename F>
+struct cast_static {
+    T operator() (const F & o) const {
+        return static_cast<T>(o);
+    }
+};
+
+template<typename L, typename R>
+struct equal_to : public std::binary_function<L, R, bool>
+{
+    bool operator()(const L & __x, const R & __y) const { return __x == __y; }
+    bool operator()(const R & __x, const L & __y) const { return __x == __y; }
+};
+
 template<typename K> struct hash {
     // specializations operate as functor for known key types
     size_t operator() (const K & v) const {

@@ -13,6 +13,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hashtable.hpp>
 #include <sstream>
 #include <algorithm>
 
@@ -23,8 +24,8 @@ namespace metrics {
 
 typedef MetricsmanagerConfig Config;
 
-MetricManager::ConsumerSpec::ConsumerSpec() : includedMetrics() { }
-MetricManager::ConsumerSpec::~ConsumerSpec() { }
+MetricManager::ConsumerSpec::ConsumerSpec() = default;
+MetricManager::ConsumerSpec::~ConsumerSpec() = default;
 
 void
 MetricManager::assertMetricLockLocked(const MetricLockGuard& g) const {

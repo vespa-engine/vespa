@@ -245,11 +245,7 @@ public:
      *
      * @return field index or -1 if not found.
      **/
-    int GetIndexFromName(const char* name) const
-    {
-        NameIdMap::const_iterator found(_nameMap.find(name));
-        return (found != _nameMap.end()) ? found->second : -1;
-    }
+    int GetIndexFromName(const char* name) const;
 
 
     /**

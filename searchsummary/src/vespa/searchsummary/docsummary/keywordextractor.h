@@ -51,11 +51,7 @@ private:
         return false;
     }
 
-    bool IsLegalIndexName(const char *idxName) const
-    {
-        return _legalIndexes.find(idxName) != _legalIndexes.end();
-    }
-
+    bool IsLegalIndexName(const char *idxName) const;
 public:
     explicit KeywordExtractor(IDocsumEnvironment * env);
     ~KeywordExtractor();

@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vespa/config/common/configparser.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hashtable.hpp>
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
@@ -420,6 +421,25 @@ Schema::getFieldSetId(vespalib::stringref name) const
 {
     return getFieldId(name, _fieldSetIds);
 }
+
+bool
+Schema::isIndexField(vespalib::stringref name) const
+{
+    return _indexIds.find(name) != _indexIds.end();
+}
+
+bool
+Schema::isSummaryField(vespalib::stringref name) const
+{
+    return _summaryIds.find(name) != _summaryIds.end();
+}
+
+bool
+Schema::isAttributeField(vespalib::stringref name) const
+{
+    return _attributeIds.find(name) != _attributeIds.end();
+}
+
 
 void
 Schema::swap(Schema &rhs)
