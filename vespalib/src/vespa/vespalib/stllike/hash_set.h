@@ -48,18 +48,18 @@ public:
     template <typename Func>
     void for_each(Func func) const { _ht.for_each(func); }
 
-    template< typename AltKey, typename AltExtract, typename AltHash, typename AltEqual >
+    template< typename AltKey, typename AltExtract=std::_Identity<K>, typename AltHash=vespalib::hash<AltKey>, typename AltEqual=equal_to<AltKey, K> >
     const_iterator find(const AltKey & key) const { return _ht.template find<AltKey, AltExtract, AltHash, AltEqual>(key); }
 
-    template< typename AltKey, typename AltExtract, typename AltHash, typename AltEqual >
+    template< typename AltKey, typename AltExtract=std::_Identity<K>, typename AltHash=vespalib::hash<AltKey>, typename AltEqual=equal_to<AltKey, K> >
     iterator find(const AltKey & key) { return _ht.template find<AltKey, AltExtract, AltHash, AltEqual>(key); }
 
-    template< typename AltKey, typename AltExtract, typename AltHash, typename AltEqual >
+    template< typename AltKey, typename AltExtract, typename AltHash=vespalib::hash<AltKey>, typename AltEqual=equal_to<AltKey, K> >
     const_iterator find(const AltKey & key, const AltExtract & altExtract) const {
         return _ht.template find<AltKey, AltExtract, AltHash, AltEqual>(key, altExtract);
     }
 
-    template< typename AltKey, typename AltExtract, typename AltHash, typename AltEqual >
+    template< typename AltKey, typename AltExtract, typename AltHash=vespalib::hash<AltKey>, typename AltEqual=equal_to<AltKey, K> >
     iterator find(const AltKey & key, const AltExtract & altExtract) {
         return _ht.template find<AltKey, AltExtract, AltHash, AltEqual>(key, altExtract);
     }

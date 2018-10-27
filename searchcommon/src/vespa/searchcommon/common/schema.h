@@ -293,11 +293,7 @@ public:
      * @return true if field is an index field.
      * @param name the name of the field.
      **/
-    bool
-    isIndexField(vespalib::stringref name) const
-    {
-        return _indexIds.find(name) != _indexIds.end();
-    }
+    bool isIndexField(vespalib::stringref name) const;
 
     /**
      * Check if a field is a summary field
@@ -305,22 +301,15 @@ public:
      * @return true if field is an summary field.
      * @param name the name of the field.
      **/
-    bool
-    isSummaryField(vespalib::stringref name) const
-    {
-        return _summaryIds.find(name) != _summaryIds.end();
-    }
+    bool isSummaryField(vespalib::stringref name) const;
+
     /**
      * Check if a field is a attribute field
      *
      * @return true if field is an attribute field.
      * @param name the name of the field.
      **/
-    bool
-    isAttributeField(vespalib::stringref name) const
-    {
-        return _attributeIds.find(name) != _attributeIds.end();
-    }
+    bool isAttributeField(vespalib::stringref name) const;
 
     /**
      * Get information about a specific attribute field using the given fieldId.

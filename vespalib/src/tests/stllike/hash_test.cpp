@@ -154,14 +154,14 @@ TEST("test hash set with simple type")
 
 TEST("test hash map iterator stability")
 {
-    hash_map<int, int> h;
+    hash_map<uint32_t, uint32_t> h;
     EXPECT_EQUAL(1ul, h.capacity());
     for (size_t i(0); i < 100; i++) {
         EXPECT_TRUE(h.find(i) == h.end());
         h[i] = i;
         EXPECT_TRUE(h.find(i) != h.end());
-        int * p1 = & h.find(i)->second;
-        int * p2 = & h[i];
+        uint32_t * p1 = & h.find(i)->second;
+        uint32_t * p2 = & h[i];
         EXPECT_EQUAL(p1, p2);
     }
     EXPECT_EQUAL(128ul, h.capacity());

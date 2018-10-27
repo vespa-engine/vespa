@@ -50,6 +50,25 @@ public:
     void erase(const_iterator it)               { return erase(it->first); }
     iterator find(const K & key)                { return _ht.find(key); }
     const_iterator find(const K & key)    const { return _ht.find(key); }
+
+    template< typename AltKey, typename AltExtract=std::_Identity<K>, typename AltHash=vespalib::hash<AltKey>, typename AltEqual=equal_to<AltKey, K> >
+    const_iterator find(const AltKey & key) const {
+        return _ht.template find<AltKey, AltExtract, AltHash, AltEqual>(key);
+    }
+    template< typename AltKey, typename AltExtract=std::_Identity<K>, typename AltHash=vespalib::hash<AltKey>, typename AltEqual=equal_to<AltKey, K> >
+    iterator find(const AltKey & key) {
+        return _ht.template find<AltKey, AltExtract, AltHash, AltEqual>(key);
+    }
+    template< typename AltKey, typename AltExtract, typename AltHash=vespalib::hash<AltKey>, typename AltEqual=equal_to<AltKey, K> >
+    const_iterator find(const AltKey & key, const AltExtract & altExtract) const {
+        return _ht.template find<AltKey, AltExtract, AltHash, AltEqual>(key, altExtract);
+    }
+
+    template< typename AltKey, typename AltExtract, typename AltHash=vespalib::hash<AltKey>, typename AltEqual=equal_to<AltKey, K> >
+    iterator find(const AltKey & key, const AltExtract & altExtract) {
+        return _ht.template find<AltKey, AltExtract, AltHash, AltEqual>(key, altExtract);
+    }
+
     void clear();
     void resize(size_t newSize);
     void swap(hash_map & rhs);
