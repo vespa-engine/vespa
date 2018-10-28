@@ -23,18 +23,22 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * This component will monitor the set of tenants in the config server by watching in ZooKeeper.
@@ -70,9 +74,10 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
 
     private final MetricUpdater metricUpdater;
     private final ExecutorService pathChildrenExecutor = Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName()));
+    private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService = new ScheduledThreadPoolExecutor(1);
     private final Optional<Curator.DirectoryCache> directoryCache;
-
+    private final boolean throwExceptionIfBootstrappingFails;
 
     /**
      * Creates a new tenant repository
@@ -93,13 +98,16 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
      */
     public TenantRepository(GlobalComponentRegistry globalComponentRegistry, boolean useZooKeeperWatchForTenantChanges) {
         this.globalComponentRegistry = globalComponentRegistry;
+        ConfigserverConfig configserverConfig = globalComponentRegistry.getConfigserverConfig();
+        this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders());
+        this.throwExceptionIfBootstrappingFails = configserverConfig.throwIfBootstrappingTenantRepoFails();
         this.curator = globalComponentRegistry.getCurator();
         metricUpdater = globalComponentRegistry.getMetrics().getOrCreateMetricUpdater(Collections.emptyMap());
         this.tenantListeners.add(globalComponentRegistry.getTenantListener());
         curator.framework().getConnectionStateListenable().addListener(this);
 
         curator.create(tenantsPath);
-        createSystemTenants(globalComponentRegistry.getConfigserverConfig());
+        createSystemTenants(configserverConfig);
         curator.create(vespaPath);
 
         if (useZooKeeperWatchForTenantChanges) {
@@ -110,7 +118,7 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
             this.directoryCache = Optional.empty();
         }
         log.log(LogLevel.DEBUG, "Creating all tenants");
-        createTenants();
+        bootstrapTenants();
         notifyTenantsLoaded();
         log.log(LogLevel.DEBUG, "All tenants created");
         checkForRemovedApplicationsService.scheduleWithFixedDelay(this::removeUnusedApplications,
@@ -129,30 +137,20 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
         addTenant(TenantBuilder.create(globalComponentRegistry, tenantName));
     }
 
-    // For testing
     public synchronized void addTenant(TenantBuilder builder) {
         writeTenantPath(builder.getTenantName());
         createTenant(builder);
     }
 
-    /**
-     * Reads the set of tenants in patch cache.
-     *
-     * @return a set of tenant names
-     */
-    private Set<TenantName> readTenantsFromZooKeeper() {
-        Set<TenantName> tenants = new LinkedHashSet<>();
-        for (String tenant : curator.getChildren(tenantsPath)) {
-            tenants.add(TenantName.from(tenant));
-        }
-        return tenants;
+     private static Set<TenantName> readTenantsFromZooKeeper(Curator curator) {
+        return curator.getChildren(tenantsPath).stream().map(TenantName::from).collect(Collectors.toSet());
     }
 
-    synchronized void createTenants() {
-        Set<TenantName> allTenants = readTenantsFromZooKeeper();
+    private synchronized void updateTenants() {
+        Set<TenantName> allTenants = readTenantsFromZooKeeper(curator);
         log.log(LogLevel.DEBUG, "Create tenants, tenants found in zookeeper: " + allTenants);
         checkForRemovedTenants(allTenants);
-        checkForAddedTenants(allTenants);
+        allTenants.stream().filter(tenantName -> ! tenants.containsKey(tenantName)).forEach(this::createTenant);
         metricUpdater.setTenants(tenants.size());
     }
 
@@ -164,16 +162,32 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
         }
     }
 
-    private void checkForAddedTenants(Set<TenantName> newTenants) {
-        // TODO: Creating an executor here for every invocation does not seem optimal
-        ExecutorService executor = Executors.newFixedThreadPool(globalComponentRegistry.getConfigserverConfig().numParallelTenantLoaders());
-        for (TenantName tenantName : newTenants) {
-            // Note: the http handler will check if the tenant exists, and throw accordingly
-            executor.execute(() -> createTenant(tenantName));
+    private void bootstrapTenants() {
+        // Keep track of tenants created
+        Map<TenantName, Future<?>> futures = new HashMap<>();
+        readTenantsFromZooKeeper(curator).forEach(t -> futures.put(t, bootstrapExecutor.submit(() -> createTenant(t))));
+
+        // Wait for all tenants to be created
+        Set<TenantName> failed = new HashSet<>();
+        for (Map.Entry<TenantName, Future<?>> f : futures.entrySet()) {
+            TenantName tenantName = f.getKey();
+            try {
+                f.getValue().get();
+            } catch (ExecutionException e) {
+                log.log(LogLevel.WARNING, "Failed to create tenant " + tenantName);
+                failed.add(tenantName);
+            } catch (InterruptedException e) {
+                log.log(LogLevel.WARNING, "Interrupted while creating tenant '" + tenantName + "'", e);
+            }
         }
-        executor.shutdown();
+
+        if (failed.size() > 0 && throwExceptionIfBootstrappingFails)
+            throw new RuntimeException("Could not create all tenants when bootstrapping, failed to create: " + failed);
+
+        metricUpdater.setTenants(tenants.size());
+        bootstrapExecutor.shutdown();
         try {
-            executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
+            bootstrapExecutor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
         } catch (InterruptedException e) {
             throw new RuntimeException("Executor for creating tenants did not terminate within timeout");
         }
@@ -183,19 +197,15 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
         createTenant(TenantBuilder.create(globalComponentRegistry, tenantName));
     }
 
-    // TODO: Fix exception handling and make method return tenant
-    private void createTenant(TenantBuilder builder) {
+    // Creates tenant and all its dependencies. This also includes loading active applications
+    protected void createTenant(TenantBuilder builder) {
         TenantName tenantName = builder.getTenantName();
         if (tenants.containsKey(tenantName)) return;
 
-        try {
-            log.log(LogLevel.INFO, "Creating tenant '" + tenantName + "'");
-            Tenant tenant = builder.build();
-            notifyNewTenant(tenant);
-            tenants.putIfAbsent(tenantName, tenant);
-        } catch (Exception e) {
-            log.log(LogLevel.WARNING, "Error loading tenant '" + tenantName + "', skipping.", e);
-        }
+        log.log(LogLevel.INFO, "Creating tenant '" + tenantName + "'");
+        Tenant tenant = builder.build();
+        notifyNewTenant(tenant);
+        tenants.putIfAbsent(tenantName, tenant);
     }
 
     /**
@@ -334,7 +344,7 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
         switch (event.getType()) {
             case CHILD_ADDED:
             case CHILD_REMOVED:
-                createTenants();
+                updateTenants();
                 break;
         }
     }

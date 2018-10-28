@@ -1,10 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
+import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.TestComponentRegistry;
@@ -15,7 +17,10 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.rules.TemporaryFolder;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -39,6 +44,12 @@ public class TenantRepositoryTest {
     private TenantRequestHandlerTest.MockReloadListener listener;
     private MockTenantListener tenantListener;
     private Curator curator;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
     public void setupSessions() {
@@ -147,12 +158,49 @@ public class TenantRepositoryTest {
         }
     }
 
+    @Test
+    public void testFailingBootstrap() throws IOException {
+        tenantRepository.close(); // stop using the one setup in Before method
+
+        // No exception if config is false
+        boolean throwIfBootstrappingTenantRepoFails = false;
+        new FailingDuringBootstrapTenantRepository(createComponentRegistry(throwIfBootstrappingTenantRepoFails));
+
+        // Should get exception if config is true
+        throwIfBootstrappingTenantRepoFails = true;
+        expectedException.expect(RuntimeException.class);
+        expectedException.expectMessage("Could not create all tenants when bootstrapping, failed to create: [default]");
+        new FailingDuringBootstrapTenantRepository(createComponentRegistry(throwIfBootstrappingTenantRepoFails));
+    }
+
     private List<String> readZKChildren(String path) throws Exception {
         return curator.framework().getChildren().forPath(path);
     }
 
     private void assertZooKeeperTenantPathExists(TenantName tenantName) throws Exception {
         assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenantRepository.tenantZkPath(tenantName)));
+    }
+
+    private GlobalComponentRegistry createComponentRegistry(boolean throwIfBootstrappingTenantRepoFails) throws IOException {
+        return new TestComponentRegistry.Builder()
+                .curator(new MockCurator())
+                .configServerConfig(new ConfigserverConfig(new ConfigserverConfig.Builder()
+                                                                   .throwIfBootstrappingTenantRepoFails(throwIfBootstrappingTenantRepoFails)
+                                                                   .configDefinitionsDir(temporaryFolder.newFolder("configdefs" + throwIfBootstrappingTenantRepoFails).getAbsolutePath())
+                                                                   .configServerDBDir(temporaryFolder.newFolder("configserverdb" + throwIfBootstrappingTenantRepoFails).getAbsolutePath())))
+                .build();
+    }
+
+    private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
+
+        public FailingDuringBootstrapTenantRepository(GlobalComponentRegistry globalComponentRegistry) {
+            super(globalComponentRegistry, false);
+        }
+
+        @Override
+        protected void createTenant(TenantBuilder builder) {
+            throw new RuntimeException("Failed to create: " + builder.getTenantName());
+        }
     }
 
 }
