@@ -23,11 +23,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -48,7 +46,7 @@ public class TenantRepositoryTest {
         globalComponentRegistry = new TestComponentRegistry.Builder().curator(curator).build();
         listener = (TenantRequestHandlerTest.MockReloadListener)globalComponentRegistry.getReloadListener();
         tenantListener = (MockTenantListener)globalComponentRegistry.getTenantListener();
-        tenantListener.tenantsLoaded = false;
+        assertFalse(tenantListener.tenantsLoaded);
         tenantRepository = new TenantRepository(globalComponentRegistry);
         assertTrue(tenantListener.tenantsLoaded);
         tenantRepository.addTenant(tenant1);
@@ -76,30 +74,27 @@ public class TenantRepositoryTest {
                                 Version.fromIntValues(1, 2, 3),
                                 MetricUpdater.createTestUpdater(),
                                 ApplicationId.defaultId())));
-        assertThat(listener.reloaded.get(), is(1));
-    }
-
-    private List<String> readZKChildren(String path) throws Exception {
-        return curator.framework().getChildren().forPath(path);
+        assertEquals(1, listener.reloaded.get());
     }
 
     @Test
     public void testTenantListenersNotified() throws Exception {
         tenantRepository.addTenant(tenant3);
-        assertThat("tenant3 not the last created tenant. Tenants: " + tenantRepository.getAllTenantNames() +
-                        ", /config/v2/tenants: " + readZKChildren("/config/v2/tenants"),
-                tenantListener.tenantCreatedName, is(tenant3));
+        assertEquals("tenant3 not the last created tenant. Tenants: " + tenantRepository.getAllTenantNames() +
+                             ", /config/v2/tenants: " + readZKChildren("/config/v2/tenants"),
+                     tenant3, tenantListener.tenantCreatedName);
         tenantRepository.deleteTenant(tenant2);
         assertFalse(tenantRepository.getAllTenantNames().contains(tenant2));
-        assertThat(tenantListener.tenantDeletedName, is(tenant2));
+        assertEquals(tenant2, tenantListener.tenantDeletedName);
     }
 
     @Test
-    public void testAddTenant() {
+    public void testAddTenant() throws Exception {
         Set<TenantName> allTenants = tenantRepository.getAllTenantNames();
         assertTrue(allTenants.contains(tenant1));
         assertTrue(allTenants.contains(tenant2));
         tenantRepository.addTenant(tenant3);
+        assertZooKeeperTenantPathExists(tenant3);
         allTenants = tenantRepository.getAllTenantNames();
         assertTrue(allTenants.contains(tenant1));
         assertTrue(allTenants.contains(tenant2));
@@ -107,14 +102,8 @@ public class TenantRepositoryTest {
     }
 
     @Test
-    public void testPutAdd() throws Exception {
-        tenantRepository.addTenant(tenant3);
-        assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenantRepository.tenantZkPath(tenant3)));
-    }
-    
-    @Test
-    public void testDelete() throws Exception {
-        assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenantRepository.tenantZkPath(tenant1)));
+    public void testDeleteTenant() throws Exception {
+        assertZooKeeperTenantPathExists(tenant1);
         tenantRepository.deleteTenant(tenant1);
         assertFalse(tenantRepository.getAllTenantNames().contains(tenant1));
 
@@ -127,9 +116,9 @@ public class TenantRepositoryTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testDeleteOfDefaultTenant()  {
+    public void testDeletingDefaultTenant()  {
         try {
-            assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenantRepository.tenantZkPath(TenantName.defaultName())));
+            assertZooKeeperTenantPathExists(TenantName.defaultName());
         } catch (Exception e) {
             fail("default tenant does not exist");
         }
@@ -156,6 +145,14 @@ public class TenantRepositoryTest {
             assertTrue(tenantRepository.getAllTenantNames().containsAll(expectedTenants));
             tenantRepository.close();
         }
+    }
+
+    private List<String> readZKChildren(String path) throws Exception {
+        return curator.framework().getChildren().forPath(path);
+    }
+
+    private void assertZooKeeperTenantPathExists(TenantName tenantName) throws Exception {
+        assertNotNull(globalComponentRegistry.getCurator().framework().checkExists().forPath(tenantRepository.tenantZkPath(tenantName)));
     }
 
 }
