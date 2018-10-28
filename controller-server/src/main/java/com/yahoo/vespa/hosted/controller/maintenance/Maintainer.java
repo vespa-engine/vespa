@@ -3,12 +3,15 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -38,6 +41,9 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     }
 
     public Maintainer(Controller controller, Duration interval, JobControl jobControl, String name, Set<SystemName> permittedSystems) {
+        if (interval.isNegative() || interval.isZero())
+            throw new IllegalArgumentException("Interval must be positive, but was " + interval);
+
         this.controller = controller;
         this.maintenanceInterval = interval;
         this.jobControl = jobControl;
@@ -45,7 +51,8 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         this.permittedSystems = ImmutableSet.copyOf(permittedSystems);
 
         service = new ScheduledThreadPoolExecutor(1);
-        service.scheduleAtFixedRate(this, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
+        long delay = staggeredDelay(controller.curator().cluster(), controller.hostname(), controller.clock().instant(), interval);
+        service.scheduleAtFixedRate(this, delay, interval.toMillis(), TimeUnit.MILLISECONDS);
         jobControl.started(name());
     }
     
@@ -89,6 +96,15 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     @Override
     public final String toString() {
         return name();
+    }
+
+    static long staggeredDelay(List<HostName> cluster, HostName host, Instant now, Duration interval) {
+        if ( ! cluster.contains(host))
+            return interval.toMillis();
+
+        long offset = cluster.indexOf(host) * interval.toMillis() / cluster.size();
+        long timeUntilNextRun = Math.floorMod(offset - now.toEpochMilli(), interval.toMillis());
+        return timeUntilNextRun + interval.toMillis() / cluster.size();
     }
 
 }
