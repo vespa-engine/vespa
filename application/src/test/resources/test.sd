@@ -4,19 +4,15 @@ search test {
   document test {
 
     field title type string {
-      # index-to: title, default
       weight: 30
       stemming: none
       bolding: on
-      body
     }
 
     field body type string {
-      # index-to: body, default
       weight: 6
       stemming: none
       summary: dynamic
-      body
     }
   }
 
