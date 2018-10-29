@@ -4,26 +4,19 @@ search blog {
   document blog {
 
     field title type string {
-	    header
         indexing: summary | index
-	    # index-to: default
     }
 
     field author type string {
-	    header
 	    indexing: summary | index
-	    # index-to: default
     }
 
     field body type string {
-        header
 	    indexing: summary | index
     }
 
     field url type uri {
-        header
 	    indexing: index | summary
-	    # index-to: default
     }
   }
 
