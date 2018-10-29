@@ -93,9 +93,9 @@ search types {
     #field wildcardfield2 type map<?,?> {
     #}
 
-    field arrarr type array<array<array<string>>> {header}
-    field maparr type array<map<string, string>> {header}
-    field complexarray type array< map<int, array<array<string>>> > {body}
+    field arrarr type array<array<array<string>>> {}
+    field maparr type array<map<string, string>> {}
+    field complexarray type array< map<int, array<array<string>>> > {}
 
     struct mystruct {
       field bytearr type array<byte>{}
@@ -104,9 +104,9 @@ search types {
       field structfield type string {}
     }
 
-    field mystructfield type mystruct {header}
-    field mystructmap type map<int, mystruct> {header}
-    field mystructarr type array<mystruct> {header}
+    field mystructfield type mystruct {}
+    field mystructmap type map<int, mystruct> {}
+    field mystructarr type array<mystruct> {}
 
     struct folder {
       field Version                   type int {}
@@ -133,7 +133,6 @@ search types {
         create-if-nonexistent
         remove-if-zero
       }
-      header
     }
 
     # Field defined same way as tag    
@@ -143,13 +142,11 @@ search types {
         create-if-nonexistent
         remove-if-zero
       }
-      header
     }
 
   }
 
   field pst_sta_boldingoff_nomatch_tag_01 type tag {
-    body
   } 
 
   field other type long {
