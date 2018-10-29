@@ -5,8 +5,7 @@
 #include <vespa/vespalib/stllike/hash_map_equal.hpp>
 #include <cassert>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 const Property::Value Property::_emptyValue;
 const Property::Values Property::_emptyValues;
@@ -220,25 +219,24 @@ Properties::lookup(vespalib::stringref key) const
 Property Properties::lookup(vespalib::stringref namespace1,
                             vespalib::stringref key) const
 {
-    if (namespace1.empty() ||
-        key.empty())
-    {
+    if (namespace1.empty() || key.empty()) {
         return Property();
     }
-    return lookup(namespace1 + "." + key);
+    vespalib::string fullKey(namespace1);
+    fullKey.append('.').append(key);
+    return lookup(fullKey);
 }
 
 Property Properties::lookup(vespalib::stringref namespace1,
                             vespalib::stringref namespace2,
                             vespalib::stringref key) const
 {
-    if (namespace1.empty() ||
-        namespace2.empty() ||
-        key.empty())
-    {
+    if (namespace1.empty() || namespace2.empty() || key.empty()) {
         return Property();
     }
-    return lookup(namespace1 + "." + namespace2 + "." + key);
+    vespalib::string fullKey(namespace1);
+    fullKey.append('.').append(namespace2).append('.').append(key);
+    return lookup(fullKey);
 }
 
 Property Properties::lookup(vespalib::stringref namespace1,
@@ -246,15 +244,12 @@ Property Properties::lookup(vespalib::stringref namespace1,
                             vespalib::stringref namespace3,
                             vespalib::stringref key) const
 {
-    if (namespace1.empty() ||
-        namespace2.empty() ||
-        namespace3.empty() ||
-        key.empty())
-    {
+    if (namespace1.empty() || namespace2.empty() || namespace3.empty() || key.empty()) {
         return Property();
     }
-    return lookup(namespace1 + "." + namespace2 + "."
-                  + namespace3 + "." + key);
+    vespalib::string fullKey(namespace1);
+    fullKey.append('.').append(namespace2).append('.').append(namespace3).append('.').append(key);
+    return lookup(fullKey);
 }
 
 void Properties::swap(Properties & rhs)
@@ -263,7 +258,6 @@ void Properties::swap(Properties & rhs)
     std::swap(_numValues, rhs._numValues);
 }
 
-} // namespace fef
-} // namespace search
+}
 
 VESPALIB_HASH_MAP_INSTANTIATE(vespalib::string, search::fef::Property::Values);
