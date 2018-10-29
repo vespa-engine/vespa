@@ -452,7 +452,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             return ((zone.environment() != Environment.prod) || RegionName.from("us-east-3").equals(zone.region()))
                     ? ContainerCluster.G1GC : ContainerCluster.CMS;
         } else {
-            return ContainerCluster.CMS;
+            return ContainerCluster.G1GC;
         }
     }
     private String getJvmOptions(ContainerCluster cluster, Element nodesElement, DeployLogger deployLogger) {
