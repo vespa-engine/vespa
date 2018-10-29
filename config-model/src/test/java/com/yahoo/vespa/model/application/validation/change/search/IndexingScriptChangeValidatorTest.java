@@ -66,7 +66,7 @@ public class IndexingScriptChangeValidatorTest {
                     FIELD + " { indexing: index | summary }").
         assertValidation(expectedAction("add index aspect",
                 "{ input f1 | summary f1; }",
-                "{ input f1 | tokenize normalize stem:\"SHORTEST\" | index f1 | summary f1; }"));
+                "{ input f1 | tokenize normalize stem:\"BEST\" | index f1 | summary f1; }"));
     }
 
     @Test
@@ -74,7 +74,7 @@ public class IndexingScriptChangeValidatorTest {
         new Fixture(FIELD + " { indexing: index | summary }",
                     FIELD + " { indexing: summary }").
                 assertValidation(expectedAction("remove index aspect",
-                        "{ input f1 | tokenize normalize stem:\"SHORTEST\" | index f1 | summary f1; }",
+                        "{ input f1 | tokenize normalize stem:\"BEST\" | index f1 | summary f1; }",
                         "{ input f1 | summary f1; }"));
     }
 
@@ -82,8 +82,8 @@ public class IndexingScriptChangeValidatorTest {
     public void requireThatChangingStemmingRequireRefeed() throws Exception {
         new Fixture(FIELD + " { indexing: index }",
                     FIELD + " { indexing: index \n stemming: none }").
-                assertValidation(expectedAction("stemming: 'shortest' -> 'none'",
-                        "{ input f1 | tokenize normalize stem:\"SHORTEST\" | index f1; }",
+                assertValidation(expectedAction("stemming: 'best' -> 'none'",
+                        "{ input f1 | tokenize normalize stem:\"BEST\" | index f1; }",
                         "{ input f1 | tokenize normalize | index f1; }"));
     }
 
@@ -92,8 +92,8 @@ public class IndexingScriptChangeValidatorTest {
         new Fixture(FIELD + " { indexing: index }",
                     FIELD + " { indexing: index \n normalizing: none }").
                 assertValidation(expectedAction("normalizing: 'ACCENT' -> 'NONE'",
-                        "{ input f1 | tokenize normalize stem:\"SHORTEST\" | index f1; }",
-                        "{ input f1 | tokenize stem:\"SHORTEST\" | index f1; }"));
+                        "{ input f1 | tokenize normalize stem:\"BEST\" | index f1; }",
+                        "{ input f1 | tokenize stem:\"BEST\" | index f1; }"));
     }
 
     @Test
@@ -111,19 +111,19 @@ public class IndexingScriptChangeValidatorTest {
                     FIELD + " { indexing: summary \n summary: dynamic }").
                 assertValidation(expectedAction("summary field 'f1' transform: 'none' -> 'dynamicteaser'",
                         "{ input f1 | summary f1; }",
-                        "{ input f1 | tokenize normalize stem:\"SHORTEST\" | summary f1; }"));
+                        "{ input f1 | tokenize normalize stem:\"BEST\" | summary f1; }"));
     }
 
     @Test
     public void requireThatMultipleChangesRequireRefeed() throws Exception {
          new Fixture(FIELD + " { indexing: index } " + FIELD_F2 + " { indexing: index }",
                      FIELD + " { indexing: index \n stemming: none } " + FIELD_F2 + " { indexing: index \n normalizing: none }").
-                 assertValidation(Arrays.asList(expectedAction("f1", "stemming: 'shortest' -> 'none'",
-                                 "{ input f1 | tokenize normalize stem:\"SHORTEST\" | index f1; }",
+                 assertValidation(Arrays.asList(expectedAction("f1", "stemming: 'best' -> 'none'",
+                                 "{ input f1 | tokenize normalize stem:\"BEST\" | index f1; }",
                                  "{ input f1 | tokenize normalize | index f1; }"),
                          expectedAction("f2", "normalizing: 'ACCENT' -> 'NONE'",
-                                 "{ input f2 | tokenize normalize stem:\"SHORTEST\" | index f2; }",
-                                 "{ input f2 | tokenize stem:\"SHORTEST\" | index f2; }")));
+                                 "{ input f2 | tokenize normalize stem:\"BEST\" | index f2; }",
+                                 "{ input f2 | tokenize stem:\"BEST\" | index f2; }")));
     }
 
     @Test

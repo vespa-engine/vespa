@@ -63,8 +63,8 @@ public class IndexingValidationTestCase extends AbstractExportingTestCase {
     @Test
     public void testExtraField() throws IOException, ParseException {
         assertIndexing(
-                Arrays.asList("clear_state | guard { input my_index | tokenize normalize stem:\"SHORTEST\" | index my_index | summary my_index }",
-                              "clear_state | guard { input my_input | tokenize normalize stem:\"SHORTEST\" | index my_extra | summary my_extra }"),
+                Arrays.asList("clear_state | guard { input my_index | tokenize normalize stem:\"BEST\" | index my_index | summary my_index }",
+                              "clear_state | guard { input my_input | tokenize normalize stem:\"BEST\" | index my_extra | summary my_extra }"),
                 SearchBuilder.buildFromFile("src/test/examples/indexing_extra.sd"));
     }
 

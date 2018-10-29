@@ -15,11 +15,13 @@ import static org.junit.Assert.assertEquals;
  * @author bratseth
  */
 public class CommentTestCase extends SearchDefinitionTestCase {
+
     @Test
     public void testComments() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/examples/comment.sd");
         SDField field = search.getConcreteField("a");
-        assertEquals("{ input a | tokenize normalize stem:\"SHORTEST\" | summary a | index a; }",
+        assertEquals("{ input a | tokenize normalize stem:\"BEST\" | summary a | index a; }",
                      field.getIndexingScript().toString());
     }
+
 }

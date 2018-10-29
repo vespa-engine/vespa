@@ -7,11 +7,13 @@ import org.junit.Test;
 import java.io.IOException;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class OrderIlscriptsTestCase extends AbstractExportingTestCase {
+
     @Test
     public void testOrderIlscripts() throws IOException, ParseException {
         assertCorrectDeriving("orderilscripts");
     }
+
 }
