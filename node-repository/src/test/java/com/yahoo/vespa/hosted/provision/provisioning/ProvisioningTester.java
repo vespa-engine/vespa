@@ -26,7 +26,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
@@ -368,12 +367,6 @@ public class ProvisioningTester {
 
     private Flavor getNodeFlavor(String hostname) {
         return nodeRepository.getNode(hostname).map(Node::flavor).orElseThrow(() -> new RuntimeException("No flavor for host " + hostname));
-    }
-
-    public static Set<HostSpec> toHostSpecs(List<Node> nodes) {
-        return nodes.stream()
-                .map(node -> new HostSpec(node.hostname(), node.allocation().map(Allocation::membership)))
-                .collect(Collectors.toSet());
     }
 
     private static class NullProvisionLogger implements ProvisionLogger {
