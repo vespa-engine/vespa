@@ -186,7 +186,7 @@ public class Authorizer implements BiPredicate<NodePrincipal, URI> {
         if (!isChildOf(root, path)) {
             return Optional.empty();
         }
-        path = path.substring(root.length(), path.length());
+        path = path.substring(root.length());
         int firstSeparator = path.indexOf('/');
         if (firstSeparator == -1) {
             return Optional.of(path);
@@ -203,7 +203,7 @@ public class Authorizer implements BiPredicate<NodePrincipal, URI> {
         if (lastSeparator == -1) {
             return path;
         }
-        return path.substring(lastSeparator + 1, path.length());
+        return path.substring(lastSeparator + 1);
     }
 
 }
