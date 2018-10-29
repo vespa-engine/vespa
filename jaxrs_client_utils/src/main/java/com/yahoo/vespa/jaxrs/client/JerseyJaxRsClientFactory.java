@@ -23,20 +23,34 @@ import java.util.Collections;
  */
 public class JerseyJaxRsClientFactory implements JaxRsClientFactory {
 
+    private static final int DEFAULT_CONNECT_TIMEOUT_MS = 30000;
+    private static final int DEFAULT_READ_TIMEOUT_MS = 30000;
+
     // Client is a heavy-weight object with a finalizer so we create only one and re-use it
     private final Client client;
 
     public JerseyJaxRsClientFactory() {
-        this(null, null, null);
+        this(DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_READ_TIMEOUT_MS);
     }
 
     public JerseyJaxRsClientFactory(SSLContext sslContext, HostnameVerifier hostnameVerifier, String userAgent) {
+        this(DEFAULT_CONNECT_TIMEOUT_MS, DEFAULT_READ_TIMEOUT_MS, sslContext, hostnameVerifier, userAgent);
+    }
+
+    public JerseyJaxRsClientFactory(int connectTimeoutMs, int readTimeoutMs) {
+        this(connectTimeoutMs, readTimeoutMs, null, null, null);
+    }
+
+    public JerseyJaxRsClientFactory(int connectTimeoutMs, int readTimeoutMs, SSLContext sslContext,
+                                    HostnameVerifier hostnameVerifier, String userAgent) {
         /*
          * Configure client with some workarounds for HTTP/JAX-RS/Jersey issues. See:
          *   https://jersey.java.net/apidocs/latest/jersey/org/glassfish/jersey/client/ClientProperties.html#SUPPRESS_HTTP_COMPLIANCE_VALIDATION
          *   https://jersey.java.net/apidocs/latest/jersey/org/glassfish/jersey/client/HttpUrlConnectorProvider.html#SET_METHOD_WORKAROUND
          */
         ClientBuilder builder = ClientBuilder.newBuilder()
+                                             .property(ClientProperties.CONNECT_TIMEOUT, connectTimeoutMs)
+                                             .property(ClientProperties.READ_TIMEOUT, readTimeoutMs)
                                              .property(ClientProperties.SUPPRESS_HTTP_COMPLIANCE_VALIDATION, true) // Allow empty PUT. TODO: Fix API.
                                              .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true) // Allow e.g. PATCH method.
                                              .property(ClientProperties.FOLLOW_REDIRECTS, true);
@@ -53,16 +67,10 @@ public class JerseyJaxRsClientFactory implements JaxRsClientFactory {
     }
 
     @Override
-    public <T> T createClient(Params<T> params) {
-        WebTarget target = client.target(params.uri());
-        target.property(ClientProperties.CONNECT_TIMEOUT, (int) params.connectTimeout().toMillis());
-        target.property(ClientProperties.READ_TIMEOUT, (int) params.readTimeout().toMillis());
-        return WebResourceFactory.newResource(params.apiClass(), target);
-    }
-
-    @Override
     public <T> T createClient(Class<T> apiClass, HostName hostName, int port, String pathPrefix, String scheme) {
         UriBuilder uriBuilder = UriBuilder.fromPath(pathPrefix).host(hostName.s()).port(port).scheme(scheme);
-        return createClient(new Params<>(apiClass, uriBuilder.build()));
+        WebTarget target = client.target(uriBuilder);
+        return WebResourceFactory.newResource(apiClass, target);
     }
+
 }
