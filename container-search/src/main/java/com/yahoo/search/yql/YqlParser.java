@@ -1254,15 +1254,21 @@ public class YqlParser implements Parser {
                                      OperatorNode<ExpressionOperator> ast, Class<?> parent,
                                      SegmentWhen segmentPolicy) {
         String wordData = getStringContents(ast);
-        return instantiateWordItem(field, wordData, ast, parent, segmentPolicy, false, decideParsingLanguage(ast, wordData));
+        return instantiateWordItem(field, wordData, ast, parent, segmentPolicy, null, decideParsingLanguage(ast, wordData));
     }
 
+    /**
+     * Converts the payload of a contains statement into an Item
+     *
+     * @param exactMatch true to always create an ExactStringItem, false to never do so, and null to
+     *                   make the choice based on the field settings
+     */
     @NonNull
     private Item instantiateWordItem(String field,
                                      String rawWord,
                                      OperatorNode<ExpressionOperator> ast, Class<?> parent,
                                      SegmentWhen segmentPolicy,
-                                     boolean exactMatch,
+                                     Boolean exactMatch,
                                      Language language) {
         String wordData = rawWord;
         if (getAnnotation(ast, NFKC, Boolean.class, Boolean.FALSE,
@@ -1279,6 +1285,7 @@ public class YqlParser implements Parser {
                                             "setting for whether to use suffix match of input data");
         boolean substrMatch = getAnnotation(ast, SUBSTRING, Boolean.class, Boolean.FALSE,
                                             "setting for whether to use substring match of input data");
+        boolean exact = exactMatch != null ? exactMatch : indexFactsSession.getIndex(field).isExact();
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        Query.Type.ALL.toString(), "grammar for handling word input");
         Preconditions.checkArgument((prefixMatch ? 1 : 0) +
@@ -1286,7 +1293,7 @@ public class YqlParser implements Parser {
                                     "Only one of prefix, substring and suffix can be set.");
 
         TaggableItem wordItem;
-        if (exactMatch) {
+        if (exact) {
             wordItem = new ExactStringItem(wordData, fromQuery);
         } else if (prefixMatch) {
             wordItem = new PrefixItem(wordData, fromQuery);
