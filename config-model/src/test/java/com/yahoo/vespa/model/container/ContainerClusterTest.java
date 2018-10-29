@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Optional;
 
+import static com.yahoo.vespa.model.container.ContainerCluster.G1GC;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -195,7 +196,7 @@ public class ContainerClusterTest {
         verifyGCOpts(isHosted, null, zone, expected);
         verifyGCOpts(isHosted, "-XX:+UseG1GC", zone, "-XX:+UseG1GC");
         Zone DEV = new Zone(SystemName.dev, zone.environment(), zone.region());
-        verifyGCOpts(isHosted, null, DEV, ContainerCluster.G1GC);
+        verifyGCOpts(isHosted, null, DEV, G1GC);
         verifyGCOpts(isHosted, "-XX:+UseConcMarkSweepGC", DEV, "-XX:+UseConcMarkSweepGC");
 
     }
@@ -203,10 +204,10 @@ public class ContainerClusterTest {
     @Test
     public void requireThatGCOptsIsHonoured() {
         final Zone US_EAST_3 = new Zone(Environment.prod, RegionName.from("us-east-3"));
-        verifyGCOpts(false, Zone.defaultZone(),ContainerCluster.CMS);
-        verifyGCOpts(false, US_EAST_3, ContainerCluster.CMS);
+        verifyGCOpts(false, Zone.defaultZone(),G1GC);
+        verifyGCOpts(false, US_EAST_3, G1GC);
         verifyGCOpts(true, Zone.defaultZone(), ContainerCluster.CMS);
-        verifyGCOpts(true, US_EAST_3, ContainerCluster.G1GC);
+        verifyGCOpts(true, US_EAST_3, G1GC);
     }
 
     @Test

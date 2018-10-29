@@ -105,7 +105,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         root.getConfig(qrStartBuilder, "jdisc/container.0");
         QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
-        assertEquals(ContainerCluster.CMS, qrStartConfig.jvm().gcopts());
+        assertEquals(ContainerCluster.G1GC, qrStartConfig.jvm().gcopts());
     }
 
     @Test
