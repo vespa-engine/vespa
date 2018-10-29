@@ -42,7 +42,7 @@ echo "Using maven command: ${MAVEN_CMD}"
 echo "Using maven extra opts: ${MAVEN_EXTRA_OPTS}"
 
 mvn_install() {
-    ${MAVEN_CMD} --quiet --batch-mode --no-snapshot-updates clean install -Dmaven.javadoc.skip=true ${MAVEN_EXTRA_OPTS} "$@"
+    ${MAVEN_CMD} --batch-mode --no-snapshot-updates clean install -Dmaven.javadoc.skip=true ${MAVEN_EXTRA_OPTS} "$@"
 }
 
 # Generate vtag map
