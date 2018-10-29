@@ -19,16 +19,18 @@ public class SingleSender implements SimpleFeedAccess {
     private final SharedSender.ResultCallback owner;
     private final SharedSender sender;
     private final List<MessageProcessor> messageProcessors = new ArrayList<>();
+    private final long timeofDoom;
     private boolean blockingQueue;
 
-    public SingleSender(SharedSender.ResultCallback owner, SharedSender sender, boolean blockingQueue) {
+    public SingleSender(SharedSender.ResultCallback owner, SharedSender sender, long timeoutMS, boolean blockingQueue) {
         this.owner = owner;
         this.sender = sender;
+        timeofDoom = System.currentTimeMillis() + timeoutMS;
         this.blockingQueue = blockingQueue;
     }
 
-    public SingleSender(SharedSender.ResultCallback owner, SharedSender sender) {
-        this(owner, sender, true);
+    public SingleSender(SharedSender.ResultCallback owner, int timeoutMS, SharedSender sender) {
+        this(owner, sender, timeoutMS, true);
     }
 
     @Override
@@ -103,4 +105,9 @@ public class SingleSender implements SimpleFeedAccess {
 
     @Override
     public void close() { }
+
+    @Override
+    boolean hasTimedOut() {
+        return System.currentTimeMillis() > timeofDoom;
+    }
 }
