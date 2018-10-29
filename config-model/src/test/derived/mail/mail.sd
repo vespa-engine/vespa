@@ -54,38 +54,31 @@ search mail {
     field body type string {
       indexing: summary | index
       match: substring
-      body
     }
 
     field attachmentcount type int {
       indexing: summary | index
-      body
     }
 
     field attachmentnames type string {
       indexing: index
-      body
     }
 
     field attachmenttypes type string {
       indexing: index
-      body
     }
 
     field attachmentlanguages type string {
       indexing: index
       match: prefix
-      body
     }
 
     field attachmentcontent type string {
       indexing: summary | index
       match: prefix
-      body
     }
 
     field attachments type raw[] {
-      body
     }
 
   }

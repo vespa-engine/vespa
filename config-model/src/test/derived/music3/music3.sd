@@ -5,37 +5,25 @@ search music3 {
 
     field title type string {
       indexing: summary | index
-      # index-to: title, default
       rank-type: about
-
-      header
     }
 
     field artist type string {
       indexing: summary | attribute | index
-      # index-to: artist, default
       rank-type:about
-
-      header
     }
 
     field year type int {
       indexing: summary | attribute
-
-      header
     }
 
     # Increase rank score of popular documents regardless of query
     field popularity type int {
       indexing: summary | attribute
-
-      header
     }
 
     field url type uri {
       indexing: summary | index
-
-      header
     }
 
   }
