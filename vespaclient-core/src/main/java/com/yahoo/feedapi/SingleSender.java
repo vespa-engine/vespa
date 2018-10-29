@@ -107,7 +107,7 @@ public class SingleSender implements SimpleFeedAccess {
     public void close() { }
 
     @Override
-    boolean hasTimedOut() {
+    public boolean hasTimedOut() {
         return System.currentTimeMillis() > timeofDoom;
     }
 }
