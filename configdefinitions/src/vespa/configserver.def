@@ -69,3 +69,4 @@ sleepTimeWhenRedeployingFails long default=30
 deleteApplicationLegacy bool default=false
 buildMinimalSetOfConfigModels bool default=true
 useDedicatedNodeForLogserver bool default=true
+throwIfBootstrappingTenantRepoFails bool default=false
