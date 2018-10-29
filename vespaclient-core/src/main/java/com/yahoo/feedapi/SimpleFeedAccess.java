@@ -14,7 +14,6 @@ public interface SimpleFeedAccess {
     void put(Document doc, TestAndSetCondition condition);
     void remove(DocumentId docId, TestAndSetCondition condition);
     void update(DocumentUpdate update, TestAndSetCondition condition);
-    boolean hasTimedOut();
     boolean isAborted();
     void close();
 }
