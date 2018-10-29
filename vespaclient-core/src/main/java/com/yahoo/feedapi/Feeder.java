@@ -95,6 +95,9 @@ public abstract class Feeder {
             } catch (XMLStreamException e) {
                 addException(e);
                 break;
+            } catch (NullPointerException e) {
+                addException(e);
+                break;
             } catch (Exception e) {
                 addException(e);
                 if (doAbort) {
