@@ -46,12 +46,12 @@ public class IndexingScriptRewriterTestCase extends SearchDefinitionTestCase {
     public void testDynamicSummaryRewriting() {
         SDField field = createField("test", DataType.STRING, "{ summary }");
         field.addSummaryField(createDynamicSummaryField(field, "dyn"));
-        assertIndexingScript("{ input test | tokenize normalize stem:\"SHORTEST\" | summary dyn; }", field);
+        assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" | summary dyn; }", field);
     }
 
     @Test
     public void testSummaryRewritingWithIndexing() {
-        assertIndexingScript("{ input test | tokenize normalize stem:\"SHORTEST\" | summary test | index test; }",
+        assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" | summary test | index test; }",
                              createField("test", DataType.STRING, "{ summary | index }"));
     }
 
@@ -62,7 +62,7 @@ public class IndexingScriptRewriterTestCase extends SearchDefinitionTestCase {
         field.addSummaryField(createStaticSummaryField(field, "test"));
         field.addSummaryField(createStaticSummaryField(field, "other"));
         field.addSummaryField(createDynamicSummaryField(field, "dyn2"));
-        assertIndexingScript("{ input test | tokenize normalize stem:\"SHORTEST\" | summary dyn | summary dyn2 | summary other | " +
+        assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" | summary dyn | summary dyn2 | summary other | " +
                              "summary test | index test; }", field);
     }
 
@@ -89,7 +89,7 @@ public class IndexingScriptRewriterTestCase extends SearchDefinitionTestCase {
     public void requireThatOutputDefaultsToCurrentField() {
         assertIndexingScript("{ input test | attribute test; }",
                              createField("test", DataType.STRING, "{ attribute; }"));
-        assertIndexingScript("{ input test | tokenize normalize stem:\"SHORTEST\" | index test; }",
+        assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" | index test; }",
                              createField("test", DataType.STRING, "{ index; }"));
         assertIndexingScript("{ input test | summary test; }",
                              createField("test", DataType.STRING, "{ summary; }"));
@@ -97,7 +97,7 @@ public class IndexingScriptRewriterTestCase extends SearchDefinitionTestCase {
 
     @Test
     public void testTokenizeComparisonDisregardsConfig() {
-        assertIndexingScript("{ input test | tokenize normalize stem:\"SHORTEST\" | summary test | index test; }",
+        assertIndexingScript("{ input test | tokenize normalize stem:\"BEST\" | summary test | index test; }",
                              createField("test", DataType.STRING, "{ summary | tokenize | index; }"));
     }
 
@@ -106,18 +106,18 @@ public class IndexingScriptRewriterTestCase extends SearchDefinitionTestCase {
         assertIndexing(Arrays.asList("clear_state | guard { input access | attribute access; }",
                 "clear_state | guard { input category | split \";\" | attribute category_arr; }",
                 "clear_state | guard { input category | tokenize | index category; }",
-                "clear_state | guard { input categories_src | lowercase | normalize | tokenize normalize stem:\"SHORTEST\" | index categories; }",
-                "clear_state | guard { input categoriesagain_src | lowercase | normalize | tokenize normalize stem:\"SHORTEST\" | index categoriesagain; }",
-                "clear_state | guard { input chatter | tokenize normalize stem:\"SHORTEST\" | index chatter; }",
-                "clear_state | guard { input description | tokenize normalize stem:\"SHORTEST\" | summary description | summary dyndesc | index description; }",
-                "clear_state | guard { input exactemento_src | lowercase | tokenize normalize stem:\"SHORTEST\" | index exactemento | summary exactemento; }",
-                "clear_state | guard { input longdesc | tokenize normalize stem:\"SHORTEST\" | summary dyndesc2 | summary dynlong | summary longdesc | summary longstat; }",
+                "clear_state | guard { input categories_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categories; }",
+                "clear_state | guard { input categoriesagain_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categoriesagain; }",
+                "clear_state | guard { input chatter | tokenize normalize stem:\"BEST\" | index chatter; }",
+                "clear_state | guard { input description | tokenize normalize stem:\"BEST\" | summary description | summary dyndesc | index description; }",
+                "clear_state | guard { input exactemento_src | lowercase | tokenize normalize stem:\"BEST\" | index exactemento | summary exactemento; }",
+                "clear_state | guard { input longdesc | tokenize normalize stem:\"BEST\" | summary dyndesc2 | summary dynlong | summary longdesc | summary longstat; }",
                 "clear_state | guard { input measurement | attribute measurement | summary measurement; }",
                 "clear_state | guard { input measurement | to_array | attribute measurement_arr; }",
                 "clear_state | guard { input popularity | attribute popularity; }",
                 "clear_state | guard { input popularity * input measurement | attribute popsiness; }",
                 "clear_state | guard { input smallattribute | attribute smallattribute; }",
-                "clear_state | guard { input title | tokenize normalize stem:\"SHORTEST\" | summary title | index title; }",
+                "clear_state | guard { input title | tokenize normalize stem:\"BEST\" | summary title | index title; }",
                 "clear_state | guard { input title . \" \" . input category | tokenize | summary exact | index exact; }"),
                 SearchBuilder.buildFromFile("src/test/examples/simple.sd"));
     }
