@@ -66,6 +66,18 @@ public class TimeBudget {
         });
     }
 
+    /** Returns the time left, possibly negative if the deadline has passed. */
+    public Optional<Duration> timeLeft() {
+        return timeout.map(timeout -> timeout.minus(timePassed()));
+    }
+
+    /** Returns the time left as a new TimeBudget. */
+    public TimeBudget timeLeftAsTimeBudget() {
+        Instant now = clock.instant();
+        Optional<Instant> deadline = deadline();
+        return new TimeBudget(clock, now, deadline.map(d -> Duration.between(now, d)));
+    }
+
     private static Duration nonNegativeBetween(Instant start, Instant end) {
         return makeNonNegative(Duration.between(start, end));
     }
