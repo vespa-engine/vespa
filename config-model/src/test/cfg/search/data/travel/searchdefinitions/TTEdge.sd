@@ -4,7 +4,6 @@ document TTEdge {
 # This field will contain a colon separate map for travel times per transport mode
     field TransportMode type array<string> {
         indexing: summary | index
-        header
     }
 }
 
