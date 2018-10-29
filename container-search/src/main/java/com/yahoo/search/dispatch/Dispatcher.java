@@ -88,21 +88,26 @@ public class Dispatcher extends AbstractComponent {
 
     public Optional<SearchInvoker> getSearchInvoker(Query query, FS4InvokerFactory fs4InvokerFactory) {
         if (query.properties().getBoolean(dispatchInternal, false)) {
-            String searchPath = query.getModel().getSearchPath();
-            if (searchPath != null) {
-                Optional<SearchInvoker> invoker = getSearchPathInvoker(query, searchPath, fs4InvokerFactory::getSearchInvoker);
-                if (invoker.isPresent()) {
-                    return invoker;
-                }
+            Optional<SearchInvoker> invoker = getSearchPathInvoker(query, fs4InvokerFactory::getSearchInvoker);
+
+            if(! invoker.isPresent()) {
+                invoker = getInternalInvoker(query, fs4InvokerFactory::getSearchInvoker);
             }
-            Optional<SearchInvoker> invoker = getInternalInvoker(query, fs4InvokerFactory::getSearchInvoker);
+            if(invoker.isPresent() && query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE)) {
+                query.setHits(0);
+                query.setOffset(0);
+            }
             return invoker;
         }
         return Optional.empty();
     }
 
     // build invoker based on searchpath
-    private Optional<SearchInvoker> getSearchPathInvoker(Query query, String searchPath, SearchInvokerSupplier invokerFactory) {
+    private Optional<SearchInvoker> getSearchPathInvoker(Query query, SearchInvokerSupplier invokerFactory) {
+        String searchPath = query.getModel().getSearchPath();
+        if(searchPath == null) {
+            return Optional.empty();
+        }
         try {
             List<SearchCluster.Node> nodes = SearchPath.selectNodes(searchPath, searchCluster);
             if (nodes.isEmpty()) {
