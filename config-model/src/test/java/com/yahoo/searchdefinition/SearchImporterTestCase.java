@@ -55,7 +55,7 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
         // First field
         field=(SDField) document.getField("title");
         assertEquals(DataType.STRING,field.getDataType());
-        assertEquals("{ input title | tokenize normalize stem:\"SHORTEST\" | summary title | index title; }", field.getIndexingScript().toString());
+        assertEquals("{ input title | tokenize normalize stem:\"BEST\" | summary title | index title; }", field.getIndexingScript().toString());
         assertTrue(!search.getIndex("default").isPrefix());
         assertTrue(search.getIndex("title").isPrefix());
         Iterator<String> titleAliases=search.getIndex("title").aliasIterator();
@@ -105,19 +105,19 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
 
         // Seventh field
         field= search.getConcreteField("categories");
-        assertEquals("{ input categories_src | lowercase | normalize | tokenize normalize stem:\"SHORTEST\" | index categories; }",
+        assertEquals("{ input categories_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categories; }",
                      field.getIndexingScript().toString());
         assertTrue(field.isHeader());
 
         // Eight field
         field= search.getConcreteField("categoriesagain");
-        assertEquals("{ input categoriesagain_src | lowercase | normalize | tokenize normalize stem:\"SHORTEST\" | index categoriesagain; }",
+        assertEquals("{ input categoriesagain_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categoriesagain; }",
                      field.getIndexingScript().toString());
         assertTrue(field.isHeader());
 
         // Ninth field
         field= search.getConcreteField("exactemento");
-        assertEquals("{ input exactemento_src | lowercase | tokenize normalize stem:\"SHORTEST\" | index exactemento | summary exactemento; }",
+        assertEquals("{ input exactemento_src | lowercase | tokenize normalize stem:\"BEST\" | index exactemento | summary exactemento; }",
                      field.getIndexingScript().toString());
 
         // Tenth field
