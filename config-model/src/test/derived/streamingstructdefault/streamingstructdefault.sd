@@ -8,11 +8,9 @@ search streamingstructdefault {
     field f1 type array<string> {
       indexing: index | summary
       summary-to: default
-      header
     }
     field f2 type array<sct> {
       indexing: index | summary
-      header
     }
   }
   document-summary default {

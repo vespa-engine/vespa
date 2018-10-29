@@ -47,7 +47,6 @@ search simple {
       rank-type: tags
       stemming: none
       normalizing: none
-      header
     }
 
     field popularity type int {
@@ -81,7 +80,6 @@ search simple {
 
   field categories type string {
     indexing: input categories_src | lowercase | normalize | index
-    body
   }
 
   field categoriesagain type string {

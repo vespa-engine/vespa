@@ -52,28 +52,21 @@ document music {
 
     field title type string {
       indexing: index | summary
-      body
     }
 
     field artist type string {
-      ## index-to: a
       indexing: index | summary
-      body
     }
 
     field year type int {
       indexing: attribute | summary
-      ## index-to: y
-      body
     }
 
     field url type uri {
-      body
     }
 
     field Popularity type string {
       indexing: attribute | summary
-      body
     }
 }
 
