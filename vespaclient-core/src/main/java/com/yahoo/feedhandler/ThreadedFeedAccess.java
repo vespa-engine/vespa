@@ -79,8 +79,4 @@ final class ThreadedFeedAccess implements SimpleFeedAccess {
             executorService.shutdown();
         }
     }
-    @Override
-    public boolean hasTimedOut() {
-        return simpleFeedAccess.hasTimedOut();
-    }
 }

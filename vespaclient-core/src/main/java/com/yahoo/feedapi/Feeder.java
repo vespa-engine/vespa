@@ -78,7 +78,7 @@ public abstract class Feeder {
             return errors;
         }
 
-        while (!sender.isAborted() && !sender.hasTimedOut()) {
+        while (!sender.isAborted()) {
             try {
                 VespaXMLFeedReader.Operation op = new VespaXMLFeedReader.Operation();
                 reader.read(op);
@@ -92,7 +92,10 @@ public abstract class Feeder {
                 } else {
                     sender.sendOperation(op);
                 }
-            } catch (XMLStreamException | NullPointerException e) {
+            } catch (XMLStreamException e) {
+                addException(e);
+                break;
+            } catch (NullPointerException e) {
                 addException(e);
                 break;
             } catch (Exception e) {
