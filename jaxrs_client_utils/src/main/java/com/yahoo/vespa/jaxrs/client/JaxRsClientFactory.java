@@ -50,7 +50,7 @@ public interface JaxRsClientFactory {
     }
 
     default <T> T createClient(Params<T> params) {
-        throw new UnsupportedOperationException("Not implemented");
+        return createClient(params.apiClass, new HostName(params.uri.getHost()), params.uri.getPort(), params.uri.getPath(), params.uri.getScheme());
     }
 
     <T> T createClient(Class<T> apiClass, HostName hostName, int port, String pathPrefix, String scheme);
