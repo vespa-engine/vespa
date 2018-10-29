@@ -300,6 +300,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 context.pathInNodeUnderVespaHome("var/vespa"),
                 context.pathInNodeUnderVespaHome("var/yca"),
                 context.pathInNodeUnderVespaHome("var/ycore++"),
+                context.pathInNodeUnderVespaHome("var/yinst/tmp"),
                 context.pathInNodeUnderVespaHome("var/zookeeper"),
                 context.pathInNodeUnderVespaHome("tmp"),
                 context.pathInNodeUnderVespaHome("var/container-data")));
