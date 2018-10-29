@@ -95,7 +95,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     private static void verifyIgnoreJvmGCOptions(boolean isHosted) throws IOException, SAXException {
-        verifyIgnoreJvmGCOptionsIfJvmArgs(isHosted, "jvmargs", ContainerCluster.CMS);
+        verifyIgnoreJvmGCOptionsIfJvmArgs(isHosted, "jvmargs", ContainerCluster.G1GC);
         verifyIgnoreJvmGCOptionsIfJvmArgs(isHosted, "jvm-options", "-XX:+UseG1GC");
 
     }
