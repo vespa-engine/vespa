@@ -6,10 +6,8 @@ search common {
         }
         field title type string {
             bolding: on
-            # index-to: default, title
             indexing: index|summary
             summary-to: smallsum
-            body
         }
         field mid type int {
             indexing: attribute|index|summary
@@ -33,7 +31,6 @@ search common {
             indexing: index|summary
         }
         field content type raw {
-            body
         }
         annotation date {
             field exacttime type long { }
