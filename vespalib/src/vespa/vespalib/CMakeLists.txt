@@ -12,6 +12,7 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_vespalib_net_tls>
     $<TARGET_OBJECTS:vespalib_vespalib_net_tls_impl>
     $<TARGET_OBJECTS:vespalib_vespalib_objects>
+    $<TARGET_OBJECTS:vespalib_vespalib_portal>
     $<TARGET_OBJECTS:vespalib_vespalib_stllike>
     $<TARGET_OBJECTS:vespalib_vespalib_test>
     $<TARGET_OBJECTS:vespalib_vespalib_testkit>
