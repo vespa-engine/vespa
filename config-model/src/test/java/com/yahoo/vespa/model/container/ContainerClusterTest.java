@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Optional;
 
+import static com.yahoo.vespa.model.container.ContainerCluster.G1GC;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
