@@ -1263,6 +1263,8 @@ public class YqlParser implements Parser {
      * @param exactMatch true to always create an ExactStringItem, false to never do so, and null to
      *                   make the choice based on the field settings
      */
+    // TODO: Clean up such that there is one way to look up an Index instance
+    //       which always expands first, but not using getIndex, which performs checks that doesn't always work
     @NonNull
     private Item instantiateWordItem(String field,
                                      String rawWord,
@@ -1285,7 +1287,7 @@ public class YqlParser implements Parser {
                                             "setting for whether to use suffix match of input data");
         boolean substrMatch = getAnnotation(ast, SUBSTRING, Boolean.class, Boolean.FALSE,
                                             "setting for whether to use substring match of input data");
-        boolean exact = exactMatch != null ? exactMatch : indexFactsSession.getIndex(field).isExact();
+        boolean exact = exactMatch != null ? exactMatch : indexFactsSession.getIndex(indexNameExpander.expand(field)).isExact();
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
                                        Query.Type.ALL.toString(), "grammar for handling word input");
         Preconditions.checkArgument((prefixMatch ? 1 : 0) +
@@ -1307,7 +1309,7 @@ public class YqlParser implements Parser {
                     wordItem = new WordItem(wordData, fromQuery);
                     break;
                 case POSSIBLY:
-                    if (shouldSegment(field, fromQuery) && ! grammar.equals(USER_INPUT_RAW)) {
+                    if (shouldSegment(field, ast, fromQuery) && ! grammar.equals(USER_INPUT_RAW)) {
                         wordItem = segment(field, ast, wordData, fromQuery, parent, language);
                     } else {
                         wordItem = new WordItem(wordData, fromQuery);
@@ -1329,8 +1331,8 @@ public class YqlParser implements Parser {
     }
 
     @SuppressWarnings({"deprecation"})
-    private boolean shouldSegment(String field, boolean fromQuery) {
-        return fromQuery && ! indexFactsSession.getIndex(field).isAttribute();
+    private boolean shouldSegment(String field, OperatorNode<ExpressionOperator> ast, boolean fromQuery) {
+        return fromQuery && ! indexFactsSession.getIndex(indexNameExpander.expand(field)).isAttribute();
     }
 
     @NonNull
