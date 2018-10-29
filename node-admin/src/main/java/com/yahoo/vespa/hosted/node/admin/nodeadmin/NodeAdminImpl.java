@@ -15,7 +15,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -141,21 +140,6 @@ public class NodeAdminImpl implements NodeAdmin {
                     nodeAgent.suspend();
                     nodeAgent.stopServices();
                 });
-    }
-
-    public int getNumberOfNodeAgents() {
-        return nodeAgentsByHostname.keySet().size();
-    }
-
-    @Override
-    public Map<String, Object> debugInfo() {
-        Map<String, Object> debug = new LinkedHashMap<>();
-        debug.put("isFrozen", isFrozen);
-
-        List<Map<String, Object>> nodeAgentDebugs = nodeAgentsByHostname.values().stream()
-                .map(NodeAgent::debugInfo).collect(Collectors.toList());
-        debug.put("NodeAgents", nodeAgentDebugs);
-        return debug;
     }
 
     @Override

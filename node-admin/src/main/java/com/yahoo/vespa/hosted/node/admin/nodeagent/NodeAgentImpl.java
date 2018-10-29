@@ -30,7 +30,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -56,7 +55,6 @@ public class NodeAgentImpl implements NodeAgent {
     private static final long BYTES_IN_GB = 1_000_000_000L;
 
     private static final Logger logger = Logger.getLogger(NodeAgentImpl.class.getName());
-
 
     private final AtomicBoolean terminated = new AtomicBoolean(false);
     private boolean isFrozen = true;
@@ -153,18 +151,6 @@ public class NodeAgentImpl implements NodeAgent {
 
             return isFrozen == frozen;
         }
-    }
-
-    @Override
-    public Map<String, Object> debugInfo() {
-        Map<String, Object> debug = new LinkedHashMap<>();
-        debug.put("hostname", context.hostname());
-        debug.put("isFrozen", isFrozen);
-        debug.put("wantFrozen", wantFrozen);
-        debug.put("terminated", terminated);
-        debug.put("workToDoNow", workToDoNow);
-        debug.put("nodeRepoState", lastNode.getState().name());
-        return debug;
     }
 
     @Override

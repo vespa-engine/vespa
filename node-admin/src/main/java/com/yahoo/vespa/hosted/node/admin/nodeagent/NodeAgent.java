@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
-import java.util.Map;
-
 /**
  * Responsible for management of a single node over its lifecycle.
  * May own its own resources, threads etc. Runs independently, but receives signals
@@ -28,11 +26,6 @@ public interface NodeAgent {
      * Suspend node. Take node offline (e.g. take node out of VIP, drain traffic, prepare for restart etc.)
      */
     void suspend();
-
-    /**
-     * Returns a map containing all relevant NodeAgent variables and their current values.
-     */
-    Map<String, Object> debugInfo();
 
     /**
      * Starts the agent. After this method is called, the agent will asynchronously maintain the node, continuously
