@@ -9,7 +9,7 @@ jvm.server bool default=true restart
 jvm.verbosegc bool default=true restart
 
 ## Garbage Collection tuning parameters
-jvm.gcopts string default="-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1" restart
+jvm.gcopts string default="-XX:MaxTenuringThreshold=15 -XX:NewRatio=1" restart
 
 ## Heap size (in megabytes) for the Java VM
 jvm.heapsize int default=1536 restart
