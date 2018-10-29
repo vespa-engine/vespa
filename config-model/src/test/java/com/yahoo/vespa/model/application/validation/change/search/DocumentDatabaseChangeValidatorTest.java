@@ -48,7 +48,7 @@ public class DocumentDatabaseChangeValidatorTest {
                 newRefeedAction("indexing-change",
                                 ValidationOverrides.empty,
                                 "Field 'f2' changed: add index aspect, indexing script: '{ input f2 | summary f2; }' -> " +
-                                "'{ input f2 | tokenize normalize stem:\"SHORTEST\" | index f2 | summary f2; }'", Instant.now()),
+                                "'{ input f2 | tokenize normalize stem:\"BEST\" | index f2 | summary f2; }'", Instant.now()),
                 newRefeedAction("field-type-change",
                                 ValidationOverrides.empty,
                                 "Field 'f3' changed: data type: 'int' -> 'string'", Instant.now())));
