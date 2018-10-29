@@ -144,7 +144,7 @@ public final class ContainerCluster
     public static final String STATISTICS_HANDLER_CLASS = "com.yahoo.container.config.StatisticsRequestHandler";
     public static final String SIMPLE_LINGUISTICS_PROVIDER = "com.yahoo.language.provider.SimpleLinguisticsProvider";
     public static final String CMS = "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1";
-    static final String G1GC = "-XX:+UseG1GC -XX:MaxTenuringThreshold=15";
+    public static final String G1GC = "-XX:+UseG1GC -XX:MaxTenuringThreshold=15";
 
     public static final String ROOT_HANDLER_BINDING = "*://*/";
 
@@ -639,7 +639,7 @@ public final class ContainerCluster
             return ((zone.environment() != Environment.prod) || RegionName.from("us-east-3").equals(zone.region()))
                     ? G1GC : CMS;
         } else {
-            return CMS;
+            return G1GC;
         }
     }
 
