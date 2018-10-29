@@ -17,6 +17,9 @@ public class VespaFeedSender {
     public boolean isAborted() {
         return sender.isAborted();
     }
+    boolean hasTimedOut() {
+        return sender.hasTimedOut();
+    }
 
     public void sendOperation(VespaXMLFeedReader.Operation op) {
         switch (op.getType()) {

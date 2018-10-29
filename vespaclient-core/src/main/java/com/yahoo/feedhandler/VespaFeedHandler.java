@@ -80,10 +80,12 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
 
             MessagePropertyProcessor.PropertySetter properties = getPropertyProcessor().buildPropertySetter(request);
 
+            long millis = getTimeoutMillis(request);
+
             String route = properties.getRoute().toString();
             FeedResponse response = new FeedResponse(new RouteMetricSet(route, callback));
 
-            SingleSender sender = new SingleSender(response, getSharedSender(route), !asynchronous);
+            SingleSender sender = new SingleSender(response, getSharedSender(route), millis, !asynchronous);
             sender.addMessageProcessor(properties);
             sender.addMessageProcessor(new DocprocMessageProcessor(getDocprocChain(request), getDocprocServiceRegistry(request)));
             ThreadedFeedAccess feedAccess = new ThreadedFeedAccess(numThreads, sender);
@@ -106,7 +108,6 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
             if (asynchronous) {
                 return response;
             }
-            long millis = getTimeoutMillis(request);
             boolean completed = sender.waitForPending(millis);
             if (!completed) {
                 response.addError(Error.TIMEOUT, "Timed out after " + millis + " ms waiting for responses");
