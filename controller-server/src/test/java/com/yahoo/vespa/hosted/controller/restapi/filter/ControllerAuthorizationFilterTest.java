@@ -127,6 +127,18 @@ public class ControllerAuthorizationFilterTest {
 
     }
 
+    @Test
+    public void operator_can_access_controller_node_management_paths() {
+        ControllerTester controllerTester = new ControllerTester();
+        controllerTester.athenzDb().hostedOperators.add(HOSTED_OPERATOR); // Controller host has same access as operators
+        ControllerAuthorizationFilter filter = createFilter(controllerTester);
+        List<AthenzIdentity> allowed = singletonList(HOSTED_OPERATOR);
+        List<AthenzIdentity> forbidden = singletonList(USER);
+
+        testApiAccess(PUT, "/nodes/v2/state/ready/controller-1", allowed, forbidden, filter);
+        testApiAccess(DELETE, "/orchestrator/v1/hosts/controller-1/suspended", allowed, forbidden, filter);
+    }
+
     private static void testApiAccess(Method method,
                                       String path,
                                       List<? extends AthenzIdentity> allowedIdentities,
@@ -139,7 +151,9 @@ public class ControllerAuthorizationFilterTest {
     }
 
     private static void assertIsAllowed(Optional<AuthorizationResponse> response) {
-        assertFalse("Expected no response from filter", response.isPresent());
+        assertFalse("Expected no response from filter, but got \"" +
+                    response.map(r -> r.message + "\" (" + r.statusCode + ")").orElse(""),
+                    response.isPresent());
     }
 
     private static void assertIsForbidden(Optional<AuthorizationResponse> response) {
