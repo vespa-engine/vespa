@@ -449,7 +449,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         } else if ((zone.system() == SystemName.dev) || isHostedVespa) {
             return null;
         } else {
-            return ContainerCluster.CMS;
+            return ContainerCluster.G1GC;
         }
     }
     private static String getJvmOptions(ContainerCluster cluster, Element nodesElement, DeployLogger deployLogger) {
