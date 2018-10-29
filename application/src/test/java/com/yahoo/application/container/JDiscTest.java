@@ -152,7 +152,6 @@ public class JDiscTest {
                     "  field title type string {\n" + //
                     "    indexing: summary | index   # How this field should be indexed\n" + //
                     "    weight: 75 # Ranking importancy of this field, used by the built in nativeRank feature\n" + //
-                    "    header\n" + //
                     "  }\n" + //
                     "}\n";
 
