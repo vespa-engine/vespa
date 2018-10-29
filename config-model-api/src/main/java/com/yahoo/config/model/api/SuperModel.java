@@ -9,7 +9,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class SuperModel {
@@ -29,11 +28,6 @@ public class SuperModel {
      */
     public Map<TenantName, Map<ApplicationId, ApplicationInfo>> getAllModels() {
         return models;
-    }
-
-    public Set<ApplicationId> getAllApplicationIds() {
-        return models.values().stream().flatMap(entry -> entry.keySet().stream())
-                .collect(Collectors.toSet());
     }
 
     public List<ApplicationInfo> getAllApplicationInfos() {
