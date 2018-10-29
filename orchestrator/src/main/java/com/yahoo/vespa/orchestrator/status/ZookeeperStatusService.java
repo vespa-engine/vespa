@@ -56,6 +56,21 @@ public class ZookeeperStatusService implements StatusService {
         };
     }
 
+    /**
+     *  1) locks the status service for an application instance.
+     *  2) fails all operations in this thread when the session is lost,
+     *     since session loss might cause the lock to be lost.
+     *     Since it only fails operations in this thread,
+     *     all operations depending on a lock, including the locking itself, must be done in this thread.
+     *     Note that since it is the thread that fails, all status operations in this thread will fail
+     *     even if they're not supposed to be guarded by this lock
+     *     (i.e. the request is for another applicationInstanceReference)
+     */
+    @Override
+    public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(ApplicationInstanceReference applicationInstanceReference) {
+        return lockApplicationInstance_forCurrentThreadOnly(applicationInstanceReference, 10);
+    }
+
     @Override
     public Set<ApplicationInstanceReference> getAllSuspendedApplications() {
         try {
@@ -78,23 +93,13 @@ public class ZookeeperStatusService implements StatusService {
         }
     }
 
-    /**
-     *  1) locks the status service for an application instance.
-     *  2) fails all operations in this thread when the session is lost,
-     *     since session loss might cause the lock to be lost.
-     *     Since it only fails operations in this thread,
-     *     all operations depending on a lock, including the locking itself, must be done in this thread.
-     *     Note that since it is the thread that fails, all status operations in this thread will fail
-     *     even if they're not supposed to be guarded by this lock
-     *     (i.e. the request is for another applicationInstanceReference)
-     */
     @Override
     public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
             ApplicationInstanceReference applicationInstanceReference,
-            Duration timeout) {
+            long timeoutSeconds) {
         String lockPath = applicationInstanceLock2Path(applicationInstanceReference);
         Lock lock = new Lock(lockPath, curator);
-        lock.acquire(timeout);
+        lock.acquire(Duration.ofSeconds(timeoutSeconds));
 
         try {
             return new ZkMutableStatusRegistry(lock, applicationInstanceReference);
