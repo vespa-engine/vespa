@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer;
+import com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.time.Clock;
@@ -599,7 +600,7 @@ public class NodeAgentImpl implements NodeAgent {
 
         Dimensions.Builder dimensionsBuilder = new Dimensions.Builder()
                 .add("host", context.hostname().value())
-                .add("role", "tenants")
+                .add("role", SecretAgentCheckConfig.nodeTypeToRole(context.nodeType()))
                 .add("state", node.getState().toString());
         node.getParentHostname().ifPresent(parent -> dimensionsBuilder.add("parentHostname", parent));
         node.getAllowedToBeDown().ifPresent(allowed ->
