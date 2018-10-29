@@ -393,7 +393,7 @@ public class GetSearcher extends Searcher {
         MessagePropertyProcessor.PropertySetter propertySetter;
         propertySetter = context.getPropertyProcessor().buildPropertySetter(query.getHttpRequest());
 
-        SingleSender sender = new SingleSender(response, context.getSharedSender(propertySetter.getRoute().toString()));
+        SingleSender sender = new SingleSender(response, (int) timeoutMillis, context.getSharedSender(propertySetter.getRoute().toString()));
         sender.addMessageProcessor(propertySetter);
 
         sendDocumentGetMessages(documentIds, fieldSet, sender);

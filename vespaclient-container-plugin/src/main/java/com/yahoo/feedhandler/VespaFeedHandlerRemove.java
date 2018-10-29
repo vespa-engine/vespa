@@ -52,7 +52,8 @@ public class VespaFeedHandlerRemove extends VespaFeedHandlerBase {
         MessagePropertyProcessor.PropertySetter properties = getPropertyProcessor().buildPropertySetter(request);
         String route = properties.getRoute().toString();
         FeedResponse response = new FeedResponse(new RouteMetricSet(route, null));
-        SingleSender sender = new SingleSender(response, getSharedSender(route));
+        long timeoutMillis = getTimeoutMillis(request);
+        SingleSender sender = new SingleSender(response, (int) timeoutMillis, getSharedSender(route));
         sender.addMessageProcessor(properties);
 
         response.setAbortOnFeedError(properties.getAbortOnFeedError());
@@ -81,10 +82,9 @@ public class VespaFeedHandlerRemove extends VespaFeedHandlerBase {
         }
 
         sender.done();
-        long millis = getTimeoutMillis(request);
-        boolean completed = sender.waitForPending(millis);
+        boolean completed = sender.waitForPending(timeoutMillis);
         if ( ! completed)
-            response.addError(Error.TIMEOUT, "Timed out after "+millis+" ms waiting for responses");
+            response.addError(Error.TIMEOUT, "Timed out after "+timeoutMillis+" ms waiting for responses");
         return response;
     }
 

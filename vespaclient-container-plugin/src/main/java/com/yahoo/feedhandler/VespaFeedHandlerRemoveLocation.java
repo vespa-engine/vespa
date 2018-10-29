@@ -57,8 +57,8 @@ public class VespaFeedHandlerRemoveLocation extends VespaFeedHandlerBase {
         }
 
         response = new FeedResponse(new RouteMetricSet(properties.getRoute().toString(), null));
-
-        SingleSender sender = new SingleSender(response, getSharedSender(properties.getRoute().toString()));
+        long timeoutMillis = getTimeoutMillis(request);
+        SingleSender sender = new SingleSender(response, (int) timeoutMillis, getSharedSender(properties.getRoute().toString()));
         sender.addMessageProcessor(properties);
 
         String user = request.getProperty("user");
