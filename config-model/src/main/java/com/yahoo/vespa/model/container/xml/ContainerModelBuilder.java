@@ -452,7 +452,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             return ((zone.environment() != Environment.prod) || RegionName.from("us-east-3").equals(zone.region()))
                     ? ContainerCluster.G1GC : ContainerCluster.CMS;
         } else {
-            return ContainerCluster.CMS;
+            return ContainerCluster.G1GC;
         }
     }
     private void addNodesFromXml(ContainerCluster cluster, Element containerElement, ConfigModelContext context) {
@@ -472,7 +472,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     : null;
             if (incompatibleGCOptions(jvmArgs)) {
                 context.getDeployLogger().log(Level.WARNING, "You need to move out your GC related options from 'jvmargs' to 'jvm-gc-options'");
-                cluster.setJvmGCOptions(ContainerCluster.CMS);
+                cluster.setJvmGCOptions(ContainerCluster.G1GC);
             } else {
                 cluster.setJvmGCOptions(buildJvmGCOptions(context.getDeployState().zone(), jvmGCOptions, context.getDeployState().isHosted()));
             }
