@@ -1,27 +1,38 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.ApplicationId;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.slime.Inspector;
+import com.yahoo.slime.Slime;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.RotationStatus;
+import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.function.Supplier;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import static java.time.temporal.ChronoUnit.MILLIS;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.findAll;
+import static com.github.tomakehurst.wiremock.client.WireMock.getAllServeEvents;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 /**
  * @author smorgrav
@@ -29,69 +40,18 @@ import static org.junit.Assert.assertFalse;
  */
 public class DeploymentMetricsMaintainerTest {
 
-    @Test
-    public void updates_metrics() {
-        ControllerTester tester = new ControllerTester();
-        ApplicationId appId = tester.createAndDeploy("tenant1", "domain1", "app1",
-                                                  Environment.dev, 123).id();
-        DeploymentMetricsMaintainer maintainer = maintainer(tester.controller());
-        Supplier<Application> app = tester.application(appId);
-        Supplier<Deployment> deployment = () -> app.get().deployments().values().stream().findFirst().get();
+    private static final double DELTA = 0.0000001;
 
-        // No metrics gathered yet
-        assertEquals(0, app.get().metrics().queryServiceQuality(), 0);
-        assertEquals(0, deployment.get().metrics().documentCount(), 0);
-        assertFalse("Never received any queries", deployment.get().activity().lastQueried().isPresent());
-        assertFalse("Never received any writes", deployment.get().activity().lastWritten().isPresent());
-
-        // Metrics are gathered and saved to application
-        maintainer.maintain();
-        assertEquals(0.5, app.get().metrics().queryServiceQuality(), Double.MIN_VALUE);
-        assertEquals(0.7, app.get().metrics().writeServiceQuality(), Double.MIN_VALUE);
-        assertEquals(1, deployment.get().metrics().queriesPerSecond(), Double.MIN_VALUE);
-        assertEquals(2, deployment.get().metrics().writesPerSecond(), Double.MIN_VALUE);
-        assertEquals(3, deployment.get().metrics().documentCount(), Double.MIN_VALUE);
-        assertEquals(4, deployment.get().metrics().queryLatencyMillis(), Double.MIN_VALUE);
-        assertEquals(5, deployment.get().metrics().writeLatencyMillis(), Double.MIN_VALUE);
-        Instant t1 = tester.clock().instant().truncatedTo(MILLIS);
-        assertEquals(t1, deployment.get().activity().lastQueried().get());
-        assertEquals(t1, deployment.get().activity().lastWritten().get());
-
-        // Time passes. Activity is updated as app is still receiving traffic
-        tester.clock().advance(Duration.ofHours(1));
-        Instant t2 = tester.clock().instant().truncatedTo(MILLIS);
-        maintainer.maintain();
-        assertEquals(t2, deployment.get().activity().lastQueried().get());
-        assertEquals(t2, deployment.get().activity().lastWritten().get());
-        assertEquals(1, deployment.get().activity().lastQueriesPerSecond().getAsDouble(), Double.MIN_VALUE);
-        assertEquals(2, deployment.get().activity().lastWritesPerSecond().getAsDouble(), Double.MIN_VALUE);
-
-        // Query traffic disappears. Query activity stops updating
-        tester.clock().advance(Duration.ofHours(1));
-        Instant t3 = tester.clock().instant().truncatedTo(MILLIS);
-        tester.metricsService().setMetric("queriesPerSecond", 0D);
-        tester.metricsService().setMetric("writesPerSecond", 5D);
-        maintainer.maintain();
-        assertEquals(t2, deployment.get().activity().lastQueried().get());
-        assertEquals(t3, deployment.get().activity().lastWritten().get());
-        assertEquals(1, deployment.get().activity().lastQueriesPerSecond().getAsDouble(), Double.MIN_VALUE);
-        assertEquals(5, deployment.get().activity().lastWritesPerSecond().getAsDouble(), Double.MIN_VALUE);
-
-        // Feed traffic disappears. Feed activity stops updating
-        tester.clock().advance(Duration.ofHours(1));
-        tester.metricsService().setMetric("writesPerSecond", 0D);
-        maintainer.maintain();
-        assertEquals(t2, deployment.get().activity().lastQueried().get());
-        assertEquals(t3, deployment.get().activity().lastWritten().get());
-        assertEquals(1, deployment.get().activity().lastQueriesPerSecond().getAsDouble(), Double.MIN_VALUE);
-        assertEquals(5, deployment.get().activity().lastWritesPerSecond().getAsDouble(), Double.MIN_VALUE);
-    }
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(options().dynamicPort(), true);
 
     @Test
-    public void updates_rotation_status() {
+    public void maintain() {
         DeploymentTester tester = new DeploymentTester();
         MetricsServiceMock metricsService = tester.controllerTester().metricsService();
-        DeploymentMetricsMaintainer maintainer = maintainer(tester.controller());
+        ApiAuthorityConfig.Builder apiAuthorityConfigBuilder = new ApiAuthorityConfig.Builder().authorities("http://localhost:" + wireMockRule.port() + "/");
+        ApiAuthorityConfig apiAuthorityConfig = new ApiAuthorityConfig(apiAuthorityConfigBuilder);
+        DeploymentMetricsMaintainer maintainer = new DeploymentMetricsMaintainer(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()), apiAuthorityConfig);
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
         ZoneId zone1 = ZoneId.from("prod", "us-west-1");
         ZoneId zone2 = ZoneId.from("prod", "us-east-3");
@@ -105,32 +65,68 @@ public class DeploymentMetricsMaintainerTest {
                 .build();
         tester.deployCompletely(application, applicationPackage);
 
-        Supplier<Application> app = () -> tester.application(application.id());
-        Supplier<Deployment> deployment1 = () -> app.get().deployments().get(zone1);
-        Supplier<Deployment> deployment2 = () -> app.get().deployments().get(zone2);
         String assignedRotation = "rotation-fqdn-01";
         tester.controllerTester().metricsService().addRotation(assignedRotation);
-
-        // No status gathered yet
-        assertEquals(RotationStatus.unknown, app.get().rotationStatus(deployment1.get()));
-        assertEquals(RotationStatus.unknown, app.get().rotationStatus(deployment2.get()));
 
         // One rotation out, one in
         metricsService.setZoneIn(assignedRotation, "proxy.prod.us-west-1.vip.test");
         metricsService.setZoneOut(assignedRotation,"proxy.prod.us-east-3.vip.test");
-        maintainer.maintain();
-        assertEquals(RotationStatus.in, app.get().rotationStatus(deployment1.get()));
-        assertEquals(RotationStatus.out, app.get().rotationStatus(deployment2.get()));
 
-        // All rotations in
-        metricsService.setZoneIn(assignedRotation,"proxy.prod.us-east-3.vip.test");
+        wireMockRule.stubFor(post(urlEqualTo("/metricforwarding/v1/deploymentmetrics/"))
+                .willReturn(aResponse().withStatus(200)));
         maintainer.maintain();
-        assertEquals(RotationStatus.in, app.get().rotationStatus(deployment1.get()));
-        assertEquals(RotationStatus.in, app.get().rotationStatus(deployment2.get()));
+
+        List<ServeEvent> allServeEvents = getAllServeEvents();
+        assertEquals(1, allServeEvents.size());
+        LoggedRequest request = findAll(postRequestedFor(urlEqualTo("/metricforwarding/v1/deploymentmetrics/"))).get(0);
+
+        Slime slime = SlimeUtils.jsonToSlime(request.getBody());
+        Inspector inspector = slime.get().entry(0);
+        assertEquals("tenant1:app1:default", inspector.field("applicationId").asString());
+        MetricsService.ApplicationMetrics applicationMetrics = applicationMetricsFromInspector(inspector.field("applicationMetrics"));
+        assertEquals(0.5, applicationMetrics.queryServiceQuality(), DELTA);
+        assertEquals(0.7, applicationMetrics.writeServiceQuality(), DELTA);
+
+        Map<String, String> rotationStatus = rotationsStatusFromInspector(inspector.field("rotationStatus"));
+        assertEquals("in", rotationStatus.get("proxy.prod.us-west-1.vip.test"));
+        assertEquals("out", rotationStatus.get("proxy.prod.us-east-3.vip.test"));
+
+        Map<String, MetricsService.DeploymentMetrics> deploymentMetricsByZone = deploymentMetricsFromInspector(inspector.field("deploymentMetrics"));
+        MetricsService.DeploymentMetrics deploymentMetrics = deploymentMetricsByZone.get("prod.us-west-1");
+        assertEquals(1.0, deploymentMetrics.queriesPerSecond(), DELTA);
+        assertEquals(2.0, deploymentMetrics.writesPerSecond(), DELTA);
+        assertEquals(3.0, deploymentMetrics.documentCount(), DELTA);
+        assertEquals(4.0, deploymentMetrics.queryLatencyMillis(), DELTA);
+        assertEquals(5.0, deploymentMetrics.writeLatencyMillis(), DELTA);
+
+        deploymentMetrics = deploymentMetricsByZone.get("prod.us-east-3");
+        assertEquals(1.0, deploymentMetrics.queriesPerSecond(), DELTA);
+        assertEquals(2.0, deploymentMetrics.writesPerSecond(), DELTA);
+        assertEquals(3.0, deploymentMetrics.documentCount(), DELTA);
+        assertEquals(4.0, deploymentMetrics.queryLatencyMillis(), DELTA);
+        assertEquals(5.0, deploymentMetrics.writeLatencyMillis(), DELTA);
     }
 
-    private static DeploymentMetricsMaintainer maintainer(Controller controller) {
-        return new DeploymentMetricsMaintainer(controller, Duration.ofDays(1), new JobControl(controller.curator()));
+    private MetricsService.ApplicationMetrics applicationMetricsFromInspector(Inspector inspector) {
+        return new MetricsService.ApplicationMetrics(inspector.field("queryServiceQuality").asDouble(), inspector.field("writeServiceQuality").asDouble());
     }
 
+    private Map<String, String> rotationsStatusFromInspector(Inspector inspector) {
+        HashMap<String, String> rotationStatus = new HashMap<>();
+        inspector.traverse((ArrayTraverser) (index, entry) -> {
+            rotationStatus.put(entry.field("hostname").asString(), entry.field("rotationStatus").asString());
+        });
+        return rotationStatus;
+    }
+
+    private Map<String, MetricsService.DeploymentMetrics> deploymentMetricsFromInspector(Inspector inspector) {
+        Map<String, MetricsService.DeploymentMetrics> deploymentMetricByZone = new HashMap<>();
+        inspector.traverse((ArrayTraverser) (index, entry) -> {
+            String zone = entry.field("zoneId").asString();
+            MetricsService.DeploymentMetrics deploymentMetrics = new MetricsService.DeploymentMetrics(entry.field("queriesPerSecond").asDouble(), entry.field("writesPerSecond").asDouble(),
+                    entry.field("documentCount").asLong(), entry.field("queryLatencyMillis").asDouble(), entry.field("writeLatencyMillis").asDouble());
+            deploymentMetricByZone.put(zone, deploymentMetrics);
+        });
+        return deploymentMetricByZone;
+    }
 }

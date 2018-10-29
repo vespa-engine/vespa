@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.Cursor;
@@ -19,6 +20,7 @@ import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
@@ -41,8 +43,10 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
@@ -75,6 +79,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
@@ -1273,8 +1278,22 @@ public class ApplicationApiTest extends ControllerContainerTest {
         String vipName = "proxy." + zone.value() + ".vip.test";
         metricsService().addRotation(rotationName)
                         .setZoneIn(rotationName, vipName);
+        ApplicationController applicationController = controllerTester.controller().applications();
+        List<Application> applicationList = applicationController.asList();
+        applicationList.stream().forEach(application -> {
+                applicationController.lockIfPresent(application.id(), locked ->
+                        applicationController.store(locked.withRotationStatus(rotationStatus(application))));
+        });}
 
-        new DeploymentMetricsMaintainer(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator())).run();
+    private Map<HostName, RotationStatus> rotationStatus(Application application) {
+        return controllerTester.controller().applications().rotationRepository().getRotation(application)
+                .map(rotation -> controllerTester.controller().metricsService().getRotationStatus(rotation.name()))
+                .map(rotationStatus -> {
+                    Map<HostName, RotationStatus> result = new TreeMap<>();
+                    rotationStatus.forEach((hostname, status) -> result.put(hostname, RotationStatus.in));
+                    return result;
+                })
+                .orElseGet(Collections::emptyMap);
     }
 
     private void updateContactInformation() {
