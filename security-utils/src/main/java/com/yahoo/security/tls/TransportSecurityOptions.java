@@ -48,15 +48,26 @@ public class TransportSecurityOptions {
 
     public static TransportSecurityOptions fromJsonFile(Path file) {
         try {
-            JsonNode root = mapper.readTree(file.toFile());
-            JsonNode filesNode = getField(root, "files");
-            String privateKeyFile = getField(filesNode, "private-key").asText();
-            String certificatesFile = getField(filesNode, "certificates").asText();
-            String caCertificatesFile = getField(filesNode, "ca-certificates").asText();
-            return new TransportSecurityOptions(privateKeyFile, certificatesFile, caCertificatesFile);
+            return fromJsonNode(mapper.readTree(file.toFile()));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public static TransportSecurityOptions fromJson(String json) {
+        try {
+            return fromJsonNode(mapper.readTree(json));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static TransportSecurityOptions fromJsonNode(JsonNode root) {
+        JsonNode filesNode = getField(root, "files");
+        String privateKeyFile = getField(filesNode, "private-key").asText();
+        String certificatesFile = getField(filesNode, "certificates").asText();
+        String caCertificatesFile = getField(filesNode, "ca-certificates").asText();
+        return new TransportSecurityOptions(privateKeyFile, certificatesFile, caCertificatesFile);
     }
 
     private static JsonNode getField(JsonNode root, String fieldName) {
