@@ -1340,7 +1340,7 @@ public class YqlParser implements Parser {
                     wordItem = new WordItem(wordData, fromQuery);
                     break;
                 case POSSIBLY:
-                    if (shouldResegmentWord(ast, fromQuery)) {
+                    if (shouldResegmentWord(field, fromQuery)) {
                         wordItem = resegment(field, ast, wordData, fromQuery, parent, language);
                     } else {
                         wordItem = new WordItem(wordData, fromQuery);
@@ -1362,8 +1362,8 @@ public class YqlParser implements Parser {
     }
 
     @SuppressWarnings({"deprecation"})
-    private boolean shouldResegmentWord(OperatorNode<ExpressionOperator> ast, boolean fromQuery) {
-        return resegment && fromQuery &&  ! indexFactsSession.getIndex(getIndex(ast)).isAttribute();
+    private boolean shouldResegmentWord(String field, boolean fromQuery) {
+        return resegment && fromQuery &&  ! indexFactsSession.getIndex(field).isAttribute();
     }
 
     @NonNull
@@ -1408,7 +1408,7 @@ public class YqlParser implements Parser {
                              WordItem wordItem) {
         wordItem.setIndexName(field);
         wordStyleSettings(ast, wordItem);
-        if (shouldResegmentWord(ast, fromQuery)) {
+        if (shouldResegmentWord(field, fromQuery)) {
             // force re-stemming, new case normalization, etc
             wordItem.setStemmed(false);
             wordItem.setLowercased(false);
