@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -9,8 +9,10 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 /**
  * This schedules periodic reboot of all nodes.
@@ -35,14 +37,15 @@ public class NodeRebooter extends Maintainer {
     @Override
     protected void maintain() {
         // Reboot candidates: Nodes in long-term states, which we know can safely orchestrate a reboot
-        List<Node> rebootCandidates = nodeRepository().getNodes(NodeType.tenant, Node.State.active, Node.State.ready);
-        rebootCandidates.addAll(nodeRepository().getNodes(NodeType.proxy, Node.State.active, Node.State.ready));
-        rebootCandidates.addAll(nodeRepository().getNodes(NodeType.host, Node.State.active, Node.State.ready));
+        EnumSet<Node.State> targetStates = EnumSet.of(Node.State.active, Node.State.ready);
+        List<Node> nodesToReboot = nodeRepository().getNodes().stream()
+                .filter(node -> targetStates.contains(node.state()))
+                .filter(node -> node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
+                .filter(this::shouldReboot)
+                .collect(Collectors.toList());
 
-        for (Node node : rebootCandidates) {
-            if (shouldReboot(node))
-                nodeRepository().reboot(NodeListFilter.from(node));
-        }
+        if (!nodesToReboot.isEmpty())
+            nodeRepository().reboot(NodeListFilter.from(nodesToReboot));
     }
     
     private boolean shouldReboot(Node node) {
