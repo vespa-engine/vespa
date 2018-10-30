@@ -44,7 +44,7 @@ public class RetryingClusterControllerClientFactoryTest {
 
         ArgumentCaptor<ClusterControllerStateRequest> requestCaptor = ArgumentCaptor.forClass(ClusterControllerStateRequest.class);
 
-        verify(api, times(1)).setNodeState(eq(clusterName), eq(storageNode), eq(4.8f), requestCaptor.capture());
+        verify(api, times(1)).setNodeState(eq(clusterName), eq(storageNode), eq(4.55f), requestCaptor.capture());
         ClusterControllerStateRequest request = requestCaptor.getValue();
         assertEquals(ClusterControllerStateRequest.Condition.SAFE, request.condition);
         Map<String, Object> expectedState = new HashMap<>();

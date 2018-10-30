@@ -47,10 +47,11 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
                     timeouts);
         } catch (IOException | UncheckedTimeoutException e) {
             String message = String.format(
-                    "Giving up setting %s for storage node with index %d in cluster %s",
+                    "Giving up setting %s for storage node with index %d in cluster %s: %s",
                     stateRequest,
                     storageNodeIndex,
-                    clusterName);
+                    clusterName,
+                    e.getMessage());
 
             throw new IOException(message, e);
         }

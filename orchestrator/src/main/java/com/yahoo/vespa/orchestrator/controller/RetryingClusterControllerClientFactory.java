@@ -41,12 +41,13 @@ public class RetryingClusterControllerClientFactory implements ClusterController
                         jaxRsClientFactory,
                         CLUSTERCONTROLLER_SCHEME)
                         .apiWithRetries(ClusterControllerJaxRsApi.class, CLUSTERCONTROLLER_API_PATH)
-                        // Use max iteration 1. The JaxRsStrategyFactory will try host 1, 2, then 3:
+                        // Use max iteration 1: The JaxRsStrategyFactory will try host 1, 2, then 3:
                         //  - If host 1 responds, it will redirect to master if necessary. Otherwise
                         //  - If host 2 responds, it will redirect to master if necessary. Otherwise
                         //  - If host 3 responds, it may redirect to master if necessary (if they're up
                         //    after all), but more likely there's no quorum and this will fail too.
-                        .setMaxIterations(1);
+                        // If there's only 1 CC, we'll try that one twice.
+                        .setMaxIterations(clusterControllers.size() > 1 ? 1 : 2);
         return new ClusterControllerClientImpl(jaxRsApi, clusterName);
     }
 }

@@ -41,11 +41,11 @@ import java.time.Duration;
  */
 public class ClusterControllerClientTimeouts implements JaxRsTimeouts {
     // In data center connect timeout
-    static final Duration CONNECT_TIMEOUT = Duration.ofMillis(50);
+    static final Duration CONNECT_TIMEOUT = Duration.ofMillis(100);
     // Per call overhead
-    static final Duration IN_PROCESS_OVERHEAD_PER_CALL = Duration.ofMillis(50);
-    // In data center kernel and network overhead.
-    static final Duration NETWORK_OVERHEAD_PER_CALL = CONNECT_TIMEOUT;
+    static final Duration IN_PROCESS_OVERHEAD_PER_CALL = Duration.ofMillis(100);
+    // In-process kernel overhead, network overhead, server kernel overhead, and server in-process overhead.
+    static final Duration DOWNSTREAM_OVERHEAD_PER_CALL = CONNECT_TIMEOUT.plus(Duration.ofMillis(100));
     // Minimum time reserved for post-RPC processing to finish BEFORE the deadline, including ZK write.
     static final Duration IN_PROCESS_OVERHEAD = Duration.ofMillis(100);
     // Number of JAX-RS RPC calls to account for within the time budget.
@@ -100,7 +100,7 @@ public class ClusterControllerClientTimeouts implements JaxRsTimeouts {
 
     public Duration getServerTimeoutOrThrow() {
         // readTimeout = networkOverhead + serverTimeout
-        Duration serverTimeout = getReadTimeoutOrThrow().minus(NETWORK_OVERHEAD_PER_CALL);
+        Duration serverTimeout = getReadTimeoutOrThrow().minus(DOWNSTREAM_OVERHEAD_PER_CALL);
         if (serverTimeout.toMillis() < MIN_SERVER_TIMEOUT.toMillis()) {
             throw new UncheckedTimeoutException("Server would be given too little time to complete: " +
                     serverTimeout + ". Original timeout was " + timeBudget.originalTimeout().get());
