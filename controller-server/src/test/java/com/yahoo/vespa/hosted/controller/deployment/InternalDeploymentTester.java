@@ -45,6 +45,7 @@ public class InternalDeploymentTester {
             .parallel("us-west-1", "us-east-3")
             .build();
     public static final ApplicationId appId = ApplicationId.from("tenant", "application", "default");
+    public static final String athenzDomain = "domain";
 
     private final DeploymentTester tester;
     private final JobController jobs;
@@ -64,7 +65,10 @@ public class InternalDeploymentTester {
 
     public InternalDeploymentTester() {
         tester = new DeploymentTester();
-        tester.createApplication(appId.application().value(), appId.tenant().value(), 1, 1L);
+        tester.controllerTester().createApplication(tester.controllerTester().createTenant(appId.tenant().value(), athenzDomain, 1L),
+                                                    appId.application().value(),
+                                                    "default",
+                                                    1);
         jobs = tester.controller().jobController();
         routing = tester.controllerTester().routingGenerator();
         cloud = (MockTesterCloud) tester.controller().jobController().cloud();

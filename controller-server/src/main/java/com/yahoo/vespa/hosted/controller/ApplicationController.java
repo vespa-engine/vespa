@@ -9,6 +9,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
@@ -69,6 +70,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -308,7 +310,8 @@ public class ApplicationController {
                 applicationVersion = ApplicationVersion.unknown;
                 applicationPackage = applicationPackageFromDeployer.orElseThrow(
                         () -> new IllegalArgumentException("Application package must be given when deploying to " + zone));
-            } else {
+            }
+            else {
                 JobType jobType = JobType.from(controller.system(), zone);
                 Optional<JobStatus> job = Optional.ofNullable(application.get().deploymentJobs().jobStatus().get(jobType));
                 if (    ! job.isPresent()
@@ -323,13 +326,14 @@ public class ApplicationController {
                         ? triggered.sourceApplication().orElse(triggered.application())
                         : triggered.application();
 
-                if (application.get().deploymentJobs().deployedInternally()) {
-                    applicationPackage = new ApplicationPackage(applicationStore.getApplicationPackage(application.get().id(), applicationVersion.id()));
-                } else {
-                    applicationPackage = new ApplicationPackage(artifactRepository.getApplicationPackage(application.get().id(), applicationVersion.id()));
-                }
+                applicationPackage = application.get().deploymentJobs().deployedInternally()
+                        ? new ApplicationPackage(applicationStore.getApplicationPackage(application.get().id(), applicationVersion.id()))
+                        : new ApplicationPackage(artifactRepository.getApplicationPackage(application.get().id(), applicationVersion.id()));
                 validateRun(application.get(), zone, platformVersion, applicationVersion);
             }
+
+            // TODO: Remove this when all packages are validated upon submission, as in ApplicationApiHandler.submit(...).
+            verifyApplicationIdentityConfiguration(applicationId.tenant(), applicationPackage);
 
             // Update application with information from application package
             if ( ! preferOldestVersion && ! application.get().deploymentJobs().deployedInternally())
@@ -689,6 +693,19 @@ public class ApplicationController {
     /** Sort given list of applications by application ID */
     private static List<Application> sort(List<Application> applications) {
         return applications.stream().sorted(Comparator.comparing(Application::id)).collect(Collectors.toList());
+    }
+
+    public void verifyApplicationIdentityConfiguration(TenantName tenantName, ApplicationPackage applicationPackage) {
+        applicationPackage.deploymentSpec().athenzDomain()
+                          .ifPresent(identityDomain -> {
+                              AthenzTenant tenant = controller.tenants().athenzTenant(tenantName)
+                                                              .orElseThrow(() -> new IllegalArgumentException("Tenant does not exist"));
+                              AthenzDomain tenantDomain = tenant.domain();
+                              if ( ! Objects.equals(tenantDomain.getName(), identityDomain.value()))
+                                  throw new IllegalArgumentException(String.format("Athenz domain in deployment.xml: [%s] must match tenant domain: [%s]",
+                                                                                   identityDomain.value(),
+                                                                                   tenantDomain.getName()));
+                          });
     }
 
 }

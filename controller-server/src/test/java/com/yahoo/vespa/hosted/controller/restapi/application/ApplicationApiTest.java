@@ -416,7 +416,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(packageWithServiceForWrongDomain)),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Athenz domain in deployment.xml: [domain2] must match tenant domain: [domain1]\"}", 403);
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Athenz domain in deployment.xml: [domain2] must match tenant domain: [domain1]\"}", 400);
 
         // Third attempt finally has a service under the domain of the tenant, and succeeds.
         ApplicationPackage packageWithService = new ApplicationPackageBuilder()
@@ -909,11 +909,17 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ScrewdriverId screwdriverId = new ScrewdriverId(Long.toString(screwdriverProjectId));
         controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application);
 
+        controllerTester.jobCompletion(JobType.component)
+                        .application(application.id())
+                        .projectId(screwdriverProjectId)
+                        .uploadArtifact(applicationPackage)
+                        .submit();
+                              
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/test/region/us-east-1/instance/default/", POST)
                                       .data(createApplicationDeployData(applicationPackage, false))
                                       .screwdriverIdentity(screwdriverId),
-                              "{\"error-code\":\"FORBIDDEN\",\"message\":\"Athenz domain in deployment.xml: [invalid.domain] must match tenant domain: [domain1]\"}",
-                              403);
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Athenz domain in deployment.xml: [invalid.domain] must match tenant domain: [domain1]\"}",
+                              400);
 
     }
 
