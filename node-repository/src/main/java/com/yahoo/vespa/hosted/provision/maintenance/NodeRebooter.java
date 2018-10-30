@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -37,7 +37,7 @@ public class NodeRebooter extends Maintainer {
     @Override
     protected void maintain() {
         // Reboot candidates: Nodes in long-term states, which we know can safely orchestrate a reboot
-        List<Node.State> targetStates = Arrays.asList(Node.State.active, Node.State.ready);
+        EnumSet<Node.State> targetStates = EnumSet.of(Node.State.active, Node.State.ready);
         List<Node> nodesToReboot = nodeRepository().getNodes().stream()
                 .filter(node -> targetStates.contains(node.state()))
                 .filter(node -> node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
