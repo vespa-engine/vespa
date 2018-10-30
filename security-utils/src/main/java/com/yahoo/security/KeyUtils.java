@@ -28,6 +28,8 @@ import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.KeyAlgorithm.RSA;
@@ -79,18 +81,23 @@ public class KeyUtils {
 
     public static PrivateKey fromPemEncodedPrivateKey(String pem) {
         try (PEMParser parser = new PEMParser(new StringReader(pem))) {
-            Object pemObject = parser.readObject();
-            if (pemObject instanceof PrivateKeyInfo) {
-                PrivateKeyInfo keyInfo = (PrivateKeyInfo) pemObject;
-                PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyInfo.getEncoded());
-                return KeyFactory.getInstance(RSA.getAlgorithmName()).generatePrivate(keySpec);
-            } else if (pemObject instanceof PEMKeyPair) {
-                PEMKeyPair pemKeypair = (PEMKeyPair) pemObject;
-                PrivateKeyInfo keyInfo = pemKeypair.getPrivateKeyInfo();
-                JcaPEMKeyConverter pemConverter = new JcaPEMKeyConverter().setProvider(BouncyCastleProviderHolder.getInstance());
-                return pemConverter.getPrivateKey(keyInfo);
+            List<Object> unknownObjects = new ArrayList<>();
+            Object pemObject;
+            while ((pemObject = parser.readObject()) != null) {
+                if (pemObject instanceof PrivateKeyInfo) {
+                    PrivateKeyInfo keyInfo = (PrivateKeyInfo) pemObject;
+                    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyInfo.getEncoded());
+                    return KeyFactory.getInstance(RSA.getAlgorithmName()).generatePrivate(keySpec);
+                } else if (pemObject instanceof PEMKeyPair) {
+                    PEMKeyPair pemKeypair = (PEMKeyPair) pemObject;
+                    PrivateKeyInfo keyInfo = pemKeypair.getPrivateKeyInfo();
+                    JcaPEMKeyConverter pemConverter = new JcaPEMKeyConverter().setProvider(BouncyCastleProviderHolder.getInstance());
+                    return pemConverter.getPrivateKey(keyInfo);
+                } else {
+                    unknownObjects.add(pemObject);
+                }
             }
-            throw new IllegalArgumentException("Unexpected type of PEM type: " + pemObject);
+            throw new IllegalArgumentException("Expected a private key, but found " + unknownObjects.toString());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } catch (GeneralSecurityException e) {
