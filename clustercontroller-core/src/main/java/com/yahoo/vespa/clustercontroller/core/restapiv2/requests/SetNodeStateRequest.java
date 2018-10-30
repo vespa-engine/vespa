@@ -37,7 +37,6 @@ public class SetNodeStateRequest extends Request<SetResponse> {
     private final SetUnitStateRequest.ResponseWait responseWait;
     private final WantedStateSetter wantedState;
     private final TimeBudget timeBudget;
-    private final boolean probe;
 
     public SetNodeStateRequest(Id.Node id, SetUnitStateRequest setUnitStateRequest) {
         this(id, setUnitStateRequest, SetNodeStateRequest::setWantedState);
@@ -52,7 +51,6 @@ public class SetNodeStateRequest extends Request<SetResponse> {
         this.responseWait = setUnitStateRequest.getResponseWait();
         this.wantedState = wantedState;
         this.timeBudget = setUnitStateRequest.timeBudget();
-        this.probe = setUnitStateRequest.isProbe();
     }
 
     @Override
@@ -63,8 +61,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
                 newStates,
                 id.getNode(),
                 context.nodeStateOrHostInfoChangeHandler,
-                context.currentConsolidatedState,
-                probe);
+                context.currentConsolidatedState);
     }
 
     static NodeState getRequestedNodeState(Map<String, UnitState> newStates, Node n) throws StateRestApiException {
@@ -103,8 +100,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
             Map<String, UnitState> newStates,
             Node node,
             NodeStateOrHostInfoChangeHandler stateListener,
-            ClusterState currentClusterState,
-            boolean probe) throws StateRestApiException {
+            ClusterState currentClusterState) throws StateRestApiException {
         if ( ! cluster.hasConfiguredNode(node.getIndex())) {
             throw new MissingIdException(cluster.getName(), node);
         }
@@ -130,8 +126,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
                 condition,
                 nodeInfo,
                 cluster,
-                stateListener,
-                probe);
+                stateListener);
 
         // If the state was successfully set, just return an "ok" message back.
         String reason = success ? "ok" : result.getReason();
@@ -148,10 +143,9 @@ public class SetNodeStateRequest extends Request<SetResponse> {
             SetUnitStateRequest.Condition condition,
             NodeInfo nodeInfo,
             ContentCluster cluster,
-            NodeStateOrHostInfoChangeHandler stateListener,
-            boolean probe) {
+            NodeStateOrHostInfoChangeHandler stateListener) {
         if (result.settingWantedStateIsAllowed()) {
-            setNewWantedState(nodeInfo, newWantedState, stateListener, probe);
+            setNewWantedState(nodeInfo, newWantedState, stateListener);
         }
 
         // True if the wanted state was or has just been set to newWantedState
@@ -162,7 +156,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
             // of the distributor. E.g. setting the storage node to maintenance may cause
             // feeding issues unless distributor is also set down.
 
-            setDistributorWantedState(cluster, nodeInfo.getNodeIndex(), newWantedState, stateListener, probe);
+            setDistributorWantedState(cluster, nodeInfo.getNodeIndex(), newWantedState, stateListener);
         }
 
         return success;
@@ -175,8 +169,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
     private static void setDistributorWantedState(ContentCluster cluster,
                                                   int index,
                                                   NodeState newStorageWantedState,
-                                                  NodeStateOrHostInfoChangeHandler stateListener,
-                                                  boolean probe) {
+                                                  NodeStateOrHostInfoChangeHandler stateListener) {
         Node distributorNode = new Node(NodeType.DISTRIBUTOR, index);
         NodeInfo nodeInfo = cluster.getNodeInfo(distributorNode);
         if (nodeInfo == null) {
@@ -207,15 +200,13 @@ public class SetNodeStateRequest extends Request<SetResponse> {
         if (newWantedState.getState() != currentWantedState.getState() ||
                 !Objects.equals(newWantedState.getDescription(),
                         currentWantedState.getDescription())) {
-            setNewWantedState(nodeInfo, newWantedState, stateListener, probe);
+            setNewWantedState(nodeInfo, newWantedState, stateListener);
         }
     }
 
     private static void setNewWantedState(NodeInfo nodeInfo,
                                           NodeState newWantedState,
-                                          NodeStateOrHostInfoChangeHandler stateListener,
-                                          boolean probe) {
-        if (probe) return;
+                                          NodeStateOrHostInfoChangeHandler stateListener) {
         nodeInfo.setWantedState(newWantedState);
         stateListener.handleNewWantedNodeState(nodeInfo, newWantedState);
     }
