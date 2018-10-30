@@ -6,13 +6,13 @@ package com.yahoo.prelude.query;
  * An interface used for anything which may be addressed using an external,
  * unique ID in the query tree in the backend.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public interface TaggableItem {
 
-    public int getUniqueID();
-    public void setUniqueID(int id);
-    public boolean hasUniqueID();
+    int getUniqueID();
+    void setUniqueID(int id);
+    boolean hasUniqueID();
 
     /**
      * Set the connectivity to another term in the same query tree.
@@ -30,9 +30,9 @@ public interface TaggableItem {
      * @param connectivity a value between 0 (none) and 1 (maximal), defining the connectivity between this and the
      *        argument item. The default connectivity is 0.1.
      */
-    public void setConnectivity(Item item, double connectivity);
-    public Item getConnectedItem();
-    public double getConnectivity();
+    void setConnectivity(Item item, double connectivity);
+    Item getConnectedItem();
+    double getConnectivity();
 
 
     /**
@@ -41,8 +41,9 @@ public interface TaggableItem {
      * This influences ranking features which take term significance into account and overrides the default
      * partial corpus based term significance computation happening in the backend.
      */
-    public void setSignificance(double significance);
-    public boolean hasExplicitSignificance();
-    public void setExplicitSignificance(boolean significance);
-    public double getSignificance();
+    void setSignificance(double significance);
+    boolean hasExplicitSignificance();
+    void setExplicitSignificance(boolean significance);
+    double getSignificance();
+
 }

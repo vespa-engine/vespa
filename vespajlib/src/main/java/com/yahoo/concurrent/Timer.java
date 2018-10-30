@@ -15,5 +15,6 @@ public interface Timer {
      *
      * @return The current value of the timer, in milliseconds.
      */
-    public long milliTime();
+    long milliTime();
+
 }
