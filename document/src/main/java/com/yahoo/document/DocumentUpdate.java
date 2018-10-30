@@ -293,6 +293,11 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
         addFieldUpdates(fieldUpdates);
     }
 
+    /** The same as setFieldUpdates(Collection&lt;FieldUpdate&gt;) */
+    public void setFieldUpdates(List<FieldUpdate> fieldUpdates) {
+        setFieldUpdates((Collection<FieldUpdate>) fieldUpdates);
+    }
+
     public void addFieldUpdates(Collection<FieldUpdate> fieldUpdates) {
         for (FieldUpdate fieldUpdate : fieldUpdates) {
             addFieldUpdate(fieldUpdate);
