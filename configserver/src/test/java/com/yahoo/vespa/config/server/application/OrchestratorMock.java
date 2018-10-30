@@ -47,6 +47,11 @@ public class OrchestratorMock implements Orchestrator {
     }
 
     @Override
+    public void suspendGroup(NodeGroup nodeGroup) {
+        nodeGroup.getHostNames().forEach(this::suspend);
+    }
+
+    @Override
     public ApplicationInstanceStatus getApplicationInstanceStatus(ApplicationId appId) {
         return suspendedApplications.contains(appId)
                ? ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN : ApplicationInstanceStatus.NO_REMARKS;

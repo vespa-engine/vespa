@@ -1,74 +1,40 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.time.TimeBudget;
-import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientTimeouts;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.Optional;
 
 /**
- * Context for an operation (or suboperation) of the Orchestrator that needs to pass through to the backend,
- * e.g. timeout management and probing.
+ * Context for the Orchestrator, e.g. timeout management.
  *
- * @author hakonhall
+ * @author hakon
  */
 public class OrchestratorContext {
-    private static final Duration DEFAULT_TIMEOUT_FOR_SINGLE_OP = Duration.ofSeconds(10);
-    private static final Duration DEFAULT_TIMEOUT_FOR_BATCH_OP = Duration.ofSeconds(60);
+    private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(10);
 
-    private final Clock clock;
-    private final TimeBudget timeBudget;
-    private boolean probe;
+    private TimeBudget timeBudget;
 
-    public static OrchestratorContext createContextForMultiAppOp(Clock clock) {
-        return new OrchestratorContext(clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_BATCH_OP), true);
+    public OrchestratorContext(Clock clock) {
+        this.timeBudget = TimeBudget.fromNow(clock, DEFAULT_TIMEOUT);
     }
 
-    public static OrchestratorContext createContextForSingleAppOp(Clock clock) {
-        return new OrchestratorContext(clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_SINGLE_OP), true);
+    /** Get the original timeout in seconds. */
+    public long getOriginalTimeoutInSeconds() {
+        return timeBudget.originalTimeout().get().getSeconds();
     }
 
-    private OrchestratorContext(Clock clock, TimeBudget timeBudget, boolean probe) {
-        this.clock = clock;
-        this.timeBudget = timeBudget;
-        this.probe = probe;
-    }
-
-    public Duration getTimeLeft() {
-        return timeBudget.timeLeftOrThrow().get();
-    }
-
-    public ClusterControllerClientTimeouts getClusterControllerTimeouts(String clusterName) {
-        return new ClusterControllerClientTimeouts(clusterName, timeBudget.timeLeftAsTimeBudget());
-    }
-
-
-    /** Mark this operation as a non-committal probe. */
-    public OrchestratorContext markAsProbe() {
-        this.probe = true;
-        return this;
-    }
-
-    /** Whether the operation is a no-op probe to test whether it would have succeeded, if it had been committal. */
-    public boolean isProbe() {
-        return probe;
-    }
-
-    /** Create an OrchestratorContext to use within an application lock. */
-    public OrchestratorContext createSubcontextForApplication() {
-        Instant now = clock.instant();
-        Instant deadline = timeBudget.deadline().get();
-        Instant maxDeadline = now.plus(DEFAULT_TIMEOUT_FOR_SINGLE_OP);
-        if (maxDeadline.compareTo(deadline) < 0) {
-            deadline = maxDeadline;
+    /**
+     * Get timeout for a suboperation that should take up {@code shareOfRemaining} of the
+     * remaining time, or throw an {@link UncheckedTimeoutException} if timed out.
+     */
+    public float getSuboperationTimeoutInSeconds(float shareOfRemaining) {
+        if (!(0f <= shareOfRemaining && shareOfRemaining <= 1.0f)) {
+            throw new IllegalArgumentException("Share of remaining time must be between 0 and 1: " + shareOfRemaining);
         }
 
-        return new OrchestratorContext(
-                clock,
-                TimeBudget.from(clock, now, Optional.of(Duration.between(now, deadline))),
-                probe);
+        return shareOfRemaining * timeBudget.timeLeftOrThrow().get().toMillis() / 1000.0f;
     }
 }

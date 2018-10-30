@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.resources;
 
+import com.yahoo.jdisc.Timer;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -31,7 +32,6 @@ import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
-import org.junit.Before;
 import org.junit.Test;
 
 import javax.ws.rs.BadRequestException;
@@ -41,7 +41,6 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
@@ -75,7 +74,7 @@ public class HostResourceTest {
     static {
         when(EVERY_HOST_IS_UP_HOST_STATUS_SERVICE.forApplicationInstance(eq(APPLICATION_INSTANCE_REFERENCE)))
                 .thenReturn(EVERY_HOST_IS_UP_MUTABLE_HOST_STATUS_REGISTRY);
-        when(EVERY_HOST_IS_UP_HOST_STATUS_SERVICE.lockApplicationInstance_forCurrentThreadOnly(eq(APPLICATION_INSTANCE_REFERENCE), any()))
+        when(EVERY_HOST_IS_UP_HOST_STATUS_SERVICE.lockApplicationInstance_forCurrentThreadOnly(eq(APPLICATION_INSTANCE_REFERENCE)))
                 .thenReturn(EVERY_HOST_IS_UP_MUTABLE_HOST_STATUS_REGISTRY);
         when(EVERY_HOST_IS_UP_MUTABLE_HOST_STATUS_REGISTRY.getHostStatus(any()))
                 .thenReturn(HostStatus.NO_REMARKS);
@@ -150,11 +149,6 @@ public class HostResourceTest {
     );
 
     private final UriInfo uriInfo = mock(UriInfo.class);
-
-    @Before
-    public void setUp() {
-        when(clock.instant()).thenReturn(Instant.now());
-    }
 
     @Test
     public void returns_200_on_success() {

@@ -23,23 +23,20 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SetNodeStateRequestTest {
-    private static final String REASON = "operator";
-    private ContentCluster cluster = mock(ContentCluster.class);
-    private SetUnitStateRequest.Condition condition = SetUnitStateRequest.Condition.SAFE;
-    private Map<String, UnitState> newStates = new HashMap<>();
-    private UnitState unitState = mock(UnitState.class);
+    public static final String REASON = "operator";
+    ContentCluster cluster = mock(ContentCluster.class);
+    SetUnitStateRequest.Condition condition = SetUnitStateRequest.Condition.SAFE;
+    Map<String, UnitState> newStates = new HashMap<>();
+    UnitState unitState = mock(UnitState.class);
     private final int NODE_INDEX = 2;
-    private Node storageNode = new Node(NodeType.STORAGE, NODE_INDEX);
-    private NodeStateOrHostInfoChangeHandler stateListener = mock(NodeStateOrHostInfoChangeHandler.class);
-    private ClusterState currentClusterState = mock(ClusterState.class);
-    private boolean probe = false;
+    Node storageNode = new Node(NodeType.STORAGE, NODE_INDEX);
+    NodeStateOrHostInfoChangeHandler stateListener = mock(NodeStateOrHostInfoChangeHandler.class);
+    ClusterState currentClusterState = mock(ClusterState.class);
 
     @Before
     public void setUp() {
@@ -53,16 +50,6 @@ public class SetNodeStateRequestTest {
                 State.UP, State.UP,
                 NodeStateChangeChecker.Result.allowSettingOfWantedState(),
                 Optional.of(State.MAINTENANCE), Optional.of(State.DOWN));
-    }
-
-    @Test
-    public void testProbingDoesntChangeState() throws StateRestApiException {
-        probe = true;
-        testSetStateRequest(
-                "maintenance",
-                State.UP, State.UP,
-                NodeStateChangeChecker.Result.allowSettingOfWantedState(),
-                Optional.empty(), Optional.empty());
     }
 
     @Test
@@ -137,9 +124,6 @@ public class SetNodeStateRequestTest {
         when(cluster.getNodeInfo(distributorNode)).thenReturn(distributorNodeInfo);
 
         NodeState distributorNodeState = new NodeState(distributorNode.getType(), distributorWantedState);
-        if (distributorWantedState != State.UP) {
-            distributorNodeState.setDescription(REASON);
-        }
         when(distributorNodeInfo.getUserWantedState()).thenReturn(distributorNodeState);
 
         setWantedState();
@@ -149,9 +133,6 @@ public class SetNodeStateRequestTest {
                     new NodeState(NodeType.STORAGE, expectedNewStorageWantedState.get());
             verify(storageNodeInfo).setWantedState(expectedNewStorageNodeState);
             verify(stateListener).handleNewWantedNodeState(storageNodeInfo, expectedNewStorageNodeState);
-        } else {
-            verify(storageNodeInfo, times(0)).setWantedState(any());
-            verify(stateListener, times(0)).handleNewWantedNodeState(eq(storageNodeInfo), any());
         }
 
         if (expectedNewDistributorWantedState.isPresent()) {
@@ -159,9 +140,6 @@ public class SetNodeStateRequestTest {
                     new NodeState(NodeType.DISTRIBUTOR, expectedNewDistributorWantedState.get());
             verify(distributorNodeInfo).setWantedState(expectedNewDistributorNodeState);
             verify(stateListener).handleNewWantedNodeState(distributorNodeInfo, expectedNewDistributorNodeState);
-        } else {
-            verify(distributorNodeInfo, times(0)).setWantedState(any());
-            verify(stateListener, times(0)).handleNewWantedNodeState(eq(distributorNodeInfo), any());
         }
     }
 
@@ -172,7 +150,6 @@ public class SetNodeStateRequestTest {
                 newStates,
                 storageNode,
                 stateListener,
-                currentClusterState,
-                probe);
+                currentClusterState);
     }
 }
