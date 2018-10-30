@@ -101,9 +101,9 @@ public class JsonReaderTest {
     final AtomicInteger numSent = new AtomicInteger(0);
 
     @Test
-    public void testReadNoocument() throws Exception {
+    public void testReadNoDocument() throws Exception {
         InputStream inputStream = new ByteArrayInputStream(
-                ("  " ).getBytes(StandardCharsets.UTF_8));
+                "  ".getBytes(StandardCharsets.UTF_8));
         JsonReader.read(inputStream, session, numSent);
         inputStream.close();
         assertThat(session.documentIds.size(), is(0));
@@ -186,20 +186,20 @@ public class JsonReaderTest {
     }
 
     @Test(expected=RuntimeException.class)
-    public void testBadJsonCommaAfterLastElement() throws Exception {
+    public void testBadJsonCommaAfterLastElement() {
         InputStream inputStream = new ByteArrayInputStream(
                 ("["+ doc1 +  ",]" ).getBytes(StandardCharsets.UTF_8));
         JsonReader.read(inputStream, session, numSent);
     }
 
     @Test(expected=RuntimeException.class)
-    public void testTotalGarbage() throws Exception {
+    public void testTotalGarbage() {
         InputStream inputStream = new ByteArrayInputStream(("garbage" ).getBytes(StandardCharsets.UTF_8));
         JsonReader.read(inputStream, session, numSent);
     }
 
     @Test(expected=RuntimeException.class)
-    public void testTwoDocIds() throws Exception {
+    public void testTwoDocIds() {
         InputStream inputStream = new ByteArrayInputStream(("[{\"remove\": \"id\", \"update\": \"id:\"}]"
                 .getBytes(StandardCharsets.UTF_8)));
         JsonReader.read(inputStream, session, numSent);
