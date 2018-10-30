@@ -43,7 +43,7 @@ public class NodeGroup {
     }
 
     public List<HostName> getHostNames() {
-        return hostNames.stream().collect(Collectors.toList()).stream().sorted().collect(Collectors.toList());
+        return hostNames.stream().sorted().collect(Collectors.toList());
     }
 
     public String toCommaSeparatedString() {
