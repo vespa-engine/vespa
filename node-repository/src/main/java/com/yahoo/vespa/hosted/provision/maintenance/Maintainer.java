@@ -2,9 +2,12 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -31,8 +34,10 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         this.interval = interval;
         this.jobControl = jobControl;
 
+        HostName hostname = HostName.from(com.yahoo.net.HostName.getLocalhost());
+        long delay = staggeredDelay(nodeRepository.database().curator().cluster(), hostname, nodeRepository.clock().instant(), interval);
         service = new ScheduledThreadPoolExecutor(1);
-        service.scheduleAtFixedRate(this, interval.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
+        service.scheduleAtFixedRate(this, delay, interval.toMillis(), TimeUnit.MILLISECONDS);
         jobControl.started(name());
     }
 
@@ -70,5 +75,14 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     protected abstract void maintain();
     
     private String name() { return this.getClass().getSimpleName(); }
+
+    static long staggeredDelay(List<HostName> cluster, HostName host, Instant now, Duration interval) {
+        if ( ! cluster.contains(host))
+            return interval.toMillis();
+
+        long offset = cluster.indexOf(host) * interval.toMillis() / cluster.size();
+        long timeUntilNextRun = Math.floorMod(offset - now.toEpochMilli(), interval.toMillis());
+        return timeUntilNextRun + interval.toMillis() / cluster.size();
+    }
 
 }
