@@ -205,6 +205,13 @@ public class JsonReaderTest {
         JsonReader.read(inputStream, session, numSent);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void throwsOnMissingId() {
+        InputStream inputStream = new ByteArrayInputStream(
+                inputJson("[{'fields':{ 'something': 'smoketest', 'nalle': 'bamse' }}]").getBytes(StandardCharsets.UTF_8));
+        JsonReader.read(inputStream, session, numSent);
+    }
+
     @Test
     public void testFullDocument() throws Exception {
         InputStream inputStream = new ByteArrayInputStream((
