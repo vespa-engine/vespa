@@ -222,34 +222,45 @@ public class DeploymentTrigger {
                 .map(Job::jobType).collect(toList());
     }
 
-    /**
-     * Triggers a change of this application
-     *
-     * @param applicationId the application to trigger
-     * @throws IllegalArgumentException if this application already has an ongoing change
-     */
+    /** Triggers a change of this application, unless it already has a change. */
     public void triggerChange(ApplicationId applicationId, Change change) {
         applications().lockOrThrow(applicationId, application -> {
-            if (application.get().change().isPresent() && ! application.get().deploymentJobs().hasFailures())
-                throw new IllegalArgumentException("Could not start " + change + " on " + application + ": " +
-                                                   application.get().change() + " is already in progress");
-            application = application.withChange(change);
-            if (change.application().isPresent())
-                application = application.withOutstandingChange(Change.empty());
+            if ( ! application.get().change().isPresent()) {
+                if (change.application().isPresent())
+                    application = application.withOutstandingChange(Change.empty());
 
-            applications().store(application);
+                applications().store(application.withChange(change));
+            }
+        });
+    }
+
+    /** Overrides the given application's platform and application changes with any contained in the given change. */
+    public void forceChange(ApplicationId applicationId, Change change) {
+        applications().lockOrThrow(applicationId, application -> {
+            Change current = application.get().change();
+            if (change.platform().isPresent())
+                current = current.with(change.platform().get());
+            if (change.application().isPresent())
+                current = current.with(change.application().get());
+            applications().store(application.withChange(current));
         });
     }
 
     /** Cancels a platform upgrade of the given application, and an application upgrade as well if {@code keepApplicationChange}. */
-    public void cancelChange(ApplicationId applicationId, boolean keepApplicationChange) {
+    public void cancelChange(ApplicationId applicationId, ChangesToCancel cancellation) {
         applications().lockOrThrow(applicationId, application -> {
-            applications().store(application.withChange(application.get().change().application()
-                                                                   .filter(__ -> keepApplicationChange)
-                                                                   .map(Change::of)
-                                                                   .orElse(Change.empty())));
+            Change change;
+            switch (cancellation) {
+                case ALL: change = Change.empty(); break;
+                case PLATFORM: change = application.get().change().withoutPlatform(); break;
+                case APPLICATION: change = application.get().change().withoutApplication(); break;
+                default: throw new IllegalArgumentException("Unknown cancellation choice '" + cancellation + "'!");
+            }
+            applications().store(application.withChange(change));
         });
     }
+
+    public enum ChangesToCancel { ALL, PLATFORM, APPLICATION }
 
     // ---------- Conveniences ----------
 

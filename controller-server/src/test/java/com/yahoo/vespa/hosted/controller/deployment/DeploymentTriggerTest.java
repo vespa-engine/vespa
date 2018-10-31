@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -51,6 +52,8 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -133,7 +136,7 @@ public class DeploymentTriggerTest {
         tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.assertRunning(productionUsCentral1, app.id());
 
-        tester.applications().deploymentTrigger().cancelChange(app.id(), false);
+        tester.applications().deploymentTrigger().cancelChange(app.id(), ALL);
         tester.deployAndNotify(app, false, systemTest);
         tester.deployAndNotify(app, false, stagingTest);
         tester.deployAndNotify(app, false, productionUsCentral1);
@@ -561,11 +564,11 @@ public class DeploymentTriggerTest {
         assertEquals(appVersion1, app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
 
         // Verify the application change is not removed when change is cancelled.
-        tester.deploymentTrigger().cancelChange(application.id(), true);
+        tester.deploymentTrigger().cancelChange(application.id(), PLATFORM);
         assertEquals(Change.of(appVersion1), app.get().change());
 
         // Now cancel the change as is done through the web API.
-        tester.deploymentTrigger().cancelChange(application.id(), false);
+        tester.deploymentTrigger().cancelChange(application.id(), ALL);
         assertEquals(Change.empty(), app.get().change());
 
         // A new version is released, which should now deploy the currently deployed application version to avoid downgrades.
@@ -609,7 +612,7 @@ public class DeploymentTriggerTest {
         tester.upgradeSystem(version1);
         // Deploy application2 to keep this version present in the system
         tester.deployCompletely(application2, applicationPackage);
-        tester.applications().deploymentTrigger().cancelChange(application1.id(), false);
+        tester.applications().deploymentTrigger().cancelChange(application1.id(), ALL);
         tester.buildService().clear(); // Clear stale build jobs for cancelled change
 
         // version2 is released and application1 starts upgrading
@@ -688,7 +691,7 @@ public class DeploymentTriggerTest {
         tester.upgradeSystem(v2);
         tester.deployAndNotify(application, true, systemTest);
         tester.deployAndNotify(application, true, stagingTest);
-        tester.deploymentTrigger().cancelChange(application.id(), true);
+        tester.deploymentTrigger().cancelChange(application.id(), PLATFORM);
         tester.deploy(productionEuWest1, application, applicationPackage);
         assertEquals(v2, app.get().deployments().get(productionEuWest1.zone(main)).version());
         assertEquals(v1, app.get().deployments().get(productionUsEast3.zone(main)).version());

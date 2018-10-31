@@ -65,6 +65,7 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
@@ -96,6 +97,8 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
 
 /**
  * This implements the application/v4 API which is used to deploy and manage applications
@@ -738,22 +741,30 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     /** Trigger deployment of the last built application package, on a given version */
     // TODO Consider move to API for maintenance related operations
     private HttpResponse deploy(String tenantName, String applicationName, HttpRequest request) {
-        Version version = decideDeployVersion(request);
-        if ( ! systemHasVersion(version))
-            throw new IllegalArgumentException("Cannot trigger deployment of version '" + version + "': " +
-                                                       "Version is not active in this system. " +
-                                                       "Active versions: " + controller.versionStatus().versions()
-                                                                                       .stream()
-                                                                                       .map(VespaVersion::versionNumber)
-                                                                                       .map(Version::toString)
-                                                                                       .collect(Collectors.joining(", ")));
-
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
+        String requestVersion = readToString(request.getData());
+        StringBuilder response = new StringBuilder();
         controller.applications().lockOrThrow(id, application -> {
-            controller.applications().deploymentTrigger().triggerChange(application.get().id(),
-                                                                        application.get().change().with(version));
+            Change change;
+            if ("commit".equals(requestVersion))
+                change = Change.of(application.get().outstandingChange().application()
+                                              .orElseThrow(() -> new IllegalArgumentException("No outstanding commit to deploy!")));
+            else {
+                Version version = requestVersion == null ? controller.systemVersion() : new Version(requestVersion);
+                if ( ! systemHasVersion(version))
+                    throw new IllegalArgumentException("Cannot trigger deployment of version '" + version + "': " +
+                                                               "Version is not active in this system. " +
+                                                               "Active versions: " + controller.versionStatus().versions()
+                                                                                               .stream()
+                                                                                               .map(VespaVersion::versionNumber)
+                                                                                               .map(Version::toString)
+                                                                                               .collect(Collectors.joining(", ")));
+                change = Change.of(version);
+            }
+            controller.applications().deploymentTrigger().forceChange(application.get().id(), change);
+            response.append("Triggered " + change + " for " + application);
         });
-        return new MessageResponse("Triggered deployment of application '" + id + "' on version " + version);
+        return new MessageResponse(response.toString());
     }
 
     /** Cancel any ongoing change for given application */
@@ -766,7 +777,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             return new MessageResponse("No deployment in progress for " + application + " at this time");
 
         controller.applications().lockOrThrow(id, lockedApplication ->
-            controller.applications().deploymentTrigger().cancelChange(id, false));
+            controller.applications().deploymentTrigger().cancelChange(id, ALL));
 
         return new MessageResponse("Cancelled " + change + " for " + application);
     }
@@ -1121,14 +1132,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private boolean systemHasVersion(Version version) {
         return controller.versionStatus().versions().stream().anyMatch(v -> v.versionNumber().equals(version));
-    }
-
-    private Version decideDeployVersion(HttpRequest request) {
-        String requestVersion = readToString(request.getData());
-        if (requestVersion != null)
-            return new Version(requestVersion);
-        else
-            return controller.systemVersion();
     }
 
     public static void toSlime(DeploymentCost deploymentCost, Cursor object) {
