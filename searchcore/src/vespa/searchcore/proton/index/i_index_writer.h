@@ -27,6 +27,7 @@ public:
     virtual void remove(search::SerialNum serialNum, const search::DocumentIdT lid) = 0;
     virtual void commit(search::SerialNum serialNum, OnWriteDoneType onWriteDone) = 0;
     virtual void heartBeat(search::SerialNum serialNum) = 0;
+    virtual void compactLidSpace(search::SerialNum serialNum, const search::DocumentIdT lid) = 0;
 };
 
 } // namespace proton

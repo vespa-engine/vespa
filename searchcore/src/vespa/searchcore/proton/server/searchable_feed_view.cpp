@@ -6,6 +6,7 @@
 #include "removedonecontext.h"
 #include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/documentmetastore/ilidreusedelayer.h>
+#include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
 #include <vespa/searchlib/common/isequencedtaskexecutor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/closuretask.h>
@@ -201,6 +202,17 @@ SearchableFeedView::performIndexForceCommit(SerialNum serialNum, OnForceCommitDo
 {
     assert(_writeService.index().isCurrentThread());
     _indexWriter->commit(serialNum, onCommitDone);
+}
+
+void
+SearchableFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
+{
+    Parent::handleCompactLidSpace(op);
+    _writeService.index().execute(
+            makeLambdaTask([this, &op]() {
+                               _indexWriter->compactLidSpace(op.getSerialNum(), op.getLidLimit());
+                           }));
+    _writeService.index().sync();
 }
 
 void
