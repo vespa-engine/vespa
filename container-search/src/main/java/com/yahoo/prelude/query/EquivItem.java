@@ -12,7 +12,7 @@ import java.util.Collection;
  * <p>
  * This can only have Word, Int or Phrase children.
  *
- * @author <a href="mailto:havardpe@yahoo-inc.com">havardpe</a>
+ * @author havardpe
  */
 public class EquivItem extends CompositeTaggableItem {
 
@@ -27,7 +27,8 @@ public class EquivItem extends CompositeTaggableItem {
     @Override
     protected void adding(Item item) {
         super.adding(item);
-        Validator.ensure("Equiv can only have word/int/phrase as children",
+        Validator.ensure("Could not add an item of type " + item.getItemType() + 
+                         ": Equiv can only have word/int/phrase as children",
                          item.getItemType() == ItemType.WORD ||
                          item.getItemType() == ItemType.INT ||
                          item.getItemType() == ItemType.PHRASE);
