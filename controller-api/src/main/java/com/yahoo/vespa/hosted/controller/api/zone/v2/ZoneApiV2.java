@@ -106,9 +106,10 @@ public interface ZoneApiV2 {
                                         @QueryParam("timeout") long timeoutInSeconds);
 
     @GET
-    @Path("/{environmentId}/{regionId}/config/v2/tenant/{tenantId}/application/{applicationId}/cloud.config.cluster-list")
+    @Path("/{environmentId}/{regionId}/config/v2/tenant/{tenantId}/application/{applicationId}/environment/{environmentId}/region/{regionId}/instance/{instanceId}/cloud.config.cluster-list")
     JsonNode getVespaConfigClusterList(@PathParam("tenantId") TenantId tenantId,
                                        @PathParam("applicationId") ApplicationId applicationId,
+                                       @PathParam("instanceId") InstanceId instanceId,
                                        @PathParam("environmentId") EnvironmentId environmentId,
                                        @PathParam("regionId") RegionId regionId,
                                        @QueryParam("timeout") long timeoutInSeconds);
