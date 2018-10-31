@@ -75,6 +75,15 @@ public interface Orchestrator {
     void acquirePermissionToRemove(HostName hostName) throws OrchestrationException;
 
     /**
+     * Suspend normal operations for a group of nodes in the same application.
+     *
+     * @param nodeGroup The group of nodes in an application.
+     * @throws HostStateChangeDeniedException if the request cannot be meet due to policy constraints.
+     * @throws HostNameNotFoundException if any hostnames in the node group is not recognized
+     */
+    void suspendGroup(NodeGroup nodeGroup) throws HostStateChangeDeniedException, HostNameNotFoundException;
+
+    /**
      * Suspend several hosts. On failure, all hosts are resumed before exiting the method with an exception.
      */
     void suspendAll(HostName parentHostname, List<HostName> hostNames)

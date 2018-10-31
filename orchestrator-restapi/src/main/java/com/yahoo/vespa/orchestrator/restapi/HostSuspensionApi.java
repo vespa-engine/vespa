@@ -22,9 +22,13 @@ public interface HostSuspensionApi {
     String PATH_PREFIX = "/v1/suspensions/hosts";
 
     /**
-     * Ask for permission to temporarily suspend all services on a set of hosts (nodes).
+     * Ask for permission to temporarily suspend all services on a set of hosts.
      *
-     * See HostApi::suspend for semantics of suspending a node.
+     * See HostApi::suspend for semantics of suspending a host.
+     *
+     * On failure, it tries to resume ALL hosts. It needs to try to resume all hosts because any or all hosts
+     * may have been suspended in an earlier attempt. Ending with resumption of all hosts makes sure other
+     * batch-requests for suspension of hosts succeed.
      */
     @PUT
     @Path("/{hostname}")
