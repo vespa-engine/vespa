@@ -58,6 +58,7 @@ readCounts(PostingListCounts &counts)
     }
     if (numChunks != 0) {
         uint32_t prevLastDoc = 0u;
+        counts._segments.reserve(numChunks);
         for (uint32_t chunk = 0; chunk < numChunks; ++chunk) {
             if (__builtin_expect(oCompr >= valE, false)) {
                 UC64_DECODECONTEXT_STORE(o, _);
