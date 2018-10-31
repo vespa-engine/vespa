@@ -70,6 +70,7 @@ import org.apache.commons.lang.StringUtils;
  *
  * @author bratseth
  */
+ @SuppressWarnings("deprecation")
 public class SDParser {
 
     private DocumentTypeManager docMan = null;
@@ -579,7 +580,7 @@ void compression(SDDocumentType document, String name) :
     <COMPRESSION> lbrace() (cfg = compressionItem(cfg) (<NL>)*)* <RBRACE>
     {
         if (name == null || name.equals("header")) {
-            document.getDocumentType().getHeaderType().setCompressionConfig(cfg);
+            document.getDocumentType().getContentType().setCompressionConfig(cfg);
         }
         if (name == null || name.equals("body")) {
             document.getDocumentType().getBodyType().setCompressionConfig(cfg);

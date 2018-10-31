@@ -19,7 +19,11 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Iterator;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests importing of search definitions
@@ -29,6 +33,7 @@ import static org.junit.Assert.*;
 public class SearchImporterTestCase extends SearchDefinitionTestCase {
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testSimpleImporting() throws IOException, ParseException {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         SearchBuilder sb = new SearchBuilder(rankProfileRegistry, new QueryProfileRegistry());

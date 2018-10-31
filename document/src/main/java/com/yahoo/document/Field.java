@@ -16,6 +16,7 @@ import java.io.Serializable;
  * @author Thomas Gundersen
  * @author bratseth
  */
+//TODO Vespa 7 Remove deprecated methods.
 public class Field extends FieldBase implements FieldSet, Comparable, Serializable {
 
     protected DataType dataType;
@@ -214,12 +215,20 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
         return forcedId;
     }
 
-    /** @return Returns true if this field should be a part of "header" serializations. */
+    /**
+     * NB: Has no longer any semantic meaning as this is no longer an aspect with a field.
+     * @return Returns true if this field should be a part of "header" serializations.
+     */
+    @Deprecated
     public boolean isHeader() {
         return isHeader;
     }
 
-    /** Sets whether this is a header field */
+    /**
+     *  NB: Has no longer any semantic meaning as this is no longer an aspect with a field.
+     *  Sets whether this is a header field
+     */
+    @Deprecated
     public void setHeader(boolean header) {
         this.isHeader = header;
     }

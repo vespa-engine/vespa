@@ -70,6 +70,7 @@ public class DocumentManager {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void buildConfig(DataType type, Datatype.Builder builder) {
         builder.id(type.getId());
         if (type instanceof ArrayDataType) {
@@ -92,7 +93,7 @@ public class DocumentManager {
             builder.documenttype(doc);
             doc.
                 name(dt.getName()).
-                headerstruct(dt.getHeaderType().getId()).
+                headerstruct(dt.getContentType().getId()).
                 bodystruct(dt.getBodyType().getId());
             for (DocumentType inherited : dt.getInheritedTypes()) {
                 doc.inherits(new Datatype.Documenttype.Inherits.Builder().name(inherited.getName()));

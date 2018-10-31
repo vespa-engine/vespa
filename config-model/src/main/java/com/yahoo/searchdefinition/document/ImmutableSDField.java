@@ -10,7 +10,6 @@ import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -31,8 +30,6 @@ public interface ImmutableSDField {
     boolean doesLowerCasing();
 
     boolean isExtraField();
-
-    boolean isHeader();
 
     boolean isImportedField();
 

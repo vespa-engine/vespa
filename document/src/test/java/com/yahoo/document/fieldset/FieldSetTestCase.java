@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 public class FieldSetTestCase extends DocumentTestCaseBase {
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testClone() throws Exception {
         assertTrue(new AllFields().clone() instanceof AllFields);
         assertTrue(new NoFields().clone() instanceof NoFields);
@@ -29,6 +30,7 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testParsing() {
         FieldSetRepo repo = new FieldSetRepo();
 
@@ -65,6 +67,7 @@ public class FieldSetTestCase extends DocumentTestCaseBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testContains() throws Exception {
         Field headerField = testDocType.getField("intattr");
         Field bodyField = testDocType.getField("rawattr");

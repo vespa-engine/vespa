@@ -2,7 +2,12 @@
 package com.yahoo.vdslib;
 
 import com.yahoo.compress.CompressionType;
-import com.yahoo.document.*;
+import com.yahoo.document.BucketIdFactory;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentPut;
+import com.yahoo.document.DocumentRemove;
+import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.vespa.objects.Serializer;
@@ -72,6 +77,7 @@ public class DynamicDocumentList extends DocumentList {
             buf.put(null, serializer.getBuf().getByteBuffer());
         }
     }
+    @SuppressWarnings("deprecation")
     private void serializeInternal(DocumentSerializer buf) {
         ByteOrder originalOrder = buf.getBuf().order();
         buf.getBuf().order(ByteOrder.LITTLE_ENDIAN);
@@ -106,8 +112,8 @@ public class DynamicDocumentList extends DocumentList {
                     metaEntry.timestamp = lastModified;
                 }
 
-                if (doc.getDataType().getHeaderType().getCompressionConfig() != null
-                        && doc.getDataType().getHeaderType().getCompressionConfig().type != CompressionType.NONE) {
+                if (doc.getDataType().getContentType().getCompressionConfig() != null
+                        && doc.getDataType().getContentType().getCompressionConfig().type != CompressionType.NONE) {
                     metaEntry.flags |= MetaEntry.COMPRESSED;
                 }
                 if (doc.getDataType().getBodyType().getCompressionConfig() != null

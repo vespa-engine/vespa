@@ -25,6 +25,7 @@ public class FieldOperationApplierForStructs extends FieldOperationApplier {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void copyFields(SDDocumentType structType, SDDocumentType sdoc) {
         //find all fields in OTHER types that have this type:
         List<SDDocumentType> list = new ArrayList<>();

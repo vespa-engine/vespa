@@ -99,7 +99,9 @@ public class Document extends StructuredFieldValue {
         docId = id;
     }
 
+    @Deprecated
     public Struct getHeader() { return header; }
+    @Deprecated
     public Struct getBody() { return body; }
 
     @Override
@@ -116,8 +118,9 @@ public class Document extends StructuredFieldValue {
         return doc;
     }
 
+    @SuppressWarnings("deprecation")
     private void setNewType(DocumentType type) {
-        header = type.getHeaderType().createFieldValue();
+        header = type.getContentType().createFieldValue();
         body = type.getBodyType().createFieldValue();
     }
 
@@ -188,14 +191,15 @@ public class Document extends StructuredFieldValue {
 
     @Override
     public FieldValue getFieldValue(Field field) {
-        if (field.isHeader()) {
-            return header.getFieldValue(field);
-        } else {
-            return body.getFieldValue(field);
+        FieldValue fv = header.getFieldValue(field);
+        if (fv == null) {
+            fv = body.getFieldValue(field);
         }
+        return fv;
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected void doSetFieldValue(Field field, FieldValue value) {
         if (field.isHeader()) {
             header.setFieldValue(field, value);
@@ -206,11 +210,11 @@ public class Document extends StructuredFieldValue {
 
     @Override
     public FieldValue removeFieldValue(Field field) {
-        if (field.isHeader()) {
-            return header.removeFieldValue(field);
-        } else {
-            return body.removeFieldValue(field);
+        FieldValue removed = header.removeFieldValue(field);
+        if (removed == null) {
+            removed = body.removeFieldValue(field);
         }
+        return removed;
     }
 
     @Override
@@ -338,6 +342,7 @@ public class Document extends StructuredFieldValue {
     }
 
     @SuppressWarnings("deprecation")
+    @Deprecated
     public void serializeHeader(Serializer data) throws SerializationException {
         if (data instanceof DocumentWriter) {
             if (data instanceof com.yahoo.document.serialization.VespaDocumentSerializer42) {
@@ -353,6 +358,7 @@ public class Document extends StructuredFieldValue {
         }
     }
 
+    @Deprecated
     public void serializeBody(Serializer data) throws SerializationException {
         if (getBody().getFieldCount() > 0) {
             if (data instanceof FieldWriter) {

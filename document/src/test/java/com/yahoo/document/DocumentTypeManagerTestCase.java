@@ -24,6 +24,7 @@ public class DocumentTypeManagerTestCase {
 
     // Verify that we can register and retrieve fields.
     @Test
+    @SuppressWarnings("deprecation")
     public void testRegisterAndGet() {
         DocumentTypeManager manager = new DocumentTypeManager();
 

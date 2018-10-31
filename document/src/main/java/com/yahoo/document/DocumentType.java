@@ -9,7 +9,17 @@ import com.yahoo.vespa.objects.Ids;
 import com.yahoo.vespa.objects.ObjectVisitor;
 import com.yahoo.vespa.objects.Serializer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
+
 
 /**
  * <p>A document definition is a list of fields. Documents may inherit other documents,
@@ -19,12 +29,13 @@ import java.util.*;
  * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
  * @author bratseth
  */
+// TODO Vespa 7 Remove header/body concept
 public class DocumentType extends StructuredDataType {
 
     public static final int classId = registerClass(Ids.document + 58, DocumentType.class);
     private StructDataType headerType;
     private StructDataType bodyType;
-    private List<DocumentType> inherits = new ArrayList<DocumentType>(1);
+    private List<DocumentType> inherits = new ArrayList<>(1);
 
     /**
      * Creates a new document type and registers it with the document type manager.
@@ -89,15 +100,23 @@ public class DocumentType extends StructuredDataType {
         return false;
     }
 
-    public StructDataType getHeaderType() {
+    public StructDataType getContentType() {
         return headerType;
     }
 
+    // Use getContentType instead
+    @Deprecated
+    public StructDataType getHeaderType() {
+        return getContentType();
+    }
+
+    @Deprecated
     public StructDataType getBodyType() {
         return bodyType;
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected void register(DocumentTypeManager manager, List<DataType> seenTypes) {
         seenTypes.add(this);
         for (DocumentType type : getInheritedTypes()) {
@@ -148,6 +167,7 @@ public class DocumentType extends StructuredDataType {
      *
      * @param field the field to add
      */
+    @SuppressWarnings("deprecation")
     public void addField(Field field) {
         if (isRegistered()) {
             throw new IllegalStateException("You cannot add fields to a document type that is already registered.");
@@ -397,7 +417,7 @@ public class DocumentType extends StructuredDataType {
      * @return an unmodifiable snapshot of the fields in this type
      */
     public Set<Field> fieldSet() {
-        Map<String, Field> map = new LinkedHashMap<String, Field>();
+        Map<String, Field> map = new LinkedHashMap<>();
         for (Field field : getFields()) { // Uniqify on field name
             map.put(field.getName(), field);
         }

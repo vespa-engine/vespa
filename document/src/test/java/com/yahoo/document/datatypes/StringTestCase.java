@@ -343,6 +343,7 @@ public class StringTestCase extends AbstractTypesTest {
         return document;
     }
 
+    @SuppressWarnings("deprecation")
     public Document consume(Document document, DocumentTypeManager docTypeMgr) {
         DocumentType type = docTypeMgr.getDocumentType("blog");
         Collection<Field> fc = type.getFields();

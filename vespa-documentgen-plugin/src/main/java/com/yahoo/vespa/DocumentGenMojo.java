@@ -2,7 +2,14 @@
 package com.yahoo.vespa;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.document.*;
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Field;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.ReferenceDataType;
+import com.yahoo.document.StructDataType;
+import com.yahoo.document.TensorDataType;
+import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.documentmodel.NewDocumentType;
@@ -11,7 +18,6 @@ import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -19,8 +25,20 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 
 /**
  * Goal which generates Vespa document classes from SD files.
@@ -75,7 +93,7 @@ public class DocumentGenMojo extends AbstractMojo {
     private Map<String, String> structTypes;
     private Map<String, String> annotationTypes;
 
-    void execute(File sdDir, File outputDir, String packageName) throws MojoFailureException {
+    void execute(File sdDir, File outputDir, String packageName) {
         if ("".equals(packageName)) throw new IllegalArgumentException("You may not use empty package for generated types.");
         searches = new HashMap<>();
         docTypes = new HashMap<>();
@@ -99,7 +117,7 @@ public class DocumentGenMojo extends AbstractMojo {
         }
         exportPackageInfo(outputDir, packageName);
         if (annotationsExported) exportPackageInfo(outputDir, packageName+".annotation");
-        exportDocFactory(outputDir, builder.getSearchList(), packageName);
+        exportDocFactory(outputDir, packageName);
         if (project!=null) project.addCompileSourceRoot(outputDirectory.toString());
     }
 
@@ -166,7 +184,7 @@ public class DocumentGenMojo extends AbstractMojo {
         return false;
     }
 
-    private void exportDocFactory(File outputDir, List<Search> searches, String packageName) {
+    private void exportDocFactory(File outputDir, String packageName) {
         File dirForSources = new File(outputDir, packageName.replaceAll("\\.", "/"));
         dirForSources.mkdirs();
         File target = new File(dirForSources, "ConcreteDocumentFactory.java");
@@ -338,8 +356,8 @@ public class DocumentGenMojo extends AbstractMojo {
      * Handle the case of an annotation reference with a type that is user provided, we need to know the class name then
      */
     private String exportImportProvidedAnnotationRefs(AnnotationType annType) {
-        String ret = "";
-        if (annType.getDataType()==null) return ret;
+        if (annType.getDataType()==null) return "";
+        StringBuilder ret = new StringBuilder();
         for (Field f : ((StructDataType)annType.getDataType()).getFields()) {
             if (f.getDataType() instanceof AnnotationReferenceDataType) {
                 AnnotationReferenceDataType refType = (AnnotationReferenceDataType) f.getDataType();
@@ -347,12 +365,11 @@ public class DocumentGenMojo extends AbstractMojo {
                 String providedClass = provided(referenced.getName());
                 if (providedClass!=null) {
                     // Annotationreference is to a type that is user-provided
-                    ret = ret +
-                            "import "+providedClass+";\n";
+                    ret.append("import ").append(providedClass).append(";\n");
                 }
             }
         }
-        return ret;
+        return ret.toString();
     }
 
     private String annTypeModifier(AnnotationType annType) {
@@ -368,12 +385,12 @@ public class DocumentGenMojo extends AbstractMojo {
     }
 
     private static String exportInnerImportsFromSuperTypes(NewDocumentType docType, String packageName) {
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         for (NewDocumentType inherited : docType.getInherited()) {
             if (inherited.getName().equals("document")) continue;
-            ret = ret + "import "+packageName+"."+className(inherited.getName())+".*;\n";
+            ret.append("import ").append(packageName).append(".").append(className(inherited.getName())).append(".*;\n");
         }
-        return ret;
+        return ret.toString();
     }
 
     private String getParentAnnotationType(AnnotationType annType) {
@@ -384,7 +401,7 @@ public class DocumentGenMojo extends AbstractMojo {
         return className(annType.getInheritedTypes().iterator().next().getName());
     }
 
-    private void exportDocumentSources(File outputDir, NewDocumentType docType, String packageName) throws MojoFailureException {
+    private void exportDocumentSources(File outputDir, NewDocumentType docType, String packageName) {
         File dirForSources = new File(outputDir, packageName.replaceAll("\\.", "/"));
         dirForSources.mkdirs();
         File target = new File(dirForSources, className(docType.getName())+".java");
@@ -444,7 +461,7 @@ public class DocumentGenMojo extends AbstractMojo {
 
         Collection<Field> allUniqueFields = getAllUniqueFields(multiExtends, docType.getAllFields());
         exportExtendedStructTypeGetter(className, docType.getName(), allUniqueFields, out, 1, "getDocumentType", "com.yahoo.document.DocumentType");
-        exportCopyConstructor(className, allUniqueFields, out, 1, true);
+        exportCopyConstructor(className, out, 1, true);
 
         exportFieldsAndAccessors(className, "com.yahoo.document.Document".equals(superType) ? allUniqueFields : docType.getFields(), out, 1, true);
         exportDocumentMethods(allUniqueFields, out, 1);
@@ -513,7 +530,7 @@ public class DocumentGenMojo extends AbstractMojo {
      *
      * NOTE: This is important, the docproc framework uses that constructor.
      */
-    private static void exportCopyConstructor(String className, Collection<Field> fieldSet, Writer out, int ind, boolean docId) throws IOException {
+    private static void exportCopyConstructor(String className, Writer out, int ind, boolean docId) throws IOException {
         out.write(
                 ind(ind)+"/**\n"+
                 ind(ind)+" * Constructs a "+className+" by taking a deep copy of the provided StructuredFieldValue.\n" +
@@ -587,7 +604,7 @@ public class DocumentGenMojo extends AbstractMojo {
     }
 
     private static void exportOverriddenStructGetter(Collection<Field> fields, Writer out, int ind, String methodName, String structType) throws IOException {
-        out.write(ind(ind)+"@Override public com.yahoo.document.datatypes.Struct "+methodName+"() {\n" +
+        out.write(ind(ind)+"@Override @Deprecated public com.yahoo.document.datatypes.Struct "+methodName+"() {\n" +
                 ind(ind+1)+"com.yahoo.document.datatypes.Struct ret = new com.yahoo.document.datatypes.Struct("+structType+");\n");
         for (Field f : fields) {
             out.write(ind(ind+1)+"ret.setFieldValue(\""+f.getName()+"\", getFieldValue(getField(\""+f.getName()+"\")));\n");
@@ -604,8 +621,8 @@ public class DocumentGenMojo extends AbstractMojo {
         exportGetFieldCount(fieldSet, out, ind);
         exportGetField(out, ind);
         exportGetFieldValue(fieldSet, out, ind);
-        exportSetFieldValue(fieldSet, out, ind);
-        exportRemoveFieldValue(fieldSet, out, ind);
+        exportSetFieldValue(out, ind);
+        exportRemoveFieldValue(out, ind);
         exportIterator(fieldSet, out, ind);
         exportClear(fieldSet, out, ind);
 
@@ -654,7 +671,7 @@ public class DocumentGenMojo extends AbstractMojo {
                 ind(ind)+"}\n\n");
     }
 
-    private static void exportRemoveFieldValue(Collection<Field> fieldSet, Writer out, int ind) throws IOException {
+    private static void exportRemoveFieldValue(Writer out, int ind) throws IOException {
         out.write(ind(ind) + "@Override public com.yahoo.document.datatypes.FieldValue removeFieldValue(com.yahoo.document.Field field) {\n");
         out.write(ind(ind+1) + "if (field==null) return null;\n");
         out.write(ind(ind+1) + "com.yahoo.document.ExtendedField ef = ensureExtended(field);\n");
@@ -662,7 +679,7 @@ public class DocumentGenMojo extends AbstractMojo {
         out.write(ind(ind) + "}\n");
     }
 
-    private static void exportSetFieldValue(Collection<Field> fieldSet, Writer out, int ind) throws IOException {
+    private static void exportSetFieldValue(Writer out, int ind) throws IOException {
         out.write(ind(ind)+"@Override public com.yahoo.document.datatypes.FieldValue setFieldValue(com.yahoo.document.Field field, com.yahoo.document.datatypes.FieldValue value) {\n");
         out.write(ind(ind+1)+"com.yahoo.document.ExtendedField ef = ensureExtended(field);\n");
         out.write(ind(ind+1)+"return (ef != null) ? ef.setFieldValue(this, value) : super.setFieldValue(field, value);\n");
@@ -721,7 +738,7 @@ public class DocumentGenMojo extends AbstractMojo {
                 out.write(ind(ind+1)+"public "+structClassName+"() {\n" +
                 ind(ind+2)+"super("+structClassName+".type);\n" +
                 ind(ind+1)+"}\n\n");
-                exportCopyConstructor(structClassName, structType.getFields(), out, ind+1, false);
+                exportCopyConstructor(structClassName, out, ind+1, false);
                 exportExtendedStructTypeGetter(structClassName, structType.getName(), structType.getFields(), out, ind+1, "getStructType", "com.yahoo.document.StructDataType");
                 exportAssign(structType, structClassName, out, ind+1);
                 exportFieldsAndAccessors(structClassName, structType.getFields(), out, ind+1, true);
@@ -820,7 +837,7 @@ public class DocumentGenMojo extends AbstractMojo {
      */
     private static String ind(int levels) {
         int indent = levels*STD_INDENT;
-        StringBuilder sb = new StringBuilder("");
+        StringBuilder sb = new StringBuilder();
         for (int i = 0 ; i<indent ; i++) {
             sb.append(" ");
         }
@@ -907,15 +924,15 @@ public class DocumentGenMojo extends AbstractMojo {
     }
 
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() {
         execute(this.sdDirectory, this.outputDirectory, this.packageName);
     }
 
-    public Map<String, Search> getSearches() {
+    Map<String, Search> getSearches() {
         return searches;
     }
 
     private static String upperCaseFirstChar(String s) {
-        return s.substring(0, 1).toUpperCase()+s.substring(1, s.length());
+        return s.substring(0, 1).toUpperCase()+s.substring(1);
     }
 }

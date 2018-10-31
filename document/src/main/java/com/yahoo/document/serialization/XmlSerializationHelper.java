@@ -47,6 +47,7 @@ public class XmlSerializationHelper {
         xml.addContent(b.toString());
     }
 
+    @SuppressWarnings("deprecation")
     public static void printDocumentXml(Document doc, XmlStream xml) {
         xml.addAttribute("documenttype", doc.getDataType().getName());
         xml.addAttribute("documentid", doc.getId());

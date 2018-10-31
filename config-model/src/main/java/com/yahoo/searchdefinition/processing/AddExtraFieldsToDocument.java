@@ -56,6 +56,7 @@ public class AddExtraFieldsToDocument extends Processor {
         addField(search, document, field, validate);
     }
 
+    @SuppressWarnings("deprecation")
     private void addSummaryField(Search search, SDDocumentType document, SummaryField field, boolean validate) {
         Field docField = document.getField(field.getName());
         if (docField == null) {

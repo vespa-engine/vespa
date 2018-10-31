@@ -15,6 +15,7 @@ import java.util.*;
  */
 public class FieldSetRepo {
 
+    @SuppressWarnings("deprecation")
     FieldSet parseSpecialValues(String name)
     {
         if (name.equals("[id]")) { return new DocIdOnly(); }
@@ -73,6 +74,7 @@ public class FieldSetRepo {
         return parseFieldCollection(docMan, type, fields);
     }
 
+    @SuppressWarnings("deprecation")
     public String serialize(FieldSet fieldSet) {
         if (fieldSet instanceof Field) {
             return ((Field)fieldSet).getName();

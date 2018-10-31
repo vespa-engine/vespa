@@ -280,6 +280,7 @@ public class SchemaMappingAndAccessesTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testMappedDocAPI() {
         Document doc = getDoc();
         Map<String, String> fieldMap = new HashMap<>();
