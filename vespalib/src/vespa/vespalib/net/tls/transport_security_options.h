@@ -3,7 +3,7 @@
 #pragma once
 
 #include "certificate_verification_callback.h"
-#include <vespa/vespalib/stllike/string.h>
+#include "peer_policies.h"
 #include <memory>
 
 namespace vespalib::net::tls {
@@ -12,12 +12,24 @@ class TransportSecurityOptions {
     vespalib::string _ca_certs_pem;
     vespalib::string _cert_chain_pem;
     vespalib::string _private_key_pem;
-    std::shared_ptr<CertificateVerificationCallback> _cert_verify_callback;
+    AllowedPeers     _allowed_peers;
 public:
     TransportSecurityOptions() = default;
 
-    // Construct transport options with a default certificate verification callback
-    // which accepts all certificates correctly signed by the given CA(s).
+    struct Builder {
+        vespalib::string _ca_certs_pem;
+        vespalib::string _cert_chain_pem;
+        vespalib::string _private_key_pem;
+        AllowedPeers     _allowed_peers;
+
+        Builder& ca_certs_pem(vespalib::stringref pem) { _ca_certs_pem = pem; return *this; }
+        Builder& cert_chain_pem(vespalib::stringref pem) { _cert_chain_pem = pem; return *this; }
+        Builder& private_key_pem(vespalib::stringref pem) { _private_key_pem = pem; return *this; }
+        Builder& allowed_peers(AllowedPeers allowed) { _allowed_peers = std::move(allowed); return *this; }
+    };
+
+    explicit TransportSecurityOptions(Builder builder);
+
     TransportSecurityOptions(vespalib::string ca_certs_pem,
                              vespalib::string cert_chain_pem,
                              vespalib::string private_key_pem);
@@ -25,15 +37,14 @@ public:
     TransportSecurityOptions(vespalib::string ca_certs_pem,
                              vespalib::string cert_chain_pem,
                              vespalib::string private_key_pem,
-                             std::shared_ptr<CertificateVerificationCallback> cert_verify_callback);
+                             AllowedPeers allowed_peers);
+
     ~TransportSecurityOptions();
 
     const vespalib::string& ca_certs_pem() const noexcept { return _ca_certs_pem; }
     const vespalib::string& cert_chain_pem() const noexcept { return _cert_chain_pem; }
     const vespalib::string& private_key_pem() const noexcept { return _private_key_pem; }
-    const std::shared_ptr<CertificateVerificationCallback>& cert_verify_callback() const noexcept {
-        return _cert_verify_callback;
-    }
+    const AllowedPeers& allowed_peers() const noexcept { return _allowed_peers; }
 };
 
-}
+} // vespalib::net::tls

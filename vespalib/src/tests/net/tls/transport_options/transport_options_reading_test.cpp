@@ -2,6 +2,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
+#include <vespa/vespalib/test/peer_policy_utils.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -60,6 +61,75 @@ TEST("missing file referenced by field throws exception") {
     EXPECT_EXCEPTION(read_options_from_json_string(incomplete_json), IllegalArgumentException,
                      "File 'missing_privkey.txt' referenced by TLS config does not exist");
 }
+
+vespalib::string json_with_policies(const vespalib::string& policies) {
+    const char* fmt = R"({"files":{"private-key":"dummy_privkey.txt",
+                                   "certificates":"dummy_certs.txt",
+                                   "ca-certificates":"dummy_ca_certs.txt"},
+                          "allowed-peers":[%s]})";
+    return vespalib::make_string(fmt, policies.c_str());
+}
+
+TransportSecurityOptions parse_policies(const vespalib::string& policies) {
+    return *read_options_from_json_string(json_with_policies(policies));
+}
+
+TEST("config file without allowed-peers accepts all pre-verified certificates") {
+    const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
+                                    "certificates":"dummy_certs.txt",
+                                    "ca-certificates":"dummy_ca_certs.txt"}})";
+    EXPECT_TRUE(read_options_from_json_string(json)->allowed_peers().allows_all_authenticated());
+}
+
+// Instead of contemplating what the semantics of an empty allow list should be,
+// we do the easy way out and just say it's not allowed in the first place.
+TEST("empty policy array throws exception") {
+    EXPECT_EXCEPTION(parse_policies(""), vespalib::IllegalArgumentException,
+                     "\"allowed-peers\" must either be not present (allows "
+                     "all peers with valid certificates) or a non-empty array");
+}
+
+TEST("can parse single peer policy with single requirement") {
+    const char* json = R"({
+      "required-credentials":[
+         {"field": "SAN_DNS", "must-match": "hello.world"}
+      ]
+    })";
+    EXPECT_EQUAL(allowed_peers({policy_with({required_san_dns("hello.world")})}),
+                 parse_policies(json).allowed_peers());
+}
+
+TEST("can parse single peer policy with multiple requirements") {
+    const char* json = R"({
+      "required-credentials":[
+         {"field": "SAN_DNS", "must-match": "hello.world"},
+         {"field": "CN", "must-match": "goodbye.moon"}
+      ]
+    })";
+    EXPECT_EQUAL(allowed_peers({policy_with({required_san_dns("hello.world"),
+                                             required_cn("goodbye.moon")})}),
+                 parse_policies(json).allowed_peers());
+}
+
+TEST("unknown field type throws exception") {
+    const char* json = R"({
+      "required-credentials":[
+         {"field": "winnie the pooh", "must-match": "piglet"}
+      ]
+    })";
+    EXPECT_EXCEPTION(parse_policies(json), vespalib::IllegalArgumentException,
+                     "Unsupported credential field type: 'winnie the pooh'. Supported are: CN, SAN_DNS");
+}
+
+TEST("empty required-credentials array throws exception") {
+    const char* json = R"({
+      "required-credentials":[]
+    })";
+    EXPECT_EXCEPTION(parse_policies(json), vespalib::IllegalArgumentException,
+                     "\"required-credentials\" array can't be empty (would allow all peers)");
+}
+
+// TODO test parsing of multiple policies
 
 TEST_MAIN() { TEST_RUN_ALL(); }
 
