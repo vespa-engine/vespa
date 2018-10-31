@@ -4,8 +4,12 @@ package com.yahoo.vespa.config.server.tenant;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Version;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.GlobalComponentRegistry;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.ServerCache;
@@ -188,6 +192,7 @@ public class TenantRepositoryTest {
                                                                    .throwIfBootstrappingTenantRepoFails(throwIfBootstrappingTenantRepoFails)
                                                                    .configDefinitionsDir(temporaryFolder.newFolder("configdefs" + throwIfBootstrappingTenantRepoFails).getAbsolutePath())
                                                                    .configServerDBDir(temporaryFolder.newFolder("configserverdb" + throwIfBootstrappingTenantRepoFails).getAbsolutePath())))
+                .zone(new Zone(SystemName.cd, Environment.prod, RegionName.from("foo")))
                 .build();
     }
 
