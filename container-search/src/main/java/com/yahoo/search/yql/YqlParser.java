@@ -1295,14 +1295,14 @@ public class YqlParser implements Parser {
                                     "Only one of prefix, substring and suffix can be set.");
 
         TaggableItem wordItem;
-        if (exact) {
-            wordItem = new ExactStringItem(wordData, fromQuery);
-        } else if (prefixMatch) {
+        if (prefixMatch) {
             wordItem = new PrefixItem(wordData, fromQuery);
         } else if (suffixMatch) {
             wordItem = new SuffixItem(wordData, fromQuery);
         } else if (substrMatch) {
             wordItem = new SubstringItem(wordData, fromQuery);
+        } else if (exact) {
+            wordItem = new ExactStringItem(wordData, fromQuery);
         } else {
             switch (segmentPolicy) {
                 case NEVER:
