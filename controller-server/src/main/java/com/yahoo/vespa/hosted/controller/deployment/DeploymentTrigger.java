@@ -230,7 +230,7 @@ public class DeploymentTrigger {
      */
     public void triggerChange(ApplicationId applicationId, Change change) {
         applications().lockOrThrow(applicationId, application -> {
-            if (application.get().changeAt(controller.clock().instant()).isPresent() && ! application.get().deploymentJobs().hasFailures())
+            if (application.get().change().isPresent() && ! application.get().deploymentJobs().hasFailures())
                 throw new IllegalArgumentException("Could not start " + change + " on " + application + ": " +
                                                    application.get().change() + " is already in progress");
             application = application.withChange(change);
@@ -289,7 +289,7 @@ public class DeploymentTrigger {
     private List<Job> computeReadyJobs(ApplicationId id) {
         List<Job> jobs = new ArrayList<>();
         applications().get(id).ifPresent(application -> {
-            Change change = application.changeAt(clock.instant());
+            Change change = application.change();
             Optional<Instant> completedAt = max(application.deploymentJobs().statusOf(systemTest)
                                                         .<Instant>flatMap(job -> job.lastSuccess().map(JobRun::at)),
                                                 application.deploymentJobs().statusOf(stagingTest)
@@ -492,7 +492,7 @@ public class DeploymentTrigger {
         if ( ! application.deploymentSpec().canChangeRevisionAt(clock.instant())) return false;
         if (application.change().application().isPresent()) return true; // Replacing a previous application change is ok.
         if (application.deploymentJobs().hasFailures()) return true; // Allow changes to fix upgrade problems.
-        return ! application.changeAt(clock.instant()).platform().isPresent();
+        return ! application.change().platform().isPresent();
     }
 
     private Change remainingChange(Application application) {

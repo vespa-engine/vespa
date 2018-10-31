@@ -28,7 +28,6 @@ import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
-import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.net.URI;
@@ -68,7 +67,7 @@ class JobControllerApiHandlerHelper {
      */
     static HttpResponse jobTypeResponse(Controller controller, ApplicationId id, URI baseUriForJobs) {
         Application application = controller.applications().require(id);
-        Change change = application.changeAt(controller.clock().instant());
+        Change change = application.change();
         DeploymentSteps steps = new DeploymentSteps(application.deploymentSpec(), controller::system);
 
         // The logic for pending runs imitates DeploymentTrigger logic; not good, but the trigger wiring must be re-written to reuse :S
@@ -160,7 +159,7 @@ class JobControllerApiHandlerHelper {
         }
         else
             lastPlatformObject.setString("pending",
-                                         application.changeAt(controller.clock().instant()).isPresent()
+                                         application.change().isPresent()
                                                  ? "Waiting for current deployment to complete"
                                                  : "Waiting for upgrade slot");
     }
@@ -259,7 +258,7 @@ class JobControllerApiHandlerHelper {
                         break;
                     for (JobType stepType : steps.toJobs(step)) {
                         if (pendingProduction.containsKey(stepType)) {
-                            Versions jobVersions = Versions.from(application.changeAt(controller.clock().instant()),
+                            Versions jobVersions = Versions.from(application.change(),
                                                                  application,
                                                                  Optional.ofNullable(application.deployments().get(stepType.zone(controller.system()))),
                                                                  controller.systemVersion());
