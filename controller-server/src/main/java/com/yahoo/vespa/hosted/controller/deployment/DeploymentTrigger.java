@@ -276,7 +276,7 @@ public class DeploymentTrigger {
     private List<Job> computeReadyJobs() {
         return ApplicationList.from(applications().asList())
                               .withProjectId()
-                              .deploying()
+                              .withChanges()
                               .idList().stream()
                               .map(this::computeReadyJobs)
                               .flatMap(Collection::stream)
@@ -301,7 +301,7 @@ public class DeploymentTrigger {
             if (change.isPresent()) {
                 for (Step step : steps.production()) {
                     List<JobType> stepJobs = steps.toJobs(step);
-                    List<JobType> remainingJobs = stepJobs.stream().filter(job -> !isComplete(change, application, job)).collect(toList());
+                    List<JobType> remainingJobs = stepJobs.stream().filter(job -> ! isComplete(change, application, job)).collect(toList());
                     if (!remainingJobs.isEmpty()) { // Change is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
                         for (JobType job : remainingJobs) {
                             Versions versions = Versions.from(change, application, deploymentFor(application, job),
@@ -337,9 +337,9 @@ public class DeploymentTrigger {
                 }
             }
             if (testJobs == null) { // If nothing to test, but outstanding commits, test those.
-                Change latestChange = application.outstandingChange().application()
-                                                 .map(application.change()::with)
-                                                 .orElse(application.change());
+                Change latestChange = application.outstandingChange().application().isPresent()
+                                      ? change.with(application.outstandingChange().application().get())
+                                      : change;
                 testJobs = testJobs(application, Versions.from(latestChange,
                                                                application,
                                                                steps.sortedDeployments(application.productionDeployments().values()).stream().findFirst(),

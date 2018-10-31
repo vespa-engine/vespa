@@ -77,8 +77,8 @@ public class ApplicationList {
         return notUpgradingTo(version.get());
     }
 
-    /** Returns the subset of applications which have unfinished changes */
-    public ApplicationList deploying() {
+    /** Returns the subset of applications which have changes left to deploy; blocked, or deploying */
+    public ApplicationList withChanges() {
         return listOf(list.stream().filter(application -> application.change().isPresent() || application.outstandingChange().isPresent()));
     }
 

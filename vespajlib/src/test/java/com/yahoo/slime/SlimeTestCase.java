@@ -9,6 +9,14 @@ import static org.hamcrest.CoreMatchers.*;
 public class SlimeTestCase {
 
     @Test
+    public void lul() throws Exception {
+        Slime s = new Slime();
+        Cursor c = s.setObject();
+        c.setObject("h").setObject("h").setObject("h").setString("h", "a");
+        new JsonFormat(false).encode(System.err, s);
+    }
+
+    @Test
     public void testTypeIds() {
         System.out.println("testing type identifiers...");
 
