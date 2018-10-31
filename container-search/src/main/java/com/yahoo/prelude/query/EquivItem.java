@@ -30,6 +30,7 @@ public class EquivItem extends CompositeTaggableItem {
         Validator.ensure("Could not add an item of type " + item.getItemType() + 
                          ": Equiv can only have word/int/phrase as children",
                          item.getItemType() == ItemType.WORD ||
+                         item.getItemType() == ItemType.EXACT ||
                          item.getItemType() == ItemType.INT ||
                          item.getItemType() == ItemType.PHRASE);
     }
