@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -193,14 +194,18 @@ public class StorageMaintainerTest {
         public TemporaryFolder folder = new TemporaryFolder();
 
         @Test
-        public void testDiskUsed() throws IOException, InterruptedException {
+        public void testDiskUsed() throws IOException, ExecutionException {
             StorageMaintainer storageMaintainer = new StorageMaintainer(docker, null, null);
             int writeSize = 10000;
             Files.write(folder.newFile().toPath(), new byte[writeSize]);
 
-            long usedBytes = storageMaintainer.getDiskUsedInBytes(folder.getRoot().toPath());
+            long usedBytes = storageMaintainer.getDiskUsageFor(folder.getRoot().toPath());
             if (usedBytes * 4 < writeSize || usedBytes > writeSize * 4)
                 fail("Used bytes is " + usedBytes + ", but wrote " + writeSize + " bytes, not even close.");
+
+            // Write another file, since disk usage is cached it should not change
+            Files.write(folder.newFile().toPath(), new byte[writeSize]);
+            assertEquals(usedBytes, storageMaintainer.getDiskUsageFor(folder.getRoot().toPath()));
         }
 
         @Test

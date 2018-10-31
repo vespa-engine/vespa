@@ -109,6 +109,7 @@ public class NodeAgentImpl implements NodeAgent {
     private NodeSpec lastNode = null;
     private CpuUsageReporter lastCpuMetric = new CpuUsageReporter();
 
+    // Created in NodeAdminImpl
     public NodeAgentImpl(
             final NodeAgentContext context,
             final NodeRepository nodeRepository,

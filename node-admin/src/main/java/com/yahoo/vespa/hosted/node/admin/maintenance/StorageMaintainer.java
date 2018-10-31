@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
@@ -28,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -47,6 +51,16 @@ public class StorageMaintainer {
     private final DockerOperations dockerOperations;
     private final CoredumpHandler coredumpHandler;
     private final Path archiveContainerStoragePath;
+
+    // We cache disk usage to avoid doing expensive disk operations so often
+    private LoadingCache<Path, Long> diskUsage = CacheBuilder.newBuilder()
+            .maximumSize(100)
+            .expireAfterWrite(5, TimeUnit.MINUTES)
+            .build(new CacheLoader<Path, Long>() {
+                public Long load(Path containerDir) throws IOException, InterruptedException {
+                    return getDiskUsedInBytes(containerDir);
+                }
+            });
 
     public StorageMaintainer(DockerOperations dockerOperations, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath) {
         this.dockerOperations = dockerOperations;
@@ -174,11 +188,15 @@ public class StorageMaintainer {
     public Optional<Long> getDiskUsageFor(NodeAgentContext context) {
         Path containerDir = context.pathOnHostFromPathInNode("/");
         try {
-            return Optional.of(getDiskUsedInBytes(containerDir));
-        } catch (Throwable e) {
+            return Optional.of(getDiskUsageFor(containerDir));
+        } catch (Exception e) {
             context.log(logger, LogLevel.WARNING, "Problems during disk usage calculations in " + containerDir.toAbsolutePath(), e);
             return Optional.empty();
         }
+    }
+
+    long getDiskUsageFor(Path containerDir) throws ExecutionException {
+        return diskUsage.get(containerDir);
     }
 
     // Public for testing
