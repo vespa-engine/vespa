@@ -18,7 +18,7 @@ namespace proton::matching {
 class IndexEnvironment : public search::fef::IIndexEnvironment
 {
 private:
-    typedef std::map<string, uint32_t> FieldNameMap;
+    using FieldNameMap = vespalib::hash_map<string, uint32_t>;
     search::fef::TableManager           _tableManager;
     search::fef::Properties             _properties;
     FieldNameMap                        _fieldNames;
