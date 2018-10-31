@@ -13,6 +13,7 @@ import java.util.List;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.APPLICATION_KEY;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.DIMENSIONS_KEY;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.METRICS_KEY;
+import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.PACKET_SEPARATOR;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.STATUS_CODE_KEY;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.STATUS_MSG_KEY;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.TIMESTAMP_KEY;
@@ -127,7 +128,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
 
     private List<JsonNode> toJsonPackets(String response) throws Exception {
         List<JsonNode> jsonPackets = new ArrayList<>();
-        String[] packets = response.split("\\n\\n");
+        String[] packets = response.split(PACKET_SEPARATOR);
         ObjectMapper mapper = new ObjectMapper();
         for (String packet : packets) {
             jsonPackets.add(mapper.readTree(mapper.getFactory().createParser(packet)));

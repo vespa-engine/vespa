@@ -44,6 +44,8 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     static final String METRICS_KEY     = "metrics";
     static final String DIMENSIONS_KEY  = "dimensions";
 
+    static final String PACKET_SEPARATOR = "\n\n";
+
     private final StateMonitor monitor;
     private final Timer timer;
     private final SnapshotProvider snapshotPreprocessor;
@@ -111,7 +113,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
         StringBuilder ret = new StringBuilder();
         List<JSONObject> metricsPackets = getPacketsForSnapshot(getSnapshot(), applicationName, timer.currentTimeMillis());
         for (JSONObject packet : metricsPackets) {
-            ret.append("\n\n"); // For legibility and parsing in unit tests
+            ret.append(PACKET_SEPARATOR); // For legibility and parsing in unit tests
             ret.append(jsonToString(packet));
         }
         return ret.toString();
