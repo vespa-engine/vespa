@@ -53,16 +53,12 @@ public class StorageMaintainer {
     private final Path archiveContainerStoragePath;
 
     // We cache disk usage to avoid doing expensive disk operations so often
-    private LoadingCache<Path, Optional<Long>> diskUsage = CacheBuilder.newBuilder()
+    private LoadingCache<Path, Long> diskUsage = CacheBuilder.newBuilder()
             .maximumSize(100)
             .expireAfterWrite(5, TimeUnit.MINUTES)
-            .build(new CacheLoader<Path, Optional<Long>>() {
-                public Optional<Long> load(Path containerDir) {
-                    try {
-                        return Optional.of(getDiskUsedInBytes(containerDir));
-                    } catch (Throwable e) {
-                        return Optional.empty();
-                    }
+            .build(new CacheLoader<Path, Long>() {
+                public Long load(Path containerDir) throws IOException, InterruptedException {
+                    return getDiskUsedInBytes(containerDir);
                 }
             });
 
@@ -192,14 +188,14 @@ public class StorageMaintainer {
     public Optional<Long> getDiskUsageFor(NodeAgentContext context) {
         Path containerDir = context.pathOnHostFromPathInNode("/");
         try {
-            return getDiskUsageFor(containerDir);
+            return Optional.of(getDiskUsageFor(containerDir));
         } catch (Exception e) {
             context.log(logger, LogLevel.WARNING, "Problems during disk usage calculations in " + containerDir.toAbsolutePath(), e);
             return Optional.empty();
         }
     }
 
-    Optional<Long> getDiskUsageFor(Path containerDir) throws ExecutionException {
+    long getDiskUsageFor(Path containerDir) throws ExecutionException {
         return diskUsage.get(containerDir);
     }
 

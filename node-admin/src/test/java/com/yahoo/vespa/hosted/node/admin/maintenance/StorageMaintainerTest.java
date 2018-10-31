@@ -199,13 +199,13 @@ public class StorageMaintainerTest {
             int writeSize = 10000;
             Files.write(folder.newFile().toPath(), new byte[writeSize]);
 
-            long usedBytes = storageMaintainer.getDiskUsageFor(folder.getRoot().toPath()).get();
+            long usedBytes = storageMaintainer.getDiskUsageFor(folder.getRoot().toPath());
             if (usedBytes * 4 < writeSize || usedBytes > writeSize * 4)
                 fail("Used bytes is " + usedBytes + ", but wrote " + writeSize + " bytes, not even close.");
 
             // Write another file, since disk usage is cached it should not change
             Files.write(folder.newFile().toPath(), new byte[writeSize]);
-            assertEquals(usedBytes, (long) storageMaintainer.getDiskUsageFor(folder.getRoot().toPath()).get());
+            assertEquals(usedBytes, storageMaintainer.getDiskUsageFor(folder.getRoot().toPath()));
         }
 
         @Test

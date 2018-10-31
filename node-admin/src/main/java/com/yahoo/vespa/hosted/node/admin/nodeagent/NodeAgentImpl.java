@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.inject.Inject;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.Container;
@@ -110,7 +109,7 @@ public class NodeAgentImpl implements NodeAgent {
     private NodeSpec lastNode = null;
     private CpuUsageReporter lastCpuMetric = new CpuUsageReporter();
 
-    @Inject
+    // Created in NodeAdminImpl
     public NodeAgentImpl(
             final NodeAgentContext context,
             final NodeRepository nodeRepository,
