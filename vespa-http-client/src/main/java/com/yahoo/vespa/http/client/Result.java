@@ -191,12 +191,12 @@ public class Result {
             b.append("Detail ");
             b.append("resultType=").append(resultType);
             if (exception != null) {
-                b.append("exception='").append(Exceptions.toMessageString(exception)).append("' ");
+                b.append(" exception='").append(Exceptions.toMessageString(exception)).append("'");
             }
             if (traceMessage != null && ! traceMessage.isEmpty()) {
-                b.append("trace='").append(traceMessage).append("' ");
+                b.append(" trace='").append(traceMessage).append("'");
             }
-            b.append("endpoint=").append(endpoint);
+            b.append(" endpoint=").append(endpoint);
             b.append(" resultTimeLocally=").append(timeStampMillis).append("\n");
             return b.toString();
         }
