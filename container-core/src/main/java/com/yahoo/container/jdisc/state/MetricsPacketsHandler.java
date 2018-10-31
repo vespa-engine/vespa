@@ -147,7 +147,6 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     private void addMetaData(long timestamp, String application, JSONObjectWithLegibleException packet) {
         packet.put(APPLICATION_KEY, application);
         packet.put(TIMESTAMP_KEY, timestamp);
-
     }
 
     private void addDimensions(MetricDimensions metricDimensions, JSONObjectWithLegibleException packet) throws JSONException {
