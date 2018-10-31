@@ -11,8 +11,4 @@ import java.util.function.Function;
  */
 public interface JaxRsStrategy<T> {
     <R> R apply(final Function<T, R> function) throws IOException;
-
-    default <R> R apply(final Function<T, R> function, JaxRsTimeouts timeouts) throws IOException {
-        return apply(function);
-    }
 }

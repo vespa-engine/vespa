@@ -5,10 +5,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.defaults.Defaults;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.OngoingStubbing;
 
 import javax.ws.rs.GET;
@@ -18,25 +15,23 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class RetryingJaxRsStrategyTest {
     private static final String API_PATH = "/";
-
-    @Captor
-    ArgumentCaptor<JaxRsClientFactory.Params<TestJaxRsApi>> paramsCaptor;
 
     @Path(API_PATH)
     private interface TestJaxRsApi {
@@ -58,7 +53,8 @@ public class RetryingJaxRsStrategyTest {
 
     @Before
     public void setup() {
-        when(jaxRsClientFactory.createClient(any())).thenReturn(mockApi);
+        when(jaxRsClientFactory.createClient(eq(TestJaxRsApi.class), any(HostName.class), anyInt(), anyString(), anyString()))
+                .thenReturn(mockApi);
     }
 
     @Test
@@ -67,12 +63,11 @@ public class RetryingJaxRsStrategyTest {
 
         verify(mockApi, times(1)).doSomething();
 
-        verify(jaxRsClientFactory, times(1)).createClient(paramsCaptor.capture());
-        JaxRsClientFactory.Params<TestJaxRsApi> params = paramsCaptor.getValue();
-        assertEquals(REST_PORT, params.uri().getPort());
-        assertEquals(API_PATH, params.uri().getPath());
-        assertEquals("http", params.uri().getScheme());
-        assertThat(SERVER_HOSTS, hasItem(new HostName(params.uri().getHost())));
+        // Check that one of the supplied hosts is contacted.
+        final ArgumentCaptor<HostName> hostNameCaptor = ArgumentCaptor.forClass(HostName.class);
+        verify(jaxRsClientFactory, times(1))
+                .createClient(eq(TestJaxRsApi.class), hostNameCaptor.capture(), eq(REST_PORT), eq(API_PATH), eq("http"));
+        assertThat(SERVER_HOSTS.contains(hostNameCaptor.getValue()), is(true));
     }
 
     @Test
@@ -104,10 +99,10 @@ public class RetryingJaxRsStrategyTest {
     @Test
     public void testRetryLoopsOverAvailableServers() throws Exception {
         when(mockApi.doSomething())
-                .thenThrow(new ProcessingException("Fake socket timeout 1 induced by test"))
-                .thenThrow(new ProcessingException("Fake socket timeout 2 induced by test"))
-                .thenThrow(new ProcessingException("Fake socket timeout 3 induced by test"))
-                .thenThrow(new ProcessingException("Fake socket timeout 4 induced by test"))
+                .thenThrow(new ProcessingException("Fake timeout 1 induced by test"))
+                .thenThrow(new ProcessingException("Fake timeout 2 induced by test"))
+                .thenThrow(new ProcessingException("Fake timeout 3 induced by test"))
+                .thenThrow(new ProcessingException("Fake timeout 4 induced by test"))
                 .thenReturn("a response");
 
         jaxRsStrategy.apply(TestJaxRsApi::doSomething);
@@ -147,9 +142,12 @@ public class RetryingJaxRsStrategyTest {
         verifyAllServersContacted(jaxRsClientFactory);
     }
 
-    private void verifyAllServersContacted(final JaxRsClientFactory jaxRsClientFactory) {
-        verify(jaxRsClientFactory, atLeast(SERVER_HOSTS.size())).createClient(paramsCaptor.capture());
-        final Set<JaxRsClientFactory.Params<TestJaxRsApi>> actualServerHostsContacted = new HashSet<>(paramsCaptor.getAllValues());
-        assertEquals(actualServerHostsContacted.stream().map(x -> new HostName(x.uri().getHost())).collect(Collectors.toSet()), SERVER_HOSTS);
+    private static void verifyAllServersContacted(
+            final JaxRsClientFactory jaxRsClientFactory) {
+        final ArgumentCaptor<HostName> hostNameCaptor = ArgumentCaptor.forClass(HostName.class);
+        verify(jaxRsClientFactory, atLeast(SERVER_HOSTS.size()))
+                .createClient(eq(TestJaxRsApi.class), hostNameCaptor.capture(), eq(REST_PORT), eq(API_PATH), eq("http"));
+        final Set<HostName> actualServerHostsContacted = new HashSet<>(hostNameCaptor.getAllValues());
+        assertThat(actualServerHostsContacted, equalTo(SERVER_HOSTS));
     }
 }
