@@ -98,6 +98,7 @@ public:
     void heartBeat(SerialNum serialNum) override {
         _maintainer.heartBeat(serialNum);
     }
+    void compactLidSpace(uint32_t lidLimit, SerialNum serialNum) override;
 
     SerialNum getCurrentSerialNum() const override {
         return _maintainer.getCurrentSerialNum();

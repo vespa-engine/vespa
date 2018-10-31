@@ -33,8 +33,11 @@ struct MyIndexManager : public test::MockIndexManager
     SerialNum current;
     SerialNum flushed;
     SerialNum commitSerial;
+    uint32_t  wantedLidLimit;
+    SerialNum compactSerial;
     MyIndexManager() : puts(), removes(), current(0), flushed(0),
-                       commitSerial(0)
+                       commitSerial(0),
+                       wantedLidLimit(0), compactSerial(0)
     {
     }
     std::string getPut(uint32_t lid) {
@@ -61,6 +64,10 @@ struct MyIndexManager : public test::MockIndexManager
     }
     virtual SerialNum getFlushedSerialNum() const override {
         return flushed;
+    }
+    void compactLidSpace(uint32_t lidLimit, SerialNum serialNum) override {
+        wantedLidLimit = lidLimit;
+        compactSerial = serialNum;
     }
 };
 
@@ -95,7 +102,7 @@ struct Fixture
     }
 };
 
-TEST_F("require that index adapter ignores old operations", Fixture)
+TEST_F("require that index writer ignores old operations", Fixture)
 {
     f.mim.flushed = 10;
     f.put(8, 1);
@@ -108,6 +115,13 @@ TEST_F("require that commit is forwarded to index manager", Fixture)
 {
     f.iw.commit(10, std::shared_ptr<IDestructorCallback>());
     EXPECT_EQUAL(10u, f.mim.commitSerial);
+}
+
+TEST_F("require that compactLidSpace is forwarded to index manager", Fixture)
+{
+    f.iw.compactLidSpace(4, 2);
+    EXPECT_EQUAL(2u, f.mim.wantedLidLimit);
+    EXPECT_EQUAL(4u, f.mim.compactSerial);
 }
 
 TEST_MAIN()

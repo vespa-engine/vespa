@@ -41,7 +41,7 @@ private:
     void requireThatSelectorCanCloneAndSubtract();
     void requireThatSelectorCanCloneAndSubtract();
     template <typename SelectorType>
-    void requireThatSelectorCanSaveAndLoad();
+    void requireThatSelectorCanSaveAndLoad(bool compactLidSpace);
     void requireThatSelectorCanSaveAndLoad();
     template <typename SelectorType>
     void requireThatCompleteSourceRangeIsHandled();
@@ -140,12 +140,15 @@ Test::requireThatSelectorCanCloneAndSubtract()
 
 template <typename SelectorType>
 void
-Test::requireThatSelectorCanSaveAndLoad()
+Test::requireThatSelectorCanSaveAndLoad(bool compactLidSpace)
 {
     SelectorType selector(default_source, base_file_name2);
     setSources(selector);
     selector.setBaseId(base_id);
     selector.setSource(maxDocId + 1, default_source);
+    if (compactLidSpace) {
+        selector.compactLidSpace(maxDocId - 4);
+    }
 
     FastOS_FileInterface::EmptyAndRemoveDirectory(index_dir.c_str());
     FastOS_FileInterface::MakeDirIfNotPresentOrExit(index_dir.c_str());
@@ -155,9 +158,13 @@ Test::requireThatSelectorCanSaveAndLoad()
     save_info->save(TuneFileAttributes(), DummyFileHeaderContext());
     typename SelectorType::UP
         selector2(SelectorType::load(base_file_name));
-    testSourceSelector(docs, arraysize(docs), default_source, *selector2);
+    testSourceSelector(docs, arraysize(docs) - compactLidSpace, default_source, *selector2);
     EXPECT_EQUAL(base_id, selector2->getBaseId());
-    EXPECT_EQUAL(maxDocId + 2, selector2->getDocIdLimit());
+    if (compactLidSpace) {
+        EXPECT_EQUAL(maxDocId - 4, selector2->getDocIdLimit());
+    } else {
+        EXPECT_EQUAL(maxDocId + 2, selector2->getDocIdLimit());
+    }
 
     FastOS_FileInterface::EmptyAndRemoveDirectory(index_dir.c_str());
 }
@@ -165,7 +172,8 @@ Test::requireThatSelectorCanSaveAndLoad()
 void
 Test::requireThatSelectorCanSaveAndLoad()
 {
-    requireThatSelectorCanSaveAndLoad<FixedSourceSelector>();
+    requireThatSelectorCanSaveAndLoad<FixedSourceSelector>(false);
+    requireThatSelectorCanSaveAndLoad<FixedSourceSelector>(true);
 }
 
 template <typename SelectorType>
