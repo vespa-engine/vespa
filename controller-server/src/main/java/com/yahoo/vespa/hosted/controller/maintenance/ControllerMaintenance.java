@@ -60,7 +60,7 @@ public class ControllerMaintenance extends AbstractComponent {
         deploymentExpirer = new DeploymentExpirer(controller, maintenanceInterval, jobControl);
         deploymentIssueReporter = new DeploymentIssueReporter(controller, deploymentIssues, maintenanceInterval, jobControl);
         metricsReporter = new MetricsReporter(controller, metric, chefClient, jobControl, controller.system());
-        outstandingChangeDeployer = new OutstandingChangeDeployer(controller, maintenanceInterval, jobControl);
+        outstandingChangeDeployer = new OutstandingChangeDeployer(controller, Duration.ofMinutes(1), jobControl);
         versionStatusUpdater = new VersionStatusUpdater(controller, Duration.ofMinutes(1), jobControl);
         upgrader = new Upgrader(controller, maintenanceInterval, jobControl, curator);
         readyJobsTrigger = new ReadyJobsTrigger(controller, Duration.ofMinutes(1), jobControl);
