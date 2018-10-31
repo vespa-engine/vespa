@@ -95,7 +95,7 @@ public class Upgrader extends Maintainer {
         applications = applications.hasProductionDeployment();
         applications = applications.onLowerVersionThan(version);
         applications = applications.allowMajorVersion(version.getMajor());
-        applications = applications.notDeployingAt(controller().clock().instant()); // wait with applications deploying an application change or already upgrading
+        applications = applications.notDeploying(); // wait with applications deploying an application change or already upgrading
         applications = applications.notFailingOn(version); // try to upgrade only if it hasn't failed on this version
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
         applications = applications.byIncreasingDeployedVersion(); // start with lowest versions

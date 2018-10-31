@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import java.time.Duration;
 
 /**
- * Deploys application changes which have been postponed due to an ongoing upgrade
+ * Deploys application changes which have been postponed due to an ongoing upgrade, or a block window.
  *
  * @author bratseth
  */
@@ -20,7 +20,9 @@ public class OutstandingChangeDeployer extends Maintainer {
     @Override
     protected void maintain() {
         for (Application application : controller().applications().asList()) {
-            if ( ! application.change().isPresent() && application.outstandingChange().isPresent()) {
+            if (   ! application.change().isPresent() // TODO jvenstad: Revisit this: should it check for only platform here?
+                &&   application.outstandingChange().isPresent()
+                &&   application.deploymentSpec().canChangeRevisionAt(controller().clock().instant())) {
                 controller().applications().deploymentTrigger().triggerChange(application.id(),
                                                                               application.outstandingChange());
             }

@@ -66,6 +66,8 @@ public class OutstandingChangeDeployerTest {
         tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
         tester.deployAndNotify(app, applicationPackage, true, JobType.stagingTest);
         tester.deployAndNotify(app, applicationPackage, true, JobType.productionUsWest1);
+        tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, JobType.stagingTest);
         assertEquals("Upgrade done", 0, tester.buildService().jobs().size());
 
         deployer.maintain();
@@ -73,10 +75,9 @@ public class OutstandingChangeDeployerTest {
         app = tester.application("app1");
         assertEquals("1.0.43-cafed00d", app.change().application().get().id());
         List<BuildService.BuildJob> jobs = tester.buildService().jobs();
-        assertEquals(2, jobs.size());
+        assertEquals(1, jobs.size());
+        assertEquals(JobType.productionUsWest1.jobName(), jobs.get(0).jobName());
         assertEquals(11, jobs.get(0).projectId());
-        tester.assertRunning(JobType.systemTest, app.id());
-        tester.assertRunning(JobType.stagingTest, app.id());
         assertFalse(tester.application("app1").outstandingChange().isPresent());
     }
 

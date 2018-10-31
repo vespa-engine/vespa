@@ -1042,23 +1042,37 @@ public class UpgraderTest {
 
         tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
 
-        // Application upgrade starts.
+        // Application revision starts rolling out.
         tester.upgrader().maintain();
         tester.triggerUntilQuiescence();
         tester.deployAndNotify(app, applicationPackage, true, systemTest);
         tester.deployAndNotify(app, applicationPackage, true, stagingTest);
         clock.advance(Duration.ofHours(1)); // Entering block window after prod job is triggered.
         tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
-        assertEquals(1, tester.buildService().jobs().size()); // Next job triggered in spite of block, because it is already rolling out.
+        assertEquals(1, tester.buildService().jobs().size());
 
-        // New revision is submitted, but is stored as outstanding, since the previous revision is proceeding in good fashion.
+        // New revision is submitted, but is stored as outstanding, since the upgrade is proceeding in good fashion.
         tester.jobCompletion(component).application(app).nextBuildNumber().nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.triggerUntilQuiescence();
-        assertEquals(1, tester.buildService().jobs().size()); // Still just the running revision upgrade.
+        assertEquals(3, tester.buildService().jobs().size()); // Just the running upgrade, and tests for the new revision.
 
+        tester.deployAndNotify(app, applicationPackage, true, systemTest);
+        tester.deployAndNotify(app, applicationPackage, true, stagingTest);
         tester.deployAndNotify(app, applicationPackage, true, productionUsCentral1);
         tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
         assertEquals(Collections.emptyList(), tester.buildService().jobs()); // No jobs left.
+
+        tester.outstandingChangeDeployer().run();
+        assertFalse(tester.application(app.id()).change().isPresent());
+        clock.advance(Duration.ofHours(2));
+
+        tester.outstandingChangeDeployer().run();
+        assertTrue(tester.application(app.id()).change().isPresent());
+        tester.readyJobTrigger().run();
+        tester.deployAndNotify(app, applicationPackage, true, productionUsWest1);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsCentral1);
+        tester.deployAndNotify(app, applicationPackage, true, productionUsEast3);
+        assertFalse(tester.application(app.id()).change().isPresent());
     }
 
 }

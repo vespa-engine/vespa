@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.integration.ApplicationStoreMock;
 import com.yahoo.vespa.hosted.controller.integration.ArtifactRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
+import com.yahoo.vespa.hosted.controller.maintenance.OutstandingChangeDeployer;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -48,6 +49,7 @@ public class DeploymentTester {
 
     private final ControllerTester tester;
     private final Upgrader upgrader;
+    private final OutstandingChangeDeployer outstandingChangeDeployer;
     private final ReadyJobsTrigger readyJobTrigger;
 
     public DeploymentTester() {
@@ -60,10 +62,13 @@ public class DeploymentTester {
 
         JobControl jobControl = new JobControl(tester.curator());
         this.upgrader = new Upgrader(tester.controller(), maintenanceInterval, jobControl, tester.curator());
+        this.outstandingChangeDeployer = new OutstandingChangeDeployer(tester.controller(), maintenanceInterval, jobControl);
         this.readyJobTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval, jobControl);
     }
 
     public Upgrader upgrader() { return upgrader; }
+
+    public OutstandingChangeDeployer outstandingChangeDeployer() { return outstandingChangeDeployer; }
 
     public ReadyJobsTrigger readyJobTrigger() { return readyJobTrigger; }
 
