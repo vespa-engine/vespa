@@ -4,7 +4,6 @@ package com.yahoo.container.jdisc.state;
 import com.google.inject.Inject;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.container.jdisc.state.StateHandler.JSONObjectWithLegibleException;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.Timer;
@@ -31,6 +30,9 @@ import static com.yahoo.container.jdisc.state.StateHandler.getSnapshotPreprocess
  * This handler outputs metrics in a json-like format. Each individual metric is a json object (packet),
  * but there is no outer array or object that wraps the metrics packets. This handler is not set up by
  * default, but can be added to the applications's services configuration.
+ *
+ * This handler is protocol agnostic, so it cannot discriminate between e.g. http request
+ * methods (get/head/post etc.).
  *
  * Based on {@link StateHandler}.
  *
