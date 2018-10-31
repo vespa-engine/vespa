@@ -32,6 +32,9 @@ import static com.yahoo.container.jdisc.state.StateHandler.getSnapshotPreprocess
  * but there is no outer array or object that wraps the metrics packets. This handler is not set up by
  * default, but can be added to the applications's services configuration.
  *
+ * This handler is protocol agnostic, so it cannot discriminate between e.g. http request
+ * methods (get/head/post etc.).
+ *
  * Based on {@link StateHandler}.
  *
  * @author gjoranv
