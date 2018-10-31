@@ -43,10 +43,15 @@ public class StorageMaintainer {
     private static final Logger logger = Logger.getLogger(StorageMaintainer.class.getName());
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
             .ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
+    private static final Duration checkDiskUsageInterval = Duration.ofMinutes(5);
 
     private final DockerOperations dockerOperations;
     private final CoredumpHandler coredumpHandler;
     private final Path archiveContainerStoragePath;
+
+    private Instant lastDiskUsageCheck = Instant.EPOCH;
+    // We cache disk usage to avoid doing expensive disk operations so often
+    private Optional<Long> diskUsage = Optional.empty();
 
     public StorageMaintainer(DockerOperations dockerOperations, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath) {
         this.dockerOperations = dockerOperations;
@@ -174,11 +179,21 @@ public class StorageMaintainer {
     public Optional<Long> getDiskUsageFor(NodeAgentContext context) {
         Path containerDir = context.pathOnHostFromPathInNode("/");
         try {
-            return Optional.of(getDiskUsedInBytes(containerDir));
+            diskUsage = getDiskUsageFor(containerDir);
         } catch (Throwable e) {
             context.log(logger, LogLevel.WARNING, "Problems during disk usage calculations in " + containerDir.toAbsolutePath(), e);
-            return Optional.empty();
+            diskUsage = Optional.empty();
         }
+        return diskUsage;
+    }
+
+    Optional<Long> getDiskUsageFor(Path containerDir) throws IOException, InterruptedException {
+        Instant now = Instant.now();
+        if (now.isAfter(lastDiskUsageCheck.plus(checkDiskUsageInterval))) {
+            diskUsage = Optional.of(getDiskUsedInBytes(containerDir));
+            lastDiskUsageCheck = now;
+        }
+        return diskUsage;
     }
 
     // Public for testing
