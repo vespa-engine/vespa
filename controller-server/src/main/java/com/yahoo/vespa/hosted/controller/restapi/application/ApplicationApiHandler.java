@@ -747,8 +747,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         controller.applications().lockOrThrow(id, application -> {
             Change change;
             if ("commit".equals(requestVersion))
-                change = Change.of(application.get().outstandingChange().application()
-                                              .orElseThrow(() -> new IllegalArgumentException("No outstanding commit to deploy!")));
+                change = Change.of(application.get().deploymentJobs().statusOf(JobType.component)
+                                              .get().lastSuccess().get().application());
             else {
                 Version version = requestVersion == null ? controller.systemVersion() : new Version(requestVersion);
                 if ( ! systemHasVersion(version))
