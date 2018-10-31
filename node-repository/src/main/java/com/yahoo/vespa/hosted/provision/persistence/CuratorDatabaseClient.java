@@ -65,6 +65,10 @@ public class CuratorDatabaseClient {
         initZK();
     }
 
+    public CuratorDatabase curator() {
+        return curatorDatabase;
+    }
+
     private void initZK() {
         curatorDatabase.create(root);
         for (Node.State state : Node.State.values())

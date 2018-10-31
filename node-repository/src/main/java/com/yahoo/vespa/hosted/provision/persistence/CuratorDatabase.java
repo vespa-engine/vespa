@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.curator.Curator;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * This encapsulated the curator database of the node repo.
@@ -57,6 +59,15 @@ public class CuratorDatabase {
         this.curator = curator;
         changeGenerationCounter = new CuratorCounter(curator, root.append("changeCounter").getAbsolute());
         cache.set(newCache(changeGenerationCounter.get()));
+    }
+
+    /** Returns all hosts configured to be part of this ZooKeeper cluster */
+    public List<HostName> cluster() {
+        return Arrays.stream(curator.zooKeeperEnsembleConnectionSpec().split(","))
+                .filter(hostAndPort -> !hostAndPort.isEmpty())
+                .map(hostAndPort -> hostAndPort.split(":")[0])
+                .map(HostName::from)
+                .collect(Collectors.toList());
     }
 
     /** Create a reentrant lock */
