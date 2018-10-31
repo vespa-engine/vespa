@@ -7,16 +7,12 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/fastos/file.h>
 
-namespace search {
-
-namespace index {
-
-class PostingListCountFileSeqRead;
-class PostingListCountFileSeqWrite;
-
+namespace search::index {
+    class PostingListCountFileSeqRead;
+    class PostingListCountFileSeqWrite;
 }
 
-namespace diskindex {
+namespace search::diskindex {
 
 class Zc4PostingSeqRead : public index::PostingListFileSeqRead
 {
@@ -230,6 +226,4 @@ public:
     void flushWordNoSkip() override;
 };
 
-} // namespace diskindex
-
-} // namespace search
+}

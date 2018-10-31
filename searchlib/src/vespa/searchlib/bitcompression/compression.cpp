@@ -449,5 +449,4 @@ template class FeatureDecodeContext<false>;
 template class FeatureEncodeContext<true>;
 template class FeatureEncodeContext<false>;
 
-
 }

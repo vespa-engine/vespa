@@ -32,7 +32,6 @@ public:
     }
 
     void readCounts(PostingListCounts &counts);
-    void readWordNum(uint64_t &wordNum);
 
     static uint64_t noWordNum() {
         return std::numeric_limits<uint64_t>::max();
@@ -64,7 +63,6 @@ public:
     }
 
     void writeCounts(const PostingListCounts &counts);
-    void writeWordNum(uint64_t wordNum);
 
     static uint64_t noWordNum() {
         return std::numeric_limits<uint64_t>::max();
