@@ -5,9 +5,11 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.yahoo.vespa.http.client.FeedClient;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -34,26 +36,34 @@ public class JsonReader {
      * @param numSent counter to be incremented for every document streamed.
      */
     public static void read(InputStream inputStream, FeedClient feedClient, AtomicInteger numSent) {
-        try {
-            final InputStreamJsonElementBuffer jsonElementBuffer = new InputStreamJsonElementBuffer(inputStream);
+        try (final InputStreamJsonElementBuffer jsonElementBuffer = new InputStreamJsonElementBuffer(inputStream)) {
             final JsonFactory jfactory = new JsonFactory().disable(JsonFactory.Feature.CANONICALIZE_FIELD_NAMES);
             final JsonParser jParser = jfactory.createParser(jsonElementBuffer);
             while (true) {
+                int documentStart = (int) jParser.getCurrentLocation().getCharOffset();
                 String docId = parseOneDocument(jParser);
                 if (docId == null) {
-                    break;
+                    int documentEnd = (int) jParser.getCurrentLocation().getCharOffset();
+                    int documentLength = documentEnd - documentStart;
+                    int maxTruncatedLength = 500;
+                    StringBuilder stringBuilder = new StringBuilder(maxTruncatedLength + 3);
+                    for (int i = 0; i < Math.min(documentLength, maxTruncatedLength); i++)
+                        stringBuilder.append(jsonElementBuffer.circular.get(documentStart + i));
+
+                    if (documentLength > maxTruncatedLength)
+                        stringBuilder.append("...");
+
+                    throw new IllegalArgumentException("Document is missing ID: '" + stringBuilder.toString() + "'");
                 }
                 CharSequence data = jsonElementBuffer.getJsonAsArray(jParser.getCurrentLocation().getCharOffset());
-                if (data == null) {
-                    continue;
-                }
                 feedClient.stream(docId, data);
                 numSent.incrementAndGet();
             }
-            jsonElementBuffer.close();
+        } catch (EOFException ignored) {
+            // No more documents
         } catch (IOException ioe) {
             System.err.println(ioe.getMessage());
-            throw new RuntimeException(ioe);
+            throw new UncheckedIOException(ioe);
         }
     }
 
@@ -85,7 +95,7 @@ public class JsonReader {
             /**
              * This is for throwing away [ and spaces in front of a json object, and find the position of {.
              * Not for parsing much text.
-             * @return posisiton for {
+             * @return position for {
              */
             public int findNextObjectStart() {
                 int readerPos = 0;
@@ -145,9 +155,6 @@ public class JsonReader {
          */
         public CharSequence getJsonAsArray(long parserPosition) throws IOException {
             final int charSize = (int)parserPosition - processedChars;
-            if (charSize<2) {
-                return null;
-            }
             final int endPosOfJson = circular.findLastObjectEnd(charSize);
             final int startPosOfJson = circular.findNextObjectStart();
             processedChars += charSize;
@@ -192,6 +199,7 @@ public class JsonReader {
     private static String parseOneDocument(JsonParser jParser) throws IOException {
         int objectLevel = 0;
         String documentId = null;
+        boolean foundObject = false;
         boolean valueIsDocumentId = false;
         while (jParser.nextToken() != null) {
             final String tokenAsText = jParser.getText();
@@ -204,6 +212,7 @@ public class JsonReader {
             }
             switch(jParser.getCurrentToken()) {
                 case START_OBJECT:
+                    foundObject = true;
                     objectLevel++;
                     break;
                 case END_OBJECT:
@@ -224,6 +233,8 @@ public class JsonReader {
                 default: // No operation on all other tags.
             }
         }
+        if (!foundObject)
+            throw new EOFException("No more documents");
         return null;
     }
 }
