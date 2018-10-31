@@ -33,6 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,6 +47,7 @@ public class SetNodeStateTest extends StateRestApiTest {
         private Condition condition = Condition.FORCE;
         private ResponseWait responseWait = ResponseWait.WAIT_UNTIL_CLUSTER_ACKED;
         private TimeBudget timeBudget = TimeBudget.fromNow(Clock.systemUTC(), Duration.ofSeconds(10));
+        private boolean probe = false;
 
         public SetUnitStateRequestImpl(String req) {
             super(req, 0);
@@ -97,6 +99,11 @@ public class SetNodeStateTest extends StateRestApiTest {
         @Override
         public TimeBudget timeBudget() {
             return timeBudget;
+        }
+
+        @Override
+        public boolean isProbe() {
+            return probe;
         }
     }
 
@@ -458,7 +465,7 @@ public class SetNodeStateTest extends StateRestApiTest {
                 new SetUnitStateRequestImpl("music/storage/1").setNewState("user", "maintenance", "whatever reason."),
                 wantedStateSetter);
         SetResponse response = new SetResponse("some reason", wasModified);
-        when(wantedStateSetter.set(any(), any(), any(), any(), any(), any())).thenReturn(response);
+        when(wantedStateSetter.set(any(), any(), any(), any(), any(), any(), anyBoolean())).thenReturn(response);
 
         RemoteClusterControllerTask.Context context = mock(RemoteClusterControllerTask.Context.class);
         MasterInterface masterInterface = mock(MasterInterface.class);

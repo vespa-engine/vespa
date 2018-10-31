@@ -43,6 +43,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -245,6 +247,8 @@ public class OrchestratorImplTest {
         // A spy is preferential because suspendAll() relies on delegating the hard work to suspend() and resume().
         OrchestratorImpl orchestrator = spy(this.orchestrator);
 
+        OrchestratorContext context = mock(OrchestratorContext.class);
+
         orchestrator.suspendAll(
                 new HostName("parentHostname"),
                 Arrays.asList(
@@ -257,9 +261,9 @@ public class OrchestratorImplTest {
         //   TEST6: tenant-id-3:application-instance-3:default
         //   TEST1: test-tenant-id:application:instance
         InOrder order = inOrder(orchestrator);
-        order.verify(orchestrator).suspendGroup(DummyInstanceLookupService.TEST3_NODE_GROUP);
-        order.verify(orchestrator).suspendGroup(DummyInstanceLookupService.TEST6_NODE_GROUP);
-        order.verify(orchestrator).suspendGroup(DummyInstanceLookupService.TEST1_NODE_GROUP);
+        order.verify(orchestrator).suspendGroup(any(), eq(DummyInstanceLookupService.TEST3_NODE_GROUP));
+        order.verify(orchestrator).suspendGroup(any(), eq(DummyInstanceLookupService.TEST6_NODE_GROUP));
+        order.verify(orchestrator).suspendGroup(any(), eq(DummyInstanceLookupService.TEST1_NODE_GROUP));
         order.verifyNoMoreInteractions();
     }
 
@@ -272,7 +276,7 @@ public class OrchestratorImplTest {
                 DummyInstanceLookupService.TEST6_HOST_NAME,
                 "some-constraint",
                 "error message");
-        doThrow(supensionFailure).when(orchestrator).suspendGroup(DummyInstanceLookupService.TEST6_NODE_GROUP);
+        doThrow(supensionFailure).when(orchestrator).suspendGroup(any(), eq(DummyInstanceLookupService.TEST6_NODE_GROUP));
 
         try {
             orchestrator.suspendAll(
@@ -291,8 +295,8 @@ public class OrchestratorImplTest {
         }
 
         InOrder order = inOrder(orchestrator);
-        order.verify(orchestrator).suspendGroup(DummyInstanceLookupService.TEST3_NODE_GROUP);
-        order.verify(orchestrator).suspendGroup(DummyInstanceLookupService.TEST6_NODE_GROUP);
+        order.verify(orchestrator).suspendGroup(any(), eq(DummyInstanceLookupService.TEST3_NODE_GROUP));
+        order.verify(orchestrator).suspendGroup(any(), eq(DummyInstanceLookupService.TEST6_NODE_GROUP));
         order.verifyNoMoreInteractions();
     }
 
