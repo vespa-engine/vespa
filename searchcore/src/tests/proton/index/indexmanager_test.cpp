@@ -145,6 +145,14 @@ struct Fixture {
                           });
         _writeService.indexFieldWriter().sync();
     }
+    void removeDocument(uint32_t docId) {
+        SerialNum serialNum = ++_serial_num;
+        removeDocument(docId, serialNum);
+    }
+    void compactLidSpace(uint32_t lidLimit) {
+        SerialNum serialNum = ++_serial_num;
+        runAsIndex([&]() { _index_manager->compactLidSpace(lidLimit, serialNum); });
+    }
     void assertStats(uint32_t expNumDiskIndexes,
                      uint32_t expNumMemoryIndexes,
                      SerialNum expLastiskIndexSerialNum,
@@ -713,6 +721,18 @@ TEST_F("require that indexes manager stats can be generated", Fixture)
     TEST_DO(f.assertStats(1, 1, 1, 1));
     f.addDocument(2);
     TEST_DO(f.assertStats(1, 1, 1, 2));
+}
+
+TEST_F("require that compactLidSpace works", Fixture)
+{
+    Schema empty_schema;
+    f.addDocument(1);
+    f.addDocument(2);
+    f.removeDocument(2);
+    auto fsc = f._index_manager->getMaintainer().getSourceCollection();
+    EXPECT_EQUAL(3u, fsc->getSourceSelector().getDocIdLimit());
+    f.compactLidSpace(2);
+    EXPECT_EQUAL(2u, fsc->getSourceSelector().getDocIdLimit());
 }
 
 }  // namespace

@@ -88,4 +88,10 @@ FixedSourceSelector::setSource(uint32_t docId, queryeval::Source source)
     _source.commit();
 }
 
+void
+FixedSourceSelector::compactLidSpace(uint32_t lidLimit)
+{
+    _source.compactLidSpace(lidLimit + 1);
+}
+
 } // namespace search

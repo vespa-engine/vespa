@@ -108,6 +108,14 @@ public:
     virtual void heartBeat(SerialNum serialNum) = 0;
 
     /**
+     * This method is called when lid space is compacted.
+     *
+     * @param lidLimit  The new lid limit.
+     * @param serialNum The serial number of the lid space compaction operation.
+     */
+    virtual void compactLidSpace(uint32_t lidLimit, SerialNum serialNum) = 0;
+
+    /**
      * Returns the current serial number of the index.
      * This should also reflect any heart beats.
      *

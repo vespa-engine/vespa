@@ -73,6 +73,13 @@ public:
     virtual uint32_t getDocIdLimit() const = 0;
 
     /**
+     * Sets the lid limit in this selector.
+     *
+     * @param lidLimit the new lid limit (one above highest valid doc id).
+     */
+    virtual void compactLidSpace(uint32_t lidLimit) = 0;
+
+    /**
      * Create a new iterator over the data held by this source
      * selector.
      *
