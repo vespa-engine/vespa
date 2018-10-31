@@ -8,9 +8,7 @@
 
 #define K_VALUE_COUNTFILE_POSOCCBITS 6
 
-namespace search {
-
-namespace bitcompression {
+namespace search::bitcompression {
 
 class PostingListCountFileDecodeContext : public FeatureDecodeContext<true>
 {
@@ -75,6 +73,4 @@ public:
     void copyParams(const PostingListCountFileEncodeContext &rhs);
 };
 
-} // namespace bitcompression
-
-} // namespace search
+}

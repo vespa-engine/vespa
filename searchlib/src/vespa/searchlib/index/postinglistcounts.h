@@ -4,9 +4,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace search {
-
-namespace index {
+namespace search::index {
 
 /**
  * Basic class for holding the result of a dictionary lookup result
@@ -103,7 +101,4 @@ public:
     { }
 };
 
-} // namespace index
-
-} // namespace search
-
+}

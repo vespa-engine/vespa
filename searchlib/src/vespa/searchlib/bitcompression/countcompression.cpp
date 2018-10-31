@@ -4,9 +4,7 @@
 #include "countcompression.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 
-namespace search {
-
-namespace bitcompression {
+namespace search::bitcompression {
 
 #define K_VALUE_COUNTFILE_LASTDOCID 22
 #define K_VALUE_COUNTFILE_NUMCHUNKS 1
@@ -192,6 +190,4 @@ copyParams(const PostingListCountFileEncodeContext &rhs)
 }
 
 
-} // namespace bitcompression
-
-} // namespace search
+}
