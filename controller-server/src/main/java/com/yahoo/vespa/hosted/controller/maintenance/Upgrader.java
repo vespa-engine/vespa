@@ -7,6 +7,8 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
@@ -21,6 +23,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
 
 /**
  * Maintenance job which schedules applications for Vespa version upgrade
@@ -100,20 +104,15 @@ public class Upgrader extends Maintainer {
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
         applications = applications.byIncreasingDeployedVersion(); // start with lowest versions
         applications = applications.first(numberOfApplicationsToUpgrade()); // throttle upgrades
-        for (Application application : applications.asList()) {
-            try {
-                controller().applications().deploymentTrigger().triggerChange(application.id(), application.change().with(version));
-            } catch (IllegalArgumentException e) {
-                log.log(Level.INFO, "Could not trigger change: " + Exceptions.toMessageString(e));
-            }
-        }
+        for (Application application : applications.asList())
+            controller().applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
     }
 
     private void cancelUpgradesOf(ApplicationList applications, String reason) {
         if (applications.isEmpty()) return;
         log.info("Cancelling upgrading of " + applications.asList().size() + " applications: " + reason);
         for (Application application : applications.asList())
-            controller().applications().deploymentTrigger().cancelChange(application.id(), true);
+            controller().applications().deploymentTrigger().cancelChange(application.id(), PLATFORM);
     }
 
     /** Returns the number of applications to upgrade in this run */

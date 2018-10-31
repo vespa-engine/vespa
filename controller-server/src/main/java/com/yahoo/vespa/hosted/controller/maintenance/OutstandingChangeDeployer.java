@@ -20,9 +20,8 @@ public class OutstandingChangeDeployer extends Maintainer {
     @Override
     protected void maintain() {
         for (Application application : controller().applications().asList()) {
-            if (   ! application.change().isPresent() // TODO jvenstad: Revisit this: should it check for only platform here?
-                &&   application.outstandingChange().isPresent()
-                &&   application.deploymentSpec().canChangeRevisionAt(controller().clock().instant())) {
+            if (   application.outstandingChange().isPresent()
+                && application.deploymentSpec().canChangeRevisionAt(controller().clock().instant())) {
                 controller().applications().deploymentTrigger().triggerChange(application.id(),
                                                                               application.outstandingChange());
             }
