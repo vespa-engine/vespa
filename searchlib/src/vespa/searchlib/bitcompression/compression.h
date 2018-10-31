@@ -7,19 +7,13 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <cassert>
 
-namespace vespalib {
+namespace vespalib { class GenericHeader; }
 
-class GenericHeader;
+namespace search::index { class DocIdAndFeatures; }
 
-}
+namespace search::fef { class TermFieldMatchDataArray; }
 
-namespace search {
-
-  namespace index { class DocIdAndFeatures; }
-
-namespace fef { class TermFieldMatchDataArray; }
-
-namespace bitcompression {
+namespace search::bitcompression {
 
 class Position {
 public:
@@ -1733,7 +1727,4 @@ extern template class FeatureDecodeContext<false>;
 extern template class FeatureEncodeContext<true>;
 extern template class FeatureEncodeContext<false>;
 
-} // namespace bitcompression
-
-} // namespace search
-
+}

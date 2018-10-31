@@ -4,14 +4,11 @@
 #include "countcompression.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 
-namespace search {
-
-namespace bitcompression {
+namespace search::bitcompression {
 
 #define K_VALUE_COUNTFILE_LASTDOCID 22
 #define K_VALUE_COUNTFILE_NUMCHUNKS 1
 #define K_VALUE_COUNTFILE_CHUNKNUMDOCS 18
-#define K_VALUE_COUNTFILE_WORDNUMDELTA 0
 #define K_VALUE_COUNTFILE_SPNUMDOCS 0
 
 
@@ -61,6 +58,7 @@ readCounts(PostingListCounts &counts)
     }
     if (numChunks != 0) {
         uint32_t prevLastDoc = 0u;
+        counts._segments.reserve(numChunks);
         for (uint32_t chunk = 0; chunk < numChunks; ++chunk) {
             if (__builtin_expect(oCompr >= valE, false)) {
                 UC64_DECODECONTEXT_STORE(o, _);
@@ -90,27 +88,6 @@ readCounts(PostingListCounts &counts)
     if (__builtin_expect(oCompr >= valE, false))
         _readContext->readComprBuffer();
 }
-
-
-void
-PostingListCountFileDecodeContext::
-readWordNum(uint64_t &wordNum)
-{
-    UC64_DECODECONTEXT_CONSTRUCTOR(o, _);
-    uint32_t length;
-    uint64_t val64;
-    const uint64_t *valE = _valE;
-
-    UC64BE_DECODEEXPGOLOMB_NS(o,
-                              K_VALUE_COUNTFILE_WORDNUMDELTA,
-                              EC);
-    wordNum = _minWordNum + val64;
-    UC64_DECODECONTEXT_STORE(o, _);
-    if (__builtin_expect(oCompr >= valE, false))
-        _readContext->readComprBuffer();
-    _minWordNum = wordNum + 1;
-}
-
 
 void
 PostingListCountFileDecodeContext::
@@ -166,21 +143,6 @@ writeCounts(const PostingListCounts &counts)
         _writeContext->writeComprBuffer(false);
 }
 
-
-void
-PostingListCountFileEncodeContext::
-writeWordNum(uint64_t wordNum)
-{
-    assert(wordNum >= _minWordNum);
-    assert(wordNum <= _numWordIds);
-    encodeExpGolomb(wordNum - _minWordNum,
-                    K_VALUE_COUNTFILE_WORDNUMDELTA);
-    if (__builtin_expect(_valI >= _valE, false))
-        _writeContext->writeComprBuffer(false);
-    _minWordNum = wordNum + 1;
-}
-
-
 void
 PostingListCountFileEncodeContext::
 copyParams(const PostingListCountFileEncodeContext &rhs)
@@ -191,7 +153,4 @@ copyParams(const PostingListCountFileEncodeContext &rhs)
     _numWordIds = rhs._numWordIds;
 }
 
-
-} // namespace bitcompression
-
-} // namespace search
+}

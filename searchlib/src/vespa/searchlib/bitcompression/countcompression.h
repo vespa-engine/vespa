@@ -8,9 +8,7 @@
 
 #define K_VALUE_COUNTFILE_POSOCCBITS 6
 
-namespace search {
-
-namespace bitcompression {
+namespace search::bitcompression {
 
 class PostingListCountFileDecodeContext : public FeatureDecodeContext<true>
 {
@@ -34,7 +32,6 @@ public:
     }
 
     void readCounts(PostingListCounts &counts);
-    void readWordNum(uint64_t &wordNum);
 
     static uint64_t noWordNum() {
         return std::numeric_limits<uint64_t>::max();
@@ -66,7 +63,6 @@ public:
     }
 
     void writeCounts(const PostingListCounts &counts);
-    void writeWordNum(uint64_t wordNum);
 
     static uint64_t noWordNum() {
         return std::numeric_limits<uint64_t>::max();
@@ -75,6 +71,4 @@ public:
     void copyParams(const PostingListCountFileEncodeContext &rhs);
 };
 
-} // namespace bitcompression
-
-} // namespace search
+}
