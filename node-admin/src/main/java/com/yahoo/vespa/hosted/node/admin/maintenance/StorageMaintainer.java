@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
@@ -28,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -43,15 +47,24 @@ public class StorageMaintainer {
     private static final Logger logger = Logger.getLogger(StorageMaintainer.class.getName());
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
             .ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
-    private static final Duration checkDiskUsageInterval = Duration.ofMinutes(5);
 
     private final DockerOperations dockerOperations;
     private final CoredumpHandler coredumpHandler;
     private final Path archiveContainerStoragePath;
 
-    private Instant lastDiskUsageCheck = Instant.EPOCH;
     // We cache disk usage to avoid doing expensive disk operations so often
-    private Optional<Long> diskUsage = Optional.empty();
+    private LoadingCache<Path, Optional<Long>> diskUsage = CacheBuilder.newBuilder()
+            .maximumSize(100)
+            .expireAfterWrite(5, TimeUnit.MINUTES)
+            .build(new CacheLoader<Path, Optional<Long>>() {
+                public Optional<Long> load(Path containerDir) {
+                    try {
+                        return Optional.of(getDiskUsedInBytes(containerDir));
+                    } catch (Throwable e) {
+                        return Optional.empty();
+                    }
+                }
+            });
 
     public StorageMaintainer(DockerOperations dockerOperations, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath) {
         this.dockerOperations = dockerOperations;
@@ -179,21 +192,15 @@ public class StorageMaintainer {
     public Optional<Long> getDiskUsageFor(NodeAgentContext context) {
         Path containerDir = context.pathOnHostFromPathInNode("/");
         try {
-            diskUsage = getDiskUsageFor(containerDir);
-        } catch (Throwable e) {
+            return getDiskUsageFor(containerDir);
+        } catch (Exception e) {
             context.log(logger, LogLevel.WARNING, "Problems during disk usage calculations in " + containerDir.toAbsolutePath(), e);
-            diskUsage = Optional.empty();
+            return Optional.empty();
         }
-        return diskUsage;
     }
 
-    Optional<Long> getDiskUsageFor(Path containerDir) throws IOException, InterruptedException {
-        Instant now = Instant.now();
-        if (now.isAfter(lastDiskUsageCheck.plus(checkDiskUsageInterval))) {
-            diskUsage = Optional.of(getDiskUsedInBytes(containerDir));
-            lastDiskUsageCheck = now;
-        }
-        return diskUsage;
+    Optional<Long> getDiskUsageFor(Path containerDir) throws ExecutionException {
+        return diskUsage.get(containerDir);
     }
 
     // Public for testing

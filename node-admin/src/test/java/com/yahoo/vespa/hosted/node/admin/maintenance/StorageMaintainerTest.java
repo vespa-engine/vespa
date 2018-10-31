@@ -28,8 +28,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -194,7 +194,7 @@ public class StorageMaintainerTest {
         public TemporaryFolder folder = new TemporaryFolder();
 
         @Test
-        public void testDiskUsed() throws IOException, InterruptedException {
+        public void testDiskUsed() throws IOException, ExecutionException {
             StorageMaintainer storageMaintainer = new StorageMaintainer(docker, null, null);
             int writeSize = 10000;
             Files.write(folder.newFile().toPath(), new byte[writeSize]);
