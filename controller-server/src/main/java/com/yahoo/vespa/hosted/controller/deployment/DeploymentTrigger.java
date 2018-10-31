@@ -367,14 +367,14 @@ public class DeploymentTrigger {
 
     private boolean isSuspendedInAnotherZone(Application application, ZoneId zone) {
         for (Deployment deployment : application.productionDeployments().values()) {
-            if ( ! deployment.zone().equals(zone)
-                 && controller.applications().isSuspended(new DeploymentId(application.id(), deployment.zone())))
+            if (   ! deployment.zone().equals(zone)
+                &&   controller.applications().isSuspended(new DeploymentId(application.id(), deployment.zone())))
                 return true;
         }
         return false;
     }
 
-    /** Returns whether job can trigger at given instant */
+    /** Returns whether the given job can trigger at the given instant */
     public boolean triggerAt(Instant instant, JobType job, Versions versions, Application application) {
         Optional<JobStatus> jobStatus = application.deploymentJobs().statusOf(job);
         if (!jobStatus.isPresent()) return true;
