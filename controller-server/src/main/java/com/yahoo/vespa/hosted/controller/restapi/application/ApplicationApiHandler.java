@@ -5,7 +5,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
@@ -93,7 +92,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -803,8 +801,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Optional<ApplicationPackage> applicationPackage = Optional.ofNullable(dataParts.get("applicationZip"))
                                                                   .map(ApplicationPackage::new);
 
-        verifyApplicationIdentityConfiguration(tenantName, applicationPackage);
-
         // TODO: get rid of the json object
         DeployOptions deployOptionsJsonClass = new DeployOptions(deployOptions.field("deployDirectly").asBool(),
                                                                  optional("vespaVersion", deployOptions).map(Version::new),
@@ -815,24 +811,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  applicationPackage,
                                                                  deployOptionsJsonClass);
         return new SlimeJsonResponse(toSlime(result));
-    }
-
-    private void verifyApplicationIdentityConfiguration(String tenantName, Optional<ApplicationPackage> applicationPackage) {
-        // Validate that domain in identity configuration (deployment.xml) is same as tenant domain
-        applicationPackage.map(ApplicationPackage::deploymentSpec).flatMap(DeploymentSpec::athenzDomain)
-                .ifPresent(identityDomain -> {
-                    AthenzTenant tenant = controller.tenants().athenzTenant(TenantName.from(tenantName))
-                                                    .orElseThrow(() -> new IllegalArgumentException("Tenant does not exist"));
-                    AthenzDomain tenantDomain = tenant.domain();
-                    if (! Objects.equals(tenantDomain.getName(), identityDomain.value())) {
-                        throw new ForbiddenException(
-                                String.format(
-                                        "Athenz domain in deployment.xml: [%s] must match tenant domain: [%s]",
-                                        identityDomain.value(),
-                                        tenantDomain.getName()
-                                ));
-                    }
-                });
     }
 
     private HttpResponse deleteTenant(String tenantName, HttpRequest request) {
@@ -1258,9 +1236,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
         if ( ! applicationPackage.deploymentSpec().athenzDomain().isPresent())
             throw new IllegalArgumentException("Application must define an Athenz service in deployment.xml!");
-        verifyApplicationIdentityConfiguration(tenant, Optional.of(applicationPackage));
+        controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant), applicationPackage);
 
-        return JobControllerApiHandlerHelper.submitResponse(controller.jobController(), tenant, application,
+        return JobControllerApiHandlerHelper.submitResponse(controller.jobController(),
+                                                            tenant,
+                                                            application,
                                                             sourceRevision,
                                                             projectId,
                                                             applicationPackage.zippedContent(),
