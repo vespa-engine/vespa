@@ -313,7 +313,8 @@ public class DeploymentTrigger {
                                 if (!alreadyTriggered(application, versions)) {
                                     testJobs = emptyList();
                                 }
-                            } else if (testJobs == null) {
+                            }
+                            else if (testJobs == null) {
                                 testJobs = testJobs(application, versions,
                                                     String.format("Testing deployment for %s (%s)",
                                                                   job.jobName(), versions.toString()),
@@ -321,22 +322,26 @@ public class DeploymentTrigger {
                             }
                         }
                         completedAt = Optional.empty();
-                    } else { // All jobs are complete; find the time of completion of this step.
-                        if (stepJobs.isEmpty()) { // No jobs means this is delay step.
+                    }
+                    else { // All jobs are complete; find the time of completion of this step.
+                        if (stepJobs.isEmpty()) { // No jobs means this is a delay step.
                             Duration delay = ((DeploymentSpec.Delay) step).duration();
                             completedAt = completedAt.map(at -> at.plus(delay)).filter(at -> !at.isAfter(clock.instant()));
                             reason += " after a delay of " + delay;
-                        } else {
+                        }
+                        else {
                             completedAt = stepJobs.stream().map(job -> application.deploymentJobs().statusOf(job).get().lastCompleted().get().at()).max(naturalOrder());
                             reason = "Available change in " + stepJobs.stream().map(JobType::jobName).collect(joining(", "));
                         }
                     }
                 }
             }
-            if (testJobs == null) {
-                testJobs = testJobs(application, Versions.from(application, controller.systemVersion()),
+            if (testJobs == null) // If nothing to test, but outstanding commits, test those.
+                testJobs = testJobs(application, Versions.from(application.outstandingChange(),
+                                                               application,
+                                                               steps.sortedDeployments(application.productionDeployments().values()).stream().findFirst(),
+                                                               controller.systemVersion()),
                                     "Testing last changes outside prod", clock.instant());
-            }
             jobs.addAll(testJobs);
         });
         return Collections.unmodifiableList(jobs);
