@@ -26,13 +26,6 @@ BitVectorIterator::initRange(uint32_t begin, uint32_t end)
     SearchIterator::initRange(begin, end);
     if (begin >= _docIdLimit) {
         setAtEnd();
-    } else {
-        uint32_t docId = _bv.getFirstTrueBit(begin);
-        if (docId >= _docIdLimit) {
-            setAtEnd();
-        } else {
-            setDocId(docId);
-        }
     }
 }
 
@@ -66,6 +59,7 @@ class BitVectorIteratorStrict : public BitVectorIterator
 public:
     BitVectorIteratorStrict(const BitVector & bv, uint32_t docIdLimit, TermFieldMatchData & matchData);
 private:
+    void initRange(uint32_t begin, uint32_t end) override;
     void doSeek(uint32_t docId) override;
     Trinary is_strict() const override { return Trinary::True; }
 };
@@ -88,6 +82,20 @@ BitVectorIteratorStrict::doSeek(uint32_t docId)
         setAtEnd();
     } else {
         setDocId(docId);
+    }
+}
+
+void
+BitVectorIteratorStrict::initRange(uint32_t begin, uint32_t end)
+{
+    BitVectorIterator::initRange(begin, end);
+    if (!isAtEnd()) {
+        uint32_t docId = _bv.getFirstTrueBit(begin);
+        if (docId >= _docIdLimit) {
+            setAtEnd();
+        } else {
+            setDocId(docId);
+        }
     }
 }
 

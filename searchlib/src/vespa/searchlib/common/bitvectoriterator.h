@@ -14,11 +14,11 @@ class BitVectorIterator : public queryeval::SearchIterator
 {
 protected:
     BitVectorIterator(const BitVector & other, uint32_t docIdLimit, fef::TermFieldMatchData &matchData);
+    void initRange(uint32_t begin, uint32_t end) override;
 
     uint32_t          _docIdLimit;
     const BitVector & _bv;
 private:
-    void initRange(uint32_t begin, uint32_t end) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void doSeek(uint32_t docId) override;
     void doUnpack(uint32_t docId) override;
