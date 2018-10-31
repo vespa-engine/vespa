@@ -44,7 +44,6 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     static final String METRICS_KEY     = "metrics";
     static final String DIMENSIONS_KEY  = "dimensions";
 
-
     private final StateMonitor monitor;
     private final Timer timer;
     private final SnapshotProvider snapshotPreprocessor;
