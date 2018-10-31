@@ -336,12 +336,16 @@ public class DeploymentTrigger {
                     }
                 }
             }
-            if (testJobs == null) // If nothing to test, but outstanding commits, test those.
-                testJobs = testJobs(application, Versions.from(application.outstandingChange(),
+            if (testJobs == null) { // If nothing to test, but outstanding commits, test those.
+                Change latestChange = application.outstandingChange().application()
+                                                 .map(application.change()::with)
+                                                 .orElse(application.change());
+                testJobs = testJobs(application, Versions.from(latestChange,
                                                                application,
                                                                steps.sortedDeployments(application.productionDeployments().values()).stream().findFirst(),
                                                                controller.systemVersion()),
                                     "Testing last changes outside prod", clock.instant());
+            }
             jobs.addAll(testJobs);
         });
         return Collections.unmodifiableList(jobs);
@@ -517,9 +521,8 @@ public class DeploymentTrigger {
         for (JobType jobType : steps(application.deploymentSpec()).testJobs()) {
             Optional<JobRun> completion = successOn(application, jobType, versions)
                     .filter(run -> versions.sourcesMatchIfPresent(run) || jobType == systemTest);
-            if (!completion.isPresent() && canTrigger(jobType, versions, application)) {
+            if ( ! completion.isPresent() && canTrigger(jobType, versions, application))
                 jobs.add(deploymentJob(application, versions, application.change(), jobType, reason, availableSince));
-            }
         }
         return jobs;
     }
