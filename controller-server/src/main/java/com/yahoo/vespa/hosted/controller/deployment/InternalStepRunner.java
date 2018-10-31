@@ -44,10 +44,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.log.LogLevel.DEBUG;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.ACTIVATION_CONFLICT;
@@ -321,8 +323,10 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(aborted);
         }
 
+        Set<ZoneId> zones = testedZoneAndProductionZones(id);
+
         logger.log("Attempting to find endpoints ...");
-        Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id.application());
+        Map<ZoneId, List<URI>> endpoints = deploymentEndpoints(id.application(), zones);
         logger.log("Found endpoints:\n" +
                          endpoints.entrySet().stream()
                                   .map(zoneEndpoints -> "- " + zoneEndpoints.getKey() + ":\n" +
@@ -340,7 +344,7 @@ public class InternalStepRunner implements StepRunner {
             return Optional.empty();
         }
 
-        Map<ZoneId, List<String>> clusters = listClusters(id.application());
+        Map<ZoneId, List<String>> clusters = listClusters(id.application(), zones);
 
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
         if (testerEndpoint.isPresent() && controller.jobController().cloud().ready(testerEndpoint.get())) {
@@ -464,21 +468,28 @@ public class InternalStepRunner implements StepRunner {
         }
     }
 
+    /** Returns a stream containing the zone of the deployment tested in the given run, and all production zones for the application. */
+    private Set<ZoneId> testedZoneAndProductionZones(RunId id) {
+        return Stream.concat(Stream.of(id.type().zone(controller.system())),
+                             application(id.application()).productionDeployments().keySet().stream())
+                     .collect(Collectors.toSet());
+    }
+
     /** Returns all endpoints for all current deployments of the given real application. */
-    private Map<ZoneId, List<URI>> deploymentEndpoints(ApplicationId id) {
+    private Map<ZoneId, List<URI>> deploymentEndpoints(ApplicationId id, Iterable<ZoneId> zones) {
         ImmutableMap.Builder<ZoneId, List<URI>> deployments = ImmutableMap.builder();
-        application(id).deployments().keySet()
-                      .forEach(zone -> controller.applications().getDeploymentEndpoints(new DeploymentId(id, zone))
-                                             .filter(endpoints -> ! endpoints.isEmpty())
-                                             .ifPresent(endpoints -> deployments.put(zone, endpoints)));
+        for (ZoneId zone : zones)
+            controller.applications().getDeploymentEndpoints(new DeploymentId(id, zone))
+                      .filter(endpoints -> ! endpoints.isEmpty())
+                      .ifPresent(endpoints -> deployments.put(zone, endpoints));
         return deployments.build();
     }
 
     /** Returns all content clusters in all current deployments of the given real application. */
-    private Map<ZoneId, List<String>> listClusters(ApplicationId id) {
+    private Map<ZoneId, List<String>> listClusters(ApplicationId id, Iterable<ZoneId> zones) {
         ImmutableMap.Builder<ZoneId, List<String>> clusters = ImmutableMap.builder();
-        application(id).deployments().keySet()
-                       .forEach(zone -> clusters.put(zone, ImmutableList.copyOf(controller.configServer().getContentClusters(new DeploymentId(id, zone)))));
+        for (ZoneId zone : zones)
+            clusters.put(zone, ImmutableList.copyOf(controller.configServer().getContentClusters(new DeploymentId(id, zone))));
         return clusters.build();
     }
 
