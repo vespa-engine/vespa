@@ -31,14 +31,30 @@ public:
     unsigned name2Id(const char * name) const;
     bool empty() const { return _listById.empty(); }
 private:
-    struct GetId   { uint32_t operator() (const RuntimeClass * f) const { return f->id(); } };
-    struct HashId  { size_t operator() (const RuntimeClass * f) const { return f->id(); } };
-    struct EqualId { bool operator() (const RuntimeClass * a, const RuntimeClass * b) const { return a->id() == b->id(); } };
-    struct GetName   { const char * operator() (const RuntimeClass * f) const { return f->name(); } };
-    struct HashName  { size_t operator() (const RuntimeClass * f) const { return hashValue(f->name()); } };
-    struct EqualName { bool operator() (const RuntimeClass * a, const RuntimeClass * b) const { return strcmp(a->name(), b->name()) == 0; } };
-    typedef hash_set<RuntimeClass *, HashId, EqualId> IdList;
-    typedef hash_set<RuntimeClass *, HashName, EqualName> NameList;
+    struct HashId  {
+        uint32_t operator() (const RuntimeClass * f) const { return f->id(); }
+        uint32_t operator() (uint32_t id) const { return id; }
+    };
+    struct EqualId {
+        bool operator() (const RuntimeClass * a, const RuntimeClass * b) const { return a->id() == b->id(); }
+        bool operator() (const RuntimeClass * a, uint32_t b) const { return a->id() == b; }
+        bool operator() (uint32_t a, const RuntimeClass * b) const { return a == b->id(); }
+
+
+    };
+    struct HashName  {
+        uint32_t operator() (const RuntimeClass * f) const { return hashValue(f->name()); }
+        uint32_t operator() (const char * name) const { return hashValue(name); }
+
+    };
+    struct EqualName {
+        bool operator() (const RuntimeClass * a, const RuntimeClass * b) const { return strcmp(a->name(), b->name()) == 0; }
+        bool operator() (const RuntimeClass * a, const char * b) const { return strcmp(a->name(), b) == 0; }
+        bool operator() (const char * a, const RuntimeClass * b) const { return strcmp(a, b->name()) == 0; }
+
+    };
+    using IdList =  hash_set<RuntimeClass *, HashId, EqualId>;
+    using NameList = hash_set<RuntimeClass *, HashName, EqualName>;
     IdList   _listById;
     NameList _listByName;
 };
@@ -69,14 +85,14 @@ bool Register::append(Identifiable::RuntimeClass * c)
 
 const Identifiable::RuntimeClass * Register::classFromId(unsigned id) const
 {
-    IdList::const_iterator it(_listById.find<uint32_t, GetId, hash<uint32_t>, std::equal_to<uint32_t> >(id));
-    return  (it != _listById.end()) ? *it : NULL;
+    IdList::const_iterator it(_listById.find<uint32_t>(id));
+    return  (it != _listById.end()) ? *it : nullptr;
 }
 
 const Identifiable::RuntimeClass * Register::classFromName(const char *name) const
 {
-    NameList::const_iterator it(_listByName.find<const char *, GetName, hash<const char *>, std::equal_to<const char *> >(name));
-    return  (it != _listByName.end()) ? *it : NULL;
+    NameList::const_iterator it(_listByName.find<const char *>(name));
+    return  (it != _listByName.end()) ? *it : nullptr;
 }
 
 Register * _register = nullptr;

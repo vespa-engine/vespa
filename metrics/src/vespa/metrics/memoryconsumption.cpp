@@ -1,12 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "memoryconsumption.h"
-#include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/stllike/hashtable.hpp>
+#include <vespa/vespalib/stllike/hash_set.hpp>
 #include <sstream>
 
 namespace metrics {
 
-struct SeenStrings : public vespalib::hash_set<const void*> { };
+struct SeenStrings : public vespalib::hash_set<const char*> { };
 struct SnapShotUsage : public std::vector<std::pair<std::string, uint32_t> > { };
 
 MemoryConsumption::MemoryConsumption()

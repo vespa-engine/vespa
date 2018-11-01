@@ -5,8 +5,7 @@
 #include <vespa/searchlib/grouping/collect.h>
 #include <vespa/vespalib/util/sort.h>
 
-namespace search {
-namespace grouping {
+namespace search::grouping {
 
 class GroupEngine : protected Collect
 {
@@ -15,6 +14,7 @@ public:
     public:
         GroupHash(const GroupEngine & engine) : _engine(engine) { }
         uint32_t operator () (GroupRef a) const { return _engine.hash(a); }
+        uint32_t operator () (const expression::ResultNode & a) const { return a.hash(); }
     private:
         const GroupEngine & _engine;
     };
@@ -22,6 +22,8 @@ public:
     public:
         GroupEqual(const GroupEngine & engine) : _engine(engine) { }
         bool operator () (GroupRef a, GroupRef b) const { return _engine.cmpId(a, b) == 0; }
+        bool operator () (const expression::ResultNode & a, GroupRef b) const { return a.cmpFast(_engine.getGroupId(b)) == 0; }
+        bool operator () (GroupRef a, const expression::ResultNode & b) const { return _engine.getGroupId(a).cmpFast(b) == 0; }
     private:
         const GroupEngine & _engine;
     };
@@ -136,5 +138,4 @@ private:
     bool              _frozen;         // If set no more groups will be created at this level.
 };
 
-}
 }

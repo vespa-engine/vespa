@@ -37,19 +37,26 @@ const MapDataType *verifyMapType(const DataType& type) {
 
 struct Hasher {
     Hasher(const MapFieldValue::IArray * keys) : _keys(keys) {}
-    uint32_t operator () (uint32_t index) const { return (*_keys)[index].hash(); }
-    const MapFieldValue::IArray * _keys;
-};
-
-struct Extract {
-    Extract(const MapFieldValue::IArray * keys) : _keys(keys) {}
-    const FieldValue & operator () (uint32_t index) const { return (*_keys)[index]; }
+    uint32_t operator () (uint32_t index) const {
+        return (*_keys)[index].hash();
+    }
+    uint32_t operator () (const FieldValue & fv) const {
+        return fv.hash();
+    }
     const MapFieldValue::IArray * _keys;
 };
 
 struct Equal {
     Equal(const MapFieldValue::IArray * keys) : _keys(keys) {}
-    bool operator () (uint32_t a, uint32_t b) const { return (*_keys)[a].fastCompare((*_keys)[b]) == 0; }
+    bool operator () (uint32_t a, uint32_t b) const {
+        return (*_keys)[a].fastCompare((*_keys)[b]) == 0;
+    }
+    bool operator () (const FieldValue & a, uint32_t b) const {
+        return a.fastCompare((*_keys)[b]) == 0;
+    }
+    bool operator () (uint32_t a, const FieldValue & b) const {
+        return (*_keys)[a].fastCompare(b) == 0;
+    }
     const MapFieldValue::IArray * _keys;
 };
 
@@ -387,8 +394,7 @@ MapFieldValue::findIndex(const FieldValue& key) const
 {
     if ((size() > 0) && (key.getClass().id() == (*_keys)[0].getClass().id())) {
         ensureLookupMap();
-        Extract extract(_keys.get());
-        auto found = _lookupMap->find<FieldValue, Extract, vespalib::hash<FieldValue>, std::equal_to<FieldValue>>(key, extract);
+        auto found = _lookupMap->find(key);
         if (found != _lookupMap->end()) {
             uint32_t index = *found;
             assert(_present[index]);

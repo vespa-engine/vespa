@@ -10,10 +10,10 @@
 class Fast_StringMap
 {
 private:
-    typedef vespalib::hash_map<vespalib::string, vespalib::string> Map;
+    using Map = vespalib::hash_map<vespalib::string, vespalib::string>;
     Map  _backing;
 public:
     void Insert(const char* key, const char* value);
-    const char *Lookup(const char* key, const char* defval);
+    const char *Lookup(const char* key, const char* defval) const;
 };
 

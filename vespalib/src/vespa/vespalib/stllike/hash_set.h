@@ -7,7 +7,7 @@
 
 namespace vespalib {
 
-template< typename K, typename H = vespalib::hash<K>, typename EQ = std::equal_to<K>, typename M=hashtable_base::prime_modulator>
+template< typename K, typename H = vespalib::hash<K>, typename EQ = std::equal_to<>, typename M=hashtable_base::prime_modulator>
 class hash_set
 {
 private:
@@ -48,21 +48,11 @@ public:
     template <typename Func>
     void for_each(Func func) const { _ht.for_each(func); }
 
-    template< typename AltKey, typename AltExtract=std::_Identity<K>, typename AltHash=vespalib::hash<AltKey>, typename AltEqual=equal_to<AltKey, K> >
-    const_iterator find(const AltKey & key) const { return _ht.template find<AltKey, AltExtract, AltHash, AltEqual>(key); }
+    template< typename AltKey >
+    const_iterator find(const AltKey & key) const { return _ht.template find<AltKey>(key); }
 
-    template< typename AltKey, typename AltExtract=std::_Identity<K>, typename AltHash=vespalib::hash<AltKey>, typename AltEqual=equal_to<AltKey, K> >
-    iterator find(const AltKey & key) { return _ht.template find<AltKey, AltExtract, AltHash, AltEqual>(key); }
-
-    template< typename AltKey, typename AltExtract, typename AltHash=vespalib::hash<AltKey>, typename AltEqual=equal_to<AltKey, K> >
-    const_iterator find(const AltKey & key, const AltExtract & altExtract) const {
-        return _ht.template find<AltKey, AltExtract, AltHash, AltEqual>(key, altExtract);
-    }
-
-    template< typename AltKey, typename AltExtract, typename AltHash=vespalib::hash<AltKey>, typename AltEqual=equal_to<AltKey, K> >
-    iterator find(const AltKey & key, const AltExtract & altExtract) {
-        return _ht.template find<AltKey, AltExtract, AltHash, AltEqual>(key, altExtract);
-    }
+    template< typename AltKey>
+    iterator find(const AltKey & key) { return _ht.template find<AltKey>(key); }
 
     void clear();
     void resize(size_t newSize);

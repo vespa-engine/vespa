@@ -10,7 +10,7 @@ void Fast_StringMap::Insert(const char* key, const char* value)
 
 
 const char *
-Fast_StringMap::Lookup(const char *key, const char *defval)
+Fast_StringMap::Lookup(const char *key, const char *defval) const
 {
     Map::const_iterator found(_backing.find(key));
     return (found != _backing.end()) ? found->second.c_str() : defval;

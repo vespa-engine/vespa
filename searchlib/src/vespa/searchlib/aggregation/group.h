@@ -42,11 +42,17 @@ public:
     struct GroupEqual : public std::binary_function<ChildP, ChildP, bool> {
         GroupEqual(const GroupList * v) : _v(v) { }
         bool operator()(uint32_t a, uint32_t b) { return (*_v)[a]->getId().cmpFast((*_v)[b]->getId()) == 0; }
+        bool operator()(const Group & a, uint32_t b) { return a.getId().cmpFast((*_v)[b]->getId()) == 0; }
+        bool operator()(uint32_t a, const Group & b) { return (*_v)[a]->getId().cmpFast(b.getId()) == 0; }
+        bool operator()(const ResultNode & a, uint32_t b) { return a.cmpFast((*_v)[b]->getId()) == 0; }
+        bool operator()(uint32_t a, const ResultNode & b) { return (*_v)[a]->getId().cmpFast(b) == 0; }
         const GroupList *_v;
     };
     struct GroupHasher {
         GroupHasher(const GroupList * v) : _v(v) { }
         size_t operator() (uint32_t arg) const { return (*_v)[arg]->getId().hash(); }
+        size_t operator() (const Group & arg) const { return arg.getId().hash(); }
+        size_t operator() (const ResultNode & arg) const { return arg.hash(); }
         const GroupList *_v;
     };
     struct GroupResult {

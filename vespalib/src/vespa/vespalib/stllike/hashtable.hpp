@@ -95,17 +95,15 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const Key & key)
 }
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-template< typename AltKey, typename AltExtract, typename AltHash, typename AltEqual>
-typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::const_iterator
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & key, const AltExtract & altExtract) const
+template< typename AltKey>
+typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::iterator
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & key)
 {
-    AltHash altHasher;
-    next_t h = modulator(altHasher(key));
-    if (_nodes[h].valid()) {
-        AltEqual altEqual;
+    next_t h = hash(key);
+    if (__builtin_expect(_nodes[h].valid(), true)) {
         do {
-            if (altEqual(altExtract(_keyExtractor(_nodes[h].getValue())), key)) {
-                return const_iterator(this, h);
+            if (__builtin_expect(_equal(_keyExtractor(_nodes[h].getValue()), key), true)) {
+                return iterator(this, h);
             }
             h = _nodes[h].getNext();
         } while (h != Node::npos);
@@ -114,17 +112,15 @@ hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & k
 }
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
-template< typename AltKey, typename AltExtract, typename AltHash, typename AltEqual>
-typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::iterator
-hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & key, const AltExtract & altExtract)
+template< typename AltKey>
+typename hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::const_iterator
+hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::find(const AltKey & key) const
 {
-    AltHash altHasher;
-    next_t h = modulator(altHasher(key));
-    if (_nodes[h].valid()) {
-        AltEqual altEqual;
+    next_t h = hash(key);
+    if (__builtin_expect(_nodes[h].valid(), true)) {
         do {
-            if (altEqual(altExtract(_keyExtractor(_nodes[h].getValue())), key)) {
-                return iterator(this, h);
+            if (__builtin_expect(_equal(_keyExtractor(_nodes[h].getValue()), key), true)) {
+                return const_iterator(this, h);
             }
             h = _nodes[h].getNext();
         } while (h != Node::npos);
