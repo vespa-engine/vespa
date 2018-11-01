@@ -3,10 +3,12 @@ search streamingjuniper {
   document streamingjuniper {
     field f1 type string {
       indexing: index | summary
+      header
       bolding: on
     }
     field f2 type string {
       indexing: index | summary
+      header
       summary: dynamic
     }
   }
