@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
@@ -21,6 +22,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -66,16 +68,22 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         pool.submit(() -> {
             applicationList.parallelStream().forEach(application -> {
                 try {
+                    MetricsService.ApplicationMetrics applicationMetrics = controller().metricsService()
+                            .getApplicationMetrics(application.id());
+                    Map<HostName, RotationStatus> rotationStatus = getRotationStatus(application);
+                    Map<ZoneId, MetricsService.DeploymentMetrics> deploymentMetrics = getDeploymentMetrics(application);
+
+
                     Cursor applicationCursor = cursor.addObject();
                     applicationCursor.setString("applicationId", application.id().serializedForm());
-                    Cursor applicationMetrics = applicationCursor.setObject("applicationMetrics");
-                    fillApplicationMetrics(applicationMetrics, application);
-                    Cursor rotationStatus = applicationCursor.setArray("rotationStatus");
-                    fillRotationStatus(rotationStatus, application);
+                    Cursor applicationMetricsCursor = applicationCursor.setObject("applicationMetrics");
+                    fillApplicationMetrics(applicationMetricsCursor, applicationMetrics);
+                    Cursor rotationStatusCursor = applicationCursor.setArray("rotationStatus");
+                    fillRotationStatus(rotationStatusCursor, rotationStatus);
                     Cursor deploymentArray = applicationCursor.setArray("deploymentMetrics");
-                    for (Deployment deployment : application.deployments().values()) {
+                    for (Map.Entry<ZoneId, MetricsService.DeploymentMetrics> entry : deploymentMetrics.entrySet()) {
                         Cursor deploymentEntry = deploymentArray.addObject();
-                        fillDeploymentMetrics(deploymentEntry, application, deployment);
+                        fillDeploymentMetrics(deploymentEntry, entry.getKey().value(), entry.getValue());
                     }
                 } catch (Exception e) {
                     failures.incrementAndGet();
@@ -83,6 +91,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                 }
             });
         });
+
         pool.shutdown();
         try {
             pool.awaitTermination(30, TimeUnit.MINUTES);
@@ -102,7 +111,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     }
 
     /** Get global rotation status for application */
-    private Map<HostName, RotationStatus> rotationStatus(Application application) {
+    private Map<HostName, RotationStatus> getRotationStatus(Application application) {
         return applications.rotationRepository().getRotation(application)
                            .map(rotation -> controller().metricsService().getRotationStatus(rotation.name()))
                            .map(rotationStatus -> {
@@ -113,14 +122,23 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                            .orElseGet(Collections::emptyMap);
     }
 
-    private void fillApplicationMetrics(Cursor applicationCursor, Application application) {
-        MetricsService.ApplicationMetrics metrics = controller().metricsService().getApplicationMetrics(application.id());
-        applicationCursor.setDouble("queryServiceQuality", metrics.queryServiceQuality());
-        applicationCursor.setDouble("writeServiceQuality", metrics.writeServiceQuality());
+    private Map<ZoneId, MetricsService.DeploymentMetrics> getDeploymentMetrics(Application application) {
+        Map<ZoneId, MetricsService.DeploymentMetrics> deploymentMetrics = new HashMap<>();
+        for (Deployment deployment : application.deployments().values()) {
+            ZoneId zone = deployment.zone();
+            MetricsService.DeploymentMetrics zoneDeploymentMetrics = controller().metricsService()
+                    .getDeploymentMetrics(application.id(), zone);
+            deploymentMetrics.put(zone, zoneDeploymentMetrics);
+        }
+        return deploymentMetrics;
     }
 
-    private void fillRotationStatus(Cursor rotationStatusCursor, Application application) {
-        Map<HostName, RotationStatus> rotationStatus = rotationStatus(application);
+    private void fillApplicationMetrics(Cursor applicationCursor, MetricsService.ApplicationMetrics applicationMetrics) {
+        applicationCursor.setDouble("queryServiceQuality", applicationMetrics.queryServiceQuality());
+        applicationCursor.setDouble("writeServiceQuality", applicationMetrics.writeServiceQuality());
+    }
+
+    private void fillRotationStatus(Cursor rotationStatusCursor, Map<HostName, RotationStatus> rotationStatus) {
         for (Map.Entry<HostName, RotationStatus> entry : rotationStatus.entrySet()) {
             Cursor rotationStatusEntry = rotationStatusCursor.addObject();
             rotationStatusEntry.setString("hostname", entry.getKey().value());
@@ -128,10 +146,8 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         }
     }
 
-    private void fillDeploymentMetrics(Cursor deploymentCursor, Application application, Deployment deployment) {
-        MetricsService.DeploymentMetrics deploymentMetrics = controller().metricsService()
-                .getDeploymentMetrics(application.id(), deployment.zone());
-        deploymentCursor.setString("zoneId", deployment.zone().value());
+    private void fillDeploymentMetrics(Cursor deploymentCursor, String zone, MetricsService.DeploymentMetrics deploymentMetrics) {
+        deploymentCursor.setString("zoneId", zone);
         deploymentCursor.setDouble("queriesPerSecond", deploymentMetrics.queriesPerSecond());
         deploymentCursor.setDouble("writesPerSecond", deploymentMetrics.writesPerSecond());
         deploymentCursor.setDouble("documentCount", deploymentMetrics.documentCount());
