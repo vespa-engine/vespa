@@ -1,26 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.simple;
 
-import com.google.common.base.Optional;
-import com.optimaize.langdetect.LanguageDetector;
-import com.optimaize.langdetect.LanguageDetectorBuilder;
-import com.optimaize.langdetect.i18n.LdLocale;
-import com.optimaize.langdetect.ngram.NgramExtractors;
-import com.optimaize.langdetect.profiles.LanguageProfile;
-import com.optimaize.langdetect.profiles.LanguageProfileReader;
-import com.optimaize.langdetect.text.CommonTextObjectFactories;
-import com.optimaize.langdetect.text.TextObject;
-import com.optimaize.langdetect.text.TextObjectFactory;
 import com.yahoo.language.Language;
 import com.yahoo.language.detect.Detection;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.detect.Hint;
 import com.yahoo.text.Utf8;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.Locale;
 
 /**
  * Includes functionality for determining the langCode from a sample or from the encoding.
@@ -37,55 +24,6 @@ import java.util.Locale;
  * @author bjorncs
  */
 public class SimpleDetector implements Detector {
-
-    static private Object initGuard = new Object();
-    static private TextObjectFactory textObjectFactory = null;
-    static private LanguageDetector languageDetector = null;
-
-    static private void initOptimaize (boolean useOptimaize) {
-        if (!useOptimaize) return;
-        synchronized (initGuard) {
-            if ((textObjectFactory != null) && (languageDetector != null)) return;
-
-            // origin: https://github.com/optimaize/language-detector
-            //load all languages:
-            List<LanguageProfile> languageProfiles;
-            try {
-                languageProfiles = new LanguageProfileReader().readAllBuiltIn();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            //build language detector:
-            languageDetector = LanguageDetectorBuilder.create(NgramExtractors.standard())
-                    .withProfiles(languageProfiles)
-                    .build();
-
-            //create a text object factory
-            textObjectFactory = CommonTextObjectFactories.forDetectingOnLargeText();
-        }
-    }
-
-    private final boolean enableOptimaize;
-
-    /** @deprecated use OptimaizeDetector to enable optimaize */
-    @Deprecated
-    SimpleDetector(boolean enableOptimaize) {
-        initOptimaize(enableOptimaize);
-        this.enableOptimaize = enableOptimaize;
-
-    }
-
-    @SuppressWarnings("deprecation")
-    public SimpleDetector() {
-        this(true);
-    }
-
-    /** @deprecated use OptimaizeDetector to enable optimaize */
-    @Deprecated
-    public SimpleDetector(SimpleLinguisticsConfig.Detector detector) {
-        this(detector.enableOptimaize());
-    }
 
     @Override
     public Detection detect(byte[] input, int offset, int length, Hint hint) {
@@ -172,24 +110,8 @@ public class SimpleDetector implements Detector {
                 return Language.THAI;
             }
         }
-        if (enableOptimaize && Language.UNKNOWN.equals(soFar)){
-            return detectLangOptimaize(input);
-        }
         // got to the end, so return the current best guess
         return soFar;
-    }
-
-    private static Language detectLangOptimaize(String input) {
-        if (input == null || input.length() == 0) {
-            return Language.UNKNOWN;
-        }
-        TextObject textObject = textObjectFactory.forText(input);
-        Optional<LdLocale> lang = languageDetector.detect(textObject);
-        if (lang.isPresent()) {
-            String language = lang.get().getLanguage();
-            return Language.fromLocale(new Locale(language));
-        }
-        return Language.UNKNOWN;
     }
 
     private boolean isTrailingOctet(byte i) {

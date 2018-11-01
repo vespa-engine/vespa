@@ -426,7 +426,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     /** Parse an indexing expression which will use the simple linguistics implementatino suitable for testing */
     @SuppressWarnings("deprecation")
     public void parseIndexingScript(String script) {
-        parseIndexingScript(script, new SimpleLinguistics(false));
+        parseIndexingScript(script, new SimpleLinguistics());
     }
 
     public void parseIndexingScript(String script, Linguistics linguistics) {
