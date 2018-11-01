@@ -178,7 +178,7 @@ public abstract class Expression extends Selectable {
 
     /** Creates an expression with simple lingustics for testing */
     public static Expression fromString(String expression) throws ParseException {
-        return fromString(expression, new SimpleLinguistics(false));
+        return fromString(expression, new SimpleLinguistics());
     }
 
     public static Expression fromString(String expression, Linguistics linguistics) throws ParseException {

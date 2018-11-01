@@ -12,7 +12,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class IndexingOperation implements FieldOperation {
 
@@ -28,7 +28,7 @@ public class IndexingOperation implements FieldOperation {
 
     /** Creates an indexing operation which will use the simple linguistics implementation suitable for testing */
     public static IndexingOperation fromStream(SimpleCharStream input, boolean multiLine) throws ParseException {
-        return fromStream(input, multiLine, new SimpleLinguistics(false));
+        return fromStream(input, multiLine, new SimpleLinguistics());
     }
 
     public static IndexingOperation fromStream(SimpleCharStream input, boolean multiLine, Linguistics linguistics)
@@ -50,4 +50,5 @@ public class IndexingOperation implements FieldOperation {
         }
         return new IndexingOperation(exp);
     }
+
 }
