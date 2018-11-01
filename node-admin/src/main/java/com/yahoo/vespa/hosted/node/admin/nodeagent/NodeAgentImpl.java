@@ -197,8 +197,6 @@ public class NodeAgentImpl implements NodeAgent {
             }
         } while (loopThread.isAlive() || !filebeatRestarter.isTerminated());
 
-        healthChecker.ifPresent(HealthChecker::close);
-
         context.log(logger, "Stopped");
     }
 
