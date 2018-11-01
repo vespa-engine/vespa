@@ -3,6 +3,7 @@ package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.document.Document;
+import com.yahoo.document.DocumentGet;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.select.DocumentSelector;
@@ -149,6 +150,15 @@ public class DocumentRouteSelectorPolicy
             RemoveDocumentMessage removeMsg = (RemoveDocumentMessage)msg;
             if (removeMsg.getDocumentId().hasDocType()) {
                 return selector.accepts(removeMsg.getDocumentRemove()) != Result.FALSE;
+            } else {
+                return true;
+            }
+        }
+        case DocumentProtocol.MESSAGE_GETDOCUMENT: {
+            GetDocumentMessage getMsg = (GetDocumentMessage)msg;
+            if (getMsg.getDocumentId().hasDocType()) {
+                DocumentGet getOp = new DocumentGet(getMsg.getDocumentId());
+                return selector.accepts(getOp) != Result.FALSE;
             } else {
                 return true;
             }

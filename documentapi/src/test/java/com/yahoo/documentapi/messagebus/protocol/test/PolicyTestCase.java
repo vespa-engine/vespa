@@ -378,6 +378,28 @@ public class PolicyTestCase {
         frame.assertSelect(Arrays.asList("testdoc-route", "other-route"));
     }
 
+    @Test
+    public void get_document_messages_are_sent_to_the_route_handling_the_given_document_type() {
+        PolicyTestFrame frame = createFrameWithTwoRoutes();
+
+        frame.setMessage(createGet("id:ns:testdoc::1"));
+        frame.assertSelect(Arrays.asList("testdoc-route"));
+
+        frame.setMessage(createGet("id:ns:other::1"));
+        frame.assertSelect(Arrays.asList("other-route"));
+    }
+
+    @Test
+    public void get_document_messages_with_legacy_document_ids_are_sent_to_all_routes() {
+        PolicyTestFrame frame = createFrameWithTwoRoutes();
+
+        frame.setMessage(createGet("userdoc:testdoc:1234:1"));
+        frame.assertSelect(Arrays.asList("testdoc-route", "other-route"));
+
+        frame.setMessage(createGet("userdoc:other:1234:1"));
+        frame.assertSelect(Arrays.asList("testdoc-route", "other-route"));
+    }
+
     private PolicyTestFrame createFrameWithTwoRoutes() {
         PolicyTestFrame result = new PolicyTestFrame(manager);
         result.setHop(new HopSpec("test", createDocumentRouteSelectorConfigWithTwoRoutes())
@@ -398,6 +420,10 @@ public class PolicyTestCase {
 
     private RemoveDocumentMessage createRemove(String docId) {
         return new RemoveDocumentMessage(new DocumentId(docId));
+    }
+
+    private GetDocumentMessage createGet(String docId) {
+        return new GetDocumentMessage(new DocumentId(docId));
     }
 
     @Test

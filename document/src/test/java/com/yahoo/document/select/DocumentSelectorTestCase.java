@@ -278,6 +278,22 @@ public class DocumentSelectorTestCase {
     }
 
     @Test
+    public void testDocumentGet() throws ParseException {
+        assertEquals(Result.TRUE, evaluate("test", createGet("id:ns:test::1")));
+        assertEquals(Result.FALSE, evaluate("test", createGet("id:ns:null::1")));
+        assertEquals(Result.FALSE, evaluate("test", createGet("userdoc:test:1234:1")));
+        assertEquals(Result.INVALID, evaluate("test.hint", createGet("id:ns:test::1")));
+        assertEquals(Result.FALSE, evaluate("test.hint", createGet("id:ns:null::1")));
+        assertEquals(Result.INVALID, evaluate("test.hint == 0", createGet("id:ns:test::1")));
+        assertEquals(Result.INVALID, evaluate("test.anything", createGet("id:ns:test::1")));
+        assertEquals(Result.INVALID, evaluate("test and test.hint == 0", createGet("id:ns:test::1")));
+    }
+
+    private DocumentGet createGet(String docId) {
+        return new DocumentGet(new DocumentId(docId));
+    }
+
+    @Test
     public void testInvalidLogic() throws ParseException {
         DocumentPut put = new DocumentPut(manager.getDocumentType("test"), new DocumentId("doc:scheme:"));
         DocumentUpdate upd = new DocumentUpdate(manager.getDocumentType("test"), new DocumentId("doc:scheme:"));
