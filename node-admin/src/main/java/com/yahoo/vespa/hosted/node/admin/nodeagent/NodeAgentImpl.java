@@ -500,6 +500,7 @@ public class NodeAgentImpl implements NodeAgent {
                     return;
                 }
                 container = removeContainerIfNeededUpdateContainerState(node, container);
+                athenzCredentialsMaintainer.ifPresent(maintainer -> maintainer.converge(context));
                 if (! container.isPresent()) {
                     containerState = STARTING;
                     startContainer(node);
@@ -509,7 +510,6 @@ public class NodeAgentImpl implements NodeAgent {
 
                 startServicesIfNeeded();
                 resumeNodeIfNeeded(node);
-                athenzCredentialsMaintainer.ifPresent(maintainer -> maintainer.converge(context));
                 healthChecker.ifPresent(checker -> checker.verifyHealth(context));
 
                 // Because it's more important to stop a bad release from rolling out in prod,
