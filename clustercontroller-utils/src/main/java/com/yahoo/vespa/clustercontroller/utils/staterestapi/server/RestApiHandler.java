@@ -97,6 +97,8 @@ public class RestApiHandler implements HttpRequestHandler {
                     public ResponseWait getResponseWait() { return setRequestData.responseWait; }
                     @Override
                     public TimeBudget timeBudget() { return TimeBudget.from(clock, start, timeout); }
+                    @Override
+                    public boolean isProbe() { return setRequestData.probe; }
                 });
                 return new JsonHttpResult().setJson(jsonWriter.createJson(setResponse));
             }
