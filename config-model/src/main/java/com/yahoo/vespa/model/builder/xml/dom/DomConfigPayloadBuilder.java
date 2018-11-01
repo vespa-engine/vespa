@@ -169,9 +169,23 @@ public class DomConfigPayloadBuilder {
             // Check for legacy (pre Vespa 6) usage
             throw new IllegalArgumentException("The 'index' attribute on config elements is not supported - use <item>");
         } else if (element.hasAttribute("operation")) {
-            // inner array, currently the only supported operation is 'append'
-            verifyLegalOperation(element);
-            ConfigPayloadBuilder childPayloadBuilder = payloadBuilder.getArray(name).append();
+            // inner array, the supported operations are 'append' and 'clear'
+            String operation = verifyLegalOperation(element);
+            ConfigPayloadBuilder childPayloadBuilder;
+            switch (operation) {
+                case "append":
+                    childPayloadBuilder = payloadBuilder.getArray(name).append();
+                    break;
+                case "clear":
+                    // Clear array if it exists, use the existing builder
+                    // Creating the array happens when handling the children ('item's)
+                    if (payloadBuilder.arrayExists(name))
+                        payloadBuilder.clearArray(name);
+                    childPayloadBuilder = payloadBuilder;
+                    break;
+                default:
+                    throw new RuntimeException("Unknown operation '" + operation + "'");
+            }
             //Cursor array = node.setArray(name);
             for (Element child : children) {
                 //Cursor struct = array.addObject();
@@ -233,11 +247,12 @@ public class DomConfigPayloadBuilder {
         }
     }
 
-    private void verifyLegalOperation(Element currElem) {
+    private String verifyLegalOperation(Element currElem) {
         String operation = currElem.getAttribute("operation");
-        if (! operation.equalsIgnoreCase("append"))
-            throw new ConfigurationRuntimeException("The only supported array operation is 'append', got '"
+        if (! Arrays.asList("append", "clear").contains(operation))
+            throw new ConfigurationRuntimeException("The supported array operations are 'append' and 'clear', got '"
                     + operation + "' at XML node '" + XML.getNodePath(currElem, " > ") + "'.");
+        return operation;
     }
 
 }

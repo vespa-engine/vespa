@@ -109,6 +109,27 @@ public class ConfigPayloadBuilder {
         return a;
     }
 
+    /**
+     * Check if array with this name exists.
+     *
+     * @param name Name of array.
+     * @return true if array exists, false otherwise
+     */
+    public boolean arrayExists(String name) {
+        return arrayMap.containsKey(name);
+    }
+
+    /**
+     * Clears contents of an array
+     *
+     * @param name Name of array.
+     */
+    public void clearArray(String name) {
+        Array a = arrayMap.get(name);
+        if (a != null)
+            a.clear();
+    }
+
     private void validateArray(String name) {
         if (configDefinition != null) {
             configDefinition.verify(name);
@@ -416,6 +437,10 @@ public class ConfigPayloadBuilder {
                 }
             }
             return this;
+        }
+
+        public void clear() {
+            elements.clear();
         }
     }
 
