@@ -65,16 +65,21 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         Cursor cursor = slime.setArray();
         pool.submit(() -> {
             applicationList.parallelStream().forEach(application -> {
-                Cursor applicationCursor = cursor.addObject();
-                applicationCursor.setString("applicationId", application.id().serializedForm());
-                Cursor applicationMetrics = applicationCursor.setObject("applicationMetrics");
-                fillApplicationMetrics(applicationMetrics, application);
-                Cursor rotationStatus = applicationCursor.setArray("rotationStatus");
-                fillRotationStatus(rotationStatus, application);
-                Cursor deploymentArray = applicationCursor.setArray("deploymentMetrics");
-                for (Deployment deployment : application.deployments().values()) {
-                    Cursor deploymentEntry = deploymentArray.addObject();
-                    fillDeploymentMetrics(deploymentEntry, application, deployment);
+                try {
+                    Cursor applicationCursor = cursor.addObject();
+                    applicationCursor.setString("applicationId", application.id().serializedForm());
+                    Cursor applicationMetrics = applicationCursor.setObject("applicationMetrics");
+                    fillApplicationMetrics(applicationMetrics, application);
+                    Cursor rotationStatus = applicationCursor.setArray("rotationStatus");
+                    fillRotationStatus(rotationStatus, application);
+                    Cursor deploymentArray = applicationCursor.setArray("deploymentMetrics");
+                    for (Deployment deployment : application.deployments().values()) {
+                        Cursor deploymentEntry = deploymentArray.addObject();
+                        fillDeploymentMetrics(deploymentEntry, application, deployment);
+                    }
+                } catch (Exception e) {
+                    failures.incrementAndGet();
+                    lastException.set(e);
                 }
             });
         });
