@@ -756,8 +756,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    /** Trigger deployment of the last built application package, on a given version */
-    // TODO Consider move to API for maintenance related operations
+    /**
+     *  Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9",
+     *  or the latest known commit of the application if "commit" is given,
+     *  or an upgrade to the system version if no data is provided.
+     */
     private HttpResponse deploy(String tenantName, String applicationName, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         String requestVersion = readToString(request.getData());
@@ -779,14 +782,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                                                .collect(joining(", ")));
                 change = Change.of(version);
             }
-            controller.applications().deploymentTrigger().forceChange(application.get().id(), change);
-            response.append("Triggered " + change + " for " + application);
+            controller.applications().deploymentTrigger().forceChange(id, change);
+            response.append("Triggered " + change + " for " + id);
         });
         return new MessageResponse(response.toString());
     }
 
     /** Cancel any ongoing change for given application */
-    // TODO Consider move to API for maintenance related operations
     private HttpResponse cancelDeploy(String tenantName, String applicationName) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
         Application application = controller.applications().require(id);
@@ -795,7 +797,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             return new MessageResponse("No deployment in progress for " + application + " at this time");
 
         controller.applications().lockOrThrow(id, lockedApplication ->
-            controller.applications().deploymentTrigger().cancelChange(id, ALL));
+                controller.applications().deploymentTrigger().cancelChange(id, ALL));
 
         return new MessageResponse("Cancelled " + change + " for " + application);
     }
