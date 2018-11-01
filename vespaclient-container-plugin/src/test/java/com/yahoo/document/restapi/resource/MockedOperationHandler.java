@@ -30,6 +30,7 @@ public class MockedOperationHandler implements OperationHandler {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void put(RestUri restUri, VespaXMLFeedReader.Operation data, Optional<String> route) throws RestApiException {
         log.append("PUT: " + data.getDocument().getId());
         log.append(data.getDocument().getBody().toString());

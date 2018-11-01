@@ -133,6 +133,7 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
         }
     }
 
+    @SuppressWarnings("deprecation")
     static List<Field> flattenField(Field field) {
         DataType fieldType = field.getDataType();
         if (fieldType.getPrimitiveType() != null){

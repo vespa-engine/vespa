@@ -302,11 +302,11 @@ public class DocumentModelBuilder {
 
     private static StructDataType handleStruct(NewDocumentType dt, SDDocumentType type) {
         StructDataType s = new StructDataType(type.getName());
-        for (Field f : type.getDocumentType().getHeaderType().getFieldsThisTypeOnly()) {
+        for (Field f : type.getDocumentType().contentStruct().getFieldsThisTypeOnly()) {
             specialHandleAnnotationReference(dt, f);
             s.addField(f);
         }
-        for (StructDataType inherited : type.getDocumentType().getHeaderType().getInheritedTypes()) {
+        for (StructDataType inherited : type.getDocumentType().contentStruct().getInheritedTypes()) {
             s.inherit(inherited);
         }
         extractNestedTypes(dt, s);
@@ -330,11 +330,12 @@ public class DocumentModelBuilder {
         }
         return false;
     }
+    @SuppressWarnings("deprecation")
     private NewDocumentType convert(SDDocumentType sdoc) {
         Map<AnnotationType, String> annotationInheritance = new HashMap<>();
         Map<StructDataType, String> structInheritance = new HashMap<>();
         NewDocumentType dt = new NewDocumentType(new NewDocumentType.Name(sdoc.getName()),
-                                                 sdoc.getDocumentType().getHeaderType(),
+                                                 sdoc.getDocumentType().contentStruct(),
                                                  sdoc.getDocumentType().getBodyType(),
                                                  sdoc.getFieldSets(),
                                                  convertDocumentReferencesToNames(sdoc.getDocumentReferences()));
@@ -386,7 +387,7 @@ public class DocumentModelBuilder {
                 e.getKey().inherit(s);
             }
         }
-        handleStruct(dt, sdoc.getDocumentType().getHeaderType());
+        handleStruct(dt, sdoc.getDocumentType().contentStruct());
         handleStruct(dt, sdoc.getDocumentType().getBodyType());
 
         extractDataTypesFromFields(dt, sdoc.fieldSet());

@@ -71,21 +71,11 @@ import static com.yahoo.text.Utf8.calculateBytePositions;
 // When removing: Move content into VespaDocumentSerializerHead
 public class VespaDocumentSerializer42 extends BufferSerializer implements DocumentSerializer {
 
-    private final Compressor compressor = new Compressor();
-    private final static Logger log = Logger.getLogger(VespaDocumentSerializer42.class.getName());
     private boolean headerOnly;
     private int spanNodeCounter = -1;
     private int[] bytePositions;
 
     VespaDocumentSerializer42(GrowableByteBuffer buf) {
-        super(buf);
-    }
-
-    VespaDocumentSerializer42(ByteBuffer buf) {
-        super(buf);
-    }
-
-    VespaDocumentSerializer42(byte[] buf) {
         super(buf);
     }
 
@@ -458,14 +448,6 @@ public class VespaDocumentSerializer42 extends BufferSerializer implements Docum
         put(null, docType);
         putByte(null, ((byte) 0));
         putShort(null, (short) 0); // Used to hold the version. Is now always 0.
-    }
-
-
-    private static void serializeAttributeString(GrowableByteBuffer data, String input) {
-        byte[] inputBytes = createUTF8CharArray(input);
-        data.put((byte) (inputBytes.length));
-        data.put(inputBytes);
-        data.put((byte) 0);
     }
 
     public void write(Annotation annotation) {

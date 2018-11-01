@@ -10,6 +10,8 @@ import com.yahoo.document.Field;
  * Time: 3:18 PM
  * To change this template use File | Settings | File Templates.
  */
+//TODO Vespa 7 Remove
+@Deprecated
 public class BodyFields implements FieldSet {
     @Override
     public boolean contains(FieldSet o) {

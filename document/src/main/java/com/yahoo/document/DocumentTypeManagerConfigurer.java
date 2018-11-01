@@ -134,6 +134,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         manager.register(type);
     }
 
+    @SuppressWarnings("deprecation")
     private static void registerDocumentType(DocumentTypeManager manager, DocumentmanagerConfig.Datatype.Documenttype doc) {
         StructDataType header = (StructDataType) manager.getDataType(doc.headerstruct(), "");
         StructDataType body = (StructDataType) manager.getDataType(doc.bodystruct(), "");

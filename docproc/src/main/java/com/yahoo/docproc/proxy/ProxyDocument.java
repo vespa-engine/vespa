@@ -228,11 +228,13 @@ public class ProxyDocument extends Document implements DocumentOperationWrapper 
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public Struct getHeader() {
         return doc.getHeader();
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public Struct getBody() {
         return doc.getBody();
     }
@@ -288,11 +290,13 @@ public class ProxyDocument extends Document implements DocumentOperationWrapper 
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void serializeHeader(Serializer target) throws SerializationException {
         doc.serializeHeader(target);
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void serializeBody(Serializer target) throws SerializationException {
         doc.serializeBody(target);
     }

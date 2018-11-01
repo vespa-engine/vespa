@@ -58,11 +58,6 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     }
 
     @Override
-    public boolean isHeader() {
-        return importedField.targetField().isHeader();
-    }
-
-    @Override
     public boolean isImportedField() {
         return true;
     }

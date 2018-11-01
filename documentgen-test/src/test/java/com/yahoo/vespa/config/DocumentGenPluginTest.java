@@ -784,6 +784,7 @@ public class DocumentGenPluginTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testSerialization() {
         final Book book = getBook();
         assertEquals(book.getMystruct().getD1(), (Double)56.777);

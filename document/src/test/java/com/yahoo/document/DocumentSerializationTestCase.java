@@ -57,6 +57,7 @@ import static org.junit.Assert.assertTrue;
 public class DocumentSerializationTestCase extends AbstractTypesTest {
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testSerializationAllVersions() throws IOException {
 
         DocumentType docInDocType = new DocumentType("docindoc");
@@ -111,18 +112,18 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
             CompressionConfig noncomp = new CompressionConfig();
             CompressionConfig lz4comp = new CompressionConfig(CompressionType.LZ4);
             {
-                doc.getDataType().getHeaderType().setCompressionConfig(noncomp);
+                doc.getDataType().contentStruct().setCompressionConfig(noncomp);
                 doc.getDataType().getBodyType().setCompressionConfig(noncomp);
                 FileOutputStream fout = new FileOutputStream(path + "document-java-currentversion-uncompressed.dat", false);
                 doc.serialize(fout);
                 fout.close();
             }
             {
-                doc.getDataType().getHeaderType().setCompressionConfig(lz4comp);
+                doc.getDataType().contentStruct().setCompressionConfig(lz4comp);
                 doc.getDataType().getBodyType().setCompressionConfig(lz4comp);
                 FileOutputStream fout = new FileOutputStream(path + "document-java-currentversion-lz4-9.dat", false);
                 doc.serialize(fout);
-                doc.getDataType().getHeaderType().setCompressionConfig(noncomp);
+                doc.getDataType().contentStruct().setCompressionConfig(noncomp);
                 doc.getDataType().getBodyType().setCompressionConfig(noncomp);
                 fout.close();
             }
