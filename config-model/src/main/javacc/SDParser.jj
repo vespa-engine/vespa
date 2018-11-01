@@ -114,7 +114,7 @@ public class SDParser {
      */
     @SuppressWarnings("deprecation")
     private IndexingOperation newIndexingOperation(boolean multiline) throws ParseException {
-        return newIndexingOperation(multiline, new SimpleLinguistics(false));
+        return newIndexingOperation(multiline, new SimpleLinguistics());
     }
 
     /**
