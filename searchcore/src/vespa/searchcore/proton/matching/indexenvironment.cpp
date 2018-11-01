@@ -13,7 +13,7 @@ namespace proton::matching {
 void
 IndexEnvironment::extractFields(const search::index::Schema &schema)
 {
-    typedef search::index::Schema::Field SchemaField;
+    using SchemaField = search::index::Schema::Field;
     for (uint32_t i = 0; i < schema.getNumAttributeFields(); ++i) {
         const SchemaField &field = schema.getAttributeField(i);
         FieldInfo fieldInfo(FieldType::ATTRIBUTE, field.getCollectionType(), field.getName(), _fields.size());
@@ -27,7 +27,7 @@ IndexEnvironment::extractFields(const search::index::Schema &schema)
         if (indexproperties::IsFilterField::check(_properties, field.getName())) {
             fieldInfo.setFilter(true);
         }
-        FieldNameMap::const_iterator itr = _fieldNames.find(field.getName());
+        auto itr = _fieldNames.find(field.getName());
         if (itr != _fieldNames.end()) { // override the attribute field
             FieldInfo shadow_field(fieldInfo.type(), fieldInfo.collection(), fieldInfo.name(), itr->second);
             shadow_field.set_data_type(fieldInfo.get_data_type());
@@ -93,16 +93,15 @@ IndexEnvironment::getField(uint32_t id) const
     if (id < _fields.size()) {
         return &_fields[id];
     }
-    return 0;
+    return nullptr;
 }
 
 const search::fef::FieldInfo *
 IndexEnvironment::getFieldByName(const string &name) const
 {
-    typedef std::map<string, uint32_t>::const_iterator ITR;
-    ITR pos = _fieldNames.find(name);
+    auto pos = _fieldNames.find(name);
     if (pos == _fieldNames.end()) {
-        return 0;
+        return nullptr;
     }
     return getField(pos->second);
 }
