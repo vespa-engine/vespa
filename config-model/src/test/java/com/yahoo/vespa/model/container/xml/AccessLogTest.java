@@ -39,8 +39,10 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
 
         createModel(root, cluster1Elem, cluster2Elem);
 
-        assertNotNull(getVespaAccessLog("cluster1"));
-        assertNull(   getVespaAccessLog("cluster2"));
+        assertNotNull(getJsonAccessLog("cluster1"));
+        assertNull(   getJsonAccessLog("cluster2"));
+        assertNull(getVespaAccessLog("cluster1"));
+        assertNull(getVespaAccessLog("cluster2"));
     }
 
     @Test
@@ -55,11 +57,16 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
 
         createModel(root, clusterElem);
         assertNull(getVespaAccessLog(jdiscClusterId));
+        assertNull(getJsonAccessLog(jdiscClusterId));
     }
 
     private Component<?, ?> getVespaAccessLog(String clusterName) {
         ContainerCluster cluster = (ContainerCluster) root.getChildren().get(clusterName);
         return cluster.getComponentsMap().get(ComponentId.fromString((VespaAccessLog.class.getName())));
+    }
+    private Component<?, ?> getJsonAccessLog(String clusterName) {
+        ContainerCluster cluster = (ContainerCluster) root.getChildren().get(clusterName);
+        return cluster.getComponentsMap().get(ComponentId.fromString((JSONAccessLog.class.getName())));
     }
 
     @Test
@@ -74,6 +81,8 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
                 "</jdisc>" );
 
         createModel(root, clusterElem);
+        assertNotNull(getJsonAccessLog("default"));
+        assertNull(getVespaAccessLog("default"));
 
         { // yapache
             Component<?, ?> accessLogComponent = getContainerComponent("default", YApacheAccessLog.class.getName());

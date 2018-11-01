@@ -708,7 +708,7 @@ public final class ContainerCluster
     }
 
     public void addDefaultSearchAccessLog() {
-        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.queryAccessLog, getName(), isHostedVespa));
+        addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, getName(), isHostedVespa));
     }
 
     @Override
