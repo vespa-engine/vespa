@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameMatches;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.olderThan;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
+import static com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig.nodeTypeToRole;
 
 /**
  * @author freva
@@ -116,13 +117,13 @@ public class StorageMaintainer {
         if (context.nodeType() == NodeType.config || context.nodeType() == NodeType.controller) {
             // configserver
             Path configServerCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_ymonsb2");
-            configs.add(new SecretAgentCheckConfig(SecretAgentCheckConfig.nodeTypeToRole(context.nodeType()), 60, configServerCheckPath,
+            configs.add(new SecretAgentCheckConfig(nodeTypeToRole(context.nodeType()), 60, configServerCheckPath,
                     "-zero", "configserver")
                     .withTags(tags));
 
             // configserver-new
             Path configServerNewCheckPath = Paths.get("curl");
-            configs.add(new SecretAgentCheckConfig("configserver-new", 60, configServerNewCheckPath,
+            configs.add(new SecretAgentCheckConfig(nodeTypeToRole(context.nodeType())+"-new", 60, configServerNewCheckPath,
                                                    "-s", "localhost:19071/yamas-metrics")
                                 .withTags(tags));
 
@@ -163,7 +164,7 @@ public class StorageMaintainer {
     private Map<String, Object> generateTags(NodeAgentContext context, NodeSpec node) {
         Map<String, String> tags = new LinkedHashMap<>();
         tags.put("namespace", "Vespa");
-        tags.put("role", SecretAgentCheckConfig.nodeTypeToRole(node.getNodeType()));
+        tags.put("role", nodeTypeToRole(node.getNodeType()));
         tags.put("zone", String.format("%s.%s", context.zoneId().environment().value(), context.zoneId().regionName().value()));
         node.getVespaVersion().ifPresent(version -> tags.put("vespaVersion", version));
 
