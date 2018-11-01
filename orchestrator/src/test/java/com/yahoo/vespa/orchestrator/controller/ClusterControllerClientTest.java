@@ -6,7 +6,9 @@ import com.yahoo.vespa.jaxrs.client.LocalPassThroughJaxRsStrategy;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import org.junit.Test;
 
-import static org.mockito.Matchers.anyFloat;
+import java.time.Duration;
+
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -28,7 +30,9 @@ public class ClusterControllerClientTest {
         final ClusterControllerNodeState wantedState = ClusterControllerNodeState.MAINTENANCE;
 
         OrchestratorContext context = mock(OrchestratorContext.class);
-        when(context.getSuboperationTimeoutInSeconds(anyFloat())).thenReturn(1.0f);
+        ClusterControllerClientTimeouts timeouts = mock(ClusterControllerClientTimeouts.class);
+        when(context.getClusterControllerTimeouts(any())).thenReturn(timeouts);
+        when(timeouts.getServerTimeoutOrThrow()).thenReturn(Duration.ofSeconds(1));
         clusterControllerClient.setNodeState(context, STORAGE_NODE_INDEX, wantedState);
 
         final ClusterControllerStateRequest expectedNodeStateRequest = new ClusterControllerStateRequest(

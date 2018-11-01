@@ -33,13 +33,16 @@ public class JsonReader {
     }
 
     static class SetRequestData {
+        final boolean probe;
         final Map<String, UnitState> stateMap;
         final SetUnitStateRequest.Condition condition;
         final SetUnitStateRequest.ResponseWait responseWait;
 
-        public SetRequestData(Map<String, UnitState> stateMap,
+        public SetRequestData(boolean probe,
+                              Map<String, UnitState> stateMap,
                               SetUnitStateRequest.Condition condition,
                               SetUnitStateRequest.ResponseWait responseWait) {
+            this.probe = probe;
             this.stateMap = stateMap;
             this.condition = condition;
             this.responseWait = responseWait;
@@ -49,8 +52,9 @@ public class JsonReader {
     public SetRequestData getStateRequestData(HttpRequest request) throws Exception {
         JSONObject json = new JSONObject(request.getPostContent().toString());
 
-        final SetUnitStateRequest.Condition condition;
+        final boolean probe = json.has("probe") && json.getBoolean("probe");
 
+        final SetUnitStateRequest.Condition condition;
         if (json.has("condition")) {
             condition = SetUnitStateRequest.Condition.fromString(json.getString("condition"));
         } else {
@@ -100,6 +104,6 @@ public class JsonReader {
             stateMap.put(type, new UnitStateImpl(code, reason));
         }
 
-        return new SetRequestData(stateMap, condition, responseWait);
+        return new SetRequestData(probe, stateMap, condition, responseWait);
     }
 }
