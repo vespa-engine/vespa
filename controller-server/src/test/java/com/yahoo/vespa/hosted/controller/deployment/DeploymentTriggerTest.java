@@ -530,8 +530,8 @@ public class DeploymentTriggerTest {
         Application app = tester.createAndDeploy("app", 3, "default");
         tester.upgradeSystem(new Version("9.8.7"));
 
-        tester.applications().deploymentTrigger().pauseJob(app.id(), productionUsWest1, tester.clock().millis() + 1000);
-        tester.applications().deploymentTrigger().pauseJob(app.id(), productionUsEast3, tester.clock().millis() + 3000);
+        tester.applications().deploymentTrigger().pauseJob(app.id(), productionUsWest1, tester.clock().instant().plus(Duration.ofSeconds(1)));
+        tester.applications().deploymentTrigger().pauseJob(app.id(), productionUsEast3, tester.clock().instant().plus(Duration.ofSeconds(3)));
 
         // us-west-1 does not trigger when paused.
         tester.deployAndNotify(app, true, systemTest);
@@ -542,7 +542,7 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofMillis(1500));
         tester.readyJobTrigger().run();
         tester.assertRunning(productionUsWest1, app.id());
-        tester.applications().deploymentTrigger().pauseJob(app.id(), productionUsWest1, tester.clock().millis() + 1000);
+        tester.applications().deploymentTrigger().pauseJob(app.id(), productionUsWest1, tester.clock().instant().plus(Duration.ofSeconds(1)));
         tester.deployAndNotify(app, false, productionUsWest1);
         tester.assertNotRunning(productionUsWest1, app.id());
         tester.clock().advance(Duration.ofMillis(1000));
