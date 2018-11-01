@@ -265,6 +265,8 @@ TOKEN :
 | < STEMMING: "stemming" >
 | < NORMALIZING: "normalizing" >
 | < BOLDING: "bolding" >
+| < BODY: "body" >
+| < HEADER: "header" >
 | < NONE: "none" >
 | < ON: "on" >
 | < OFF: "off" >
@@ -536,13 +538,35 @@ Object documentBody(SDDocumentType document, Search search) :
 {
     ( annotation(search, document)
       | compression(document, null)
+      | headercfg(document)
+      | bodycfg(document)
       | structInside(document, search)
       | field(document, search) )
     { return null; }
 }
 
 /**
- * Consumes a compression block.
+ * Consumes a document head block.
+ *
+ * @param document The document type to modify.
+ */
+void headercfg(SDDocumentType document) : { }
+{
+    <HEADER> lbrace() [compression(document, "header") (<NL>)*] <RBRACE>
+}
+
+/**
+ * Consumes a document body block.
+ *
+ * @param document The document type to modify.
+ */
+void bodycfg(SDDocumentType document) : { }
+{
+    <BODY> lbrace() [compression(document, "body") (<NL>)*] <RBRACE>
+}
+
+/**
+ * Consumes a compression block. This can be set in both document header and -body block.
  *
  * @param document The document type to modify.
  * @param name     The name of the document block to modify.
@@ -554,8 +578,12 @@ void compression(SDDocumentType document, String name) :
 {
     <COMPRESSION> lbrace() (cfg = compressionItem(cfg) (<NL>)*)* <RBRACE>
     {
-        document.getDocumentType().contentStruct().setCompressionConfig(cfg);
-        document.getDocumentType().getBodyType().setCompressionConfig(cfg);
+        if (name == null || name.equals("header")) {
+            document.getDocumentType().contentStruct().setCompressionConfig(cfg);
+        }
+        if (name == null || name.equals("body")) {
+            document.getDocumentType().getBodyType().setCompressionConfig(cfg);
+        }
     }
 }
 
@@ -938,8 +966,10 @@ String fieldBody(SDField field, Search search, SDDocumentType document) : { }
 {
     ( alias(field) |
       attribute(field) |
+      body(field) |
       bolding(field) |
       fieldStemming(field) |
+      header(field) |
       id(field, document) |
       summaryInField(field) |
       index(search, field) |
@@ -1463,6 +1493,36 @@ void bolding(FieldOperationContainer field) :
     <BOLDING> <COLON> bold = bool()
     {
         field.addOperation(new BoldingOperation(bold));
+    }
+}
+
+/**
+ * This rule consumes a body statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void body(SDField field) : { }
+{
+    <BODY>
+    {
+        deployLogger.log(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
+        field.setHeader(false);
+        field.setHeaderOrBodyDefined(true);
+    }
+}
+
+/**
+ * This rule consumes a header statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void header(SDField field) : { }
+{
+    <HEADER>
+    {
+        deployLogger.log(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
+        field.setHeader(true);
+        field.setHeaderOrBodyDefined(true);
     }
 }
 
@@ -2421,6 +2481,7 @@ String identifier() : { }
       | <AS>
       | <ASCENDING>
       | <ATTRIBUTE>
+      | <BODY>
       | <BOLDING>
       | <COMPRESSION>
       | <COMPRESSIONLEVEL>
@@ -2450,6 +2511,7 @@ String identifier() : { }
       | <FULL>
       | <FUNCTION>
       | <GRAM>
+      | <HEADER>
       | <HUGE>
       | <ID>
       | <IDENTICAL>
