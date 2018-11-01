@@ -348,12 +348,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // DELETE (cancel) again is a no-op
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", DELETE)
-                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                                      .userIdentity(USER_ID),
                               new File("application-deployment-cancelled-no-op.json"));
 
         // POST triggering of a full deployment to an application (if version is omitted, current system version is used)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", POST)
-                                      .userIdentity(HOSTED_VESPA_OPERATOR)
+                                      .userIdentity(USER_ID)
                                       .data("6.1.0"),
                               new File("application-deployment.json"));
 
