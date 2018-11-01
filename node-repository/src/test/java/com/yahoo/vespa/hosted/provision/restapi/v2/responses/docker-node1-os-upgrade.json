@@ -31,7 +31,7 @@
   "wantedDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.42.0",
   "wantedVespaVersion": "6.42.0",
   "allowedToBeDown": false,
-  "rebootGeneration": 1,
+  "rebootGeneration": 0,
   "currentRebootGeneration": 0,
   "wantedOsVersion": "7.5.2",
   "failCount": 0,
