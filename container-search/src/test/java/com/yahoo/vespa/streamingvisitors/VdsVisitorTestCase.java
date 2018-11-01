@@ -100,7 +100,7 @@ public class VdsVisitorTestCase {
     private class QueryArguments {
         // General query parameters
         String query = "test";
-        long timeout = 5;
+        double timeout = 0.5;
         int offset = 0;
         int hits = 10;
         int traceLevel = 0;
@@ -155,7 +155,7 @@ public class VdsVisitorTestCase {
     private Query buildQuery(QueryArguments qa) throws Exception {
         StringBuilder queryString = new StringBuilder();
         queryString.append("/?query=").append(qa.query);
-        if (qa.timeout != 5) {
+        if (qa.timeout != 0.5) {
             queryString.append("&timeout=").append(qa.timeout);
         }
         if (qa.offset != 0) {
@@ -276,8 +276,8 @@ public class VdsVisitorTestCase {
         }
 
         // Verify parameters based only on query
-        assertEquals(qa.timeout*1000, params.getTimeoutMs());
-        assertEquals(qa.timeout*1000, params.getSessionTimeoutMs());
+        assertEquals(qa.timeout*1000, params.getTimeoutMs(),0.0000001);
+        assertEquals(qa.timeout*1000, params.getSessionTimeoutMs(), 0.0000001);
         assertEquals("searchvisitor", params.getVisitorLibrary());
         assertEquals(Integer.MAX_VALUE, params.getMaxPending());
         assertEquals(qa.traceLevel, params.getTraceLevel());
