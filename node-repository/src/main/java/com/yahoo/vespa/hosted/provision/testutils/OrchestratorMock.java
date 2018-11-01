@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.Host;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
@@ -43,11 +42,6 @@ public class OrchestratorMock implements Orchestrator {
     @Override
     public void suspend(HostName hostName) {
         suspendedHosts.add(hostName);
-    }
-
-    @Override
-    public void suspendGroup(NodeGroup nodeGroup) {
-        nodeGroup.getHostNames().forEach(this::suspend);
     }
 
     @Override
