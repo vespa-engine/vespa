@@ -359,8 +359,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // POST a pause to a production job
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job/production-us-west-1/pause", POST)
-                             .userIdentity(USER_ID),
-                              "{\"message\":\"productionUsWest1 for tenant1.application1 paused for " + DeploymentTrigger.maxPause + "\"}");
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"production-us-west-1 for tenant1.application1 paused for " + DeploymentTrigger.maxPause + "\"}");
+
+        // POST a triggering to the same production job
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job/production-us-west-1", POST)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Triggered production-us-west-1 for tenant1.application1\"}");
 
         // POST a 'restart application' command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/restart", POST)

@@ -100,6 +100,7 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
+import static java.util.stream.Collectors.joining;
 
 /**
  * This implements the application/v4 API which is used to deploy and manage applications
@@ -203,6 +204,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploy(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return submit(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return trigger(appIdFromPath(path), jobTypeFromPath(path), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/pause")) return pause(appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
@@ -369,10 +371,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
+    private HttpResponse trigger(ApplicationId id, JobType type, HttpRequest request) {
+            String triggered = controller.applications().deploymentTrigger()
+                                         .forceTrigger(id, type, request.getJDiscRequest().getUserPrincipal().getName())
+                                         .stream().map(JobType::jobName).collect(joining(", "));
+            return new MessageResponse("Triggered " + triggered + " for " + id);
+    }
+
     private HttpResponse pause(ApplicationId id, JobType type) {
         Instant until = controller.clock().instant().plus(DeploymentTrigger.maxPause);
         controller.applications().deploymentTrigger().pauseJob(id, type, until);
-        return new MessageResponse(type + " for " + id + " paused for " + DeploymentTrigger.maxPause);
+        return new MessageResponse(type.jobName() + " for " + id + " paused for " + DeploymentTrigger.maxPause);
     }
 
     private HashMap<String, String> getParameters(String query) {
@@ -767,7 +776,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                                                .stream()
                                                                                                .map(VespaVersion::versionNumber)
                                                                                                .map(Version::toString)
-                                                                                               .collect(Collectors.joining(", ")));
+                                                                                               .collect(joining(", ")));
                 change = Change.of(version);
             }
             controller.applications().deploymentTrigger().forceChange(application.get().id(), change);
