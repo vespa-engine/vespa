@@ -49,6 +49,7 @@ import com.yahoo.vespa.hosted.controller.athenz.mock.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsServiceMock;
 import com.yahoo.vespa.hosted.controller.maintenance.DeploymentMetricsMaintainer;
@@ -347,14 +348,24 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // DELETE (cancel) again is a no-op
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", DELETE)
-                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                                      .userIdentity(USER_ID),
                               new File("application-deployment-cancelled-no-op.json"));
 
         // POST triggering of a full deployment to an application (if version is omitted, current system version is used)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deploying", POST)
-                                      .userIdentity(HOSTED_VESPA_OPERATOR)
+                                      .userIdentity(USER_ID)
                                       .data("6.1.0"),
                               new File("application-deployment.json"));
+
+        // POST a pause to a production job
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job/production-us-west-1/pause", POST)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"production-us-west-1 for tenant1.application1 paused for " + DeploymentTrigger.maxPause + "\"}");
+
+        // POST a triggering to the same production job
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job/production-us-west-1", POST)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Triggered production-us-west-1 for tenant1.application1\"}");
 
         // POST a 'restart application' command
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/corp-us-east-1/instance/default/restart", POST)
@@ -497,9 +508,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private void addIssues(ContainerControllerTester tester, ApplicationId id) {
         tester.controller().applications().lockOrThrow(id, application ->
-                tester.controller().applications().store(application
-                                                                 .withDeploymentIssueId(IssueId.from("123"))
-                                                                 .withOwnershipIssueId(IssueId.from("321"))));
+                tester.controller().applications().store(application.withDeploymentIssueId(IssueId.from("123"))
+                                                                    .withOwnershipIssueId(IssueId.from("321"))));
     }
 
     @Test

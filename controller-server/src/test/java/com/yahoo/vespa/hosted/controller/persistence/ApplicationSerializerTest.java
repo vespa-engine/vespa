@@ -83,7 +83,8 @@ public class ApplicationSerializerTest {
 
         statusList.add(JobStatus.initial(JobType.systemTest)
                                 .withTriggering(Version.fromString("5.6.7"), ApplicationVersion.unknown, empty(), "Test", Instant.ofEpochMilli(7))
-                                .withCompletion(30, empty(), Instant.ofEpochMilli(8)));
+                                .withCompletion(30, empty(), Instant.ofEpochMilli(8))
+                                .withPause(OptionalLong.of(1L << 32)));
         statusList.add(JobStatus.initial(JobType.stagingTest)
                                 .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, empty(), "Test 2", Instant.ofEpochMilli(5))
                                 .withCompletion(11, Optional.of(JobError.unknown), Instant.ofEpochMilli(6)));

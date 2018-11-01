@@ -66,6 +66,8 @@ import static java.util.stream.Collectors.toList;
  */
 public class DeploymentTrigger {
 
+    public static final Duration maxPause = Duration.ofDays(3);
+
     private final static Logger log = Logger.getLogger(DeploymentTrigger.class.getName());
 
     private final Controller controller;
@@ -222,31 +224,33 @@ public class DeploymentTrigger {
                 .map(Job::jobType).collect(toList());
     }
 
+    /** Prevents jobs of the given type from starting, until the given time. */
+    public void pauseJob(ApplicationId id, JobType jobType, Instant until) {
+        if (until.isAfter(clock.instant().plus(maxPause)))
+            throw new IllegalArgumentException("Pause only allowed for up to " + maxPause);
+
+        applications().lockOrThrow(id, application ->
+                applications().store(application.withJobPause(jobType, OptionalLong.of(until.toEpochMilli()))));
+    }
+
     /** Triggers a change of this application, unless it already has a change. */
     public void triggerChange(ApplicationId applicationId, Change change) {
         applications().lockOrThrow(applicationId, application -> {
-            if ( ! application.get().change().isPresent()) {
-                if (change.application().isPresent())
-                    application = application.withOutstandingChange(Change.empty());
-
-                applications().store(application.withChange(change));
-            }
+            if ( ! application.get().change().isPresent())
+                forceChange(applicationId, change);
         });
     }
 
     /** Overrides the given application's platform and application changes with any contained in the given change. */
     public void forceChange(ApplicationId applicationId, Change change) {
         applications().lockOrThrow(applicationId, application -> {
-            Change current = application.get().change();
-            if (change.platform().isPresent())
-                current = current.with(change.platform().get());
             if (change.application().isPresent())
-                current = current.with(change.application().get());
-            applications().store(application.withChange(current));
+                application = application.withOutstandingChange(Change.empty());
+            applications().store(application.withChange(change.onTopOf(application.get().change())));
         });
     }
 
-    /** Cancels a platform upgrade of the given application, and an application upgrade as well if {@code keepApplicationChange}. */
+    /** Cancels the indicated part of the given application's change. */
     public void cancelChange(ApplicationId applicationId, ChangesToCancel cancellation) {
         applications().lockOrThrow(applicationId, application -> {
             Change change;
@@ -313,7 +317,7 @@ public class DeploymentTrigger {
                 for (Step step : steps.production()) {
                     List<JobType> stepJobs = steps.toJobs(step);
                     List<JobType> remainingJobs = stepJobs.stream().filter(job -> ! isComplete(change, application, job)).collect(toList());
-                    if (!remainingJobs.isEmpty()) { // Change is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
+                    if ( ! remainingJobs.isEmpty()) { // Change is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
                         for (JobType job : remainingJobs) {
                             Versions versions = Versions.from(change, application, deploymentFor(application, job),
                                                               controller.systemVersion());
@@ -321,7 +325,7 @@ public class DeploymentTrigger {
                                 if (completedAt.isPresent() && canTrigger(job, versions, application, stepJobs)) {
                                     jobs.add(deploymentJob(application, versions, change, job, reason, completedAt.get()));
                                 }
-                                if (!alreadyTriggered(application, versions)) {
+                                if ( ! alreadyTriggered(application, versions)) {
                                     testJobs = emptyList();
                                 }
                             }
@@ -348,10 +352,7 @@ public class DeploymentTrigger {
                 }
             }
             if (testJobs == null) { // If nothing to test, but outstanding commits, test those.
-                Change latestChange = application.outstandingChange().application().isPresent()
-                                      ? change.with(application.outstandingChange().application().get())
-                                      : change;
-                testJobs = testJobs(application, Versions.from(latestChange,
+                testJobs = testJobs(application, Versions.from(application.outstandingChange().onTopOf(application.change()),
                                                                application,
                                                                steps.sortedDeployments(application.productionDeployments().values()).stream().findFirst(),
                                                                controller.systemVersion()),
@@ -392,11 +393,12 @@ public class DeploymentTrigger {
     /** Returns whether the given job can trigger at the given instant */
     public boolean triggerAt(Instant instant, JobType job, Versions versions, Application application) {
         Optional<JobStatus> jobStatus = application.deploymentJobs().statusOf(job);
-        if (!jobStatus.isPresent()) return true;
+        if ( ! jobStatus.isPresent()) return true;
+        if (jobStatus.get().pausedUntil().isPresent() && jobStatus.get().pausedUntil().getAsLong() > clock.instant().toEpochMilli()) return false;
         if (jobStatus.get().isSuccess()) return true; // Success
-        if (!jobStatus.get().lastCompleted().isPresent()) return true; // Never completed
-        if (!jobStatus.get().firstFailing().isPresent()) return true; // Should not happen as firstFailing should be set for an unsuccessful job
-        if (!versions.targetsMatch(jobStatus.get().lastCompleted().get())) return true; // Always trigger as targets have changed
+        if ( ! jobStatus.get().lastCompleted().isPresent()) return true; // Never completed
+        if ( ! jobStatus.get().firstFailing().isPresent()) return true; // Should not happen as firstFailing should be set for an unsuccessful job
+        if ( ! versions.targetsMatch(jobStatus.get().lastCompleted().get())) return true; // Always trigger as targets have changed
         if (application.deploymentSpec().upgradePolicy() == DeploymentSpec.UpgradePolicy.canary) return true; // Don't throttle canaries
 
         Instant firstFailing = jobStatus.get().firstFailing().get().at();

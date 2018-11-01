@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 
 import static java.util.stream.Collectors.joining;
 
+// TODO jvenstad: Only useful method has been moved to application API. Delete this when users have updated.
 /**
  * This API lists deployment jobs that are queued for execution on Screwdriver.
  * 

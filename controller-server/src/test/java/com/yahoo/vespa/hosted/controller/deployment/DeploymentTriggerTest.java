@@ -526,6 +526,37 @@ public class DeploymentTriggerTest {
     }
 
     @Test
+    public void testJobPause() {
+        Application app = tester.createAndDeploy("app", 3, "default");
+        tester.upgradeSystem(new Version("9.8.7"));
+
+        tester.applications().deploymentTrigger().pauseJob(app.id(), productionUsWest1, tester.clock().instant().plus(Duration.ofSeconds(1)));
+        tester.applications().deploymentTrigger().pauseJob(app.id(), productionUsEast3, tester.clock().instant().plus(Duration.ofSeconds(3)));
+
+        // us-west-1 does not trigger when paused.
+        tester.deployAndNotify(app, true, systemTest);
+        tester.deployAndNotify(app, true, stagingTest);
+        tester.assertNotRunning(productionUsWest1, app.id());
+
+        // us-west-1 triggers when no longer paused, but does not retry when paused again.
+        tester.clock().advance(Duration.ofMillis(1500));
+        tester.readyJobTrigger().run();
+        tester.assertRunning(productionUsWest1, app.id());
+        tester.applications().deploymentTrigger().pauseJob(app.id(), productionUsWest1, tester.clock().instant().plus(Duration.ofSeconds(1)));
+        tester.deployAndNotify(app, false, productionUsWest1);
+        tester.assertNotRunning(productionUsWest1, app.id());
+        tester.clock().advance(Duration.ofMillis(1000));
+        tester.readyJobTrigger().run();
+        tester.deployAndNotify(app, true, productionUsWest1);
+
+        // us-east-3 does not automatically trigger when paused, but does when forced.
+        tester.assertNotRunning(productionUsEast3, app.id());
+        tester.deploymentTrigger().forceTrigger(app.id(), productionUsEast3, "mrTrigger");
+        tester.assertRunning(productionUsEast3, app.id());
+        assertFalse(tester.application(app.id()).deploymentJobs().jobStatus().get(productionUsEast3).pausedUntil().isPresent());
+    }
+
+    @Test
     public void testUpgradingButNoJobStarted() {
         ReadyJobsTrigger readyJobsTrigger = new ReadyJobsTrigger(tester.controller(),
                                                                  Duration.ofHours(1),

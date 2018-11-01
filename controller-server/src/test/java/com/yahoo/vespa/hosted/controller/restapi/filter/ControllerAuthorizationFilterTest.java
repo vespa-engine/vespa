@@ -70,7 +70,7 @@ public class ControllerAuthorizationFilterTest {
         List<AthenzIdentity> allowed = singletonList(HOSTED_OPERATOR);
         List<AthenzIdentity> forbidden = singletonList(USER);
 
-        testApiAccess(PUT, "/application/v4/tenant/mytenant/application/myapp/deploying",
+        testApiAccess(PUT, "/zone/v2/hello-proxy-path",
                       allowed, forbidden, filter);
         testApiAccess(POST, "/screwdriver/v1/trigger/tenant/mytenant/application/myapp/",
                       allowed, forbidden, filter);

@@ -71,6 +71,15 @@ public class DeploymentJobs {
         return new DeploymentJobs(projectId, status, issueId, builtInternally);
     }
 
+    public DeploymentJobs withPause(JobType jobType, OptionalLong pausedUntil) {
+        Map<JobType, JobStatus> status = new LinkedHashMap<>(this.status);
+        status.compute(jobType, (__, job) -> {
+            if (job == null) job = JobStatus.initial(jobType);
+            return job.withPause(pausedUntil);
+        });
+        return new DeploymentJobs(projectId, status, issueId, builtInternally);
+    }
+
     public DeploymentJobs withProjectId(OptionalLong projectId) {
         return new DeploymentJobs(projectId, status, issueId, builtInternally);
     }

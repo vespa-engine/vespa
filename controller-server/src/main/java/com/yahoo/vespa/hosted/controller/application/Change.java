@@ -69,6 +69,15 @@ public final class Change {
         return new Change(platform, Optional.of(applicationVersion));
     }
 
+    /** Returns the change obtained when overwriting elements of the given change with any present in this */
+    public Change onTopOf(Change other) {
+        if (platform.isPresent())
+            other = other.with(platform.get());
+        if (application.isPresent())
+            other = other.with(application.get());
+        return other;
+    }
+
     @Override
     public int hashCode() { return Objects.hash(platform, application); }
 
