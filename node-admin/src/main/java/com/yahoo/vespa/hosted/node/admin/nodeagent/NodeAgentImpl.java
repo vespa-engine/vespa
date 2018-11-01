@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.Function;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.Container;
@@ -451,22 +452,15 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
-    private String stateDescription(Node.State state) {
-        return state == null ? "[absent]" : state.toString();
-    }
-
     // Public for testing
     void converge() {
         final Optional<NodeSpec> optionalNode = nodeRepository.getOptionalNode(context.hostname().value());
 
-        Node.State newState = optionalNode.map(NodeSpec::getState).orElse(null);
-        if (newState != lastState) {
-            context.log(logger, LogLevel.INFO, "State changed: " + stateDescription(lastState) + " -> " + stateDescription(newState));
-            lastState = newState;
-        }
-
         // We just removed the node from node repo, so this is expected until NodeAdmin stop this NodeAgent
-        if (!optionalNode.isPresent() && expectNodeNotInNodeRepo) return;
+        if (!optionalNode.isPresent() && expectNodeNotInNodeRepo) {
+            context.log(logger, LogLevel.INFO, "Node removed from node repo (as expected)");
+            return;
+        }
 
         final NodeSpec node = optionalNode.orElseThrow(() ->
                 new IllegalStateException(String.format("Node '%s' missing from node repository", context.hostname())));
@@ -474,13 +468,14 @@ public class NodeAgentImpl implements NodeAgent {
 
         Optional<Container> container = getContainer();
         if (!node.equals(lastNode)) {
+            logChangesToNodeSpec(lastNode, node);
+
             // Every time the node spec changes, we should clear the metrics for this container as the dimensions
             // will change and we will be reporting duplicate metrics.
             if (container.map(c -> c.state.isRunning()).orElse(false)) {
                 storageMaintainer.writeMetricsConfig(context, node);
             }
 
-            context.log(logger, LogLevel.DEBUG, "Loading new node spec: " + node.toString());
             lastNode = node;
         }
 
@@ -550,6 +545,29 @@ public class NodeAgentImpl implements NodeAgent {
                 break;
             default:
                 throw new RuntimeException("UNKNOWN STATE " + node.getState().name());
+        }
+    }
+
+    private void logChangesToNodeSpec(NodeSpec lastNode, NodeSpec node) {
+        StringBuilder builder = new StringBuilder();
+        appendIfDifferent(builder, "state", lastNode, node, NodeSpec::getState);
+        if (builder.length() > 0) {
+            context.log(logger, LogLevel.INFO, "Changes to node: " + builder.toString());
+        }
+    }
+
+    private static <T> String fieldDescription(T value) {
+        return value == null ? "[absent]" : value.toString();
+    }
+
+    private <T> void appendIfDifferent(StringBuilder builder, String name, NodeSpec oldNode, NodeSpec newNode, Function<NodeSpec, T> getter) {
+        T oldValue = oldNode == null ? null : getter.apply(oldNode);
+        T newValue = getter.apply(newNode);
+        if (!Objects.equals(oldValue, newValue)) {
+            if (builder.length() > 0) {
+                builder.append(", ");
+            }
+            builder.append(name).append(" ").append(fieldDescription(oldValue)).append(" -> ").append(fieldDescription(newValue));
         }
     }
 
