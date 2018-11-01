@@ -18,6 +18,8 @@ import com.yahoo.search.searchchain.Execution;
 public final class ParserEnvironment {
 
     private IndexFacts indexFacts = new IndexFacts();
+
+    @SuppressWarnings("deprecation")
     private Linguistics linguistics = new SimpleLinguistics(false);
     private SpecialTokens specialTokens = new SpecialTokens();
 

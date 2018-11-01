@@ -32,14 +32,20 @@ public class SimpleLinguistics implements Linguistics {
     private final GramSplitter gramSplitter;
 
     @Inject
+    @SuppressWarnings("deprecation")
     public SimpleLinguistics() {
         this(true);
 
     }
+
+    /** @deprecated use OpenNlpLinguistics to get optimaize */
+    @Deprecated // OK
     public SimpleLinguistics(boolean enableOptimaize) {
         this(new SimpleDetector(enableOptimaize));
     }
 
+    /** @deprecated use OpenNlpLinguistics to get optimaize */
+    @Deprecated // OK
     public SimpleLinguistics(SimpleLinguisticsConfig config) {
         this(new SimpleDetector(config.detector()));
     }
@@ -76,6 +82,8 @@ public class SimpleLinguistics implements Linguistics {
     @Override
     public CharacterClasses getCharacterClasses() { return characterClasses; }
 
+    /** @deprecated do not use */
+    @Deprecated // OK
     @Override
     public Tuple2<String, Version> getVersion(Component component) {
         return new Tuple2<>("yahoo", new Version(1, 0));

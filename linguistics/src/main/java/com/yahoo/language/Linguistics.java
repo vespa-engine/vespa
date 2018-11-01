@@ -101,7 +101,10 @@ public interface Linguistics {
     /**
      * Returns the name and version of a processor component returned by
      * this instance.
+     *
+     * @deprecated do not use
      */
+    @Deprecated // OK
     Tuple2<String, Version> getVersion(Linguistics.Component component);
 
 }

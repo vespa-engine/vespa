@@ -68,16 +68,21 @@ public class SimpleDetector implements Detector {
 
     private final boolean enableOptimaize;
 
+    /** @deprecated use OptimaizeDetector to enable optimaize */
+    @Deprecated
     SimpleDetector(boolean enableOptimaize) {
         initOptimaize(enableOptimaize);
         this.enableOptimaize = enableOptimaize;
 
     }
 
+    @SuppressWarnings("deprecation")
     public SimpleDetector() {
         this(true);
     }
 
+    /** @deprecated use OptimaizeDetector to enable optimaize */
+    @Deprecated
     public SimpleDetector(SimpleLinguisticsConfig.Detector detector) {
         this(detector.enableOptimaize());
     }
