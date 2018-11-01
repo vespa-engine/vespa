@@ -101,7 +101,7 @@ public class AccessLogBuilder {
         AccessLogTypeLiteral typeLiteral =
                 getOptionalAttribute(accessLogSpec, "type").
                         map(AccessLogTypeLiteral::fromAttributeValue).
-                        orElse(AccessLogTypeLiteral.VESPA);
+                        orElse(AccessLogTypeLiteral.JSON);
         AccessLogType logType = logTypeFor(typeLiteral);
         if (logType == null) {
             return Optional.empty();
