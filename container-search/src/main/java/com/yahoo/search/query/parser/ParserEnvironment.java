@@ -18,7 +18,7 @@ import com.yahoo.search.searchchain.Execution;
 public final class ParserEnvironment {
 
     private IndexFacts indexFacts = new IndexFacts();
-    private Linguistics linguistics = new SimpleLinguistics(false);
+    private Linguistics linguistics = new SimpleLinguistics();
     private SpecialTokens specialTokens = new SpecialTokens();
 
     public IndexFacts getIndexFacts() {
