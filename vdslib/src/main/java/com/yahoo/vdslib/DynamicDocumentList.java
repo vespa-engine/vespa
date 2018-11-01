@@ -112,8 +112,8 @@ public class DynamicDocumentList extends DocumentList {
                     metaEntry.timestamp = lastModified;
                 }
 
-                if (doc.getDataType().getContentType().getCompressionConfig() != null
-                        && doc.getDataType().getContentType().getCompressionConfig().type != CompressionType.NONE) {
+                if (doc.getDataType().contentStruct().getCompressionConfig() != null
+                        && doc.getDataType().contentStruct().getCompressionConfig().type != CompressionType.NONE) {
                     metaEntry.flags |= MetaEntry.COMPRESSED;
                 }
                 if (doc.getDataType().getBodyType().getCompressionConfig() != null

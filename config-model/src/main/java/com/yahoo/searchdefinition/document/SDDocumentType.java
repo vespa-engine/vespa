@@ -151,7 +151,7 @@ public class SDDocumentType implements Cloneable, Serializable {
     @SuppressWarnings("deprecation")
     public SDDocumentType(String name, Search search) {
         docType = new DocumentType(name);
-        docType.getContentType().setCompressionConfig(new CompressionConfig());
+        docType.contentStruct().setCompressionConfig(new CompressionConfig());
         docType.getBodyType().setCompressionConfig(new CompressionConfig());
         validateId(search);
         inherit(VESPA_DOCUMENT);
@@ -164,8 +164,8 @@ public class SDDocumentType implements Cloneable, Serializable {
             this.structType = structType;
             inheritedTypes.clear();
         } else {
-            if (docType.getContentType() != null) {
-                this.structType = docType.getContentType();
+            if (docType.contentStruct() != null) {
+                this.structType = docType.contentStruct();
                 inheritedTypes.clear();
             } else {
                 throw new IllegalArgumentException("You can not set a null struct");

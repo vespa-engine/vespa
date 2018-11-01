@@ -120,7 +120,7 @@ public class Document extends StructuredFieldValue {
 
     @SuppressWarnings("deprecation")
     private void setNewType(DocumentType type) {
-        header = type.getContentType().createFieldValue();
+        header = type.contentStruct().createFieldValue();
         body = type.getBodyType().createFieldValue();
     }
 

@@ -100,14 +100,18 @@ public class DocumentType extends StructuredDataType {
         return false;
     }
 
-    public StructDataType getContentType() {
+    /**
+     * Provides the Struct describing the fields in the document.
+     * @return Struct describing the document fields.
+     */
+    public StructDataType contentStruct() {
         return headerType;
     }
 
-    // Use getContentType instead
+    // Use contentStruct instead
     @Deprecated
     public StructDataType getHeaderType() {
-        return getContentType();
+        return contentStruct();
     }
 
     @Deprecated

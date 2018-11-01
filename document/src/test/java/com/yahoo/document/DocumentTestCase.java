@@ -806,12 +806,12 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         CompressionConfig noncomp = new CompressionConfig();
         CompressionConfig lz4comp = new CompressionConfig(CompressionType.LZ4);
 
-        doc.getDataType().getContentType().setCompressionConfig(lz4comp);
+        doc.getDataType().contentStruct().setCompressionConfig(lz4comp);
         doc.getDataType().getBodyType().setCompressionConfig(lz4comp);
         buf = new GrowableByteBuffer(size, 2.0f);
 
         doc.serialize(buf);
-        doc.getDataType().getContentType().setCompressionConfig(noncomp);
+        doc.getDataType().contentStruct().setCompressionConfig(noncomp);
         doc.getDataType().getBodyType().setCompressionConfig(noncomp);
         fos = new FileOutputStream("src/tests/data/serializejava-compressed.dat");
         fos.write(buf.array(), 0, buf.position());
@@ -910,13 +910,13 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         CompressionConfig noncomp = new CompressionConfig();
         CompressionConfig lz4comp = new CompressionConfig(CompressionType.LZ4);
 
-        doc.getDataType().getContentType().setCompressionConfig(lz4comp);
+        doc.getDataType().contentStruct().setCompressionConfig(lz4comp);
         doc.getDataType().getBodyType().setCompressionConfig(lz4comp);
 
         GrowableByteBuffer data = new GrowableByteBuffer();
         doc.serialize(data);
         int size = doc.getSerializedSize();
-        doc.getDataType().getContentType().setCompressionConfig(noncomp);
+        doc.getDataType().contentStruct().setCompressionConfig(noncomp);
         doc.getDataType().getBodyType().setCompressionConfig(noncomp);
 
         assertEquals(size, data.position());
