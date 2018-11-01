@@ -162,7 +162,7 @@ public class SearchHandlerTestCase {
         assertEquals("text/xml", s.getContentType());
         assertNull(s.getCoverage());
         assertEquals("query 'dummy'", s.getParsedQuery());
-        assertEquals(5000, s.getTiming().getTimeout());
+        assertEquals(500, s.getTiming().getTimeout());
     }
 
     @Test
