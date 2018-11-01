@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Function;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.Container;
@@ -42,6 +41,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
@@ -80,7 +80,6 @@ public class NodeAgentImpl implements NodeAgent {
 
     private int numberOfUnhandledException = 0;
     private Instant lastConverge;
-    private Node.State lastState = null;
 
     private final Thread loopThread;
     private final Optional<HealthChecker> healthChecker;
