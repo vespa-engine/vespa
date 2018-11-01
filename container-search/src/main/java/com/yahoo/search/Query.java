@@ -139,7 +139,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     // The timeout to be used when dumping rank features
     private static final long dumpTimeout = (6 * 60 * 1000); // 6 minutes
-    private static final long defaultTimeout = 5000;
+    private static final long defaultTimeout = 500;
     /** The timeout of the query, in milliseconds */
     private long timeout = defaultTimeout;
 
@@ -537,7 +537,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /**
      * Returns the number of milliseconds to wait for a response from a search backend
-     * before timing it out. Default is 5000.
+     * before timing it out. Default is 500.
      * <p>
      * Note: If Ranking.RANKFEATURES is turned on, this is hardcoded to 6 minutes.
      *
@@ -549,7 +549,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
 
     /**
      * Sets the number of milliseconds to wait for a response from a search backend
-     * before time out. Default is 5000.
+     * before time out. Default is 500.
      */
     public void setTimeout(long timeout) {
         if (timeout > 1000000000 || timeout < 0)
@@ -885,7 +885,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                 yql.append(" limit ").append(Integer.toString(getHits()));
             }
         }
-        if (getTimeout() != 5000L) {
+        if (getTimeout() != defaultTimeout) {
             yql.append(" timeout ").append(Long.toString(getTimeout()));
         }
         yql.append(';');
