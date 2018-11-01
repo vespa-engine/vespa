@@ -3,6 +3,7 @@ search child {
     document child inherits parent {
       field child_struct_field type my_struct {
         indexing: summary | index
+        header
         match: prefix
       }
     }

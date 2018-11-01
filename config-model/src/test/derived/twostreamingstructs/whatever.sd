@@ -9,6 +9,7 @@ search whatever {
 
     field f1 type pair {
       indexing: summary
+      body
     }
   }
 

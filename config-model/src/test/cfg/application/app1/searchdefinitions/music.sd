@@ -9,28 +9,34 @@ search music {
       indexing: summary | index   # How this field should be indexed
       # index-to: title, default    # Create two indexes
       rank-type: about            # Type of ranking settings to apply
+      header
     }
 
     field artist type string {
       indexing: summary | attribute | index
       # index-to: artist, default
       rank-type:about
+      header
     }
 
     field year type int {
       indexing: summary | attribute
+      header
     }
 
     # Increase rank score of popular documents regardless of query
     field popularity type int {
       indexing: summary | attribute
+      body
     }
 
     field url type uri {
       indexing: summary | index
+      header
     }
 
     field cover type raw {
+      body
     }
 
   }
