@@ -67,6 +67,7 @@ import static java.util.stream.Collectors.toList;
 public class DeploymentTrigger {
 
     private final static Logger log = Logger.getLogger(DeploymentTrigger.class.getName());
+    private static final long maxPauseDays = 3;
 
     private final Controller controller;
     private final Clock clock;
@@ -220,6 +221,15 @@ public class DeploymentTrigger {
                 : Stream.of(deploymentJob(application, versions, application.change(), jobType, reason, clock.instant())))
                 .peek(this::trigger)
                 .map(Job::jobType).collect(toList());
+    }
+
+    /** Prevents jobs of the given type from starting, until the given time. */
+    public void pauseJob(ApplicationId id, JobType jobType, long until) {
+        if (until > clock.instant().plus(Duration.ofDays(maxPauseDays)).toEpochMilli())
+            throw new IllegalArgumentException("Pause only allowed for up to " + maxPauseDays + " days.");
+
+        applications().lockOrThrow(id, application ->
+                applications().store(application.withJobPause(jobType, OptionalLong.of(until))));
     }
 
     /** Triggers a change of this application, unless it already has a change. */

@@ -113,6 +113,12 @@ public class LockedApplication {
                                      ownershipIssueId, metrics, rotation, rotationStatus);
     }
 
+    public LockedApplication withJobPause(JobType jobType, OptionalLong pausedUntil) {
+        return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs.withPause(jobType, pausedUntil), change, outstandingChange,
+                                     ownershipIssueId, metrics, rotation, rotationStatus);
+    }
+
     public LockedApplication withJobCompletion(long projectId, JobType jobType, JobStatus.JobRun completion,
                                                Optional<DeploymentJobs.JobError> jobError) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
