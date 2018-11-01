@@ -3,7 +3,8 @@ package com.yahoo.document;
 
 /**
  * Base class for "document operations".
- * These include "put" (DocumentPut), "update" (DocumentUpdate), and "remove" (DocumentRemove).
+ * These include "put" (DocumentPut), "update" (DocumentUpdate), "remove" (DocumentRemove)
+ * and "get" (DocumentGet).  The latter only for internal use.
  * Historically, put operations were represented by the Document class alone,
  * but since it doesn't make much sense to put a *test and set* condition in Document,
  * a more uniform interface for document operations was needed.

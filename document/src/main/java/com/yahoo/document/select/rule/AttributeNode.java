@@ -135,6 +135,8 @@ public class AttributeNode implements ExpressionNode {
             return Result.INVALID;
         } else if (value instanceof DocumentRemove) {
             return Result.INVALID;
+        } else if (value instanceof DocumentGet) {
+            return Result.INVALID;
         }
         return Result.FALSE;
     }

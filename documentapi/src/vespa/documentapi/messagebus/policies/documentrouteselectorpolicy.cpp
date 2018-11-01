@@ -4,6 +4,7 @@
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
+#include <vespa/documentapi/messagebus/messages/getdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/updatedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/documentignoredreply.h>
@@ -133,6 +134,14 @@ DocumentRouteSelectorPolicy::select(mbus::RoutingContext &context, const vespali
         const RemoveDocumentMessage &removeMsg = static_cast<const RemoveDocumentMessage &>(msg);
         if (removeMsg.getDocumentId().hasDocType()) {
             return it->second->contains(removeMsg.getDocumentId()) != Result::False;
+        } else {
+            return true;
+        }
+    }
+    case DocumentProtocol::MESSAGE_GETDOCUMENT: {
+        const GetDocumentMessage &getMsg = static_cast<const GetDocumentMessage &>(msg);
+        if (getMsg.getDocumentId().hasDocType()) {
+            return it->second->contains(getMsg.getDocumentId()) != Result::False;
         } else {
             return true;
         }
