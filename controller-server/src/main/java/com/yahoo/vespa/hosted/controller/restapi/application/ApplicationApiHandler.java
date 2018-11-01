@@ -65,7 +65,6 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
@@ -214,6 +213,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return JobControllerApiHandlerHelper.unregisterResponse(controller.jobController(), path.get("tenant"), path.get("application"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.abortJobResponse(controller.jobController(), appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deactivate(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override"))
@@ -895,9 +895,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private HttpResponse notifyJobCompletion(String tenant, String applicationName, HttpRequest request) {
+    private HttpResponse notifyJobCompletion(String tenant, String application, HttpRequest request) {
         try {
-            controller.applications().deploymentTrigger().notifyOfCompletion(toJobReport(tenant, applicationName, toSlime(request.getData()).get()));
+            DeploymentJobs.JobReport report = toJobReport(tenant, application, toSlime(request.getData()).get());
+            if (controller.applications().require(report.applicationId()).deploymentJobs().deployedInternally())
+                throw new IllegalArgumentException(report.applicationId() + " is set up to be deployed from internally, and no " +
+                                                   "longer accepts reports from Screwdriver v3 jobs. If you need to revert " +
+                                                   "to the old pipeline, please file a ticket at yo/vespa-support and request this.");
+
+            controller.applications().deploymentTrigger().notifyOfCompletion(report);
             return new MessageResponse("ok");
         } catch (IllegalStateException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));

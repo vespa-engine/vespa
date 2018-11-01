@@ -429,9 +429,37 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(createApplicationSubmissionData(packageWithService)),
                               "{\"version\":\"1.0.43-d00d\"}");
 
+        ApplicationId app1 = ApplicationId.from("tenant1", "application1", "default");
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID)
+                                      .data(asJson(new DeploymentJobs.JobReport(app1,
+                                                                                JobType.component,
+                                                                                1234,
+                                                                                123,
+                                                                                Optional.of(BuildJob.defaultSourceRevision),
+                                                                                Optional.empty()))),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"" + app1 + " is set up to be deployed from internally," +
+                              " and no longer accepts reports from Screwdriver v3 jobs. If you need to revert " +
+                              "to the old pipeline, please file a ticket at yo/vespa-support and request this.\"}",
+                              400);
+
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default/job/production-us-west-1", DELETE)
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Nothing to abort.\"}");
+
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", DELETE)
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                              "{\"message\":\"Unregistered 'tenant1.application1' from internal deployment pipeline.\"}");
+
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID)
+                                      .data(asJson(new DeploymentJobs.JobReport(app1,
+                                                                                JobType.component,
+                                                                                1234,
+                                                                                123,
+                                                                                Optional.of(BuildJob.defaultSourceRevision),
+                                                                                Optional.empty()))),
+                              "{\"message\":\"ok\"}");
 
         // PUT (create) the authenticated user
         byte[] data = new byte[0];
