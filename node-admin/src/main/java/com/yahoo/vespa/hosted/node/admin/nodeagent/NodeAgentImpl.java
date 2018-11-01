@@ -79,8 +79,10 @@ public class NodeAgentImpl implements NodeAgent {
 
     private int numberOfUnhandledException = 0;
     private Instant lastConverge;
+    private Node.State lastState = null;
 
     private final Thread loopThread;
+    private final Optional<HealthChecker> healthChecker;
 
     private final ScheduledExecutorService filebeatRestarter =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("filebeatrestarter"));
@@ -119,7 +121,8 @@ public class NodeAgentImpl implements NodeAgent {
             final Clock clock,
             final Duration timeBetweenEachConverge,
             final Optional<AthenzCredentialsMaintainer> athenzCredentialsMaintainer,
-            final Optional<AclMaintainer> aclMaintainer) {
+            final Optional<AclMaintainer> aclMaintainer,
+            final Optional<HealthChecker> healthChecker) {
         this.context = context;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
@@ -130,6 +133,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.lastConverge = clock.instant();
         this.athenzCredentialsMaintainer = athenzCredentialsMaintainer;
         this.aclMaintainer = aclMaintainer;
+        this.healthChecker = healthChecker;
 
         this.loopThread = new Thread(() -> {
             try {
@@ -193,14 +197,10 @@ public class NodeAgentImpl implements NodeAgent {
             }
         } while (loopThread.isAlive() || !filebeatRestarter.isTerminated());
 
+        healthChecker.ifPresent(HealthChecker::close);
+
         context.log(logger, "Stopped");
     }
-
-    /**
-     * Verifies that service is healthy, otherwise throws an exception. The default implementation does
-     * nothing, override if it's necessary to verify that a service is healthy before resuming.
-     */
-    protected void verifyHealth(NodeSpec node) { }
 
     void startServicesIfNeeded() {
         if (!hasStartedServices) {
@@ -430,7 +430,6 @@ public class NodeAgentImpl implements NodeAgent {
             isFrozenCopy = isFrozen;
         }
 
-        doAtTickStart(isFrozen);
         boolean converged = false;
 
         if (isFrozenCopy) {
@@ -452,13 +451,21 @@ public class NodeAgentImpl implements NodeAgent {
                 context.log(logger, LogLevel.ERROR, "Unhandled exception, ignoring.", e);
             }
         }
+    }
 
-        doAtTickEnd(converged);
+    private String stateDescription(Node.State state) {
+        return state == null ? "[absent]" : state.toString();
     }
 
     // Public for testing
     void converge() {
         final Optional<NodeSpec> optionalNode = nodeRepository.getOptionalNode(context.hostname().value());
+
+        Node.State newState = optionalNode.map(NodeSpec::getState).orElse(null);
+        if (newState != lastState) {
+            context.log(logger, LogLevel.INFO, "State changed: " + stateDescription(lastState) + " -> " + stateDescription(newState));
+            lastState = newState;
+        }
 
         // We just removed the node from node repo, so this is expected until NodeAdmin stop this NodeAgent
         if (!optionalNode.isPresent() && expectNodeNotInNodeRepo) return;
@@ -508,13 +515,10 @@ public class NodeAgentImpl implements NodeAgent {
                     aclMaintainer.ifPresent(AclMaintainer::converge);
                 }
 
-                verifyHealth(node);
                 startServicesIfNeeded();
                 resumeNodeIfNeeded(node);
-
                 athenzCredentialsMaintainer.ifPresent(maintainer -> maintainer.converge(context));
-
-                doBeforeConverge(node);
+                healthChecker.ifPresent(checker -> checker.verifyHealth(context));
 
                 // Because it's more important to stop a bad release from rolling out in prod,
                 // we put the resume call last. So if we fail after updating the node repo attributes
@@ -550,39 +554,6 @@ public class NodeAgentImpl implements NodeAgent {
                 throw new RuntimeException("UNKNOWN STATE " + node.getState().name());
         }
     }
-
-    /**
-     * Execute at start of tick
-     *
-     * WARNING: MUST NOT throw an exception
-     *
-     * @param frozen whether the agent is frozen
-     */
-    protected void doAtTickStart(boolean frozen) {}
-
-    /**
-     * Execute at end of tick
-     *
-     * WARNING: MUST NOT throw an exception
-     *
-     * @param converged Whether the tick converged: converge() was called without exception
-     */
-    protected void doAtTickEnd(boolean converged) {}
-
-    /**
-     * Execute at end of a (so far) successful converge of an active node
-     *
-     * Method a subclass can override to execute code:
-     *  - Called right before the node repo is updated with converged attributes, and
-     *    Orchestrator resume() is called
-     *  - The only way to avoid a successful converge and the update to the node repo
-     *    and Orchestrator is to throw an exception
-     *  - The method is only called in a tick if the node is active, not frozen, and
-     *    there are no prior phases of the converge that fails
-     *
-     * @throws RuntimeException to fail the convergence
-     */
-    protected void doBeforeConverge(NodeSpec node) {}
 
     private void stopFilebeatSchedulerIfNeeded() {
         if (currentFilebeatRestarter.isPresent()) {

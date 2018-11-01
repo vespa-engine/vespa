@@ -70,6 +70,7 @@ public class NodeAgentImplTest {
     private final StorageMaintainer storageMaintainer = mock(StorageMaintainer.class);
     private final MetricReceiverWrapper metricReceiver = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
     private final AclMaintainer aclMaintainer = mock(AclMaintainer.class);
+    private final HealthChecker healthChecker = mock(HealthChecker.class);
     private final ContainerStats emptyContainerStats = new ContainerStats(Collections.emptyMap(),
             Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap());
     private final AthenzCredentialsMaintainer athenzCredentialsMaintainer = mock(AthenzCredentialsMaintainer.class);
@@ -191,12 +192,13 @@ public class NodeAgentImplTest {
         verify(dockerOperations, never()).startServices(any());
         verify(orchestrator, never()).suspend(any(String.class));
 
-        final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository, aclMaintainer);
+        final InOrder inOrder = inOrder(dockerOperations, orchestrator, nodeRepository, aclMaintainer, healthChecker);
         inOrder.verify(dockerOperations, times(1)).pullImageAsyncIfNeeded(eq(dockerImage));
         inOrder.verify(dockerOperations, times(1)).createContainer(eq(context), eq(node), any());
         inOrder.verify(dockerOperations, times(1)).startContainer(eq(context));
         inOrder.verify(aclMaintainer, times(1)).converge();
         inOrder.verify(dockerOperations, times(1)).resumeNode(eq(context));
+        inOrder.verify(healthChecker, times(1)).verifyHealth(eq(context));
         inOrder.verify(nodeRepository).updateNodeAttributes(
                 hostName, new NodeAttributes().withDockerImage(dockerImage));
         inOrder.verify(orchestrator).resume(hostName);
@@ -707,7 +709,8 @@ public class NodeAgentImplTest {
         doNothing().when(storageMaintainer).writeMetricsConfig(any(), any());
 
         return new NodeAgentImpl(context, nodeRepository, orchestrator, dockerOperations,
-                storageMaintainer, clock, NODE_AGENT_SCAN_INTERVAL, Optional.of(athenzCredentialsMaintainer), Optional.of(aclMaintainer));
+                storageMaintainer, clock, NODE_AGENT_SCAN_INTERVAL, Optional.of(athenzCredentialsMaintainer), Optional.of(aclMaintainer),
+                Optional.of(healthChecker));
     }
 
     private void mockGetContainer(DockerImage dockerImage, boolean isRunning) {
