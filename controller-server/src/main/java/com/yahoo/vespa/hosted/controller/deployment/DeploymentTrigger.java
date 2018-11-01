@@ -392,11 +392,12 @@ public class DeploymentTrigger {
     /** Returns whether the given job can trigger at the given instant */
     public boolean triggerAt(Instant instant, JobType job, Versions versions, Application application) {
         Optional<JobStatus> jobStatus = application.deploymentJobs().statusOf(job);
-        if (!jobStatus.isPresent()) return true;
+        if ( ! jobStatus.isPresent()) return true;
+        if (jobStatus.get().pausedUntil().isPresent() && jobStatus.get().pausedUntil().getAsLong() > clock.instant().toEpochMilli()) return false;
         if (jobStatus.get().isSuccess()) return true; // Success
-        if (!jobStatus.get().lastCompleted().isPresent()) return true; // Never completed
-        if (!jobStatus.get().firstFailing().isPresent()) return true; // Should not happen as firstFailing should be set for an unsuccessful job
-        if (!versions.targetsMatch(jobStatus.get().lastCompleted().get())) return true; // Always trigger as targets have changed
+        if ( ! jobStatus.get().lastCompleted().isPresent()) return true; // Never completed
+        if ( ! jobStatus.get().firstFailing().isPresent()) return true; // Should not happen as firstFailing should be set for an unsuccessful job
+        if ( ! versions.targetsMatch(jobStatus.get().lastCompleted().get())) return true; // Always trigger as targets have changed
         if (application.deploymentSpec().upgradePolicy() == DeploymentSpec.UpgradePolicy.canary) return true; // Don't throttle canaries
 
         Instant firstFailing = jobStatus.get().firstFailing().get().at();
