@@ -47,8 +47,8 @@ public class DocumentNode implements ExpressionNode {
             DocumentRemove removeOp = (DocumentRemove)op;
             return (removeOp.getId().getDocType().equals(type) ? op : Boolean.FALSE);
         } else if (op instanceof DocumentGet) {
-            DocumentGet removeOp = (DocumentGet)op;
-            return (removeOp.getId().getDocType().equals(type) ? op : Boolean.FALSE);
+            DocumentGet getOp = (DocumentGet)op;
+            return (getOp.getId().getDocType().equals(type) ? op : Boolean.FALSE);
         } else {
             throw new IllegalStateException("Document class '" + op.getClass().getName() + "' is not supported.");
         }
