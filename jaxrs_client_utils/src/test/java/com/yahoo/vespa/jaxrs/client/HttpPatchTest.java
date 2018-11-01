@@ -74,7 +74,8 @@ public class HttpPatchTest extends JerseyTest {
         final JaxRsStrategy<TestResourceApi> client = factory.apiNoRetries(TestResourceApi.class, apiPath);
 
         final String responseBody;
-        responseBody = client.apply(api -> api.doPatch(REQUEST_BODY));
+        responseBody = client.apply(api ->
+                api.doPatch(REQUEST_BODY));
 
         assertThat(testResourceSingleton.invocation.get(60, TimeUnit.SECONDS), is(REQUEST_BODY));
         assertThat(responseBody, is(REQUEST_BODY));

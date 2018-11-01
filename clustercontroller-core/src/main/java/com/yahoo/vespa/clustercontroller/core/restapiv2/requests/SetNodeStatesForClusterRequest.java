@@ -27,7 +27,6 @@ public class SetNodeStatesForClusterRequest extends Request<SetResponse> {
     private final Map<String, UnitState> newStates;
     private final SetUnitStateRequest.Condition condition;
     private final TimeBudget timeBudget;
-    private final boolean probe;
 
 
     public SetNodeStatesForClusterRequest(Id.Cluster cluster, SetUnitStateRequest request) {
@@ -36,7 +35,6 @@ public class SetNodeStatesForClusterRequest extends Request<SetResponse> {
         this.newStates = request.getNewState();
         this.condition = request.getCondition();
         this.timeBudget = request.timeBudget();
-        this.probe = request.isProbe();
     }
 
     @Override
@@ -71,8 +69,7 @@ public class SetNodeStatesForClusterRequest extends Request<SetResponse> {
                     newStates,
                     node,
                     context.nodeStateOrHostInfoChangeHandler,
-                    context.currentConsolidatedState,
-                    probe);
+                    context.currentConsolidatedState);
 
             if (!setResponse.getWasModified()) {
                 throw new InternalFailure("We have not yet implemented the meaning of " +

@@ -64,7 +64,4 @@ public interface SetUnitStateRequest extends UnitRequest {
     ResponseWait getResponseWait();
 
     TimeBudget timeBudget();
-
-    /** A probe request is a non-committal request to see if an identical (but non-probe) request would have succeeded. */
-    boolean isProbe();
 }
