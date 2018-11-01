@@ -117,8 +117,8 @@ public class StorageMaintainerTest {
         public void configserver() {
             Path path = executeAs(NodeType.config);
 
-            assertChecks(path, "athenz-certificate-expiry", "configserver", "host-life", "ntp",
-                    "system-coredumps-processing", "zkbackupage");
+            assertChecks(path, "athenz-certificate-expiry", "configserver", "configserver-new",
+                         "host-life", "ntp", "system-coredumps-processing", "zkbackupage");
 
             assertCheckEnds(path.resolve("configserver.yaml"),
                     "  tags:\n" +

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -118,6 +119,12 @@ public class StorageMaintainer {
             configs.add(new SecretAgentCheckConfig(SecretAgentCheckConfig.nodeTypeToRole(context.nodeType()), 60, configServerCheckPath,
                     "-zero", "configserver")
                     .withTags(tags));
+
+            // configserver-new
+            Path configServerNewCheckPath = Paths.get("curl");
+            configs.add(new SecretAgentCheckConfig("configserver-new", 60, configServerNewCheckPath,
+                                                   "-s", "localhost:19071/yamas-metrics")
+                                .withTags(tags));
 
             //zkbackupage
             Path zkbackupCheckPath = context.pathInNodeUnderVespaHome("libexec/yamas2/yms_check_file_age.py");
