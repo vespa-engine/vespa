@@ -13,30 +13,30 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.Rule;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
-import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.IOExceptionUtil.uncheck;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -47,7 +47,7 @@ public class StorageMaintainerTest {
     private static final DockerOperations docker = mock(DockerOperations.class);
 
     public static class SecretAgentCheckTests {
-        private final StorageMaintainer storageMaintainer = new StorageMaintainer(docker, null, null);
+        private final StorageMaintainer storageMaintainer = new StorageMaintainer(null, docker, null, null);
 
         @Test
         public void tenant() {
@@ -190,29 +190,33 @@ public class StorageMaintainerTest {
     }
 
     public static class DiskUsageTests {
-        @Rule
-        public TemporaryFolder folder = new TemporaryFolder();
+
+        private final TestTerminal terminal = new TestTerminal();
 
         @Test
-        public void testDiskUsed() throws IOException, ExecutionException {
-            StorageMaintainer storageMaintainer = new StorageMaintainer(docker, null, null);
-            int writeSize = 10000;
-            Files.write(folder.newFile().toPath(), new byte[writeSize]);
+        public void testDiskUsed() throws IOException {
+            StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, docker, null, null);
+            FileSystem fileSystem = TestFileSystem.create();
+            NodeAgentContext context = new NodeAgentContextImpl.Builder("host-1.domain.tld").fileSystem(fileSystem).build();
+            Files.createDirectories(context.pathOnHostFromPathInNode("/"));
 
-            long usedBytes = storageMaintainer.getDiskUsageFor(folder.getRoot().toPath());
-            if (usedBytes * 4 < writeSize || usedBytes > writeSize * 4)
-                fail("Used bytes is " + usedBytes + ", but wrote " + writeSize + " bytes, not even close.");
+            terminal.expectCommand("du -xsk /home/docker/host-1 2>&1", 0, "321\t/home/docker/host-1/");
+            assertEquals(Optional.of(328_704L), storageMaintainer.getDiskUsageFor(context));
 
-            // Write another file, since disk usage is cached it should not change
-            Files.write(folder.newFile().toPath(), new byte[writeSize]);
-            assertEquals(usedBytes, storageMaintainer.getDiskUsageFor(folder.getRoot().toPath()));
+            // Value should still be cached, no new execution against the terminal
+            assertEquals(Optional.of(328_704L), storageMaintainer.getDiskUsageFor(context));
         }
 
         @Test
-        public void testNonExistingDiskUsed() throws IOException, InterruptedException {
-            StorageMaintainer storageMaintainer = new StorageMaintainer(docker, null, null);
-            long usedBytes = storageMaintainer.getDiskUsedInBytes(folder.getRoot().toPath().resolve("doesn't exist"));
+        public void testNonExistingDiskUsed() {
+            StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, docker, null, null);
+            long usedBytes = storageMaintainer.getDiskUsedInBytes(null, Paths.get("/fake/path"));
             assertEquals(0L, usedBytes);
+        }
+
+        @After
+        public void after() {
+            terminal.verifyAllCommandsExecuted();
         }
     }
 
@@ -237,7 +241,7 @@ public class StorageMaintainerTest {
 
 
             // Archive container-1
-            StorageMaintainer storageMaintainer = new StorageMaintainer(docker, null, pathToArchiveDir);
+            StorageMaintainer storageMaintainer = new StorageMaintainer(null, docker, null, pathToArchiveDir);
             storageMaintainer.archiveNodeStorage(context1);
 
             // container-1 should be gone from container-storage

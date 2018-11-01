@@ -1,23 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig;
 import com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoredumpHandler;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -31,7 +29,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -48,21 +45,19 @@ public class StorageMaintainer {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
             .ofPattern("yyyyMMddHHmmss").withZone(ZoneOffset.UTC);
 
+    private final Terminal terminal;
     private final DockerOperations dockerOperations;
     private final CoredumpHandler coredumpHandler;
     private final Path archiveContainerStoragePath;
 
     // We cache disk usage to avoid doing expensive disk operations so often
-    private LoadingCache<Path, Long> diskUsage = CacheBuilder.newBuilder()
+    private final Cache<Path, Long> diskUsage = CacheBuilder.newBuilder()
             .maximumSize(100)
             .expireAfterWrite(5, TimeUnit.MINUTES)
-            .build(new CacheLoader<Path, Long>() {
-                public Long load(Path containerDir) throws IOException, InterruptedException {
-                    return getDiskUsedInBytes(containerDir);
-                }
-            });
+            .build();
 
-    public StorageMaintainer(DockerOperations dockerOperations, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath) {
+    public StorageMaintainer(Terminal terminal, DockerOperations dockerOperations, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath) {
+        this.terminal = terminal;
         this.dockerOperations = dockerOperations;
         this.coredumpHandler = coredumpHandler;
         this.archiveContainerStoragePath = archiveContainerStoragePath;
@@ -186,37 +181,37 @@ public class StorageMaintainer {
     }
 
     public Optional<Long> getDiskUsageFor(NodeAgentContext context) {
-        Path containerDir = context.pathOnHostFromPathInNode("/");
         try {
-            return Optional.of(getDiskUsageFor(containerDir));
+            Path path = context.pathOnHostFromPathInNode("/");
+
+            Long cachedDiskUsage = diskUsage.getIfPresent(path);
+            if (cachedDiskUsage != null) return Optional.of(cachedDiskUsage);
+
+            long diskUsageBytes = getDiskUsedInBytes(context, path);
+            diskUsage.put(path, diskUsageBytes);
+            return Optional.of(diskUsageBytes);
         } catch (Exception e) {
-            context.log(logger, LogLevel.WARNING, "Problems during disk usage calculations in " + containerDir.toAbsolutePath(), e);
+            context.log(logger, LogLevel.WARNING, "Failed to get disk usage", e);
             return Optional.empty();
         }
     }
 
-    long getDiskUsageFor(Path containerDir) throws ExecutionException {
-        return diskUsage.get(containerDir);
-    }
-
     // Public for testing
-    long getDiskUsedInBytes(Path path) throws IOException, InterruptedException {
+    long getDiskUsedInBytes(TaskContext context, Path path) {
         if (!Files.exists(path)) return 0;
 
-        Process duCommand = new ProcessBuilder().command("du", "-xsk", path.toString()).start();
-        if (!duCommand.waitFor(60, TimeUnit.SECONDS)) {
-            duCommand.destroy();
-            duCommand.waitFor();
-            throw new RuntimeException("Disk usage command timed out, aborting.");
-        }
-        String output = IOUtils.readAll(new InputStreamReader(duCommand.getInputStream()));
+        String output = terminal.newCommandLine(context)
+                .add("du", "-xsk", path.toString())
+                .setTimeout(Duration.ofSeconds(60))
+                .executeSilently()
+                .getOutput();
+
         String[] results = output.split("\t");
         if (results.length != 2) {
             throw new RuntimeException("Result from disk usage command not as expected: " + output);
         }
 
-        long diskUsageKB = Long.valueOf(results[0]);
-        return diskUsageKB * 1024;
+        return 1024 * Long.valueOf(results[0]);
     }
 
 
