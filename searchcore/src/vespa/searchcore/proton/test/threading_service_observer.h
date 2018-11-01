@@ -39,7 +39,7 @@ public:
         return _index;
     }
     const ThreadServiceObserver &summaryObserver() const {
-        return _index;
+        return _summary;
     }
     const search::SequencedTaskExecutorObserver &indexFieldInverterObserver() const {
         return _indexFieldInverter;
