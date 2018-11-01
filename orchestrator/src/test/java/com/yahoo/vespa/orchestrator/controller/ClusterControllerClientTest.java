@@ -8,7 +8,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -31,7 +30,7 @@ public class ClusterControllerClientTest {
 
         OrchestratorContext context = mock(OrchestratorContext.class);
         ClusterControllerClientTimeouts timeouts = mock(ClusterControllerClientTimeouts.class);
-        when(context.getClusterControllerTimeouts(any())).thenReturn(timeouts);
+        when(context.getClusterControllerTimeouts()).thenReturn(timeouts);
         when(timeouts.getServerTimeoutOrThrow()).thenReturn(Duration.ofSeconds(1));
         clusterControllerClient.setNodeState(context, STORAGE_NODE_INDEX, wantedState);
 

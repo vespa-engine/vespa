@@ -18,15 +18,18 @@ import java.util.Optional;
 public class OrchestratorContext {
     private static final Duration DEFAULT_TIMEOUT_FOR_SINGLE_OP = Duration.ofSeconds(10);
     private static final Duration DEFAULT_TIMEOUT_FOR_BATCH_OP = Duration.ofSeconds(60);
+    private static final Duration TIMEOUT_OVERHEAD = Duration.ofMillis(500);
 
     private final Clock clock;
     private final TimeBudget timeBudget;
     private boolean probe;
 
+    /** Create an OrchestratorContext for operations on multiple applications. */
     public static OrchestratorContext createContextForMultiAppOp(Clock clock) {
         return new OrchestratorContext(clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_BATCH_OP), true);
     }
 
+    /** Create an OrchestratorContext for an operation on a single application. */
     public static OrchestratorContext createContextForSingleAppOp(Clock clock) {
         return new OrchestratorContext(clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_SINGLE_OP), true);
     }
@@ -41,8 +44,8 @@ public class OrchestratorContext {
         return timeBudget.timeLeftOrThrow().get();
     }
 
-    public ClusterControllerClientTimeouts getClusterControllerTimeouts(String clusterName) {
-        return new ClusterControllerClientTimeouts(clusterName, timeBudget.timeLeftAsTimeBudget());
+    public ClusterControllerClientTimeouts getClusterControllerTimeouts() {
+        return new ClusterControllerClientTimeouts(timeBudget.timeLeftAsTimeBudget());
     }
 
 
@@ -57,8 +60,16 @@ public class OrchestratorContext {
         return probe;
     }
 
-    /** Create an OrchestratorContext to use within an application lock. */
-    public OrchestratorContext createSubcontextForApplication() {
+    /** Create OrchestratorContext to use within an application lock. */
+    public OrchestratorContext createSubcontextWithinLock() {
+        // Move deadline towards past by a fixed amount to ensure there's time to process exceptions and
+        // access ZooKeeper before the lock times out.
+        TimeBudget subTimeBudget = timeBudget.withDeadline(timeBudget.deadline().get().minus(TIMEOUT_OVERHEAD));
+        return new OrchestratorContext(clock, subTimeBudget, probe);
+    }
+
+    /** Create an OrchestratorContext for an operation on a single application, but limited to current timeout. */
+    public OrchestratorContext createSubcontextForSingleAppOp() {
         Instant now = clock.instant();
         Instant deadline = timeBudget.deadline().get();
         Instant maxDeadline = now.plus(DEFAULT_TIMEOUT_FOR_SINGLE_OP);

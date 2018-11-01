@@ -36,7 +36,7 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
                                                        ClusterControllerNodeState wantedState) throws IOException {
         ClusterControllerStateRequest.State state = new ClusterControllerStateRequest.State(wantedState, REQUEST_REASON);
         ClusterControllerStateRequest stateRequest = new ClusterControllerStateRequest(state, ClusterControllerStateRequest.Condition.SAFE);
-        ClusterControllerClientTimeouts timeouts = context.getClusterControllerTimeouts(clusterName);
+        ClusterControllerClientTimeouts timeouts = context.getClusterControllerTimeouts();
 
         try {
             return clusterControllerApi.apply(api -> api.setNodeState(
@@ -68,7 +68,7 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
             ClusterControllerNodeState wantedState) throws IOException {
         ClusterControllerStateRequest.State state = new ClusterControllerStateRequest.State(wantedState, REQUEST_REASON);
         ClusterControllerStateRequest stateRequest = new ClusterControllerStateRequest(state, ClusterControllerStateRequest.Condition.FORCE);
-        ClusterControllerClientTimeouts timeouts = context.getClusterControllerTimeouts(clusterName);
+        ClusterControllerClientTimeouts timeouts = context.getClusterControllerTimeouts();
 
         try {
             return clusterControllerApi.apply(api -> api.setClusterState(

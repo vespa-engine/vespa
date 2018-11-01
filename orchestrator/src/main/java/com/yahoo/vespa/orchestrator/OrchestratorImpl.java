@@ -141,7 +141,7 @@ public class OrchestratorImpl implements Orchestrator {
 
             ApplicationInstanceStatus appStatus = statusService.forApplicationInstance(appInstance.reference()).getApplicationInstanceStatus();
             if (appStatus == ApplicationInstanceStatus.NO_REMARKS) {
-                policy.releaseSuspensionGrant(context, appInstance, hostName, statusRegistry);
+                policy.releaseSuspensionGrant(context.createSubcontextWithinLock(), appInstance, hostName, statusRegistry);
             }
         }
     }
@@ -167,7 +167,7 @@ public class OrchestratorImpl implements Orchestrator {
                     statusRegistry,
                     clusterControllerClientFactory);
 
-            policy.acquirePermissionToRemove(context, applicationApi);
+            policy.acquirePermissionToRemove(context.createSubcontextWithinLock(), applicationApi);
         }
     }
 
@@ -193,7 +193,7 @@ public class OrchestratorImpl implements Orchestrator {
                     nodeGroup,
                     hostStatusRegistry,
                     clusterControllerClientFactory);
-            policy.grantSuspensionRequest(context, applicationApi);
+            policy.grantSuspensionRequest(context.createSubcontextWithinLock(), applicationApi);
         }
     }
 
@@ -232,7 +232,7 @@ public class OrchestratorImpl implements Orchestrator {
         OrchestratorContext context = OrchestratorContext.createContextForMultiAppOp(clock);
         for (NodeGroup nodeGroup : nodeGroupsOrderedByApplication) {
             try {
-                suspendGroup(context.createSubcontextForApplication(), nodeGroup);
+                suspendGroup(context.createSubcontextForSingleAppOp(), nodeGroup);
             } catch (HostStateChangeDeniedException e) {
                 throw new BatchHostStateChangeDeniedException(parentHostname, nodeGroup, e);
             } catch (RuntimeException e) {
@@ -324,7 +324,7 @@ public class OrchestratorImpl implements Orchestrator {
 
                 // If the clustercontroller throws an error the nodes will be marked as allowed to be down
                 // and be set back up on next resume invocation.
-                setClusterStateInController(context, application, ClusterControllerNodeState.MAINTENANCE);
+                setClusterStateInController(context.createSubcontextWithinLock(), application, ClusterControllerNodeState.MAINTENANCE);
             }
 
             statusRegistry.setApplicationInstanceStatus(status);

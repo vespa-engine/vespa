@@ -12,10 +12,13 @@ import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
+import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateErrorResponse;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
@@ -74,6 +77,17 @@ public class StorageNodeImpl implements StorageNode {
                     hostName(),
                     HostedVespaPolicy.CLUSTER_CONTROLLER_AVAILABLE_CONSTRAINT,
                     "Failed to communicate with cluster controllers " + clusterControllers + ": " + e,
+                    e);
+        } catch (WebApplicationException e) {
+            Response webResponse = e.getResponse();
+            // Response may contain detail message
+            ClusterControllerStateErrorResponse errorResponse = webResponse.readEntity(ClusterControllerStateErrorResponse.class);
+            String detail = errorResponse.message == null ? "" : ": " + errorResponse.message;
+            throw new HostStateChangeDeniedException(
+                    hostName(),
+                    HostedVespaPolicy.SET_NODE_STATE_CONSTRAINT,
+                    "Failure from cluster controllers " + clusterControllers + " when setting node " + nodeIndex +
+                            " in cluster " + clusterId + " to state " + wantedNodeState + detail,
                     e);
         } catch (UncheckedTimeoutException e) {
             throw new HostStateChangeDeniedException(
