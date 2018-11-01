@@ -59,7 +59,7 @@ public class DeploymentJobs {
             if (job == null) job = JobStatus.initial(jobType);
             return job.withCompletion(completion, jobError);
         });
-        return new DeploymentJobs(OptionalLong.of(projectId), status, issueId, builtInternally);
+        return new DeploymentJobs(jobType == JobType.component ? OptionalLong.of(projectId) : this.projectId, status, issueId, builtInternally);
     }
 
     public DeploymentJobs withTriggering(JobType jobType, JobStatus.JobRun jobRun) {
