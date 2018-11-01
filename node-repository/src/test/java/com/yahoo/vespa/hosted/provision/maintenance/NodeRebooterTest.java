@@ -22,8 +22,8 @@ public class NodeRebooterTest {
         MaintenanceTester tester = new MaintenanceTester();
         tester.createReadyTenantNodes(15);
         tester.createReadyHostNodes(15);
-        // New nodes are rebooted when transitioning from dirty to ready. Advance the time so that additional reboots
-        // will be performed.
+        // New non-host nodes are rebooted when transitioning from dirty to ready. Advance the time so that additional
+        // reboots will be performed.
         tester.clock.advance(rebootInterval);
         
         NodeRebooter rebooter = new NodeRebooter(tester.nodeRepository, tester.clock, rebootInterval, tester.jobControl());
@@ -34,12 +34,15 @@ public class NodeRebooterTest {
                      withCurrentRebootGeneration(2L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
         assertEquals("No nodes have 2 reboots scheduled",
                      0,
-                     withCurrentRebootGeneration(3L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
+                     withCurrentRebootGeneration(3L, tester.nodeRepository.getNodes(Node.State.ready)).size());
 
         maintenanceIntervals(rebooter, tester, 11);
-        assertEquals("Reboot interval is 10x iteration interval, so most nodes are now rebooted twice",
-                     30,
-                     withCurrentRebootGeneration(3L, tester.nodeRepository.getNodes(Node.State.ready)).size());
+        assertEquals("Reboot interval is 10x iteration interval, so tenant nodes are now rebooted 3 times",
+                     15,
+                     withCurrentRebootGeneration(3L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
+        assertEquals("Reboot interval is 10x iteration interval, so host nodes are now rebooted twice",
+                     15,
+                     withCurrentRebootGeneration(2L, tester.nodeRepository.getNodes(NodeType.host, Node.State.ready)).size());
     }
     
     private void maintenanceIntervals(NodeRebooter rebooter, MaintenanceTester tester, int iterations) {

@@ -214,17 +214,19 @@ public class CuratorDatabaseClient {
     private Status newNodeStatus(Node node, Node.State toState) {
         if (node.state() != Node.State.failed && toState == Node.State.failed) return node.status().withIncreasedFailCount();
         if (node.state() == Node.State.failed && toState == Node.State.active) return node.status().withDecreasedFailCount(); // fail undo
-        // Increase reboot generation when node is moved to dirty unless quick reuse is prioritized. 
-        // This gets rid of lingering processes, updates OS packages if necessary and tests that reboot succeeds.
-        if (node.state() != Node.State.dirty && toState == Node.State.dirty && !needsFastNodeReuse(zone))
+        if (rebootOnTransitionTo(toState, node)) {
             return node.status().withReboot(node.status().reboot().withIncreasedWanted());
-
+        }
         return node.status();
     }
 
-    /** In automated test environments, nodes need to be reused quickly to achieve fast test turnaround time */
-    private boolean needsFastNodeReuse(Zone zone) {
-        return zone.environment().isTest();
+    /** Returns whether to reboot node as part of transition to given state. This is done to get rid of any lingering
+     * unwanted state (e.g. processes) on non-host nodes. */
+    private boolean rebootOnTransitionTo(Node.State state, Node node) {
+        if (node.type().isDockerHost()) return false; // Reboot of host nodes is handled by NodeRebooter
+        if (zone.environment().isTest()) return false; // We want to reuse nodes quickly in test environments
+
+        return node.state() != Node.State.dirty && state == Node.State.dirty;
     }
 
     /**
@@ -238,7 +240,7 @@ public class CuratorDatabaseClient {
         for (Node.State state : states) {
             for (String hostname : curatorDatabase.getChildren(toPath(state))) {
                 Optional<Node> node = getNode(hostname, state);
-                if (node.isPresent()) nodes.add(node.get()); // node might disappear between getChildren and getNode
+                node.ifPresent(nodes::add); // node might disappear between getChildren and getNode
             }
         }
         return nodes;
