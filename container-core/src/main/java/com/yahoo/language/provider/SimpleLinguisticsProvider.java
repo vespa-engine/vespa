@@ -5,7 +5,6 @@ import com.google.inject.Inject;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.simple.SimpleLinguisticsConfig;
 
 /**
  * Provides simple linguistics if no linguistics component has been explicitly configured
@@ -19,8 +18,8 @@ public class SimpleLinguisticsProvider implements Provider<Linguistics> {
 
     @SuppressWarnings("deprecation")
     @Inject
-    public SimpleLinguisticsProvider(SimpleLinguisticsConfig config) {
-        linguistics = new SimpleLinguistics(config);
+    public SimpleLinguisticsProvider() {
+        linguistics = new SimpleLinguistics();
     }
 
     @Override
