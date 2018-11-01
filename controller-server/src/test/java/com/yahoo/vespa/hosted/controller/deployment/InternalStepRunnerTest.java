@@ -43,6 +43,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author jonmv
@@ -65,7 +66,7 @@ public class InternalStepRunnerTest {
     }
 
     @Test
-    public void canSwitchFromScrewdriver() {
+    public void canSwitchFromScrewdriverAndBackAgain() {
         // Deploys a default application package with default build number.
         tester.tester().deployCompletely(tester.app(), InternalDeploymentTester.applicationPackage);
         tester.setEndpoints(InternalDeploymentTester.appId, JobType.productionUsCentral1.zone(tester.tester().controller().system()));
@@ -75,6 +76,14 @@ public class InternalStepRunnerTest {
         tester.deployNewSubmission();
 
         tester.deployNewPlatform(new Version("7.1"));
+
+        tester.jobs().unregister(InternalDeploymentTester.appId);
+        try {
+            tester.tester().deployCompletely(tester.app(), InternalDeploymentTester.applicationPackage, BuildJob.defaultBuildNumber + 1);
+            throw new IllegalStateException("Component job should get ahead again with build numbers to produce a change.");
+        }
+        catch (AssertionError expected) { }
+        tester.tester().deployCompletely(tester.app(), InternalDeploymentTester.applicationPackage, BuildJob.defaultBuildNumber + 2);
     }
 
     @Test

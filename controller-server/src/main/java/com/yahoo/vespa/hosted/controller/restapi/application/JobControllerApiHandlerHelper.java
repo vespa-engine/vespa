@@ -421,5 +421,14 @@ class JobControllerApiHandlerHelper {
         return new SlimeJsonResponse(slime);
     }
 
+    /** Unregisters the application from the internal deployment pipeline. */
+    static HttpResponse unregisterResponse(JobController jobs, String tenantName, String applicationName) {
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, "default");
+        jobs.unregister(id);
+        Slime slime = new Slime();
+        slime.setObject().setString("message", "Unregistered '" + id + "' from internal deployment pipeline.");
+        return new SlimeJsonResponse(slime);
+    }
+
 }
 

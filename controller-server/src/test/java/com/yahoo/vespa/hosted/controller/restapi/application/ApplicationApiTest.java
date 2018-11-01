@@ -433,6 +433,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Nothing to abort.\"}");
 
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", DELETE)
+                                      .screwdriverIdentity(SCREWDRIVER_ID),
+                              "{\"message\":\"Unregistered 'tenant1.application1' from internal deployment pipeline.\"}");
+
         // PUT (create) the authenticated user
         byte[] data = new byte[0];
         tester.assertResponse(request("/application/v4/user?user=new_user&domain=by", PUT)
