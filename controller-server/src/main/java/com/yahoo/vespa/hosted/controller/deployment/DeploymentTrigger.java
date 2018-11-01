@@ -235,28 +235,21 @@ public class DeploymentTrigger {
     /** Triggers a change of this application, unless it already has a change. */
     public void triggerChange(ApplicationId applicationId, Change change) {
         applications().lockOrThrow(applicationId, application -> {
-            if ( ! application.get().change().isPresent()) {
-                if (change.application().isPresent())
-                    application = application.withOutstandingChange(Change.empty());
-
-                applications().store(application.withChange(change));
-            }
+            if ( ! application.get().change().isPresent())
+                forceChange(applicationId, change);
         });
     }
 
     /** Overrides the given application's platform and application changes with any contained in the given change. */
     public void forceChange(ApplicationId applicationId, Change change) {
         applications().lockOrThrow(applicationId, application -> {
-            Change current = application.get().change();
-            if (change.platform().isPresent())
-                current = current.with(change.platform().get());
             if (change.application().isPresent())
-                current = current.with(change.application().get());
-            applications().store(application.withChange(current));
+                application = application.withOutstandingChange(Change.empty());
+            applications().store(application.withChange(change.onTopOf(application.get().change())));
         });
     }
 
-    /** Cancels a platform upgrade of the given application, and an application upgrade as well if {@code keepApplicationChange}. */
+    /** Cancels the indicated part of the given application's change. */
     public void cancelChange(ApplicationId applicationId, ChangesToCancel cancellation) {
         applications().lockOrThrow(applicationId, application -> {
             Change change;
@@ -323,7 +316,7 @@ public class DeploymentTrigger {
                 for (Step step : steps.production()) {
                     List<JobType> stepJobs = steps.toJobs(step);
                     List<JobType> remainingJobs = stepJobs.stream().filter(job -> ! isComplete(change, application, job)).collect(toList());
-                    if (!remainingJobs.isEmpty()) { // Change is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
+                    if ( ! remainingJobs.isEmpty()) { // Change is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
                         for (JobType job : remainingJobs) {
                             Versions versions = Versions.from(change, application, deploymentFor(application, job),
                                                               controller.systemVersion());
@@ -331,7 +324,7 @@ public class DeploymentTrigger {
                                 if (completedAt.isPresent() && canTrigger(job, versions, application, stepJobs)) {
                                     jobs.add(deploymentJob(application, versions, change, job, reason, completedAt.get()));
                                 }
-                                if (!alreadyTriggered(application, versions)) {
+                                if ( ! alreadyTriggered(application, versions)) {
                                     testJobs = emptyList();
                                 }
                             }
@@ -358,10 +351,7 @@ public class DeploymentTrigger {
                 }
             }
             if (testJobs == null) { // If nothing to test, but outstanding commits, test those.
-                Change latestChange = application.outstandingChange().application().isPresent()
-                                      ? change.with(application.outstandingChange().application().get())
-                                      : change;
-                testJobs = testJobs(application, Versions.from(latestChange,
+                testJobs = testJobs(application, Versions.from(application.outstandingChange().onTopOf(application.change()),
                                                                application,
                                                                steps.sortedDeployments(application.productionDeployments().values()).stream().findFirst(),
                                                                controller.systemVersion()),
