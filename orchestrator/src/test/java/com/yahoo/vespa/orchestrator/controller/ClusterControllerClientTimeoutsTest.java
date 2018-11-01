@@ -10,30 +10,18 @@ import java.time.Duration;
 import java.util.Optional;
 
 import static com.yahoo.vespa.orchestrator.controller.ClusterControllerClientTimeouts.CONNECT_TIMEOUT;
-import static com.yahoo.vespa.orchestrator.controller.ClusterControllerClientTimeouts.IN_PROCESS_OVERHEAD;
-import static com.yahoo.vespa.orchestrator.controller.ClusterControllerClientTimeouts.IN_PROCESS_OVERHEAD_PER_CALL;
+import static com.yahoo.vespa.orchestrator.controller.ClusterControllerClientTimeouts.DOWNSTREAM_OVERHEAD;
 import static com.yahoo.vespa.orchestrator.controller.ClusterControllerClientTimeouts.MIN_SERVER_TIMEOUT;
-import static com.yahoo.vespa.orchestrator.controller.ClusterControllerClientTimeouts.DOWNSTREAM_OVERHEAD_PER_CALL;
-import static com.yahoo.vespa.orchestrator.controller.ClusterControllerClientTimeouts.NUM_CALLS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class ClusterControllerClientTimeoutsTest {
-    // The minimum time left that allows for a single RPC to CC.
-    private static final Duration MINIMUM_TIME_LEFT = IN_PROCESS_OVERHEAD_PER_CALL
-            .plus(CONNECT_TIMEOUT)
-            .plus(DOWNSTREAM_OVERHEAD_PER_CALL)
+    // The minimum time that allows for a single RPC to CC.
+    private static final Duration MINIMUM_TIME_LEFT = CONNECT_TIMEOUT
+            .plus(DOWNSTREAM_OVERHEAD)
             .plus(MIN_SERVER_TIMEOUT);
     static {
-        assertEquals(Duration.ofMillis(410), MINIMUM_TIME_LEFT);
-    }
-
-    // The minimum time left (= original time) that allows for NUM_CALLS RPCs to CC.
-    private static final Duration MINIMUM_ORIGINAL_TIMEOUT = MINIMUM_TIME_LEFT
-            .multipliedBy(NUM_CALLS)
-            .plus(IN_PROCESS_OVERHEAD);
-    static {
-        assertEquals(Duration.ofMillis(920), MINIMUM_ORIGINAL_TIMEOUT);
+        assertEquals(Duration.ofMillis(500), MINIMUM_TIME_LEFT);
     }
 
     private final ManualClock clock = new ManualClock();
@@ -45,7 +33,7 @@ public class ClusterControllerClientTimeoutsTest {
     private void makeTimeouts(Duration originalTimeout) {
         this.originalTimeout = originalTimeout;
         this.timeBudget = TimeBudget.from(clock, clock.instant(), Optional.of(originalTimeout));
-        this.timeouts = new ClusterControllerClientTimeouts("clustername", timeBudget);
+        this.timeouts = new ClusterControllerClientTimeouts(timeBudget);
     }
 
     @Before
@@ -54,47 +42,22 @@ public class ClusterControllerClientTimeoutsTest {
     }
 
     @Test
-    public void makes2RequestsWithMaxProcessingTime() {
-        assertStandardTimeouts();
-
-        Duration maxProcessingTime = IN_PROCESS_OVERHEAD_PER_CALL
-                .plus(CONNECT_TIMEOUT)
-                .plus(timeouts.getReadTimeoutOrThrow());
-        assertEquals(1450, maxProcessingTime.toMillis());
-        clock.advance(maxProcessingTime);
-
-        assertStandardTimeouts();
-
-        clock.advance(maxProcessingTime);
-
-        try {
-            timeouts.getServerTimeoutOrThrow();
-            fail();
-        } catch (UncheckedTimeoutException e) {
-            assertEquals(
-                    "Too little time left (PT0.1S) to call content cluster 'clustername', original timeout was PT3S",
-                    e.getMessage());
-        }
-    }
-
-    @Test
-    public void makesAtLeast3RequestsWithShortProcessingTime() {
-        assertStandardTimeouts();
-
-        Duration shortProcessingTime = Duration.ofMillis(200);
-        clock.advance(shortProcessingTime);
-
-        assertStandardTimeouts();
-
-        clock.advance(shortProcessingTime);
-
-        assertStandardTimeouts();
-    }
-
-    private void assertStandardTimeouts() {
+    public void makesManyRequestsWithShortProcessingTime() {
         assertEquals(Duration.ofMillis(100), timeouts.getConnectTimeoutOrThrow());
-        assertEquals(Duration.ofMillis(1250), timeouts.getReadTimeoutOrThrow());
-        assertEquals(Duration.ofMillis(1050), timeouts.getServerTimeoutOrThrow());
+        assertEquals(Duration.ofMillis(2900), timeouts.getReadTimeoutOrThrow());
+        assertEquals(Duration.ofMillis(2600), timeouts.getServerTimeoutOrThrow());
+
+        clock.advance(Duration.ofMillis(100));
+
+        assertEquals(Duration.ofMillis(100), timeouts.getConnectTimeoutOrThrow());
+        assertEquals(Duration.ofMillis(2800), timeouts.getReadTimeoutOrThrow());
+        assertEquals(Duration.ofMillis(2500), timeouts.getServerTimeoutOrThrow());
+
+        clock.advance(Duration.ofMillis(100));
+
+        assertEquals(Duration.ofMillis(100), timeouts.getConnectTimeoutOrThrow());
+        assertEquals(Duration.ofMillis(2700), timeouts.getReadTimeoutOrThrow());
+        assertEquals(Duration.ofMillis(2400), timeouts.getServerTimeoutOrThrow());
     }
 
     @Test
@@ -105,9 +68,7 @@ public class ClusterControllerClientTimeoutsTest {
             timeouts.getServerTimeoutOrThrow();
             fail();
         } catch (UncheckedTimeoutException e) {
-            assertEquals(
-                    "Exceeded the timeout PT3S against content cluster 'clustername' by PT1S",
-                    e.getMessage());
+            assertEquals("Timed out after PT3S", e.getMessage());
         }
     }
 
@@ -118,34 +79,13 @@ public class ClusterControllerClientTimeoutsTest {
             timeouts.getServerTimeoutOrThrow();
             fail();
         } catch (UncheckedTimeoutException e) {
-            assertEquals(
-                    "Server would be given too little time to complete: PT0.009S. Original timeout was PT3S",
-                    e.getMessage());
+            assertEquals("Timed out after PT3S", e.getMessage());
         }
     }
 
     @Test
     public void justEnoughTime() {
         clock.advance(originalTimeout.minus(MINIMUM_TIME_LEFT));
-        timeouts.getServerTimeoutOrThrow();
-    }
-
-    @Test
-    public void justTooLittleInitialTime() {
-        makeTimeouts(MINIMUM_ORIGINAL_TIMEOUT.minus(Duration.ofMillis(1)));
-        try {
-            timeouts.getServerTimeoutOrThrow();
-            fail();
-        } catch (UncheckedTimeoutException e) {
-            assertEquals(
-                    "Server would be given too little time to complete: PT0.0095S. Original timeout was PT0.919S",
-                    e.getMessage());
-        }
-    }
-
-    @Test
-    public void justEnoughInitialTime() {
-        makeTimeouts(MINIMUM_ORIGINAL_TIMEOUT);
         timeouts.getServerTimeoutOrThrow();
     }
 }

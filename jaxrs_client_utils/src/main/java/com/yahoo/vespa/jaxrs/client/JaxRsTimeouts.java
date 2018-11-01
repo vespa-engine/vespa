@@ -7,14 +7,14 @@ import java.time.Duration;
  */
 public interface JaxRsTimeouts {
     /**
-     * The connect timeout, which must be at least 1ms.
+     * The connect timeout, which must be at least 1ms. Called once per real REST call.
      *
      * Throws com.google.common.util.concurrent.UncheckedTimeoutException on timeout.
      */
     Duration getConnectTimeoutOrThrow();
 
     /**
-     * The read timeout, which must be at least 1ms.
+     * The read timeout, which must be at least 1ms. Called once per real REST call.
      *
      * Throws com.google.common.util.concurrent.UncheckedTimeoutException on timeout.
      */
