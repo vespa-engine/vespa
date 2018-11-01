@@ -18,7 +18,7 @@ public class DocumentGet extends DocumentOperation {
 
     @Override
     public void setCondition(TestAndSetCondition condition) {
-        throw new IllegalStateException("conditional DocumentGet is not supported");
+        throw new UnsupportedOperationException("conditional DocumentGet is not supported");
     }
 
     @Override
