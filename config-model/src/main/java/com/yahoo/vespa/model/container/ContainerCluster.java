@@ -14,9 +14,6 @@ import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.ComponentsConfig;
@@ -186,7 +183,7 @@ public final class ContainerCluster
     private Zone zone;
     
     private String hostClusterId = null;
-    private String gcopts = null;
+    private String jvmGCOptions = null;
     private Integer memoryPercentage = null;
 
     private static class AcceptAllVerifier implements ContainerClusterVerifier {
@@ -642,8 +639,8 @@ public final class ContainerCluster
     	if (containerSearch!=null) {
             jvmBuilder.directMemorySizeCache(containerSearch.totalCacheSizeMb());
         }
-        if (gcopts != null) {
-            jvmBuilder.gcopts(gcopts);
+        if (jvmGCOptions != null) {
+            jvmBuilder.gcopts(jvmGCOptions);
         }
         builder.jvm(jvmBuilder);
     }
@@ -802,8 +799,8 @@ public final class ContainerCluster
     public Optional<String> getHostClusterId() { return Optional.ofNullable(hostClusterId); }
 
     public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage; }
-    public void setGCOpts(String gcopts) { this.gcopts = gcopts; }
-    public Optional<String> getGCOpts() { return Optional.ofNullable(gcopts); }
+    public void setJvmGCOptions(String opts) { this.jvmGCOptions = opts; }
+    public Optional<String> getJvmGCOptions() { return Optional.ofNullable(jvmGCOptions); }
 
     /** 
      * Returns the percentage of host physical memory this application has specified for nodes in this cluster,

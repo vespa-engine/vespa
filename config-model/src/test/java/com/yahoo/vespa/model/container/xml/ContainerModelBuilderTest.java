@@ -70,7 +70,7 @@ import static org.junit.Assert.fail;
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
-    public void detect_conflicting_gcoptions_in_jvmargs() {
+    public void detect_conflicting_jvmgcoptions_in_jvmargs() {
         assertFalse(ContainerModelBuilder.incompatibleGCOptions(""));
         assertFalse(ContainerModelBuilder.incompatibleGCOptions("UseG1GC"));
         assertTrue(ContainerModelBuilder.incompatibleGCOptions("-XX:+UseG1GC"));
@@ -79,11 +79,11 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void honours_gcopts() {
+    public void honours_jvm_gc_options() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc version='1.0'>",
                 "  <search/>",
-                "  <nodes gcopts='-XX:+UseG1GC'>",
+                "  <nodes jvm-gc-options='-XX:+UseG1GC'>",
                 "    <node hostalias='mockhost'/>",
                 "  </nodes>",
                 "</jdisc>" );
@@ -97,7 +97,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     private static void verifyIgnoreJvmGCOptions(boolean isHosted) throws IOException, SAXException {
         String servicesXml =
                 "<jdisc version='1.0'>" +
-                "  <nodes gcopts='-XX:+UseG1GC' jvmargs='-XX:+UseParNewGC'>" +
+                "  <nodes jvm-gc-options='-XX:+UseG1GC' jvmargs='-XX:+UseParNewGC'>" +
                 "    <node hostalias='mockhost'/>" +
                 "  </nodes>" +
                 "</jdisc>";
@@ -119,15 +119,15 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void ignores_gcopts_on_conflicting_jvargs() throws IOException, SAXException {
+    public void ignores_jvmgcoptions_on_conflicting_jvmargs() throws IOException, SAXException {
         verifyIgnoreJvmGCOptions(false);
         verifyIgnoreJvmGCOptions(true);
     }
 
-    private void verifyGCOpts(boolean isHosted, String override, Zone zone, String expected) throws IOException, SAXException  {
+    private void verifyJvmGCOptions(boolean isHosted, String override, Zone zone, String expected) throws IOException, SAXException  {
         String servicesXml =
                 "<jdisc version='1.0'>" +
-                        "  <nodes " + ((override == null) ? ">" : ("gcopts='" + override + "'>")) +
+                        "  <nodes " + ((override == null) ? ">" : ("jvm-gc-options='" + override + "'>")) +
                         "    <node hostalias='mockhost'/>" +
                         "  </nodes>" +
                         "</jdisc>";
@@ -148,21 +148,21 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals(expected, qrStartConfig.jvm().gcopts());
     }
 
-    private void verifyGCOpts(boolean isHosted, Zone zone, String expected)  throws IOException, SAXException {
-        verifyGCOpts(isHosted, null, zone, expected);
-        verifyGCOpts(isHosted, "-XX:+UseG1GC", zone, "-XX:+UseG1GC");
+    private void verifyJvmGCOptions(boolean isHosted, Zone zone, String expected)  throws IOException, SAXException {
+        verifyJvmGCOptions(isHosted, null, zone, expected);
+        verifyJvmGCOptions(isHosted, "-XX:+UseG1GC", zone, "-XX:+UseG1GC");
         Zone DEV = new Zone(SystemName.dev, zone.environment(), zone.region());
-        verifyGCOpts(isHosted, null, DEV, ContainerCluster.G1GC);
-        verifyGCOpts(isHosted, "-XX:+UseConcMarkSweepGC", DEV, "-XX:+UseConcMarkSweepGC");
+        verifyJvmGCOptions(isHosted, null, DEV, ContainerCluster.G1GC);
+        verifyJvmGCOptions(isHosted, "-XX:+UseConcMarkSweepGC", DEV, "-XX:+UseConcMarkSweepGC");
     }
 
     @Test
-    public void requireThatGCOptsIsHonoured()  throws IOException, SAXException {
+    public void requireThatJvmGCOptionsIsHonoured()  throws IOException, SAXException {
         final Zone US_EAST_3 = new Zone(Environment.prod, RegionName.from("us-east-3"));
-        verifyGCOpts(false, Zone.defaultZone(),ContainerCluster.CMS);
-        verifyGCOpts(false, US_EAST_3, ContainerCluster.CMS);
-        verifyGCOpts(true, Zone.defaultZone(), ContainerCluster.CMS);
-        verifyGCOpts(true, US_EAST_3, ContainerCluster.G1GC);
+        verifyJvmGCOptions(false, Zone.defaultZone(),ContainerCluster.CMS);
+        verifyJvmGCOptions(false, US_EAST_3, ContainerCluster.CMS);
+        verifyJvmGCOptions(true, Zone.defaultZone(), ContainerCluster.CMS);
+        verifyJvmGCOptions(true, US_EAST_3, ContainerCluster.G1GC);
     }
 
     @Test

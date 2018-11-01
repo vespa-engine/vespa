@@ -86,7 +86,7 @@ public class ModelProvisioningTest {
                         "  <handler id='myHandler'>" +
                         "    <component id='injected' />" +
                         "  </handler>" +
-                        "  <nodes count='2' allocated-memory='45%' gcopts='-XX:+UseParNewGC' jvmargs='-verbosegc' preload='lib/blablamalloc.so'/>" +
+                        "  <nodes count='2' allocated-memory='45%' jvm-gc-options='-XX:+UseParNewGC' jvmargs='-verbosegc' preload='lib/blablamalloc.so'/>" +
                         "</jdisc>" +
                         "</services>";
         String hosts ="<hosts>"
@@ -140,7 +140,7 @@ public class ModelProvisioningTest {
         assertThat(mydisc2.getContainers().get(0).getPreLoad(), is("lib/blablamalloc.so"));
         assertThat(mydisc2.getContainers().get(1).getPreLoad(), is("lib/blablamalloc.so"));
         assertThat(mydisc2.getMemoryPercentage(), is(Optional.of(45)));
-        assertThat(mydisc2.getGCOpts(), is(Optional.of("-XX:+UseParNewGC")));
+        assertThat(mydisc2.getJvmGCOptions(), is(Optional.of("-XX:+UseParNewGC")));
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         mydisc2.getConfig(qrStartBuilder);
         QrStartConfig qrsStartConfig = new QrStartConfig(qrStartBuilder);

@@ -459,9 +459,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return (gcAlgorithm.matcher(jvmargs).find() ||cmsArgs.matcher(jvmargs).find());
     }
 
-    private static String buildGCOpts(Zone zone, String gcopts, boolean isHostedVespa) {
-        if (gcopts != null) {
-            return gcopts;
+    private static String buildJvmGCOptions(Zone zone, String jvmGCOPtions, boolean isHostedVespa) {
+        if (jvmGCOPtions != null) {
+            return jvmGCOPtions;
         } else if (zone.system() == SystemName.dev) {
             return ContainerCluster.G1GC;
         } else if (isHostedVespa) {
@@ -483,14 +483,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         else {
             List<Container> nodes = createNodes(cluster, nodesElement, context);
             String jvmArgs = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
-            String gcopts = nodesElement.hasAttribute(VespaDomBuilder.GCOPTS_ATTRIB_NAME)
-                    ? nodesElement.getAttribute(VespaDomBuilder.GCOPTS_ATTRIB_NAME)
+            String jvmGCOptions = nodesElement.hasAttribute(VespaDomBuilder.JVM_GC_OPTIONS)
+                    ? nodesElement.getAttribute(VespaDomBuilder.JVM_GC_OPTIONS)
                     : null;
             if (incompatibleGCOptions(jvmArgs)) {
-                context.getDeployLogger().log(Level.WARNING, "You need to move out your GC related options from 'jvmargs' to 'gcopts'");
-                cluster.setGCOpts(ContainerCluster.CMS);
+                context.getDeployLogger().log(Level.WARNING, "You need to move out your GC related options from 'jvmargs' to 'jvm-gc-options'");
+                cluster.setJvmGCOptions(ContainerCluster.CMS);
             } else {
-                cluster.setGCOpts(buildGCOpts(context.getDeployState().zone(), gcopts, context.getDeployState().isHosted()));
+                cluster.setJvmGCOptions(buildJvmGCOptions(context.getDeployState().zone(), jvmGCOptions, context.getDeployState().isHosted()));
             }
             applyNodesTagJvmArgs(nodes, jvmArgs);
             applyRoutingAliasProperties(nodes, cluster);
