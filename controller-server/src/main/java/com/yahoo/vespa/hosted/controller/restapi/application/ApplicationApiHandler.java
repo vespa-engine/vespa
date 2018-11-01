@@ -65,7 +65,6 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.application.SourceRevision;
 import com.yahoo.vespa.hosted.controller.athenz.impl.ZmsClientFacade;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
 import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
@@ -896,9 +895,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private HttpResponse notifyJobCompletion(String tenant, String applicationName, HttpRequest request) {
+    private HttpResponse notifyJobCompletion(String tenant, String application, HttpRequest request) {
         try {
-            controller.applications().deploymentTrigger().notifyOfCompletion(toJobReport(tenant, applicationName, toSlime(request.getData()).get()));
+            DeploymentJobs.JobReport report = toJobReport(tenant, application, toSlime(request.getData()).get());
+            if (controller.applications().require(report.applicationId()).deploymentJobs().deployedInternally())
+                throw new IllegalArgumentException(report.applicationId() + " is set up to be deployed from internally, and no " +
+                                                   "longer accepts reports from Screwdriver v3 jobs. If you need to revert " +
+                                                   "to the old pipeline, please file a ticket at yo/vespa-support and request this.");
+
+            controller.applications().deploymentTrigger().notifyOfCompletion(report);
             return new MessageResponse("ok");
         } catch (IllegalStateException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
