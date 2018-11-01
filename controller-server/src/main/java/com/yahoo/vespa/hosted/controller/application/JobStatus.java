@@ -60,7 +60,7 @@ public class JobStatus {
     }
 
     public JobStatus withTriggering(JobRun jobRun) {
-        return new JobStatus(type, jobError, Optional.of(jobRun), lastCompleted, firstFailing, lastSuccess, pausedUntil);
+        return new JobStatus(type, jobError, Optional.of(jobRun), lastCompleted, firstFailing, lastSuccess, OptionalLong.empty());
     }
 
     public JobStatus withCompletion(long runId, Optional<DeploymentJobs.JobError> jobError, Instant completion) {
