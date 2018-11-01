@@ -177,6 +177,7 @@ public abstract class Expression extends Selectable {
     public abstract DataType createdOutputType();
 
     /** Creates an expression with simple lingustics for testing */
+    @SuppressWarnings("deprecation")
     public static Expression fromString(String expression) throws ParseException {
         return fromString(expression, new SimpleLinguistics(false));
     }
