@@ -100,6 +100,14 @@ void VespaDocumentSerializer::write(const Document &value,
     bool hasHeader = false;
     bool hasBody = false;
 
+    const StructFieldValue::Chunks & chunks = value.getFields().getChunks();
+    if (chunks.size() == 2) {
+        // we must assume both types of fields if the original serialization
+        // had that, even if config has changed since then.
+        hasHeader = true;
+        hasBody = true;
+    }
+
     for (const Field & field : value.getFields()) {
         if (field.isHeaderField()) {
             hasHeader = true;
@@ -124,7 +132,7 @@ void VespaDocumentSerializer::write(const Document &value,
         // Currently assume legacy serialization; a chunk will only ever contain fields
         // _either_ for the header _or_ for the body, never a mixture!
         // This is to avoid horrible breakage whilst ripping out old guts.
-        const StructFieldValue::Chunks & chunks = value.getFields().getChunks();
+
         if (hasHeader) {
             assert(chunks.size() >= 1);
             doc_serializer.writeUnchanged(chunks[0]);

@@ -136,16 +136,20 @@ public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 imple
 
         doc.setDataType(readDocumentType());
 
+        Struct h = doc.getHeader();
+        Struct b = doc.getBody();
+        h.clear();
+        b.clear();
         if ((content & 0x2) != 0) {
-            doc.getHeader().deserialize(new Field("header"),this);
+            readHeaderBody(h, b);
         }
         if ((content & 0x4) != 0) {
-            doc.getBody().deserialize(new Field("body"),this);
+            readHeaderBody(b, h);
         } else if (body != null) {
             GrowableByteBuffer header = getBuf();
             setBuf(body);
             body = null;
-            doc.getBody().deserialize(new Field("body"), this);
+            readHeaderBody(b, h);
             body = getBuf();
             setBuf(header);
         }
@@ -371,6 +375,94 @@ public class VespaDocumentDeserializer42 extends VespaDocumentSerializer42 imple
                 //jump to beginning of next field:
                 position(posBefore + fieldIdsAndLengths.get(i).second.intValue());
             }
+        }
+
+        // restore the original buffer
+        buf = bigBuf;
+    }
+
+    private void readHeaderBody(Struct primary, Struct alternate) {
+        primary.setVersion(version);
+        int startPos = position();
+
+        if (version < 6) {
+            throw new DeserializationException("Illegal document serialization version " + version);
+        }
+
+        int dataSize;
+        if (version < 7) {
+            long rSize = getInt2_4_8Bytes(null);
+            //TODO: Look into how to support data segments larger than INT_MAX bytes
+            if (rSize > Integer.MAX_VALUE) {
+                throw new DeserializationException("Raw size of data block is too large.");
+            }
+            dataSize = (int)rSize;
+        } else {
+            dataSize = getInt(null);
+        }
+
+        byte comprCode = getByte(null);
+        CompressionType compression = CompressionType.valueOf(comprCode);
+
+        int uncompressedSize = 0;
+        if (compression != CompressionType.NONE &&
+            compression != CompressionType.INCOMPRESSIBLE)
+        {
+            // uncompressedsize (full size of FIELDS only, after decompression)
+            long pSize = getInt2_4_8Bytes(null);
+            //TODO: Look into how to support data segments larger than INT_MAX bytes
+            if (pSize > Integer.MAX_VALUE) {
+                throw new DeserializationException("Uncompressed size of data block is too large.");
+            }
+            uncompressedSize = (int) pSize;
+        }
+
+        int numberOfFields = getInt1_4Bytes(null);
+
+        List<Tuple2<Integer, Long>> fieldIdsAndLengths = new ArrayList<>(numberOfFields);
+        for (int i=0; i<numberOfFields; ++i) {
+            // id, length (length only used for unknown fields
+            fieldIdsAndLengths.add(new Tuple2<>(getInt1_4Bytes(null), getInt2_4_8Bytes(null)));
+        }
+
+        // save a reference to the big buffer we're reading from:
+        GrowableByteBuffer bigBuf = buf;
+
+        if (version < 7) {
+            // In V6 and earlier, the length included the header.
+            int headerSize = position() - startPos;
+            dataSize -= headerSize;
+        }
+        byte[] destination = compressor.decompress(compression, getBuf().array(), position(), uncompressedSize, Optional.of(dataSize));
+
+        // set position in original buffer to after data
+        position(position() + dataSize);
+
+        // for a while: deserialize from this buffer instead:
+        buf = GrowableByteBuffer.wrap(destination);
+
+        StructDataType priType = primary.getDataType();
+        StructDataType altType = alternate.getDataType();
+        for (int i=0; i<numberOfFields; ++i) {
+            int posBefore = position();
+            Struct s = null;
+            Integer f_id = fieldIdsAndLengths.get(i).first;
+            Field structField = priType.getField(f_id, version);
+            if (structField != null) {
+                s = primary;
+            } else {
+                structField = altType.getField(f_id, version);
+                if (structField != null) {
+                  s = alternate;
+                }
+            }
+            if (s != null) {
+              FieldValue value = structField.getDataType().createFieldValue();
+              value.deserialize(structField, this);
+              s.setFieldValue(structField, value);
+            }
+            //jump to beginning of next field:
+            position(posBefore + fieldIdsAndLengths.get(i).second.intValue());
         }
 
         // restore the original buffer
