@@ -21,7 +21,9 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Rotation;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.config.MetricDefaultsConfig;
 import com.yahoo.search.rendering.RendererRegistry;
@@ -456,6 +458,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Pattern cmsArgs = Pattern.compile("-XX:[-+]*CMS");
         return (gcAlgorithm.matcher(jvmargs).find() ||cmsArgs.matcher(jvmargs).find());
     }
+
+    private static String buildGCOpts(Zone zone, String gcopts, boolean isHostedVespa) {
+        if (gcopts != null) {
+            return gcopts;
+        } else if (zone.system() == SystemName.dev) {
+            return ContainerCluster.G1GC;
+        } else if (isHostedVespa) {
+            return ((zone.environment() != Environment.prod) || RegionName.from("us-east-3").equals(zone.region()))
+                    ? ContainerCluster.G1GC : ContainerCluster.CMS;
+        } else {
+            return ContainerCluster.CMS;
+        }
+    }
     private void addNodesFromXml(ContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         Element nodesElement = XML.getChild(containerElement, "nodes");
         if (nodesElement == null) { // default single node on localhost
@@ -473,8 +488,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     : null;
             if (incompatibleGCOptions(jvmArgs)) {
                 context.getDeployLogger().log(Level.WARNING, "You need to move out your GC related options from 'jvmargs' to 'gcopts'");
+                cluster.setGCOpts(ContainerCluster.CMS);
             } else {
-                cluster.setGCOpts(gcopts);
+                cluster.setGCOpts(buildGCOpts(context.getDeployState().zone(), gcopts, context.getDeployState().isHosted()));
             }
             applyNodesTagJvmArgs(nodes, jvmArgs);
             applyRoutingAliasProperties(nodes, cluster);

@@ -179,36 +179,6 @@ public class ContainerClusterTest {
         verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmArgs());
     }
 
-    private void verifyGCOpts(boolean isHosted, String override, Zone zone, String expected) {
-        MockRoot root = createRoot(isHosted, zone);
-        ContainerCluster cluster = createContainerCluster(root, false);
-        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
-        cluster.setGCOpts(override);
-        assertEquals(1, cluster.getContainers().size());
-        QrStartConfig.Builder qsB = new QrStartConfig.Builder();
-        cluster.getConfig(qsB);
-        QrStartConfig qsC= new QrStartConfig(qsB);
-        assertEquals(expected, qsC.jvm().gcopts());
-    }
-
-    private void verifyGCOpts(boolean isHosted, Zone zone, String expected) {
-        verifyGCOpts(isHosted, null, zone, expected);
-        verifyGCOpts(isHosted, "-XX:+UseG1GC", zone, "-XX:+UseG1GC");
-        Zone DEV = new Zone(SystemName.dev, zone.environment(), zone.region());
-        verifyGCOpts(isHosted, null, DEV, ContainerCluster.G1GC);
-        verifyGCOpts(isHosted, "-XX:+UseConcMarkSweepGC", DEV, "-XX:+UseConcMarkSweepGC");
-
-    }
-
-    @Test
-    public void requireThatGCOptsIsHonoured() {
-        final Zone US_EAST_3 = new Zone(Environment.prod, RegionName.from("us-east-3"));
-        verifyGCOpts(false, Zone.defaultZone(),ContainerCluster.CMS);
-        verifyGCOpts(false, US_EAST_3, ContainerCluster.CMS);
-        verifyGCOpts(true, Zone.defaultZone(), ContainerCluster.CMS);
-        verifyGCOpts(true, US_EAST_3, ContainerCluster.G1GC);
-    }
-
     @Test
     public void testContainerClusterMaxThreads() {
         MockRoot root = createRoot(false);

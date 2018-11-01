@@ -144,7 +144,7 @@ public final class ContainerCluster
     public static final String STATISTICS_HANDLER_CLASS = "com.yahoo.container.config.StatisticsRequestHandler";
     public static final String SIMPLE_LINGUISTICS_PROVIDER = "com.yahoo.language.provider.SimpleLinguisticsProvider";
     public static final String CMS = "-XX:+UseConcMarkSweepGC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1";
-    static final String G1GC = "-XX:+UseG1GC -XX:MaxTenuringThreshold=15";
+    public static final String G1GC = "-XX:+UseG1GC -XX:MaxTenuringThreshold=15";
 
     public static final String ROOT_HANDLER_BINDING = "*://*/";
 
@@ -631,20 +631,6 @@ public final class ContainerCluster
     	if (containerSearch!=null) containerSearch.getConfig(builder);
     }
 
-    private String buildGCOpts(Zone zone) {
-        Optional<String> gcopts = getGCOpts();
-        if (gcopts.isPresent()) {
-            return gcopts.get();
-        } else if (zone.system() == SystemName.dev) {
-            return G1GC;
-        } else if (isHostedVespa()) {
-            return ((zone.environment() != Environment.prod) || RegionName.from("us-east-3").equals(zone.region()))
-                    ? G1GC : CMS;
-        } else {
-            return CMS;
-        }
-    }
-
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
         QrStartConfig.Jvm.Builder jvmBuilder = new QrStartConfig.Jvm.Builder();
@@ -656,7 +642,9 @@ public final class ContainerCluster
     	if (containerSearch!=null) {
             jvmBuilder.directMemorySizeCache(containerSearch.totalCacheSizeMb());
         }
-        jvmBuilder.gcopts(buildGCOpts(getZone()));
+        if (gcopts != null) {
+            jvmBuilder.gcopts(gcopts);
+        }
         builder.jvm(jvmBuilder);
     }
 
