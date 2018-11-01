@@ -17,6 +17,7 @@ public class SimpleLinguisticsProvider implements Provider<Linguistics> {
 
     private final Linguistics linguistics;
 
+    @SuppressWarnings("deprecation")
     @Inject
     public SimpleLinguisticsProvider(SimpleLinguisticsConfig config) {
         linguistics = new SimpleLinguistics(config);
