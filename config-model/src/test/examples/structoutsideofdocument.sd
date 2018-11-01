@@ -11,5 +11,6 @@ search structoutsideofdocument {
 
    field nallestruct type array<nalle> {
      indexing: summary
+     body
    }
   }

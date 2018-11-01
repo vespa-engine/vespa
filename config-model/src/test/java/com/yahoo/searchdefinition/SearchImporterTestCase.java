@@ -107,7 +107,7 @@ public class SearchImporterTestCase extends SearchDefinitionTestCase {
         field= search.getConcreteField("categories");
         assertEquals("{ input categories_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categories; }",
                      field.getIndexingScript().toString());
-        assertTrue(field.isHeader());
+        assertTrue(!field.isHeader());
 
         // Eight field
         field= search.getConcreteField("categoriesagain");
