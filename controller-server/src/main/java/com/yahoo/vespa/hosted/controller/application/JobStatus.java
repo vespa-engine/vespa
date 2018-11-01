@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 import static java.util.Objects.requireNonNull;
 
@@ -25,6 +26,7 @@ public class JobStatus {
     private final Optional<JobRun> lastCompleted;
     private final Optional<JobRun> firstFailing;
     private final Optional<JobRun> lastSuccess;
+    private final OptionalLong pausedUntil;
 
     private final Optional<DeploymentJobs.JobError> jobError;
 
@@ -34,27 +36,23 @@ public class JobStatus {
      */
     public JobStatus(JobType type, Optional<DeploymentJobs.JobError> jobError,
                      Optional<JobRun> lastTriggered, Optional<JobRun> lastCompleted,
-                     Optional<JobRun> firstFailing, Optional<JobRun> lastSuccess) {
-        requireNonNull(type, "jobType cannot be null");
-        requireNonNull(jobError, "jobError cannot be null");
-        requireNonNull(lastTriggered, "lastTriggered cannot be null");
-        requireNonNull(lastCompleted, "lastCompleted cannot be null");
-        requireNonNull(firstFailing, "firstFailing cannot be null");
-        requireNonNull(lastSuccess, "lastSuccess cannot be null");
-
-        this.type = type;
-        this.jobError = jobError;
+                     Optional<JobRun> firstFailing, Optional<JobRun> lastSuccess,
+                     OptionalLong pausedUntil) {
+        this.type = requireNonNull(type, "jobType cannot be null");
+        this.jobError = requireNonNull(jobError, "jobError cannot be null");
 
         // Never say we triggered component because we don't:
-        this.lastTriggered = type == JobType.component ? Optional.empty() : lastTriggered;
-        this.lastCompleted = lastCompleted;
-        this.firstFailing = firstFailing;
-        this.lastSuccess = lastSuccess;
+        this.lastTriggered = type == JobType.component ? Optional.empty() : requireNonNull(lastTriggered, "lastTriggered cannot be null");
+        this.lastCompleted = requireNonNull(lastCompleted, "lastCompleted cannot be null");
+        this.firstFailing = requireNonNull(firstFailing, "firstFailing cannot be null");
+        this.lastSuccess = requireNonNull(lastSuccess, "lastSuccess cannot be null");
+        this.pausedUntil = requireNonNull(pausedUntil, "pausedUntil cannot be null");
+
     }
 
     /** Returns an empty job status */
     public static JobStatus initial(JobType type) {
-        return new JobStatus(type, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+        return new JobStatus(type, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), OptionalLong.empty());
     }
 
     public JobStatus withTriggering(Version platform, ApplicationVersion application, Optional<Deployment> deployment, String reason, Instant triggeredAt) {
@@ -62,7 +60,7 @@ public class JobStatus {
     }
 
     public JobStatus withTriggering(JobRun jobRun) {
-        return new JobStatus(type, jobError, Optional.of(jobRun), lastCompleted, firstFailing, lastSuccess);
+        return new JobStatus(type, jobError, Optional.of(jobRun), lastCompleted, firstFailing, lastSuccess, pausedUntil);
     }
 
     public JobStatus withCompletion(long runId, Optional<DeploymentJobs.JobError> jobError, Instant completion) {
@@ -80,7 +78,11 @@ public class JobStatus {
             firstFailing = Optional.empty();
         }
 
-        return new JobStatus(type, jobError, lastTriggered, Optional.of(completion), firstFailing, lastSuccess);
+        return new JobStatus(type, jobError, lastTriggered, Optional.of(completion), firstFailing, lastSuccess, pausedUntil);
+    }
+
+    public JobStatus withPause(OptionalLong pausedUntil) {
+        return new JobStatus(type, jobError, lastTriggered, lastCompleted, firstFailing, lastSuccess, pausedUntil);
     }
 
     public JobType type() { return type; }
@@ -113,17 +115,21 @@ public class JobStatus {
     /** Returns the run when this last succeeded, or empty if it has never succeeded */
     public Optional<JobRun> lastSuccess() { return lastSuccess; }
 
+    /** Returns the time until which this job is paused, if currently paused */
+    public OptionalLong pausedUntil() { return pausedUntil; }
+
     @Override
     public String toString() {
         return "job status of " + type + "[ " +
                "last triggered: " + lastTriggered.map(JobRun::toString).orElse("(never)") +
                ", last completed: " + lastCompleted.map(JobRun::toString).orElse("(never)") +
                ", first failing: " + firstFailing.map(JobRun::toString).orElse("(not failing)") +
-               ", lastSuccess: " + lastSuccess.map(JobRun::toString).orElse("(never)") + "]";
+               ", lastSuccess: " + lastSuccess.map(JobRun::toString).orElse("(never)") +
+               ", pausedUntil: " + (pausedUntil.isPresent() ? pausedUntil.getAsLong() : "(not paused)") + "]";
     }
 
     @Override
-    public int hashCode() { return Objects.hash(type, jobError, lastTriggered, lastCompleted, firstFailing, lastSuccess); }
+    public int hashCode() { return Objects.hash(type, jobError, lastTriggered, lastCompleted, firstFailing, lastSuccess, pausedUntil); }
 
     @Override
     public boolean equals(Object o) {
@@ -135,7 +141,8 @@ public class JobStatus {
                Objects.equals(lastTriggered, other.lastTriggered) &&
                Objects.equals(lastCompleted, other.lastCompleted) &&
                Objects.equals(firstFailing, other.firstFailing) &&
-               Objects.equals(lastSuccess, other.lastSuccess);
+               Objects.equals(lastSuccess, other.lastSuccess) &&
+               Objects.equals(pausedUntil, other.pausedUntil);
     }
 
     /** Information about a particular triggering or completion of a run of a job. This is immutable. */
@@ -202,7 +209,7 @@ public class JobStatus {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof JobRun)) return false;
+            if ( ! (o instanceof JobRun)) return false;
 
             JobRun run = (JobRun) o;
 
@@ -224,6 +231,7 @@ public class JobStatus {
             result = 31 * result + at.hashCode();
             return result;
         }
+
     }
 
 }

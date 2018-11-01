@@ -95,6 +95,7 @@ public class ApplicationSerializer {
     private final String lastCompletedField = "lastCompleted";
     private final String firstFailingField = "firstFailing";
     private final String lastSuccessField = "lastSuccess";
+    private final String pausedUntilField = "pausedUntil";
 
     // JobRun fields
     private final String jobRunIdField = "id";
@@ -252,6 +253,7 @@ public class ApplicationSerializer {
         jobStatus.lastCompleted().ifPresent(run -> jobRunToSlime(run, object, lastCompletedField));
         jobStatus.lastSuccess().ifPresent(run -> jobRunToSlime(run, object, lastSuccessField));
         jobStatus.firstFailing().ifPresent(run -> jobRunToSlime(run, object, firstFailingField));
+        jobStatus.pausedUntil().ifPresent(until -> object.setLong(pausedUntilField, until));
     }
 
     private void jobRunToSlime(JobStatus.JobRun jobRun, Cursor parent, String jobRunObjectName) {
@@ -440,11 +442,13 @@ public class ApplicationSerializer {
         if (object.field(errorField).valid())
             jobError = Optional.of(JobError.valueOf(object.field(errorField).asString()));
 
-        return Optional.of(new JobStatus(jobType.get(), jobError,
-                             jobRunFromSlime(object.field(lastTriggeredField)),
-                             jobRunFromSlime(object.field(lastCompletedField)),
-                             jobRunFromSlime(object.field(firstFailingField)),
-                             jobRunFromSlime(object.field(lastSuccessField))));
+        return Optional.of(new JobStatus(jobType.get(),
+                                         jobError,
+                                         jobRunFromSlime(object.field(lastTriggeredField)),
+                                         jobRunFromSlime(object.field(lastCompletedField)),
+                                         jobRunFromSlime(object.field(firstFailingField)),
+                                         jobRunFromSlime(object.field(lastSuccessField)),
+                                         optionalLong(object.field(pausedUntilField))));
     }
 
     private Optional<JobStatus.JobRun> jobRunFromSlime(Inspector object) {
