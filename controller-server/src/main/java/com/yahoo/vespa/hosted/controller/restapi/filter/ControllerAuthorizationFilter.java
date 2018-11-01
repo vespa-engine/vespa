@@ -131,7 +131,7 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
         if (isHostedOperatorOperation(path, method)) return false;
         return path.matches("/application/v4/tenant/{tenant}") ||
                path.matches("/application/v4/tenant/{tenant}/application/{application}") ||
-               path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{job}") ||
+               path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{job}/{*}") ||
                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/dev/{*}") ||
                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/perf/{*}") ||
                path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override");
