@@ -31,6 +31,7 @@ import com.yahoo.prelude.query.parser.ParseException;
 import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.vespa.config.SlimeUtils;
@@ -247,8 +248,12 @@ public class SearchHandler extends LoggingRequestHandler {
 
         Query query = new Query(request, requestMap, queryProfile);
 
-        boolean benchmarkOutput = VespaHeaders.benchmarkOutput(request);
-        boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarkOutput, request.getJDiscRequest().headers());
+        boolean benchmarking = VespaHeaders.benchmarkOutput(request);
+        boolean benchmarkCoverage = VespaHeaders.benchmarkCoverage(benchmarking, request.getJDiscRequest().headers());
+
+        // Don't use soft timeout by default when benchmarking to avoid wrong conclusions by excluding nodes
+        if (benchmarking && ! request.hasProperty(SoftTimeout.enableProperty.toString()))
+            query.properties().set(SoftTimeout.enableProperty, false);
 
         // Find and execute search chain if we have a valid query
         String invalidReason = query.validate();
@@ -292,7 +297,7 @@ public class SearchHandler extends LoggingRequestHandler {
         if (hostResponseHeaderKey.isPresent())
             response.headers().add(hostResponseHeaderKey.get(), selfHostname);
 
-        if (benchmarkOutput)
+        if (benchmarking)
             VespaHeaders.benchmarkOutput(response.headers(), benchmarkCoverage, response.getTiming(),
                                          response.getHitCounts(), getErrors(result), response.getCoverage());
 
