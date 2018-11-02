@@ -12,16 +12,14 @@ import com.yahoo.prelude.fastsearch.FastSearcher;
 import com.yahoo.prelude.fastsearch.SummaryParameters;
 import com.yahoo.prelude.fastsearch.test.fs4mock.MockBackend;
 import com.yahoo.prelude.fastsearch.test.fs4mock.MockFS4ResourcePool;
-import com.yahoo.prelude.fastsearch.test.fs4mock.MockFSChannel;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.SearchCluster;
+import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.searchchain.Execution;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -38,7 +36,7 @@ class FastSearcherTester {
     private final MockDispatcher mockDispatcher;
     private final VipStatus vipStatus;
 
-    public FastSearcherTester(int containerClusterSize, SearchCluster.Node searchNode) {
+    public FastSearcherTester(int containerClusterSize, Node searchNode) {
         this(containerClusterSize, Collections.singletonList(searchNode));
     }
 
@@ -46,7 +44,7 @@ class FastSearcherTester {
         this(containerClusterSize, toNodes(hostAndPortAndGroupStrings));
     }
 
-    public FastSearcherTester(int containerClusterSize, List<SearchCluster.Node> searchNodes) {
+    public FastSearcherTester(int containerClusterSize, List<Node> searchNodes) {
         ClustersStatus clustersStatus = new ClustersStatus();
         clustersStatus.setContainerHasClusters(true);
         vipStatus = new VipStatus(clustersStatus);
@@ -61,12 +59,12 @@ class FastSearcherTester {
                                         new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder()));
     }
 
-    private static List<SearchCluster.Node> toNodes(String... hostAndPortAndGroupStrings) {
-        List<SearchCluster.Node> nodes = new ArrayList<>();
+    private static List<Node> toNodes(String... hostAndPortAndGroupStrings) {
+        List<Node> nodes = new ArrayList<>();
         int key = 0;
         for (String s : hostAndPortAndGroupStrings) {
             String[] parts = s.split(":");
-            nodes.add(new SearchCluster.Node(key++, parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2])));
+            nodes.add(new Node(key++, parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2])));
         }
         return nodes;
     }
@@ -90,7 +88,7 @@ class FastSearcherTester {
         mockFS4ResourcePool.setResponding(hostname, responding);
 
         // Make the search cluster monitor notice right now in this thread
-        SearchCluster.Node node = mockDispatcher.searchCluster().nodesByHost().get(hostname).iterator().next();
+        Node node = mockDispatcher.searchCluster().nodesByHost().get(hostname).iterator().next();
         mockDispatcher.searchCluster().ping(node, MoreExecutors.directExecutor());
     }
 
@@ -99,7 +97,7 @@ class FastSearcherTester {
         mockFS4ResourcePool.setActiveDocuments(hostname, activeDocuments);
 
         // Make the search cluster monitor notice right now in this thread
-        SearchCluster.Node node = mockDispatcher.searchCluster().nodesByHost().get(hostname).iterator().next();
+        Node node = mockDispatcher.searchCluster().nodesByHost().get(hostname).iterator().next();
         mockDispatcher.searchCluster().ping(node, MoreExecutors.directExecutor());
         mockDispatcher.searchCluster().pingIterationCompleted();
     }

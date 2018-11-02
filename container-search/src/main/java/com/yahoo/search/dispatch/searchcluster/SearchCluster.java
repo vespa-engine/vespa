@@ -1,5 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.dispatch;
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.search.dispatch.searchcluster;
 
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -11,27 +11,18 @@ import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.cluster.NodeManager;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.vespa.config.search.DispatchConfig;
-
-// Only needed until query requests are moved to rpc
-import com.yahoo.prelude.Ping;
-import com.yahoo.prelude.fastsearch.FastSearcher;
-import com.yahoo.yolean.Exceptions;
 import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -41,7 +32,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-public class SearchCluster implements NodeManager<SearchCluster.Node> {
+public class SearchCluster implements NodeManager<Node> {
 
     private static final Logger log = Logger.getLogger(SearchCluster.class.getName());
 
@@ -128,8 +119,8 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         // Only use direct dispatch if we have exactly 1 search node on the same machine:
         if (localSearchNodes.size() != 1) return Optional.empty();
 
-        SearchCluster.Node localSearchNode = localSearchNodes.iterator().next();
-        SearchCluster.Group localSearchGroup = groups.get(localSearchNode.group());
+        Node localSearchNode = localSearchNodes.iterator().next();
+        Group localSearchGroup = groups.get(localSearchNode.group());
 
         // Only use direct dispatch if the local search node has the entire corpus
         if (localSearchGroup.nodes().size() != 1) return Optional.empty();
@@ -188,7 +179,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         if ( ! directDispatchTarget.isPresent()) return Optional.empty();
 
         // Only use direct dispatch if the local group has sufficient coverage
-        SearchCluster.Group localSearchGroup = groups.get(directDispatchTarget.get().group());
+        Group localSearchGroup = groups.get(directDispatchTarget.get().group());
         if ( ! localSearchGroup.hasSufficientCoverage()) return Optional.empty();
 
         // Only use direct dispatch if the local search node is up
@@ -216,10 +207,6 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
             vipStatus.removeFromRotation(this);
     }
 
-    public void groupConnectionFailure(Group group) {
-        group.setHasSufficientCoverage(false); // will be reset after next ping iteration
-    }
-
     private void updateSufficientCoverage(Group group, boolean sufficientCoverage) {
         // update VIP status if we direct dispatch to this group and coverage status changed
         if (usesDirectDispatchTo(group) && sufficientCoverage != group.hasSufficientCoverage()) {
@@ -245,7 +232,7 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
     /** Used by the cluster monitor to manage node status */
     @Override
     public void ping(Node node, Executor executor) {
-        Pinger pinger = new Pinger(node);
+        Pinger pinger = new Pinger(node, clusterMonitor, fs4ResourcePool);
         FutureTask<Pong> futurePong = new FutureTask<>(pinger);
         executor.execute(futurePong);
         Pong pong = getPong(futurePong, node);
@@ -287,29 +274,34 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
             Group group = orderedGroups.get(i);
             long activeDocuments = activeDocumentsInGroup[i];
             long averageDocumentsInOtherGroups = (sumOfActiveDocuments - activeDocuments) / (numGroups - 1);
-            boolean sufficientCoverage = true;
-
-            if (averageDocumentsInOtherGroups > 0) {
-                double coverage = 100.0 * (double) activeDocuments / averageDocumentsInOtherGroups;
-                sufficientCoverage = coverage >= minActivedocsCoveragePercentage;
-            }
-            if (sufficientCoverage) {
-                sufficientCoverage = isNodeCoverageSufficient(group);
-            }
+            boolean sufficientCoverage = isGroupCoverageSufficient(group.nodes(), activeDocuments, averageDocumentsInOtherGroups);
             updateSufficientCoverage(group, sufficientCoverage);
         }
     }
 
-    private boolean isNodeCoverageSufficient(Group group) {
+    private boolean isGroupCoverageSufficient(List<Node> nodes, long activeDocuments, long averageDocumentsInOtherGroups) {
+        boolean sufficientCoverage = true;
+
+        if (averageDocumentsInOtherGroups > 0) {
+            double coverage = 100.0 * (double) activeDocuments / averageDocumentsInOtherGroups;
+            sufficientCoverage = coverage >= minActivedocsCoveragePercentage;
+        }
+        if (sufficientCoverage) {
+            sufficientCoverage = isGroupNodeCoverageSufficient(nodes);
+        }
+        return sufficientCoverage;
+    }
+
+    private boolean isGroupNodeCoverageSufficient(List<Node> nodes) {
         int nodesUp = 0;
-        for (Node node : group.nodes()) {
+        for (Node node : nodes) {
             if (node.isWorking()) {
                 nodesUp++;
             }
         }
-        int nodes = group.nodes().size();
-        int nodesAllowedDown = maxNodesDownPerGroup + (int) (((double) nodes * (100.0 - minGroupCoverage)) / 100.0);
-        return nodesUp + nodesAllowedDown >= nodes;
+        int numNodes = nodes.size();
+        int nodesAllowedDown = maxNodesDownPerGroup + (int) (((double) numNodes * (100.0 - minGroupCoverage)) / 100.0);
+        return nodesUp + nodesAllowedDown >= numNodes;
     }
 
     private Pong getPong(FutureTask<Pong> futurePong, Node node) {
@@ -326,153 +318,26 @@ public class SearchCluster implements NodeManager<SearchCluster.Node> {
         }
     }
 
-    private class Pinger implements Callable<Pong> {
-
-        private final Node node;
-
-        public Pinger(Node node) {
-            this.node = node;
-        }
-
-        public Pong call() {
-            try {
-                Pong pong = FastSearcher.ping(new Ping(clusterMonitor.getConfiguration().getRequestTimeout()),
-                                              fs4ResourcePool.getBackend(node.hostname(), node.fs4port()), node.toString());
-                if (pong.activeDocuments().isPresent())
-                    node.setActiveDocuments(pong.activeDocuments().get());
-                return pong;
-            } catch (RuntimeException e) {
-                return new Pong(ErrorMessage.createBackendCommunicationError("Exception when pinging " + node + ": "
-                                + Exceptions.toMessageString(e)));
-            }
-        }
-
-    }
-
-    /** A group in a search cluster. This class is multithread safe. */
-    public static class Group {
-
-        private final int id;
-        private final ImmutableList<Node> nodes;
-
-        private final AtomicBoolean hasSufficientCoverage = new AtomicBoolean(true);
-        private final AtomicLong activeDocuments = new AtomicLong(0);
-
-        public Group(int id, List<Node> nodes) {
-            this.id = id;
-            this.nodes = ImmutableList.copyOf(nodes);
-        }
-
-        /** Returns the unique identity of this group */
-        public int id() { return id; }
-
-        /** Returns the nodes in this group as an immutable list */
-        public ImmutableList<Node> nodes() { return nodes; }
-
-        /**
-         * Returns whether this group has sufficient active documents
-         * (compared to other groups) that is should receive traffic
-         */
-        public boolean hasSufficientCoverage() {
-            return hasSufficientCoverage.get();
-        }
-
-        void setHasSufficientCoverage(boolean sufficientCoverage) {
-            hasSufficientCoverage.lazySet(sufficientCoverage);
-        }
-
-        void aggregateActiveDocuments() {
-            long activeDocumentsInGroup = 0;
-            for (Node node : nodes) {
-                if (node.isWorking()) {
-                    activeDocumentsInGroup += node.getActiveDocuments();
-                }
-            }
-            activeDocuments.set(activeDocumentsInGroup);
-
-        }
-
-        /** Returns the active documents on this node. If unknown, 0 is returned. */
-        long getActiveDocuments() {
-            return this.activeDocuments.get();
-        }
-
-        @Override
-        public String toString() { return "search group " + id; }
-
-        @Override
-        public int hashCode() { return id; }
-
-        @Override
-        public boolean equals(Object other) {
-            if (other == this) return true;
-            if (!(other instanceof Group)) return false;
-            return ((Group) other).id == this.id;
-        }
-
-    }
-
-    /** A node in a search cluster. This class is multithread safe. */
-    public static class Node {
-
-        private final int key;
-        private final String hostname;
-        private final int fs4port;
-        private final int group;
-
-        private final AtomicBoolean working = new AtomicBoolean(true);
-        private final AtomicLong activeDocuments = new AtomicLong(0);
-
-        public Node(int key, String hostname, int fs4port, int group) {
-            this.key = key;
-            this.hostname = hostname;
-            this.fs4port = fs4port;
-            this.group = group;
-        }
-
-        /** Returns the unique and stable distribution key of this node */
-        public int key() { return key; }
-
-        public String hostname() { return hostname; }
-
-        public int fs4port() { return fs4port; }
-
-        /** Returns the id of this group this node belongs to */
-        public int group() { return group; }
-
-        void setWorking(boolean working) {
-            this.working.lazySet(working);
-        }
-
-        /** Returns whether this node is currently responding to requests */
-        public boolean isWorking() { return working.get(); }
-
-        /** Updates the active documents on this node */
-        void setActiveDocuments(long activeDocuments) {
-            this.activeDocuments.set(activeDocuments);
-        }
-
-        /** Returns the active documents on this node. If unknown, 0 is returned. */
-        public long getActiveDocuments() {
-            return this.activeDocuments.get();
-        }
-
-        @Override
-        public int hashCode() { return Objects.hash(hostname, fs4port); }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) return true;
-            if ( ! (o instanceof Node)) return false;
-            Node other = (Node)o;
-            if ( ! Objects.equals(this.hostname, other.hostname)) return false;
-            if ( ! Objects.equals(this.fs4port, other.fs4port)) return false;
+    /**
+     * Calculate whether a subset of nodes in a group has enough coverage
+     */
+    public boolean isPartialGroupCoverageSufficient(int groupId, List<Node> nodes) {
+        if (orderedGroups.size() == 1) {
             return true;
         }
-
-        @Override
-        public String toString() { return "search node " + hostname + ":" + fs4port + " in group " + group; }
-
+        long sumOfActiveDocuments = 0;
+        int otherGroups = 0;
+        for (Group g : orderedGroups) {
+            if (g.id() != groupId) {
+                sumOfActiveDocuments += g.getActiveDocuments();
+                otherGroups++;
+            }
+        }
+        long activeDocuments = 0;
+        for (Node n : nodes) {
+            activeDocuments += n.getActiveDocuments();
+        }
+        long averageDocumentsInOtherGroups = sumOfActiveDocuments / otherGroups;
+        return isGroupCoverageSufficient(nodes, activeDocuments, averageDocumentsInOtherGroups);
     }
-
 }

@@ -17,8 +17,8 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.FillInvoker;
-import com.yahoo.search.dispatch.SearchCluster;
 import com.yahoo.search.dispatch.SearchInvoker;
+import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.Ranking;
@@ -218,7 +218,7 @@ public class FastSearcher extends VespaBackEndSearcher {
             return invoker.get();
         }
 
-        Optional<SearchCluster.Node> direct = getDirectNode(query);
+        Optional<Node> direct = getDirectNode(query);
         if(direct.isPresent()) {
             return fs4InvokerFactory.getSearchInvoker(query, direct.get());
         }
@@ -237,7 +237,7 @@ public class FastSearcher extends VespaBackEndSearcher {
             return invoker.get();
         }
 
-        Optional<SearchCluster.Node> direct = getDirectNode(query);
+        Optional<Node> direct = getDirectNode(query);
         if (direct.isPresent()) {
             return fs4InvokerFactory.getFillInvoker(query, direct.get());
         }
@@ -248,18 +248,18 @@ public class FastSearcher extends VespaBackEndSearcher {
      * If the query can be directed to a single local content node, returns that node. Otherwise,
      * returns an empty value.
      */
-    private Optional<SearchCluster.Node> getDirectNode(Query query) {
+    private Optional<Node> getDirectNode(Query query) {
         if (!query.properties().getBoolean(dispatchDirect, true))
             return Optional.empty();
         if (query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE))
             return Optional.empty();
 
-        Optional<SearchCluster.Node> directDispatchRecipient = dispatcher.searchCluster().directDispatchTarget();
+        Optional<Node> directDispatchRecipient = dispatcher.searchCluster().directDispatchTarget();
         if (!directDispatchRecipient.isPresent())
             return Optional.empty();
 
         // Dispatch directly to the single, local search node
-        SearchCluster.Node local = directDispatchRecipient.get();
+        Node local = directDispatchRecipient.get();
         query.trace(false, 2, "Dispatching directly to ", local);
         return Optional.of(local);
     }

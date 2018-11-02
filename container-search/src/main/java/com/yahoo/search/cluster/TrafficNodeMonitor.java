@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.cluster;
 
+import com.yahoo.container.protect.Error;
 import com.yahoo.search.result.ErrorMessage;
 
 /**
@@ -36,20 +37,14 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
     public void failed(ErrorMessage error) {
         respondedAt = now();
 
-        switch (error.getCode()) {
-            // TODO: Remove hard coded error messages.
-            // Refer to docs/errormessages
-            case 10:
-            case 11:
-                // Only count not being able to talk to backend at all
-                // as errors we care about
-                if ((respondedAt-succeededAt) > 10000) {
-                    setWorking(false, "Not working for 10 s: " + error.toString());
-                }
-                break;
-            default:
-                succeededAt = respondedAt;
-                break;
+        if (error.getCode() == Error.BACKEND_COMMUNICATION_ERROR.code) {
+            setWorking(false, "Connection failure: " + error.toString());
+        } else if (error.getCode() == Error.NO_ANSWER_WHEN_PINGING_NODE.code) {
+            if ((respondedAt - succeededAt) > 10000) {
+                setWorking(false, "Not working for 10 s: " + error.toString());
+            }
+        } else {
+            succeededAt = respondedAt;
         }
     }
 

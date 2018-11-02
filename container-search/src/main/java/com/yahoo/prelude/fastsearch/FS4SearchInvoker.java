@@ -11,8 +11,8 @@ import com.yahoo.fs4.mplex.FS4Channel;
 import com.yahoo.fs4.mplex.InvalidChannelException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.SearchCluster;
 import com.yahoo.search.dispatch.SearchInvoker;
+import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
 
@@ -33,13 +33,13 @@ import static java.util.Arrays.asList;
 public class FS4SearchInvoker extends SearchInvoker {
     private final VespaBackEndSearcher searcher;
     private FS4Channel channel;
-    private final Optional<SearchCluster.Node> node;
+    private final Optional<Node> node;
 
     private ErrorMessage pendingSearchError = null;
     private Query query = null;
     private QueryPacket queryPacket = null;
 
-    public FS4SearchInvoker(VespaBackEndSearcher searcher, Query query, FS4Channel channel, SearchCluster.Node node) {
+    public FS4SearchInvoker(VespaBackEndSearcher searcher, Query query, FS4Channel channel, Node node) {
         this.searcher = searcher;
         this.node = Optional.of(node);
         this.channel = channel;
@@ -115,7 +115,7 @@ public class FS4SearchInvoker extends SearchInvoker {
 
         searcher.addMetaInfo(query, queryPacket.getQueryPacketData(), resultPacket, result);
 
-        searcher.addUnfilledHits(result, resultPacket.getDocuments(), false, queryPacket.getQueryPacketData(), cacheKey, node.map(SearchCluster.Node::key));
+        searcher.addUnfilledHits(result, resultPacket.getDocuments(), false, queryPacket.getQueryPacketData(), cacheKey, node.map(Node::key));
         Packet[] packets;
         CacheControl cacheControl = searcher.getCacheControl();
         PacketWrapper packetWrapper = cacheControl.lookup(cacheKey, query);
@@ -130,7 +130,7 @@ public class FS4SearchInvoker extends SearchInvoker {
             } else {
                 packets = new Packet[1];
                 packets[0] = resultPacket;
-                cacheControl.cache(cacheKey, query, new DocsumPacketKey[0], packets, node.map(SearchCluster.Node::key));
+                cacheControl.cache(cacheKey, query, new DocsumPacketKey[0], packets, node.map(Node::key));
             }
         }
         return asList(result);

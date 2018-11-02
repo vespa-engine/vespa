@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.cluster;
 
-
-import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.search.result.ErrorMessage;
 
@@ -43,7 +41,7 @@ public class ClusterMonitor<T> {
     public ClusterMonitor(NodeManager<T> manager, String ignored) {
         this(manager);
     }
-    
+
     public ClusterMonitor(NodeManager<T> manager) {
         nodeManager = manager;
         monitorThread = new MonitorThread("search.clustermonitor");

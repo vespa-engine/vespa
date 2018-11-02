@@ -3,6 +3,9 @@ package com.yahoo.search.dispatch;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.yahoo.search.dispatch.searchcluster.Group;
+import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 
 import java.util.ArrayList;
 import java.util.Collections;

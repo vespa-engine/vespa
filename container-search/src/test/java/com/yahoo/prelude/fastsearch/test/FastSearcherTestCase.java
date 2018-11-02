@@ -5,26 +5,37 @@ import com.google.common.collect.ImmutableList;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.container.handler.VipStatus;
+import com.yahoo.container.protect.Error;
 import com.yahoo.container.search.Fs4Config;
 import com.yahoo.document.GlobalId;
-import com.yahoo.fs4.mplex.*;
+import com.yahoo.fs4.BasicPacket;
+import com.yahoo.fs4.Packet;
+import com.yahoo.fs4.QueryPacket;
+import com.yahoo.fs4.mplex.Backend;
+import com.yahoo.fs4.mplex.BackendTestCase;
 import com.yahoo.fs4.test.QueryTestCase;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
+import com.yahoo.prelude.fastsearch.CacheControl;
+import com.yahoo.prelude.fastsearch.CacheKey;
+import com.yahoo.prelude.fastsearch.CacheParams;
+import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
-import com.yahoo.container.protect.Error;
-import com.yahoo.fs4.*;
+import com.yahoo.prelude.fastsearch.FS4ResourcePool;
+import com.yahoo.prelude.fastsearch.FastHit;
+import com.yahoo.prelude.fastsearch.FastSearcher;
+import com.yahoo.prelude.fastsearch.PacketWrapper;
+import com.yahoo.prelude.fastsearch.SummaryParameters;
 import com.yahoo.prelude.fastsearch.test.fs4mock.MockBackend;
 import com.yahoo.prelude.fastsearch.test.fs4mock.MockFS4ResourcePool;
 import com.yahoo.prelude.fastsearch.test.fs4mock.MockFSChannel;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.processing.execution.Execution.Trace;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.prelude.fastsearch.*;
-import com.yahoo.prelude.query.WordItem;
-import com.yahoo.search.dispatch.SearchCluster;
+import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.request.AllOperation;
 import com.yahoo.search.grouping.request.EachOperation;
@@ -48,9 +59,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the Fast searcher
@@ -87,7 +102,7 @@ public class FastSearcherTestCase {
     @Test
     public void testNullQuery() {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
-        FastSearcher fastSearcher = new FastSearcher(new MockBackend(), 
+        FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                                                      new FS4ResourcePool(1),
                                                      new MockDispatcher(Collections.emptyList()),
                                                      new SummaryParameters(null),
@@ -115,9 +130,9 @@ public class FastSearcherTestCase {
                         .rankprofile(new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder()
                                 .name("simpler").hasRankFeatures(false).hasSummaryFeatures(false))));
 
-        List<SearchCluster.Node> nodes = new ArrayList<>();
-        nodes.add(new SearchCluster.Node(0, "host1", 5000, 0));
-        nodes.add(new SearchCluster.Node(2, "host2", 5000, 0));
+        List<Node> nodes = new ArrayList<>();
+        nodes.add(new Node(0, "host1", 5000, 0));
+        nodes.add(new Node(2, "host2", 5000, 0));
 
         MockFS4ResourcePool mockFs4ResourcePool = new MockFS4ResourcePool();
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
@@ -162,15 +177,15 @@ public class FastSearcherTestCase {
             new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder().documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("testDb")));
         FastSearcher fastSearcher = new FastSearcher(mockBackend,
                                                      new FS4ResourcePool(1),
-                                                     new MockDispatcher(Collections.emptyList()), 
+                                                     new MockDispatcher(Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
-                                                     new CacheParams(100, 1e64), 
+                                                     new CacheParams(100, 1e64),
                                                      documentdbConfigWithOneDb);
 
         Query query = new Query("?query=foo&model.restrict=testDb");
         query.prepare();
-        Result result = doSearch(fastSearcher, query, 0, 10);
+        doSearch(fastSearcher, query, 0, 10);
 
         Packet receivedPacket = mockBackend.getChannel().getLastQueryPacket();
         byte[] encoded = QueryTestCase.packetToBytes(receivedPacket);
@@ -354,10 +369,10 @@ public class FastSearcherTestCase {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         return new FastSearcher(mockBackend,
                                 new FS4ResourcePool(1),
-                                new MockDispatcher(Collections.emptyList()), 
+                                new MockDispatcher(Collections.emptyList()),
                                 new SummaryParameters(null),
-                                new ClusterParams("testhittype"), 
-                                new CacheParams(100, 1e64), 
+                                new ClusterParams("testhittype"),
+                                new CacheParams(100, 1e64),
                                 config);
     }
 
@@ -436,12 +451,12 @@ public class FastSearcherTestCase {
         }
 
     }
-    
+
     @Test
     public void testSinglePassGroupingIsForcedWithSingleNodeGroups() {
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                                                      new FS4ResourcePool(1),
-                                                     new MockDispatcher(new SearchCluster.Node(0, "host0", 123, 0)),
+                                                     new MockDispatcher(new Node(0, "host0", 123, 0)),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      new CacheParams(100, 1e64),
@@ -455,17 +470,17 @@ public class FastSearcherTestCase {
         all.addChild(new EachOperation());
         all.addChild(new EachOperation());
         request2.setRootOperation(all);
-        
+
         assertForceSinglePassIs(false, q);
         fastSearcher.search(q, new Execution(Execution.Context.createContextStub()));
-        assertForceSinglePassIs(true, q);        
+        assertForceSinglePassIs(true, q);
     }
 
     @Test
     public void testSinglePassGroupingIsNotForcedWithSingleNodeGroups() {
-        MockDispatcher dispatcher = 
-                new MockDispatcher(ImmutableList.of(new SearchCluster.Node(0, "host0", 123, 0),
-                                                    new SearchCluster.Node(2, "host1", 123, 0)));
+        MockDispatcher dispatcher =
+                new MockDispatcher(ImmutableList.of(new Node(0, "host0", 123, 0),
+                                                    new Node(2, "host1", 123, 0)));
 
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                                                      new FS4ResourcePool(1),
@@ -495,7 +510,7 @@ public class FastSearcherTestCase {
     }
 
     private void assertForceSinglePassIs(boolean expected, GroupingOperation operation) {
-        assertEquals("Force single pass is " + expected + " in " + operation, 
+        assertEquals("Force single pass is " + expected + " in " + operation,
                      expected, operation.getForceSinglePass());
         for (GroupingOperation child : operation.getChildren())
             assertForceSinglePassIs(expected, child);

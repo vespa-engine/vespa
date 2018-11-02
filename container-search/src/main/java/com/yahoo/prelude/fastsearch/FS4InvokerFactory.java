@@ -8,10 +8,12 @@ import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.InterleavedFillInvoker;
 import com.yahoo.search.dispatch.InterleavedSearchInvoker;
-import com.yahoo.search.dispatch.SearchCluster;
 import com.yahoo.search.dispatch.SearchInvoker;
+import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.search.result.Hit;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,18 +32,20 @@ import java.util.Set;
 public class FS4InvokerFactory {
     private final FS4ResourcePool fs4ResourcePool;
     private final VespaBackEndSearcher searcher;
-    private final ImmutableMap<Integer, SearchCluster.Node> nodesByKey;
+    private final SearchCluster searchCluster;
+    private final ImmutableMap<Integer, Node> nodesByKey;
 
     public FS4InvokerFactory(FS4ResourcePool fs4ResourcePool, SearchCluster searchCluster, VespaBackEndSearcher searcher) {
         this.fs4ResourcePool = fs4ResourcePool;
         this.searcher = searcher;
+        this.searchCluster = searchCluster;
 
-        ImmutableMap.Builder<Integer, SearchCluster.Node> builder = ImmutableMap.builder();
+        ImmutableMap.Builder<Integer, Node> builder = ImmutableMap.builder();
         searchCluster.groups().values().forEach(group -> group.nodes().forEach(node -> builder.put(node.key(), node)));
         this.nodesByKey = builder.build();
     }
 
-    public SearchInvoker getSearchInvoker(Query query, SearchCluster.Node node) {
+    public SearchInvoker getSearchInvoker(Query query, Node node) {
         Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port());
         return new FS4SearchInvoker(searcher, query, backend.openChannel(), node);
     }
@@ -49,20 +53,44 @@ public class FS4InvokerFactory {
     /**
      * Create a {@link SearchInvoker} for a list of content nodes.
      *
-     * @param query the search query being processed
-     * @param nodes pre-selected list of content nodes
-     * @return Optional containing the SearchInvoker or <i>empty</i> if some node in the list is invalid
+     * @param query
+     *            the search query being processed
+     * @param groupId
+     *            the id of the node group to which the nodes belong
+     * @param nodes
+     *            pre-selected list of content nodes
+     * @param acceptIncompleteCoverage
+     *            if some of the nodes are unavailable and this parameter is
+     *            <b>false</b>, verify that the remaining set of nodes has enough
+     *            coverage
+     * @return Optional containing the SearchInvoker or <i>empty</i> if some node in the
+     *         list is invalid and the remaining coverage is not sufficient
      */
-    public Optional<SearchInvoker> getSearchInvoker(Query query, List<SearchCluster.Node> nodes) {
+    public Optional<SearchInvoker> getSearchInvoker(Query query, int groupId, List<Node> nodes, boolean acceptIncompleteCoverage) {
         Map<Integer, SearchInvoker> invokers = new HashMap<>();
-        for (SearchCluster.Node node : nodes) {
+        Set<Integer> failed = null;
+        for (Node node : nodes) {
             if (node.isWorking()) {
                 Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port());
                 if (backend.probeConnection()) {
                     invokers.put(node.key(), new FS4SearchInvoker(searcher, query, backend.openChannel(), node));
                 } else {
-                    return Optional.empty();
+                    if(failed == null) {
+                        failed = new HashSet<>();
+                    }
+                    failed.add(node.key());
                 }
+            }
+        }
+        if (failed != null && ! acceptIncompleteCoverage) {
+            List<Node> success = new ArrayList<>(nodes.size() - failed.size());
+            for (Node node : nodes) {
+                if (!failed.contains(node.key())) {
+                    success.add(node);
+                }
+            }
+            if (!searchCluster.isPartialGroupCoverageSufficient(groupId, success)) {
+                return Optional.empty();
             }
         }
         if (invokers.size() == 1) {
@@ -72,7 +100,7 @@ public class FS4InvokerFactory {
         }
     }
 
-    public FillInvoker getFillInvoker(Query query, SearchCluster.Node node) {
+    public FillInvoker getFillInvoker(Query query, Node node) {
         return new FS4FillInvoker(searcher, query, fs4ResourcePool, node.hostname(), node.fs4port(), node.key());
     }
 
@@ -88,7 +116,7 @@ public class FS4InvokerFactory {
         Query query = result.getQuery();
         Map<Integer, FillInvoker> invokers = new HashMap<>();
         for (Integer distKey : requiredNodes) {
-            SearchCluster.Node node = nodesByKey.get(distKey);
+            Node node = nodesByKey.get(distKey);
             if (node == null) {
                 return Optional.empty();
             }
