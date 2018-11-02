@@ -14,6 +14,7 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
@@ -69,7 +70,7 @@ import static org.junit.Assert.fail;
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
-    public void detect_conflicting_gcoptions_in_jvmargs() {
+    public void detect_conflicting_jvmgcoptions_in_jvmargs() {
         assertFalse(ContainerModelBuilder.incompatibleGCOptions(""));
         assertFalse(ContainerModelBuilder.incompatibleGCOptions("UseG1GC"));
         assertTrue(ContainerModelBuilder.incompatibleGCOptions("-XX:+UseG1GC"));
@@ -78,11 +79,11 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void honours_gcopts() {
+    public void honours_jvm_gc_options() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc version='1.0'>",
                 "  <search/>",
-                "  <nodes gcopts='-XX:+UseG1GC'>",
+                "  <nodes jvm-gc-options='-XX:+UseG1GC'>",
                 "    <node hostalias='mockhost'/>",
                 "  </nodes>",
                 "</jdisc>" );
@@ -93,23 +94,79 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals("-XX:+UseG1GC", qrStartConfig.jvm().gcopts());
     }
 
-    @Test
-    public void ignores_gcopts_on_conflicting_jvargs() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<jdisc version='1.0'>",
-                "  <nodes gcopts='-XX:+UseG1GC' jvmargs='-XX:+UseParNewGC'>",
-                "    <node hostalias='mockhost'/>",
-                "  </nodes>",
-                "</jdisc>" );
-        createModel(root, clusterElem);
+    private static void verifyIgnoreJvmGCOptions(boolean isHosted) throws IOException, SAXException {
+        String servicesXml =
+                "<jdisc version='1.0'>" +
+                "  <nodes jvm-gc-options='-XX:+UseG1GC' jvmargs='-XX:+UseParNewGC'>" +
+                "    <node hostalias='mockhost'/>" +
+                "  </nodes>" +
+                "</jdisc>";
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
+        // Need to create VespaModel to make deploy properties have effect
+        final MyLogger logger = new MyLogger();
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                .applicationPackage(applicationPackage)
+                .deployLogger(logger)
+                .zone(new Zone(SystemName.cd, Environment.dev, RegionName.from("here")))
+                .properties(new DeployProperties.Builder()
+                        .hostedVespa(isHosted)
+                        .build())
+                .build());
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
-        root.getConfig(qrStartBuilder, "jdisc/container.0");
+        model.getConfig(qrStartBuilder, "jdisc/container.0");
         QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
         assertEquals(ContainerCluster.CMS, qrStartConfig.jvm().gcopts());
     }
 
     @Test
-    public void default_port_is_4080() throws Exception {
+    public void ignores_jvmgcoptions_on_conflicting_jvmargs() throws IOException, SAXException {
+        verifyIgnoreJvmGCOptions(false);
+        verifyIgnoreJvmGCOptions(true);
+    }
+
+    private void verifyJvmGCOptions(boolean isHosted, String override, Zone zone, String expected) throws IOException, SAXException  {
+        String servicesXml =
+                "<jdisc version='1.0'>" +
+                        "  <nodes " + ((override == null) ? ">" : ("jvm-gc-options='" + override + "'>")) +
+                        "    <node hostalias='mockhost'/>" +
+                        "  </nodes>" +
+                        "</jdisc>";
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
+        // Need to create VespaModel to make deploy properties have effect
+        final MyLogger logger = new MyLogger();
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                .applicationPackage(applicationPackage)
+                .deployLogger(logger)
+                .zone(zone)
+                .properties(new DeployProperties.Builder()
+                        .hostedVespa(isHosted)
+                        .build())
+                .build());
+        QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
+        model.getConfig(qrStartBuilder, "jdisc/container.0");
+        QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
+        assertEquals(expected, qrStartConfig.jvm().gcopts());
+    }
+
+    private void verifyJvmGCOptions(boolean isHosted, Zone zone, String expected)  throws IOException, SAXException {
+        verifyJvmGCOptions(isHosted, null, zone, expected);
+        verifyJvmGCOptions(isHosted, "-XX:+UseG1GC", zone, "-XX:+UseG1GC");
+        Zone DEV = new Zone(SystemName.dev, zone.environment(), zone.region());
+        verifyJvmGCOptions(isHosted, null, DEV, ContainerCluster.G1GC);
+        verifyJvmGCOptions(isHosted, "-XX:+UseConcMarkSweepGC", DEV, "-XX:+UseConcMarkSweepGC");
+    }
+
+    @Test
+    public void requireThatJvmGCOptionsIsHonoured()  throws IOException, SAXException {
+        final Zone US_EAST_3 = new Zone(Environment.prod, RegionName.from("us-east-3"));
+        verifyJvmGCOptions(false, Zone.defaultZone(),ContainerCluster.CMS);
+        verifyJvmGCOptions(false, US_EAST_3, ContainerCluster.CMS);
+        verifyJvmGCOptions(true, Zone.defaultZone(), ContainerCluster.CMS);
+        verifyJvmGCOptions(true, US_EAST_3, ContainerCluster.G1GC);
+    }
+
+    @Test
+    public void default_port_is_4080() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc version='1.0'>",
                   nodesXml,
@@ -120,7 +177,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void http_server_port_is_configurable_and_does_not_affect_other_ports() throws Exception {
+    public void http_server_port_is_configurable_and_does_not_affect_other_ports() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc version='1.0'>",
                 "  <http>",
@@ -162,7 +219,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(logger.msgs.get(0).getSecond(), containsString(String.format("You cannot set port to anything else than %d", Container.BASEPORT)));
     }
 
-    private class MyLogger implements DeployLogger {
+    private static class MyLogger implements DeployLogger {
         List<Pair<Level, String>> msgs = new ArrayList<>();
         @Override
         public void log(Level level, String message) {
@@ -171,7 +228,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void one_cluster_with_explicit_port_and_one_without_is_ok() throws Exception {
+    public void one_cluster_with_explicit_port_and_one_without_is_ok() {
         Element cluster1Elem = DomBuilderTest.parse(
                 "<jdisc id='cluster1' version='1.0' />");
         Element cluster2Elem = DomBuilderTest.parse(
@@ -184,7 +241,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void two_clusters_without_explicit_port_throws_exception() throws SAXException, IOException {
+    public void two_clusters_without_explicit_port_throws_exception() {
         Element cluster1Elem = DomBuilderTest.parse(
                 "<jdisc id='cluster1' version='1.0'>",
                   nodesXml,
@@ -202,7 +259,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void verify_bindings_for_builtin_handlers() throws Exception {
+    public void verify_bindings_for_builtin_handlers() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0' />"
         );
@@ -226,7 +283,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void default_root_handler_is_disabled_when_user_adds_a_handler_with_same_binding() throws Exception {
+    public void default_root_handler_is_disabled_when_user_adds_a_handler_with_same_binding() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>" +
                         "  <handler id='userRootHandler'>" +
@@ -240,7 +297,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void handler_bindings_are_included_in_discBindings_config() throws Exception {
+    public void handler_bindings_are_included_in_discBindings_config() {
         createClusterWithJDiscHandler();
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
         assertThat(discBindingsConfig, containsString("{discHandler}"));
@@ -250,12 +307,12 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void handlers_are_included_in_components_config() throws Exception {
+    public void handlers_are_included_in_components_config() {
         createClusterWithJDiscHandler();
         assertThat(componentsConfig().toString(), containsString(".id \"discHandler\""));
     }
 
-    private void createClusterWithJDiscHandler() throws SAXException, IOException {
+    private void createClusterWithJDiscHandler() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <handler id='discHandler'>",
@@ -269,14 +326,14 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void servlets_are_included_in_ServletPathConfig() throws Exception {
+    public void servlets_are_included_in_ServletPathConfig() {
         createClusterWithServlet();
         ServletPathsConfig servletPathsConfig = root.getConfig(ServletPathsConfig.class, "default");
         assertThat(servletPathsConfig.servlets().values().iterator().next().path(), is("p/a/t/h"));
     }
 
     @Test
-    public void servletconfig_is_produced() throws Exception {
+    public void servletconfig_is_produced() {
         createClusterWithServlet();
 
         String configId = getContainerCluster("default").getServletMap().
@@ -287,7 +344,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(servletConfig.map().get("myKey"), is("myValue"));
     }
 
-    private void createClusterWithServlet() throws SAXException, IOException {
+    private void createClusterWithServlet() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <servlet id='myServlet' class='myClass' bundle='myBundle'>",
@@ -303,7 +360,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
 
     @Test
-    public void processing_handler_bindings_can_be_overridden() throws Exception {
+    public void processing_handler_bindings_can_be_overridden() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <processing>",
@@ -321,7 +378,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void clientProvider_bindings_are_included_in_discBindings_config() throws Exception {
+    public void clientProvider_bindings_are_included_in_discBindings_config() {
         createModelWithClientProvider();
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
         assertThat(discBindingsConfig, containsString("{discClient}"));
@@ -331,12 +388,12 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void clientProviders_are_included_in_components_config() throws Exception {
+    public void clientProviders_are_included_in_components_config() {
         createModelWithClientProvider();
         assertThat(componentsConfig().toString(), containsString(".id \"discClient\""));
     }
 
-    private void createModelWithClientProvider() throws SAXException, IOException {
+    private void createModelWithClientProvider() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>" +
                 "  <client id='discClient'>" +
@@ -350,7 +407,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void serverProviders_are_included_in_components_config() throws Exception {
+    public void serverProviders_are_included_in_components_config() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>" +
                 "  <server id='discServer' />" +
@@ -367,7 +424,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void searchHandler_gets_only_search_chains_in_chains_config() throws Exception {
+    public void searchHandler_gets_only_search_chains_in_chains_config()  {
         createClusterWithProcessingAndSearchChains();
         String searchHandlerConfigId = "default/component/com.yahoo.search.handler.SearchHandler";
         String chainsConfig = getChainsConfig(searchHandlerConfigId);
@@ -376,7 +433,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void processingHandler_gets_only_processing_chains_in_chains_config() throws Exception {
+    public void processingHandler_gets_only_processing_chains_in_chains_config()  {
         createClusterWithProcessingAndSearchChains();
         String processingHandlerConfigId = "default/component/com.yahoo.processing.handler.ProcessingHandler";
         String chainsConfig = getChainsConfig(processingHandlerConfigId);
@@ -384,7 +441,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(chainsConfig, not(containsLineWithPattern(".*\\.id \"testSearcher@default\"$")));
     }
 
-    private void createClusterWithProcessingAndSearchChains() throws SAXException, IOException {
+    private void createClusterWithProcessingAndSearchChains() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>" +
                         "  <search>" +
@@ -404,7 +461,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void user_config_can_be_overridden_on_node() throws Exception {
+    public void user_config_can_be_overridden_on_node() {
         Element containerElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <config name=\"prelude.cluster.qr-monitor\">" +
@@ -429,7 +486,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void legacy_yca_filter_and_its_config_provider_are_included_in_components_config() throws Exception {
+    public void legacy_yca_filter_and_its_config_provider_are_included_in_components_config()  {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <filter id='YcaFilter' /> ",
@@ -443,7 +500,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void nested_components_are_injected_to_handlers() throws Exception {
+    public void nested_components_are_injected_to_handlers() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <handler id='myHandler'>",
@@ -474,7 +531,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void affinity_is_set() throws IOException, SAXException {
+    public void affinity_is_set() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <http>",
@@ -516,7 +573,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void http_aliases_are_stored_on_cluster_and_on_service_properties() throws SAXException, IOException {
+    public void http_aliases_are_stored_on_cluster_and_on_service_properties() {
         Element clusterElem = DomBuilderTest.parse(
                         "<jdisc id='default' version='1.0'>",
                         "  <aliases>",
@@ -541,7 +598,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void http_aliases_are_only_honored_in_prod_environment() throws SAXException, IOException {
+    public void http_aliases_are_only_honored_in_prod_environment() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='default' version='1.0'>",
                 "  <aliases>",
@@ -578,17 +635,17 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void renderers_named_JsonRenderer_are_not_allowed() throws IOException, SAXException {
+    public void renderers_named_JsonRenderer_are_not_allowed() {
         createModel(root, generateContainerElementWithRenderer("JsonRenderer"));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void renderers_named_DefaultRenderer_are_not_allowed() throws IOException, SAXException {
+    public void renderers_named_DefaultRenderer_are_not_allowed() {
         createModel(root, generateContainerElementWithRenderer("DefaultRenderer"));
     }
 
     @Test
-    public void renderers_named_something_else_are_allowed() throws IOException, SAXException {
+    public void renderers_named_something_else_are_allowed() {
         createModel(root, generateContainerElementWithRenderer("my-little-renderer"));
     }
 
@@ -642,15 +699,15 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals("default.container.0", config.discriminator());
         assertEquals(19102, config.rpc().port());
         assertEquals("vespa/service/default/container.0", config.rpc().slobrokId());
-        assertEquals(true, config.rpc().enabled());
+        assertTrue(config.rpc().enabled());
         assertEquals("", config.rpc().host());
-        assertEquals(false, config.restartOnDeploy());
-        assertEquals(false, config.coveragereports());
+        assertFalse(config.restartOnDeploy());
+        assertFalse(config.coveragereports());
         assertEquals("filedistribution/" + hostname, config.filedistributor().configid());
     }
 
     @Test
-    public void secret_store_can_be_set_up() throws IOException, SAXException {
+    public void secret_store_can_be_set_up() {
         Element clusterElem = DomBuilderTest.parse(
                 "<jdisc version='1.0'>",
                 "  <secret-store>",
