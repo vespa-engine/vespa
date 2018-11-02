@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.restapi.StringResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * This implements the metricforwarding/v1 API which allows feeding
@@ -72,7 +73,8 @@ public class MetricForwardingApiHandler extends LoggingRequestHandler {
                 });
             });
         } catch (IOException e) {
-            ErrorResponse.badRequest("Unable to parse request for metrics - " + e.getMessage());
+            log.log(Level.WARNING, "Unable to parse request for cluster utilization metrics", e);
+            return ErrorResponse.badRequest("Unable to parse request for cluster utilization metrics - " + e.getMessage());
         }
         return new StringResponse("Added cluster utilization metrics");
     }
@@ -99,7 +101,8 @@ public class MetricForwardingApiHandler extends LoggingRequestHandler {
                 }
             });
         } catch (IOException e) {
-            ErrorResponse.badRequest("Unable to parse request for metrics - " + e.getMessage());
+            log.log(Level.WARNING, "Unable to parse request for deployment metrics", e);
+            return ErrorResponse.badRequest("Unable to parse request for deployment metrics - " + e.getMessage());
         }
         return new StringResponse("Added deployment metrics");
     }
