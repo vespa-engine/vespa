@@ -20,10 +20,10 @@ public class ConfigProducerGroup<CHILD extends AbstractConfigProducer<?>> extend
     }
 
     public void addComponent(ComponentId id, CHILD producer) {
-        boolean wasAdded = producerById.put(id, producer) == null;
-        if (!wasAdded) {
-            throw new IllegalArgumentException("Two entities have the same component id '" +
-                                               id + "' in the same scope.");
+        CHILD existing = producerById.put(id, producer);
+        if ( existing != null) {
+            throw new IllegalArgumentException("Both " + producer + " and " + existing + " are configured" +
+                                               " with the id '" + id + "'. All components must have a unique id.");
         }
         addChild(producer);
     }

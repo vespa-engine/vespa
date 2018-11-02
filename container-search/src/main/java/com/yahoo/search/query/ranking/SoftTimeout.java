@@ -8,7 +8,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import java.util.Objects;
 
 /**
- * Holds the settings for the soft-timeout feature.
+ * Settings for the soft-timeout feature.
  *
  * @author baldersheim
  */
@@ -41,22 +41,24 @@ public class SoftTimeout implements Cloneable {
 
     public void setFactor(double factor) {
         if ((factor < 0.0) || (factor > 1.0)) {
-            throw new IllegalArgumentException("factor must be in the range [0.0, 1.0]. It is " + factor);
+            throw new IllegalArgumentException("factor must be in the range [0.0, 1.0], got " + factor);
         }
         this.factor = factor;
     }
+
     public Double getFactor() { return factor; }
+
     public void setTailcost(double tailcost) {
         if ((tailcost < 0.0) || (tailcost > 1.0)) {
-            throw new IllegalArgumentException("tailcost must be in the range [0.0, 1.0]. It is " + tailcost);
+            throw new IllegalArgumentException("tailcost must be in the range [0.0, 1.0], got " + tailcost);
         }
         this.tailcost = tailcost;
     }
+
     public Double getTailcost() { return tailcost; }
 
     /** Internal operation - DO NOT USE */
     public void prepare(RankProperties rankProperties) {
-
         if (enable != null) {
             rankProperties.put("vespa.softtimeout.enable", String.valueOf(enable));
         }
