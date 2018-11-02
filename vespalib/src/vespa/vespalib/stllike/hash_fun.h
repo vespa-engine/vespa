@@ -62,21 +62,17 @@ template<typename T> struct hash<const T *> {
 size_t hashValue(const char *str);
 size_t hashValue(const void *str, size_t sz);
 
-template<> struct hash<const char *> {
-    size_t operator() (const char * arg) const { return hashValue(arg); }
-};
-
-template<> struct hash<vespalib::stringref> {
-    size_t operator() (vespalib::stringref arg) const { return hashValue(arg.data(), arg.size()); }
-};
-
-template<> struct hash<vespalib::string> {
+struct hash_strings {
     size_t operator() (const vespalib::string & arg) const { return hashValue(arg.c_str()); }
-};
-
-template<> struct hash<std::string> {
+    size_t operator() (vespalib::stringref arg) const { return hashValue(arg.data(), arg.size()); }
+    size_t operator() (const char * arg) const { return hashValue(arg); }
     size_t operator() (const std::string& arg) const { return hashValue(arg.c_str()); }
 };
+
+template<> struct hash<const char *> : hash_strings { };
+template<> struct hash<vespalib::stringref> : public hash_strings { };
+template<> struct hash<vespalib::string> : hash_strings {};
+template<> struct hash<std::string> : hash_strings {};
 
 template<typename V> struct size {
     size_t operator() (const V & arg) const { return arg.size(); }
@@ -86,6 +82,4 @@ template<typename V> struct zero {
     size_t operator() (const V & ) const { return 0; }
 };
 
-
 } // namespace vespalib
-

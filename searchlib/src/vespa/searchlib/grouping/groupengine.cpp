@@ -6,12 +6,10 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <cassert>
 
-namespace search {
+using namespace search::expression;
+using namespace search::aggregation;
 
-using namespace expression;
-using namespace aggregation;
-
-namespace grouping {
+namespace search::grouping {
 
 GroupEngine::GroupEngine(const GroupingLevel * request, size_t level, GroupEngine * nextEngine, bool frozen) :
     Collect(request->getGroupPrototype()),
@@ -52,7 +50,7 @@ GroupRef GroupEngine::group(Children & children, uint32_t docId, double rank)
         throw std::runtime_error("Does not know how to handle failed select statements");
     }
     const ResultNode &selectResult = selector.getResult();
-    Children::iterator found = children.find<ResultNode, GroupResult, Group::ResultHash, Group::ResultEqual>(selectResult, GroupResult(*this));
+    Children::iterator found = children.find(selectResult);
     GroupRef gr;
     if (found == children.end()) {
         if (_request->allowMoreGroups(children.size())) {
@@ -227,7 +225,6 @@ GroupEngine::preFillEngine(const Group & r, size_t depth)
     return gr;
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

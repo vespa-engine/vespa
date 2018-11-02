@@ -42,26 +42,18 @@ public:
     struct GroupEqual : public std::binary_function<ChildP, ChildP, bool> {
         GroupEqual(const GroupList * v) : _v(v) { }
         bool operator()(uint32_t a, uint32_t b) { return (*_v)[a]->getId().cmpFast((*_v)[b]->getId()) == 0; }
+        bool operator()(const Group & a, uint32_t b) { return a.getId().cmpFast((*_v)[b]->getId()) == 0; }
+        bool operator()(uint32_t a, const Group & b) { return (*_v)[a]->getId().cmpFast(b.getId()) == 0; }
+        bool operator()(const ResultNode & a, uint32_t b) { return a.cmpFast((*_v)[b]->getId()) == 0; }
+        bool operator()(uint32_t a, const ResultNode & b) { return (*_v)[a]->getId().cmpFast(b) == 0; }
         const GroupList *_v;
     };
     struct GroupHasher {
         GroupHasher(const GroupList * v) : _v(v) { }
         size_t operator() (uint32_t arg) const { return (*_v)[arg]->getId().hash(); }
-        const GroupList *_v;
-    };
-    struct GroupResult {
-        GroupResult(const GroupList * v) : _v(v) { }
-        const ResultNode & operator() (uint32_t arg) const { return (*_v)[arg]->getId(); }
-        const GroupList *_v;
-    };
-    struct ResultLess : public std::binary_function<ResultNode::CP, ResultNode::CP, bool> {
-        bool operator()(const ResultNode::CP & a, const ResultNode::CP & b) { return a->cmpFast(*b) < 0; }
-    };
-    struct ResultEqual : public std::binary_function<ResultNode, ResultNode, bool> {
-        bool operator()(const ResultNode & a, const ResultNode & b) { return a.cmpFast(b) == 0; }
-    };
-    struct ResultHash {
+        size_t operator() (const Group & arg) const { return arg.getId().hash(); }
         size_t operator() (const ResultNode & arg) const { return arg.hash(); }
+        const GroupList *_v;
     };
 
     using GroupingLevelList = std::vector<GroupingLevel>;
@@ -192,12 +184,12 @@ public:
         return _aggr.groupSingle(result, rank, level);
     }
 
-    bool hasId() const { return (_id.get() != NULL); }
+    bool hasId() const { return static_cast<bool>(_id); }
     const ResultNode &getId() const { return *_id; }
 
     Group unchain() const { return *this; }
 
-    Group &setId(const ResultNode &id)  { _id.reset(static_cast<ResultNode *>(id.clone())); return *this; }
+    Group &setId(const ResultNode &id)  { _id.reset(id.clone()); return *this; }
     Group &addAggregationResult(ExpressionNode::UP result) {
         _aggr.addAggregationResult(std::move(result));
         return *this;

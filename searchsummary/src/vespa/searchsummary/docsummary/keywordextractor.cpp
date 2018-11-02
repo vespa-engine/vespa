@@ -4,6 +4,7 @@
 #include "keywordextractor.h"
 #include "idocsumenvironment.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
+#include <vespa/vespalib/stllike/hashtable.hpp>
 
 /** Tell us what parts of the query we are interested in */
 
@@ -12,12 +13,7 @@ namespace search::docsummary {
 
 bool useful(search::ParseItem::ItemCreator creator)
 {
-    switch (creator) {
-    case search::ParseItem::CREA_ORIG:
-        return true;
-    default:
-        return false;
-    }
+    return creator == search::ParseItem::CREA_ORIG;
 }
 
 
@@ -36,6 +32,12 @@ KeywordExtractor::~KeywordExtractor()
         _legalPrefixes = tmp->_next;
         delete tmp;
     }
+}
+
+bool
+KeywordExtractor::IsLegalIndexName(const char *idxName) const
+{
+    return _legalIndexes.find(idxName) != _legalIndexes.end();
 }
 
 KeywordExtractor::IndexPrefix::IndexPrefix(const char *prefix, IndexPrefix **list)

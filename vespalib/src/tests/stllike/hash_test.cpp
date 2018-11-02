@@ -154,14 +154,14 @@ TEST("test hash set with simple type")
 
 TEST("test hash map iterator stability")
 {
-    hash_map<int, int> h;
+    hash_map<uint32_t, uint32_t> h;
     EXPECT_EQUAL(1ul, h.capacity());
     for (size_t i(0); i < 100; i++) {
         EXPECT_TRUE(h.find(i) == h.end());
         h[i] = i;
         EXPECT_TRUE(h.find(i) != h.end());
-        int * p1 = & h.find(i)->second;
-        int * p2 = & h[i];
+        uint32_t * p1 = & h.find(i)->second;
+        uint32_t * p2 = & h[i];
         EXPECT_EQUAL(p1, p2);
     }
     EXPECT_EQUAL(128ul, h.capacity());
@@ -341,11 +341,11 @@ private:
 
 struct myhash {
     size_t operator() (const S & arg) const { return arg.hash(); }
+    size_t operator() (uint32_t arg) const { return arg; }
 };
 
-struct myextract {
-    uint32_t operator() (const S & arg) const { return arg.a(); }
-};
+bool operator == (uint32_t a, const S & b) { return a == b.a(); }
+bool operator == (const S & a, uint32_t b) { return a.a() == b; }
 
 TEST("test hash set find")
 {
@@ -354,7 +354,7 @@ TEST("test hash set find")
         set.insert(S(i));
     }
     EXPECT_TRUE(*set.find(S(1)) == S(1));
-    hash_set<S, myhash>::iterator cit = set.find<uint32_t, myextract, vespalib::hash<uint32_t>, std::equal_to<uint32_t> >(7);
+    auto cit = set.find<uint32_t>(7);
     EXPECT_TRUE(*cit == S(7));
 }
 

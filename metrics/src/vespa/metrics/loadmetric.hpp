@@ -55,7 +55,7 @@ LoadMetric<MetricType>::LoadMetric(const LoadMetric<MetricType>& other, MetricSe
 }
 
 template<typename MetricType>
-LoadMetric<MetricType>::~LoadMetric() { }
+LoadMetric<MetricType>::~LoadMetric() = default;
 
 template<typename MetricType>
 MetricSet*
@@ -74,10 +74,9 @@ MetricType&
 LoadMetric<MetricType>::getMetric(const LoadType& type) {
     MetricType* metric;
 
-    typename vespalib::hash_map<uint32_t, MetricTypeUP>::iterator it(
-            _metrics.find(type.getId()));
+    auto it = _metrics.find(type.getId());
     if (it == _metrics.end()) {
-        it = _metrics.find(0);
+        it = _metrics.find(0u);
         assert(it != _metrics.end()); // Default should always exist
     }
     metric = it->second.get();

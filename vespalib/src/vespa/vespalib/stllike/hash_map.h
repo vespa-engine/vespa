@@ -6,7 +6,7 @@
 
 namespace vespalib {
 
-template< typename K, typename V, typename H = vespalib::hash<K>, typename EQ = std::equal_to<K>, typename M=hashtable_base::prime_modulator >
+template< typename K, typename V, typename H = vespalib::hash<K>, typename EQ = std::equal_to<>, typename M=hashtable_base::prime_modulator >
 class hash_map
 {
 public:
@@ -50,6 +50,16 @@ public:
     void erase(const_iterator it)               { return erase(it->first); }
     iterator find(const K & key)                { return _ht.find(key); }
     const_iterator find(const K & key)    const { return _ht.find(key); }
+
+    template< typename AltKey >
+    const_iterator find(const AltKey & key) const {
+        return _ht.template find<AltKey>(key);
+    }
+    template< typename AltKey>
+    iterator find(const AltKey & key) {
+        return _ht.template find<AltKey>(key);
+    }
+
     void clear();
     void resize(size_t newSize);
     void swap(hash_map & rhs);

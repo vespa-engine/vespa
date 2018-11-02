@@ -71,7 +71,7 @@ hash_map<K, V, H, EQ, M>::getMemoryUsed() const
 #define VESPALIB_HASH_MAP_INSTANTIATE_H_E(K, V, H, E) \
     VESPALIB_HASH_MAP_INSTANTIATE_H_E_M(K, V, H, E, vespalib::hashtable_base::prime_modulator)
 
-#define VESPALIB_HASH_MAP_INSTANTIATE_H(K, V, H) VESPALIB_HASH_MAP_INSTANTIATE_H_E(K, V, H, std::equal_to<K>)
+#define VESPALIB_HASH_MAP_INSTANTIATE_H(K, V, H) VESPALIB_HASH_MAP_INSTANTIATE_H_E(K, V, H, std::equal_to<>)
 
 #define VESPALIB_HASH_MAP_INSTANTIATE(K, V) VESPALIB_HASH_MAP_INSTANTIATE_H(K, V, vespalib::hash<K>)
 

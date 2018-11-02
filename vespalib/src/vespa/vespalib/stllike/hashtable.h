@@ -235,15 +235,12 @@ public:
     size_t capacity()      const { return _nodes.capacity(); }
     size_t size()          const { return _count; }
     bool empty()           const { return _count == 0; }
-    template< typename AltKey, typename AltExtract, typename AltHash, typename AltEqual >
-    iterator find(const AltKey & key, const AltExtract & altExtract);
-    template< typename AltKey, typename AltExtract, typename AltHash, typename AltEqual >
-    iterator find(const AltKey & key) { return find<AltKey, AltExtract, AltHash, AltEqual>(key, AltExtract()); }
+    template< typename AltKey>
+    iterator find(const AltKey & key);
     iterator find(const Key & key);
-    template< typename AltKey, typename AltExtract, typename AltHash, typename AltEqual >
-    const_iterator find(const AltKey & key, const AltExtract & altExtract) const;
-    template< typename AltKey, typename AltExtract, typename AltHash, typename AltEqual >
-    const_iterator find(const AltKey & key) const { return find<AltKey, AltExtract, AltHash, AltEqual>(key, AltExtract()); }
+
+    template< typename AltKey>
+    const_iterator find(const AltKey & key) const;
     const_iterator find(const Key & key) const;
     template <typename V>
     insert_result insert(V && node) {
@@ -285,7 +282,8 @@ protected:
     const Value & getByInternalIndex(size_t index) const { return _nodes[index].getValue(); }
     template <typename MoveHandler>
     void erase(MoveHandler & moveHandler, next_t h, const const_iterator & key);
-    next_t hash(const Key & key) const { return modulator(_hasher(key)); }
+    template<typename K>
+    next_t hash(const K & key) const { return modulator(_hasher(key)); }
 private:
     Modulator   _modulator;
     size_t      _count;
