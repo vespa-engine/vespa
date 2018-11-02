@@ -2,25 +2,24 @@
 package com.yahoo.language.provider;
 
 import com.google.inject.Inject;
+import com.yahoo.language.opennlp.OpenNlpLinguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.language.Linguistics;
 
 /**
- * Provides simple linguistics if no linguistics component has been explicitly configured
+ * Provides the default linguistics implementation if no linguistics component has been explicitly configured
  * (dependency injection will fallback to providers if no components of the requested type is found).
  *
  * @author bratseth
  */
-public class SimpleLinguisticsProvider implements Provider<Linguistics> {
+public class DefaultLinguisticsProvider implements Provider<Linguistics> {
 
     private final Linguistics linguistics;
 
     @SuppressWarnings("deprecation")
     @Inject
-    public SimpleLinguisticsProvider() {
-        linguistics = new SimpleLinguistics();
-    }
+    public DefaultLinguisticsProvider() { linguistics = new OpenNlpLinguistics(); }
 
     @Override
     public Linguistics get() { return linguistics; }
