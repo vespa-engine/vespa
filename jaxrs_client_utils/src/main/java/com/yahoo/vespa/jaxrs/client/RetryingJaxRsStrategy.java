@@ -4,7 +4,6 @@ package com.yahoo.vespa.jaxrs.client;
 import com.yahoo.vespa.applicationmodel.HostName;
 
 import javax.ws.rs.ProcessingException;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
