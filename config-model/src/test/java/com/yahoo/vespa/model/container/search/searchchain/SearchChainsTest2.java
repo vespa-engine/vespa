@@ -9,13 +9,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.hamcrest.Matchers.containsString;
 
 /**
  * @author gjoranv
- * @since 5.1.11
  */
 public class SearchChainsTest2 {
 
@@ -38,7 +36,8 @@ public class SearchChainsTest2 {
             chains.validate();
             fail("Expected exception when inheriting a nonexistent search chain.");
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("Missing chain 'nonexistent'"));
+            assertEquals("Missing chain 'nonexistent'.",
+                         e.getMessage());
         }
     }
 
@@ -56,12 +55,13 @@ public class SearchChainsTest2 {
             ContainerModelBuilderTest.createModel(root, clusterElem);
             fail("Expected exception when declaring chains with duplicate id.");
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("Two entities have the same component id 'same'"));
+            assertEquals("Both search chain 'same' and search chain 'same' are configured with the id 'same'. All components must have a unique id.",
+                         e.getMessage());
         }
     }
 
     @Test
-    public void fail_upon_user_declared_chain_with_same_id_as_builtin_chain() throws Exception {
+    public void fail_upon_user_declared_chain_with_same_id_as_builtin_chain() {
         final Element clusterElem = DomBuilderTest.parse(
                 "<jdisc id='cluster1' version='1.0'>",
                 ContainerModelBuilderTest.nodesXml,
@@ -73,7 +73,8 @@ public class SearchChainsTest2 {
             ContainerModelBuilderTest.createModel(root, clusterElem);
             fail("Expected exception when taking the id from a builtin chain.");
         } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("Two entities have the same component id 'vespa'"));
+            assertEquals("Both search chain 'vespa' and search chain 'vespa' are configured with the id 'vespa'. All components must have a unique id.",
+                         e.getMessage());
         }
     }
 }

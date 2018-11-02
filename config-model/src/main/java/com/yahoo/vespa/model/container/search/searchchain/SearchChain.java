@@ -28,4 +28,9 @@ public class SearchChain extends Chain<Searcher<?>> {
         return Collections.emptyList();
     }
 
+    @Override
+    public String toString() {
+        return "search chain '" + getId() + "'";
+    }
+
 }

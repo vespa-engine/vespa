@@ -78,4 +78,9 @@ public class Chain<T extends ChainedComponent<?>> extends AbstractConfigProducer
         return TYPE;
     }
 
+    @Override
+    public String toString() {
+        return "chain '" + componentId + "'";
+    }
+
 }
