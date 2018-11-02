@@ -75,7 +75,7 @@ public class DomV20ClientsBuilder {
                 int index = clients.getVespaSpoolers().size();
                 VespaSpoolerService spoolerService = new VespaSpoolerServiceBuilder(index, new VespaSpooler(feederConfig, spoolConfig)).
                         build(deployState, spoolerCfg, e);
-                if ("".equals(spoolerService.getJvmArgs()) && jvmArgs!=null) spoolerService.setJvmArgs(jvmArgs);
+                if ("".equals(spoolerService.getJvmOptions()) && jvmArgs!=null) spoolerService.setJvmOptions(jvmArgs);
                 spoolerService.setProp("index", String.valueOf(index));
                 clients.getVespaSpoolers().add(spoolerService);
             } else {

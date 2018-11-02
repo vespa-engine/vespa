@@ -295,7 +295,7 @@ public class Container extends AbstractService implements
     }
 
     public String getStartupCommand() {
-        return "PRELOAD=" + getPreLoad() + " exec vespa-start-container-daemon " + getJvmArgs() + " ";
+        return "PRELOAD=" + getPreLoad() + " exec vespa-start-container-daemon " + getJvmOptions() + " ";
     }
 
     @Override
@@ -315,15 +315,15 @@ public class Container extends AbstractService implements
 
     /** Returns the jvm arguments this should start with */
     @Override
-    public String getJvmArgs() {
-        String jvmArgs = super.getJvmArgs();
+    public String getJvmOptions() {
+        String jvmArgs = super.getJvmOptions();
         return isHostedVespa && hasDocproc()
                 ? ("".equals(jvmArgs) ? defaultHostedJVMArgs : defaultHostedJVMArgs + " " + jvmArgs)
                 : jvmArgs;
     }
 
     /** Returns the jvm args set explicitly for this node */
-    public String getAssignedJvmArgs() { return super.getJvmArgs(); }
+    public String getAssignedJvmOptions() { return super.getJvmOptions(); }
     
     private String serviceSlobrokId() {
         return "vespa/service/" + getConfigId();

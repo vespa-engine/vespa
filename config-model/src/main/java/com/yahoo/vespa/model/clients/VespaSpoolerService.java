@@ -26,7 +26,7 @@ public class VespaSpoolerService extends AbstractService implements SpoolerConfi
     }
 
     public String getStartupCommand() {
-        return "exec vespaspooler "+getJvmArgs();
+        return "exec vespaspooler "+ getJvmOptions();
     }
 
     @Override

@@ -95,12 +95,17 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     private static void verifyIgnoreJvmGCOptions(boolean isHosted) throws IOException, SAXException {
+        verifyIgnoreJvmGCOptionsIfJvmArgs(isHosted, "jvmargs", ContainerCluster.CMS);
+        verifyIgnoreJvmGCOptionsIfJvmArgs(isHosted, "jvm-options", "-XX:+UseG1GC");
+
+    }
+    private static void verifyIgnoreJvmGCOptionsIfJvmArgs(boolean isHosted, String jvmOptionsName, String expectedGC) throws IOException, SAXException {
         String servicesXml =
                 "<jdisc version='1.0'>" +
-                "  <nodes jvm-gc-options='-XX:+UseG1GC' jvmargs='-XX:+UseParNewGC'>" +
-                "    <node hostalias='mockhost'/>" +
-                "  </nodes>" +
-                "</jdisc>";
+                        "  <nodes jvm-gc-options='-XX:+UseG1GC' " + jvmOptionsName + "='-XX:+UseParNewGC'>" +
+                        "    <node hostalias='mockhost'/>" +
+                        "  </nodes>" +
+                        "</jdisc>";
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder().withServices(servicesXml).build();
         // Need to create VespaModel to make deploy properties have effect
         final MyLogger logger = new MyLogger();
@@ -115,7 +120,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         model.getConfig(qrStartBuilder, "jdisc/container.0");
         QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
-        assertEquals(ContainerCluster.CMS, qrStartConfig.jvm().gcopts());
+        assertEquals(expectedGC, qrStartConfig.jvm().gcopts());
     }
 
     @Test

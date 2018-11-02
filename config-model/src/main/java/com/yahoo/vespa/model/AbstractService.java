@@ -47,9 +47,9 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     /** The ports allocated to this Service. */
     private List<Integer> ports = new ArrayList<>();
 
-    /** The optional JVM execution args for this Service. */
+    /** The optional JVM execution options for this Service. */
     // Please keep non-null, as passed to command line in service startup
-    private String jvmArgs = "";
+    private String jvmOptions = "";
 
     /** The optional PRELOAD libraries for this Service. */
     // Please keep non-null, as passed to command line in service startup
@@ -399,23 +399,23 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     }
 
     /** Optional execution args for this service */
-    public String getJvmArgs() {
-        return jvmArgs;
+    public String getJvmOptions() {
+        return jvmOptions;
     }
-    public void setJvmArgs(String args) {
-        jvmArgs = (args == null) ? "" : args;
+    public void setJvmOptions(String args) {
+        jvmOptions = (args == null) ? "" : args;
     }
-    public void appendJvmArgs(String args) {
+    public void appendJvmOptions(String args) {
         if ((args != null) && ! "".equals(args)) {
-            setJvmArgs(jvmArgs + getSeparator(jvmArgs) + args);
+            setJvmOptions(jvmOptions + getSeparator(jvmOptions) + args);
         }
     }
     private static String getSeparator(String current) {
         return ("".equals(current)) ? "" : " ";
     }
-    public void prependJvmArgs(String args) {
+    public void prependJvmOptions(String args) {
         if ((args != null) && ! "".equals(args)) {
-            setJvmArgs(args + getSeparator(jvmArgs) + jvmArgs);
+            setJvmOptions(args + getSeparator(jvmOptions) + jvmOptions);
         }
     }
     public String getPreLoad() { return preload; }
