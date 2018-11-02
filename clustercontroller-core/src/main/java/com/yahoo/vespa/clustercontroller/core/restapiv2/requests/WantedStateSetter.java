@@ -22,5 +22,6 @@ public interface WantedStateSetter {
                     Map<String, UnitState> newStates,
                     Node node,
                     NodeStateOrHostInfoChangeHandler stateListener,
-                    ClusterState currentClusterState) throws StateRestApiException;
+                    ClusterState currentClusterState,
+                    boolean probe) throws StateRestApiException;
 }
