@@ -159,8 +159,8 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void requireThatJvmGCOptionsIsHonoured()  throws IOException, SAXException {
         final Zone US_EAST_3 = new Zone(Environment.prod, RegionName.from("us-east-3"));
-        verifyJvmGCOptions(false, Zone.defaultZone(),ContainerCluster.CMS);
-        verifyJvmGCOptions(false, US_EAST_3, ContainerCluster.CMS);
+        verifyJvmGCOptions(false, Zone.defaultZone(),ContainerCluster.G1GC);
+        verifyJvmGCOptions(false, US_EAST_3, ContainerCluster.G1GC);
         verifyJvmGCOptions(true, Zone.defaultZone(), ContainerCluster.CMS);
         verifyJvmGCOptions(true, US_EAST_3, ContainerCluster.G1GC);
     }
