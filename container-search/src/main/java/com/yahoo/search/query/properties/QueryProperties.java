@@ -217,9 +217,9 @@ public class QueryProperties extends Properties {
                 }
                 else if (key.size() == 3 && key.get(1).equals(Ranking.SOFTTIMEOUT)) {
                     SoftTimeout soft = ranking.getSoftTimeout();
-                    if (key.last().equals(SoftTimeout.ENABLE)) soft.setEnable(asBoolean(value, false));
-                    if (key.last().equals(SoftTimeout.FACTOR)) soft.setFactor(asDouble(value, 0.50));
-                    if (key.last().equals(SoftTimeout.TAILCOST)) soft.setTailcost(asDouble(value, 0.10));
+                    if (key.last().equals(SoftTimeout.ENABLE)) soft.setEnable(asBoolean(value, true));
+                    if (key.last().equals(SoftTimeout.FACTOR)) soft.setFactor(asDouble(value, null));
+                    if (key.last().equals(SoftTimeout.TAILCOST)) soft.setTailcost(asDouble(value, null));
                 }
                 else if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
                     Matching matching = ranking.getMatching();

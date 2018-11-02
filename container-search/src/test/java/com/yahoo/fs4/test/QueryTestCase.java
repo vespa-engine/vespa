@@ -12,6 +12,7 @@ import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.WeightedSetItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
+import com.yahoo.search.query.ranking.SoftTimeout;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -52,6 +53,8 @@ public class QueryTestCase {
     @Test
     public void testEncodeQueryPacketWithSomeAdditionalFeatures() {
         Query query = new Query("/?query=chain&dataset=10&type=phrase&timeout=0");
+        query.properties().set(SoftTimeout.enableProperty, false);
+
         // Because the rank mapping now needs config and a searcher,
         // we do the sledgehammer dance:
         query.getRanking().setProfile("two");
@@ -79,7 +82,7 @@ public class QueryTestCase {
                                 "&ranking.features.query(foo)=30.3&ranking.features.query(bar)=0" +
                                 "&ranking.properties.property.p1=v1&ranking.properties.property.p2=v2" +
                                 "&pos.ll=S22.4532;W123.9887&pos.radius=3&pos.attribute=place&ranking.freshness=37" +
-                                "&model.searchPath=7/3");
+                                "&model.searchPath=7/3&ranking.softtimeout.enable=false");
         query.getRanking().setFreshness(new Freshness("123456"));
         query.getRanking().setSorting("+field1 -field2");
         query.getRanking().setProfile("two");
@@ -105,7 +108,7 @@ public class QueryTestCase {
                                 "&ranking.features.query(foo)=30.3&ranking.features.query(bar)=0" +
                                 "&ranking.properties.property.p1=v1&ranking.properties.property.p2=v2" +
                                 "&pos.ll=S22.4532;W123.9887&pos.radius=3&pos.attribute=place&ranking.freshness=37" +
-                                "&model.searchPath=7/3");
+                                "&model.searchPath=7/3&ranking.softtimeout.enable=false");
         query.getRanking().setFreshness("123456");
         query.getRanking().setSorting("+field1 -field2");
         query.getRanking().setProfile("two");
@@ -127,6 +130,7 @@ public class QueryTestCase {
     @Test
     public void testEncodeQueryPacketWithLabelsConnectivityAndSignificance() {
         Query query = new Query();
+        query.properties().set(SoftTimeout.enableProperty, false);
         AndItem and = new AndItem();
         WeightedSetItem taggable1 = new WeightedSetItem("field1");
         taggable1.setLabel("foo");

@@ -54,6 +54,7 @@ public final class VespaHeaders {
         }
     }
 
+    /** Returns true if this is a benchmarking request, according to headers */
     public static boolean benchmarkOutput(com.yahoo.container.jdisc.HttpRequest request) {
         return request.getHeader(BenchmarkingHeaders.REQUEST) != null;
     }
@@ -69,8 +70,7 @@ public final class VespaHeaders {
      * @param coverage          The Coverage to read data from.
      */
     public static void benchmarkOutput(HeaderFields responseHeaders, boolean benchmarkCoverage,
-                                       Timing t, HitCounts c, int errorCount, Coverage coverage)
-    {
+                                       Timing t, HitCounts c, int errorCount, Coverage coverage) {
         final long renderStartTime = System.currentTimeMillis();
         if (c != null) {
             // Fill inn response getHeaders
