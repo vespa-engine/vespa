@@ -889,13 +889,14 @@ FastS_FNET_Search::CheckCoverage()
             }
         }
     }
+    bool missingReplies = (askedButNotAnswered != 0) || (nodesQueried != nodesReplied);
     const ssize_t missingParts = cntNone - (_dataset->getSearchableCopies() - 1);
-    if ((missingParts > 0) && (cntNone != _nodes.size())) {
+    if (((missingParts > 0) && (cntNone != _nodes.size())) || (missingReplies && useAdaptiveTimeout())) {
         // TODO This is a dirty way of anticipating missing coverage.
         // It should be done differently
         activeDocs += missingParts * activeDocs/(_nodes.size() - cntNone);
     }
-    if ((askedButNotAnswered != 0) || (nodesQueried != nodesReplied)) {
+    if (missingReplies && useAdaptiveTimeout()) {
         degradedReason |= search::engine::SearchReply::Coverage::ADAPTIVE_TIMEOUT;
     }
     _util.SetCoverage(covDocs, activeDocs, soonActiveDocs, degradedReason, nodesQueried, nodesReplied);
