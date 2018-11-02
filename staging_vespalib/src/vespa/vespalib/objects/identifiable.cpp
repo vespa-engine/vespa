@@ -27,8 +27,6 @@ public:
     bool erase(RuntimeClass * c);
     const RuntimeClass * classFromId(unsigned id) const;
     const RuntimeClass * classFromName(const char * name) const;
-    const char * id2Name(unsigned id) const;
-    unsigned name2Id(const char * name) const;
     bool empty() const { return _listById.empty(); }
 private:
     struct HashId  {
@@ -39,19 +37,15 @@ private:
         bool operator() (const RuntimeClass * a, const RuntimeClass * b) const { return a->id() == b->id(); }
         bool operator() (const RuntimeClass * a, uint32_t b) const { return a->id() == b; }
         bool operator() (uint32_t a, const RuntimeClass * b) const { return a == b->id(); }
-
-
     };
     struct HashName  {
         uint32_t operator() (const RuntimeClass * f) const { return hashValue(f->name()); }
         uint32_t operator() (const char * name) const { return hashValue(name); }
-
     };
     struct EqualName {
         bool operator() (const RuntimeClass * a, const RuntimeClass * b) const { return strcmp(a->name(), b->name()) == 0; }
         bool operator() (const RuntimeClass * a, const char * b) const { return strcmp(a->name(), b) == 0; }
         bool operator() (const char * a, const RuntimeClass * b) const { return strcmp(a, b->name()) == 0; }
-
     };
     using IdList =  hash_set<RuntimeClass *, HashId, EqualId>;
     using NameList = hash_set<RuntimeClass *, HashName, EqualName>;
@@ -131,7 +125,7 @@ Identifiable::RuntimeClass::RuntimeClass(RuntimeInfo * info_) :
             }
         }
     }
-    if (_register == NULL) {
+    if (_register == nullptr) {
         _register = new Register();
     }
     if (! _register->append(this)) {
@@ -147,7 +141,7 @@ Identifiable::RuntimeClass::~RuntimeClass()
     }
     if (_register->empty()) {
         delete _register;
-        _register = NULL;
+        _register = nullptr;
     }
 }
 
@@ -157,20 +151,6 @@ bool Identifiable::RuntimeClass::inherits(unsigned cid) const
     for (cur = _rt; (cur != &Identifiable::_RTInfo) && cid != cur->_id; cur = cur->_base) { }
     return (cid == cur->_id);
 }
-
-class SortById : public std::binary_function<const Identifiable::RuntimeClass *, const Identifiable::RuntimeClass *, bool> {
-public:
-    bool operator() (const Identifiable::RuntimeClass * x, const Identifiable::RuntimeClass * y) const {
-        return x->id() < y->id();
-    }
-};
-
-class SortByName : public std::binary_function<const Identifiable::RuntimeClass *, const Identifiable::RuntimeClass *, bool> {
-public:
-    bool operator() (const Identifiable::RuntimeClass * x, const Identifiable::RuntimeClass * y) const {
-        return strcmp(x->name(), y->name()) < 0;
-    }
-};
 
 Serializer & operator << (Serializer & os, const Identifiable & obj)
 {
@@ -215,16 +195,16 @@ Identifiable::UP Identifiable::create(Deserializer & is)
     is.get(classIdField, cid);
     UP obj;
     const Identifiable::RuntimeClass *rtc = Identifiable::classFromId(cid);
-    if (rtc == NULL) {
-        if ((_classLoader != NULL) && _classLoader->hasClass(cid)) {
+    if (rtc == nullptr) {
+        if ((_classLoader != nullptr) && _classLoader->hasClass(cid)) {
             _classLoader->loadClass(cid);
             rtc = Identifiable::classFromId(cid);
-            if (rtc == NULL) {
+            if (rtc == nullptr) {
                 throw std::runtime_error(make_string("Failed loading class for Identifiable with classId %d(%0x)", cid, cid));
             }
         }
     }
-    if (rtc != NULL) {
+    if (rtc != nullptr) {
         obj.reset(rtc->create());
         if (obj.get()) {
             obj->deserialize(is);

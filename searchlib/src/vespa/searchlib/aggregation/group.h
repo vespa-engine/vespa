@@ -55,20 +55,6 @@ public:
         size_t operator() (const ResultNode & arg) const { return arg.hash(); }
         const GroupList *_v;
     };
-    struct GroupResult {
-        GroupResult(const GroupList * v) : _v(v) { }
-        const ResultNode & operator() (uint32_t arg) const { return (*_v)[arg]->getId(); }
-        const GroupList *_v;
-    };
-    struct ResultLess : public std::binary_function<ResultNode::CP, ResultNode::CP, bool> {
-        bool operator()(const ResultNode::CP & a, const ResultNode::CP & b) { return a->cmpFast(*b) < 0; }
-    };
-    struct ResultEqual : public std::binary_function<ResultNode, ResultNode, bool> {
-        bool operator()(const ResultNode & a, const ResultNode & b) { return a.cmpFast(b) == 0; }
-    };
-    struct ResultHash {
-        size_t operator() (const ResultNode & arg) const { return arg.hash(); }
-    };
 
     using GroupingLevelList = std::vector<GroupingLevel>;
 
@@ -198,12 +184,12 @@ public:
         return _aggr.groupSingle(result, rank, level);
     }
 
-    bool hasId() const { return (_id.get() != NULL); }
+    bool hasId() const { return static_cast<bool>(_id); }
     const ResultNode &getId() const { return *_id; }
 
     Group unchain() const { return *this; }
 
-    Group &setId(const ResultNode &id)  { _id.reset(static_cast<ResultNode *>(id.clone())); return *this; }
+    Group &setId(const ResultNode &id)  { _id.reset(id.clone()); return *this; }
     Group &addAggregationResult(ExpressionNode::UP result) {
         _aggr.addAggregationResult(std::move(result));
         return *this;
