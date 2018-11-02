@@ -97,11 +97,10 @@ public class DeploymentMetricsMaintainer extends Maintainer {
             pool.awaitTermination(30, TimeUnit.MINUTES);
             feedMetrics(slime);
             if (lastException.get() != null) {
-                log.log(Level.WARNING, String.format("Failed to query metrics service for %d/%d applications. Last error: %s. Retrying in %s",
+                log.log(Level.WARNING, String.format("Failed to query metrics service for %d/%d applications. Retrying in %s. Stacktrace of last error: ",
                                                      failures.get(),
                                                      applicationList.size(),
-                                                     Exceptions.toMessageString(lastException.get()),
-                                                     maintenanceInterval()));
+                                                     maintenanceInterval()),lastException.get());
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
