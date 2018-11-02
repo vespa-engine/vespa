@@ -209,7 +209,7 @@
 
     </server>
 
-    <nodes jvmargs="-XX:+PrintGCDetails -XX:+PrintGCTimeStamps">
+    <nodes jvm-options="-XX:+PrintGCDetails -XX:+PrintGCTimeStamps">
       <node hostalias="host1" />
       <node hostalias="host1">
         <server-port id="myServer" port="4090" />

@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 public class VespaDomBuilder extends VespaModelBuilder {
 
     public static final String JVMARGS_ATTRIB_NAME = "jvmargs";
+    public static final String JVM_OPTIONS = "jvm-options";
     public static final String JVM_GC_OPTIONS = "jvm-gc-options";
     public static final String PRELOAD_ATTRIB_NAME = "preload";        // Intended for vespa engineers
     public static final String MMAP_NOCORE_LIMIT = "mmap-core-limit";  // Intended for vespa engineers
@@ -143,8 +144,12 @@ public class VespaDomBuilder extends VespaModelBuilder {
         {
             initializeProducer(t, deployState, producerSpec);
             if (producerSpec != null) {
-                if (producerSpec.hasAttribute(JVMARGS_ATTRIB_NAME)) {
-                    t.appendJvmArgs(producerSpec.getAttribute(JVMARGS_ATTRIB_NAME));
+                if (producerSpec.hasAttribute(JVM_OPTIONS)) {
+                    t.appendJvmOptions(producerSpec.getAttribute(JVM_OPTIONS));
+                } else {
+                    if (producerSpec.hasAttribute(JVMARGS_ATTRIB_NAME)) {
+                        t.appendJvmOptions(producerSpec.getAttribute(JVMARGS_ATTRIB_NAME));
+                    }
                 }
                 if (producerSpec.hasAttribute(PRELOAD_ATTRIB_NAME)) {
                     t.setPreLoad(producerSpec.getAttribute(PRELOAD_ATTRIB_NAME));

@@ -98,8 +98,8 @@ public interface Service extends ConfigProducer {
      */
     String getHostName();
 
-    /** Optional JVM execution args for this service */
-    String getJvmArgs();
+    /** Optional JVM execution options for this service */
+    String getJvmOptions();
 
     /**
      * Computes and returns the i'th port for this service, based on

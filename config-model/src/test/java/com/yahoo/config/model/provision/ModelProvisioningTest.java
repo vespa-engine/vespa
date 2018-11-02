@@ -86,7 +86,7 @@ public class ModelProvisioningTest {
                         "  <handler id='myHandler'>" +
                         "    <component id='injected' />" +
                         "  </handler>" +
-                        "  <nodes count='2' allocated-memory='45%' jvm-gc-options='-XX:+UseParNewGC' jvmargs='-verbosegc' preload='lib/blablamalloc.so'/>" +
+                        "  <nodes count='2' allocated-memory='45%' jvm-gc-options='-XX:+UseParNewGC' jvm-options='-verbosegc' preload='lib/blablamalloc.so'/>" +
                         "</jdisc>" +
                         "</services>";
         String hosts ="<hosts>"
@@ -127,16 +127,16 @@ public class ModelProvisioningTest {
         assertThat(mydisc2.getContainers().get(1).getConfigId(), is("mydisc2/container.1"));
         assertTrue(mydisc2.getContainers().get(1).isInitialized());
 
-        assertThat(mydisc.getContainers().get(0).getJvmArgs(), is(""));
-        assertThat(mydisc.getContainers().get(1).getJvmArgs(), is(""));
-        assertThat(mydisc.getContainers().get(2).getJvmArgs(), is(""));
+        assertThat(mydisc.getContainers().get(0).getJvmOptions(), is(""));
+        assertThat(mydisc.getContainers().get(1).getJvmOptions(), is(""));
+        assertThat(mydisc.getContainers().get(2).getJvmOptions(), is(""));
         assertThat(mydisc.getContainers().get(0).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
         assertThat(mydisc.getContainers().get(1).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
         assertThat(mydisc.getContainers().get(2).getPreLoad(), is(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so")));
         assertThat(mydisc.getMemoryPercentage(), is(Optional.empty()));
 
-        assertThat(mydisc2.getContainers().get(0).getJvmArgs(), is("-verbosegc"));
-        assertThat(mydisc2.getContainers().get(1).getJvmArgs(), is("-verbosegc"));
+        assertThat(mydisc2.getContainers().get(0).getJvmOptions(), is("-verbosegc"));
+        assertThat(mydisc2.getContainers().get(1).getJvmOptions(), is("-verbosegc"));
         assertThat(mydisc2.getContainers().get(0).getPreLoad(), is("lib/blablamalloc.so"));
         assertThat(mydisc2.getContainers().get(1).getPreLoad(), is("lib/blablamalloc.so"));
         assertThat(mydisc2.getMemoryPercentage(), is(Optional.of(45)));
@@ -261,13 +261,13 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testCombinedClusterWithJvmArgs() {
+    public void testCombinedClusterWithJvmOptions() {
         String xmlWithNodes =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
                 "<services>" +
                 "  <container version='1.0' id='container1'>" +
                 "     <document-processing/>" +
-                "     <nodes of='content1' jvmargs='testarg'/>" +
+                "     <nodes of='content1' jvm-options='testoption'/>" +
                 "  </container>" +
                 "  <content version='1.0' id='content1'>" +
                 "     <redundancy>2</redundancy>" +
@@ -284,7 +284,7 @@ public class ModelProvisioningTest {
         assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
         assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
         for (Container container : model.getContainerClusters().get("container1").getContainers())
-            assertTrue(container.getJvmArgs().contains("testarg"));
+            assertTrue(container.getJvmOptions().contains("testoption"));
     }
 
     @Test
@@ -1225,6 +1225,54 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testJvmArgs() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                        "<jdisc version='1.0'>" +
+                        "  <search/>" +
+                        "  <nodes jvmargs='xyz' count='3'/>" +
+                        "</jdisc>";
+        int numberOfHosts = 3;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals("xyz", model.getContainerClusters().get("jdisc").getContainers().get(0).getAssignedJvmOptions());
+    }
+
+    @Test
+    public void testJvmOptions() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                        "<jdisc version='1.0'>" +
+                        "  <search/>" +
+                        "  <nodes jvm-options='xyz' count='3'/>" +
+                        "</jdisc>";
+        int numberOfHosts = 3;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals("xyz", model.getContainerClusters().get("jdisc").getContainers().get(0).getAssignedJvmOptions());
+    }
+
+    @Test
+    public void testJvmOptionsOverridesJvmArgs() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                        "<jdisc version='1.0'>" +
+                        "  <search/>" +
+                        "  <nodes jvm-options='xyz' jvmargs='abc' count='3'/>" +
+                        "</jdisc>";
+        int numberOfHosts = 3;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals("xyz", model.getContainerClusters().get("jdisc").getContainers().get(0).getAssignedJvmOptions());
+    }
+
+    @Test
     public void testUsingHostaliasWithProvisioner() {
         String services =
                         "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -1418,7 +1466,7 @@ public class ModelProvisioningTest {
                 "    <document-processing/>\n" +
                 "    <document-api/>\n" +
                 "    <search/>\n" +
-                "    <nodes jvmargs=\"-Xms512m -Xmx512m\">\n" +
+                "    <nodes jvm-options=\"-Xms512m -Xmx512m\">\n" +
                 "      <node hostalias=\"vespa-1\"/>\n" +
                 "    </nodes>\n" +
                 "  </container>\n" +
@@ -1477,7 +1525,7 @@ public class ModelProvisioningTest {
                 "    <document-processing/>\n" +
                 "    <document-api/>\n" +
                 "    <search/>\n" +
-                "    <nodes jvmargs=\"-Xms512m -Xmx512m\">\n" +
+                "    <nodes jvm-options=\"-Xms512m -Xmx512m\">\n" +
                 "      <node hostalias=\"vespa-1\"/>\n" +
                 "      <node hostalias=\"vespa-2\"/>\n" +
                 "      <node hostalias=\"vespa-3\"/>\n" +

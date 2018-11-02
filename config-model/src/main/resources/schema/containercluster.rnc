@@ -211,6 +211,7 @@ DocumentApi = element document-api {
 
 NodesOfContainerCluster = element nodes {
     attribute jvmargs { text }? &
+    attribute jvm-options { text }? &
     attribute jvm-gc-options { text }? &
     attribute preload { text }? &
     attribute allocated-memory { text }? &

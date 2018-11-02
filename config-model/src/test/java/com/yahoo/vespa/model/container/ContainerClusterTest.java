@@ -168,15 +168,15 @@ public class ContainerClusterTest {
         addContainer(root.deployLogger(), cluster, "c1", "host-c1");
         assertEquals(1, cluster.getContainers().size());
         Container container = cluster.getContainers().get(0);
-        verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmArgs());
-        container.setJvmArgs("initial");
-        verifyJvmArgs(isHosted, hasDocProc, "initial", container.getJvmArgs());
-        container.prependJvmArgs("ignored");
-        verifyJvmArgs(isHosted, hasDocProc, "ignored initial", container.getJvmArgs());
-        container.appendJvmArgs("override");
-        verifyJvmArgs(isHosted, hasDocProc, "ignored initial override", container.getJvmArgs());
-        container.setJvmArgs(null);
-        verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmArgs());
+        verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmOptions());
+        container.setJvmOptions("initial");
+        verifyJvmArgs(isHosted, hasDocProc, "initial", container.getJvmOptions());
+        container.prependJvmOptions("ignored");
+        verifyJvmArgs(isHosted, hasDocProc, "ignored initial", container.getJvmOptions());
+        container.appendJvmOptions("override");
+        verifyJvmArgs(isHosted, hasDocProc, "ignored initial override", container.getJvmOptions());
+        container.setJvmOptions(null);
+        verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmOptions());
     }
 
     @Test
@@ -259,10 +259,10 @@ public class ContainerClusterTest {
         ContainerCluster cluster = createContainerCluster(root, false);
         addContainer(root.deployLogger(), cluster, "c1", "host-c1");
         Container container = cluster.getContainers().get(0);
-        container.setJvmArgs("");
-        String empty = container.getJvmArgs();
-        container.setJvmArgs(null);
-        assertEquals(empty, container.getJvmArgs());
+        container.setJvmOptions("");
+        String empty = container.getJvmOptions();
+        container.setJvmOptions(null);
+        assertEquals(empty, container.getJvmOptions());
     }
 
     @Test

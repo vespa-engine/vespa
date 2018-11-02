@@ -26,7 +26,7 @@ public class StorageGroupTest {
                 "<content id=\"storage\">\n" +
                         "  <documents/>" +
                         "  <group>\n" +
-                        "    <node jvmargs=\"foo\" hostalias=\"mockhost\" distribution-key=\"0\"/>\n" +
+                        "    <node hostalias=\"mockhost\" distribution-key=\"0\"/>\n" +
                         "    <node hostalias=\"mockhost\" distribution-key=\"1\"/>\n" +
                         "  </group>\n" +
                         "</content>"
