@@ -184,6 +184,7 @@ public class FastSearcherTestCase {
                                                      documentdbConfigWithOneDb);
 
         Query query = new Query("?query=foo&model.restrict=testDb");
+        query.getRanking().getSoftTimeout().setEnable(false);
         query.prepare();
         doSearch(fastSearcher, query, 0, 10);
 
