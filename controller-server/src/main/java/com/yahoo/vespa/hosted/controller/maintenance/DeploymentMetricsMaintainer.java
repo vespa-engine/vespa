@@ -13,7 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
 import com.yahoo.vespa.hosted.controller.authority.config.ApiAuthorityConfig;
-import com.yahoo.yolean.Exceptions;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -155,11 +155,14 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     }
 
     private void feedMetrics(Slime slime) throws IOException {
-        String uri = baseUris.get(0) + "/metricforwarding/v1/deploymentmetrics/"; // For now, we only feed to one controller
+        String uri = baseUris.get(0) + "/metricforwarding/v1/deploymentmetrics"; // For now, we only feed to one controller
         CloseableHttpClient httpClient = HttpClientBuilder.create().build();
         HttpPost httpPost = new HttpPost(uri);
         httpPost.setEntity(new ByteArrayEntity(SlimeUtils.toJsonBytes(slime)));
-        httpClient.execute(httpPost);
+        HttpResponse response = httpClient.execute(httpPost);
+        if (response.getStatusLine().getStatusCode() != 200) {
+            log.log(Level.WARNING, "Could not feed metrics. Reason: " + response.getStatusLine().getReasonPhrase());
+        }
     }
 
     private static RotationStatus from(com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus status) {

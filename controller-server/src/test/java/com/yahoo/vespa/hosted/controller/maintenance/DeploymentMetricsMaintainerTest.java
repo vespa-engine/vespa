@@ -72,13 +72,13 @@ public class DeploymentMetricsMaintainerTest {
         metricsService.setZoneIn(assignedRotation, "proxy.prod.us-west-1.vip.test");
         metricsService.setZoneOut(assignedRotation,"proxy.prod.us-east-3.vip.test");
 
-        wireMockRule.stubFor(post(urlEqualTo("/metricforwarding/v1/deploymentmetrics/"))
+        wireMockRule.stubFor(post(urlEqualTo("/metricforwarding/v1/deploymentmetrics"))
                 .willReturn(aResponse().withStatus(200)));
         maintainer.maintain();
 
         List<ServeEvent> allServeEvents = getAllServeEvents();
         assertEquals(1, allServeEvents.size());
-        LoggedRequest request = findAll(postRequestedFor(urlEqualTo("/metricforwarding/v1/deploymentmetrics/"))).get(0);
+        LoggedRequest request = findAll(postRequestedFor(urlEqualTo("/metricforwarding/v1/deploymentmetrics"))).get(0);
 
         Slime slime = SlimeUtils.jsonToSlime(request.getBody());
         Inspector inspector = slime.get().entry(0);
