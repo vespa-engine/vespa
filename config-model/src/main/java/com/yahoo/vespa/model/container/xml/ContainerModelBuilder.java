@@ -477,8 +477,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVM_OPTIONS);
             if (nodesElement.hasAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME)) {
                 String jvmArgs = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
-                deployLogger.log(Level.WARNING, "You have specified both jvm-options='" + jvmOptions + "'" +
-                        " and deprecated jvmargs='" + jvmArgs + "'. 'jvmargs' will be ignored");
+                throw new IllegalArgumentException("You have specified both jvm-options='" + jvmOptions + "'" +
+                        " and deprecated jvmargs='" + jvmArgs + "'. Merge jvmargs into jvm-options.");
             }
         } else {
             jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);

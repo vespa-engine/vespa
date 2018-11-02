@@ -1267,9 +1267,13 @@ public class ModelProvisioningTest {
         int numberOfHosts = 3;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
-        VespaModel model = tester.createModel(services, true);
-        assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
-        assertEquals("xyz", model.getContainerClusters().get("jdisc").getContainers().get(0).getAssignedJvmOptions());
+        try {
+            tester.createModel(services, true);
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("You have specified both jvm-options='xyz' and deprecated jvmargs='abc'. Merge jvmargs into jvm-options.", e.getMessage());
+        }
     }
 
     @Test
