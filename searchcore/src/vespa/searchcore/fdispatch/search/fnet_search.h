@@ -328,6 +328,7 @@ public:
     char *ST_GetSortData() { return _util.GetSortData(); }
     FastS_QueryResult *ST_GetQueryResult() { return _util.GetQueryResult(); }
 
+    bool useAdaptiveTimeout() const;
     void adjustQueryTimeout();
     void adjustDocsumTimeout();
     uint32_t getRequestedQueries() const { return _queryNodes; }

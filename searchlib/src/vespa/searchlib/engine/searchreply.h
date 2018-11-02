@@ -53,8 +53,8 @@ public:
         Coverage & degradeMatchPhase() { _degradeReason |= MATCH_PHASE; return *this; }
         Coverage & degradeTimeout() { _degradeReason |= TIMEOUT; return *this; }
         Coverage & degradeAdaptiveTimeout() { _degradeReason |= ADAPTIVE_TIMEOUT; return *this; }
-    private:
         enum DegradeReason {MATCH_PHASE=0x01, TIMEOUT=0x02, ADAPTIVE_TIMEOUT=0x04};
+    private:
         uint64_t _covered;
         uint64_t _active;
         uint64_t _soonActive;
