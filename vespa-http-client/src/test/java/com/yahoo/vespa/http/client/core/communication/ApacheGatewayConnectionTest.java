@@ -192,7 +192,7 @@ public class ApacheGatewayConnectionTest {
     @Test
     public void testCompressedWriteOperations() throws Exception {
         final Endpoint endpoint = Endpoint.create("hostname", 666, false);
-        final FeedParams feedParams = new FeedParams.Builder().build();
+        final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.XML_UTF8).build();
         final String clusterSpecificRoute = "";
         final ConnectionParams connectionParams = new ConnectionParams.Builder()
                 .setUseCompression(true)
