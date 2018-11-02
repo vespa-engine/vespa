@@ -228,7 +228,7 @@ public class ContainerClusterTest {
         MockRoot root = createRoot(false);
         ContainerCluster cluster = createClusterControllerCluster(root);
         addClusterController(root.deployLogger(), cluster, "host-c1");
-        assertFalse(contains("com.yahoo.language.provider.SimpleLinguisticsProvider", cluster.getAllComponents()));
+        assertFalse(contains("com.yahoo.language.provider.DefaultLinguisticsProvider", cluster.getAllComponents()));
     }
 
     @Test
@@ -236,7 +236,7 @@ public class ContainerClusterTest {
         MockRoot root = createRoot(false);
         ContainerCluster cluster = createContainerCluster(root, false);
         addClusterController(root.deployLogger(), cluster, "host-c1");
-        assertTrue(contains("com.yahoo.language.provider.SimpleLinguisticsProvider", cluster.getAllComponents()));
+        assertTrue(contains("com.yahoo.language.provider.DefaultLinguisticsProvider", cluster.getAllComponents()));
     }
 
     private static boolean contains(String componentId, Collection<Component<?, ?>> componentList) {
