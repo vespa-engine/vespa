@@ -13,14 +13,14 @@ public class SoftTimeoutTestCase {
     @Test
     public void testDefaultsInQuery() {
         Query query=new Query("?query=test");
-        assertNull(query.getRanking().getSoftTimeout().getEnable());
+        assertTrue(query.getRanking().getSoftTimeout().getEnable());
         assertNull(query.getRanking().getSoftTimeout().getFactor());
         assertNull(query.getRanking().getSoftTimeout().getTailcost());
     }
 
     @Test
     public void testQueryOverride() {
-        Query query=new Query("?query=test&ranking.softtimeout.enable&ranking.softtimeout.factor=0.7&ranking.softtimeout.tailcost=0.3");
+        Query query=new Query("?query=test&ranking.softtimeout.factor=0.7&ranking.softtimeout.tailcost=0.3");
         assertTrue(query.getRanking().getSoftTimeout().getEnable());
         assertEquals(Double.valueOf(0.7), query.getRanking().getSoftTimeout().getFactor());
         assertEquals(Double.valueOf(0.3), query.getRanking().getSoftTimeout().getTailcost());
@@ -30,6 +30,14 @@ public class SoftTimeoutTestCase {
         assertEquals("0.3", query.getRanking().getProperties().get("vespa.softtimeout.tailcost").get(0));
     }
 
+    @Test
+    public void testDisable() {
+        Query query=new Query("?query=test&ranking.softtimeout.enable=false");
+        assertFalse(query.getRanking().getSoftTimeout().getEnable());
+        query.prepare();
+        assertTrue(query.getRanking().getProperties().isEmpty());
+    }
+
     private void verifyException(String key, String value) {
         try {
             new Query("?query=test&ranking.softtimeout."+key+"="+value);
@@ -37,7 +45,7 @@ public class SoftTimeoutTestCase {
         } catch (QueryException e) {
             assertEquals("Invalid request parameter", e.getMessage());
             assertEquals("Could not set 'ranking.softtimeout." + key + "' to '" + value +"'", e.getCause().getMessage());
-            assertEquals(key + " must be in the range [0.0, 1.0]. It is " + value, e.getCause().getCause().getMessage());
+            assertEquals(key + " must be in the range [0.0, 1.0], got " + value, e.getCause().getCause().getMessage());
         }
     }
     @Test
