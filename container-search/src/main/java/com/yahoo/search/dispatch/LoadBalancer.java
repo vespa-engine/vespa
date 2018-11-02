@@ -2,12 +2,14 @@
 package com.yahoo.search.dispatch;
 
 import com.yahoo.search.Query;
-import com.yahoo.search.dispatch.SearchCluster.Group;
+import com.yahoo.search.dispatch.searchcluster.Group;
+import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,18 +49,19 @@ public class LoadBalancer {
      * {@link #releaseGroup} symmetrically for each taken allocation.
      *
      * @param query the query for which this allocation is made
+     * @param rejectedGroups if not null, the load balancer will only return groups with IDs not in the set
      * @return The node group to target, or <i>empty</i> if the internal dispatch logic cannot be used
      */
-    public Optional<Group> takeGroupForQuery(Query query) {
+    public Optional<Group> takeGroupForQuery(Query query, Set<Integer> rejectedGroups) {
         if (scoreboard == null) {
             return Optional.empty();
         }
 
-        return allocateNextGroup();
+        return allocateNextGroup(rejectedGroups);
     }
 
     /**
-     * Release an allocation given by {@link #takeGroupForQuery(Query)}. The release must be done exactly once for each allocation.
+     * Release an allocation given by {@link #takeGroupForQuery}. The release must be done exactly once for each allocation.
      *
      * @param group
      *            previously allocated group
@@ -74,7 +77,7 @@ public class LoadBalancer {
         }
     }
 
-    private Optional<Group> allocateNextGroup() {
+    private Optional<Group> allocateNextGroup(Set<Integer> rejectedGroups) {
         synchronized (this) {
             GroupSchedule bestSchedule = null;
             int bestIndex = needle;
@@ -82,9 +85,11 @@ public class LoadBalancer {
             int index = needle;
             for (int i = 0; i < scoreboard.size(); i++) {
                 GroupSchedule sched = scoreboard.get(index);
-                if (sched.isPreferredOver(bestSchedule)) {
-                    bestSchedule = sched;
-                    bestIndex = index;
+                if (rejectedGroups == null || !rejectedGroups.contains(sched.group.id())) {
+                    if (sched.isPreferredOver(bestSchedule)) {
+                        bestSchedule = sched;
+                        bestIndex = index;
+                    }
                 }
                 index = nextScoreboardIndex(index);
             }

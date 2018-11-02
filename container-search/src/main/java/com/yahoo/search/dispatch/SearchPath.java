@@ -3,7 +3,9 @@ package com.yahoo.search.dispatch;
 
 import com.google.common.collect.ImmutableCollection;
 import com.yahoo.collections.Pair;
-import com.yahoo.search.dispatch.SearchCluster.Group;
+import com.yahoo.search.dispatch.searchcluster.Group;
+import com.yahoo.search.dispatch.searchcluster.Node;
+import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,7 +39,7 @@ public class SearchPath {
      * @return list of nodes chosen with the search path, or an empty list in which
      *         case some other node selection logic should be used
      */
-    public static List<SearchCluster.Node> selectNodes(String searchPath, SearchCluster cluster) {
+    public static List<Node> selectNodes(String searchPath, SearchCluster cluster) {
         Optional<SearchPath> sp = SearchPath.fromString(searchPath);
         if (sp.isPresent()) {
             return sp.get().mapToNodes(cluster);
@@ -46,7 +48,7 @@ public class SearchPath {
         }
     }
 
-    public static Optional<SearchPath> fromString(String path) {
+    static Optional<SearchPath> fromString(String path) {
         if (path == null || path.isEmpty()) {
             return Optional.empty();
         }
@@ -73,23 +75,23 @@ public class SearchPath {
         this.group = group;
     }
 
-    private List<SearchCluster.Node> mapToNodes(SearchCluster cluster) {
+    private List<Node> mapToNodes(SearchCluster cluster) {
         if (cluster.groups().isEmpty()) {
             return Collections.emptyList();
         }
 
-        SearchCluster.Group selectedGroup = selectGroup(cluster);
+        Group selectedGroup = selectGroup(cluster);
 
         if (nodes.isEmpty()) {
             return selectedGroup.nodes();
         }
-        List<SearchCluster.Node> groupNodes = selectedGroup.nodes();
+        List<Node> groupNodes = selectedGroup.nodes();
         Set<Integer> wanted = new HashSet<>();
         int max = groupNodes.size();
         for (NodeSelection node : nodes) {
             wanted.addAll(node.matches(max));
         }
-        List<SearchCluster.Node> ret = new ArrayList<>();
+        List<Node> ret = new ArrayList<>();
         for (int idx : wanted) {
             ret.add(groupNodes.get(idx));
         }

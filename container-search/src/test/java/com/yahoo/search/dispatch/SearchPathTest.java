@@ -2,6 +2,7 @@
 package com.yahoo.search.dispatch;
 
 import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
+import com.yahoo.search.dispatch.searchcluster.Node;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -77,7 +78,7 @@ public class SearchPathTest {
         assertThat(distKeysAsString(SearchPath.selectNodes("[1,88>/1", cluster)), equalTo("5,6"));
     }
 
-    private static String distKeysAsString(Collection<SearchCluster.Node> nodes) {
-        return nodes.stream().map(SearchCluster.Node::key).map(Object::toString).collect(Collectors.joining(","));
+    private static String distKeysAsString(Collection<Node> nodes) {
+        return nodes.stream().map(Node::key).map(Object::toString).collect(Collectors.joining(","));
     }
 }
