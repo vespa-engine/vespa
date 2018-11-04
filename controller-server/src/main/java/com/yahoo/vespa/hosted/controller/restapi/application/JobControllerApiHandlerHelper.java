@@ -203,6 +203,8 @@ class JobControllerApiHandlerHelper {
 
     private static void jobTypeToSlime(Cursor jobObject, Controller controller, Application application, JobType type, DeploymentSteps steps,
                                        Map<JobType, Versions> pendingProduction, Map<JobType, Run> running, URI baseUriForJob) {
+        application.deploymentJobs().statusOf(type).ifPresent(status -> status.pausedUntil().ifPresent(until ->
+                jobObject.setLong("pausedUntil", until)));
         int runs = 0;
         Cursor runArray = jobObject.setArray("runs");
         if (type.isTest()) {
@@ -239,7 +241,9 @@ class JobControllerApiHandlerHelper {
             runObject.setString("status", "pending");
             versionsToSlime(runObject, pendingProduction.get(type));
             Cursor pendingObject = runObject.setObject("tasks");
-            if ( ! controller.applications().deploymentTrigger().triggerAt(controller.clock().instant(), type, versions, application))
+            if (application.deploymentJobs().statusOf(type).map(status -> status.pausedUntil().isPresent()).orElse(false))
+                pendingObject.setString("paused", "pending");
+            else if ( ! controller.applications().deploymentTrigger().triggerAt(controller.clock().instant(), type, versions, application))
                 pendingObject.setString("cooldown", "failed");
             else {
                 int pending = 0;
