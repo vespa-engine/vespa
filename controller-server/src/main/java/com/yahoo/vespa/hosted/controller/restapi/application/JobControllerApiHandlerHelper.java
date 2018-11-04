@@ -243,7 +243,7 @@ class JobControllerApiHandlerHelper {
             Cursor pendingObject = runObject.setObject("tasks");
             if (application.deploymentJobs().statusOf(type).map(status -> status.pausedUntil().isPresent()).orElse(false))
                 pendingObject.setString("paused", "pending");
-            if ( ! controller.applications().deploymentTrigger().triggerAt(controller.clock().instant(), type, versions, application))
+            else if ( ! controller.applications().deploymentTrigger().triggerAt(controller.clock().instant(), type, versions, application))
                 pendingObject.setString("cooldown", "failed");
             else {
                 int pending = 0;
