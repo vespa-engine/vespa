@@ -58,8 +58,6 @@ public class ControllerAuthorizationFilterTest {
         ControllerAuthorizationFilter filter = createFilter(new ControllerTester());
         assertIsAllowed(invokeFilter(filter, createRequest(PUT, "/application/v4/user", USER)));
         assertIsAllowed(invokeFilter(filter, createRequest(POST, "/application/v4/tenant/john", USER)));
-        assertIsAllowed(invokeFilter(filter, createRequest(POST, "/metricforwarding/v1/deploymentmetrics", USER)));
-        assertIsAllowed(invokeFilter(filter, createRequest(POST, "/contactinfo/v1/tenant/john/etc", USER)));
     }
 
     @Test
