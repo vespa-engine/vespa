@@ -47,10 +47,9 @@ import static com.yahoo.component.chain.ChainsConfigurer.prepareChainRegistry;
  * <p>
  * COMPONENT: The type of the processing components of which this executes a chain
  *
- * @author  bratseth
- * @author  Tony Vaagenes
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @since   5.1.6
+ * @author bratseth
+ * @author Tony Vaagenes
+ * @author Steinar Knutsen
  */
 public abstract class AbstractProcessingHandler<COMPONENT extends Processor> extends LoggingRequestHandler {
 
