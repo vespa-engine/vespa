@@ -627,9 +627,6 @@ public final class ContainerCluster
         } else if (isHostedVespa()) {
             jvmBuilder.heapSizeAsPercentageOfPhysicalMemory(getHostClusterId().isPresent() ? 17 : 60);
         }
-    	if (containerSearch!=null) {
-            jvmBuilder.directMemorySizeCache(containerSearch.totalCacheSizeMb());
-        }
         if (jvmGCOptions != null) {
             jvmBuilder.gcopts(jvmGCOptions);
         } else {
