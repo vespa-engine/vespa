@@ -315,21 +315,6 @@ public class FastHit extends Hit {
         return super.hasFields();
     }
 
-    /**
-     * Changes the key under which a value is found. This is useful because it allows keys to be changed
-     * without accessing the value (which may be lazily created).
-     *
-     * @deprecated do not use
-     */
-    @Deprecated // OK
-    @Override
-    @SuppressWarnings("deprecation")
-    public void changeFieldKey(String oldKey, String newKey) {
-        Object value = removeField(oldKey);
-        if (value != null)
-            setField(newKey, value);
-    }
-
     private Object getSummaryValue(String name) {
         if (removedFields != null && removedFields.contains(name))
             return null;
@@ -355,13 +340,6 @@ public class FastHit extends Hit {
         } else {
             return super.hashCode();
         }
-    }
-
-    /** @deprecated do not use */
-    // TODO: Make private on Vespa 7
-    @Deprecated // OK
-    public static String asHexString(GlobalId gid) {
-        return asHexString(new StringBuilder(), gid).toString();
     }
 
     private static StringBuilder asHexString(StringBuilder sb, GlobalId gid) {
