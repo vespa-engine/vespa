@@ -3,9 +3,6 @@ package com.yahoo.search.pagetemplates.engine.test;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.io.IOUtils;
-import com.yahoo.prelude.templates.TiledTemplateSet;
-import com.yahoo.prelude.templates.UserTemplate;
-import com.yahoo.prelude.templates.test.TilingTestCase;
 import com.yahoo.search.Result;
 import com.yahoo.search.pagetemplates.PageTemplate;
 import com.yahoo.search.pagetemplates.config.PageTemplateXMLReader;
