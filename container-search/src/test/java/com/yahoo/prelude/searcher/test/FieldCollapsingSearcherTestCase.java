@@ -336,11 +336,6 @@ public class FieldCollapsingSearcherTestCase {
         assertHit("http://acme.org/h.html", 6,1,r.hits().get(1));
     }
 
-    // This test depends on DocumentSourceSearcher filling the hits
-    // with whatever data it got, ignoring actual summary arguments
-    // in the fill call, then saying the hits are filled for the
-    // ignored argument. Rewrite to contain different summaries if
-    // DocumentSourceSearcher gets extended.
     @Test
     public void testFieldCollapsingTwoPhaseSelectSummary() {
         // Set up

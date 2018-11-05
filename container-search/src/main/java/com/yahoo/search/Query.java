@@ -527,15 +527,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     }
 
     /**
-     * @deprecated do not use
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public boolean requestHasProperty(String name) {
-        return httpRequest.hasProperty(name);
-    }
-
-    /**
      * Returns the number of milliseconds to wait for a response from a search backend
      * before timing it out. Default is 500.
      * <p>
@@ -638,24 +629,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         setOffset(offset);
         setHits(hits);
     }
-
-    /**
-     * This is ignored - compression is controlled at the network level.
-     *
-     * @deprecated this is ignored
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public void setCompress(boolean ignored) { }
-
-    /**
-     * Returns false.
-     *
-     * @deprecated this always returns false
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public boolean getCompress() { return false; }
 
     /** Returns a string describing this query */
     @Override

@@ -35,13 +35,6 @@ public class ClusterMonitor<T> {
     /** A map from Node to corresponding MonitoredNode */
     private final Map<T, BaseNodeMonitor<T>> nodeMonitors = Collections.synchronizedMap(new java.util.LinkedHashMap<>());
 
-    /** @deprecated use the constructor with just the first argument instead */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public ClusterMonitor(NodeManager<T> manager, String ignored) {
-        this(manager);
-    }
-
     public ClusterMonitor(NodeManager<T> manager) {
         nodeManager = manager;
         monitorThread = new MonitorThread("search.clustermonitor");
