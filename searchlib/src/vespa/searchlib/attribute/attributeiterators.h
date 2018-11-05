@@ -183,19 +183,11 @@ public:
 };
 
 
-typedef btree::BTreeConstIterator<uint32_t,
-                                  btree::BTreeNoLeafData,
-                                  btree::NoAggregated,
-                                  std::less<uint32_t>,
-                                  btree::BTreeDefaultTraits>
-InnerAttributePostingListIterator;
+using InnerAttributePostingListIterator = btree::BTreeConstIterator<uint32_t, btree::BTreeNoLeafData, btree::NoAggregated,
+                                                                    std::less<uint32_t>, btree::BTreeDefaultTraits>;
 
-typedef btree::BTreeConstIterator<uint32_t,
-                                  int32_t,
-                                  btree::MinMaxAggregated,
-                                  std::less<uint32_t>,
-                                  btree::BTreeDefaultTraits>
-WeightedInnerAttributePostingListIterator; 
+using WeightedInnerAttributePostingListIterator = btree::BTreeConstIterator<uint32_t, int32_t, btree::MinMaxAggregated,
+                                                                            std::less<uint32_t>, btree::BTreeDefaultTraits>; 
 
 template <typename PL>
 class AttributePostingListIteratorT : public AttributePostingListIterator
@@ -259,12 +251,7 @@ public:
 
 template <>
 inline int32_t
-AttributePostingListIteratorT<
-    btree::BTreeConstIterator<uint32_t,
-                              btree::BTreeNoLeafData,
-                              btree::NoAggregated,
-                              std::less<uint32_t>,
-                              btree::BTreeDefaultTraits> >::
+AttributePostingListIteratorT<InnerAttributePostingListIterator>::
 getWeight()
 {
     return 1;   // default weight 1 for single value attributes
@@ -272,15 +259,13 @@ getWeight()
 
 template <>
 void
-AttributePostingListIteratorT<btree::BTreeConstIterator<uint32_t, btree::BTreeNoLeafData, btree::NoAggregated,
-                              std::less<uint32_t>, btree::BTreeDefaultTraits> >::
+AttributePostingListIteratorT<InnerAttributePostingListIterator >::
 doUnpack(uint32_t docId);
 
 
 template <>
 void
-AttributePostingListIteratorT<btree::BTreeConstIterator<uint32_t, int32_t, btree::MinMaxAggregated,
-                              std::less<uint32_t>, btree::BTreeDefaultTraits> >::
+AttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::
 doUnpack(uint32_t docId);
 
 
