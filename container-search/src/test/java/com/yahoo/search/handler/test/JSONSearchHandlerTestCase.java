@@ -235,7 +235,7 @@ public class JSONSearchHandlerTestCase {
     public void testNormalResultExplicitDefaultRenderingFullRendererName1() throws Exception {
         JSONObject json = new JSONObject();
         json.put("query", "abc");
-        json.put("format", "DefaultRenderer");
+        json.put("format", "XmlRenderer");
         assertXmlResult(json, driver);
     }
 
