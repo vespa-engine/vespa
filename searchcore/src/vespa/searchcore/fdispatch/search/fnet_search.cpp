@@ -6,6 +6,7 @@
 #include "fnet_search.h"
 #include "mergehits.h"
 #include <vespa/searchlib/engine/packetconverter.h>
+#include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/xxhash/xxhash.h>
 
@@ -870,6 +871,7 @@ FastS_FNET_Search::CheckCoverage()
     uint16_t nodesQueried = 0;
     uint16_t nodesReplied = 0;
     size_t cntNone(0);
+    size_t askedButNotAnswered(0);
 
     for (const FastS_FNET_SearchNode & node : _nodes) {
         if (node._qresult != nullptr) {
@@ -882,13 +884,20 @@ FastS_FNET_Search::CheckCoverage()
         } else {
             nodesQueried++;
             cntNone++;
+            if (node.IsConnected()) {
+                askedButNotAnswered++;
+            }
         }
     }
+    bool missingReplies = (askedButNotAnswered != 0) || (nodesQueried != nodesReplied);
     const ssize_t missingParts = cntNone - (_dataset->getSearchableCopies() - 1);
-    if ((missingParts > 0) && (cntNone != _nodes.size())) {
+    if (((missingParts > 0) && (cntNone != _nodes.size())) || (missingReplies && useAdaptiveTimeout())) {
         // TODO This is a dirty way of anticipating missing coverage.
         // It should be done differently
         activeDocs += missingParts * activeDocs/(_nodes.size() - cntNone);
+    }
+    if (missingReplies && useAdaptiveTimeout()) {
+        degradedReason |= search::engine::SearchReply::Coverage::ADAPTIVE_TIMEOUT;
     }
     _util.SetCoverage(covDocs, activeDocs, soonActiveDocs, degradedReason, nodesQueried, nodesReplied);
 }
@@ -1446,22 +1455,26 @@ FastS_FNET_Search::ProcessDocsumsDone()
     return RET_OK;
 }
 
+bool
+FastS_FNET_Search::useAdaptiveTimeout() const {
+    return _dataset->getMinimalSearchCoverage() < 100.0;
+}
 
 void
 FastS_FNET_Search::adjustQueryTimeout()
 {
     uint32_t pendingQueries = getPendingQueries();
 
-    if (pendingQueries == 0 || _util.IsQueryFlagSet(search::fs4transport::QFLAG_DUMP_FEATURES)) {
+    if ((pendingQueries == 0) ||
+        _util.IsQueryFlagSet(search::fs4transport::QFLAG_DUMP_FEATURES) ||
+        ! useAdaptiveTimeout())
+    {
         return;
     }
 
     double mincoverage = _dataset->getMinimalSearchCoverage();
-    uint32_t wantedAnswers = getRequestedQueries();
-    if (mincoverage < 100.0) {
-        wantedAnswers *= mincoverage / 100.0;
-        LOG(spam, "Adjusting wanted answers from %u to %u", getRequestedQueries(), wantedAnswers);
-    }
+    uint32_t wantedAnswers = getRequestedQueries() * mincoverage / 100.0;
+    LOG(spam, "Adjusting wanted answers from %u to %u", getRequestedQueries(), wantedAnswers);
     if (getDoneQueries() < wantedAnswers) {
         return;
     }
