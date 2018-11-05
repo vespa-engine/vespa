@@ -89,7 +89,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
 
     private byte[] buildMetricOutput() {
         try {
-            String output = getStatusPacket() + getAllMetricsPackets();
+            String output = getStatusPacket() + getAllMetricsPackets() + "\n";
             return output.getBytes(StandardCharsets.UTF_8);
         } catch (JSONException e) {
             throw new RuntimeException("Bad JSON construction.", e);
