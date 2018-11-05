@@ -229,7 +229,20 @@ public class OrchestratorImpl implements Orchestrator {
             throw new BatchHostNameNotFoundException(parentHostname, hostNames, e);
         }
 
+<<<<<<< Updated upstream
         OrchestratorContext context = OrchestratorContext.createContextForMultiAppOp(clock);
+=======
+        suspendAllNodeGroups(context, parentHostname, nodeGroupsOrderedByApplication, true);
+        log.log(LogLevel.DEBUG, "Probe for " + parentHostname + " was successful");
+        suspendAllNodeGroups(context, parentHostname, nodeGroupsOrderedByApplication, false);
+    }
+
+    private void suspendAllNodeGroups(OrchestratorContext context,
+                                      HostName parentHostname,
+                                      List<NodeGroup> nodeGroupsOrderedByApplication,
+                                      boolean probe)
+            throws BatchHostStateChangeDeniedException, BatchInternalErrorException {
+>>>>>>> Stashed changes
         for (NodeGroup nodeGroup : nodeGroupsOrderedByApplication) {
             try {
                 suspendGroup(context.createSubcontextForSingleAppOp(), nodeGroup);
