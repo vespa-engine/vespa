@@ -43,7 +43,7 @@ public class DomSearchChainsBuilderTest extends DomBuilderTest {
             "<searchchains>",
             "  <searcher id='searcher:1'/>",
 
-            "  <provider id='provider:1' type='vespa' inherits='parentChain1 parentChain2' excludes='ExcludedSearcher1 ExcludedSearcher2'",
+            "  <provider id='provider:1' inherits='parentChain1 parentChain2' excludes='ExcludedSearcher1 ExcludedSearcher2'",
             "             cacheweight='2.3'>",
             "    <federationoptions optional='true' timeout='2.3 s' />",
             "    <nodes>",
@@ -155,7 +155,6 @@ public class DomSearchChainsBuilderTest extends DomBuilderTest {
         ChainsConfig config = new ChainsConfig(builder);
 
         checkInnerSearcherIdIsNestedInSearchChainId(config, "federationSearcher", "default");
-        checkInnerSearcherIdIsNestedInSearchChainId(config, "VespaSearcher", "provider");
     }
 
     private void checkInnerSearcherIdIsNestedInSearchChainId(ChainsConfig config,
