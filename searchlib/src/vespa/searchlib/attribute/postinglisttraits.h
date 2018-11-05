@@ -13,7 +13,7 @@ template <>
 class PostingListTraits<btree::BTreeNoLeafData>
 {
 private:
-    using BTreeTraits = btree::BTreeTraits<16, 16, 10, true>;
+    using BTreeTraits = btree::BTreeTraits<64, 16, 8, true>;
 public:
     using AggregatedType = btree::NoAggregated;
     using AggrCalcType = btree::NoAggrCalc;
@@ -27,7 +27,7 @@ template <>
 class PostingListTraits<int32_t>
 {
 private:
-    using BTreeTraits = btree::BTreeTraits<16, 16, 10, true>;
+    using BTreeTraits = btree::BTreeTraits<32, 16, 9, true>;
 public:
     using AggregatedType = btree::MinMaxAggregated;
     using AggrCalcType = btree::MinMaxAggrCalc;
