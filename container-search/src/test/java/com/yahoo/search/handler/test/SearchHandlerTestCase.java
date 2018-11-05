@@ -15,7 +15,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.handler.HttpSearchResponse;
 import com.yahoo.search.handler.SearchHandler;
-import com.yahoo.search.rendering.DefaultRenderer;
+import com.yahoo.search.rendering.XmlRenderer;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -158,7 +158,7 @@ public class SearchHandlerTestCase {
         Result r = new Result(q);
         r.hits().addError(ErrorMessage.createUnspecifiedError("bamse"));
         r.hits().add(new Hit("http://localhost/dummy", 0.5));
-        HttpSearchResponse s = new HttpSearchResponse(200, r, q, new DefaultRenderer());
+        HttpSearchResponse s = new HttpSearchResponse(200, r, q, new XmlRenderer());
         assertEquals("text/xml", s.getContentType());
         assertNull(s.getCoverage());
         assertEquals("query 'dummy'", s.getParsedQuery());
@@ -234,7 +234,7 @@ public class SearchHandlerTestCase {
 
     @Test
     public void testNormalResultExplicitDefaultRenderingFullRendererName1() throws Exception {
-        assertXmlResult("http://localhost?query=abc&format=DefaultRenderer", driver);
+        assertXmlResult("http://localhost?query=abc&format=XmlRenderer", driver);
     }
 
     @Test
