@@ -15,7 +15,6 @@ import com.yahoo.search.searchchain.PhaseNames;
 
 import java.util.*;
 
-import static com.yahoo.prelude.querytransform.IndexCombinatorSearcher.MIXED_RECALL_REWRITE;
 import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
 
 /**
@@ -24,7 +23,7 @@ import static com.yahoo.prelude.querytransform.StemmingSearcher.STEMMING;
  * @author bratseth
  */
 @After(PhaseNames.RAW_QUERY)
-@Before({PhaseNames.TRANSFORMED_QUERY, STEMMING, MIXED_RECALL_REWRITE})
+@Before({PhaseNames.TRANSFORMED_QUERY, STEMMING})
 public class SemanticSearcher extends Searcher {
 
     private static final CompoundName rulesRulebase=new CompoundName("rules.rulebase");
