@@ -478,20 +478,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         return fields != null && ! fields.isEmpty();
     }
 
-    /**
-     * Changes the key under which a value is found. This is useful because it allows keys to be changed
-     * without accessing the value (which may be lazily created).
-     *
-     * @deprecated do not use
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public void changeFieldKey(String oldKey, String newKey) {
-        Map<String,Object> fieldMap = getFieldMap();
-        Object value = fieldMap.remove(oldKey);
-        fieldMap.put(newKey, value);
-    }
-
     private Map<String, Object> getFieldMap() {
         return getFieldMap(2);
     }
@@ -515,42 +501,16 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         return unmodifiableFieldMap;
     }
 
-    /** Generate a HitField from a field if the field exists */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public HitField buildHitField(String key) {
-        return buildHitField(key, false);
-    }
-
-    /** Generate a HitField from a field if the field exists */
-    @SuppressWarnings("deprecation")
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
     public HitField buildHitField(String key, boolean forceNoPreTokenize) {
-        return buildHitField(key, forceNoPreTokenize, false);
-    }
-
-    // TODO: Remove third parameter on Vespa 7 (set always true)
-    @Deprecated // OK
-    public HitField buildHitField(String key, boolean forceNoPreTokenize, boolean forceStringHandling) {
         Object o = getField(key);
         if (o == null) return null;
         if (o instanceof HitField) return (HitField)o;
 
         HitField h;
-        if (forceNoPreTokenize) {
-            if (o instanceof XMLString && !forceStringHandling) {
-                h = new HitField(key, (XMLString) o, false);
-            } else {
-                h = new HitField(key, o.toString(), false);
-            }
-        } else {
-            if (o instanceof XMLString && !forceStringHandling) {
-                h = new HitField(key, (XMLString) o);
-            } else {
-                h = new HitField(key, o.toString());
-            }
-        }
+        if (forceNoPreTokenize)
+            h = new HitField(key, o.toString(), false);
+        else
+            h = new HitField(key, o.toString());
         h.setOriginal(o);
         getFieldMap().put(key, h);
         return h;
@@ -559,34 +519,19 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /** Returns the types of this as a modifiable set. Modifications to this set are directly reflected in this hit */
     public Set<String> types() { return types; }
 
-    /** @deprecated do not use */
-    // TODO: FRemove on Vespa 7
-    @Deprecated // OK
-    public String getTypeString() {
-        return types().stream().collect(Collectors.joining(" "));
-    }
-
     /**
      * Returns the add number, assigned when adding the hit to a Result.
      *
      * Used to order equal relevant hit by add order. -1 if this hit
      * has never been added to a result.
-     *
-     * @deprecated do not use
      */
-    // TODO: Make package private on Vespa 7
-    @Deprecated // OK
-    public int getAddNumber() { return addNumber; }
+    int getAddNumber() { return addNumber; }
 
     /**
      * Sets the add number, assigned when adding the hit to a Result,
      * used to order equal relevant hit by add order.
-     *
-     * @deprecated do not use
      */
-    // TODO: Make package private on Vespa 7
-    @Deprecated // OK
-    public void setAddNumber(int addNumber) { this.addNumber = addNumber; }
+    void setAddNumber(int addNumber) { this.addNumber = addNumber; }
 
     /**
      * Returns whether this is a concrete hit, containing content of the requested
@@ -610,16 +555,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
 
     public void setAuxiliary(boolean auxiliary) { this.auxiliary = auxiliary; }
 
-    /** @deprecated do not use */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public int getSourceNumber() { return sourceNumber; }
-
-    /** @deprecated do not use */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public void setSourceNumber(int number) { this.sourceNumber = number; }
-
     /** Returns the query which produced this hit, or null if not known */
     public Query getQuery() { return query; }
 
@@ -630,52 +565,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     public final void setQuery(Query query) {
         if (this.query == null || this instanceof HitGroup) {
             this.query = query;
-        }
-    }
-
-    /**
-     * Returns a field of this hit XML escaped and without token
-     * delimiters.
-     *
-     * @deprecated do not use
-     * @return a field of this hit, or null if the property is not set
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public String getFieldXML(String key) {
-        Object p = getField(key);
-
-        if (p == null) {
-            return null;
-        } else if (p instanceof HitField) {
-            return ((HitField)p).quotedContent(false);
-        } else if (p instanceof StructuredData || p instanceof XMLString || p instanceof JSONString) {
-            return p.toString();
-        } else {
-            return XML.xmlEscape(p.toString(), false, '\u001f');
-        }
-    }
-
-    /**
-     * @deprecated do not use
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public String getUnboldedField(String key, boolean escape) {
-        Object p = getField(key);
-
-        if (p == null) {
-            return null;
-        } else if (p instanceof HitField) {
-            return ((HitField) p).bareContent(escape, false);
-        } else if (p instanceof StructuredData) {
-            return p.toString();
-        } else if (p instanceof XMLString || p instanceof JSONString) {
-            return p.toString();
-        } else if (escape) {
-            return XML.xmlEscape(p.toString(), false, '\u001f');
-        } else {
-            return stripCharacter('\u001F', p.toString());
         }
     }
 
@@ -703,58 +592,19 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         return searcherSpecificMetaData != null ? searcherSpecificMetaData.get(searcher) : null;
     }
 
-    /**
-     * Internal - do not use
-     *
-     * @param filled the backing set
-     */
-    // TODO: Make package private on Vespa 7
-    protected final void setFilledInternal(Set<String> filled) {
+    final void setFilledInternal(Set<String> filled) {
         this.filled = filled;
         unmodifiableFilled = (filled != null) ? Collections.unmodifiableSet(filled) : null;
     }
 
     /**
-     * For internal use only.
      * Gives access to the modifiable backing set of filled summaries.
      * This set might be unmodifiable if the size is less than or equal to 1
      *
      * @return the set of filled summaries.
      */
-    // TODO: Make package private on Vespa 7
-    protected final Set<String> getFilledInternal() {
+    final Set<String> getFilledInternal() {
         return filled;
-    }
-
-    /**
-     * @deprecated do not use
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public static String stripCharacter(char strip, String toStripFrom) {
-        StringBuilder builder = null;
-
-        int lastBadChar = 0;
-        for (int i = 0; i < toStripFrom.length(); i++) {
-            if (toStripFrom.charAt(i) == strip) {
-                if (builder == null) {
-                    builder = new StringBuilder(toStripFrom.length());
-                }
-
-                builder.append(toStripFrom, lastBadChar, i);
-                lastBadChar = i + 1;
-            }
-        }
-
-        if (builder == null) {
-            return toStripFrom;
-        } else {
-            if (lastBadChar < toStripFrom.length()) {
-                builder.append(toStripFrom, lastBadChar, toStripFrom.length());
-            }
-
-            return builder.toString();
-        }
     }
 
     /** Releases the resources held by this, making it irreversibly unusable */

@@ -46,7 +46,7 @@ public class Pong {
     public int getErrorSize() {
         return errors.size();
     }
-    
+
     /** Returns the number of active documents in the backend responding in this Pong, if available */
     public Optional<Long> activeDocuments() {
         if ( ! pongPacket.isPresent()) return Optional.empty();

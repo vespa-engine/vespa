@@ -58,18 +58,6 @@ public class DefaultErrorHit extends Hit implements ErrorHit, Cloneable {
     }
 
     /**
-     * Returns the main error of this result, never null.
-     *
-     * @deprecated use {@link #errors()}
-     */
-    @Override
-    @Deprecated // OK
-    // TODO: Remove on Vespa 7
-    public ErrorMessage getMainError() {
-        return errors.get(0);
-    }
-
-    /**
      * This is basically a way of making a list simulate a set.
      */
     private void removeAndAdd(ErrorMessage error) {
