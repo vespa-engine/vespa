@@ -154,6 +154,7 @@ public class TlsCryptoSocket implements CryptoSocket {
 
     @Override
     public int write(ByteBuffer src) throws IOException {
+        verifyHandshakeCompleted();
         if (flush() == FlushResult.NEED_WRITE) return 0;
         int totalBytesWrapped = 0;
         int bytesWrapped;
@@ -166,6 +167,7 @@ public class TlsCryptoSocket implements CryptoSocket {
 
     @Override
     public FlushResult flush() throws IOException {
+        verifyHandshakeCompleted();
         channelWrite();
         return wrapBuffer.bytes() > 0 ? FlushResult.NEED_WRITE : FlushResult.DONE;
     }
