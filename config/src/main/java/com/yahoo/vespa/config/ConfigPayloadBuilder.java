@@ -110,24 +110,12 @@ public class ConfigPayloadBuilder {
     }
 
     /**
-     * Check if array with this name exists.
-     *
-     * @param name Name of array.
-     * @return true if array exists, false otherwise
-     */
-    public boolean arrayExists(String name) {
-        return arrayMap.containsKey(name);
-    }
-
-    /**
-     * Clears contents of an array
+     * Removes an array
      *
      * @param name Name of array.
      */
-    public void clearArray(String name) {
-        Array a = arrayMap.get(name);
-        if (a != null)
-            a.clear();
+    public void removeArray(String name) {
+        arrayMap.remove(name);
     }
 
     private void validateArray(String name) {

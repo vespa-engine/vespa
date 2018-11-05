@@ -170,7 +170,7 @@ public class DomConfigPayloadBuilder {
             throw new IllegalArgumentException("The 'index' attribute on config elements is not supported - use <item>");
         } else if (element.hasAttribute("operation")) {
             // inner array, the supported operations are 'append' and 'clear'
-            String operation = verifyLegalOperation(element);
+            String operation = element.getAttribute("operation");
             ConfigPayloadBuilder childPayloadBuilder;
             switch (operation) {
                 case "append":
@@ -179,8 +179,7 @@ public class DomConfigPayloadBuilder {
                 case "clear":
                     // Clear array if it exists, use the existing builder
                     // Creating the array happens when handling the children ('item's)
-                    if (payloadBuilder.arrayExists(name))
-                        payloadBuilder.clearArray(name);
+                    payloadBuilder.removeArray(name);
                     childPayloadBuilder = payloadBuilder;
                     break;
                 default:
@@ -249,7 +248,7 @@ public class DomConfigPayloadBuilder {
 
     private String verifyLegalOperation(Element currElem) {
         String operation = currElem.getAttribute("operation");
-        if (! Arrays.asList("append", "clear").contains(operation))
+        if (! Arrays.asList("append", "clear").contains(operation.toLowerCase()))
             throw new ConfigurationRuntimeException("The supported array operations are 'append' and 'clear', got '"
                     + operation + "' at XML node '" + XML.getNodePath(currElem, " > ") + "'.");
         return operation;
