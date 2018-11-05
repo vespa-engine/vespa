@@ -104,6 +104,12 @@ public class StorageNodeImpl implements StorageNode {
                     HostedVespaPolicy.SET_NODE_STATE_CONSTRAINT,
                     "Failed to set state to " + wantedNodeState + " in cluster controller: " + response.reason);
         }
+
+        String logSuffix = context.isProbe() ?
+                " has been set to " + wantedNodeState:
+                " would have been set to " + wantedNodeState + " (this is a probe)";
+        logger.log(LogLevel.INFO, "Storage node " + nodeIndex + " in cluster " + clusterId +
+                " application " + applicationInstance.reference().asString() + " on host " + hostName() + logSuffix);
     }
 
     @Override

@@ -84,9 +84,9 @@ public class HostedVespaPolicyTest {
         order.verify(storageNode3).setNodeState(context, ClusterControllerNodeState.MAINTENANCE);
 
         order.verify(applicationApi).getNodesInGroupWithStatus(HostStatus.NO_REMARKS);
-        order.verify(applicationApi).setHostState(hostName1, HostStatus.ALLOWED_TO_BE_DOWN);
-        order.verify(applicationApi).setHostState(hostName2, HostStatus.ALLOWED_TO_BE_DOWN);
-        order.verify(applicationApi).setHostState(hostName3, HostStatus.ALLOWED_TO_BE_DOWN);
+        order.verify(applicationApi).setHostState(context, hostName1, HostStatus.ALLOWED_TO_BE_DOWN);
+        order.verify(applicationApi).setHostState(context, hostName2, HostStatus.ALLOWED_TO_BE_DOWN);
+        order.verify(applicationApi).setHostState(context, hostName3, HostStatus.ALLOWED_TO_BE_DOWN);
 
         order.verifyNoMoreInteractions();
     }
@@ -135,9 +135,9 @@ public class HostedVespaPolicyTest {
         order.verify(storageNode3).setNodeState(context, ClusterControllerNodeState.DOWN);
 
         order.verify(applicationApi).getNodesInGroupWithStatus(HostStatus.NO_REMARKS);
-        order.verify(applicationApi).setHostState(hostName1, HostStatus.ALLOWED_TO_BE_DOWN);
-        order.verify(applicationApi).setHostState(hostName2, HostStatus.ALLOWED_TO_BE_DOWN);
-        order.verify(applicationApi).setHostState(hostName3, HostStatus.ALLOWED_TO_BE_DOWN);
+        order.verify(applicationApi).setHostState(context, hostName1, HostStatus.ALLOWED_TO_BE_DOWN);
+        order.verify(applicationApi).setHostState(context, hostName2, HostStatus.ALLOWED_TO_BE_DOWN);
+        order.verify(applicationApi).setHostState(context, hostName3, HostStatus.ALLOWED_TO_BE_DOWN);
 
         order.verifyNoMoreInteractions();
     }

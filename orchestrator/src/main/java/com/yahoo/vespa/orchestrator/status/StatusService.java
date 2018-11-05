@@ -2,8 +2,8 @@
 package com.yahoo.vespa.orchestrator.status;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
 
-import java.time.Duration;
 import java.util.Set;
 
 /**
@@ -25,7 +25,7 @@ public interface StatusService {
      * possibly inconsistent snapshot values. It is not recommended that this method is used for anything other
      * than monitoring, logging, debugging, etc. It should never be used for multi-step operations (e.g.
      * read-then-write) where consistency is required. For those cases, use
-     * {@link #lockApplicationInstance_forCurrentThreadOnly(ApplicationInstanceReference, Duration)}.
+     * {@link #lockApplicationInstance_forCurrentThreadOnly(OrchestratorContext, ApplicationInstanceReference)}.
      */
     ReadOnlyStatusRegistry forApplicationInstance(ApplicationInstanceReference applicationInstanceReference);
 
@@ -54,8 +54,8 @@ public interface StatusService {
      * This may leave the registry in an inconsistent state (as judged by the client code).
      */
     MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
-            ApplicationInstanceReference applicationInstanceReference,
-            Duration timeout);
+            OrchestratorContext context,
+            ApplicationInstanceReference applicationInstanceReference);
 
     /**
      * Returns all application instances that are allowed to be down. The intention is to use this

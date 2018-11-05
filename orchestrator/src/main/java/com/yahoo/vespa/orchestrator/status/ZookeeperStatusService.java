@@ -7,6 +7,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
 import org.apache.zookeeper.KeeperException.NoNodeException;
@@ -90,14 +91,15 @@ public class ZookeeperStatusService implements StatusService {
      */
     @Override
     public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
-            ApplicationInstanceReference applicationInstanceReference,
-            Duration timeout) {
+            OrchestratorContext context,
+            ApplicationInstanceReference applicationInstanceReference) {
+        Duration duration = context.getTimeLeft();
         String lockPath = applicationInstanceLock2Path(applicationInstanceReference);
         Lock lock = new Lock(lockPath, curator);
-        lock.acquire(timeout);
+        lock.acquire(duration);
 
         try {
-            return new ZkMutableStatusRegistry(lock, applicationInstanceReference);
+            return new ZkMutableStatusRegistry(lock, applicationInstanceReference, context.isProbe());
         } catch (Throwable t) {
             // In case the constructor throws an exception.
             lock.close();
@@ -215,23 +217,31 @@ public class ZookeeperStatusService implements StatusService {
     private class ZkMutableStatusRegistry implements MutableStatusRegistry {
         private final Lock lock;
         private final ApplicationInstanceReference applicationInstanceReference;
+        private final boolean probe;
 
         public ZkMutableStatusRegistry(
                 Lock lock,
-                ApplicationInstanceReference applicationInstanceReference) {
+                ApplicationInstanceReference applicationInstanceReference,
+                boolean probe) {
             this.lock = lock;
             this.applicationInstanceReference = applicationInstanceReference;
+            this.probe = probe;
         }
 
         @Override
         public void setHostState(final HostName hostName, final HostStatus status) {
+            if (probe) return;
+            log.log(LogLevel.INFO, "Setting host " + hostName + " to status " + status);
             setHostStatus(applicationInstanceReference, hostName, status);
         }
 
         @Override
         public void setApplicationInstanceStatus(ApplicationInstanceStatus applicationInstanceStatus) {
-            String path = applicationInstanceSuspendedPath(applicationInstanceReference);
+            if (probe) return;
 
+            log.log(LogLevel.INFO, "Setting app " + applicationInstanceReference.asString() + " to status " + applicationInstanceStatus);
+
+            String path = applicationInstanceSuspendedPath(applicationInstanceReference);
             try {
                 switch (applicationInstanceStatus) {
                     case NO_REMARKS:

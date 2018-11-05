@@ -107,7 +107,7 @@ public class OrchestratorImpl implements Orchestrator {
         ApplicationInstanceReference reference = getApplicationInstance(hostName).reference();
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
         try (MutableStatusRegistry statusRegistry = statusService
-                .lockApplicationInstance_forCurrentThreadOnly(reference, context.getTimeLeft())) {
+                .lockApplicationInstance_forCurrentThreadOnly(context, reference)) {
             statusRegistry.setHostState(hostName, status);
         }
     }
@@ -130,9 +130,8 @@ public class OrchestratorImpl implements Orchestrator {
         ApplicationInstance appInstance = getApplicationInstance(hostName);
 
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
-        try (MutableStatusRegistry statusRegistry = statusService.lockApplicationInstance_forCurrentThreadOnly(
-                appInstance.reference(),
-                context.getTimeLeft())) {
+        try (MutableStatusRegistry statusRegistry = statusService
+                .lockApplicationInstance_forCurrentThreadOnly(context, appInstance.reference())) {
             final HostStatus currentHostState = statusRegistry.getHostStatus(hostName);
 
             if (HostStatus.NO_REMARKS == currentHostState) {
@@ -159,9 +158,8 @@ public class OrchestratorImpl implements Orchestrator {
         NodeGroup nodeGroup = new NodeGroup(appInstance, hostName);
 
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
-        try (MutableStatusRegistry statusRegistry = statusService.lockApplicationInstance_forCurrentThreadOnly(
-                appInstance.reference(),
-                context.getTimeLeft())) {
+        try (MutableStatusRegistry statusRegistry = statusService
+                .lockApplicationInstance_forCurrentThreadOnly(context, appInstance.reference())) {
             ApplicationApi applicationApi = new ApplicationApiImpl(
                     nodeGroup,
                     statusRegistry,
@@ -181,9 +179,7 @@ public class OrchestratorImpl implements Orchestrator {
         ApplicationInstanceReference applicationReference = nodeGroup.getApplicationReference();
 
         try (MutableStatusRegistry hostStatusRegistry =
-                     statusService.lockApplicationInstance_forCurrentThreadOnly(
-                             applicationReference,
-                             context.getTimeLeft())) {
+                     statusService.lockApplicationInstance_forCurrentThreadOnly(context, applicationReference)) {
             ApplicationInstanceStatus appStatus = statusService.forApplicationInstance(applicationReference).getApplicationInstanceStatus();
             if (appStatus == ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN) {
                 return;
@@ -222,6 +218,8 @@ public class OrchestratorImpl implements Orchestrator {
     @Override
     public void suspendAll(HostName parentHostname, List<HostName> hostNames)
             throws BatchHostStateChangeDeniedException, BatchHostNameNotFoundException, BatchInternalErrorException {
+        OrchestratorContext context = OrchestratorContext.createContextForMultiAppOp(clock);
+
         List<NodeGroup> nodeGroupsOrderedByApplication;
         try {
             nodeGroupsOrderedByApplication = nodeGroupsOrderedForSuspend(hostNames);
@@ -229,10 +227,18 @@ public class OrchestratorImpl implements Orchestrator {
             throw new BatchHostNameNotFoundException(parentHostname, hostNames, e);
         }
 
-        OrchestratorContext context = OrchestratorContext.createContextForMultiAppOp(clock);
+        suspendAllNodeGroups(context, parentHostname, nodeGroupsOrderedByApplication, true);
+        suspendAllNodeGroups(context, parentHostname, nodeGroupsOrderedByApplication, false);
+    }
+
+    private void suspendAllNodeGroups(OrchestratorContext context,
+                                      HostName parentHostname,
+                                      List<NodeGroup> nodeGroupsOrderedByApplication,
+                                      boolean probe)
+            throws BatchHostStateChangeDeniedException, BatchInternalErrorException {
         for (NodeGroup nodeGroup : nodeGroupsOrderedByApplication) {
             try {
-                suspendGroup(context.createSubcontextForSingleAppOp(), nodeGroup);
+                suspendGroup(context.createSubcontextForSingleAppOp(probe), nodeGroup);
             } catch (HostStateChangeDeniedException e) {
                 throw new BatchHostStateChangeDeniedException(parentHostname, nodeGroup, e);
             } catch (RuntimeException e) {
@@ -307,9 +313,7 @@ public class OrchestratorImpl implements Orchestrator {
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
         ApplicationInstanceReference appRef = OrchestratorUtil.toApplicationInstanceReference(appId, instanceLookupService);
         try (MutableStatusRegistry statusRegistry =
-                     statusService.lockApplicationInstance_forCurrentThreadOnly(
-                             appRef,
-                             context.getTimeLeft())) {
+                     statusService.lockApplicationInstance_forCurrentThreadOnly(context, appRef)) {
 
             // Short-circuit if already in wanted state
             if (status == statusRegistry.getApplicationInstanceStatus()) return;

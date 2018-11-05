@@ -35,7 +35,10 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
                                                        int storageNodeIndex,
                                                        ClusterControllerNodeState wantedState) throws IOException {
         ClusterControllerStateRequest.State state = new ClusterControllerStateRequest.State(wantedState, REQUEST_REASON);
-        ClusterControllerStateRequest stateRequest = new ClusterControllerStateRequest(state, ClusterControllerStateRequest.Condition.SAFE);
+        ClusterControllerStateRequest stateRequest = new ClusterControllerStateRequest(
+                state,
+                ClusterControllerStateRequest.Condition.SAFE,
+                context.isProbe() ? true : null);
         ClusterControllerClientTimeouts timeouts = context.getClusterControllerTimeouts();
 
         try {
@@ -67,7 +70,8 @@ public class ClusterControllerClientImpl implements ClusterControllerClient{
             OrchestratorContext context,
             ClusterControllerNodeState wantedState) throws IOException {
         ClusterControllerStateRequest.State state = new ClusterControllerStateRequest.State(wantedState, REQUEST_REASON);
-        ClusterControllerStateRequest stateRequest = new ClusterControllerStateRequest(state, ClusterControllerStateRequest.Condition.FORCE);
+        ClusterControllerStateRequest stateRequest = new ClusterControllerStateRequest(
+                state, ClusterControllerStateRequest.Condition.FORCE, null);
         ClusterControllerClientTimeouts timeouts = context.getClusterControllerTimeouts();
 
         try {

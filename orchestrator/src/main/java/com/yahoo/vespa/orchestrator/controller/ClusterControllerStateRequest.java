@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.controller;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import javax.annotation.concurrent.Immutable;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -10,6 +12,8 @@ import java.util.Objects;
 /**
  * @author hakonhall
  */
+@Immutable
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ClusterControllerStateRequest {
 
     @JsonProperty("state")
@@ -18,26 +22,29 @@ public class ClusterControllerStateRequest {
     @JsonProperty("condition")
     public final Condition condition;
 
-    public ClusterControllerStateRequest(State currentState, Condition condition) {
+    @JsonProperty("probe")
+    public final Boolean probe;
+
+    public ClusterControllerStateRequest(State currentState, Condition condition, Boolean probe) {
         Map<String, State> state = Collections.singletonMap("user", currentState);
         this.state = Collections.unmodifiableMap(state);
         this.condition = condition;
+        this.probe = probe;
     }
 
     @Override
-    public boolean equals(Object object) {
-        if (!(object instanceof ClusterControllerStateRequest)) {
-            return false;
-        }
-
-        final ClusterControllerStateRequest that = (ClusterControllerStateRequest) object;
-        return Objects.equals(this.state, that.state)
-                && Objects.equals(this.condition, that.condition);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClusterControllerStateRequest that = (ClusterControllerStateRequest) o;
+        return Objects.equals(state, that.state) &&
+                condition == that.condition &&
+                Objects.equals(probe, that.probe);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(state, condition);
+        return Objects.hash(state, condition, probe);
     }
 
     @Override

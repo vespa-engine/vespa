@@ -6,12 +6,12 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
-import com.yahoo.vespa.orchestrator.status.ReadOnlyStatusRegistry;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.orchestrator.OrchestratorUtil.getHostsUsedByApplicationInstance;
@@ -29,7 +30,6 @@ public class ApplicationApiImpl implements ApplicationApi {
     private final NodeGroup nodeGroup;
     private final MutableStatusRegistry hostStatusService;
     private final List<ClusterApi> clusterInOrder;
-    private final ClusterControllerClientFactory clusterControllerClientFactory;
     private final Map<HostName, HostStatus> hostStatusMap;
 
     public ApplicationApiImpl(NodeGroup nodeGroup,
@@ -38,24 +38,14 @@ public class ApplicationApiImpl implements ApplicationApi {
         this.applicationInstance = nodeGroup.getApplication();
         this.nodeGroup = nodeGroup;
         this.hostStatusService = hostStatusService;
-        this.hostStatusMap = createHostStatusMap(
-                getHostsUsedByApplicationInstance(applicationInstance),
-                hostStatusService);
+        Collection<HostName> hosts = getHostsUsedByApplicationInstance(applicationInstance);
+        this.hostStatusMap = hosts.stream().collect(Collectors.toMap(Function.identity(), hostStatusService::getHostStatus));
         this.clusterInOrder = makeClustersInOrder(nodeGroup, hostStatusMap, clusterControllerClientFactory);
-        this.clusterControllerClientFactory = clusterControllerClientFactory;
     }
 
     @Override
     public ApplicationId applicationId() {
         return OrchestratorUtil.toApplicationId(applicationInstance.reference());
-    }
-
-    private static Map<HostName, HostStatus> createHostStatusMap(Collection<HostName> hosts,
-                                                                 ReadOnlyStatusRegistry hostStatusService) {
-        return hosts.stream()
-                .collect(Collectors.toMap(
-                        hostName -> hostName,
-                        hostName -> hostStatusService.getHostStatus(hostName)));
     }
 
     private HostStatus getHostStatus(HostName hostName) {
@@ -104,7 +94,7 @@ public class ApplicationApiImpl implements ApplicationApi {
     }
 
     @Override
-    public void setHostState(HostName hostName, HostStatus status) {
+    public void setHostState(OrchestratorContext context, HostName hostName, HostStatus status) {
         hostStatusService.setHostState(hostName, status);
     }
 

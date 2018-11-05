@@ -4,6 +4,7 @@ package com.yahoo.vespa.orchestrator.status;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.TestIds;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.curator.SessionFailRetryLoop.SessionFailedException;
@@ -35,11 +36,14 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsCollectionContaining.hasItem;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ZookeeperStatusServiceTest {
     private TestingServer testingServer;
     private ZookeeperStatusService zookeeperStatusService;
     private Curator curator;
+    private final OrchestratorContext context = mock(OrchestratorContext.class);
 
     @Before
     public void setUp() throws Exception {
@@ -48,6 +52,8 @@ public class ZookeeperStatusServiceTest {
         testingServer = new TestingServer();
         curator = createConnectedCurator(testingServer);
         zookeeperStatusService = new ZookeeperStatusService(curator);
+        when(context.getTimeLeft()).thenReturn(Duration.ofSeconds(10));
+        when(context.isProbe()).thenReturn(false);
     }
 
     private static Curator createConnectedCuratorFramework(TestingServer server) throws InterruptedException {
@@ -81,9 +87,8 @@ public class ZookeeperStatusServiceTest {
 
     @Test
     public void setting_host_state_is_idempotent() {
-        try (MutableStatusRegistry statusRegistry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(
-                TestIds.APPLICATION_INSTANCE_REFERENCE,
-                Duration.ofSeconds(10))) {
+        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
+                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
             //shuffling to catch "clean database" failures for all cases.
             for (HostStatus hostStatus: shuffledList(HostStatus.values())) {
@@ -106,13 +111,12 @@ public class ZookeeperStatusServiceTest {
             ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
 
             final CompletableFuture<Void> lockedSuccessfullyFuture;
-            try (MutableStatusRegistry statusRegistry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(
-                    TestIds.APPLICATION_INSTANCE_REFERENCE,
-                    Duration.ofSeconds(10))) {
+            try (MutableStatusRegistry statusRegistry = zookeeperStatusService
+                    .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
                 lockedSuccessfullyFuture = CompletableFuture.runAsync(() -> {
                     try (MutableStatusRegistry statusRegistry2 = zookeeperStatusService2
-                            .lockApplicationInstance_forCurrentThreadOnly(TestIds.APPLICATION_INSTANCE_REFERENCE, Duration.ofSeconds(10)))
+                            .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE))
                     {
                     }
                 });
@@ -133,14 +137,13 @@ public class ZookeeperStatusServiceTest {
         try (Curator curator = createConnectedCuratorFramework(testingServer)) {
             ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
 
-            try (MutableStatusRegistry statusRegistry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(
-                    TestIds.APPLICATION_INSTANCE_REFERENCE, Duration.ofSeconds(10))) {
+            try (MutableStatusRegistry statusRegistry = zookeeperStatusService
+                    .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
                 //must run in separate thread, since having 2 locks in the same thread fails
                 CompletableFuture<Void> resultOfZkOperationAfterLockFailure = CompletableFuture.runAsync(() -> {
                     try {
-                        zookeeperStatusService2.lockApplicationInstance_forCurrentThreadOnly(
-                                TestIds.APPLICATION_INSTANCE_REFERENCE, Duration.ofSeconds(1));
+                        zookeeperStatusService2.lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE);
                         fail("Both zookeeper host status services locked simultaneously for the same application instance");
                     } catch (RuntimeException e) {
                     }
@@ -213,8 +216,8 @@ public class ZookeeperStatusServiceTest {
                 is(ApplicationInstanceStatus.NO_REMARKS));
 
         // Suspend
-        try (MutableStatusRegistry statusRegistry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(
-                TestIds.APPLICATION_INSTANCE_REFERENCE, Duration.ofSeconds(10))) {
+        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
+                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
             statusRegistry.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
         }
 
@@ -225,8 +228,8 @@ public class ZookeeperStatusServiceTest {
                 is(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN));
 
         // Resume
-        try (MutableStatusRegistry statusRegistry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(
-                TestIds.APPLICATION_INSTANCE_REFERENCE, Duration.ofSeconds(10))) {
+        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
+                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
             statusRegistry.setApplicationInstanceStatus(ApplicationInstanceStatus.NO_REMARKS);
         }
 
@@ -243,13 +246,13 @@ public class ZookeeperStatusServiceTest {
                 = zookeeperStatusService.getAllSuspendedApplications();
         assertThat(suspendedApps.size(), is(0));
 
-        try (MutableStatusRegistry statusRegistry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(
-                TestIds.APPLICATION_INSTANCE_REFERENCE, Duration.ofSeconds(10))) {
+        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
+                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
             statusRegistry.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
         }
 
-        try (MutableStatusRegistry statusRegistry = zookeeperStatusService.lockApplicationInstance_forCurrentThreadOnly(
-                TestIds.APPLICATION_INSTANCE_REFERENCE2, Duration.ofSeconds(10))) {
+        try (MutableStatusRegistry statusRegistry = zookeeperStatusService
+                .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE2)) {
             statusRegistry.setApplicationInstanceStatus(ApplicationInstanceStatus.ALLOWED_TO_BE_DOWN);
         }
 
