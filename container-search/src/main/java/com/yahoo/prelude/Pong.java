@@ -48,15 +48,6 @@ public class Pong {
         return errors.size();
     }
 
-    /** 
-     * Returns the package causing this to exist, or empty if none 
-     * 
-     * @deprecated do not use
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public Optional<PongPacket> getPongPacket() { return pongPacket; }
-    
     /** Returns the number of active documents in the backend responding in this Pong, if available */
     public Optional<Long> activeDocuments() {
         if ( ! pongPacket.isPresent()) return Optional.empty();
