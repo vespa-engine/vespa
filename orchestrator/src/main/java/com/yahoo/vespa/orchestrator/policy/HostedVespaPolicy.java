@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.policy;
 
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
@@ -52,13 +51,11 @@ public class HostedVespaPolicy implements Policy {
         // These storage nodes are guaranteed to be NO_REMARKS
         for (StorageNode storageNode : application.getUpStorageNodesInGroupInClusterOrder()) {
             storageNode.setNodeState(context, ClusterControllerNodeState.MAINTENANCE);
-            log.log(LogLevel.INFO, "The storage node on " + storageNode.hostName() + " has been set to MAINTENANCE");
         }
 
         // Ensure all nodes in the group are marked as allowed to be down
         for (HostName hostName : application.getNodesInGroupWithStatus(HostStatus.NO_REMARKS)) {
-            application.setHostState(hostName, HostStatus.ALLOWED_TO_BE_DOWN);
-            log.log(LogLevel.INFO, hostName + " is now allowed to be down (suspended)");
+            application.setHostState(context, hostName, HostStatus.ALLOWED_TO_BE_DOWN);
         }
     }
 
@@ -68,12 +65,10 @@ public class HostedVespaPolicy implements Policy {
         // Always defer to Cluster Controller whether it's OK to resume storage node
         for (StorageNode storageNode : application.getStorageNodesAllowedToBeDownInGroupInReverseClusterOrder()) {
             storageNode.setNodeState(context, ClusterControllerNodeState.UP);
-            log.log(LogLevel.INFO, "The storage node on " + storageNode.hostName() + " has been set to UP");
         }
 
         for (HostName hostName : application.getNodesInGroupWithStatus(HostStatus.ALLOWED_TO_BE_DOWN)) {
-            application.setHostState(hostName, HostStatus.NO_REMARKS);
-            log.log(LogLevel.INFO, hostName + " is no longer allowed to be down (resumed)");
+            application.setHostState(context, hostName, HostStatus.NO_REMARKS);
         }
     }
 
@@ -98,13 +93,11 @@ public class HostedVespaPolicy implements Policy {
         // These storage nodes are guaranteed to be NO_REMARKS
         for (StorageNode storageNode : applicationApi.getStorageNodesInGroupInClusterOrder()) {
             storageNode.setNodeState(context, ClusterControllerNodeState.DOWN);
-            log.log(LogLevel.INFO, "The storage node on " + storageNode.hostName() + " has been set DOWN");
         }
 
         // Ensure all nodes in the group are marked as allowed to be down
         for (HostName hostName : applicationApi.getNodesInGroupWithStatus(HostStatus.NO_REMARKS)) {
-            applicationApi.setHostState(hostName, HostStatus.ALLOWED_TO_BE_DOWN);
-            log.log(LogLevel.INFO, hostName + " is now allowed to be down (suspended)");
+            applicationApi.setHostState(context, hostName, HostStatus.ALLOWED_TO_BE_DOWN);
         }
     }
 

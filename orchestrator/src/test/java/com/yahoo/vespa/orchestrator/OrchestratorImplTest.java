@@ -16,6 +16,7 @@ import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
+import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
@@ -25,6 +26,7 @@ import com.yahoo.vespa.orchestrator.status.StatusService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 import java.util.Arrays;
@@ -247,8 +249,6 @@ public class OrchestratorImplTest {
         // A spy is preferential because suspendAll() relies on delegating the hard work to suspend() and resume().
         OrchestratorImpl orchestrator = spy(this.orchestrator);
 
-        OrchestratorContext context = mock(OrchestratorContext.class);
-
         orchestrator.suspendAll(
                 new HostName("parentHostname"),
                 Arrays.asList(
@@ -261,10 +261,20 @@ public class OrchestratorImplTest {
         //   TEST6: tenant-id-3:application-instance-3:default
         //   TEST1: test-tenant-id:application:instance
         InOrder order = inOrder(orchestrator);
-        order.verify(orchestrator).suspendGroup(any(), eq(DummyInstanceLookupService.TEST3_NODE_GROUP));
-        order.verify(orchestrator).suspendGroup(any(), eq(DummyInstanceLookupService.TEST6_NODE_GROUP));
-        order.verify(orchestrator).suspendGroup(any(), eq(DummyInstanceLookupService.TEST1_NODE_GROUP));
+        verifySuspendGroup(order, orchestrator, DummyInstanceLookupService.TEST3_NODE_GROUP, true);
+        verifySuspendGroup(order, orchestrator, DummyInstanceLookupService.TEST6_NODE_GROUP, true);
+        verifySuspendGroup(order, orchestrator, DummyInstanceLookupService.TEST1_NODE_GROUP, true);
+        verifySuspendGroup(order, orchestrator, DummyInstanceLookupService.TEST3_NODE_GROUP, false);
+        verifySuspendGroup(order, orchestrator, DummyInstanceLookupService.TEST6_NODE_GROUP, false);
+        verifySuspendGroup(order, orchestrator, DummyInstanceLookupService.TEST1_NODE_GROUP, false);
         order.verifyNoMoreInteractions();
+    }
+
+    private void verifySuspendGroup(InOrder order, OrchestratorImpl orchestrator, NodeGroup nodeGroup, boolean probe)
+            throws HostStateChangeDeniedException{
+        ArgumentCaptor<OrchestratorContext> argument = ArgumentCaptor.forClass(OrchestratorContext.class);
+        order.verify(orchestrator).suspendGroup(argument.capture(), eq(nodeGroup));
+        assertEquals(probe, argument.getValue().isProbe());
     }
 
     @Test

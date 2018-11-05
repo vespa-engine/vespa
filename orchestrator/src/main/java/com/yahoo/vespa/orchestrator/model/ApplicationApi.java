@@ -3,6 +3,7 @@ package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
@@ -26,7 +27,7 @@ public interface ApplicationApi {
 
     ApplicationInstanceStatus getApplicationStatus();
 
-    void setHostState(HostName hostName, HostStatus status);
+    void setHostState(OrchestratorContext context, HostName hostName, HostStatus status);
     List<HostName> getNodesInGroupWithStatus(HostStatus status);
 
     List<StorageNode> getStorageNodesInGroupInClusterOrder();

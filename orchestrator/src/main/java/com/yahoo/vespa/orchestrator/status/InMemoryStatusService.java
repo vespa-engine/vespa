@@ -3,8 +3,8 @@ package com.yahoo.vespa.orchestrator.status;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.orchestrator.OrchestratorContext;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -46,8 +46,8 @@ public class InMemoryStatusService implements StatusService {
 
     @Override
     public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
-            ApplicationInstanceReference applicationInstanceReference,
-            Duration timeout) {
+            OrchestratorContext context,
+            ApplicationInstanceReference applicationInstanceReference) {
         Lock lock = instanceLockService.get(applicationInstanceReference);
         return new InMemoryMutableStatusRegistry(lock, applicationInstanceReference);
     }

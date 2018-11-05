@@ -22,16 +22,16 @@ public class OrchestratorContext {
 
     private final Clock clock;
     private final TimeBudget timeBudget;
-    private boolean probe;
+    private final boolean probe;
 
     /** Create an OrchestratorContext for operations on multiple applications. */
     public static OrchestratorContext createContextForMultiAppOp(Clock clock) {
-        return new OrchestratorContext(clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_BATCH_OP), true);
+        return new OrchestratorContext(clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_BATCH_OP), false);
     }
 
     /** Create an OrchestratorContext for an operation on a single application. */
     public static OrchestratorContext createContextForSingleAppOp(Clock clock) {
-        return new OrchestratorContext(clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_SINGLE_OP), true);
+        return new OrchestratorContext(clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_SINGLE_OP), false);
     }
 
     private OrchestratorContext(Clock clock, TimeBudget timeBudget, boolean probe) {
@@ -48,13 +48,6 @@ public class OrchestratorContext {
         return new ClusterControllerClientTimeouts(timeBudget.timeLeftAsTimeBudget());
     }
 
-
-    /** Mark this operation as a non-committal probe. */
-    public OrchestratorContext markAsProbe() {
-        this.probe = true;
-        return this;
-    }
-
     /** Whether the operation is a no-op probe to test whether it would have succeeded, if it had been committal. */
     public boolean isProbe() {
         return probe;
@@ -69,7 +62,7 @@ public class OrchestratorContext {
     }
 
     /** Create an OrchestratorContext for an operation on a single application, but limited to current timeout. */
-    public OrchestratorContext createSubcontextForSingleAppOp() {
+    public OrchestratorContext createSubcontextForSingleAppOp(boolean probe) {
         Instant now = clock.instant();
         Instant deadline = timeBudget.deadline().get();
         Instant maxDeadline = now.plus(DEFAULT_TIMEOUT_FOR_SINGLE_OP);
