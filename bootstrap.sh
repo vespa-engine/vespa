@@ -29,7 +29,7 @@ get_env_var_with_optional_default() {
    local var_name=$1
    local default_val=$2
    eval "existing_value=\${$var_name}"
-    if [ "$existing_value" ]; then
+    if [ -n "$existing_value" ]; then
         echo "$existing_value"
     elif [ $# -ge 2 ]; then
         echo "$default_val"
