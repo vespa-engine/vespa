@@ -27,9 +27,11 @@ import java.util.Map;
 import static com.yahoo.container.jdisc.state.StateHandler.getSnapshotPreprocessor;
 
 /**
- * This handler outputs metrics in a json-like format. Each individual metric is a json object (packet),
- * but there is no outer array or object that wraps the metrics packets. This handler is not set up by
- * default, but can be added to the applications's services configuration.
+ * This handler outputs metrics in a json-like format, consisting of a series of metrics packets.
+ * Each packet is a json object but there is no outer array or object that wraps the packets.
+ * To reduce the amount of output, a packet contains all metrics that share the same set of dimensions.
+ *
+ * This handler is not set up by default, but can be added to the applications's services configuration.
  *
  * This handler is protocol agnostic, so it cannot discriminate between e.g. http request
  * methods (get/head/post etc.).
@@ -87,7 +89,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
 
     private byte[] buildMetricOutput() {
         try {
-            String output = getStatusPacket() + getAllMetricsPackets();
+            String output = getStatusPacket() + getAllMetricsPackets() + "\n";
             return output.getBytes(StandardCharsets.UTF_8);
         } catch (JSONException e) {
             throw new RuntimeException("Bad JSON construction.", e);
