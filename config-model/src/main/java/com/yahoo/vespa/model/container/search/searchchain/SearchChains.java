@@ -74,11 +74,6 @@ public class SearchChains extends Chains<SearchChain> {
         return CollectionUtil.filter(allChains().allComponents(), LocalProvider.class);
     }
 
-
-    public Collection<HttpProvider> httpProviders() {
-        return CollectionUtil.filter(allChains().allComponents(), HttpProvider.class);
-    }
-
     /*
      * If searchChain is a provider, its sources must already have been attached.
      */
