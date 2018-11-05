@@ -81,10 +81,10 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
     @Override
     public Optional<ErrorResponse> filterRequest(DiscFilterRequest request) {
         Method method = getMethod(request);
-        Path path = new Path(request.getRequestURI());
-        if (isWhiteListed(method, path)) return Optional.empty();
+        if (isWhiteListedMethod(method)) return Optional.empty();
 
         try {
+            Path path = new Path(request.getRequestURI());
             AthenzPrincipal principal = getPrincipalOrThrow(request);
             if (isWhiteListedOperation(path, method)) {
                 // no authz check
@@ -106,10 +106,8 @@ public class ControllerAuthorizationFilter extends CorsRequestFilterBase {
         }
     }
 
-    private static boolean isWhiteListed(Method method, Path path) {
-        return WHITELISTED_METHODS.contains(method) ||
-                path.matches("/metricforwarding/v1/{*}") && method == POST ||
-                path.matches("/contactinfo/v1/{*}") && method == POST;
+    private static boolean isWhiteListedMethod(Method method) {
+        return WHITELISTED_METHODS.contains(method);
     }
 
     private static boolean isWhiteListedOperation(Path path, Method method) {
