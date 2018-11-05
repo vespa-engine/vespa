@@ -108,7 +108,7 @@ public class JuniperSearcher extends Searcher {
 
             for (Index index : indexFacts.getIndexes(searchDefinitionField.toString())) {
                 if (index.getDynamicSummary() || index.getHighlightSummary()) {
-                    HitField fieldValue = hit.buildHitField(index.getName(), true, true);
+                    HitField fieldValue = hit.buildHitField(index.getName(), true);
                     if (fieldValue != null)
                         insertTags(fieldValue, bolding, index.getDynamicSummary());
                 }
