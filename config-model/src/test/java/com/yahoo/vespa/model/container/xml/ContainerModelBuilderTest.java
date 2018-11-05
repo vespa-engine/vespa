@@ -627,7 +627,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test(expected = IllegalArgumentException.class)
     public void renderers_named_DefaultRenderer_are_not_allowed() {
-        createModel(root, generateContainerElementWithRenderer("DefaultRenderer"));
+        createModel(root, generateContainerElementWithRenderer("XmlRenderer"));
     }
 
     @Test
