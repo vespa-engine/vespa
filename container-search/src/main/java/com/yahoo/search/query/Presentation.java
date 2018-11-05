@@ -96,16 +96,6 @@ public class Presentation implements Cloneable {
     /** Sets whether matching query terms should be bolded in the result */
     public void setBolding(boolean bolding) { this.bolding = bolding; }
 
-    /** @deprecated coverage information is always returned */
-    @Deprecated // OK
-    // TODO: Remove on Vespa 7
-    public boolean getReportCoverage() { return true; }
-
-    /** @deprecated coverage information is always returned */
-    @Deprecated // OK
-    // TODO: Remove on Vespa 7
-    public void setReportCoverage(boolean ignored) { }
-
     /** Get the name of the format desired for result rendering. */
     @NonNull
     public ComponentSpecification getRenderer() { return format; }

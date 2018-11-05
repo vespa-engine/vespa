@@ -14,15 +14,6 @@ public interface ErrorHit extends Cloneable {
 
     void setSource(String source);
 
-    /** 
-     * Returns the main error of this result, never null
-     * 
-     * @deprecated use errors().iterator().next()
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    ErrorMessage getMainError();
-
     /**
      * Adds an error to this. This may change the main error
      * and/or the list of detailed errors
