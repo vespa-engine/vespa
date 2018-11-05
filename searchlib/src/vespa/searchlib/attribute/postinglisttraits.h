@@ -14,41 +14,32 @@ template <typename DataT> class PostingStore;
 template <>
 class PostingListTraits<btree::BTreeNoLeafData>
 {
+private:
 public:
-    typedef btree::NoAggregated AggregatedType;
-    typedef btree::NoAggrCalc AggrCalcType;
-    typedef btree::BTreeStore<uint32_t, btree::BTreeNoLeafData,
-                              AggregatedType,
-                              std::less<uint32_t>,
-                              btree::BTreeDefaultTraits,
-                              AggrCalcType> PostingStoreBase;
-    typedef PostingStore<btree::BTreeNoLeafData> PostingList;
-    typedef PostingStoreBase::KeyDataType Posting;
+    using AggregatedType = btree::NoAggregated;
+    using AggrCalcType = btree::NoAggrCalc;
+    using PostingStoreBase = btree::BTreeStore<uint32_t, btree::BTreeNoLeafData, AggregatedType, std::less<uint32_t>,
+                                               btree::BTreeTraits<16, 16, 10, true>, AggrCalcType> ;
+    using PostingList = PostingStore<btree::BTreeNoLeafData>;
+    using Posting = PostingStoreBase::KeyDataType;
 };
-
 
 template <>
 class PostingListTraits<int32_t>
 {
 public:
-    typedef btree::MinMaxAggregated AggregatedType;
-    typedef btree::MinMaxAggrCalc AggrCalcType;
-    typedef btree::BTreeStore<uint32_t, int32_t,
-                              AggregatedType,
-                              std::less<uint32_t>,
-                              btree::BTreeDefaultTraits,
-                              AggrCalcType> PostingStoreBase;
-    typedef PostingStore<int32_t> PostingList;
-    typedef PostingStoreBase::KeyDataType Posting;
+    using AggregatedType = btree::MinMaxAggregated;
+    using AggrCalcType = btree::MinMaxAggrCalc;
+    using PostingStoreBase = btree::BTreeStore<uint32_t, int32_t, AggregatedType, std::less<uint32_t>,
+                                               btree::BTreeTraits<16, 16, 10, true>, AggrCalcType>;
+    using PostingList = PostingStore<int32_t>;
+    using Posting = PostingStoreBase::KeyDataType;
 };
 
+}
 
-} // namespace attribute
+using AttributePosting = btree::BTreeKeyData<uint32_t, btree::BTreeNoLeafData>;
+using AttributeWeightPosting = btree::BTreeKeyData<uint32_t, int32_t>;
 
-typedef btree::BTreeKeyData<uint32_t, btree::BTreeNoLeafData> AttributePosting;
-
-typedef btree::BTreeKeyData<uint32_t, int32_t> AttributeWeightPosting;
-
-
-} // namespace search
+}
 
