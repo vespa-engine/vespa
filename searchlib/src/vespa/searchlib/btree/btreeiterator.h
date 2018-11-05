@@ -7,8 +7,7 @@
 #include "btreetraits.h"
 #include <vespa/fastos/dynamiclibrary.h>
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 template <typename, typename, typename, typename, typename, class>
 class BTreeInserter;
@@ -871,21 +870,15 @@ private:
     void adjustGivenEntriesToRightLeafNode();
 };
 
-
 extern template class BTreeIteratorBase<uint32_t, uint32_t, NoAggregated>;
-extern template class BTreeIteratorBase<uint32_t, BTreeNoLeafData,
-                                        NoAggregated>;
-extern template class BTreeIteratorBase<uint32_t, int32_t,
-                                        MinMaxAggregated>;
+extern template class BTreeIteratorBase<uint32_t, BTreeNoLeafData, NoAggregated>;
+extern template class BTreeIteratorBase<uint32_t, int32_t, MinMaxAggregated>;
 extern template class BTreeConstIterator<uint32_t, uint32_t, NoAggregated>;
-extern template class BTreeConstIterator<uint32_t, BTreeNoLeafData,
-                                         NoAggregated>;
-extern template class BTreeConstIterator<uint32_t, int32_t,
-                                         MinMaxAggregated>;
+extern template class BTreeConstIterator<uint32_t, BTreeNoLeafData, NoAggregated>;
+extern template class BTreeConstIterator<uint32_t, int32_t, MinMaxAggregated>;
 extern template class BTreeIterator<uint32_t, uint32_t, NoAggregated>;
 extern template class BTreeIterator<uint32_t, BTreeNoLeafData, NoAggregated>;
 extern template class BTreeIterator<uint32_t, int32_t, MinMaxAggregated>;
 
-} // namespace search::btree
-} // namespace search
+}
 

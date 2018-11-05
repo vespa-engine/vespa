@@ -4,15 +4,14 @@
 
 #include "noaggregated.h"
 #include "minmaxaggregated.h"
+#include "btree_key_data.h"
 #include <vespa/searchlib/datastore/entryref.h>
 #include <vespa/searchlib/datastore/handle.h>
 #include <cassert>
 #include <utility>
 #include <cstddef>
-#include "btree_key_data.h"
 
-namespace search {
-namespace datastore {
+namespace search::datastore {
 
 template <typename, typename> class Allocator;
 template <typename> class BufferType;
@@ -23,7 +22,7 @@ template <typename, typename ...> class Assigner;
 
 }
 
-namespace btree {
+namespace search::btree {
 
 template <typename, typename, typename, size_t, size_t> class BTreeNodeAllocator;
 template <typename, typename, typename, size_t, size_t> class BTreeNodeStore;
@@ -506,5 +505,4 @@ extern template class BTreeLeafNodeTemp<uint32_t, int32_t, MinMaxAggregated,
 extern template class BTreeLeafNodeTemp<uint32_t, BTreeNoLeafData,
                                         NoAggregated, 16>;
 
-} // namespace search::btree
-} // namespace search
+}

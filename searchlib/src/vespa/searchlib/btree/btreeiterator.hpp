@@ -6,25 +6,10 @@
 #include "btreeaggregator.h"
 #include "btreenode.hpp"
 #include <vespa/vespalib/util/hdr_abort.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 #define STRICT_BTREE_ITERATOR_SEEK
-
-namespace {
-
-template <typename KeyT>
-vespalib::string
-keyToStr(const KeyT & key)
-{
-    vespalib::asciistream ss;
-    ss << key;
-    return ss.str();
-}
-
-}
 
 template <typename KeyT, typename DataT, typename AggrT,
           uint32_t INTERNAL_SLOTS, uint32_t LEAF_SLOTS, uint32_t PATH_SIZE>
@@ -1373,6 +1358,4 @@ BTreeIterator<KeyT, DataT, AggrT, CompareT, TraitsT>::adjustGivenEntriesToRightL
     }
 }
 
-} // namespace search::btree
-} // namespace search
-
+}

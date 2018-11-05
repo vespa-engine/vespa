@@ -5,11 +5,7 @@
 #include "btreenodestore.h"
 #include <vespa/searchlib/datastore/datastore.hpp>
 
-namespace search
-{
-
-namespace btree
-{
+namespace search::btree {
 
 template <typename EntryType>
 void
@@ -26,10 +22,7 @@ BTreeNodeBufferType<EntryType>::initializeReservedElements(void *buffer, size_t 
 
 template <typename EntryType>
 void
-BTreeNodeBufferType<EntryType>::cleanHold(void *buffer,
-                                          uint64_t offset,
-                                          uint64_t len,
-                                          CleanContext)
+BTreeNodeBufferType<EntryType>::cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext)
 {
     EntryType *e = static_cast<EntryType *>(buffer) + offset;
     for (size_t j = len; j != 0; --j) {
@@ -70,14 +63,10 @@ std::vector<uint32_t>
 BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
 startCompact()
 {
-    std::vector<uint32_t> iToHold =
-        _store.startCompact(NODETYPE_INTERNAL);
-    std::vector<uint32_t> lToHold =
-        _store.startCompact(NODETYPE_LEAF);
+    std::vector<uint32_t> iToHold = _store.startCompact(NODETYPE_INTERNAL);
+    std::vector<uint32_t> lToHold = _store.startCompact(NODETYPE_LEAF);
     std::vector<uint32_t> ret = iToHold;
-    for (std::vector<uint32_t>::const_iterator
-             i = lToHold.begin(), ie = lToHold.end(); i != ie; ++i)
-        ret.push_back(*i);
+    ret.insert(ret.end(), lToHold.begin(), lToHold.end());
     return ret;
 }
 
@@ -91,9 +80,4 @@ finishCompact(const std::vector<uint32_t> &toHold)
     _store.finishCompact(toHold);
 }
 
-
-} // namespace btree
-
-} // namespace search
-
-
+}

@@ -3,11 +3,12 @@
 #include "enumstorebase.h"
 #include "enumstore.h"
 #include <vespa/searchlib/datastore/datastore.hpp>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/searchlib/btree/btreeiterator.hpp>
 #include <vespa/searchlib/btree/btreenode.hpp>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/common/rcuvector.hpp>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.enumstorebase");
@@ -34,7 +35,7 @@ EnumStoreBase::EnumBufferType::calcClustersToAlloc(uint32_t bufferId, size_t siz
     size_t reservedElements = getReservedElements(bufferId);
     sizeNeeded = std::max(sizeNeeded, _minSizeNeeded);
     size_t usedElems = _activeUsedElems;
-    if (_lastUsedElems != NULL) {
+    if (_lastUsedElems != nullptr) {
         usedElems += *_lastUsedElems;
     }
     assert((usedElems % _clusterSize) == 0);
@@ -62,7 +63,7 @@ EnumStoreBase::EnumBufferType::calcClustersToAlloc(uint32_t bufferId, size_t siz
 
 EnumStoreBase::EnumStoreBase(uint64_t initBufferSize,
                              bool hasPostings)
-    : _enumDict(NULL),
+    : _enumDict(nullptr),
       _store(),
       _type(),
       _nextEnum(0),
@@ -314,9 +315,7 @@ EnumStoreDictBase::EnumStoreDictBase(EnumStoreBase &enumStore)
 }
 
 
-EnumStoreDictBase::~EnumStoreDictBase()
-{
-}
+EnumStoreDictBase::~EnumStoreDictBase() = default;
 
 
 template <typename Dictionary>
@@ -327,9 +326,7 @@ EnumStoreDict<Dictionary>::EnumStoreDict(EnumStoreBase &enumStore)
 }
 
 template <typename Dictionary>
-EnumStoreDict<Dictionary>::~EnumStoreDict()
-{
-}
+EnumStoreDict<Dictionary>::~EnumStoreDict() = default;
 
 
 template <typename Dictionary>
@@ -418,7 +415,7 @@ EnumStoreDict<Dictionary>::removeUnusedEnums(const IndexSet &unused,
          iter != mt; ++iter) {
         it.lower_bound(_dict.getRoot(), *iter, cmp);
         assert(it.valid() && !cmp(*iter, it.getKey()));
-        if (Iterator::hasData() && fcmp != NULL) {
+        if (Iterator::hasData() && fcmp != nullptr) {
             typename Dictionary::DataType pidx(it.getData());
             _dict.remove(it);
             if (!it.valid() || (*fcmp)(*iter, it.getKey()))

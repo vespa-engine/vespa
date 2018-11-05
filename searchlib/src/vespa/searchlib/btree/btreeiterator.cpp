@@ -6,9 +6,6 @@
 #include "btreeiterator.hpp"
 #include "btreenode.hpp"
 
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.btree.breeiterator");
-
 namespace search::btree {
 
 template class BTreeIteratorBase<uint32_t, uint32_t, NoAggregated>;

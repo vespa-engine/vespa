@@ -7,8 +7,6 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/status.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.posting_store");
 
 namespace search::attribute {
 
@@ -39,9 +37,7 @@ PostingStoreBase2::PostingStoreBase2(EnumPostingTree &dict, Status &status,
 }
 
 
-PostingStoreBase2::~PostingStoreBase2()
-{
-}
+PostingStoreBase2::~PostingStoreBase2() = default;
 
 
 bool
@@ -632,9 +628,7 @@ PostingStore<DataT>::getMemoryUsage() const
     return usage;
 }
 
-
 template class PostingStore<BTreeNoLeafData>;
-
 template class PostingStore<int32_t>;
 
 }

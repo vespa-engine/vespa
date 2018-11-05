@@ -4,9 +4,7 @@
 
 #include "btreerootbase.h"
 
-namespace search {
-namespace btree {
-
+namespace search::btree {
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
@@ -70,8 +68,7 @@ template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
 void
 BTreeRootBase<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
-recursiveDelete(BTreeNode::Ref node,
-        NodeAllocatorType &allocator)
+recursiveDelete(BTreeNode::Ref node, NodeAllocatorType &allocator)
 {
     assert(allocator.isValidRef(node));
     if (!allocator.isLeafRef(node)) {
@@ -85,6 +82,4 @@ recursiveDelete(BTreeNode::Ref node,
     }
 }
 
-} // namespace btree
-} // namespace search
-
+}

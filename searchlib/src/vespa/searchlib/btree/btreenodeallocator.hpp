@@ -8,8 +8,7 @@
 #include <vespa/vespalib/util/array.hpp>
 #include "btreenodestore.hpp"
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
@@ -432,7 +431,4 @@ toString(const BTreeNode * node) const
     return ss.str();
 }
 
-
-} // namespace btree
-} // namespace search
-
+}

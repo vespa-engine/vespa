@@ -3,24 +3,16 @@
 #include "btreerootbase.h"
 #include "btreerootbase.hpp"
 
-namespace search
-{
+namespace search::btree {
 
-namespace btree
-{
-
-template class BTreeRootBase<uint32_t, uint32_t,
-                             NoAggregated,
+template class BTreeRootBase<uint32_t, uint32_t, NoAggregated,
                              BTreeDefaultTraits::INTERNAL_SLOTS,
                              BTreeDefaultTraits::LEAF_SLOTS>;
-template class BTreeRootBase<uint32_t, BTreeNoLeafData,
-                             NoAggregated,
+template class BTreeRootBase<uint32_t, BTreeNoLeafData, NoAggregated,
                              BTreeDefaultTraits::INTERNAL_SLOTS,
                              BTreeDefaultTraits::LEAF_SLOTS>;
-template class BTreeRootBase<uint32_t, int32_t,
-                             MinMaxAggregated,
+template class BTreeRootBase<uint32_t, int32_t, MinMaxAggregated,
                              BTreeDefaultTraits::INTERNAL_SLOTS,
                              BTreeDefaultTraits::LEAF_SLOTS>;
 
-} // namespace btree
-} // namespace search
+}

@@ -5,8 +5,7 @@
 #include "btreenode.h"
 #include <algorithm>
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 namespace {
 
@@ -381,7 +380,4 @@ BTreeLeafNode(const KeyDataType *smallArray, uint32_t arraySize)
     freeze();
 }
 
-
-} // namespace search::btree
-} // namespace search
-
+}
