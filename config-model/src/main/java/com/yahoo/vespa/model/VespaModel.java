@@ -113,8 +113,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     /** The global ranking constants of this model */
     private final RankingConstants rankingConstants = new RankingConstants();
 
-    private DeployLogger deployLogger;
-
     /** The validation overrides of this. This is never null. */
     private final ValidationOverrides validationOverrides;
     
@@ -171,7 +169,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                                    deployState.getImportedModels());
 
         if (complete) { // create a a completed, frozen model
-            this.deployLogger = deployState.getDeployLogger();
             configModelRepo.readConfigModels(deployState, this, builder, root, configModelRegistry);
             addServiceClusters(deployState, builder);
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs()); // must happen after the two lines above
@@ -182,12 +179,10 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             root.prepare(configModelRepo);
             configModelRepo.prepareConfigModels(deployState);
             validateWrapExceptions();
-            this.deployLogger = null;
         }
         else { // create a model with no services instantiated and the given file distributor
             this.allocatedHosts = AllocatedHosts.withHosts(hostSystem.getHostSpecs());
             this.fileDistributor = fileDistributor;
-            this.deployLogger = deployState.getDeployLogger();
         }
     }
 
