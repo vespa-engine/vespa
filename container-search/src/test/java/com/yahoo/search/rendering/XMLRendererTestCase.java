@@ -4,11 +4,7 @@ package com.yahoo.search.rendering;
 import static org.junit.Assert.*;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 
-import com.yahoo.search.handler.SearchHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,11 +31,11 @@ import com.yahoo.text.Utf8;
  */
 public class XMLRendererTestCase {
 
-    DefaultRenderer d;
+    XmlRenderer d;
 
     @Before
     public void setUp() throws Exception {
-        d = new DefaultRenderer();
+        d = new XmlRenderer();
         d.init();
     }
 
