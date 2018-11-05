@@ -25,8 +25,24 @@ else
     exit 1
 fi
 
+get_env_var_with_optional_default() {
+   local var_name=$1
+   local default_val=$2
+   eval "existing_value=\${$var_name}"
+    if [ "$existing_value" ]; then
+        echo "$existing_value"
+    elif [ $# -ge 2 ]; then
+        echo "$default_val"
+    fi
+}
+
+readonly MAVEN_CMD=$(get_env_var_with_optional_default VESPA_MAVEN_COMMAND mvn)
+readonly MAVEN_EXTRA_OPTS=$(get_env_var_with_optional_default VESPA_MAVEN_EXTRA_OPTS)
+echo "Using maven command: ${MAVEN_CMD}"
+echo "Using maven extra opts: ${MAVEN_EXTRA_OPTS}"
+
 mvn_install() {
-    mvn --quiet --batch-mode --no-snapshot-updates clean install -Dmaven.javadoc.skip=true "$@"
+    ${MAVEN_CMD} --quiet --batch-mode --no-snapshot-updates clean install -Dmaven.javadoc.skip=true ${MAVEN_EXTRA_OPTS} "$@"
 }
 
 # Generate vtag map
