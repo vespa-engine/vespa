@@ -54,7 +54,7 @@ public class FeedHandler extends LoggingRequestHandler {
     protected final ReplyHandler feedReplyHandler;
     private final AtomicLong sessionId;
     private final Metric metric;
-    private static final List<Integer> serverSupportedVersions = Collections.unmodifiableList(Arrays.asList(2));
+    private static final List<Integer> serverSupportedVersions = Collections.unmodifiableList(Arrays.asList(2, 3));
     private final String localHostname;
     private final FeedHandlerV3 feedHandlerV3;
 
