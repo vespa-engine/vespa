@@ -8,7 +8,6 @@ import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ContainerSubsystem;
-import com.yahoo.vespa.model.container.search.searchchain.HttpProvider;
 import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.search.config.IndexInfoConfig;
@@ -108,18 +107,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     @Override
     public void getConfig(PageTemplatesConfig.Builder builder) {
         if (pageTemplates!=null) pageTemplates.getConfig(builder);
-    }
-
-    public int totalCacheSizeMb() {
-        return totalHttpProviderCacheSize();
-    }
-
-    private int totalHttpProviderCacheSize() {
-        int totalCacheSizeMb = 0;
-        for (HttpProvider provider: getChains().httpProviders())
-            totalCacheSizeMb += provider.cacheSizeMB();
-
-        return totalCacheSizeMb;
     }
 
     @Override
