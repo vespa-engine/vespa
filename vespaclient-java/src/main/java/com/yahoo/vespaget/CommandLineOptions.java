@@ -123,8 +123,7 @@ public class CommandLineOptions {
                 .hasArg(true)
                 .desc("Priority (default 6).")
                 .longOpt(PRIORITY_OPTION)
-                .argName("priority")
-                .type(Number.class).build());
+                .argName("priority").build());
 
         options.addOption(Option.builder("l")
                 .hasArg(true)
@@ -257,18 +256,25 @@ public class CommandLineOptions {
     }
 
     private static DocumentProtocol.Priority getPriority(CommandLine cl) throws ParseException {
-        Number priorityObj = (Number) cl.getParsedOptionValue(PRIORITY_OPTION);
-        int priorityNumber = priorityObj != null ? priorityObj.intValue() : DocumentProtocol.Priority.NORMAL_2.getValue();
-        return parsePriority(priorityNumber);
+        String priority = cl.getOptionValue(PRIORITY_OPTION, "NORMAL_2");
+        return parsePriority(priority);
     }
 
-    private static DocumentProtocol.Priority parsePriority(int n) {
-        for (DocumentProtocol.Priority priority : DocumentProtocol.Priority.values()) {
-            if (priority.getValue() == n) {
-                return priority;
-            }
+    private static DocumentProtocol.Priority parsePriority(String name) {
+        try {
+            return DocumentProtocol.Priority.valueOf(name);
+        } catch (IllegalArgumentException e) {
         }
-        throw new IllegalArgumentException("Invalid priority: " + n);
+        try {
+            int n = Integer.parseInt(name);
+            for (DocumentProtocol.Priority priority : DocumentProtocol.Priority.values()) {
+                if (priority.getValue() == n) {
+                    return priority;
+                }
+            }
+        } catch (NumberFormatException e) {
+        }
+        throw new IllegalArgumentException("Invalid priority: " + name);
     }
 
 }
