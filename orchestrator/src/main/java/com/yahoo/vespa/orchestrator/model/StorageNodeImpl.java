@@ -106,8 +106,8 @@ public class StorageNodeImpl implements StorageNode {
         }
 
         String logSuffix = context.isProbe() ?
-                " has been set to " + wantedNodeState:
-                " would have been set to " + wantedNodeState + " (this is a probe)";
+                " would have been set to " + wantedNodeState + " (this is a probe)" :
+                " has been set to " + wantedNodeState;
         logger.log(LogLevel.INFO, "Storage node " + nodeIndex + " in cluster " + clusterId +
                 " application " + applicationInstance.reference().asString() + " on host " + hostName() + logSuffix);
     }
