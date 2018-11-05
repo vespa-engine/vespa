@@ -37,12 +37,9 @@ import java.util.stream.Collectors;
  * XML rendering of search results. This is NOT the default (but it once was).
  *
  * @author Tony Vaagenes
- * @deprecated use JsonRenderer instead
  */
 @SuppressWarnings({ "rawtypes", "deprecation" })
-@Deprecated // OK
-// TODO: Rename to XmlRenderer on Vespa 7
-public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result> {
+public final class XmlRenderer extends AsynchronousSectionedRenderer<Result> {
 
     public static final String  DEFAULT_MIMETYPE    = "text/xml";
     public static final String  DEFAULT_ENCODING    = "utf-8";
@@ -75,7 +72,7 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
 
     private XMLWriter writer;
 
-    public DefaultRenderer() {
+    public XmlRenderer() {
         this(null);
     }
 
@@ -83,7 +80,7 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
      * Creates an XML renderer using a custom executor.
      * Using a custom executor is useful for tests to avoid creating new threads for each renderer registry.
      */
-    public DefaultRenderer(Executor executor) {
+    public XmlRenderer(Executor executor) {
         super(executor);
     }
 
@@ -354,7 +351,7 @@ public final class DefaultRenderer extends AsynchronousSectionedRenderer<Result>
             r = (Result) getResponse();
         } catch (ClassCastException e) {
             throw new IllegalArgumentException(
-                    "DefaultRenderer attempted used outside a search context, got a "
+                    "XmlRenderer attempted used outside a search context, got a "
                     + getResponse().getClass().getName());
         }
         return r;
