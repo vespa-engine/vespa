@@ -23,7 +23,7 @@ import java.util.concurrent.Executor;
  */
 public final class RendererRegistry extends ComponentRegistry<com.yahoo.processing.rendering.Renderer<Result>> {
 
-    public static final ComponentId xmlRendererId = ComponentId.fromString("DefaultRenderer");
+    public static final ComponentId xmlRendererId = ComponentId.fromString("XmlRenderer");
     public static final ComponentId jsonRendererId = ComponentId.fromString("JsonRenderer");
     public static final ComponentId defaultRendererId = jsonRendererId;
     
@@ -60,7 +60,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         register(jsonRenderer.getId(), jsonRenderer);
 
         // Add xml renderer
-        Renderer xmlRenderer = new DefaultRenderer(executor);
+        Renderer xmlRenderer = new XmlRenderer(executor);
         xmlRenderer.initId(xmlRendererId);
         register(xmlRenderer.getId(), xmlRenderer);
 

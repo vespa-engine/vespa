@@ -13,6 +13,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.pagetemplates.model.Renderer;
 import com.yahoo.search.pagetemplates.model.Source;
 import com.yahoo.search.query.context.QueryContext;
+import com.yahoo.search.rendering.XmlRenderer;
 import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.DefaultErrorHit;
 import com.yahoo.search.result.ErrorHit;
@@ -124,7 +125,7 @@ public class PageTemplatesXmlRenderer extends AsynchronousSectionedRenderer<Resu
             XMLWriter xmlWriter=XMLWriter.from(writer);
             xmlWriter.openTag("meta").attribute("type", QueryContext.ID);
             TraceNode traceRoot = owner.getModel().getExecution().trace().traceNode().root();
-            traceRoot.accept(new com.yahoo.search.rendering.DefaultRenderer.RenderingVisitor(xmlWriter, owner.getStartTime()));
+            traceRoot.accept(new XmlRenderer.RenderingVisitor(xmlWriter, owner.getStartTime()));
             xmlWriter.closeTag();
         }
     }
