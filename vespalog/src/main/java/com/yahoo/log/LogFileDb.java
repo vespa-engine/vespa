@@ -30,13 +30,13 @@ public class LogFileDb {
     }
 
     private static OutputStream metaFile() throws java.io.IOException {
-        File dir = new File(getDefaults().underVespaHome(DBDIR));
+        String fn = getDefaults().underVespaHome(DBDIR + "logfiles." + dayStamp());
+        File dir = new File(fn).getParentFile();
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
                 System.err.println("Failed creating logfiledb directory '" + dir.getPath() + "'.");
             }
         }
-        String fn = dir + "logfiles." + dayStamp();
         Path path = Paths.get(fn);
         return Files.newOutputStream(path, CREATE, APPEND);
     }
