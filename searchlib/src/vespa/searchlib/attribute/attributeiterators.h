@@ -183,11 +183,9 @@ public:
 };
 
 
-using InnerAttributePostingListIterator = btree::BTreeConstIterator<uint32_t, btree::BTreeNoLeafData, btree::NoAggregated,
-                                                                    std::less<uint32_t>, btree::BTreeDefaultTraits>;
+using InnerAttributePostingListIterator = attribute::PostingListTraits<btree::BTreeNoLeafData>::const_iterator;
 
-using WeightedInnerAttributePostingListIterator = btree::BTreeConstIterator<uint32_t, int32_t, btree::MinMaxAggregated,
-                                                                            std::less<uint32_t>, btree::BTreeDefaultTraits>; 
+using WeightedInnerAttributePostingListIterator = attribute::PostingListTraits<int32_t>::const_iterator;
 
 template <typename PL>
 class AttributePostingListIteratorT : public AttributePostingListIterator
@@ -203,7 +201,7 @@ private:
     int32_t getWeight() { return _iterator.getData(); }
 
     const queryeval::PostingInfo * getPostingInfo() const override {
-        return _postingInfoValid ? &_postingInfo : NULL;
+        return _postingInfoValid ? &_postingInfo : nullptr;
     }
 
     void initRange(uint32_t begin, uint32_t end) override;
@@ -238,7 +236,7 @@ private:
     void setupPostingInfo() { }
 
     const queryeval::PostingInfo * getPostingInfo() const override {
-        return _postingInfoValid ? &_postingInfo : NULL;
+        return _postingInfoValid ? &_postingInfo : nullptr;
     }
 
     void initRange(uint32_t begin, uint32_t end) override;

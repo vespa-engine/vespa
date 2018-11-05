@@ -15,11 +15,14 @@ template <>
 class PostingListTraits<btree::BTreeNoLeafData>
 {
 private:
+    using BTreeTraits = btree::BTreeTraits<16, 16, 10, true>;
 public:
     using AggregatedType = btree::NoAggregated;
     using AggrCalcType = btree::NoAggrCalc;
-    using PostingStoreBase = btree::BTreeStore<uint32_t, btree::BTreeNoLeafData, AggregatedType, std::less<uint32_t>,
-                                               btree::BTreeTraits<16, 16, 10, true>, AggrCalcType> ;
+    using const_iterator = btree::BTreeConstIterator<uint32_t, btree::BTreeNoLeafData, AggregatedType ,
+                                                     std::less<uint32_t>, BTreeTraits >;
+    using PostingStoreBase = btree::BTreeStore<uint32_t, btree::BTreeNoLeafData, AggregatedType,
+                                               std::less<uint32_t>, BTreeTraits, AggrCalcType> ;
     using PostingList = PostingStore<btree::BTreeNoLeafData>;
     using Posting = PostingStoreBase::KeyDataType;
 };
@@ -27,11 +30,15 @@ public:
 template <>
 class PostingListTraits<int32_t>
 {
+private:
+    using BTreeTraits = btree::BTreeTraits<16, 16, 10, true>;
 public:
     using AggregatedType = btree::MinMaxAggregated;
     using AggrCalcType = btree::MinMaxAggrCalc;
-    using PostingStoreBase = btree::BTreeStore<uint32_t, int32_t, AggregatedType, std::less<uint32_t>,
-                                               btree::BTreeTraits<16, 16, 10, true>, AggrCalcType>;
+    using const_iterator = btree::BTreeConstIterator<uint32_t, int32_t, AggregatedType ,
+                                                     std::less<uint32_t>, BTreeTraits >;
+    using PostingStoreBase = btree::BTreeStore<uint32_t, int32_t, AggregatedType,
+                                               std::less<uint32_t>, BTreeTraits, AggrCalcType>;
     using PostingList = PostingStore<int32_t>;
     using Posting = PostingStoreBase::KeyDataType;
 };
