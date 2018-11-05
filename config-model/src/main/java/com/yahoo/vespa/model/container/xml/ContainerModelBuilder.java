@@ -833,7 +833,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
 
     /**
-     * Disallow renderers named "DefaultRenderer" or "JsonRenderer"
+     * Disallow renderers named "XmlRenderer" or "JsonRenderer"
      */
     private static void validateRendererElement(Element element) {
         String idAttr = element.getAttribute("id");
