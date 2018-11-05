@@ -6,7 +6,6 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.path.Path;
@@ -182,7 +181,7 @@ public class TenantRepository implements ConnectionStateListener, PathChildrenCa
             }
         }
 
-        if (failed.size() > 0 && throwExceptionIfBootstrappingFails && globalComponentRegistry.getZone().system() == SystemName.cd)
+        if (failed.size() > 0 && throwExceptionIfBootstrappingFails)
             throw new RuntimeException("Could not create all tenants when bootstrapping, failed to create: " + failed);
 
         metricUpdater.setTenants(tenants.size());
