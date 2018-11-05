@@ -193,13 +193,12 @@ public class InstanceValidatorTest {
 
     private SuperModelProvider mockSuperModelProvider(ApplicationInfo... appInfos) {
         SuperModel superModel = new SuperModel(Stream.of(appInfos)
-                                                       .collect(Collectors.groupingBy(
-                                                               appInfo -> appInfo.getApplicationId().tenant(),
-                                                               Collectors.toMap(
-                                                                       ApplicationInfo::getApplicationId,
-                                                                       Function.identity()
-                                                               )
-                                                       )));
+                                                          .collect(Collectors.toMap(
+                                                                  ApplicationInfo::getApplicationId,
+                                                                  Function.identity()
+                                                                   )
+                                                          ),
+                                               false);
 
         SuperModelProvider superModelProvider = mock(SuperModelProvider.class);
         when(superModelProvider.getSuperModel()).thenReturn(superModel);

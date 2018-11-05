@@ -9,7 +9,6 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.service.monitor.internal.slobrok.SlobrokMonitor;
 
 import java.util.ArrayList;
@@ -45,11 +44,9 @@ public class ExampleModel {
                 .then()
                 .build();
 
-        Map<TenantName, Map<ApplicationId, ApplicationInfo>> applicationInfos = new HashMap<>();
-        applicationInfos.put(applicationInfo.getApplicationId().tenant(), new HashMap<>());
-        applicationInfos.get(applicationInfo.getApplicationId().tenant())
-                .put(applicationInfo.getApplicationId(), applicationInfo);
-        return new SuperModel(applicationInfos);
+        Map<ApplicationId, ApplicationInfo> applicationInfos = new HashMap<>();
+        applicationInfos.put(applicationInfo.getApplicationId(), applicationInfo);
+        return new SuperModel(applicationInfos, false);
     }
 
     public static ApplicationBuilder createApplication(String tenant,
