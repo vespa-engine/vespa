@@ -5,6 +5,7 @@ import com.yahoo.collections.Tuple2;
 import com.yahoo.container.jdisc.HttpResponse;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -77,6 +78,12 @@ public class VersionsTestCase {
     public void testTooLarge() throws Exception {
         Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(TOO_LARGE_NUMBER);
         assertThat(v.first, instanceOf(ErrorHttpResponse.class));
+        ByteArrayOutputStream errorMsg = new ByteArrayOutputStream();
+        ErrorHttpResponse errorResponse = (ErrorHttpResponse) v.first;
+        errorResponse.render(errorMsg);
+        assertThat(errorMsg.toString(),
+                is("Could not parse X-Yahoo-Feed-Protocol-Versionheader of request (values: [1000000000]). " +
+                            "Server supports protocol versions [2, 3]"));
         assertThat(v.second, is(-1));
     }
 
