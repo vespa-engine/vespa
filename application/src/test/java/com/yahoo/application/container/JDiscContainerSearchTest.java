@@ -23,7 +23,7 @@ public class JDiscContainerSearchTest {
 
         try (JDisc container = containerWithSearch(searcherId)) {
             byte[] rendered = container.search().processAndRender(ComponentSpecification.fromString("mychain"),
-                    ComponentSpecification.fromString("DefaultRenderer"), new Query(""));
+                    ComponentSpecification.fromString("XmlRenderer"), new Query(""));
             String renderedAsString = new String(rendered, "utf-8");
             assertThat(renderedAsString, containsString(searcherId));
         }
