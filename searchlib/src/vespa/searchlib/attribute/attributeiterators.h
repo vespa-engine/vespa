@@ -3,9 +3,8 @@
 #pragma once
 
 #include "dociditerator.h"
+#include "postinglisttraits.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/btree/btreenode.h>
-#include <vespa/searchlib/btree/btreeiterator.h>
 
 namespace search {
 

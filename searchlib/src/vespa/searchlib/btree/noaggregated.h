@@ -2,10 +2,7 @@
 
 #pragma once
 
-namespace search
-{
-namespace btree
-{
+namespace search::btree {
 
 class NoAggregated
 {
@@ -15,7 +12,4 @@ public:
     bool operator!=(const NoAggregated &) const { return false; }
 };
 
-
-} // namespace search::btree
-} // namespace search
-
+}

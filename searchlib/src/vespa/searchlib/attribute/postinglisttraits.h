@@ -4,9 +4,7 @@
 
 #include <vespa/searchlib/btree/btreestore.h>
 
-namespace search {
-
-namespace attribute {
+namespace search::attribute {
 
 template <typename DataT> class PostingListTraits;
 template <typename DataT> class PostingStore;
@@ -19,10 +17,8 @@ private:
 public:
     using AggregatedType = btree::NoAggregated;
     using AggrCalcType = btree::NoAggrCalc;
-    using const_iterator = btree::BTreeConstIterator<uint32_t, btree::BTreeNoLeafData, AggregatedType ,
-                                                     std::less<uint32_t>, BTreeTraits >;
-    using PostingStoreBase = btree::BTreeStore<uint32_t, btree::BTreeNoLeafData, AggregatedType,
-                                               std::less<uint32_t>, BTreeTraits, AggrCalcType> ;
+    using const_iterator = btree::BTreeConstIterator<uint32_t, btree::BTreeNoLeafData, AggregatedType, std::less<uint32_t>, BTreeTraits >;
+    using PostingStoreBase = btree::BTreeStore<uint32_t, btree::BTreeNoLeafData, AggregatedType, std::less<uint32_t>, BTreeTraits, AggrCalcType> ;
     using PostingList = PostingStore<btree::BTreeNoLeafData>;
     using Posting = PostingStoreBase::KeyDataType;
 };
@@ -35,18 +31,10 @@ private:
 public:
     using AggregatedType = btree::MinMaxAggregated;
     using AggrCalcType = btree::MinMaxAggrCalc;
-    using const_iterator = btree::BTreeConstIterator<uint32_t, int32_t, AggregatedType ,
-                                                     std::less<uint32_t>, BTreeTraits >;
-    using PostingStoreBase = btree::BTreeStore<uint32_t, int32_t, AggregatedType,
-                                               std::less<uint32_t>, BTreeTraits, AggrCalcType>;
+    using const_iterator = btree::BTreeConstIterator<uint32_t, int32_t, AggregatedType, std::less<uint32_t>, BTreeTraits >;
+    using PostingStoreBase = btree::BTreeStore<uint32_t, int32_t, AggregatedType, std::less<uint32_t>, BTreeTraits, AggrCalcType>;
     using PostingList = PostingStore<int32_t>;
     using Posting = PostingStoreBase::KeyDataType;
 };
 
 }
-
-using AttributePosting = btree::BTreeKeyData<uint32_t, btree::BTreeNoLeafData>;
-using AttributeWeightPosting = btree::BTreeKeyData<uint32_t, int32_t>;
-
-}
-

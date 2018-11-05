@@ -7,11 +7,7 @@
 #include "btreetraits.h"
 #include "noaggrcalc.h"
 
-namespace search
-{
-
-namespace btree
-{
+namespace search::btree {
 
 template <typename KeyT,
           typename DataT,
@@ -22,47 +18,25 @@ template <typename KeyT,
 class BTreeAggregator
 {
 public:
-    typedef BTreeNodeAllocator<KeyT, DataT, AggrT,
-                               INTERNAL_SLOTS,
-                               LEAF_SLOTS> NodeAllocatorType;
-    typedef BTreeInternalNode<KeyT, AggrT, INTERNAL_SLOTS>
-    InternalNodeType;
-    typedef BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS>
-    LeafNodeType;
-    typedef AggrT AggregatedType;
+    using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>;
+    using InternalNodeType = BTreeInternalNode<KeyT, AggrT, INTERNAL_SLOTS>;
+    using LeafNodeType = BTreeLeafNode<KeyT, DataT, AggrT, LEAF_SLOTS>;
+    using AggregatedType = AggrT;
 
     static AggrT aggregate(const LeafNodeType &node, AggrCalcT aggrCalc);
     static AggrT aggregate(const InternalNodeType &node, const NodeAllocatorType &allocator, AggrCalcT aggrCalc);
 
-    static void
-    recalc(LeafNodeType &node, const AggrCalcT &aggrCalc);
+    static void recalc(LeafNodeType &node, const AggrCalcT &aggrCalc);
 
-    static void
-    recalc(LeafNodeType &node,
-           const NodeAllocatorType &allocator,
-           const AggrCalcT &aggrCalc)
-    {
-        (void) allocator;
+    static void recalc(LeafNodeType &node, const NodeAllocatorType &, const AggrCalcT &aggrCalc) {
         recalc(node, aggrCalc);
     }
 
-    static void
-    recalc(InternalNodeType &node,
-           const NodeAllocatorType &allocator,
-           const AggrCalcT &aggrCalc);
-
-    static AggregatedType
-    recalc(LeafNodeType &node,
-           LeafNodeType &splitNode,
-           const AggrCalcT &aggrCalc);
+    static void recalc(InternalNodeType &node, const NodeAllocatorType &allocator, const AggrCalcT &aggrCalc);
+    static AggregatedType recalc(LeafNodeType &node, LeafNodeType &splitNode, const AggrCalcT &aggrCalc);
            
-    static AggregatedType
-    recalc(InternalNodeType &node,
-           InternalNodeType &splitNode,
-           const NodeAllocatorType &allocator,
-           const AggrCalcT &aggrCalc);
+    static AggregatedType recalc(InternalNodeType &node, InternalNodeType &splitNode,
+                                 const NodeAllocatorType &allocator, const AggrCalcT &aggrCalc);
 };
 
-} // namespace search::btree
-} // namespace search
-
+}

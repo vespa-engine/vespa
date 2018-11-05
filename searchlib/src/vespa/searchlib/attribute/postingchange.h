@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/array.h>
-#include "postinglisttraits.h"
+#include "postingdata.h"
 #include "enumstorebase.h"
+#include <vespa/vespalib/util/array.h>
 
-namespace search
-{
+namespace search {
 
 class GrowableBitVector;
 
@@ -80,7 +79,6 @@ PostingChange<AttributeWeightPosting>::add(uint32_t docId, int32_t weight)
 {
     _additions.push_back(AttributeWeightPosting(docId, weight));
 }
-
 
 } // namespace search
 

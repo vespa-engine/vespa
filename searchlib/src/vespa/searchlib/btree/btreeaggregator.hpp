@@ -4,11 +4,7 @@
 
 #include "btreeaggregator.h"
 
-namespace search
-{
-
-namespace btree
-{
+namespace search::btree {
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
@@ -93,7 +89,4 @@ BTreeAggregator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>::
     return a;
 }
 
-
-} // namespace search::btree
-} // namespace search
-
+}

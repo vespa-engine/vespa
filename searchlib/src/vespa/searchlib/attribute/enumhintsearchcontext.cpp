@@ -3,12 +3,9 @@
 #include "enumhintsearchcontext.h"
 #include <vespa/searchlib/queryeval/emptysearch.h>
 
-namespace search {
+namespace search::attribute {
 
 using queryeval::SearchIterator;
-
-namespace attribute {
-
 using btree::BTreeNode;
 using fef::TermFieldMatchData;
 
@@ -25,9 +22,7 @@ EnumHintSearchContext(const EnumStoreDictBase &dictionary,
 }
 
 
-EnumHintSearchContext::~EnumHintSearchContext()
-{
-}
+EnumHintSearchContext::~EnumHintSearchContext() = default;
 
 
 void
@@ -51,14 +46,10 @@ EnumHintSearchContext::fetchPostings(bool strict)
 }
 
 SearchIterator::UP
-EnumHintSearchContext::createPostingIterator(TermFieldMatchData *matchData,
-                                             bool strict)
+EnumHintSearchContext::createPostingIterator(TermFieldMatchData *, bool )
 {
-    (void) matchData;
-    (void) strict;
-
     return (_uniqueValues == 0u)
-        ? SearchIterator::UP(new queryeval::EmptySearch())
+        ? std::make_unique<queryeval::EmptySearch>()
         : SearchIterator::UP();
 }
 
@@ -71,6 +62,4 @@ EnumHintSearchContext::approximateHits() const
         : std::max(uint64_t(_docIdLimit), _numValues);
 }
 
-} // namespace attribute
-
-} // namespace search
+}

@@ -2,10 +2,9 @@
 
 #pragma once
 
-namespace search
-{
-namespace btree
-{
+#include "noaggregated.h"
+
+namespace search::btree {
 
 class NoAggrCalc
 {
@@ -92,7 +91,4 @@ public:
     }
 };
 
-
-} // namespace search::btree
-} // namespace search
-
+}

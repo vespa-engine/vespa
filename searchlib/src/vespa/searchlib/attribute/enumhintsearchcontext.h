@@ -3,15 +3,10 @@
 #pragma once
 
 #include "enumstore.h"
-#include "postinglisttraits.h"
 #include "ipostinglistsearchcontext.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
-namespace search
-{
-
-namespace attribute
-{
+namespace search::attribute {
 
 /**
  * Search context helper for enumerated attributes, used to eliminate
@@ -42,8 +37,4 @@ protected:
     unsigned int approximateHits() const override;
 };
 
-
-} // namespace attribute
-
-} // namespace search
-
+}
