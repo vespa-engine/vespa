@@ -44,12 +44,8 @@ public class IndexFacts {
     /**
      * The name of the default search definition, which is the union of all
      * known document types.
-     * 
-     * @deprecated do not use
      */
-    // TODO: Make this package private in Vespa 7
-    @Deprecated // OK
-    public static final String unionName = "unionOfAllKnown";
+    static final String unionName = "unionOfAllKnown";
 
     /** A search definition which contains the union of all settings. */
     @SuppressWarnings("deprecation")
@@ -104,31 +100,6 @@ public class IndexFacts {
 
         List<String> clusters = clusterByDocument.get(searchDefinitionName);
         return clusters != null ? clusters : Collections.<String>emptyList();
-    }
-
-    /**
-     * Public only for testing.
-     *
-     * @deprecated set at creation time
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public void setClusters(Map<String, List<String>> clusters) {
-        ensureNotFrozen();
-        this.clusters = clusters;
-        clusterByDocument = invert(clusters);
-    }
-
-    /**
-     * @deprecated set indexes at creation time instead
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public void setSearchDefinitions(Map<String, SearchDefinition> searchDefinitions,
-                                     SearchDefinition unionSearchDefinition) {
-        ensureNotFrozen();
-        this.searchDefinitions = searchDefinitions;
-        this.unionSearchDefinition = unionSearchDefinition;
     }
 
     private boolean isInitialized() {
@@ -310,58 +281,6 @@ public class IndexFacts {
         if (frozen) {
             throw new IllegalStateException("Tried to modify frozen IndexFacts instance.");
         }
-    }
-
-
-    /**
-     * Add a string to be accepted as an index name when parsing a
-     * query.
-     *
-     * For testing only.
-     *
-     * @param sdName name of search definition containing index, if null, modify default set
-     * @param indexName name of index, actual or otherwise
-     * @deprecated set indexes at creation time instead
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public void addIndex(String sdName, String indexName) {
-        ensureNotFrozen();
-
-        SearchDefinition sd;
-        if (sdName == null) {
-            sd = unionSearchDefinition;
-        } else if (searchDefinitions.containsKey(sdName)) {
-            sd = searchDefinitions.get(sdName);
-        } else {
-            sd = new SearchDefinition(sdName);
-            searchDefinitions.put(sdName, sd);
-        }
-        sd.getOrCreateIndex(indexName);
-        unionSearchDefinition.getOrCreateIndex(indexName);
-    }
-
-    /**
-     * Adds an index to the specified index, and the default index settings,
-     * overriding any current settings for this index
-     * @deprecated set indexes at creation time instead
-     */
-    // TODO: Remove on Vespa 7
-    @Deprecated // OK
-    public void addIndex(String sdName, Index index) {
-        ensureNotFrozen();
-
-        SearchDefinition sd;
-        if (sdName == null) {
-            sd = unionSearchDefinition;
-        } else if (searchDefinitions.containsKey(sdName)) {
-            sd = searchDefinitions.get(sdName);
-        } else {
-            sd = new SearchDefinition(sdName);
-            searchDefinitions.put(sdName, sd);
-        }
-        sd.addIndex(index);
-        unionSearchDefinition.addIndex(index);
     }
 
     public String getDefaultPosition(String sdName) {
