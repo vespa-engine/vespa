@@ -44,6 +44,7 @@ public class TlsCryptoSocket implements CryptoSocket {
         // Note: Dummy buffer as unwrap requires a full size application buffer even though no application data is unwrapped
         this.handshakeDummyBuffer = ByteBuffer.allocate(nullSession.getApplicationBufferSize());
         this.handshakeState = HandshakeState.NOT_STARTED;
+        log.fine(() -> "Initialized with " + sslEngine.toString());
     }
 
     // inject pre-read data into the read pipeline (typically called by MaybeTlsCryptoSocket)
@@ -67,6 +68,7 @@ public class TlsCryptoSocket implements CryptoSocket {
     private HandshakeState processHandshakeState(HandshakeState state) throws IOException {
         switch (state) {
             case NOT_STARTED:
+                log.fine(() -> "Initiating handshake");
                 sslEngine.beginHandshake();
                 break;
             case NEED_WRITE:
@@ -82,6 +84,7 @@ public class TlsCryptoSocket implements CryptoSocket {
         }
 
         while (true) {
+            log.fine(() -> "SSLEngine.getHandshakeStatus(): " + sslEngine.getHandshakeStatus());
             switch (sslEngine.getHandshakeStatus()) {
                 case NOT_HANDSHAKING:
                     if (wrapBuffer.bytes() > 0) return HandshakeState.NEED_WRITE;
@@ -90,6 +93,7 @@ public class TlsCryptoSocket implements CryptoSocket {
                     SSLSession session = sslEngine.getSession();
                     sessionApplicationBufferSize = session.getApplicationBufferSize();
                     sessionPacketBufferSize = session.getPacketBufferSize();
+                    log.fine(() -> String.format("Handshake complete: protocol=%s, cipherSuite=%s", session.getProtocol(), session.getCipherSuite()));
                     return HandshakeState.COMPLETED;
                 case NEED_TASK:
                     sslEngine.getDelegatedTask().run();
