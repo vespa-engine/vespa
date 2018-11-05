@@ -66,14 +66,6 @@ public class UserConfigBuilderTest {
         assertNotNull(map.get(key));
         ArraytypesConfig config = createConfig(ArraytypesConfig.class, map.get(key));
         assertEquals(Arrays.asList(13,10,1337), config.intarr());
-
-        Element configRoot2 = getDocument("<config name=\"arraytypes\">" +
-                                                  "    <intarr operation=\"clear\">456</intarr>" +
-                                                  "</config>");
-        UserConfigRepo map2 = UserConfigBuilder.build(configRoot2, configDefinitionStore, new BaseDeployLogger());
-        map.merge(map2);
-        ArraytypesConfig config2 = createConfig(ArraytypesConfig.class, map2.get(key));
-        assertEquals(Collections.singletonList(456), config2.intarr());
     }
 
     @Test

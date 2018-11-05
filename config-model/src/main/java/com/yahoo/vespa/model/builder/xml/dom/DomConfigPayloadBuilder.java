@@ -169,22 +169,7 @@ public class DomConfigPayloadBuilder {
             // Check for legacy (pre Vespa 6) usage
             throw new IllegalArgumentException("The 'index' attribute on config elements is not supported - use <item>");
         } else if (element.hasAttribute("operation")) {
-            // inner array, the supported operations are 'append' and 'clear'
-            String operation = element.getAttribute("operation");
-            ConfigPayloadBuilder childPayloadBuilder;
-            switch (operation) {
-                case "append":
-                    childPayloadBuilder = payloadBuilder.getArray(name).append();
-                    break;
-                case "clear":
-                    // Clear array if it exists, use the existing builder
-                    // Creating the array happens when handling the children ('item's)
-                    payloadBuilder.removeArray(name);
-                    childPayloadBuilder = payloadBuilder;
-                    break;
-                default:
-                    throw new RuntimeException("Unknown operation '" + operation + "'");
-            }
+            ConfigPayloadBuilder childPayloadBuilder = getBuilderForInnerArray(element, payloadBuilder, name);
             //Cursor array = node.setArray(name);
             for (Element child : children) {
                 //Cursor struct = array.addObject();
@@ -246,12 +231,31 @@ public class DomConfigPayloadBuilder {
         }
     }
 
-    private String verifyLegalOperation(Element currElem) {
+    private void verifyLegalOperation(Element currElem) {
         String operation = currElem.getAttribute("operation");
-        if (! Arrays.asList("append", "clear").contains(operation.toLowerCase()))
-            throw new ConfigurationRuntimeException("The supported array operations are 'append' and 'clear', got '"
+        if (! operation.equalsIgnoreCase("append"))
+            throw new ConfigurationRuntimeException("The only supported array operation is 'append', got '"
                     + operation + "' at XML node '" + XML.getNodePath(currElem, " > ") + "'.");
-        return operation;
+    }
+
+    private ConfigPayloadBuilder getBuilderForInnerArray(Element element, ConfigPayloadBuilder payloadBuilder, String arrayName) {
+        // inner array, the supported operations are 'append' and 'clear'
+        String operation = element.getAttribute("operation").toLowerCase();
+        ConfigPayloadBuilder arrayPayloadBuilder;
+        switch (operation) {
+            case "append":
+                arrayPayloadBuilder = payloadBuilder.getArray(arrayName).append();
+                break;
+            case "clear":
+                // Clear array if it exists, use the existing builder
+                // Creating the array happens when handling the children ('item's)
+                payloadBuilder.removeArray(arrayName);
+                arrayPayloadBuilder = payloadBuilder;
+                break;
+            default:
+                throw new RuntimeException("Unknown operation '" + operation + "' at XML node '" + XML.getNodePath(element, " > ") + "'.");
+        }
+        return arrayPayloadBuilder;
     }
 
 }
