@@ -1,7 +1,20 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt.tool;
 
-import com.yahoo.jrt.*;
+import com.yahoo.jrt.DoubleValue;
+import com.yahoo.jrt.FloatValue;
+import com.yahoo.jrt.Int16Value;
+import com.yahoo.jrt.Int32Value;
+import com.yahoo.jrt.Int64Value;
+import com.yahoo.jrt.Int8Value;
+import com.yahoo.jrt.Request;
+import com.yahoo.jrt.Spec;
+import com.yahoo.jrt.StringValue;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Target;
+import com.yahoo.jrt.Transport;
+import com.yahoo.jrt.Value;
+import com.yahoo.jrt.Values;
 
 import java.util.Arrays;
 import java.util.List;
@@ -14,7 +27,7 @@ import java.util.ArrayList;
  */
 public class RpcInvoker {
 
-    private Value getArgument(Request request,String parameter) {
+    private Value getArgument(Request request, String parameter) {
         if (parameter.length()<=1 || parameter.charAt(1)!=':')
             return new StringValue(parameter);
 

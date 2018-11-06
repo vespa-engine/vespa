@@ -13,7 +13,6 @@ import com.yahoo.container.handler.VipStatus;
 import com.yahoo.fs4.mplex.Backend;
 import com.yahoo.container.search.LegacyEmulationConfig;
 import com.yahoo.net.HostName;
-import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.IndexFacts;
@@ -347,7 +346,7 @@ public class ClusterSearcher extends Searcher {
         }
     }
 
-    public void doFill(Searcher searcher, Result result, String summaryClass, Execution execution) {
+    private void doFill(Searcher searcher, Result result, String summaryClass, Execution execution) {
         searcher.fill(result, summaryClass, execution);
         updateCacheHitRatio(result, result.getQuery());
     }
@@ -550,7 +549,7 @@ public class ClusterSearcher extends Searcher {
         private final Ping pingChallenge = new Ping(monitor.getConfiguration().getRequestTimeout());
         private final Receiver<Pong> pong = new Receiver<>();
 
-        public Pinger(final Searcher searcher) {
+        Pinger(final Searcher searcher) {
             this.searcher = searcher;
         }
 

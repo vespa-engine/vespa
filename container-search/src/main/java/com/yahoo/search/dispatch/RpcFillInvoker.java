@@ -44,7 +44,7 @@ public class RpcFillInvoker extends FillInvoker {
     private GetDocsumsResponseReceiver responseReceiver;
 
 
-    public RpcFillInvoker(RpcResourcePool resourcePool, DocumentDatabase documentDb) {
+    RpcFillInvoker(RpcResourcePool resourcePool, DocumentDatabase documentDb) {
         this.documentDb = documentDb;
         this.resourcePool = resourcePool;
     }
@@ -96,11 +96,13 @@ public class RpcFillInvoker extends FillInvoker {
     }
 
     /** Send a getDocsums request to a node. Responses will be added to the given receiver. */
-    private void sendGetDocsumsRequest(int nodeId, List<FastHit> hits, String summaryClass, CompressionType compression, Result result,
-            GetDocsumsResponseReceiver responseReceiver) {
+    private void sendGetDocsumsRequest(int nodeId, List<FastHit> hits, String summaryClass, CompressionType compression,
+                                       Result result, GetDocsumsResponseReceiver responseReceiver) {
         Client.NodeConnection node = resourcePool.nodeConnections().get(nodeId);
         if (node == null) {
-            result.hits().addError(ErrorMessage.createEmptyDocsums("Could not fill hits from unknown node " + nodeId));
+            String error = "Could not fill hits from unknown node " + nodeId;
+            responseReceiver.receive(Client.GetDocsumsResponseOrError.fromError(error));
+            result.hits().addError(ErrorMessage.createEmptyDocsums(error));
             log.warning("Got hits with partid " + nodeId + ", which is not included in the current dispatch config");
             return;
         }
@@ -150,7 +152,7 @@ public class RpcFillInvoker extends FillInvoker {
         /** The number of responses we should receive (and process) before this is complete */
         private int outstandingResponses;
 
-        public GetDocsumsResponseReceiver(int requestCount, Compressor compressor, Result result) {
+        GetDocsumsResponseReceiver(int requestCount, Compressor compressor, Result result) {
             this.compressor = compressor;
             responses = new LinkedBlockingQueue<>(requestCount);
             outstandingResponses = requestCount;
@@ -170,7 +172,7 @@ public class RpcFillInvoker extends FillInvoker {
          * Call this from the dispatcher thread to initiate and complete processing of responses.
          * This will block until all responses are available and processed, or to timeout.
          */
-        public void processResponses(Query query, String summaryClass, DocumentDatabase documentDb) throws TimeoutException {
+        void processResponses(Query query, String summaryClass, DocumentDatabase documentDb) throws TimeoutException {
             try {
                 int skippedHits = 0;
                 while (outstandingResponses > 0) {
