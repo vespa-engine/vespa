@@ -114,6 +114,7 @@ public class TransportSecurityOptions {
                 "privateKeyFile=" + privateKeyFile +
                 ", certificatesFile=" + certificatesFile +
                 ", caCertificatesFile=" + caCertificatesFile +
+                ", acceptedCiphers=" + acceptedCiphers +
                 '}';
     }
 
@@ -124,11 +125,12 @@ public class TransportSecurityOptions {
         TransportSecurityOptions that = (TransportSecurityOptions) o;
         return Objects.equals(privateKeyFile, that.privateKeyFile) &&
                 Objects.equals(certificatesFile, that.certificatesFile) &&
-                Objects.equals(caCertificatesFile, that.caCertificatesFile);
+                Objects.equals(caCertificatesFile, that.caCertificatesFile) &&
+                Objects.equals(acceptedCiphers, that.acceptedCiphers);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(privateKeyFile, certificatesFile, caCertificatesFile);
+        return Objects.hash(privateKeyFile, certificatesFile, caCertificatesFile, acceptedCiphers);
     }
 }
