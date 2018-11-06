@@ -3,7 +3,6 @@
 #pragma once
 
 #include "postinglisttraits.h"
-#include <vespa/searchlib/datastore/entryref.h>
 
 namespace search {
 

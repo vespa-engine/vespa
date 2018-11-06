@@ -19,6 +19,7 @@ template class btree::BTreeRootT<uint32_t, BTreeNoLeafData, NoD::AggregatedType,
 template class btree::BTreeNodeAllocator<uint32_t, BTreeNoLeafData, NoD::AggregatedType, NoD::BTreeTraits::INTERNAL_SLOTS, NoD::BTreeTraits::LEAF_SLOTS>;
 template class btree::BTreeBuilder<uint32_t, BTreeNoLeafData, NoD::AggregatedType, NoD::BTreeTraits::INTERNAL_SLOTS, NoD::BTreeTraits::LEAF_SLOTS, NoD::AggrCalcType>;
 template class btree::BTreeIteratorBase<uint32_t, BTreeNoLeafData, NoD::AggregatedType, NoD::BTreeTraits::INTERNAL_SLOTS, NoD::BTreeTraits::LEAF_SLOTS, NoD::BTreeTraits::PATH_SIZE>;
+template class btree::BTreeConstIterator<uint32_t, BTreeNoLeafData, NoD::AggregatedType, std::less<uint32_t>, NoD::BTreeTraits>;
 
 template class btree::BTreeStore<uint32_t, int32_t, WD::AggregatedType, std::less<uint32_t>, WD::BTreeTraits, WD::AggrCalcType>;
 template class btree::BTreeRoot<uint32_t, int32_t, WD::AggregatedType, std::less<uint32_t>, WD::BTreeTraits, WD::AggrCalcType>;
@@ -26,6 +27,7 @@ template class btree::BTreeRootT<uint32_t, int32_t, WD::AggregatedType, std::les
 template class btree::BTreeNodeAllocator<uint32_t, int32_t, WD::AggregatedType, WD::BTreeTraits::INTERNAL_SLOTS, WD::BTreeTraits::LEAF_SLOTS>;
 template class btree::BTreeBuilder<uint32_t, int32_t, WD::AggregatedType, WD::BTreeTraits::INTERNAL_SLOTS, WD::BTreeTraits::LEAF_SLOTS, WD::AggrCalcType>;
 template class btree::BTreeIteratorBase<uint32_t, int32_t, WD::AggregatedType, WD::BTreeTraits::INTERNAL_SLOTS, WD::BTreeTraits::LEAF_SLOTS, WD::BTreeTraits::PATH_SIZE>;
+template class btree::BTreeConstIterator<uint32_t, int32_t, WD::AggregatedType, std::less<uint32_t>, WD::BTreeTraits>;
 template class btree::BTreeAggregator<uint32_t, int32_t, WD::AggregatedType, WD::BTreeTraits::INTERNAL_SLOTS, WD::BTreeTraits::LEAF_SLOTS, WD::AggrCalcType >;
 
 } // namespace search
