@@ -547,7 +547,7 @@ public class SelectTestCase {
         assertParseFail("{ \"contains\" : [\"fieldName\", {\"equiv\" : [\"ny\",{\"nalle\" : [ \"void\" ] } ] } ] }",
                 new IllegalArgumentException("Expected operator phrase, got nalle."));
         assertParseFail("{ \"contains\" : [\"fieldName\", {\"equiv\" : [\"ny\", 42]}]}",
-                new IllegalArgumentException("Word item word can not be empty"));
+                new IllegalArgumentException("The word of a word item can not be empty"));
     }
 
     @Test

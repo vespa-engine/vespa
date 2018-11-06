@@ -27,10 +27,8 @@ public abstract class Validator {
      */
     public static void ensureNotInitialized(String fieldDescription, Object fieldOwner, Object fieldValue) {
         if (fieldValue != null) {
-            throw new IllegalStateException(
-                    fieldDescription + " of " + fieldOwner
-                    + " cannot be changed, it is already set " + "to "
-                    + fieldValue);
+            throw new IllegalStateException(fieldDescription + " of " + fieldOwner +
+                                            " cannot be changed, it is already set " + "to " + fieldValue);
         }
     }
 
@@ -45,9 +43,8 @@ public abstract class Validator {
      */
     public static void ensureInRange(String argumentDescription, int from, int to, int argument) {
         if (argument < from || argument > to) {
-            throw new IllegalArgumentException(
-                    argumentDescription + " is " + argument
-                    + " but must be between " + from + " and " + to);
+            throw new IllegalArgumentException(argumentDescription + " is " + argument +
+                                               " but must be between " + from + " and " + to);
         }
     }
 
@@ -62,9 +59,8 @@ public abstract class Validator {
      */
     public static void ensureSmaller(String smallDescription, int small, String largeDescription, int large) {
         if (small >= large) {
-            throw new IllegalArgumentException(
-                    smallDescription + " is " + small + " but should be "
-                    + "less than " + largeDescription + " " + large);
+            throw new IllegalArgumentException(smallDescription + " is " + small + " but should be " +
+                                               "less than " + largeDescription + " " + large);
         }
     }
 
@@ -84,9 +80,8 @@ public abstract class Validator {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public static void ensureSmaller(String smallDescription, Comparable small, String largeDescription, Comparable large) {
         if (small.compareTo(large) >= 0) {
-            throw new IllegalArgumentException(smallDescription + " is "
-                    + small + " but should be " + "less than "
-                    + largeDescription + " " + large);
+            throw new IllegalArgumentException(smallDescription + " is " + small + " but should be " +
+                                               "less than " + largeDescription + " " + large);
         }
     }
 
@@ -98,7 +93,7 @@ public abstract class Validator {
      * @throws IllegalArgumentException if the given condition was false
      */
     public static void ensure(String description, boolean condition) {
-        if (!condition) {
+        if ( ! condition) {
             throw new IllegalArgumentException(description);
         }
     }
@@ -108,7 +103,7 @@ public abstract class Validator {
      * concatenating the String representation of the description arguments.
      */
     public static void ensure(boolean condition, Object... description) {
-        if (!condition) {
+        if ( ! condition) {
             StringBuilder msg = new StringBuilder();
             for (Object part : description) {
                 msg.append(part.toString());
@@ -130,9 +125,9 @@ public abstract class Validator {
      *             if the given item is not of the correct type
      */
     public static void ensureInstanceOf(String description, Object item, Class<?> type) {
-        if (!type.isAssignableFrom(item.getClass())) {
-            throw new IllegalArgumentException(description + ", " + item
-                    + " should " + "have been an instance of " + type);
+        if ( ! type.isAssignableFrom(item.getClass())) {
+            throw new IllegalArgumentException(description + " " + item + " should be an instance of " + type +
+                                               " but is " + item.getClass());
         }
     }
 

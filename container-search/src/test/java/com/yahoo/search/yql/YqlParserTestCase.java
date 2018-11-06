@@ -868,10 +868,10 @@ public class YqlParserTestCase {
 
     @Test
     public void testWordAlternativesWithOrigin() {
-        QueryTree x = parse("select * from sources * where foo contains"
-                + " ([{\"origin\": {\"original\": \" trees \", \"offset\": 1, \"length\": 5}}]"
-                + "alternatives({\"trees\": 1.0, \"tree\": 0.7}));");
-        Item root = x.getRoot();
+        QueryTree q = parse("select * from sources * where foo contains" +
+                            " ([{\"origin\": {\"original\": \" trees \", \"offset\": 1, \"length\": 5}}]" +
+                            "alternatives({\"trees\": 1.0, \"tree\": 0.7}));");
+        Item root = q.getRoot();
         assertSame(WordAlternativesItem.class, root.getClass());
         WordAlternativesItem alternatives = (WordAlternativesItem) root;
         checkWordAlternativesContent(alternatives);
@@ -884,9 +884,9 @@ public class YqlParserTestCase {
 
     @Test
     public void testWordAlternativesInPhrase() {
-        QueryTree x = parse("select * from sources * where"
-                + " foo contains phrase(\"forest\", alternatives({\"trees\": 1.0, \"tree\": 0.7}));");
-        Item root = x.getRoot();
+        QueryTree q = parse("select * from sources * where" +
+                            " foo contains phrase(\"forest\", alternatives({\"trees\": 1.0, \"tree\": 0.7}));");
+        Item root = q.getRoot();
         assertSame(PhraseItem.class, root.getClass());
         PhraseItem phrase = (PhraseItem) root;
         assertEquals(2, phrase.getItemCount());
