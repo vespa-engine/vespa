@@ -55,7 +55,6 @@ public class ApacheGatewayConnectionTest {
         final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
         final String clusterSpecificRoute = "";
         final ConnectionParams connectionParams = new ConnectionParams.Builder()
-                .setEnableV3Protocol(true)
                 .build();
         final List<Document> documents = new ArrayList<>();
 
@@ -90,7 +89,6 @@ public class ApacheGatewayConnectionTest {
         final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
         final String clusterSpecificRoute = "";
         final ConnectionParams connectionParams = new ConnectionParams.Builder()
-                .setEnableV3Protocol(true)
                 .build();
 
         // This is the fake server, returns wrong session Id.
@@ -115,7 +113,6 @@ public class ApacheGatewayConnectionTest {
         final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
         final String clusterSpecificRoute = "";
         final ConnectionParams connectionParams = new ConnectionParams.Builder()
-                .setEnableV3Protocol(true)
                 .build();
 
         final ApacheGatewayConnection.HttpClientFactory mockFactory =
