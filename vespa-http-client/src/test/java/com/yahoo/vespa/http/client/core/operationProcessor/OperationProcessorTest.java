@@ -124,7 +124,7 @@ public class OperationProcessorTest {
         SessionParams sessionParams = new SessionParams.Builder()
                 .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
                 .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
-                .setConnectionParams(new ConnectionParams.Builder().setEnableV3Protocol(true).build())
+                .setConnectionParams(new ConnectionParams.Builder().build())
                 .build();
         OperationProcessor operationProcessor = new OperationProcessor(
                 new IncompleteResultsThrottler(1000, 1000, null, null),
@@ -161,7 +161,7 @@ public class OperationProcessorTest {
     public void testBlockingOfOperationsToSameDocIdWithTwoOperations() {
         SessionParams sessionParams = new SessionParams.Builder()
                 .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
-                .setConnectionParams(new ConnectionParams.Builder().setEnableV3Protocol(true).build())
+                .setConnectionParams(new ConnectionParams.Builder().build())
                 .build();
 
         OperationProcessor operationProcessor = new OperationProcessor(
@@ -194,7 +194,7 @@ public class OperationProcessorTest {
     public void testBlockingOfOperationsToSameDocIdMany() {
         SessionParams sessionParams = new SessionParams.Builder()
                 .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
-                .setConnectionParams(new ConnectionParams.Builder().setEnableV3Protocol(true).build())
+                .setConnectionParams(new ConnectionParams.Builder().build())
                 .build();
 
         OperationProcessor operationProcessor = new OperationProcessor(
@@ -229,7 +229,7 @@ public class OperationProcessorTest {
         Endpoint endpoint = Endpoint.create("host");
         SessionParams sessionParams = new SessionParams.Builder()
                 .addCluster(new Cluster.Builder().addEndpoint(endpoint).build())
-                .setConnectionParams(new ConnectionParams.Builder().setEnableV3Protocol(true).build())
+                .setConnectionParams(new ConnectionParams.Builder().build())
                 .build();
 
         OperationProcessor operationProcessor = new OperationProcessor(
