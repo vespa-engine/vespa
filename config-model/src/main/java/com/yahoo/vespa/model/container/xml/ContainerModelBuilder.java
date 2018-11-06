@@ -464,7 +464,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
             if (incompatibleGCOptions(jvmOptions)) {
                 deployLogger.log(Level.WARNING, "You need to move out your GC related options from 'jvmargs' to 'jvm-gc-options'");
-                cluster.setJvmGCOptions(ContainerCluster.CMS);
+                cluster.setJvmGCOptions(ContainerCluster.G1GC);
             }
         }
         return jvmOptions;
