@@ -51,7 +51,6 @@ public class OperationProcessor {
     private final long minTimeBetweenRetriesMs;
     private final Random random = new SecureRandom();
     private final int traceEveryXOperation;
-    private final boolean blockOperationsToSameDocument;
     private int traceCounter = 0;
     private final boolean traceToStderr;
     private final ThreadGroup ioThreadGroup;
@@ -66,7 +65,6 @@ public class OperationProcessor {
         this.resultCallback = resultCallback;
         this.incompleteResultsThrottler = incompleteResultsThrottler;
         this.timeoutExecutor = timeoutExecutor;
-        this.blockOperationsToSameDocument = sessionParams.getConnectionParams().isEnableV3Protocol();
         this.ioThreadGroup = new ThreadGroup("operationprocessor");
 
         if (sessionParams.getClusters().isEmpty()) {
@@ -243,7 +241,7 @@ public class OperationProcessor {
         incompleteResultsThrottler.operationStart();
 
         synchronized (monitor) {
-            if (blockOperationsToSameDocument && inflightDocumentIds.contains(document.getDocumentId())) {
+            if (inflightDocumentIds.contains(document.getDocumentId())) {
                 blockedDocumentsByDocumentId.put(document.getDocumentId(), document);
                 return;
             }
