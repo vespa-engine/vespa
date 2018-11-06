@@ -121,6 +121,25 @@ public class FillTestCase {
         assertEquals("Malfunctioning", result.hits().getError().getDetailedMessage());
     }
 
+    @Test
+    public void testSendingFill2UnknownNode() {
+        client.setMalfunctioning(true);
+
+        Map<Integer, Client.NodeConnection> nodes = new HashMap<>();
+        nodes.put(0, client.createConnection("host0", 123));
+        RpcResourcePool rpcResourcePool = new RpcResourcePool(client, nodes);
+
+        Query query = new Query();
+        Result result = new Result(query);
+        result.hits().add(createHit(0, 0));
+        result.hits().add(createHit(1, 1));
+
+
+        rpcResourcePool.getFillInvoker(db()).fill(result, "summaryClass1");
+
+        assertEquals("Could not fill hits from unknown node 1", result.hits().getError().getDetailedMessage());
+    }
+
     private DocumentDatabase db() {
         List<DocsumField> fields = new ArrayList<>();
         fields.add(DocsumField.create("field1", "string"));
