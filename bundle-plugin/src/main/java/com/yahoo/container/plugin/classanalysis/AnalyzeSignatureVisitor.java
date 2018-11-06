@@ -18,7 +18,7 @@ class AnalyzeSignatureVisitor extends SignatureVisitor implements ImportCollecto
     private Set<String> imports = new HashSet<>();
 
     AnalyzeSignatureVisitor(AnalyzeClassVisitor analyzeClassVisitor) {
-        super(Opcodes.ASM6);
+        super(Opcodes.ASM7);
         this.analyzeClassVisitor = analyzeClassVisitor;
     }
 
