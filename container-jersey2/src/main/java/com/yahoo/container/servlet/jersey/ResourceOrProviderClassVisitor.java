@@ -29,7 +29,7 @@ public class ResourceOrProviderClassVisitor extends ClassVisitor {
     private boolean isAnnotated = false;
 
     public ResourceOrProviderClassVisitor() {
-        super(Opcodes.ASM6);
+        super(Opcodes.ASM7);
     }
 
     public Optional<String> getJerseyClassName() {
