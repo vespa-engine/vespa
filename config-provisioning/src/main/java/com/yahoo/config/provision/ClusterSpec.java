@@ -69,9 +69,7 @@ public final class ClusterSpec {
 
     @Override
     public String toString() {
-        return String.join(" ", type.toString(), id.toString(),
-                           groupId.map(Group::toString).orElse(""),
-                           vespaVersion.toString());
+        return type + " " + id + " " + groupId.map(group -> group + " ").orElse("") + vespaVersion;
     }
 
     @Override

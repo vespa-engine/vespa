@@ -71,8 +71,8 @@ public class WordItem extends TermItem {
     }
 
     public void setWord(String word) {
-        Validator.ensureNotNull("Word item word", word);
-        Validator.ensureNonEmpty("Word item word", word);
+        Validator.ensureNotNull("The word of a word item", word);
+        Validator.ensureNonEmpty("The word of a word item", word);
         this.word = word;
     }
 
