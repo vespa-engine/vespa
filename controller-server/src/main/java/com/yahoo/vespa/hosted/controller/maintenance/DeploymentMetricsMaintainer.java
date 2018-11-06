@@ -47,6 +47,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         AtomicInteger failures = new AtomicInteger(0);
+        AtomicInteger zeroQps = new AtomicInteger(0);
         AtomicReference<Exception> lastException = new AtomicReference<>(null);
         List<Application> applicationList = applications.asList();
 
@@ -64,6 +65,10 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                     for (Deployment deployment : application.deployments().values()) {
                         MetricsService.DeploymentMetrics deploymentMetrics = controller().metricsService()
                                                                                          .getDeploymentMetrics(application.id(), deployment.zone());
+                        if (deploymentMetrics.queriesPerSecond() < 0.0001) {
+                            zeroQps.incrementAndGet();
+                        }
+
                         DeploymentMetrics newMetrics = new DeploymentMetrics(deploymentMetrics.queriesPerSecond(),
                                                                              deploymentMetrics.writesPerSecond(),
                                                                              deploymentMetrics.documentCount(),
@@ -83,6 +88,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         pool.shutdown();
         try {
             pool.awaitTermination(30, TimeUnit.MINUTES);
+            log.log(Level.INFO, String.format("Number of application with 0 qps: %d/%d", zeroQps.get(), applicationList.size()));
             if (lastException.get() != null) {
                 log.log(Level.WARNING, String.format("Failed to query metrics service for %d/%d applications. Last error: %s. Retrying in %s",
                                                      failures.get(),
