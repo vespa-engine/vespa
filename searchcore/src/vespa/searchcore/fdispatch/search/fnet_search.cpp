@@ -891,7 +891,7 @@ FastS_FNET_Search::CheckCoverage()
     }
     bool missingReplies = (askedButNotAnswered != 0) || (nodesQueried != nodesReplied);
     const ssize_t missingParts = cntNone - (_dataset->getSearchableCopies() - 1);
-    if (((missingParts > 0) && (cntNone != _nodes.size())) || (missingReplies && useAdaptiveTimeout())) {
+    if (((missingParts > 0) || (missingReplies && useAdaptiveTimeout())) && (cntNone != _nodes.size())) {
         // TODO This is a dirty way of anticipating missing coverage.
         // It should be done differently
         activeDocs += missingParts * activeDocs/(_nodes.size() - cntNone);
