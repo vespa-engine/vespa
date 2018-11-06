@@ -79,12 +79,8 @@ public class ClusterConnection implements AutoCloseable {
                             operationProcessor.getClientId()
                     );
                 }
-                if (connectionParams.isEnableV3Protocol()) {
-                    if (documentQueue == null) {
-                        documentQueue = new DocumentQueue(clientQueueSizePerCluster);
-                    }
-                } else {
-                    documentQueue = new DocumentQueue(clientQueueSizePerCluster / cluster.getEndpoints().size());
+                if (documentQueue == null) {
+                    documentQueue = new DocumentQueue(clientQueueSizePerCluster);
                 }
                 final IOThread ioThread = new IOThread(
                         operationProcessor.getIoThreadGroup(),
@@ -95,7 +91,7 @@ public class ClusterConnection implements AutoCloseable {
                         maxInFlightPerSession,
                         feedParams.getLocalQueueTimeOut(),
                         documentQueue,
-                        connectionParams.isEnableV3Protocol() ? feedParams.getMaxSleepTimeMs() : 0);
+                        feedParams.getMaxSleepTimeMs());
                 ioThreads.add(ioThread);
             }
         }
