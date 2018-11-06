@@ -124,6 +124,18 @@ public class CommandLineOptionsTest {
     }
 
     @Test
+    public void TestHighestPriority() {
+        ClientParameters params = getParsedOptions("--priority", "HIGHEST");
+        assertEquals(DocumentProtocol.Priority.HIGHEST, params.priority);
+    }
+
+    @Test
+    public void TestHigh1PriorityAsNumber() {
+        ClientParameters params = getParsedOptions("--priority", "2");
+        assertEquals(DocumentProtocol.Priority.HIGH_1, params.priority);
+    }
+
+    @Test
     public void testInvalidTraceLevel1() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("Invalid tracelevel: -1");
