@@ -46,7 +46,6 @@ public final class ConnectionParams {
         private int maxRetries = 100;
         private long minTimeBetweenRetriesMs = 700;
         private boolean dryRun = false;
-        private boolean enableV3Protocol = true;
         private int traceLevel = 0;
         private int traceEveryXOperation = 0;
         private boolean printTraceToStdErr = true;
@@ -175,12 +174,6 @@ public final class ConnectionParams {
             return this;
         }
 
-        @Beta
-        public Builder setEnableV3Protocol(boolean enableV3Protocol) {
-            this.enableV3Protocol = enableV3Protocol;
-            return this;
-        }
-
         /**
          * Set the min time between retries when temporarily failing against a gateway.
          *
@@ -245,7 +238,6 @@ public final class ConnectionParams {
                     maxRetries,
                     minTimeBetweenRetriesMs,
                     dryRun,
-                    enableV3Protocol,
                     traceLevel,
                     traceEveryXOperation,
                     printTraceToStdErr);
@@ -301,7 +293,6 @@ public final class ConnectionParams {
     private final int maxRetries;
     private final long minTimeBetweenRetriesMs;
     private final boolean dryRun;
-    private final boolean enableV3Protocol;
     private final int traceLevel;
     private final int traceEveryXOperation;
     private final boolean printTraceToStdErr;
@@ -319,7 +310,6 @@ public final class ConnectionParams {
             int maxRetries,
             long minTimeBetweenRetriesMs,
             boolean dryRun,
-            boolean enableV3Protocol,
             int traceLevel,
             int traceEveryXOperation,
             boolean printTraceToStdErr) {
@@ -335,7 +325,6 @@ public final class ConnectionParams {
         this.maxRetries = maxRetries;
         this.minTimeBetweenRetriesMs = minTimeBetweenRetriesMs;
         this.dryRun = dryRun;
-        this.enableV3Protocol = enableV3Protocol;
         this.traceLevel = traceLevel;
         this.traceEveryXOperation = traceEveryXOperation;
         this.printTraceToStdErr = printTraceToStdErr;
@@ -386,8 +375,6 @@ public final class ConnectionParams {
     public boolean isDryRun() {
         return dryRun;
     }
-
-    public boolean isEnableV3Protocol() { return enableV3Protocol; }
 
     public int getTraceLevel() {
         return traceLevel;

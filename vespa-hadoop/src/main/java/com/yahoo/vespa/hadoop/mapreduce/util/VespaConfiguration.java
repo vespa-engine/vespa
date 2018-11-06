@@ -19,7 +19,6 @@ public class VespaConfiguration {
     public static final String USE_COMPRESSION = "vespa.feed.usecompression";
     public static final String DATA_FORMAT = "vespa.feed.data.format";
     public static final String PROGRESS_REPORT = "vespa.feed.progress.interval";
-    public static final String V3_PROTOCOL = "vespa.feed.v3.protocol";
     public static final String CONNECTIONS = "vespa.feed.connections";
     public static final String THROTTLER_MIN_SIZE = "vespa.feed.throttler.min.size";
     public static final String QUERY_CONNECTION_TIMEOUT = "vespa.query.connection.timeout";
@@ -75,11 +74,6 @@ public class VespaConfiguration {
 
     public boolean useCompression() {
         return getBoolean(USE_COMPRESSION, true);
-    }
-
-
-    public boolean useV3Protocol() {
-        return getBoolean(V3_PROTOCOL, true);
     }
 
 
@@ -187,7 +181,6 @@ public class VespaConfiguration {
         sb.append(USE_COMPRESSION + ": " +  useCompression() +"\n");
         sb.append(DATA_FORMAT + ": " +  dataFormat() +"\n");
         sb.append(PROGRESS_REPORT + ": " +  progressInterval() +"\n");
-        sb.append(V3_PROTOCOL + ": " +  useV3Protocol() +"\n");
         sb.append(CONNECTIONS + ": " +  numConnections() +"\n");
         sb.append(THROTTLER_MIN_SIZE + ": " +  throttlerMinSize() +"\n");
         sb.append(QUERY_CONNECTION_TIMEOUT + ": " +  queryConnectionTimeout() +"\n");

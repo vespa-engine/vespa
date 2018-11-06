@@ -66,16 +66,6 @@ public class CommandLineArguments {
                 return null;
             }
         }
-        if (cmdArgs.enableV2Protocol) {
-            if (cmdArgs.enableV3Protocol) {
-                System.err.println("both --useV2Protocol and --useV3Protocol options specified, ignoring deprecated --useV2Protocol option");
-                cmdArgs.enableV2Protocol = false;
-            } else {
-                System.err.println("--useV2Protocol option is deprecated");
-            }
-        } else {
-            cmdArgs.enableV3Protocol = true;
-        }
 
         return cmdArgs;
     }
@@ -110,10 +100,7 @@ public class CommandLineArguments {
     private HelpOption helpOption;
 
     @Option(name = {"--useV3Protocol"}, description = "Use V3 protocol to gateway. This is the default protocol.")
-    private boolean enableV3Protocol = false;
-
-    @Option(name = {"--useV2Protocol"}, description = "Use old V2 protocol to gateway. This option is deprecated.")
-    private boolean enableV2Protocol = false;
+    private boolean enableV3Protocol = true;
 
     @Option(name = {"--file"},
             description = "The name of the input file to read.")
@@ -240,7 +227,6 @@ public class CommandLineArguments {
                                 .setHostnameVerifier(insecure ? NoopHostnameVerifier.INSTANCE :
                                         SSLConnectionSocketFactory.getDefaultHostnameVerifier())
                                 .setNumPersistentConnectionsPerEndpoint(16)
-                                .setEnableV3Protocol(! enableV2Protocol)
                                 .setUseCompression(useCompressionArg)
                                 .setMaxRetries(noRetryArg ? 0 : 100)
                                 .setMinTimeBetweenRetries(retrydelayArg, TimeUnit.SECONDS)
