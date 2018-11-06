@@ -105,7 +105,7 @@ public class SuperModelControllerTest {
         assertThat(lbc.tenants("t1").applications().size(), is(2));
         assertThat(lbc.tenants("t2").applications().size(), is(1));
         assertThat(lbc.tenants("t2").applications("minetooadvancedapp:prod:default:default").hosts().size(), is(1));
-        assertQrserver(lbc.tenants("t2").applications("minetooadvancedapp:prod:default:default"));
+        assertQrServer(lbc.tenants("t2").applications("minetooadvancedapp:prod:default:default"));
     }
 
     @Test
@@ -140,7 +140,7 @@ public class SuperModelControllerTest {
         return ApplicationId.from(tenantName, ApplicationName.from(applicationName), InstanceName.defaultName());
     }
 
-    private void assertQrserver(Applications app) {
+    private void assertQrServer(Applications app) {
         String host = app.hosts().keySet().iterator().next();
         Applications.Hosts hosts = app.hosts(host);
         assertThat(hosts.hostname(), is(host));
