@@ -58,7 +58,7 @@ public class Analyze {
     }
 
     static AnnotationVisitor visitAnnotationDefault(ImportCollector collector) {
-        return new AnnotationVisitor(Opcodes.ASM6) {
+        return new AnnotationVisitor(Opcodes.ASM7) {
             @Override
             public void visit(String name, Object value) {
             }
