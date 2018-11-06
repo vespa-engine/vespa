@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include <vespa/searchlib/datastore/entryref.h>
-#include <vespa/searchlib/btree/btreeiterator.h>
+#include "postinglisttraits.h"
 
 namespace search {
 
 namespace query { class Node; }
 
-typedef btree::BTreeConstIterator<uint32_t, int32_t, btree::MinMaxAggregated, std::less<uint32_t>, btree::BTreeDefaultTraits> DocumentWeightIterator;
+using DocumentWeightIterator = attribute::PostingListTraits<int32_t>::const_iterator;
 
 struct IDocumentWeightAttribute
 {
@@ -28,5 +27,5 @@ struct IDocumentWeightAttribute
     virtual ~IDocumentWeightAttribute() {}
 };
 
-} // namespace search
+}
 

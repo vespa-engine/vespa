@@ -9,8 +9,7 @@
 #include "noaggrcalc.h"
 #include "minmaxaggrcalc.h"
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 template <typename, typename, typename, size_t, size_t>
 class BTreeNodeAllocator;
@@ -80,30 +79,17 @@ public:
             where.emplace_back(_frozenRoot, _allocator);
         }
 
-        BTreeNode::Ref
-        getRoot() const
-        {
-            return _frozenRoot;
-        }
-
-        size_t
-        size() const;
-
-        const NodeAllocatorType &
-        getAllocator() const
-        {
-            return _allocator;
-        }
+        BTreeNode::Ref getRoot() const { return _frozenRoot; }
+        size_t size() const;
+        const NodeAllocatorType &getAllocator() const { return _allocator; }
 
         template <typename FunctionType>
-        void
-        foreach_key(FunctionType func) const {
+        void foreach_key(FunctionType func) const {
             _allocator.getNodeStore().foreach_key(_frozenRoot, func);
         }
 
         template <typename FunctionType>
-        void
-        foreach(FunctionType func) const {
+        void foreach(FunctionType func) const {
             _allocator.getNodeStore().foreach(_frozenRoot, func);
         }
     };
@@ -123,20 +109,12 @@ public:
     BTreeRootT();
     ~BTreeRootT();
 
-    void
-    clear(NodeAllocatorType &allocator);
+    void clear(NodeAllocatorType &allocator);
 
-    Iterator
-    find(const KeyType & key, const NodeAllocatorType &allocator,
-         CompareT comp = CompareT()) const;
+    Iterator find(const KeyType & key, const NodeAllocatorType &allocator, CompareT comp = CompareT()) const;
 
-    Iterator
-    lowerBound(const KeyType & key, const NodeAllocatorType & allocator,
-               CompareT comp = CompareT()) const;
-
-    Iterator
-    upperBound(const KeyType & key, const NodeAllocatorType & allocator,
-               CompareT comp = CompareT()) const;
+    Iterator lowerBound(const KeyType & key, const NodeAllocatorType & allocator, CompareT comp = CompareT()) const;
+    Iterator upperBound(const KeyType & key, const NodeAllocatorType & allocator, CompareT comp = CompareT()) const;
 
     Iterator begin(const NodeAllocatorType &allocator) const {
         return Iterator(_root, allocator);
@@ -146,22 +124,12 @@ public:
         return FrozenView(getFrozenRoot(), allocator);
     }
 
-    size_t
-    size(const NodeAllocatorType &allocator) const;
-
-    size_t
-    frozenSize(const NodeAllocatorType &allocator) const;
-
+    size_t size(const NodeAllocatorType &allocator) const;
+    size_t frozenSize(const NodeAllocatorType &allocator) const;
     vespalib::string toString(const NodeAllocatorType &allocator) const;
-
-    size_t
-    bitSize(const NodeAllocatorType &allocator) const;
-
-    size_t
-    bitSize(BTreeNode::Ref node, const NodeAllocatorType &allocator) const;
-
-    void
-    thaw(Iterator &itr);
+    size_t bitSize(const NodeAllocatorType &allocator) const;
+    size_t bitSize(BTreeNode::Ref node, const NodeAllocatorType &allocator) const;
+    void thaw(Iterator &itr);
 };
 
 
@@ -244,9 +212,6 @@ extern template class BTreeRootT<uint32_t, int32_t, MinMaxAggregated>;
 extern template class BTreeRoot<uint32_t, uint32_t, NoAggregated>;
 extern template class BTreeRoot<uint32_t, BTreeNoLeafData, NoAggregated>;
 extern template class BTreeRoot<uint32_t, int32_t, MinMaxAggregated,
-                                std::less<uint32_t>,
-                                BTreeDefaultTraits, MinMaxAggrCalc>;
+                                std::less<uint32_t>, BTreeDefaultTraits, MinMaxAggrCalc>;
 
-} // namespace search::btree
-} // namespace search
-
+}

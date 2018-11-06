@@ -3,16 +3,12 @@
 #pragma once
 
 #include "btreestore.h"
-#include <vespa/searchlib/bitcompression/compression.h>
 #include "btreebuilder.h"
 #include "btreebuilder.hpp"
 #include <vespa/searchlib/datastore/datastore.hpp>
+#include <vespa/searchlib/bitcompression/compression.h>
 
-namespace search
-{
-
-namespace btree
-{
+namespace search::btree {
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT, typename AggrCalcT>
@@ -958,8 +954,4 @@ getAggregated(const EntryRef ref) const
     return a;
 }
 
-} // namespace btree
-
-} // namespace search
-
-
+}

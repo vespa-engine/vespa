@@ -3,9 +3,6 @@
 #include "attributeiterators.hpp"
 #include "postinglistattribute.h"
 
-#include <vespa/log/log.h>
-LOG_SETUP(".searchlib.attribute.attribute_iterators");
-
 namespace search {
 
 using queryeval::MinMaxPostingInfo;
@@ -77,12 +74,7 @@ FilterAttributeIterator::doUnpack(uint32_t docId)
 
 template <>
 void
-AttributePostingListIteratorT<btree::
-BTreeConstIterator<uint32_t,
-                   btree::BTreeNoLeafData,
-                   btree::NoAggregated,
-                   std::less<uint32_t>,
-                   btree::BTreeDefaultTraits> >::
+AttributePostingListIteratorT<InnerAttributePostingListIterator>::
 doUnpack(uint32_t docId)
 {
     _matchData->resetOnlyDocId(docId);
@@ -92,12 +84,7 @@ doUnpack(uint32_t docId)
 
 template <>
 void
-AttributePostingListIteratorT<btree::
-BTreeConstIterator<uint32_t,
-                   int32_t,
-                   btree::MinMaxAggregated,
-                   std::less<uint32_t>,
-                   btree::BTreeDefaultTraits> >::
+AttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::
 doUnpack(uint32_t docId)
 {
     _matchData->resetOnlyDocId(docId);
@@ -107,12 +94,7 @@ doUnpack(uint32_t docId)
 
 template <>
 void
-FilterAttributePostingListIteratorT<btree::
-BTreeConstIterator<uint32_t,
-                   btree::BTreeNoLeafData,
-                   btree::NoAggregated,
-                   std::less<uint32_t>,
-                   btree::BTreeDefaultTraits> >::
+FilterAttributePostingListIteratorT<InnerAttributePostingListIterator>::
 doUnpack(uint32_t docId)
 {
     _matchData->resetOnlyDocId(docId);
@@ -121,12 +103,7 @@ doUnpack(uint32_t docId)
 
 template <>
 void
-FilterAttributePostingListIteratorT<btree::
-BTreeConstIterator<uint32_t,
-                   int32_t,
-                   btree::MinMaxAggregated,
-                   std::less<uint32_t>,
-                   btree::BTreeDefaultTraits> >::
+FilterAttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::
 doUnpack(uint32_t docId)
 {
     _matchData->resetOnlyDocId(docId);

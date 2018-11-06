@@ -2,10 +2,9 @@
 
 #pragma once
 
-namespace search
-{
-namespace btree
-{
+#include "minmaxaggregated.h"
+
+namespace search::btree {
 
 class MinMaxAggrCalc
 {
@@ -48,7 +47,4 @@ public:
     }
 };
 
-
-} // namespace search::btree
-} // namespace search
-
+}

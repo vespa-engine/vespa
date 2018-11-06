@@ -6,17 +6,12 @@
 #include "btreetraits.h"
 #include <vespa/searchlib/datastore/datastore.h>
 
-namespace search
-{
-
-namespace btree
-{
+namespace search::btree {
 
 class BTreeNodeReclaimer
 {
 public:
-    static void reclaim(BTreeNode * node)
-    {
+    static void reclaim(BTreeNode * node) {
         node->unFreeze();
     }
 };
@@ -30,18 +25,15 @@ class BTreeNodeBufferType : public datastore::BufferType<EntryType>
     using ParentType::_clusterSize;
     using CleanContext = typename ParentType::CleanContext;
 public:
-    BTreeNodeBufferType(uint32_t minClusters,
-                        uint32_t maxClusters)
+    BTreeNodeBufferType(uint32_t minClusters, uint32_t maxClusters)
         : ParentType(1, minClusters, maxClusters)
     {
         _emptyEntry.freeze();
     }
 
-    virtual void
-    initializeReservedElements(void *buffer, size_t reservedElements) override;
+    void initializeReservedElements(void *buffer, size_t reservedElements) override;
 
-    virtual void
-    cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) override;
+    void cleanHold(void *buffer, uint64_t offset, uint64_t len, CleanContext cleanCtx) override;
 };
 
 
@@ -80,141 +72,93 @@ public:
 
     ~BTreeNodeStore();
 
-    void
-    disableFreeLists() {
-        _store.disableFreeLists();
-    }
+    void disableFreeLists() { _store.disableFreeLists(); }
+    void disableElemHoldList() { _store.disableElemHoldList(); }
 
-    void
-    disableElemHoldList()
-    {
-        _store.disableElemHoldList();
-    }
+    static bool isValidRef(EntryRef ref) { return ref.valid(); }
 
-    static bool
-    isValidRef(EntryRef ref)
-    {
-        return ref.valid();
-    }
-
-    bool
-    isLeafRef(EntryRef ref) const
-    {
+    bool isLeafRef(EntryRef ref) const {
         RefType iRef(ref);
         return _store.getTypeId(iRef.bufferId()) == NODETYPE_LEAF;
     }
 
-    const InternalNodeType *
-    mapInternalRef(EntryRef ref) const
-    {
+    const InternalNodeType *mapInternalRef(EntryRef ref) const {
         RefType iRef(ref);
-        return _store.getBufferEntry<InternalNodeType>(iRef.bufferId(),
-                                                       iRef.offset());
+        return _store.getBufferEntry<InternalNodeType>(iRef.bufferId(), iRef.offset());
     }
 
-    InternalNodeType *
-    mapInternalRef(EntryRef ref)
-    {
+    InternalNodeType *mapInternalRef(EntryRef ref) {
         RefType iRef(ref);
-        return _store.getBufferEntry<InternalNodeType>(iRef.bufferId(),
-                                                       iRef.offset());
+        return _store.getBufferEntry<InternalNodeType>(iRef.bufferId(), iRef.offset());
     }
 
-    const LeafNodeType *
-    mapLeafRef(EntryRef ref) const
-    {
+    const LeafNodeType *mapLeafRef(EntryRef ref) const {
         RefType iRef(ref);
-        return _store.getBufferEntry<LeafNodeType>(iRef.bufferId(),
-                                                   iRef.offset());
+        return _store.getBufferEntry<LeafNodeType>(iRef.bufferId(), iRef.offset());
     }
 
-    LeafNodeType *
-    mapLeafRef(EntryRef ref)
-    {
+    LeafNodeType *mapLeafRef(EntryRef ref) {
         RefType iRef(ref);
-        return _store.getBufferEntry<LeafNodeType>(iRef.bufferId(),
-                                                   iRef.offset());
+        return _store.getBufferEntry<LeafNodeType>(iRef.bufferId(), iRef.offset());
     }
 
     template <typename NodeType>
-    const NodeType *
-    mapRef(EntryRef ref) const
-    {
+    const NodeType *mapRef(EntryRef ref) const {
         RefType iRef(ref);
-        return _store.getBufferEntry<NodeType>(iRef.bufferId(),
-                                               iRef.offset());
+        return _store.getBufferEntry<NodeType>(iRef.bufferId(), iRef.offset());
     }
 
     template <typename NodeType>
-    NodeType *
-    mapRef(EntryRef ref)
-    {
+    NodeType *mapRef(EntryRef ref) {
         RefType iRef(ref);
-        return _store.getBufferEntry<NodeType>(iRef.bufferId(),
-                                               iRef.offset());
+        return _store.getBufferEntry<NodeType>(iRef.bufferId(), iRef.offset());
     }
 
-    LeafNodeTypeRefPair
-    allocNewLeafNode() {
+    LeafNodeTypeRefPair allocNewLeafNode() {
         return _store.allocator<LeafNodeType>(NODETYPE_LEAF).alloc();
     }
 
-    LeafNodeTypeRefPair
-    allocLeafNode() {
+    LeafNodeTypeRefPair allocLeafNode() {
         return _store.freeListAllocator<LeafNodeType, BTreeNodeReclaimer>(NODETYPE_LEAF).alloc();
     }
 
-    LeafNodeTypeRefPair
-    allocNewLeafNodeCopy(const LeafNodeType &rhs) {
+    LeafNodeTypeRefPair allocNewLeafNodeCopy(const LeafNodeType &rhs) {
         return _store.allocator<LeafNodeType>(NODETYPE_LEAF).alloc(rhs);
     }
 
-    LeafNodeTypeRefPair
-    allocLeafNodeCopy(const LeafNodeType &rhs) {
+    LeafNodeTypeRefPair allocLeafNodeCopy(const LeafNodeType &rhs) {
         return _store.freeListAllocator<LeafNodeType, BTreeNodeReclaimer>(NODETYPE_LEAF).alloc(rhs);
     }
 
-    InternalNodeTypeRefPair
-    allocNewInternalNode() {
+    InternalNodeTypeRefPair allocNewInternalNode() {
         return _store.allocator<InternalNodeType>(NODETYPE_INTERNAL).alloc();
     }
 
-    InternalNodeTypeRefPair
-    allocInternalNode() {
+    InternalNodeTypeRefPair allocInternalNode() {
         return _store.freeListAllocator<InternalNodeType, BTreeNodeReclaimer>(NODETYPE_INTERNAL).alloc();
     }
 
-    InternalNodeTypeRefPair
-    allocNewInternalNodeCopy(const InternalNodeType &rhs) {
+    InternalNodeTypeRefPair allocNewInternalNodeCopy(const InternalNodeType &rhs) {
         return _store.allocator<InternalNodeType>(NODETYPE_INTERNAL).alloc(rhs);
     }
 
-    InternalNodeTypeRefPair
-    allocInternalNodeCopy(const InternalNodeType &rhs) {
+    InternalNodeTypeRefPair allocInternalNodeCopy(const InternalNodeType &rhs) {
         return _store.freeListAllocator<InternalNodeType, BTreeNodeReclaimer>(NODETYPE_INTERNAL).alloc(rhs);
     }
 
-    void
-    holdElem(EntryRef ref)
-    {
+    void holdElem(EntryRef ref) {
         _store.holdElem(ref, 1);
     }
 
-    void
-    freeElem(EntryRef ref)
-    {
+    void freeElem(EntryRef ref) {
         _store.freeElem(ref, 1);
     }
 
-    std::vector<uint32_t>
-    startCompact();
+    std::vector<uint32_t> startCompact();
 
-    void
-    finishCompact(const std::vector<uint32_t> &toHold);
+    void finishCompact(const std::vector<uint32_t> &toHold);
 
-    void
-    transferHoldLists(generation_t generation)
-    {
+    void transferHoldLists(generation_t generation) {
         _store.transferHoldLists(generation);
     }
 
@@ -224,15 +168,11 @@ public:
     }
 
     // Inherit doc from DataStoreBase
-    void
-    trimHoldLists(generation_t usedGen)
-    {
+    void trimHoldLists(generation_t usedGen) {
         _store.trimHoldLists(usedGen);
     }
 
-    void
-    clearHoldLists()
-    {
+    void clearHoldLists() {
         _store.clearHoldLists();
     }
 
@@ -247,9 +187,7 @@ public:
     }
 
     template <typename FunctionType>
-    void
-    foreach_key(EntryRef ref, FunctionType func) const
-    {
+    void foreach_key(EntryRef ref, FunctionType func) const {
         if (!ref.valid())
             return;
         if (isLeafRef(ref)) {
@@ -260,9 +198,7 @@ public:
     }
 
     template <typename FunctionType>
-    void
-    foreach(EntryRef ref, FunctionType func) const
-    {
+    void foreach(EntryRef ref, FunctionType func) const {
         if (!ref.valid())
             return;
         if (isLeafRef(ref)) {
@@ -273,20 +209,14 @@ public:
     }
 };
 
-extern template class BTreeNodeStore<uint32_t, uint32_t,
-                                     NoAggregated,
+extern template class BTreeNodeStore<uint32_t, uint32_t, NoAggregated,
                                      BTreeDefaultTraits::INTERNAL_SLOTS,
                                      BTreeDefaultTraits::LEAF_SLOTS>;
-extern template class BTreeNodeStore<uint32_t, BTreeNoLeafData,
-                                     NoAggregated,
+extern template class BTreeNodeStore<uint32_t, BTreeNoLeafData, NoAggregated,
                                      BTreeDefaultTraits::INTERNAL_SLOTS,
                                      BTreeDefaultTraits::LEAF_SLOTS>;
-extern template class BTreeNodeStore<uint32_t, int32_t,
-                                     MinMaxAggregated,
+extern template class BTreeNodeStore<uint32_t, int32_t, MinMaxAggregated,
                                      BTreeDefaultTraits::INTERNAL_SLOTS,
                                      BTreeDefaultTraits::LEAF_SLOTS>;
 
-} // namespace btree
-
-} // namespace search
-
+}

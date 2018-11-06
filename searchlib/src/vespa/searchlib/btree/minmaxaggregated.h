@@ -3,10 +3,9 @@
 #pragma once
 
 #include <limits>
-#include <stdint.h>
+#include <cstdint>
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 class MinMaxAggregated
 {
@@ -103,7 +102,4 @@ public:
     }
 };
 
-
-} // namespace search::btree
-} // namespace search
-
+}

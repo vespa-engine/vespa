@@ -236,7 +236,7 @@ FlagAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
     const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     for (int i = sc._low; (i <= sc._high); ++i) {
         const BitVector * bv = attr.getBitVector(i);
-        if ((bv != NULL) && !isAtEnd(docId) && bv->testBit(docId)) {
+        if ((bv != nullptr) && !isAtEnd(docId) && bv->testBit(docId)) {
             setDocId(docId);
             return;
         }
@@ -245,7 +245,7 @@ FlagAttributeIteratorStrict<SC>::doSeek(uint32_t docId)
     uint32_t minNextBit(search::endDocId);
     for (int i = sc._low; (i <= sc._high); ++i) {
         const BitVector * bv = attr.getBitVector(i);
-        if (bv != NULL && !isAtEnd(docId)) {
+        if (bv != nullptr && !isAtEnd(docId)) {
             uint32_t nextBit = bv->getNextTrueBit(docId);
             minNextBit = std::min(nextBit, minNextBit);
         }
@@ -265,7 +265,7 @@ FlagAttributeIteratorT<SC>::doSeek(uint32_t docId)
     const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     for (int i = sc._low; (i <= sc._high); ++i) {
         const BitVector * bv = attr.getBitVector(i);
-        if ((bv != NULL) && !isAtEnd(docId) && bv->testBit(docId)) {
+        if ((bv != nullptr) && !isAtEnd(docId) && bv->testBit(docId)) {
             setDocId(docId);
             return;
         }
@@ -280,7 +280,7 @@ FlagAttributeIteratorT<SC>::or_hits_into(BitVector &result, uint32_t begin_id) {
     const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     for (int i = sc._low; (i <= sc._high); ++i) {
         const BitVector * bv = attr.getBitVector(i);
-        if (bv != NULL) {
+        if (bv != nullptr) {
             result.orWith(*bv);
         }
     }
@@ -293,7 +293,7 @@ FlagAttributeIteratorT<SC>::and_hits_into(BitVector &result, uint32_t begin_id) 
     const Attribute &attr = static_cast<const Attribute &>(sc.attribute());
     if (sc._low == sc._high) {
         const BitVector * bv = attr.getBitVector(sc._low);
-        if (bv != NULL) {
+        if (bv != nullptr) {
             result.andWith(*bv);
         } else {
             // I would expect us never to end up in this case as we are probably
@@ -314,14 +314,14 @@ FlagAttributeIteratorT<SC>::get_hits(uint32_t begin_id) {
     BitVector::UP result;
     for (;!result && i < sc._high; ++i) {
         const BitVector * bv = attr.getBitVector(i);
-        if (bv != NULL) {
+        if (bv != nullptr) {
             result = BitVector::create(*bv, begin_id, getEndId());
         }
     }
 
     for (; i <= sc._high; ++i) {
         const BitVector * bv = attr.getBitVector(i);
-        if (bv != NULL) {
+        if (bv != nullptr) {
             result->orWith(*bv);
         }
     }

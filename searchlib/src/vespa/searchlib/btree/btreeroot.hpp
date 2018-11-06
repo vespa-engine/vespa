@@ -10,8 +10,7 @@
 #include "btreeaggregator.hpp"
 #include <vespa/vespalib/stllike/asciistream.h>
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 //----------------------- BTreeRoot ------------------------------------------//
 
@@ -235,16 +234,11 @@ FrozenView::size() const
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT>
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::BTreeRootT()
-    : ParentType()
-{
-}
+BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::BTreeRootT() = default;
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT>
-BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::~BTreeRootT()
-{
-}
+BTreeRootT<KeyT, DataT, AggrT, CompareT, TraitsT>::~BTreeRootT() = default;
 
 template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
           typename TraitsT>
@@ -492,7 +486,4 @@ remove(Iterator &itr,
         itr.getAllocator().needFreeze(this);
 }
 
-
-} // namespace search::btree
-} // namespace search
-
+}

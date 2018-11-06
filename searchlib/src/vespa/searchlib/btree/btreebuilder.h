@@ -9,11 +9,7 @@
 #include "minmaxaggrcalc.h"
 #include "btreeaggregator.h"
 
-namespace search
-{
-
-namespace btree
-{
+namespace search::btree {
 
 template <typename KeyT,
           typename DataT,
@@ -24,21 +20,17 @@ template <typename KeyT,
 class BTreeBuilder
 {
 public:
-    typedef BTreeNodeAllocator<KeyT, DataT, AggrT,
-                               INTERNAL_SLOTS, LEAF_SLOTS> NodeAllocatorType;
-    typedef typename NodeAllocatorType::BTreeRootBaseType BTreeRootBaseType;
-    typedef typename NodeAllocatorType::InternalNodeType InternalNodeType;
-    typedef typename NodeAllocatorType::LeafNodeType LeafNodeType;
-    typedef BTreeAggregator<KeyT, DataT, AggrT,
-                            INTERNAL_SLOTS,
-                            LEAF_SLOTS,
-                            AggrCalcT> Aggregator;
+    using NodeAllocatorType = BTreeNodeAllocator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>;
+    using BTreeRootBaseType = typename NodeAllocatorType::BTreeRootBaseType;
+    using InternalNodeType = typename NodeAllocatorType::InternalNodeType;
+    using LeafNodeType = typename NodeAllocatorType::LeafNodeType;
+    using Aggregator = BTreeAggregator<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS, AggrCalcT>;
 private:
-    typedef KeyT KeyType;
-    typedef DataT DataType;
-    typedef typename InternalNodeType::RefPair InternalNodeTypeRefPair;
-    typedef typename LeafNodeType::RefPair LeafNodeTypeRefPair;
-    typedef BTreeNode::Ref NodeRef;
+    using KeyType = KeyT;
+    using DataType = DataT;
+    using InternalNodeTypeRefPair =  typename InternalNodeType::RefPair;
+    using LeafNodeTypeRefPair = typename LeafNodeType::RefPair;
+    using NodeRef = BTreeNode::Ref;
 
     NodeAllocatorType &_allocator;
     int _numInternalNodes;
@@ -49,52 +41,30 @@ private:
     AggrCalcT _defaultAggrCalc;
     const AggrCalcT &_aggrCalc;
 
-    void
-    normalize();
-
-    void
-    allocNewLeafNode();
-
-    InternalNodeType *
-    createInternalNode();
+    void normalize();
+    void allocNewLeafNode();
+    InternalNodeType *createInternalNode();
 public:
     BTreeBuilder(NodeAllocatorType &allocator);
-
     BTreeBuilder(NodeAllocatorType &allocator, const AggrCalcT &aggrCalc);
-
     ~BTreeBuilder();
 
-    void
-    recursiveDelete(NodeRef node);
-
-    void
-    insert(const KeyT &key, const DataT &data);
-
-    NodeRef
-    handover();
-
-    void
-    reuse();
-
-    void
-    clear();
+    void recursiveDelete(NodeRef node);
+    void insert(const KeyT &key, const DataT &data);
+    NodeRef handover();
+    void reuse();
+    void clear();
 };
 
-extern template class BTreeBuilder<uint32_t, uint32_t,
-                                   NoAggregated,
+extern template class BTreeBuilder<uint32_t, uint32_t, NoAggregated,
                                    BTreeDefaultTraits::INTERNAL_SLOTS,
                                    BTreeDefaultTraits::LEAF_SLOTS>;
-extern template class BTreeBuilder<uint32_t, BTreeNoLeafData,
-                                   NoAggregated,
+extern template class BTreeBuilder<uint32_t, BTreeNoLeafData, NoAggregated,
                                    BTreeDefaultTraits::INTERNAL_SLOTS,
                                    BTreeDefaultTraits::LEAF_SLOTS>;
-extern template class BTreeBuilder<uint32_t, int32_t,
-                                   MinMaxAggregated,
+extern template class BTreeBuilder<uint32_t, int32_t, MinMaxAggregated,
                                    BTreeDefaultTraits::INTERNAL_SLOTS,
                                    BTreeDefaultTraits::LEAF_SLOTS,
                                    MinMaxAggrCalc>;
 
-} // namespace btree
-
-} // namespace search
-
+}

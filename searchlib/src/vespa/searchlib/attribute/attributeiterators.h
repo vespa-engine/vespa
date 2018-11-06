@@ -3,9 +3,8 @@
 #pragma once
 
 #include "dociditerator.h"
+#include "postinglisttraits.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/btree/btreenode.h>
-#include <vespa/searchlib/btree/btreeiterator.h>
 
 namespace search {
 
@@ -183,19 +182,9 @@ public:
 };
 
 
-typedef btree::BTreeConstIterator<uint32_t,
-                                  btree::BTreeNoLeafData,
-                                  btree::NoAggregated,
-                                  std::less<uint32_t>,
-                                  btree::BTreeDefaultTraits>
-InnerAttributePostingListIterator;
+using InnerAttributePostingListIterator = attribute::PostingListTraits<btree::BTreeNoLeafData>::const_iterator;
 
-typedef btree::BTreeConstIterator<uint32_t,
-                                  int32_t,
-                                  btree::MinMaxAggregated,
-                                  std::less<uint32_t>,
-                                  btree::BTreeDefaultTraits>
-WeightedInnerAttributePostingListIterator; 
+using WeightedInnerAttributePostingListIterator = attribute::PostingListTraits<int32_t>::const_iterator;
 
 template <typename PL>
 class AttributePostingListIteratorT : public AttributePostingListIterator
@@ -211,7 +200,7 @@ private:
     int32_t getWeight() { return _iterator.getData(); }
 
     const queryeval::PostingInfo * getPostingInfo() const override {
-        return _postingInfoValid ? &_postingInfo : NULL;
+        return _postingInfoValid ? &_postingInfo : nullptr;
     }
 
     void initRange(uint32_t begin, uint32_t end) override;
@@ -246,7 +235,7 @@ private:
     void setupPostingInfo() { }
 
     const queryeval::PostingInfo * getPostingInfo() const override {
-        return _postingInfoValid ? &_postingInfo : NULL;
+        return _postingInfoValid ? &_postingInfo : nullptr;
     }
 
     void initRange(uint32_t begin, uint32_t end) override;
@@ -259,12 +248,7 @@ public:
 
 template <>
 inline int32_t
-AttributePostingListIteratorT<
-    btree::BTreeConstIterator<uint32_t,
-                              btree::BTreeNoLeafData,
-                              btree::NoAggregated,
-                              std::less<uint32_t>,
-                              btree::BTreeDefaultTraits> >::
+AttributePostingListIteratorT<InnerAttributePostingListIterator>::
 getWeight()
 {
     return 1;   // default weight 1 for single value attributes
@@ -272,15 +256,13 @@ getWeight()
 
 template <>
 void
-AttributePostingListIteratorT<btree::BTreeConstIterator<uint32_t, btree::BTreeNoLeafData, btree::NoAggregated,
-                              std::less<uint32_t>, btree::BTreeDefaultTraits> >::
+AttributePostingListIteratorT<InnerAttributePostingListIterator >::
 doUnpack(uint32_t docId);
 
 
 template <>
 void
-AttributePostingListIteratorT<btree::BTreeConstIterator<uint32_t, int32_t, btree::MinMaxAggregated,
-                              std::less<uint32_t>, btree::BTreeDefaultTraits> >::
+AttributePostingListIteratorT<WeightedInnerAttributePostingListIterator>::
 doUnpack(uint32_t docId);
 
 

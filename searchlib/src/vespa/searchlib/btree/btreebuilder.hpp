@@ -4,11 +4,7 @@
 
 #include "btreebuilder.h"
 
-namespace search
-{
-
-namespace btree
-{
+namespace search::btree {
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS, class AggrCalcT>
@@ -450,8 +446,4 @@ clear()
     assert(_numInternalNodes == 0);
 }
 
-
-} // namespace btree
-
-} // namespace search
-
+}
