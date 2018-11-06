@@ -18,7 +18,7 @@ public class AnalyzeFieldVisitor extends FieldVisitor implements ImportCollector
     private final Set<String> imports = new HashSet<>();
 
     public AnalyzeFieldVisitor(AnalyzeClassVisitor analyzeClassVisitor) {
-        super(Opcodes.ASM6);
+        super(Opcodes.ASM7);
         this.analyzeClassVisitor = analyzeClassVisitor;
     }
 
