@@ -13,6 +13,7 @@ import com.yahoo.protect.ClassValidator;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Tests all method of NamedReader.
@@ -35,8 +36,10 @@ public class NamedReaderTestCase {
 
     @Test
     public void testMethodMasking() {
-        assertEquals(0,
-                     ClassValidator.unmaskedMethodsFromSuperclass(NamedReader.class).size());
+        List<Method> unmaskedMethods = ClassValidator.unmaskedMethodsFromSuperclass(NamedReader.class);
+        if (! unmaskedMethods.isEmpty()) {
+            fail("Unmasked methods in " + NamedReader.class.getName() + ": " + unmaskedMethods);
+        }
     }
 
     private static class MarkerReader extends Reader {
