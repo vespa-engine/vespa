@@ -95,7 +95,6 @@ public class CommandLineArgumentsTest {
         assertThat(params.getClusters().get(0).getEndpoints().get(0).isUseSsl(), is(false));
         assertThat(params.getConnectionParams().getUseCompression(), is(false));
         assertThat(params.getConnectionParams().getNumPersistentConnectionsPerEndpoint(), is(16));
-        assertThat(params.getConnectionParams().isEnableV3Protocol(), is(true));
         assertThat(params.getFeedParams().getRoute(), is("default"));
         assertThat(params.getFeedParams().getDataFormat(), is(FeedParams.DataFormat.XML_UTF8));
         assertThat(params.getFeedParams().getLocalQueueTimeOut(), is(180000L));
@@ -176,30 +175,10 @@ public class CommandLineArgumentsTest {
     }
 
     @Test
-    public void testDeprecatedUseV2Protocol() {
-        addMinimum();
-        args.add("--useV2Protocol");
-        CommandLineArguments arguments = CommandLineArguments.build(asArray());
-        SessionParams params = arguments.createSessionParams(true /* use json */);
-        assertThat(params.getConnectionParams().isEnableV3Protocol(), is(false));
-    }
-
-    @Test
     public void testUseV3Protocol() {
         addMinimum();
         args.add("--useV3Protocol");
         CommandLineArguments arguments = CommandLineArguments.build(asArray());
         SessionParams params = arguments.createSessionParams(true /* use json */);
-        assertThat(params.getConnectionParams().isEnableV3Protocol(), is(true));
-    }
-
-    @Test
-    public void testDeprecatedUseV2ProtocolAndUseV3Protocol() {
-        addMinimum();
-        args.add("--useV2Protocol");
-        args.add("--useV3Protocol");
-        CommandLineArguments arguments = CommandLineArguments.build(asArray());
-        SessionParams params = arguments.createSessionParams(true /* use json */);
-        assertThat(params.getConnectionParams().isEnableV3Protocol(), is(true));
     }
 }
