@@ -36,6 +36,7 @@ public class NamedReader extends Reader {
     }
 
     // The rest is reader method implementations which delegates to the wrapped reader
+    public static Reader nullReader() { return new NamedReader("nullReader", Reader.nullReader()); }
     @Override
     public int read(CharBuffer charBuffer) throws IOException { return reader.read(charBuffer); }
     @Override
