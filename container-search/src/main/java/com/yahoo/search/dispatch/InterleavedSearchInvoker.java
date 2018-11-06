@@ -33,13 +33,15 @@ public class InterleavedSearchInvoker extends SearchInvoker {
      */
     @Override
     protected void sendSearchRequest(Query query, QueryPacket queryPacket) throws IOException {
+        int originalHits = query.getHits();
+        int originalOffset = query.getOffset();
+        query.setHits(query.getHits() + query.getOffset());
+        query.setOffset(0);
         for (SearchInvoker invoker : invokers) {
-            Query subquery = query.clone();
-
-            subquery.setHits(subquery.getHits() + subquery.getOffset());
-            subquery.setOffset(0);
-            invoker.sendSearchRequest(subquery, null);
+            invoker.sendSearchRequest(query, null);
         }
+        query.setHits(originalHits);
+        query.setOffset(originalOffset);
     }
 
     @Override
