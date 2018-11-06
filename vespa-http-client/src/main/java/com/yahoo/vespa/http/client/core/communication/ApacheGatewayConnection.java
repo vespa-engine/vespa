@@ -78,7 +78,7 @@ class ApacheGatewayConnection implements GatewayConnection {
             ConnectionParams connectionParams,
             HttpClientFactory httpClientFactory,
             String clientId) {
-        SUPPORTED_VERSIONS.add(2);
+        SUPPORTED_VERSIONS.add(3);
         this.endpoint = endpoint;
         this.feedParams = feedParams;
         this.clusterSpecificRoute = clusterSpecificRoute;
@@ -94,11 +94,8 @@ class ApacheGatewayConnection implements GatewayConnection {
             endOfFeed = END_OF_FEED_XML;
         }
         this.clientId = clientId;
-        if (connectionParams.isEnableV3Protocol()) {
-            if (this.clientId == null) {
-                throw new RuntimeException("Set to support version 3, but got no client Id.");
-            }
-            SUPPORTED_VERSIONS.add(3);
+        if (this.clientId == null) {
+            throw new RuntimeException("Got no client Id.");
         }
     }
 
@@ -343,10 +340,6 @@ class ApacheGatewayConnection implements GatewayConnection {
             if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "Server decided upon protocol version " + serverVersion + ".");
             }
-        }
-        if (this.connectionParams.isEnableV3Protocol() && serverVersion != 3) {
-            throw new ServerResponseException("Client was set up to use v3 of protocol, however, gateway wants to " +
-                    "use version " + serverVersion + ". Already set up structures for v3 so can not do v2 now.");
         }
         this.negotiatedVersion = serverVersion;
     }
