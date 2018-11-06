@@ -28,7 +28,7 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
     private Optional<ExportPackageAnnotation> exportPackageAnnotation = Optional.empty();
 
     AnalyzeClassVisitor() {
-        super(Opcodes.ASM6);
+        super(Opcodes.ASM7);
     }
 
     @Override
@@ -98,7 +98,7 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
     }
 
     private AnnotationVisitor visitExportPackage() {
-        return new AnnotationVisitor(Opcodes.ASM6) {
+        return new AnnotationVisitor(Opcodes.ASM7) {
             private int major = defaultVersionValue("major");
             private int minor = defaultVersionValue("minor");
             private int micro = defaultVersionValue("micro");
