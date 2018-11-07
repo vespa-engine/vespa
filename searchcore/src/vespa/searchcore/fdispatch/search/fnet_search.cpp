@@ -891,12 +891,15 @@ FastS_FNET_Search::CheckCoverage()
     }
     bool missingReplies = (askedButNotAnswered != 0) || (nodesQueried != nodesReplied);
     const ssize_t missingParts = cntNone - (_dataset->getSearchableCopies() - 1);
-    if (((missingParts > 0) || (missingReplies && useAdaptiveTimeout())) && (cntNone != _nodes.size())) {
+    if ((missingParts > 0) && (cntNone != _nodes.size())) {
         // TODO This is a dirty way of anticipating missing coverage.
         // It should be done differently
         activeDocs += missingParts * activeDocs/(_nodes.size() - cntNone);
     }
-    if (missingReplies && useAdaptiveTimeout()) {
+    if (missingReplies && useAdaptiveTimeout() && nodesReplied) {
+        // TODO This will not be correct when using multilevel dispatch and has timeout on anything, but leaf level.
+        //      We can live with that as leaf level failures are the likely ones.
+        activeDocs += askedButNotAnswered * activeDocs/nodesReplied;
         degradedReason |= search::engine::SearchReply::Coverage::ADAPTIVE_TIMEOUT;
     }
     _util.SetCoverage(covDocs, activeDocs, soonActiveDocs, degradedReason, nodesQueried, nodesReplied);
