@@ -56,6 +56,7 @@ public interface IPAddresses {
     default Optional<Inet6Address> getIPv6Address(String hostname) {
         List<Inet6Address> ipv6addresses = Stream.of(getAddresses(hostname))
                 .filter(Inet6Address.class::isInstance)
+                .filter(inetAddress -> !inetAddress.isLoopbackAddress())
                 .map(Inet6Address.class::cast)
                 .filter(inetAddress -> !inetAddress.isLinkLocalAddress())
                 .filter(inetAddress -> !inetAddress.isSiteLocalAddress())
@@ -78,6 +79,7 @@ public interface IPAddresses {
     default Optional<Inet4Address> getIPv4Address(String hostname) {
         List<Inet4Address> ipv4Addresses = Stream.of(getAddresses(hostname))
                 .filter(Inet4Address.class::isInstance)
+                .filter(inetAddress -> !inetAddress.isLoopbackAddress())
                 .map(Inet4Address.class::cast)
                 .collect(Collectors.toList());
 

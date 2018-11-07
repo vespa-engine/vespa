@@ -9,12 +9,12 @@ import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerOperations;
+import com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoredumpHandler;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig;
-import com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoredumpHandler;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -96,11 +96,14 @@ public class StorageMaintainer {
         if (context.nodeType() != NodeType.config) {
             // vespa-health
             Path vespaHealthCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa_health");
-            configs.add(new SecretAgentCheckConfig("vespa-health", 60, vespaHealthCheckPath, "all").withTags(tags));
+            configs.add(new SecretAgentCheckConfig("vespa-health", 60, vespaHealthCheckPath, "all")
+                    .withRunAsUser(context.vespaUser())
+                    .withTags(tags));
 
             // vespa
             Path vespaCheckPath = context.pathInNodeUnderVespaHome("libexec/yms/yms_check_vespa");
             SecretAgentCheckConfig vespaSchedule = new SecretAgentCheckConfig("vespa", 60, vespaCheckPath, "all");
+            vespaSchedule.withRunAsUser(context.vespaUser());
             if (isConfigserverLike(context.nodeType())) {
                 Map<String, Object> tagsWithoutNameSpace = new LinkedHashMap<>(tags);
                 tagsWithoutNameSpace.remove("namespace");
