@@ -6,6 +6,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.ZoneId;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
@@ -33,6 +34,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final ZoneId zoneId;
     private final Path pathToNodeRootOnHost;
     private final Path pathToVespaHome;
+    private final String vespaUser;
 
     public NodeAgentContextImpl(String hostname, NodeType nodeType, AthenzService identity,
                                 DockerNetworking dockerNetworking, ZoneId zoneId,
@@ -46,6 +48,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         this.pathToNodeRootOnHost = Objects.requireNonNull(pathToContainerStorage).resolve(containerName.asString());
         this.pathToVespaHome = Objects.requireNonNull(pathToVespaHome);
         this.logPrefix = containerName.asString() + ": ";
+        this.vespaUser = Defaults.getDefaults().vespaUser();
     }
 
     @Override
@@ -76,6 +79,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     @Override
     public ZoneId zoneId() {
         return zoneId;
+    }
+
+    @Override
+    public String vespaUser() {
+        return vespaUser;
     }
 
     @Override
