@@ -425,14 +425,11 @@ public class NodeAgentImpl implements NodeAgent {
             isFrozenCopy = isFrozen;
         }
 
-        boolean converged = false;
-
         if (isFrozenCopy) {
             context.log(logger, LogLevel.DEBUG, "tick: isFrozen");
         } else {
             try {
                 converge();
-                converged = true;
             } catch (OrchestratorException e) {
                 context.log(logger, e.getMessage());
             } catch (ContainerNotFoundException e) {
