@@ -4,7 +4,6 @@ package com.yahoo;
 import com.yahoo.osgi.maven.ProjectBundleClassPaths;
 import com.yahoo.vespa.config.VespaVersion;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -81,9 +80,15 @@ public class BundleIT {
     @Test
     public void require_that_manifest_contains_inferred_imports() {
         String importPackage = mainAttributes.getValue("Import-Package");
+
+        // From SimpleSearcher
         assertThat(importPackage, containsString("com.yahoo.prelude.hitfield"));
-        //Not available from jdisc at the moment, scope temporarily changed to compile.
-        //assertThat(importPackage, containsString("org.json"));
+        assertThat(importPackage, containsString("org.json"));
+
+        // From SimpleSearcher2
+        assertThat(importPackage, containsString("com.yahoo.processing"));
+        assertThat(importPackage, containsString("com.yahoo.metrics.simple"));
+        assertThat(importPackage, containsString("com.google.inject"));
     }
 
     @Test
@@ -104,6 +109,8 @@ public class BundleIT {
     }
 
     @Test
+    // TODO: use another jar than jrt, which now pulls in a lot of dependencies that pollute the manifest of the
+    //       generated bundle. (It's compile scoped in pom.xml to be added to the bundle-cp.)
     public void require_that_manifest_contains_bundle_class_path() {
         String bundleClassPath = mainAttributes.getValue("Bundle-ClassPath");
         assertThat(bundleClassPath, containsString(".,"));
