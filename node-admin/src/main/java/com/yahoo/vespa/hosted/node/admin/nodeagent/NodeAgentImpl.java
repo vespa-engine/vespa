@@ -227,7 +227,8 @@ public class NodeAgentImpl implements NodeAgent {
         final NodeAttributes currentNodeAttributes = new NodeAttributes();
         final NodeAttributes newNodeAttributes = new NodeAttributes();
 
-        if (!Objects.equals(node.getCurrentRestartGeneration(), currentRestartGeneration)) {
+        if (node.getWantedRestartGeneration().isPresent() &&
+                !Objects.equals(node.getCurrentRestartGeneration(), currentRestartGeneration)) {
             currentNodeAttributes.withRestartGeneration(node.getCurrentRestartGeneration());
             newNodeAttributes.withRestartGeneration(currentRestartGeneration);
         }
@@ -469,11 +470,10 @@ public class NodeAgentImpl implements NodeAgent {
         if (!node.equals(lastNode)) {
             logChangesToNodeSpec(lastNode, node);
 
-            if (currentRebootGeneration < node.getCurrentRebootGeneration())
+            if (lastNode == null) {
                 currentRebootGeneration = node.getCurrentRebootGeneration();
-
-            if (currentRestartGeneration.isPresent() != node.getCurrentRestartGeneration().isPresent())
                 currentRestartGeneration = node.getCurrentRestartGeneration();
+            }
 
             // Every time the node spec changes, we should clear the metrics for this container as the dimensions
             // will change and we will be reporting duplicate metrics.
