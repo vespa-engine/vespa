@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorException;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.util.SecretAgentCheckConfig;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -428,15 +429,12 @@ public class NodeAgentImpl implements NodeAgent {
             isFrozenCopy = isFrozen;
         }
 
-        boolean converged = false;
-
         if (isFrozenCopy) {
             context.log(logger, LogLevel.DEBUG, "tick: isFrozen");
         } else {
             try {
                 converge();
-                converged = true;
-            } catch (OrchestratorException e) {
+            } catch (OrchestratorException | ConvergenceException e) {
                 context.log(logger, e.getMessage());
             } catch (ContainerNotFoundException e) {
                 containerState = ABSENT;
@@ -655,7 +653,7 @@ public class NodeAgentImpl implements NodeAgent {
             }
             String wrappedMetrics = "s:" + params.toString();
 
-            // Push metrics to the metrics proxy in each container - give it maximum 1 seconds to complete
+            // Push metrics to the metrics proxy in each container
             String[] command = {"vespa-rpc-invoke",  "-t", "2",  "tcp/localhost:19091",  "setExtraMetrics", wrappedMetrics};
             dockerOperations.executeCommandInContainerAsRoot(context, 5L, command);
         } catch (DockerExecTimeoutException | JsonProcessingException  e) {
