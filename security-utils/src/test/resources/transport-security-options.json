@@ -3,5 +3,6 @@
     "private-key": "myhost.key",
     "ca-certificates": "my_cas.pem",
     "certificates": "certs.pem"
-  }
+  },
+  "accepted-ciphers": ["TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"]
 }
