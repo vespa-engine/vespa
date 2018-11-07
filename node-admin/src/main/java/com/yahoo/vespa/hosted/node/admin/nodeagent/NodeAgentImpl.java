@@ -83,6 +83,9 @@ public class NodeAgentImpl implements NodeAgent {
     private DockerImage imageBeingDownloaded = null;
     private Instant lastConverge;
 
+    private long currentRebootGeneration = 0;
+    private Optional<Long> currentRestartGeneration = Optional.empty();
+
     private final Thread loopThread;
     private final ScheduledExecutorService filebeatRestarter =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("filebeatrestarter"));
@@ -223,14 +226,14 @@ public class NodeAgentImpl implements NodeAgent {
         final NodeAttributes currentNodeAttributes = new NodeAttributes();
         final NodeAttributes newNodeAttributes = new NodeAttributes();
 
-        if (!Objects.equals(node.getCurrentRestartGeneration(), node.getWantedRestartGeneration())) {
+        if (!Objects.equals(node.getCurrentRestartGeneration(), currentRestartGeneration)) {
             currentNodeAttributes.withRestartGeneration(node.getCurrentRestartGeneration());
-            newNodeAttributes.withRestartGeneration(node.getWantedRestartGeneration());
+            newNodeAttributes.withRestartGeneration(currentRestartGeneration);
         }
 
-        if (!Objects.equals(node.getCurrentRebootGeneration(), node.getWantedRebootGeneration())) {
+        if (!Objects.equals(node.getCurrentRebootGeneration(), currentRebootGeneration)) {
             currentNodeAttributes.withRebootGeneration(node.getCurrentRebootGeneration());
-            newNodeAttributes.withRebootGeneration(node.getWantedRebootGeneration());
+            newNodeAttributes.withRebootGeneration(currentRebootGeneration);
         }
 
         Optional<DockerImage> actualDockerImage = node.getWantedDockerImage().filter(n -> containerState == UNKNOWN);
@@ -268,6 +271,7 @@ public class NodeAgentImpl implements NodeAgent {
                         shouldRestartServices(node).ifPresent(restartReason -> {
                             context.log(logger, "Will restart services: " + restartReason);
                             restartServices(node, container);
+                            currentRestartGeneration = node.getWantedRestartGeneration();
                         });
                         return container;
                 });
@@ -277,9 +281,9 @@ public class NodeAgentImpl implements NodeAgent {
         if (!node.getWantedRestartGeneration().isPresent()) return Optional.empty();
 
         // Restart generation is only optional because it does not exist for unallocated nodes
-        if (node.getCurrentRestartGeneration().get() < node.getWantedRestartGeneration().get()) {
+        if (currentRestartGeneration.get() < node.getWantedRestartGeneration().get()) {
             return Optional.of("Restart requested - wanted restart generation has been bumped: "
-                    + node.getCurrentRestartGeneration().get() + " -> " + node.getWantedRestartGeneration().get());
+                    + currentRestartGeneration.get() + " -> " + node.getWantedRestartGeneration().get());
         }
         return Optional.empty();
     }
@@ -341,9 +345,9 @@ public class NodeAgentImpl implements NodeAgent {
                     wantedContainerResources + ", actual: " + existingContainer.resources);
         }
 
-        if (node.getCurrentRebootGeneration() < node.getWantedRebootGeneration()) {
+        if (currentRebootGeneration < node.getWantedRebootGeneration()) {
             return Optional.of(String.format("Container reboot wanted. Current: %d, Wanted: %d",
-                    node.getCurrentRebootGeneration(), node.getWantedRebootGeneration()));
+                    currentRebootGeneration, node.getWantedRebootGeneration()));
         }
 
         if (containerState == STARTING) return Optional.of("Container failed to start");
@@ -372,6 +376,7 @@ public class NodeAgentImpl implements NodeAgent {
             stopFilebeatSchedulerIfNeeded();
             storageMaintainer.handleCoreDumpsForContainer(context, node, Optional.of(existingContainer));
             dockerOperations.removeContainer(context, existingContainer);
+            currentRebootGeneration = node.getWantedRebootGeneration();
             containerState = ABSENT;
             context.log(logger, "Container successfully removed, new containerState is " + containerState);
             return Optional.empty();
@@ -462,6 +467,12 @@ public class NodeAgentImpl implements NodeAgent {
         Optional<Container> container = getContainer();
         if (!node.equals(lastNode)) {
             logChangesToNodeSpec(lastNode, node);
+
+            if (currentRebootGeneration < node.getCurrentRebootGeneration())
+                currentRebootGeneration = node.getCurrentRebootGeneration();
+
+            if (currentRestartGeneration.isPresent() != node.getCurrentRestartGeneration().isPresent())
+                currentRestartGeneration = node.getCurrentRestartGeneration();
 
             // Every time the node spec changes, we should clear the metrics for this container as the dimensions
             // will change and we will be reporting duplicate metrics.
