@@ -58,15 +58,15 @@ public class NodeAgentImpl implements NodeAgent {
 
     private static final Logger logger = Logger.getLogger(NodeAgentImpl.class.getName());
 
+    private final Object monitor = new Object();
     private final AtomicBoolean terminated = new AtomicBoolean(false);
+
     private boolean isFrozen = true;
     private boolean wantFrozen = false;
     private boolean workToDoNow = true;
     private boolean expectNodeNotInNodeRepo = false;
-
-    private final Object monitor = new Object();
-
-    private DockerImage imageBeingDownloaded = null;
+    private boolean hasResumedNode = false;
+    private boolean hasStartedServices = true;
 
     private final NodeAgentContext context;
     private final NodeRepository nodeRepository;
@@ -77,20 +77,18 @@ public class NodeAgentImpl implements NodeAgent {
     private final Duration timeBetweenEachConverge;
     private final Optional<AthenzCredentialsMaintainer> athenzCredentialsMaintainer;
     private final Optional<AclMaintainer> aclMaintainer;
+    private final Optional<HealthChecker> healthChecker;
 
     private int numberOfUnhandledException = 0;
+    private DockerImage imageBeingDownloaded = null;
     private Instant lastConverge;
 
     private final Thread loopThread;
-    private final Optional<HealthChecker> healthChecker;
-
     private final ScheduledExecutorService filebeatRestarter =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("filebeatrestarter"));
-    private Consumer<String> serviceRestarter;
+    private final Consumer<String> serviceRestarter;
     private Optional<Future<?>> currentFilebeatRestarter = Optional.empty();
 
-    private boolean hasResumedNode = false;
-    private boolean hasStartedServices = true;
 
     /**
      * ABSENT means container is definitely absent - A container that was absent will not suddenly appear without
@@ -144,6 +142,19 @@ public class NodeAgentImpl implements NodeAgent {
             }
         });
         this.loopThread.setName("tick-" + context.hostname());
+
+        this.serviceRestarter = service -> {
+            try {
+                ProcessResult processResult = dockerOperations.executeCommandInContainerAsRoot(
+                        context, "service", service, "restart");
+
+                if (!processResult.isSuccess()) {
+                    context.log(logger, LogLevel.ERROR, "Failed to restart service " + service + ": " + processResult);
+                }
+            } catch (Exception e) {
+                context.log(logger, LogLevel.ERROR, "Failed to restart service " + service, e);
+            }
+        };
     }
 
     @Override
@@ -162,21 +173,7 @@ public class NodeAgentImpl implements NodeAgent {
     @Override
     public void start() {
         context.log(logger, "Starting with interval " + timeBetweenEachConverge.toMillis() + " ms");
-
         loopThread.start();
-
-        serviceRestarter = service -> {
-            try {
-                ProcessResult processResult = dockerOperations.executeCommandInContainerAsRoot(
-                        context, "service", service, "restart");
-
-                if (!processResult.isSuccess()) {
-                    context.log(logger, LogLevel.ERROR, "Failed to restart service " + service + ": " + processResult);
-                }
-            } catch (Exception e) {
-                context.log(logger, LogLevel.ERROR, "Failed to restart service " + service, e);
-            }
-        };
     }
 
     @Override
