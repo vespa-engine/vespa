@@ -10,14 +10,15 @@ import com.yahoo.config.provision.ApplicationId;
 public interface ApplicationStore {
 
     /** Returns the tenant application package of the given version. */
-    byte[] getApplicationPackage(ApplicationId application, String applicationVersion);
+    byte[] getApplicationPackage(ApplicationId application, ApplicationVersion applicationVersion);
 
     /** Stores the given tenant application package of the given version. */
-    void putApplicationPackage(ApplicationId application, String applicationVersion, byte[] applicationPackage);
+    void putApplicationPackage(ApplicationId application, ApplicationVersion applicationVersion, byte[] applicationPackage);
 
     /** Stores the given tester application package of the given version. Does NOT contain the services.xml. */
-    void putTesterPackage(ApplicationId tester, String applicationVersion, byte[] testerPackage);
+    void putTesterPackage(ApplicationId tester, ApplicationVersion applicationVersion, byte[] testerPackage);
 
     /** Returns the tester application package of the given version. Does NOT contain the services.xml. */
-    byte[] getTesterPackage(ApplicationId tester, String applicationVersion);
+    byte[] getTesterPackage(ApplicationId tester, ApplicationVersion applicationVersion);
+
 }
