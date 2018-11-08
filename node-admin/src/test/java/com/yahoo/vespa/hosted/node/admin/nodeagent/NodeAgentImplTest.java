@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.AthenzCredentialsMaintainer;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 import org.mockito.InOrder;
@@ -312,13 +313,26 @@ public class NodeAgentImplTest {
         when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
         when(dockerOperations.pullImageAsyncIfNeeded(eq(dockerImage))).thenReturn(false);
         when(storageMaintainer.getDiskUsageFor(eq(context))).thenReturn(Optional.of(201326592000L));
+        doThrow(new ConvergenceException("Connection refused")).doNothing()
+                .when(healthChecker).verifyHealth(eq(context));
 
-        nodeAgent.converge();
+        try {
+            nodeAgent.converge();
+        } catch (ConvergenceException ignored) {}
 
+        // First time we fail to resume because health verification fails
         verify(orchestrator, times(1)).suspend(eq(hostName));
         verify(dockerOperations, times(1)).removeContainer(eq(context), any());
         verify(dockerOperations, times(1)).createContainer(eq(context), eq(node), any());
         verify(dockerOperations, times(1)).startContainer(eq(context));
+        verify(orchestrator, never()).resume(eq(hostName));
+        verify(nodeRepository, never()).updateNodeAttributes(any(), any());
+
+        nodeAgent.converge();
+
+        // Do not reboot the container again
+        verify(dockerOperations, times(1)).removeContainer(eq(context), any());
+        verify(dockerOperations, times(1)).createContainer(eq(context), eq(node), any());
         verify(orchestrator, times(1)).resume(eq(hostName));
         verify(nodeRepository, times(1)).updateNodeAttributes(eq(hostName), eq(new NodeAttributes()
                 .withRebootGeneration(wantedRebootGeneration)));

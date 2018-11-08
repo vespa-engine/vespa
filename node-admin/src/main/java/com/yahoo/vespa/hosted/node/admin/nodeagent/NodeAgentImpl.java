@@ -59,15 +59,15 @@ public class NodeAgentImpl implements NodeAgent {
 
     private static final Logger logger = Logger.getLogger(NodeAgentImpl.class.getName());
 
+    private final Object monitor = new Object();
     private final AtomicBoolean terminated = new AtomicBoolean(false);
+
     private boolean isFrozen = true;
     private boolean wantFrozen = false;
     private boolean workToDoNow = true;
     private boolean expectNodeNotInNodeRepo = false;
-
-    private final Object monitor = new Object();
-
-    private DockerImage imageBeingDownloaded = null;
+    private boolean hasResumedNode = false;
+    private boolean hasStartedServices = true;
 
     private final NodeAgentContext context;
     private final NodeRepository nodeRepository;
@@ -78,20 +78,21 @@ public class NodeAgentImpl implements NodeAgent {
     private final Duration timeBetweenEachConverge;
     private final Optional<AthenzCredentialsMaintainer> athenzCredentialsMaintainer;
     private final Optional<AclMaintainer> aclMaintainer;
-
-    private int numberOfUnhandledException = 0;
-    private Instant lastConverge;
-
-    private final Thread loopThread;
     private final Optional<HealthChecker> healthChecker;
 
+    private int numberOfUnhandledException = 0;
+    private DockerImage imageBeingDownloaded = null;
+    private Instant lastConverge;
+
+    private long currentRebootGeneration = 0;
+    private Optional<Long> currentRestartGeneration = Optional.empty();
+
+    private final Thread loopThread;
     private final ScheduledExecutorService filebeatRestarter =
             Executors.newScheduledThreadPool(1, ThreadFactoryFactory.getDaemonThreadFactory("filebeatrestarter"));
-    private Consumer<String> serviceRestarter;
+    private final Consumer<String> serviceRestarter;
     private Optional<Future<?>> currentFilebeatRestarter = Optional.empty();
 
-    private boolean hasResumedNode = false;
-    private boolean hasStartedServices = true;
 
     /**
      * ABSENT means container is definitely absent - A container that was absent will not suddenly appear without
@@ -145,6 +146,19 @@ public class NodeAgentImpl implements NodeAgent {
             }
         });
         this.loopThread.setName("tick-" + context.hostname());
+
+        this.serviceRestarter = service -> {
+            try {
+                ProcessResult processResult = dockerOperations.executeCommandInContainerAsRoot(
+                        context, "service", service, "restart");
+
+                if (!processResult.isSuccess()) {
+                    context.log(logger, LogLevel.ERROR, "Failed to restart service " + service + ": " + processResult);
+                }
+            } catch (Exception e) {
+                context.log(logger, LogLevel.ERROR, "Failed to restart service " + service, e);
+            }
+        };
     }
 
     @Override
@@ -163,21 +177,7 @@ public class NodeAgentImpl implements NodeAgent {
     @Override
     public void start() {
         context.log(logger, "Starting with interval " + timeBetweenEachConverge.toMillis() + " ms");
-
         loopThread.start();
-
-        serviceRestarter = service -> {
-            try {
-                ProcessResult processResult = dockerOperations.executeCommandInContainerAsRoot(
-                        context, "service", service, "restart");
-
-                if (!processResult.isSuccess()) {
-                    context.log(logger, LogLevel.ERROR, "Failed to restart service " + service + ": " + processResult);
-                }
-            } catch (Exception e) {
-                context.log(logger, LogLevel.ERROR, "Failed to restart service " + service, e);
-            }
-        };
     }
 
     @Override
@@ -227,14 +227,15 @@ public class NodeAgentImpl implements NodeAgent {
         final NodeAttributes currentNodeAttributes = new NodeAttributes();
         final NodeAttributes newNodeAttributes = new NodeAttributes();
 
-        if (!Objects.equals(node.getCurrentRestartGeneration(), node.getWantedRestartGeneration())) {
+        if (node.getWantedRestartGeneration().isPresent() &&
+                !Objects.equals(node.getCurrentRestartGeneration(), currentRestartGeneration)) {
             currentNodeAttributes.withRestartGeneration(node.getCurrentRestartGeneration());
-            newNodeAttributes.withRestartGeneration(node.getWantedRestartGeneration());
+            newNodeAttributes.withRestartGeneration(currentRestartGeneration);
         }
 
-        if (!Objects.equals(node.getCurrentRebootGeneration(), node.getWantedRebootGeneration())) {
+        if (!Objects.equals(node.getCurrentRebootGeneration(), currentRebootGeneration)) {
             currentNodeAttributes.withRebootGeneration(node.getCurrentRebootGeneration());
-            newNodeAttributes.withRebootGeneration(node.getWantedRebootGeneration());
+            newNodeAttributes.withRebootGeneration(currentRebootGeneration);
         }
 
         Optional<DockerImage> actualDockerImage = node.getWantedDockerImage().filter(n -> containerState == UNKNOWN);
@@ -272,6 +273,7 @@ public class NodeAgentImpl implements NodeAgent {
                         shouldRestartServices(node).ifPresent(restartReason -> {
                             context.log(logger, "Will restart services: " + restartReason);
                             restartServices(node, container);
+                            currentRestartGeneration = node.getWantedRestartGeneration();
                         });
                         return container;
                 });
@@ -281,9 +283,9 @@ public class NodeAgentImpl implements NodeAgent {
         if (!node.getWantedRestartGeneration().isPresent()) return Optional.empty();
 
         // Restart generation is only optional because it does not exist for unallocated nodes
-        if (node.getCurrentRestartGeneration().get() < node.getWantedRestartGeneration().get()) {
+        if (currentRestartGeneration.get() < node.getWantedRestartGeneration().get()) {
             return Optional.of("Restart requested - wanted restart generation has been bumped: "
-                    + node.getCurrentRestartGeneration().get() + " -> " + node.getWantedRestartGeneration().get());
+                    + currentRestartGeneration.get() + " -> " + node.getWantedRestartGeneration().get());
         }
         return Optional.empty();
     }
@@ -345,9 +347,9 @@ public class NodeAgentImpl implements NodeAgent {
                     wantedContainerResources + ", actual: " + existingContainer.resources);
         }
 
-        if (node.getCurrentRebootGeneration() < node.getWantedRebootGeneration()) {
+        if (currentRebootGeneration < node.getWantedRebootGeneration()) {
             return Optional.of(String.format("Container reboot wanted. Current: %d, Wanted: %d",
-                    node.getCurrentRebootGeneration(), node.getWantedRebootGeneration()));
+                    currentRebootGeneration, node.getWantedRebootGeneration()));
         }
 
         if (containerState == STARTING) return Optional.of("Container failed to start");
@@ -376,6 +378,7 @@ public class NodeAgentImpl implements NodeAgent {
             stopFilebeatSchedulerIfNeeded();
             storageMaintainer.handleCoreDumpsForContainer(context, node, Optional.of(existingContainer));
             dockerOperations.removeContainer(context, existingContainer);
+            currentRebootGeneration = node.getWantedRebootGeneration();
             containerState = ABSENT;
             context.log(logger, "Container successfully removed, new containerState is " + containerState);
             return Optional.empty();
@@ -466,6 +469,11 @@ public class NodeAgentImpl implements NodeAgent {
         Optional<Container> container = getContainer();
         if (!node.equals(lastNode)) {
             logChangesToNodeSpec(lastNode, node);
+
+            if (lastNode == null) {
+                currentRebootGeneration = node.getCurrentRebootGeneration();
+                currentRestartGeneration = node.getCurrentRestartGeneration();
+            }
 
             // Every time the node spec changes, we should clear the metrics for this container as the dimensions
             // will change and we will be reporting duplicate metrics.
