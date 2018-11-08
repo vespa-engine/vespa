@@ -8,7 +8,6 @@ import com.yahoo.config.provision.Version;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -22,6 +21,8 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -29,7 +30,6 @@ import static org.junit.Assert.*;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.9
  */
 public class SuperModelRequestHandlerTest {
 
@@ -51,56 +51,57 @@ public class SuperModelRequestHandlerTest {
 
     @Test
     public void test_super_model_reload() throws IOException, SAXException {
-        TenantName tenantA = TenantName.from("a");
+        ApplicationId foo = applicationId("a", "foo");
+        ApplicationId bar = applicationId("a", "foo");
+
         assertNotNull(controller.getHandler());
         long gen = counter.increment();
-        controller.reloadConfig(createApp(tenantA, "foo", 3l, 1));
+        controller.reloadConfig(createApp(foo, 3l));
         assertNotNull(controller.getHandler());
         assertThat(controller.getHandler().getGeneration(), is(gen));
-        controller.reloadConfig(createApp(tenantA, "foo", 4l, 2));
+        controller.reloadConfig(createApp(foo, 4l));
         assertThat(controller.getHandler().getGeneration(), is(gen));
         // Test that a new app is used when there already exist an application with the same id
-        ApplicationId appId = new ApplicationId.Builder().tenant(tenantA).applicationName("foo").build();
-        assertThat(controller.getHandler().getSuperModel().applicationModels().get(tenantA).get(appId).getGeneration(), is(4l));
+        assertThat(controller.getHandler().getSuperModel().applicationModels().get(foo).getGeneration(), is(4l));
         gen = counter.increment();
-        controller.reloadConfig(createApp(tenantA, "bar", 2l, 3));
+        controller.reloadConfig(createApp(bar, 2l));
         assertThat(controller.getHandler().getGeneration(), is(gen));
     }
 
     @Test
     public void test_super_model_remove() throws IOException, SAXException {
-        TenantName tenantA = TenantName.from("a");
-        TenantName tenantB = TenantName.from("b");
+        ApplicationId foo = applicationId("a", "foo");
+        ApplicationId bar = applicationId("a", "bar");
+        ApplicationId baz = applicationId("b", "baz");
+
         long gen = counter.increment();
-        controller.reloadConfig(createApp(tenantA, "foo", 3l, 1));
-        controller.reloadConfig(createApp(tenantA, "bar", 30l, 2));
-        controller.reloadConfig(createApp(tenantB, "baz", 9l, 3));
+        controller.reloadConfig(createApp(foo, 3l));
+        controller.reloadConfig(createApp(bar, 30l));
+        controller.reloadConfig(createApp(baz, 9l));
         assertThat(controller.getHandler().getGeneration(), is(gen));
-        assertThat(controller.getHandler().getSuperModel().applicationModels().size(), is(2));
-        assertThat(controller.getHandler().getSuperModel().applicationModels().get(TenantName.from("a")).size(), is(2));
-        controller.removeApplication(
-                new ApplicationId.Builder().tenant("a").applicationName("unknown").build());
+        assertThat(controller.getHandler().getSuperModel().applicationModels().size(), is(3));
+        assertEquals(Arrays.asList(foo, bar, baz), new ArrayList<>(controller.getHandler().getSuperModel().applicationModels().keySet()));
+        controller.removeApplication(new ApplicationId.Builder().tenant("a").applicationName("unknown").build());
         assertThat(controller.getHandler().getGeneration(), is(gen));
-        assertThat(controller.getHandler().getSuperModel().applicationModels().size(), is(2));
-        assertThat(controller.getHandler().getSuperModel().applicationModels().get(TenantName.from("a")).size(), is(2));
+        assertThat(controller.getHandler().getSuperModel().applicationModels().size(), is(3));
+        assertEquals(Arrays.asList(foo, bar, baz), new ArrayList<>(controller.getHandler().getSuperModel().applicationModels().keySet()));
         gen = counter.increment();
-        controller.removeApplication(
-                new ApplicationId.Builder().tenant("a").applicationName("bar").build());
+        controller.removeApplication(bar);
         assertThat(controller.getHandler().getSuperModel().applicationModels().size(), is(2));
-        assertThat(controller.getHandler().getSuperModel().applicationModels().get(TenantName.from("a")).size(), is(1));
+        assertEquals(Arrays.asList(foo, baz), new ArrayList<>(controller.getHandler().getSuperModel().applicationModels().keySet()));
         assertThat(controller.getHandler().getGeneration(), is(gen));
     }
 
     @Test
     public void test_super_model_master_generation() throws IOException, SAXException {
-        TenantName tenantA = TenantName.from("a");
+        ApplicationId foo = applicationId("a", "foo");
         long masterGen = 10;
         ConfigserverConfig configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder().masterGeneration(masterGen));
         manager = new SuperModelManager(configserverConfig, emptyNodeFlavors(), counter);
         controller = new SuperModelRequestHandler(new TestConfigDefinitionRepo(), configserverConfig, manager);
 
         long gen = counter.increment();
-        controller.reloadConfig(createApp(tenantA, "foo", 3L, 1));
+        controller.reloadConfig(createApp(foo, 3L));
         assertThat(controller.getHandler().getGeneration(), is(masterGen + gen));
     }
 
@@ -111,19 +112,18 @@ public class SuperModelRequestHandlerTest {
         assertTrue(controller.hasApplication(ApplicationId.global(), Optional.empty()));
     }
 
-    private ApplicationSet createApp(TenantName tenant, String application, long generation, long version) throws IOException, SAXException {
+    private ApplicationSet createApp(ApplicationId applicationId, long generation) throws IOException, SAXException {
         return ApplicationSet.fromSingle(
                 new TestApplication(
                         new VespaModel(FilesApplicationPackage.fromFile(testApp)),
                         new ServerCache(),
                         generation,
-                        new ApplicationId.Builder().tenant(tenant).applicationName(application).build(),
-                        version));
+                        applicationId));
     }
 
     private static class TestApplication extends Application {
 
-        TestApplication(VespaModel vespaModel, ServerCache cache, long appGeneration, ApplicationId app, long version) {
+        TestApplication(VespaModel vespaModel, ServerCache cache, long appGeneration, ApplicationId app) {
             super(vespaModel, cache, appGeneration, false, Version.fromIntValues(1, 2, 3), MetricUpdater.createTestUpdater(), app);
         }
 
@@ -131,6 +131,10 @@ public class SuperModelRequestHandlerTest {
 
     public static NodeFlavors emptyNodeFlavors() {
         return new NodeFlavors(new FlavorsConfig(new FlavorsConfig.Builder()));
+    }
+
+    private ApplicationId applicationId(String tenantName, String applicationName) {
+        return ApplicationId.from(tenantName, applicationName, "default");
     }
 
 }

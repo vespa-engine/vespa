@@ -11,24 +11,25 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * Produces lb-services cfg
  *
- * @author vegardh
- * @since 5.9
+ * @author Vegard Havdal
  */
 public class LbServicesProducer implements LbServicesConfig.Producer {
 
-    private final Map<TenantName, Map<ApplicationId, ApplicationInfo>> models;
+    private final Map<TenantName, Set<ApplicationInfo>> models;
     private final Zone zone;
 
-    public LbServicesProducer(Map<TenantName, Map<ApplicationId, ApplicationInfo>> models, Zone zone) {
+    public LbServicesProducer(Map<TenantName, Set<ApplicationInfo>> models, Zone zone) {
         this.models = models;
         this.zone = zone;
     }
@@ -42,13 +43,11 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
         });
     }
 
-    private LbServicesConfig.Tenants.Builder getTenantConfig(Map<ApplicationId, ApplicationInfo> apps) {
+    private LbServicesConfig.Tenants.Builder getTenantConfig(Set<ApplicationInfo> apps) {
         LbServicesConfig.Tenants.Builder tb = new LbServicesConfig.Tenants.Builder();
-        apps.keySet().stream()
-                .sorted()
-                .forEach(applicationId -> {
-            tb.applications(createLbAppIdKey(applicationId), getAppConfig(apps.get(applicationId)));
-        });
+        apps.stream()
+                .sorted(Comparator.comparing(ApplicationInfo::getApplicationId))
+                .forEach(applicationInfo -> tb.applications(createLbAppIdKey(applicationInfo.getApplicationId()), getAppConfig(applicationInfo)));
         return tb;
     }
 
