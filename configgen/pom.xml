@@ -12,7 +12,7 @@
   <packaging>jar</packaging>
   <version>6-SNAPSHOT</version>
   <name>configgen</name>
-  <description>Config java code generation from defintion files for Java Vespa components.</description>
+  <description>Config java code generation from config definition files for Java Vespa components.</description>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -51,9 +51,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-install-plugin</artifactId>
-        <configuration>
-          <updateReleaseInfo>true</updateReleaseInfo>
-        </configuration>
       </plugin>
     </plugins>
   </build>
