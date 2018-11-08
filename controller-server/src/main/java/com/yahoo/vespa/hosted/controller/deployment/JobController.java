@@ -231,7 +231,7 @@ public class JobController {
                            .distinct()
                            .forEach(appVersion -> {
                                byte[] content = controller.applications().artifacts().getApplicationPackage(application.get().id(), appVersion.id());
-                               controller.applications().applicationStore().putApplicationPackage(application.get().id(), appVersion.id(), content);
+                               controller.applications().applicationStore().putApplicationPackage(application.get().id(), appVersion, content);
                            });
             }
 
@@ -239,10 +239,10 @@ public class JobController {
             version.set(ApplicationVersion.from(revision, run));
 
             controller.applications().applicationStore().putApplicationPackage(id,
-                                                                               version.get().id(),
+                                                                               version.get(),
                                                                                packageBytes);
             controller.applications().applicationStore().putTesterPackage(testerOf(id),
-                                                                          version.get().id(),
+                                                                          version.get(),
                                                                           testPackageBytes);
 
             controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(packageBytes));

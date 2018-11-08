@@ -452,7 +452,7 @@ public class InternalStepRunner implements StepRunner {
     private ApplicationPackage testerPackage(RunId id) {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
 
-        byte[] testPackage = controller.applications().applicationStore().getTesterPackage(JobController.testerOf(id.application()), version.id());
+        byte[] testPackage = controller.applications().applicationStore().getTesterPackage(JobController.testerOf(id.application()), version);
         byte[] servicesXml = servicesXml(controller.system());
 
         DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
