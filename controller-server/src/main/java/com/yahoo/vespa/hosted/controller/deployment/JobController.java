@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -225,6 +226,7 @@ public class JobController {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
             if ( ! application.get().deploymentJobs().deployedInternally()) {
+                // TODO jvenstad: Remove when there are no more SDv3 pipelines.
                 // Copy all current packages to the new application store
                 application.get().deployments().values().stream()
                            .map(Deployment::applicationVersion)
@@ -244,6 +246,14 @@ public class JobController {
             controller.applications().applicationStore().putTesterPackage(testerOf(id),
                                                                           version.get(),
                                                                           testPackageBytes);
+
+            application.get().deployments().values().stream()
+                       .map(Deployment::applicationVersion)
+                       .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
+                       .ifPresent(oldestDeployed -> {
+                           controller.applications().applicationStore().pruneApplicationPackages(id, oldestDeployed);
+                           controller.applications().applicationStore().pruneTesterPackages(id, oldestDeployed);
+                       });
 
             controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(packageBytes));
 
