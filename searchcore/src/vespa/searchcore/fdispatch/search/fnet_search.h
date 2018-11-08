@@ -121,6 +121,10 @@ public:
         }
     }
 
+    void DirtySetChannelOnlyForTesting(FNET_Channel * channel) {
+        _channel = channel;
+    }
+
 
     void Disconnect()
     {
@@ -284,6 +288,8 @@ public:
     bool ShouldLimitHitsPerNode() const;
     void MergeHits();
     void CheckCoverage();
+    static FastS_SearchInfo computeCoverage(const std::vector<FastS_FNET_SearchNode> & nodes,
+                                            uint32_t numSearchableCopies, bool adaptiveTimeout);
     void CheckQueryTimes();
     void CheckDocsumTimes();
     void CheckQueryTimeout();

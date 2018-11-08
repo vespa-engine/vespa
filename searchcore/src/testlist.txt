@@ -1,7 +1,7 @@
 ?tests/proton/proton
 tests/applyattrupdates
 tests/fdispatch/randomrow
-tests/fdispatch/search_path
+tests/fdispatch/fnet_search
 tests/grouping
 tests/proton/attribute
 tests/proton/attribute/attribute_manager
