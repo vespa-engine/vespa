@@ -109,15 +109,6 @@ public class ConfigPayloadBuilder {
         return a;
     }
 
-    /**
-     * Removes an array
-     *
-     * @param name Name of array.
-     */
-    public void removeArray(String name) {
-        arrayMap.remove(name);
-    }
-
     private void validateArray(String name) {
         if (configDefinition != null) {
             configDefinition.verify(name);
@@ -425,10 +416,6 @@ public class ConfigPayloadBuilder {
                 }
             }
             return this;
-        }
-
-        public void clear() {
-            elements.clear();
         }
     }
 

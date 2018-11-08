@@ -169,7 +169,9 @@ public class DomConfigPayloadBuilder {
             // Check for legacy (pre Vespa 6) usage
             throw new IllegalArgumentException("The 'index' attribute on config elements is not supported - use <item>");
         } else if (element.hasAttribute("operation")) {
-            ConfigPayloadBuilder childPayloadBuilder = getBuilderForInnerArray(element, payloadBuilder, name);
+            // inner array, currently the only supported operation is 'append'
+            verifyLegalOperation(element);
+            ConfigPayloadBuilder childPayloadBuilder = payloadBuilder.getArray(name).append();
             //Cursor array = node.setArray(name);
             for (Element child : children) {
                 //Cursor struct = array.addObject();
@@ -236,26 +238,6 @@ public class DomConfigPayloadBuilder {
         if (! operation.equalsIgnoreCase("append"))
             throw new ConfigurationRuntimeException("The only supported array operation is 'append', got '"
                     + operation + "' at XML node '" + XML.getNodePath(currElem, " > ") + "'.");
-    }
-
-    private ConfigPayloadBuilder getBuilderForInnerArray(Element element, ConfigPayloadBuilder payloadBuilder, String arrayName) {
-        // inner array, the supported operations are 'append' and 'clear'
-        String operation = element.getAttribute("operation").toLowerCase();
-        ConfigPayloadBuilder arrayPayloadBuilder;
-        switch (operation) {
-            case "append":
-                arrayPayloadBuilder = payloadBuilder.getArray(arrayName).append();
-                break;
-            case "clear":
-                // Clear array if it exists, use the existing builder
-                // Creating the array happens when handling the children ('item's)
-                payloadBuilder.removeArray(arrayName);
-                arrayPayloadBuilder = payloadBuilder;
-                break;
-            default:
-                throw new RuntimeException("Unknown operation '" + operation + "' at XML node '" + XML.getNodePath(element, " > ") + "'.");
-        }
-        return arrayPayloadBuilder;
     }
 
 }
