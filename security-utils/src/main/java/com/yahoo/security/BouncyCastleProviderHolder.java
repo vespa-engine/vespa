@@ -8,7 +8,12 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  */
 class BouncyCastleProviderHolder {
 
-    private static final BouncyCastleProvider bcProvider = new BouncyCastleProvider();
+    private static BouncyCastleProvider bcProvider;
 
-    static BouncyCastleProvider getInstance() { return bcProvider; }
+    synchronized static BouncyCastleProvider getInstance() {
+        if (bcProvider == null) {
+            bcProvider = new BouncyCastleProvider();
+        }
+        return bcProvider;
+    }
 }
