@@ -35,13 +35,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     private static final Set<String> REQUIRED_HANDLER_BINDINGS = ImmutableSet.of(
             "/custom-handler/",
             "/search/",
-            "/feed/",
-            "/remove/",
-            "/removelocation/",
-            "/get/",
-            "/visit/",
             "/document/",
-            "/feedstatus/",
             ContainerCluster.RESERVED_URI_PREFIX);
 
     private static final Set<String> FORBIDDEN_HANDLER_BINDINGS = ImmutableSet.of(
