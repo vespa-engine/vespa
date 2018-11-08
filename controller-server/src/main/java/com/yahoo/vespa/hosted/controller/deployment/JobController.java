@@ -252,7 +252,7 @@ public class JobController {
                        .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
                        .ifPresent(oldestDeployed -> {
                            controller.applications().applicationStore().pruneApplicationPackages(id, oldestDeployed);
-                           controller.applications().applicationStore().pruneTesterPackages(id, oldestDeployed);
+                           controller.applications().applicationStore().pruneTesterPackages(testerOf(id), oldestDeployed);
                        });
 
             controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(packageBytes));
