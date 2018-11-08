@@ -5,6 +5,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import javax.net.ssl.SSLContext;
 import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
@@ -12,6 +13,7 @@ import java.security.cert.X509Certificate;
 import static com.yahoo.security.TestUtils.createCertificate;
 import static com.yahoo.security.TestUtils.createKeystore;
 import static com.yahoo.security.TestUtils.createKeystoreFile;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bjorncs
@@ -72,6 +74,15 @@ public class SslContextBuilderTest {
         new SslContextBuilder()
                 .withKeyStore(keystoreFile, PASSWORD, KeyStoreType.PKCS12)
                 .build();
+    }
+
+    @Test
+    public void can_build_with_conscrypt() {
+        SSLContext sslContext = new SslContextBuilder(JsseProvider.CONSCRYPT)
+                .withKeyStore(createKeystore(KeyStoreType.JKS, PASSWORD), PASSWORD)
+                .withTrustStore(createKeystore(KeyStoreType.JKS, PASSWORD))
+                .build();
+        assertEquals(ConscryptProviderHolder.getInstance(), sslContext.getProvider());
     }
 
 }

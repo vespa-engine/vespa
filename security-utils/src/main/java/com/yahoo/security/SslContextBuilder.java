@@ -14,7 +14,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
@@ -24,11 +23,18 @@ import static java.util.Collections.singletonList;
  */
 public class SslContextBuilder {
 
+    private final JsseProvider provider;
     private KeyStoreSupplier trustStoreSupplier;
     private KeyStoreSupplier keyStoreSupplier;
     private char[] keyStorePassword;
 
-    public SslContextBuilder() {}
+    public SslContextBuilder() {
+        this(JsseProvider.DEFAULT);
+    }
+
+    public SslContextBuilder(JsseProvider provider) {
+        this.provider = provider;
+    }
 
     public SslContextBuilder withTrustStore(Path file, KeyStoreType trustStoreType) {
         this.trustStoreSupplier = () -> KeyStoreBuilder.withType(trustStoreType).fromFile(file).build();
@@ -92,7 +98,7 @@ public class SslContextBuilder {
 
     public SSLContext build() {
         try {
-            SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+            SSLContext sslContext = provider.createSSLContext();
             TrustManager[] trustManagers =
                     trustStoreSupplier != null ? createTrustManagers(trustStoreSupplier) : null;
             KeyManager[] keyManagers =
