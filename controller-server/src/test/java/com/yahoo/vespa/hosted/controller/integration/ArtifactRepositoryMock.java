@@ -47,21 +47,6 @@ public class ArtifactRepositoryMock extends AbstractComponent implements Artifac
     }
 
     @Override
-    public void putApplicationPackage(ApplicationId application, String applicationVersion, byte[] applicationPackage) {
-        repository.put(artifactHash(application, applicationVersion), new Artifact(applicationPackage));
-    }
-
-    @Override
-    public byte[] getTesterPackage(ApplicationId tester, String applicationVersion) {
-        return getApplicationPackage(tester, applicationVersion);
-    }
-
-    @Override
-    public void putTesterPackage(ApplicationId tester, String applicationVersion, byte[] testerPackage) {
-        putApplicationPackage(tester, applicationVersion, testerPackage);
-    }
-
-    @Override
     public byte[] getSystemApplicationPackage(ApplicationId application, ZoneId zone, Version version) {
         return new byte[0];
     }
