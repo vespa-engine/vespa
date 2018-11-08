@@ -171,14 +171,16 @@ public class InstanceValidator {
                 .orElse(false);
     }
 
-    // If/when we dont care about logging exactly whats wrong, this can be simplified
+    // If/when we don't care about logging exactly whats wrong, this can be simplified
     // TODO Use identity type to determine if this check should be performed
-    boolean isSameIdentityAsInServicesXml(ApplicationId applicationId, String domain, String service) {
+    private boolean isSameIdentityAsInServicesXml(ApplicationId applicationId, String domain, String service) {
 
         Optional<ApplicationInfo> applicationInfo = superModelProvider.getSuperModel().getApplicationInfo(applicationId);
 
         if (!applicationInfo.isPresent()) {
-            log.info(String.format("Could not find application info for %s", applicationId.serializedForm()));
+            log.info(String.format("Could not find application info for %s, existing applications: %s",
+                                   applicationId.serializedForm(),
+                                   superModelProvider.getSuperModel().getAllApplicationInfos()));
             return false;
         }
 
