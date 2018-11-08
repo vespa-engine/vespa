@@ -5,35 +5,60 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import static java.util.Objects.requireNonNull;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+/**
+ * Threadsafe.
+ *
+ * @author jonmv
+ */
 public class ApplicationStoreMock implements ApplicationStore {
 
-    Map<String, byte[]> store = new HashMap<>();
+    private final Map<ApplicationId, Map<ApplicationVersion, byte[]>> store = new ConcurrentHashMap<>();
 
     @Override
     public byte[] getApplicationPackage(ApplicationId application, ApplicationVersion applicationVersion) {
-        return store.get(path(application, applicationVersion));
+        assertFalse(application.instance().isTester());
+        return requireNonNull(store.get(application).get(applicationVersion));
     }
 
     @Override
     public void putApplicationPackage(ApplicationId application, ApplicationVersion applicationVersion, byte[] applicationPackage) {
-        store.put(path(application, applicationVersion), applicationPackage);
+        assertFalse(application.instance().isTester());
+        store.putIfAbsent(application, new ConcurrentHashMap<>());
+        store.get(application).put(applicationVersion, applicationPackage);
     }
 
     @Override
     public void putTesterPackage(ApplicationId tester, ApplicationVersion applicationVersion, byte[] testerPackage) {
-        store.put(path(tester, applicationVersion), testerPackage);
+        assertTrue(tester.instance().isTester());
+        store.putIfAbsent(tester, new ConcurrentHashMap<>());
+        store.get(tester).put(applicationVersion, testerPackage);
     }
 
     @Override
     public byte[] getTesterPackage(ApplicationId tester, ApplicationVersion applicationVersion) {
-        return store.get(path(tester, applicationVersion));
+        assertTrue(tester.instance().isTester());
+        return requireNonNull(store.get(tester).get(applicationVersion));
     }
 
-    String path(ApplicationId tester, ApplicationVersion applicationVersion) {
-        return tester.toString() + applicationVersion.id();
+    @Override
+    public boolean pruneApplicationPackages(ApplicationId application, ApplicationVersion oldestToRetain) {
+        assertFalse(application.instance().isTester());
+        return    store.containsKey(application)
+               && store.get(application).keySet().removeIf(version -> version.compareTo(oldestToRetain) < 0);
+    }
+
+    @Override
+    public boolean pruneTesterPackages(ApplicationId tester, ApplicationVersion oldestToRetain) {
+        assertTrue(tester.instance().isTester());
+        return    store.containsKey(tester)
+               && store.get(tester).keySet().removeIf(version -> version.compareTo(oldestToRetain) < 0);
     }
 
 }
