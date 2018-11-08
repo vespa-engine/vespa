@@ -25,4 +25,9 @@ public class ApplicationInfo {
         return model;
     }
 
+    @Override
+    public String toString() {
+        return applicationId + ", generation " + generation;
+    }
+
 }
