@@ -563,6 +563,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         metricsObject.setDouble("documentCount", metrics.documentCount());
         metricsObject.setDouble("queryLatencyMillis", metrics.queryLatencyMillis());
         metricsObject.setDouble("writeLatencyMillis", metrics.writeLatencyMillis());
+        metrics.instant().ifPresent(instant -> metricsObject.setLong("lastUpdated", instant.toEpochMilli()));
     }
 
     private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
