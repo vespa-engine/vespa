@@ -14,6 +14,7 @@ import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
+import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.Arrays;
@@ -46,12 +47,14 @@ public class Dispatcher extends AbstractComponent {
 
     private final LoadBalancer loadBalancer;
     private final RpcResourcePool rpcResourcePool;
+    private final boolean multilevelDispatch;
 
     public Dispatcher(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize, VipStatus vipStatus) {
         this.searchCluster = new SearchCluster(dispatchConfig, fs4ResourcePool, containerClusterSize, vipStatus);
         this.loadBalancer = new LoadBalancer(searchCluster,
                 dispatchConfig.distributionPolicy() == DispatchConfig.DistributionPolicy.ROUNDROBIN);
         this.rpcResourcePool = new RpcResourcePool(dispatchConfig);
+        this.multilevelDispatch = dispatchConfig.useMultilevelDispatch();
     }
 
     /** For testing */
@@ -59,6 +62,7 @@ public class Dispatcher extends AbstractComponent {
         this.searchCluster = null;
         this.loadBalancer = new LoadBalancer(searchCluster, true);
         this.rpcResourcePool = new RpcResourcePool(client, nodeConnections);
+        this.multilevelDispatch = false;
     }
 
     /** Returns the search cluster this dispatches to */
@@ -87,19 +91,20 @@ public class Dispatcher extends AbstractComponent {
     }
 
     public Optional<SearchInvoker> getSearchInvoker(Query query, FS4InvokerFactory fs4InvokerFactory) {
-        if (query.properties().getBoolean(dispatchInternal, false)) {
-            Optional<SearchInvoker> invoker = getSearchPathInvoker(query, fs4InvokerFactory::getSearchInvoker);
-
-            if(! invoker.isPresent()) {
-                invoker = getInternalInvoker(query, fs4InvokerFactory::getSearchInvoker);
-            }
-            if(invoker.isPresent() && query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE)) {
-                query.setHits(0);
-                query.setOffset(0);
-            }
-            return invoker;
+        if (multilevelDispatch || ! query.properties().getBoolean(dispatchInternal, false)) {
+            return Optional.empty();
         }
-        return Optional.empty();
+
+        Optional<SearchInvoker> invoker = getSearchPathInvoker(query, fs4InvokerFactory::getSearchInvoker);
+
+        if (!invoker.isPresent()) {
+            invoker = getInternalInvoker(query, fs4InvokerFactory::getSearchInvoker);
+        }
+        if (invoker.isPresent() && query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE)) {
+            query.setHits(0);
+            query.setOffset(0);
+        }
+        return invoker;
     }
 
     @FunctionalInterface
@@ -121,7 +126,7 @@ public class Dispatcher extends AbstractComponent {
                 return invokerFactory.supply(query, -1, nodes, true);
             }
         } catch (InvalidSearchPathException e) {
-            return Optional.of(new SearchErrorInvoker(e.getMessage()));
+            return Optional.of(new SearchErrorInvoker(ErrorMessage.createIllegalQuery(e.getMessage())));
         }
     }
 

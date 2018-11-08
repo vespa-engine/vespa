@@ -323,7 +323,7 @@ public class SearchCluster implements NodeManager<Node> {
      */
     public boolean isPartialGroupCoverageSufficient(int groupId, List<Node> nodes) {
         if (orderedGroups.size() == 1) {
-            return true;
+            return nodes.size() >= groupSize() - maxNodesDownPerGroup;
         }
         long sumOfActiveDocuments = 0;
         int otherGroups = 0;
