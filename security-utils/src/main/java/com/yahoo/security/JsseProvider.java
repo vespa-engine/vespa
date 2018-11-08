@@ -5,6 +5,8 @@ import javax.net.ssl.SSLContext;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 
+import static com.yahoo.security.TlsProtocolVersion.TLS_1_2;
+
 /**
  * @author bjorncs
  */
@@ -12,13 +14,13 @@ public enum JsseProvider {
     DEFAULT {
         @Override
         SSLContext createSSLContext() throws NoSuchAlgorithmException {
-            return SSLContext.getInstance("TLSv1.2"); // TODO Vespa 7: Use TLSv1.3 on Java 11 to allow TLSv1.3 support
+            return SSLContext.getInstance(TLS_1_2.getProtocolName()); // TODO Vespa 7: Use TLSv1.3 on Java 11 to allow TLSv1.3 support
         }
     },
     CONSCRYPT {
         @Override
         SSLContext createSSLContext() throws GeneralSecurityException {
-            return SSLContext.getInstance("TLSv1.3", ConscryptProviderHolder.getInstance());
+            return SSLContext.getInstance(TLS_1_2.getProtocolName(), ConscryptProviderHolder.getInstance()); // TODO Figure out why TLSv1.3 does not work
         }
     };
 
