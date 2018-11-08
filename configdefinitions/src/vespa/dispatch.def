@@ -16,6 +16,9 @@ maxNodesDownPerGroup int default=0
 # Distribution policy for group selection
 distributionPolicy enum { ROUNDROBIN, RANDOM } default=ROUNDROBIN
 
+# Is multi-level dispatch configured for this cluster
+useMultilevelDispatch bool default=false
+
 # The unique key of a search node
 node[].key int
 

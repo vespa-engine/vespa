@@ -404,23 +404,24 @@ public class IndexedSearchCluster extends SearchCluster
             nodeBuilder.host(node.getHostName());
             nodeBuilder.port(node.getRpcPort());
             nodeBuilder.fs4port(node.getDispatchPort());
-            if (tuning.dispatch.minActiveDocsCoverage != null)
-                builder.minActivedocsPercentage(tuning.dispatch.minActiveDocsCoverage);
-            if (tuning.dispatch.minGroupCoverage != null)
-                builder.minGroupCoverage(tuning.dispatch.minGroupCoverage);
-            if (tuning.dispatch.policy != null) {
-                switch (tuning.dispatch.policy) {
-                    case RANDOM:
-                        builder.distributionPolicy(DistributionPolicy.RANDOM);
-                        break;
-                    case ROUNDROBIN:
-                        builder.distributionPolicy(DistributionPolicy.ROUNDROBIN);
-                        break;
-                }
-            }
-            builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());
             builder.node(nodeBuilder);
         }
+        if (tuning.dispatch.minActiveDocsCoverage != null)
+            builder.minActivedocsPercentage(tuning.dispatch.minActiveDocsCoverage);
+        if (tuning.dispatch.minGroupCoverage != null)
+            builder.minGroupCoverage(tuning.dispatch.minGroupCoverage);
+        if (tuning.dispatch.policy != null) {
+            switch (tuning.dispatch.policy) {
+                case RANDOM:
+                    builder.distributionPolicy(DistributionPolicy.RANDOM);
+                    break;
+                case ROUNDROBIN:
+                    builder.distributionPolicy(DistributionPolicy.ROUNDROBIN);
+                    break;
+            }
+        }
+        builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());
+        builder.useMultilevelDispatch(useMultilevelDispatchSetup());
     }
 
     @Override
