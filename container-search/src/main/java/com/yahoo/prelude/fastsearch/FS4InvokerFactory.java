@@ -8,9 +8,12 @@ import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.InterleavedFillInvoker;
 import com.yahoo.search.dispatch.InterleavedSearchInvoker;
+import com.yahoo.search.dispatch.SearchErrorInvoker;
 import com.yahoo.search.dispatch.SearchInvoker;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
+import com.yahoo.search.result.Coverage;
+import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 
 import java.util.ArrayList;
@@ -70,19 +73,24 @@ public class FS4InvokerFactory {
         Map<Integer, SearchInvoker> invokers = new HashMap<>();
         Set<Integer> failed = null;
         for (Node node : nodes) {
+            boolean nodeAdded = false;
             if (node.isWorking()) {
                 Backend backend = fs4ResourcePool.getBackend(node.hostname(), node.fs4port());
                 if (backend.probeConnection()) {
                     invokers.put(node.key(), new FS4SearchInvoker(searcher, query, backend.openChannel(), node));
-                } else {
-                    if(failed == null) {
-                        failed = new HashSet<>();
-                    }
-                    failed.add(node.key());
+                    nodeAdded = true;
                 }
             }
+
+            if (!nodeAdded) {
+                if (failed == null) {
+                    failed = new HashSet<>();
+                }
+                failed.add(node.key());
+            }
         }
-        if (failed != null && ! acceptIncompleteCoverage) {
+
+        if (failed != null) {
             List<Node> success = new ArrayList<>(nodes.size() - failed.size());
             for (Node node : nodes) {
                 if (!failed.contains(node.key())) {
@@ -90,14 +98,38 @@ public class FS4InvokerFactory {
                 }
             }
             if (!searchCluster.isPartialGroupCoverageSufficient(groupId, success)) {
-                return Optional.empty();
+                if (acceptIncompleteCoverage) {
+                    createCoverageErrorInvoker(invokers, nodes, failed);
+                } else {
+                    return Optional.empty();
+                }
             }
         }
+
         if (invokers.size() == 1) {
             return Optional.of(invokers.values().iterator().next());
         } else {
             return Optional.of(new InterleavedSearchInvoker(invokers));
         }
+    }
+
+    private void createCoverageErrorInvoker(Map<Integer, SearchInvoker> invokers, List<Node> nodes, Set<Integer> failed) {
+        long activeDocuments = 0;
+        StringBuilder down = new StringBuilder("Connection failure on nodes with distribution-keys: ");
+        Integer key = null;
+        for (Node node : nodes) {
+            if (failed.contains(node.key())) {
+                activeDocuments += node.getActiveDocuments();
+                if (key == null) {
+                    key = node.key();
+                } else {
+                    down.append(", ");
+                }
+                down.append(node.key());
+            }
+        }
+        Coverage coverage = new Coverage(0, activeDocuments, 0);
+        invokers.put(key, new SearchErrorInvoker(ErrorMessage.createBackendCommunicationError(down.toString()), coverage));
     }
 
     public FillInvoker getFillInvoker(Query query, Node node) {

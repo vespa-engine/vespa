@@ -5,6 +5,7 @@ import com.yahoo.fs4.QueryPacket;
 import com.yahoo.prelude.fastsearch.CacheKey;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.result.Coverage;
 import com.yahoo.search.result.ErrorMessage;
 
 import java.io.IOException;
@@ -12,17 +13,24 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * A search invoker that will immediately produce an error that occurred during invoker construction.
- * Currently used for invalid searchpath values.
+ * A search invoker that will immediately produce an error that occurred during
+ * invoker construction. Currently used for invalid searchpath values and node
+ * failure
  *
  * @author ollivir
  */
 public class SearchErrorInvoker extends SearchInvoker {
-    private final String message;
+    private final ErrorMessage message;
     private Query query;
+    private final Coverage coverage;
 
-    public SearchErrorInvoker(String message) {
+    public SearchErrorInvoker(ErrorMessage message, Coverage coverage) {
         this.message = message;
+        this.coverage = coverage;
+    }
+
+    public SearchErrorInvoker(ErrorMessage message) {
+        this(message, null);
     }
 
     @Override
@@ -32,7 +40,11 @@ public class SearchErrorInvoker extends SearchInvoker {
 
     @Override
     protected List<Result> getSearchResults(CacheKey cacheKey) throws IOException {
-        return Arrays.asList(new Result(query, ErrorMessage.createIllegalQuery(message)));
+        Result res = new Result(query, message);
+        if (coverage != null) {
+            res.setCoverage(coverage);
+        }
+        return Arrays.asList(res);
     }
 
     @Override

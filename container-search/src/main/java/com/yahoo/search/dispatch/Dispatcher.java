@@ -14,6 +14,7 @@ import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
+import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
 import java.util.Arrays;
@@ -125,7 +126,7 @@ public class Dispatcher extends AbstractComponent {
                 return invokerFactory.supply(query, -1, nodes, true);
             }
         } catch (InvalidSearchPathException e) {
-            return Optional.of(new SearchErrorInvoker(e.getMessage()));
+            return Optional.of(new SearchErrorInvoker(ErrorMessage.createIllegalQuery(e.getMessage())));
         }
     }
 

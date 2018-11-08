@@ -272,14 +272,20 @@ public class FastSearcher extends VespaBackEndSearcher {
         Result result = new Result(query);
         // keep a separate tally of coverage as the normal merge counts using
         // federated query rules
-        Coverage finalCoverage = new Coverage(0, 0);
+        Coverage finalCoverage = null;
 
         for (Result partialResult : results) {
-            finalCoverage.mergeWithPartition(partialResult.getCoverage(true));
+            if(finalCoverage == null) {
+                finalCoverage = partialResult.getCoverage(true);
+            } else {
+                finalCoverage.mergeWithPartition(partialResult.getCoverage(true));
+            }
             result.mergeWith(partialResult);
             result.hits().addAll(partialResult.hits().asUnorderedHits());
         }
-        result.setCoverage(finalCoverage);
+        if (finalCoverage != null) {
+            result.setCoverage(finalCoverage);
+        }
 
         if (query.getOffset() != 0 || result.hits().size() > query.getHits()) {
             // with multiple results, each partial result is expected to have
