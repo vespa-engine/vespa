@@ -130,6 +130,7 @@ public class ApplicationSerializer {
     private final String deploymentMetricsDocsField = "documentCount";
     private final String deploymentMetricsQueryLatencyField = "queryLatencyMillis";
     private final String deploymentMetricsWriteLatencyField = "writeLatencyMillis";
+    private final String deploymentMetricsUpdateTime = "lastUpdated";
 
     // ------------------ Serialization
 
@@ -178,6 +179,7 @@ public class ApplicationSerializer {
         root.setDouble(deploymentMetricsDocsField, metrics.documentCount());
         root.setDouble(deploymentMetricsQueryLatencyField, metrics.queryLatencyMillis());
         root.setDouble(deploymentMetricsWriteLatencyField, metrics.writeLatencyMillis());
+        metrics.instant().ifPresent(instant -> root.setLong(deploymentMetricsUpdateTime, instant.toEpochMilli()));
     }
 
     private void clusterInfoToSlime(Map<ClusterSpec.Id, ClusterInfo> clusters, Cursor object) {
@@ -329,11 +331,15 @@ public class ApplicationSerializer {
     }
 
     private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {
+        Optional<Instant> instant = object.field(deploymentMetricsUpdateTime).valid() ?
+                Optional.of(Instant.ofEpochMilli(object.field(deploymentMetricsUpdateTime).asLong())) :
+                Optional.empty();
         return new DeploymentMetrics(object.field(deploymentMetricsQPSField).asDouble(),
                                      object.field(deploymentMetricsWPSField).asDouble(),
                                      object.field(deploymentMetricsDocsField).asDouble(),
                                      object.field(deploymentMetricsQueryLatencyField).asDouble(),
-                                     object.field(deploymentMetricsWriteLatencyField).asDouble());
+                                     object.field(deploymentMetricsWriteLatencyField).asDouble(),
+                                     instant);
     }
 
     private Map<HostName, RotationStatus> rotationStatusFromSlime(Inspector object) {

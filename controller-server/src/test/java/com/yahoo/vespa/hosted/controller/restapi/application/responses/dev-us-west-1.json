@@ -62,6 +62,7 @@
     "writesPerSecond": 2.0,
     "documentCount": 3.0,
     "queryLatencyMillis": 4.0,
-    "writeLatencyMillis": 5.0
+    "writeLatencyMillis": 5.0,
+    "lastUpdated": 123123
   }
 }

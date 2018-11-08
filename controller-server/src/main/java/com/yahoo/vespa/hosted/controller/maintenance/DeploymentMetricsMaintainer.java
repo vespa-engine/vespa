@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
@@ -73,7 +74,8 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                                                                              deploymentMetrics.writesPerSecond(),
                                                                              deploymentMetrics.documentCount(),
                                                                              deploymentMetrics.queryLatencyMillis(),
-                                                                             deploymentMetrics.writeLatencyMillis());
+                                                                             deploymentMetrics.writeLatencyMillis(),
+                                                                             Optional.of(controller().clock().instant()));
 
                         applications.lockIfPresent(application.id(), locked ->
                                 applications.store(locked.with(deployment.zone(), newMetrics)
