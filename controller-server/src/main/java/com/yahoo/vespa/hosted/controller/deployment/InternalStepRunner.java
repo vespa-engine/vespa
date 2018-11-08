@@ -28,7 +28,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.yolean.Exceptions;
@@ -452,7 +452,7 @@ public class InternalStepRunner implements StepRunner {
     private ApplicationPackage testerPackage(RunId id) {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
 
-        byte[] testPackage = controller.applications().applicationStore().getTesterPackage(JobController.testerOf(id.application()), version.id());
+        byte[] testPackage = controller.applications().applicationStore().getTesterPackage(JobController.testerOf(id.application()), version);
         byte[] servicesXml = servicesXml(controller.system());
 
         DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();

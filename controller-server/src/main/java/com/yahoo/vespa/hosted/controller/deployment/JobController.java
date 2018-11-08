@@ -14,16 +14,17 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.application.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.application.SourceRevision;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -225,13 +226,14 @@ public class JobController {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockOrThrow(id, application -> {
             if ( ! application.get().deploymentJobs().deployedInternally()) {
+                // TODO jvenstad: Remove when there are no more SDv3 pipelines.
                 // Copy all current packages to the new application store
                 application.get().deployments().values().stream()
                            .map(Deployment::applicationVersion)
                            .distinct()
                            .forEach(appVersion -> {
                                byte[] content = controller.applications().artifacts().getApplicationPackage(application.get().id(), appVersion.id());
-                               controller.applications().applicationStore().putApplicationPackage(application.get().id(), appVersion.id(), content);
+                               controller.applications().applicationStore().putApplicationPackage(application.get().id(), appVersion, content);
                            });
             }
 
@@ -239,11 +241,19 @@ public class JobController {
             version.set(ApplicationVersion.from(revision, run));
 
             controller.applications().applicationStore().putApplicationPackage(id,
-                                                                               version.get().id(),
+                                                                               version.get(),
                                                                                packageBytes);
             controller.applications().applicationStore().putTesterPackage(testerOf(id),
-                                                                          version.get().id(),
+                                                                          version.get(),
                                                                           testPackageBytes);
+
+            application.get().deployments().values().stream()
+                       .map(Deployment::applicationVersion)
+                       .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
+                       .ifPresent(oldestDeployed -> {
+                           controller.applications().applicationStore().pruneApplicationPackages(id, oldestDeployed);
+                           controller.applications().applicationStore().pruneTesterPackages(testerOf(id), oldestDeployed);
+                       });
 
             controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(packageBytes));
 

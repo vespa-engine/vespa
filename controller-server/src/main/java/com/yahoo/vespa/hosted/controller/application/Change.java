@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 
 import java.util.Objects;
 import java.util.Optional;
