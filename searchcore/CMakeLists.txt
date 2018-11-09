@@ -58,7 +58,7 @@ vespa_define_module(
     TESTS
     src/tests/applyattrupdates
     src/tests/fdispatch/randomrow
-    src/tests/fdispatch/search_path
+    src/tests/fdispatch/fnet_search
     src/tests/grouping
     src/tests/proton/attribute
     src/tests/proton/attribute/attribute_aspect_delayer
