@@ -67,7 +67,9 @@ public class MaybeTlsCryptoSocket implements CryptoSocket {
 
         @Override public HandshakeResult handshake() throws IOException {
             if (factory != null) {
-                channel().read(buffer.getWritable(SNOOP_SIZE));
+                if (channel().read(buffer.getWritable(SNOOP_SIZE)) == -1) {
+                    throw new IOException("jrt: Connection closed by peer during tls detection");
+                }
                 if (buffer.bytes() < SNOOP_SIZE) {
                     return HandshakeResult.NEED_READ;
                 }
