@@ -4,10 +4,6 @@ package com.yahoo.search.rendering;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.prelude.templates.PageTemplateSet;
-import com.yahoo.prelude.templates.SearchRendererAdaptor;
-import com.yahoo.prelude.templates.TiledTemplateSet;
-import com.yahoo.prelude.templates.UserTemplate;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.search.Result;
 
@@ -27,9 +23,6 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
     public static final ComponentId jsonRendererId = ComponentId.fromString("JsonRenderer");
     public static final ComponentId defaultRendererId = jsonRendererId;
     
-    private final ComponentId tiledRendererId;
-    private final ComponentId pageRendererId;
-
     /** Creates a registry containing the built-in renderers only */
     public RendererRegistry() {
         this(Collections.emptyList());
@@ -68,10 +61,6 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         for (Renderer renderer : renderers)
             register(renderer.getId(), renderer);
 
-        // add legacy "templates" converted to renderers // TODO: Remove on Vespa 7
-        tiledRendererId = addTemplateSet(new TiledTemplateSet());
-        pageRendererId = addTemplateSet(new PageTemplateSet());
-
         freeze();
     }
     
@@ -80,17 +69,6 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         // deconstruct the renderers which was created by this
         getRenderer(jsonRendererId.toSpecification()).deconstruct();
         getRenderer(xmlRendererId.toSpecification()).deconstruct();
-        getRenderer(tiledRendererId.toSpecification()).deconstruct();
-        getRenderer(pageRendererId.toSpecification()).deconstruct();
-    }
-
-    @SuppressWarnings({"deprecation", "unchecked"})
-    private ComponentId addTemplateSet(UserTemplate<?> templateSet) {
-        Renderer renderer = new SearchRendererAdaptor(templateSet);
-        ComponentId rendererId = new ComponentId(templateSet.getName());
-        renderer.initId(rendererId);
-        register(rendererId, renderer);
-        return rendererId;
     }
 
     /**
