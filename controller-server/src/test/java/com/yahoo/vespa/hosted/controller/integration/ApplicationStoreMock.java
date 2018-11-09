@@ -42,6 +42,11 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
+    public void removeAll(ApplicationId application) {
+        store.remove(application);
+    }
+
+    @Override
     public byte[] getTesterPackage(TesterId tester, ApplicationVersion applicationVersion) {
         return requireNonNull(store.get(tester.id()).get(applicationVersion));
     }
@@ -56,6 +61,11 @@ public class ApplicationStoreMock implements ApplicationStore {
     public boolean pruneTesterPackages(TesterId tester, ApplicationVersion oldestToRetain) {
         return    store.containsKey(tester.id())
                && store.get(tester.id()).keySet().removeIf(version -> version.compareTo(oldestToRetain) < 0);
+    }
+
+    @Override
+    public void removeAll(TesterId tester) {
+        store.remove(tester.id());
     }
 
 }

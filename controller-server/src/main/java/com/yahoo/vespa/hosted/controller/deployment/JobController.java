@@ -301,6 +301,8 @@ public class JobController {
                                    deactivateTester(TesterId.of(id), type);
                                    curator.deleteRunData(id, type);
                                    logs.delete(id);
+                                   controller.applications().applicationStore().removeAll(id);
+                                   controller.applications().applicationStore().removeAll(TesterId.of(id));
                                }
                            });
                    }

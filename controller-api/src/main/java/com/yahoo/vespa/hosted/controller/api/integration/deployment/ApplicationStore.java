@@ -18,6 +18,9 @@ public interface ApplicationStore {
     /** Removes applications older than the given version, for the given application, and returns whether something was removed. */
     boolean pruneApplicationPackages(ApplicationId application, ApplicationVersion olderThanVersion);
 
+    /** Removes all application packages for the given application. */
+    void removeAll(ApplicationId application);
+
     /** Returns the tester application package of the given version. Does NOT contain the services.xml. */
     byte[] getTesterPackage(TesterId tester, ApplicationVersion applicationVersion);
 
@@ -26,5 +29,8 @@ public interface ApplicationStore {
 
     /** Removes tester packages older than the given version, for the given tester, and returns whether something was removed. */
     boolean pruneTesterPackages(TesterId tester, ApplicationVersion olderThanVersion);
+
+    /** Removes all tester packages for the given tester. */
+    void removeAll(TesterId tester);
 
 }
