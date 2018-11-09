@@ -139,7 +139,7 @@ public final class IndexModel {
     public Map<String, SearchDefinition> getSearchDefinitions() { return searchDefinitions; }
 
     /** @deprecated do not use */
-    @Deprecated
+    @Deprecated // TODO: Remove on Vespa 8
     public SearchDefinition getUnionSearchDefinition() { return unionSearchDefinition; }
 
 }
