@@ -24,6 +24,7 @@ public interface CloudConfigOptions {
     Optional<Boolean> hostedVespa();
 
     ConfigServer[] allConfigServers();
+    int[] configServerZookeeperIds();
     Optional<Integer> zookeeperClientPort();
     String[] configModelPluginDirs();
     Optional<Long> sessionLifeTimeSecs();

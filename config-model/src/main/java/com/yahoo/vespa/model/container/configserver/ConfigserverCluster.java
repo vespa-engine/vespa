@@ -18,6 +18,7 @@ import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions;
 import com.yahoo.vespa.model.container.configserver.option.CloudConfigOptions.ConfigServer;
 
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 /**
  * Represents a config server cluster.
@@ -53,17 +54,27 @@ public class ConfigserverCluster extends AbstractConfigProducer
 
     @Override
     public void getConfig(ZookeeperServerConfig.Builder builder) {
-        String myhostname = HostName.getLocalhost();
-        int myid = 0;
-        int i = 0;
-        for (ConfigServer server : getConfigServers()) {
-            if (server.hostName.equals(myhostname)) {
-                myid = i;
-            }
-            builder.server(getZkServer(server, i));
-            i++;
+        ConfigServer[] configServers = getConfigServers();
+        int[] zookeeperIds = getConfigServerZookeeperIds();
+
+        if (configServers.length != zookeeperIds.length) {
+            throw new IllegalArgumentException(String.format("Number of provided config server hosts (%d) must be the " +
+                    "same as number of provided config server zookeeper ids (%d)",
+                    configServers.length, zookeeperIds.length));
         }
-        builder.myid(myid);
+
+        String myhostname = HostName.getLocalhost();
+        for (int i = 0; i < configServers.length; i++) {
+            if (zookeeperIds[i] < 0) {
+                throw new IllegalArgumentException(String.format("Zookeeper ids cannot be negative, was %d for %s",
+                        zookeeperIds[i], configServers[i].hostName));
+            }
+            if (configServers[i].hostName.equals(myhostname)) {
+                builder.myid(zookeeperIds[i]);
+            }
+            builder.server(getZkServer(configServers[i], zookeeperIds[i]));
+        }
+
         if (options.zookeeperClientPort().isPresent()) {
             builder.clientPort(options.zookeeperClientPort().get());
         }
@@ -150,11 +161,15 @@ public class ConfigserverCluster extends AbstractConfigProducer
     }
 
     private ConfigServer[] getConfigServers() {
-        if (options.allConfigServers().length > 0) {
-            return options.allConfigServers();
-        } else {
-            return new ConfigServer[]{new ConfigServer(HostName.getLocalhost(), Optional.<Integer>empty()) };
-        }
+        return Optional.of(options.allConfigServers())
+                .filter(configServers -> configServers.length > 0)
+                .orElseGet(() -> new ConfigServer[]{new ConfigServer(HostName.getLocalhost(), Optional.empty())});
+    }
+
+    private int[] getConfigServerZookeeperIds() {
+        return Optional.of(options.configServerZookeeperIds())
+                .filter(ids -> ids.length > 0)
+                .orElseGet(() -> IntStream.range(0, getConfigServers().length).toArray());
     }
 
     private ZookeeperServerConfig.Server.Builder getZkServer(ConfigServer server, int id) {
