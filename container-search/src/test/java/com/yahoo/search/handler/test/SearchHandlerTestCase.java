@@ -105,12 +105,12 @@ public class SearchHandlerTestCase {
     }
 
     @Test
-    public void testFailing() throws Exception {
+    public void testFailing() {
          assertTrue(driver.sendRequest("http://localhost?query=test&searchChain=classLoadingError").readAll().contains("NoClassDefFoundError"));
     }
 
     @Test
-    public synchronized void testPluginError() throws Exception {
+    public synchronized void testPluginError() {
         assertTrue(driver.sendRequest("http://localhost?query=test&searchChain=exceptionInPlugin").readAll().contains("NullPointerException"));
     }
 
@@ -191,7 +191,7 @@ public class SearchHandlerTestCase {
         }
     }
     @Test
-    public void testInvalidQueryParamWithoutQueryProfile() throws Exception {
+    public void testInvalidQueryParamWithoutQueryProfile() {
         testInvalidQueryParam(driver);
     }
     private void testInvalidQueryParam(final RequestHandlerTestDriver testDriver) {
@@ -213,43 +213,33 @@ public class SearchHandlerTestCase {
     }
 
     @Test
-    public void testNormalResultImplicitDefaultRendering() throws Exception {
+    public void testNormalResultImplicitDefaultRendering() {
         assertJsonResult("http://localhost?query=abc", driver);
     }
 
     @Test
-    public void testNormalResultExplicitDefaultRendering() throws Exception {
+    public void testNormalResultExplicitDefaultRendering() {
         assertJsonResult("http://localhost?query=abc&format=default", driver);
     }
 
     @Test
-    public void testNormalResultXmlAliasRendering() throws Exception {
+    public void testNormalResultXmlAliasRendering() {
         assertXmlResult("http://localhost?query=abc&format=xml", driver);
     }
 
     @Test
-    public void testNormalResultJsonAliasRendering() throws Exception {
+    public void testNormalResultJsonAliasRendering() {
         assertJsonResult("http://localhost?query=abc&format=json", driver);
     }
 
     @Test
-    public void testNormalResultExplicitDefaultRenderingFullRendererName1() throws Exception {
+    public void testNormalResultExplicitDefaultRenderingFullRendererName1() {
         assertXmlResult("http://localhost?query=abc&format=XmlRenderer", driver);
     }
 
     @Test
-    public void testNormalResultExplicitDefaultRenderingFullRendererName2() throws Exception {
+    public void testNormalResultExplicitDefaultRenderingFullRendererName2() {
         assertJsonResult("http://localhost?query=abc&format=JsonRenderer", driver);
-    }
-
-    @Test
-    public void testResultLegacyTiledFormat() throws Exception {
-        assertTiledResult("http://localhost?query=abc&format=tiled", driver);
-    }
-
-    @Test
-    public void testResultLegacyPageFormat() throws Exception {
-        assertPageResult("http://localhost?query=abc&format=page", driver);
     }
 
     private static final String xmlResult =
@@ -260,10 +250,12 @@ public class SearchHandlerTestCase {
             "    <field name=\"uri\">testHit</field>\n" +
             "  </hit>\n" +
             "</result>\n";
-    private void assertXmlResult(String request, RequestHandlerTestDriver driver) throws Exception {
+
+    private void assertXmlResult(String request, RequestHandlerTestDriver driver) {
         assertOkResult(driver.sendRequest(request), xmlResult);
     }
-    private void assertXmlResult(RequestHandlerTestDriver driver) throws Exception {
+
+    private void assertXmlResult(RequestHandlerTestDriver driver) {
         assertXmlResult("http://localhost?query=abc", driver);
     }
 
@@ -272,38 +264,9 @@ public class SearchHandlerTestCase {
             + "\"children\":["
             + "{\"id\":\"testHit\",\"relevance\":1.0,\"fields\":{\"uri\":\"testHit\"}}"
             + "]}}";
-    private void assertJsonResult(String request, RequestHandlerTestDriver driver) throws Exception {
+
+    private void assertJsonResult(String request, RequestHandlerTestDriver driver) {
         assertOkResult(driver.sendRequest(request), jsonResult);
-    }
-
-    private static final String tiledResult =
-            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-            "<result version=\"1.0\">\n" +
-            "\n" +
-            "  <hit relevance=\"1.0\">\n" +
-            "    <id>testHit</id>\n" +
-            "    <uri>testHit</uri>\n" +
-            "  </hit>\n" +
-            "\n" +
-            "</result>\n";
-    private void assertTiledResult(String request, RequestHandlerTestDriver driver) throws Exception {
-        assertOkResult(driver.sendRequest(request), tiledResult);
-    }
-
-    private static final String pageResult =
-            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-            "<page version=\"1.0\">\n" +
-            "\n" +
-            "  <content>\n" +
-            "    <hit relevance=\"1.0\">\n" +
-            "      <id>testHit</id>\n" +
-            "      <uri>testHit</uri>\n" +
-            "    </hit>\n" +
-            "  </content>\n" +
-            "\n" +
-            "</page>\n";
-    private void assertPageResult(String request, RequestHandlerTestDriver driver) throws Exception {
-        assertOkResult(driver.sendRequest(request), pageResult);
     }
 
     private void assertOkResult(RequestHandlerTestDriver.MockResponseHandler response, String expected) {
