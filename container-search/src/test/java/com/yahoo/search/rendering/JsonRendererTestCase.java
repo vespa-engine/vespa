@@ -498,8 +498,7 @@ public class JsonRendererTestCase {
                 + "                \"children\": [\n"
                 + "                    {\n"
                 + "                        \"fields\": {\n"
-                + "                            \"c\": \"d\",\n"
-                + "                            \"uri\": \"http://localhost/1\"\n"
+                + "                            \"c\": \"d\"\n"
                 + "                        },\n"
                 + "                        \"id\": \"http://localhost/1\",\n"
                 + "                        \"relevance\": 0.9,\n"
@@ -523,8 +522,7 @@ public class JsonRendererTestCase {
                 + "            },\n"
                 + "            {\n"
                 + "                \"fields\": {\n"
-                + "                    \"b\": \"foo\",\n"
-                + "                    \"uri\": \"http://localhost/\"\n"
+                + "                    \"b\": \"foo\"\n"
                 + "                },\n"
                 + "                \"id\": \"http://localhost/\",\n"
                 + "                \"relevance\": 0.95,\n"
@@ -555,7 +553,7 @@ public class JsonRendererTestCase {
                 + "        \"relevance\": 1.0\n"
                 + "    }\n"
                 + "}";
-        Query q = new Query("/?query=a&tracelevel=5&reportCoverage=true");
+        Query q = new Query("/?query=a&tracelevel=5");
         Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
         r.setCoverage(new Coverage(500, 500,1,1));
@@ -603,7 +601,7 @@ public class JsonRendererTestCase {
                 + "        \"relevance\": 1.0\n"
                 + "    }\n"
                 + "}";
-        Query q = new Query("/?query=a&tracelevel=5&reportCoverage=true");
+        Query q = new Query("/?query=a&tracelevel=5");
         Execution execution = new Execution(Execution.Context.createContextStub());
         Result r = new Result(q);
         r.setCoverage(new Coverage(500, 600).setDegradedReason(5));
@@ -725,7 +723,7 @@ public class JsonRendererTestCase {
                 + "        \"relevance\": 1.0\n"
                 + "    }\n"
                 + "}\n";
-        Query q = new Query("/?query=a&tracelevel=5&reportCoverage=true");
+        Query q = new Query("/?query=a&tracelevel=5");
         Result r = new Result(q);
         Throwable t = new Throwable();
         StackTraceElement[] stack = new StackTraceElement[1];
