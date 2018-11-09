@@ -9,6 +9,9 @@ import java.util.Optional;
  * @author Ulf Lilleengen
  */
 public class TestOptions implements CloudConfigOptions {
+
+    private ConfigServer[] configServers = new ConfigServer[0];
+    private int[] configServerZookeeperIds = new int[0];
     private Optional<Integer> rpcPort = Optional.empty();
     private Optional<String> environment = Optional.empty();
     private Optional<String> region = Optional.empty();
@@ -45,7 +48,12 @@ public class TestOptions implements CloudConfigOptions {
 
     @Override
     public ConfigServer[] allConfigServers() {
-        return new ConfigServer[0];
+        return configServers;
+    }
+
+    @Override
+    public int[] configServerZookeeperIds() {
+        return configServerZookeeperIds;
     }
 
     @Override
@@ -119,6 +127,16 @@ public class TestOptions implements CloudConfigOptions {
     @Override
     public Optional<String> ztsUrl() {
         return Optional.empty();
+    }
+
+    public TestOptions configServers(ConfigServer[] configServers) {
+        this.configServers = configServers;
+        return this;
+    }
+
+    public TestOptions configServerZookeeperIds(int[] configServerZookeeperIds) {
+        this.configServerZookeeperIds = configServerZookeeperIds;
+        return this;
     }
 
     public TestOptions numParallelTenantLoaders(int numLoaders) {

@@ -33,6 +33,15 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
     }
 
     @Override
+    public int[] configServerZookeeperIds() {
+        return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_ZOOKEEPER_IDS"))
+                .map(CloudConfigInstallVariables::multiValueParameterStream)
+                .orElseGet(Stream::empty)
+                .mapToInt(Integer::valueOf)
+                .toArray();
+    }
+
+    @Override
     public Optional<Long> zookeeperBarrierTimeout() {
         return getInstallVariable("zookeeper_barrier_timeout", Long::parseLong);
     }
