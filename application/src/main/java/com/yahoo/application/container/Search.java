@@ -47,7 +47,6 @@ public final class Search extends ProcessingBase<Query, Result, Searcher> {
                                                            Renderer<Result> renderer,
                                                            ByteArrayOutputStream stream) throws IOException {
         Result result = process(chainSpec, request);
-        result.getTemplating().setRenderer(renderer); // TODO: Remove on Vespa 7
         return HttpSearchResponse.waitableRender(result, result.getQuery(), renderer, stream);
     }
 
