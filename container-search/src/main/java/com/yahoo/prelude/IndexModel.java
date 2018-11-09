@@ -39,8 +39,11 @@ public final class IndexModel {
 
     /**
      * Use IndexModel as a pure wrapper for the parameters given.
+     *
+     * @deprecated use the constructor without the third parameter
      */
-    // TODO: Deprecate on Vespa 7 and remove on Vespa 8
+    // TODO: Remove Vespa 8
+    @Deprecated
     public IndexModel(Map<String, List<String>> masterClusters,
                       Map<String, SearchDefinition> searchDefinitions,
                       SearchDefinition unionSearchDefinition) {
@@ -135,7 +138,8 @@ public final class IndexModel {
 
     public Map<String, SearchDefinition> getSearchDefinitions() { return searchDefinitions; }
 
-    // TODO: Deprecate on Vespa 7 and make package scope on Vespa 8
+    /** @deprecated do not use */
+    @Deprecated
     public SearchDefinition getUnionSearchDefinition() { return unionSearchDefinition; }
 
 }
