@@ -106,9 +106,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     /** If this is true, then this hit will not be counted as a concrete hit */
     private boolean auxiliary = false;
 
-    /**
-     * The hit field used to store rank features. TODO: Remove on Vespa 7
-     */
+    /** The hit field used to store rank features */
     public static final String RANKFEATURES_FIELD = "rankfeatures";
     public static final String SDDOCNAME_FIELD = "sddocname";
 

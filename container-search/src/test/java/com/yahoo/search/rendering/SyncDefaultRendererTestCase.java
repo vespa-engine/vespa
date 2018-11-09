@@ -58,8 +58,8 @@ public class SyncDefaultRendererTestCase {
 
     @SuppressWarnings("deprecation")
     @Test
-    public final void testRenderWriterResult() throws InterruptedException, ExecutionException {
-        Query q = new Query("/?query=a&tracelevel=5&reportCoverage=true");
+    public void testRenderWriterResult() throws InterruptedException, ExecutionException {
+        Query q = new Query("/?query=a&tracelevel=5");
         q.getPresentation().setTiming(true);
         Result r = new Result(q);
         r.setCoverage(new Coverage(500, 1));
@@ -96,7 +96,7 @@ public class SyncDefaultRendererTestCase {
         assertTrue(f.get());
         String summary = Utf8.toString(bs.toByteArray());
         // TODO figure out a reasonably strict and reasonably flexible way to test
-        assertTrue(summary.length() > 1000);
+        assertTrue(summary.length() > 900);
     }
 
 }
