@@ -150,7 +150,7 @@ ThreadStackExecutorBase::start(uint32_t threads)
     assert(threads > 0);
     for (uint32_t i = 0; i < threads; ++i) {
         FastOS_ThreadInterface *thread = _pool->NewThread(_thread_init.get());
-        assert(thread != 0);
+        assert(thread != nullptr);
         (void)thread;
     }
 }
@@ -200,7 +200,7 @@ ThreadStackExecutorBase::execute(Task::UP task)
     } else {
         ++_stats.rejectedTasks;
     }
-    return std::move(task);
+    return task;
 }
 
 ThreadStackExecutorBase &
