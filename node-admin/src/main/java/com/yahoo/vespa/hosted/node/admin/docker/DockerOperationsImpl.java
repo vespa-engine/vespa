@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
 import com.yahoo.vespa.hosted.dockerapi.Docker;
 import com.yahoo.vespa.hosted.dockerapi.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
-import com.yahoo.vespa.hosted.node.admin.component.ContainerEnvironmentResolver;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.ContainerData;
@@ -47,16 +46,13 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private final Docker docker;
     private final ProcessExecuter processExecuter;
-    private final ContainerEnvironmentResolver containerEnvironmentResolver;
     private final List<String> configServerHostnames;
     private final IPAddresses ipAddresses;
 
     public DockerOperationsImpl(Docker docker, ProcessExecuter processExecuter,
-                                ContainerEnvironmentResolver containerEnvironmentResolver,
                                 List<String> configServerHostnames, IPAddresses ipAddresses) {
         this.docker = docker;
         this.processExecuter = processExecuter;
-        this.containerEnvironmentResolver = containerEnvironmentResolver;
         this.configServerHostnames = configServerHostnames;
         this.ipAddresses = ipAddresses;
     }
@@ -79,7 +75,6 @@ public class DockerOperationsImpl implements DockerOperations {
                 node.getHostname())
                 .withManagedBy(MANAGER_NAME)
                 .withEnvironment("VESPA_CONFIGSERVERS", configServers)
-                .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS", containerEnvironmentResolver.createSettings(node))
                 .withUlimit("nofile", 262_144, 262_144)
                 .withUlimit("nproc", 32_768, 409_600)
                 .withUlimit("core", -1, -1)
