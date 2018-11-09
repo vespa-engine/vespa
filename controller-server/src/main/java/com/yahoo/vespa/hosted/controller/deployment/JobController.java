@@ -295,16 +295,17 @@ public class JobController {
                .filter(id -> ! applicationsToBuild.contains(id))
                .forEach(id -> {
                    try {
+                       TesterId tester = TesterId.of(id);
                        for (JobType type : jobs(id))
                            locked(id, type, deactivateTester, __ -> {
                                try (Lock ___ = curator.lock(id, type)) {
-                                   deactivateTester(TesterId.of(id), type);
+                                   deactivateTester(tester, type);
                                    curator.deleteRunData(id, type);
                                    logs.delete(id);
-                                   controller.applications().applicationStore().removeAll(id);
-                                   controller.applications().applicationStore().removeAll(TesterId.of(id));
                                }
                            });
+                       controller.applications().applicationStore().removeAll(id);
+                       controller.applications().applicationStore().removeAll(tester);
                    }
                    catch (TimeoutException e) {
                        return; // Don't remove the data if we couldn't clean up all resources.
