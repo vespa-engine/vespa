@@ -213,30 +213,60 @@ public final class AllfeaturesConfig extends ConfigInstance {
         fileVal(__superior.fileVal);
       if (__superior.pathVal != null)
         pathVal(__superior.pathVal);
-      if (!__superior.boolarr.isEmpty())
+      if (!__superior.boolarr.isEmpty()) {
+        if (__superior.replaceWhenOverriding())
+          boolarr.clear();
         boolarr.addAll(__superior.boolarr);
-      if (!__superior.intarr.isEmpty())
+      }
+      if (!__superior.intarr.isEmpty()) {
+        if (__superior.replaceWhenOverriding())
+          intarr.clear();
         intarr.addAll(__superior.intarr);
-      if (!__superior.longarr.isEmpty())
+      }
+      if (!__superior.longarr.isEmpty()) {
+        if (__superior.replaceWhenOverriding())
+          longarr.clear();
         longarr.addAll(__superior.longarr);
-      if (!__superior.doublearr.isEmpty())
+      }
+      if (!__superior.doublearr.isEmpty()) {
+        if (__superior.replaceWhenOverriding())
+          doublearr.clear();
         doublearr.addAll(__superior.doublearr);
-      if (!__superior.stringarr.isEmpty())
+      }
+      if (!__superior.stringarr.isEmpty()) {
+        if (__superior.replaceWhenOverriding())
+          stringarr.clear();
         stringarr.addAll(__superior.stringarr);
-      if (!__superior.enumarr.isEmpty())
+      }
+      if (!__superior.enumarr.isEmpty()) {
+        if (__superior.replaceWhenOverriding())
+          enumarr.clear();
         enumarr.addAll(__superior.enumarr);
-      if (!__superior.refarr.isEmpty())
+      }
+      if (!__superior.refarr.isEmpty()) {
+        if (__superior.replaceWhenOverriding())
+          refarr.clear();
         refarr.addAll(__superior.refarr);
-      if (!__superior.filearr.isEmpty())
+      }
+      if (!__superior.filearr.isEmpty()) {
+        if (__superior.replaceWhenOverriding())
+          filearr.clear();
         filearr.addAll(__superior.filearr);
-      if (!__superior.pathArr.isEmpty())
+      }
+      if (!__superior.pathArr.isEmpty()) {
+        if (__superior.replaceWhenOverriding())
+          pathArr.clear();
         pathArr.addAll(__superior.pathArr);
+      }
       intMap(__superior.intMap);
       pathMap(__superior.pathMap);
       basic_struct(basic_struct.override(__superior.basic_struct));
       struct_of_struct(struct_of_struct.override(__superior.struct_of_struct));
-      if (!__superior.myArray.isEmpty())
+      if (!__superior.myArray.isEmpty()) {
+        if (__superior.replaceWhenOverriding())
+          myArray.clear();
         myArray.addAll(__superior.myArray);
+      }
       myMap(__superior.myMap);
       return this;
     }
@@ -1435,14 +1465,20 @@ public final class AllfeaturesConfig extends ConfigInstance {
       private Builder override(Builder __superior) {
         if (__superior.intVal != null)
           intVal(__superior.intVal);
-        if (!__superior.stringVal.isEmpty())
+        if (!__superior.stringVal.isEmpty()) {
+          if (__superior.replaceWhenOverriding())
+            stringVal.clear();
           stringVal.addAll(__superior.stringVal);
+        }
         if (__superior.enumVal != null)
           enumVal(__superior.enumVal);
         if (__superior.refVal != null)
           refVal(__superior.refVal);
-        if (!__superior.anotherArray.isEmpty())
+        if (!__superior.anotherArray.isEmpty()) {
+          if (__superior.replaceWhenOverriding())
+            anotherArray.clear();
           anotherArray.addAll(__superior.anotherArray);
+        }
         return this;
       }
 
@@ -1723,14 +1759,20 @@ public final class AllfeaturesConfig extends ConfigInstance {
       private Builder override(Builder __superior) {
         if (__superior.intVal != null)
           intVal(__superior.intVal);
-        if (!__superior.stringVal.isEmpty())
+        if (!__superior.stringVal.isEmpty()) {
+          if (__superior.replaceWhenOverriding())
+            stringVal.clear();
           stringVal.addAll(__superior.stringVal);
+        }
         if (__superior.enumVal != null)
           enumVal(__superior.enumVal);
         if (__superior.refVal != null)
           refVal(__superior.refVal);
-        if (!__superior.anotherArray.isEmpty())
+        if (!__superior.anotherArray.isEmpty()) {
+          if (__superior.replaceWhenOverriding())
+            anotherArray.clear();
           anotherArray.addAll(__superior.anotherArray);
+        }
         return this;
       }
 

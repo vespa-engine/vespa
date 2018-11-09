@@ -302,8 +302,10 @@ public class BuilderGenerator {
         final String callSetter = name + "(" + superior + "." + name + ");";
 
         if (child.isArray) {
-            String arrayOverride = INDENTATION + name + ".addAll(" + superior + "." + name + ");";
-            return conditionStatement(child) + "\n" + arrayOverride;
+            String conditionalClearArray = INDENTATION + "if (" + superior + ".replaceWhenOverriding())\n" +
+                 INDENTATION + INDENTATION + name + ".clear();\n";
+            String arrayOverride = conditionalClearArray + INDENTATION + name + ".addAll(" + superior + "." + name + ");";
+            return conditionStatement(child) + " {\n" + arrayOverride + "\n}";
         } else if (child instanceof InnerCNode && !child.isArray && !child.isMap) {
             return name + "(" + name + "." + method + "(" + superior + "." + name + "));";
         } else if (child.isMap) {
