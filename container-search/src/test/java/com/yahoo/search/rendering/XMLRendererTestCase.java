@@ -54,8 +54,8 @@ public class XMLRendererTestCase {
     }
 
     @Test
-    public final void testImplicitDefaultRender() throws Exception {
-        Query q = new Query("/?query=a&tracelevel=5&reportCoverage=true");
+    public void testImplicitDefaultRender() throws Exception {
+        Query q = new Query("/?query=a&tracelevel=5");
         q.getPresentation().setTiming(true);
         Result r = new Result(q);
         r.setCoverage(new Coverage(500, 1));
@@ -102,7 +102,7 @@ public class XMLRendererTestCase {
         assertTrue(summary.contains("<hit type=\"grouphit\" relevancy=\"1.0\">"));
         assertTrue(summary.contains("<hit type=\"summary\" relevancy=\"0.95\">"));
         assertEquals(2, occurrences("<error ", summary));
-        assertTrue(summary.length() > 1000);
+        assertTrue(summary.length() > 900);
     }
 
     private int occurrences(String fragment, String string) {

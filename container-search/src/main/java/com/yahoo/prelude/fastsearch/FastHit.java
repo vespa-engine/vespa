@@ -77,7 +77,6 @@ public class FastHit extends Hit {
     // Note: This constructor is only used for tests, production use is always of the empty constructor
     public FastHit(String uri, double relevance, String source) {
         setId(uri);
-        super.setField("uri", uri); // TODO: Remove on Vespa 7
         setRelevance(new Relevance(relevance));
         setSource(source);
         types().add("summary");
@@ -96,13 +95,6 @@ public class FastHit extends Hit {
     public URI getId() {
         URI uri = super.getId();
         if (uri != null) return uri;
-
-        // TODO: Remove on Vespa 7, this should be one of the last vestiges of URL field magic
-        Object uriField = getField("uri");
-        if (uriField != null) {
-            setId(uriField.toString());
-            return super.getId();
-        }
 
         // Fallback to index:[source]/[partid]/[id]
         if (indexUri != null) return indexUri;
