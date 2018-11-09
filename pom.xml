@@ -44,7 +44,6 @@
         <module>config-model-fat</module>
         <module>config-model</module>
         <module>config</module>
-        <module>configgen</module>
         <module>config-provisioning</module>
         <module>config-proxy</module>
         <module>configserver</module>
