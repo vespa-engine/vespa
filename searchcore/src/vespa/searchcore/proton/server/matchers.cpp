@@ -14,13 +14,13 @@ Matchers::Matchers(const vespalib::Clock &clock,
       _default()
 { }
 
-Matchers::~Matchers() { }
+Matchers::~Matchers() = default;
 
 void
 Matchers::add(const vespalib::string &name, matching::Matcher::SP matcher)
 {
     _rpmap[name] = matcher;
-    if (name == "default" || _default.get() == 0) {
+    if ((name == "default") || ! _default) {
         _default = matcher;
     }
 }
@@ -29,8 +29,8 @@ matching::MatchingStats
 Matchers::getStats() const
 {
     matching::MatchingStats stats;
-    for (Map::const_iterator it(_rpmap.begin()), mt(_rpmap.end()); it != mt; it++) {
-        stats.add(it->second->getStats());
+    for (const auto & entry : _rpmap) {
+        stats.add(entry.second->getStats());
     }
     return stats;
 }
