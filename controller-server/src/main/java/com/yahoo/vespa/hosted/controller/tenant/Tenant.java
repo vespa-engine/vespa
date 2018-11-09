@@ -3,8 +3,11 @@ package com.yahoo.vespa.hosted.controller.tenant;
 
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 
+import javax.swing.text.html.Option;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * A tenant in hosted Vespa.
@@ -17,13 +20,29 @@ public abstract class Tenant {
 
     private final TenantName name;
 
-    Tenant(TenantName name) {
+    private Optional<Contact> contact;
+
+    Tenant(TenantName name, Optional<Contact> contact) {
         this.name = name;
+        this.contact = contact;
     }
+
+    /*Tenant(TenantName name) {
+        this(name, Optional.empty());
+    }*/
 
     /** Name of this tenant */
     public TenantName name() {
         return name;
+    }
+
+    public Optional<Contact> contact() {
+        return contact;
+    }
+
+    public Tenant withContact(Optional<Contact> contact) {
+        this.contact = contact;
+        return this;
     }
 
     @Override

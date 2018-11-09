@@ -2,6 +2,9 @@
 package com.yahoo.vespa.hosted.controller.tenant;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
+
+import java.util.Optional;
 
 /**
  * Represents an user tenant in hosted Vespa.
@@ -14,8 +17,12 @@ public class UserTenant extends Tenant {
      * This should only be used by serialization.
      * Use {@link #create(String)}.
      * */
+    public UserTenant(TenantName name, Optional<Contact> contact) {
+        super(name, contact);
+    }
+
     public UserTenant(TenantName name) {
-        super(name);
+        super(name, Optional.empty());
     }
 
     /** Returns true if this is the tenant for the given user name */
@@ -32,6 +39,11 @@ public class UserTenant extends Tenant {
     public static UserTenant create(String username) {
         TenantName name = TenantName.from(username);
         return new UserTenant(requireName(requireUser(name)));
+    }
+
+    public static UserTenant create(String username, Optional<Contact> contact) {
+        TenantName name = TenantName.from(username);
+        return new UserTenant(requireName(requireUser(name)), contact);
     }
 
     /** Normalize given username. E.g. foo_bar becomes by-foo-bar */

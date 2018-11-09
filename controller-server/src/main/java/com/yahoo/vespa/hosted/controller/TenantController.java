@@ -102,7 +102,11 @@ public class TenantController {
      */
     public void lockIfPresent(TenantName name, Consumer<LockedTenant> action) {
         try (Lock lock = lock(name)) {
-            athenzTenant(name).map(tenant -> new LockedTenant(tenant, lock)).ifPresent(action);
+            tenant(name).map(tenant -> {
+                tenant = tenant instanceof AthenzTenant ? (AthenzTenant) tenant  : (UserTenant) tenant;
+                if (tenant instanceof AthenzTenant) return new LockedTenant((AthenzTenant) tenant, lock);
+                else return new LockedTenant((UserTenant) tenant, lock);
+            }).ifPresent(action);
         }
     }
 
@@ -173,7 +177,8 @@ public class TenantController {
 
     /** Update Athenz domain for tenant. Returns the updated tenant which must be explicitly stored */
     public LockedTenant withDomain(LockedTenant tenant, AthenzDomain newDomain, OktaAccessToken token) {
-        AthenzDomain existingDomain = tenant.get().domain();
+        AthenzTenant athenzTenant = (AthenzTenant) tenant.get();
+        AthenzDomain existingDomain = athenzTenant.domain();
         if (existingDomain.equals(newDomain)) return tenant;
         Optional<Tenant> existingTenantWithNewDomain = tenantIn(newDomain);
         if (existingTenantWithNewDomain.isPresent())

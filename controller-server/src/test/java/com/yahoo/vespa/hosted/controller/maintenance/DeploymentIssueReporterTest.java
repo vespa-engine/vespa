@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -18,6 +19,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionCorpUsEast1;
@@ -69,6 +71,11 @@ public class DeploymentIssueReporterTest {
         Long propertyId3 = 3L;
 
         tester.upgradeSystem(Version.fromString("6.2"));
+
+        Optional<Contact> contact = Optional.of(tester.controllerTester().contactRetriever().contact());
+        tester.controllerTester().createTenant("tenant1", "domain1", 1L, contact);
+        tester.controllerTester().createTenant("tenant2", "domain2", 1L, contact);
+        tester.controllerTester().createTenant("tenant3", "domain3", 1L, contact);
 
         // Create and deploy one application for each of three tenants.
         Application app1 = tester.createApplication("application1", "tenant1", projectId1, propertyId1);

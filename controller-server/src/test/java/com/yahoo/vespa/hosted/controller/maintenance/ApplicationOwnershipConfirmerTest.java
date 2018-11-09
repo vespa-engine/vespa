@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -40,18 +40,19 @@ public class ApplicationOwnershipConfirmerTest {
 
     @Test
     public void testConfirmation() {
-        TenantName property = tester.controllerTester().createTenant("property", "domain", 1L);
+        Optional<Contact> contact = Optional.of(tester.controllerTester().contactRetriever().contact());
+        TenantName property = tester.controllerTester().createTenant("property", "domain", 1L, contact);
         tester.createAndDeploy(property, "application", 1, "default");
         Supplier<Application> propertyApp = () -> tester.controller().applications().require(ApplicationId.from("property", "application", "default"));
 
-        UserTenant user = UserTenant.create("by-user");
+        UserTenant user = UserTenant.create("by-user", contact);
         tester.controller().tenants().create(user);
         tester.createAndDeploy(user.name(), "application", 2, "default");
         Supplier<Application> userApp = () -> tester.controller().applications().require(ApplicationId.from("by-user", "application", "default"));
 
         assertFalse("No issue is initially stored for a new application.", propertyApp.get().ownershipIssueId().isPresent());
         assertFalse("No issue is initially stored for a new application.", userApp.get().ownershipIssueId().isPresent());
-        assertFalse("No escalation has been attempted for a new application", issues.escalatedForProperty || issues.escalatedForUser);
+        assertFalse("No escalation has been attempted for a new application", issues.escalatedToContact || issues.escalatedToTerminator);
 
         // Set response from the issue mock, which will be obtained by the maintainer on issue filing.
         Optional<IssueId> issueId = Optional.of(IssueId.from("1"));
@@ -68,7 +69,8 @@ public class ApplicationOwnershipConfirmerTest {
 
         assertEquals("Confirmation issue has been filed for property owned application.", issueId, propertyApp.get().ownershipIssueId());
         assertEquals("Confirmation issue has been filed for user owned application.", issueId, userApp.get().ownershipIssueId());
-        assertTrue("Both applications have had their responses ensured.", issues.escalatedForProperty && issues.escalatedForUser);
+        assertTrue(issues.escalatedToTerminator);
+        assertTrue("Both applications have had their responses ensured.", issues.escalatedToContact && issues.escalatedToTerminator);
 
         // No new issue is created, so return empty now.
         issues.response = Optional.empty();
@@ -99,23 +101,18 @@ public class ApplicationOwnershipConfirmerTest {
     private class MockOwnershipIssues implements OwnershipIssues {
 
         private Optional<IssueId> response;
-        private boolean escalatedForProperty = false;
-        private boolean escalatedForUser = false;
+        private boolean escalatedToContact = false;
+        private boolean escalatedToTerminator = false;
 
         @Override
-        public Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationId applicationId, PropertyId propertyId) {
+        public Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationId applicationId, User asignee, Contact contact) {
             return response;
         }
 
         @Override
-        public Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationId applicationId, User owner) {
-            return response;
-        }
-
-        @Override
-        public void ensureResponse(IssueId issueId, Optional<PropertyId> propertyId) {
-            if (propertyId.isPresent()) escalatedForProperty = true;
-            else escalatedForUser = true;
+        public void ensureResponse(IssueId issueId, Optional<Contact> contact) {
+            if (contact.isPresent()) escalatedToContact = true;
+            else escalatedToTerminator = true;
         }
 
     }

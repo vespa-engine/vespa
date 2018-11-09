@@ -32,8 +32,7 @@ import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.MockOrganization;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -58,7 +57,7 @@ import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
-import com.yahoo.vespa.hosted.controller.tenant.Contact;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.MultipartEntityBuilder;
@@ -1314,8 +1313,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         return (MetricsServiceMock) tester.container().components().getComponent(MetricsServiceMock.class.getName());
     }
 
-    private MockOrganization organization() {
-        return (MockOrganization) tester.container().components().getComponent(MockOrganization.class.getName());
+    private MockContactRetriever contactRetriever() {
+        return (MockContactRetriever) tester.container().components().getComponent(MockContactRetriever.class.getName());
     }
 
     private void setZoneInRotation(String rotationName, ZoneId zone) {
@@ -1341,18 +1340,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private void updateContactInformation() {
-        Contact contact = new Contact(URI.create("www.contacts.tld/1234"), URI.create("www.properties.tld/1234"), URI.create("www.issues.tld/1234"), Arrays.asList(Arrays.asList("alice"), Arrays.asList("bob")));
+        Contact contact = new Contact(URI.create("www.contacts.tld/1234"), URI.create("www.properties.tld/1234"), URI.create("www.issues.tld/1234"), Arrays.asList(Arrays.asList("alice"), Arrays.asList("bob")), "queue", Optional.empty());
         tester.controller().tenants().lockIfPresent(TenantName.from("tenant2"), lockedTenant -> tester.controller().tenants().store(lockedTenant.with(contact)));
     }
 
     private void registerContact(long propertyId) {
         PropertyId p = new PropertyId(String.valueOf(propertyId));
-        organization().addProperty(p)
-                      .setIssueUrl(p, URI.create("www.issues.tld/" + p.id()))
-                      .setContactsUrl(p, URI.create("www.contacts.tld/" + p.id()))
-                      .setPropertyUrl(p, URI.create("www.properties.tld/" + p.id()))
-                      .setContactsFor(p, Arrays.asList(Collections.singletonList(User.from("alice")),
-                                                       Collections.singletonList(User.from("bob"))));
+        contactRetriever().addContact(p, new Contact(URI.create("www.issues.tld/" + p.id()), URI.create("www.contacts.tld/" + p.id()), URI.create("www.properties.tld/" + p.id()), Arrays.asList(Collections.singletonList("alice"),
+                Collections.singletonList("bob")), "queue", Optional.empty()));
     }
 
 }

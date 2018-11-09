@@ -5,6 +5,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -19,7 +20,7 @@ public class AthenzTenant extends Tenant {
     private final AthenzDomain domain;
     private final Property property;
     private final Optional<PropertyId> propertyId;
-    private final Optional<Contact> contact;
+
 
     /**
      * This should only be used by serialization.
@@ -27,11 +28,10 @@ public class AthenzTenant extends Tenant {
      * */
     public AthenzTenant(TenantName name, AthenzDomain domain, Property property, Optional<PropertyId> propertyId,
                         Optional<Contact> contact) {
-        super(name);
+        super(name, Objects.requireNonNull(contact, "contact must be non-null"));
         this.domain = Objects.requireNonNull(domain, "domain must be non-null");
         this.property = Objects.requireNonNull(property, "property must be non-null");
         this.propertyId = Objects.requireNonNull(propertyId, "propertyId must be non-null");
-        this.contact = Objects.requireNonNull(contact, "contact must be non-null");
     }
 
     /** Property name of this tenant */
@@ -42,11 +42,6 @@ public class AthenzTenant extends Tenant {
     /** Property ID of the tenant, if any */
     public Optional<PropertyId> propertyId() {
         return propertyId;
-    }
-
-    /** Contact information for this, if any */
-    public Optional<Contact> contact() {
-        return contact;
     }
 
     /** Athenz domain of this tenant */
@@ -68,6 +63,11 @@ public class AthenzTenant extends Tenant {
     public static AthenzTenant create(TenantName name, AthenzDomain domain, Property property,
                                       Optional<PropertyId> propertyId) {
         return new AthenzTenant(requireName(requireNoPrefix(name)), domain, property, propertyId, Optional.empty());
+    }
+
+    public static AthenzTenant create(TenantName name, AthenzDomain domain, Property property,
+                                      Optional<PropertyId> propertyId, Optional<Contact> contact) {
+        return new AthenzTenant(requireName(requireNoPrefix(name)), domain, property, propertyId, contact);
     }
 
     private static TenantName requireNoPrefix(TenantName name) {

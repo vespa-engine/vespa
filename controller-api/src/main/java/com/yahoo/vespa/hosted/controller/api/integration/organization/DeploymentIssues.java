@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -16,12 +15,10 @@ import java.util.Optional;
  */
 public interface DeploymentIssues {
 
-    IssueId fileUnlessOpen(Optional<IssueId> issueId, ApplicationId applicationId, PropertyId propertyId);
-
-    IssueId fileUnlessOpen(Optional<IssueId> issueId, ApplicationId applicationId, User assignee);
+    IssueId fileUnlessOpen(Optional<IssueId> issueId, ApplicationId applicationId, User asignee, Contact contact);
 
     IssueId fileUnlessOpen(Collection<ApplicationId> applicationIds, Version version);
 
-    void escalateIfInactive(IssueId issueId, Optional<PropertyId> propertyId, Duration maxInactivity);
+    void escalateIfInactive(IssueId issueId, Duration maxInactivity, Optional<Contact> contact);
 
 }

@@ -6,6 +6,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -54,12 +55,7 @@ public class LoggingDeploymentIssues implements DeploymentIssues {
     }
 
     @Override
-    public IssueId fileUnlessOpen(Optional<IssueId> issueId, ApplicationId applicationId, PropertyId propertyId) {
-        return fileUnlessPresent(issueId, applicationId);
-    }
-
-    @Override
-    public IssueId fileUnlessOpen(Optional<IssueId> issueId, ApplicationId applicationId, User assignee) {
+    public IssueId fileUnlessOpen(Optional<IssueId> issueId, ApplicationId applicationId, User asignee, Contact contact) {
         return fileUnlessPresent(issueId, applicationId);
     }
 
@@ -73,7 +69,7 @@ public class LoggingDeploymentIssues implements DeploymentIssues {
     }
 
     @Override
-    public void escalateIfInactive(IssueId issueId, Optional<PropertyId> propertyId, Duration maxInactivity) {
+    public void escalateIfInactive(IssueId issueId, Duration maxInactivity, Optional<Contact> contact) {
         if (issueUpdates.containsKey(issueId) && issueUpdates.get(issueId).isBefore(clock.instant().minus(maxInactivity)))
             escalateIssue(issueId);
     }

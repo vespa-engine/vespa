@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.logging.Level;
 
@@ -52,9 +51,7 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                            try {
                                Tenant tenant = ownerOf(application.id());
                                Optional<IssueId> ourIssueId = application.ownershipIssueId();
-                               ourIssueId = tenant instanceof AthenzTenant
-                                       ? ownershipIssues.confirmOwnership(ourIssueId, application.id(), propertyIdFor((AthenzTenant) tenant))
-                                       : ownershipIssues.confirmOwnership(ourIssueId, application.id(), userFor(tenant));
+                               ourIssueId = ownershipIssues.confirmOwnership(ourIssueId, application.id(), userFor(tenant), tenant.contact().orElseThrow(RuntimeException::new));
                                ourIssueId.ifPresent(issueId -> store(issueId, application.id()));
                            }
                            catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
@@ -69,12 +66,11 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
         for (Application application : controller().applications().asList())
             application.ownershipIssueId().ifPresent(issueId -> {
                 try {
-                    Optional<PropertyId> propertyId = Optional.of(application.id())
-                                                              .map(this::ownerOf)
-                                                              .filter(t -> t instanceof AthenzTenant)
-                                                              .map(AthenzTenant.class::cast)
-                                                              .flatMap(AthenzTenant::propertyId);
-                    ownershipIssues.ensureResponse(issueId, propertyId);
+                    Optional<Contact> contact = Optional.of(application.id())
+                            .map(this::ownerOf)
+                            .filter(t -> t instanceof AthenzTenant)
+                            .flatMap(Tenant::contact);
+                     ownershipIssues.ensureResponse(issueId, contact);
                 }
                 catch (RuntimeException e) {
                     log.log(Level.INFO, "Exception caught when attempting to escalate issue with id '" + issueId + "': " + Exceptions.toMessageString(e));
@@ -89,12 +85,6 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
 
     protected User userFor(Tenant tenant) {
         return User.from(tenant.name().value().replaceFirst(Tenant.userPrefix, ""));
-    }
-
-    protected PropertyId propertyIdFor(AthenzTenant tenant) {
-        return tenant.propertyId()
-                     .orElseThrow(() -> new NoSuchElementException("No PropertyId is listed for non-user tenant " +
-                                                                   tenant));
     }
 
     protected void store(IssueId issueId, ApplicationId applicationId) {
