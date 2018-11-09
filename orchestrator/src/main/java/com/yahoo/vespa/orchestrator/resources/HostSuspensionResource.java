@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.resources;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -41,7 +42,7 @@ public class HostSuspensionResource implements HostSuspensionApi {
         List<HostName> hostnames = hostnamesAsStrings.stream().map(HostName::new).collect(Collectors.toList());
         try {
             orchestrator.suspendAll(parentHostname, hostnames);
-        } catch (BatchHostStateChangeDeniedException e) {
+        } catch (BatchHostStateChangeDeniedException | UncheckedTimeoutException e) {
             log.log(LogLevel.DEBUG, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
             throw createWebApplicationException(e.getMessage(), Response.Status.CONFLICT);
         } catch (BatchHostNameNotFoundException e) {

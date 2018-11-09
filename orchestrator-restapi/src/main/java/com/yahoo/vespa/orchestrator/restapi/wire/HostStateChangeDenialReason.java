@@ -56,4 +56,9 @@ public class HostStateChangeDenialReason {
     public int hashCode() {
         return Objects.hash(constraintName, message);
     }
+
+    @Override
+    public String toString() {
+        return message + " [" + constraintName + "]";
+    }
 }

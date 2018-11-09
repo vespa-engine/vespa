@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.resources;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -12,7 +13,10 @@ import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
+import com.yahoo.vespa.orchestrator.BatchHostNameNotFoundException;
+import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
 import com.yahoo.vespa.orchestrator.Host;
+import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.InstanceLookupService;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -20,10 +24,12 @@ import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorImpl;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
+import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.Policy;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
+import com.yahoo.vespa.orchestrator.restapi.wire.HostStateChangeDenialReason;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostRequest;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
@@ -359,5 +365,34 @@ public class HostResourceTest {
         assertEquals("configId", response.services().get(0).configId);
         assertEquals("UP", response.services().get(0).serviceStatus);
         assertEquals("serviceType", response.services().get(0).serviceType);
+    }
+
+    @Test
+    public void throws_409_on_timeout() throws HostNameNotFoundException, HostStateChangeDeniedException {
+        Orchestrator orchestrator = mock(Orchestrator.class);
+        doThrow(new UncheckedTimeoutException("Timeout Message")).when(orchestrator).resume(any(HostName.class));
+
+        try {
+            HostResource hostResource = new HostResource(orchestrator, uriInfo);
+            hostResource.resume("hostname");
+            fail();
+        } catch (WebApplicationException w) {
+            assertThat(w.getResponse().getStatus()).isEqualTo(409);
+            assertEquals("resume failed: Timeout Message [deadline]", w.getMessage());
+        }
+    }
+
+    @Test
+    public void throws_409_on_suspendAll_timeout() throws BatchHostStateChangeDeniedException, BatchHostNameNotFoundException, BatchInternalErrorException {
+        Orchestrator orchestrator = mock(Orchestrator.class);
+        doThrow(new UncheckedTimeoutException("Timeout Message")).when(orchestrator).suspendAll(any(), any());
+
+        try {
+            HostSuspensionResource resource = new HostSuspensionResource(orchestrator);
+            resource.suspendAll("parenthost", Arrays.asList("h1", "h2", "h3"));
+            fail();
+        } catch (WebApplicationException w) {
+            assertThat(w.getResponse().getStatus()).isEqualTo(409);
+        }
     }
 }

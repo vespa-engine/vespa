@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.resources;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -9,6 +10,7 @@ import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
+import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.HostService;
@@ -73,6 +75,9 @@ public class HostResource implements HostApi {
                     host.getHostStatus().name(),
                     applicationUri.toString(),
                     hostServices);
+        } catch (UncheckedTimeoutException e) {
+            log.log(LogLevel.INFO, "Failed to get host " + hostName + ": " + e.getMessage());
+            throw webExceptionFromTimeout("getHost", hostName, e);
         } catch (HostNameNotFoundException e) {
             log.log(LogLevel.INFO, "Host not found: " + hostName);
             throw new NotFoundException(e);
@@ -96,6 +101,9 @@ public class HostResource implements HostApi {
             } catch (HostNameNotFoundException e) {
                 log.log(LogLevel.INFO, "Host not found: " + hostName);
                 throw new NotFoundException(e);
+            } catch (UncheckedTimeoutException e) {
+                log.log(LogLevel.INFO, "Failed to patch " + hostName + ": " + e.getMessage());
+                throw webExceptionFromTimeout("patch", hostName, e);
             } catch (OrchestrationException e) {
                 String message = "Failed to set " + hostName + " to " + state + ": " + e.getMessage();
                 log.log(LogLevel.INFO, message, e);
@@ -116,6 +124,9 @@ public class HostResource implements HostApi {
         } catch (HostNameNotFoundException e) {
             log.log(LogLevel.INFO, "Host not found: " + hostName);
             throw new NotFoundException(e);
+        } catch (UncheckedTimeoutException e) {
+            log.log(LogLevel.INFO, "Failed to suspend " + hostName + ": " + e.getMessage());
+            throw webExceptionFromTimeout("suspend", hostName, e);
         } catch (HostStateChangeDeniedException e) {
             log.log(LogLevel.INFO, "Failed to suspend " + hostName + ": " + e.getMessage());
             throw webExceptionWithDenialReason("suspend", hostName, e);
@@ -131,6 +142,9 @@ public class HostResource implements HostApi {
         } catch (HostNameNotFoundException e) {
             log.log(LogLevel.INFO, "Host not found: " + hostName);
             throw new NotFoundException(e);
+        } catch (UncheckedTimeoutException e) {
+            log.log(LogLevel.INFO, "Failed to resume " + hostName + ": " + e.getMessage());
+            throw webExceptionFromTimeout("resume", hostName, e);
         } catch (HostStateChangeDeniedException e) {
             log.log(LogLevel.INFO, "Failed to resume " + hostName + ": " + e.getMessage());
             throw webExceptionWithDenialReason("resume", hostName, e);
@@ -138,15 +152,25 @@ public class HostResource implements HostApi {
         return new UpdateHostResponse(hostName.s(), null);
     }
 
+    private static WebApplicationException webExceptionFromTimeout(String operationDescription, HostName hostName, UncheckedTimeoutException e) {
+        return createWebException(operationDescription, hostName, e, HostedVespaPolicy.DEADLINE_CONSTRAINT, e.getMessage());
+    }
+
     private static WebApplicationException webExceptionWithDenialReason(
             String operationDescription,
             HostName hostName,
             HostStateChangeDeniedException e) {
-        HostStateChangeDenialReason hostStateChangeDenialReason =
-                new HostStateChangeDenialReason(
-                        e.getConstraintName(),
-                        operationDescription + " failed: " + e.getMessage());
-        UpdateHostResponse response = new UpdateHostResponse(hostName.s(), hostStateChangeDenialReason);
+        return createWebException(operationDescription, hostName, e, e.getConstraintName(), e.getMessage());
+    }
+
+    private static WebApplicationException createWebException(String operationDescription,
+                                                              HostName hostname,
+                                                              Exception e,
+                                                              String constraint,
+                                                              String message) {
+        HostStateChangeDenialReason hostStateChangeDenialReason = new HostStateChangeDenialReason(
+                constraint, operationDescription + " failed: " + message);
+        UpdateHostResponse response = new UpdateHostResponse(hostname.s(), hostStateChangeDenialReason);
         return new WebApplicationException(
                 hostStateChangeDenialReason.toString(),
                 e,
@@ -154,8 +178,6 @@ public class HostResource implements HostApi {
                         .entity(response)
                         .type(MediaType.APPLICATION_JSON_TYPE)
                         .build());
-
     }
-
 }
 
