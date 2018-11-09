@@ -234,26 +234,26 @@ public class JobController {
                            .distinct()
                            .forEach(appVersion -> {
                                byte[] content = controller.applications().artifacts().getApplicationPackage(application.get().id(), appVersion.id());
-                               controller.applications().applicationStore().putApplicationPackage(application.get().id(), appVersion, content);
+                               controller.applications().applicationStore().put(application.get().id(), appVersion, content);
                            });
             }
 
             long run = nextBuild(id);
             version.set(ApplicationVersion.from(revision, run));
 
-            controller.applications().applicationStore().putApplicationPackage(id,
-                                                                               version.get(),
-                                                                               packageBytes);
-            controller.applications().applicationStore().putTesterPackage(TesterId.of(id),
-                                                                          version.get(),
-                                                                          testPackageBytes);
+            controller.applications().applicationStore().put(id,
+                                                             version.get(),
+                                                             packageBytes);
+            controller.applications().applicationStore().put(TesterId.of(id),
+                                                             version.get(),
+                                                             testPackageBytes);
 
             application.get().deployments().values().stream()
                        .map(Deployment::applicationVersion)
                        .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
                        .ifPresent(oldestDeployed -> {
-                           controller.applications().applicationStore().pruneApplicationPackages(id, oldestDeployed);
-                           controller.applications().applicationStore().pruneTesterPackages(TesterId.of(id), oldestDeployed);
+                           controller.applications().applicationStore().prune(id, oldestDeployed);
+                           controller.applications().applicationStore().prune(TesterId.of(id), oldestDeployed);
                        });
 
             controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(packageBytes));

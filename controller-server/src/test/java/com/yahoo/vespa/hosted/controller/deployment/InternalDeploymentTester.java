@@ -88,8 +88,8 @@ public class InternalDeploymentTester {
      */
     public ApplicationVersion newSubmission() {
         ApplicationVersion version = jobs.submit(appId, BuildJob.defaultSourceRevision, 2, applicationPackage.zippedContent(), new byte[0]);
-        tester.applicationStore().putApplicationPackage(appId, version, applicationPackage.zippedContent());
-        tester.applicationStore().putTesterPackage(testerId, version, new byte[0]);
+        tester.applicationStore().put(appId, version, applicationPackage.zippedContent());
+        tester.applicationStore().put(testerId, version, new byte[0]);
         return version;
     }
 

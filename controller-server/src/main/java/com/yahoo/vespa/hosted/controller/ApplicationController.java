@@ -329,7 +329,7 @@ public class ApplicationController {
 
                 try {
                     applicationPackage = application.get().deploymentJobs().deployedInternally()
-                            ? new ApplicationPackage(applicationStore.getApplicationPackage(application.get().id(), applicationVersion))
+                            ? new ApplicationPackage(applicationStore.get(application.get().id(), applicationVersion))
                             : new ApplicationPackage(artifactRepository.getApplicationPackage(application.get().id(), applicationVersion.id()));
                 }
                 catch (RuntimeException e) { // If application has switched deployment pipeline, artifacts stored prior to the switch are in the other artifact store.
@@ -337,7 +337,7 @@ public class ApplicationController {
                              + (application.get().deploymentJobs().deployedInternally() ? "internally" : "externally"));
                     applicationPackage = application.get().deploymentJobs().deployedInternally()
                             ? new ApplicationPackage(artifactRepository.getApplicationPackage(application.get().id(), applicationVersion.id()))
-                            : new ApplicationPackage(applicationStore.getApplicationPackage(application.get().id(), applicationVersion));
+                            : new ApplicationPackage(applicationStore.get(application.get().id(), applicationVersion));
                 }
                 validateRun(application.get(), zone, platformVersion, applicationVersion);
             }
