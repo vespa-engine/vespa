@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstance
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -243,7 +244,7 @@ public class JobController {
             controller.applications().applicationStore().putApplicationPackage(id,
                                                                                version.get(),
                                                                                packageBytes);
-            controller.applications().applicationStore().putTesterPackage(testerOf(id),
+            controller.applications().applicationStore().putTesterPackage(TesterId.of(id),
                                                                           version.get(),
                                                                           testPackageBytes);
 
@@ -252,7 +253,7 @@ public class JobController {
                        .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
                        .ifPresent(oldestDeployed -> {
                            controller.applications().applicationStore().pruneApplicationPackages(id, oldestDeployed);
-                           controller.applications().applicationStore().pruneTesterPackages(testerOf(id), oldestDeployed);
+                           controller.applications().applicationStore().pruneTesterPackages(TesterId.of(id), oldestDeployed);
                        });
 
             controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(packageBytes));
@@ -287,7 +288,7 @@ public class JobController {
         });
     }
 
-    /** Deletes stale data and tester deployments for applications which are unknown, or no longer built internally. */
+    /** Deletes run data, packages and tester deployments for applications which are unknown, or no longer built internally. */
     public void collectGarbage() {
         Set<ApplicationId> applicationsToBuild = new HashSet<>(applications());
         curator.applicationsWithJobs().stream()
@@ -304,7 +305,7 @@ public class JobController {
                            });
                    }
                    catch (TimeoutException e) {
-                       return; // Don't remove the data if we couldn't deactivate all testers.
+                       return; // Don't remove the data if we couldn't clean up all resources.
                    }
                    curator.deleteRunData(id);
                });
@@ -312,23 +313,16 @@ public class JobController {
 
     public void deactivateTester(ApplicationId id, JobType type) {
         try {
-            controller.configServer().deactivate(new DeploymentId(testerOf(id), type.zone(controller.system())));
+            controller.configServer().deactivate(new DeploymentId(TesterId.of(id).id(), type.zone(controller.system())));
         }
         catch (NoInstanceException ignored) {
             // Already gone -- great!
         }
     }
 
-    /** Returns the application id of the tester application for the real application with the given id. */
-    public static ApplicationId testerOf(ApplicationId id) {
-        return ApplicationId.from(id.tenant().value(),
-                                  id.application().value(),
-                                  id.instance().value() + "-t");
-    }
-
     /** Returns a URI of the tester endpoint retrieved from the routing generator, provided it matches an expected form. */
     Optional<URI> testerEndpoint(RunId id) {
-        ApplicationId tester = testerOf(id.application());
+        ApplicationId tester = id.tester().id();
         return controller.applications().getDeploymentEndpoints(new DeploymentId(tester, id.type().zone(controller.system())))
                          .flatMap(uris -> uris.stream()
                                               .filter(uri -> uri.getHost().contains(String.format("%s--%s--%s.",

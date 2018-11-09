@@ -13,17 +13,20 @@ import java.util.Objects;
 public class RunId {
 
     private final ApplicationId application;
+    private final TesterId tester;
     private final JobType type;
     private final long number;
 
     public RunId(ApplicationId application, JobType type, long number) {
         this.application = Objects.requireNonNull(application, "ApplicationId cannot be null!");
+        this.tester = TesterId.of(application);
         this.type = Objects.requireNonNull(type, "JobType cannot be null!");
         if (number <= 0) throw new IllegalArgumentException("Build number must be a positive integer!");
         this.number = number;
     }
 
     public ApplicationId application() { return application; }
+    public TesterId tester() { return tester; }
     public JobType type() { return type; }
     public long number() { return number; }
 

@@ -156,9 +156,9 @@ public class InternalStepRunner implements StepRunner {
     private Optional<RunStatus> deployTester(RunId id, DualLogger logger) {
         // TODO jvenstad: Consider deploying old version of tester for initial staging feeding?
         logger.log("Deploying the tester container ...");
-        return deploy(JobController.testerOf(id.application()),
+        return deploy(id.tester().id(),
                       id.type(),
-                      () -> controller.applications().deployTester(JobController.testerOf(id.application()),
+                      () -> controller.applications().deployTester(id.tester(),
                                                                    testerPackage(id),
                                                                    id.type().zone(controller.system()),
                                                                    new DeployOptions(true,
@@ -263,7 +263,7 @@ public class InternalStepRunner implements StepRunner {
         }
 
         logger.log("Checking installation of tester container ...");
-        if (servicesConverged(JobController.testerOf(id.application()), id.type(), logger)) {
+        if (servicesConverged(id.tester().id(), id.type(), logger)) {
             logger.log("Tester container successfully installed!");
             return Optional.of(running);
         }
@@ -452,7 +452,7 @@ public class InternalStepRunner implements StepRunner {
     private ApplicationPackage testerPackage(RunId id) {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
 
-        byte[] testPackage = controller.applications().applicationStore().getTesterPackage(JobController.testerOf(id.application()), version);
+        byte[] testPackage = controller.applications().applicationStore().getTesterPackage(id.tester(), version);
         byte[] servicesXml = servicesXml(controller.system());
 
         DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();

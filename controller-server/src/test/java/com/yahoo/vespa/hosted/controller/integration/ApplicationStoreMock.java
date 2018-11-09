@@ -4,13 +4,13 @@ package com.yahoo.vespa.hosted.controller.integration;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Threadsafe.
@@ -35,19 +35,6 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
-    public void putTesterPackage(ApplicationId tester, ApplicationVersion applicationVersion, byte[] testerPackage) {
-        assertTrue(tester.instance().isTester());
-        store.putIfAbsent(tester, new ConcurrentHashMap<>());
-        store.get(tester).put(applicationVersion, testerPackage);
-    }
-
-    @Override
-    public byte[] getTesterPackage(ApplicationId tester, ApplicationVersion applicationVersion) {
-        assertTrue(tester.instance().isTester());
-        return requireNonNull(store.get(tester).get(applicationVersion));
-    }
-
-    @Override
     public boolean pruneApplicationPackages(ApplicationId application, ApplicationVersion oldestToRetain) {
         assertFalse(application.instance().isTester());
         return    store.containsKey(application)
@@ -55,10 +42,20 @@ public class ApplicationStoreMock implements ApplicationStore {
     }
 
     @Override
-    public boolean pruneTesterPackages(ApplicationId tester, ApplicationVersion oldestToRetain) {
-        assertTrue(tester.instance().isTester());
-        return    store.containsKey(tester)
-               && store.get(tester).keySet().removeIf(version -> version.compareTo(oldestToRetain) < 0);
+    public byte[] getTesterPackage(TesterId tester, ApplicationVersion applicationVersion) {
+        return requireNonNull(store.get(tester.id()).get(applicationVersion));
+    }
+
+    @Override
+    public void putTesterPackage(TesterId tester, ApplicationVersion applicationVersion, byte[] testerPackage) {
+        store.putIfAbsent(tester.id(), new ConcurrentHashMap<>());
+        store.get(tester.id()).put(applicationVersion, testerPackage);
+    }
+
+    @Override
+    public boolean pruneTesterPackages(TesterId tester, ApplicationVersion oldestToRetain) {
+        return    store.containsKey(tester.id())
+               && store.get(tester.id()).keySet().removeIf(version -> version.compareTo(oldestToRetain) < 0);
     }
 
 }
