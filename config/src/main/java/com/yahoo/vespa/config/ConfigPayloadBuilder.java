@@ -275,8 +275,6 @@ public class ConfigPayloadBuilder {
     public class Array {
         private final Map<Integer, ConfigPayloadBuilder> elements = new LinkedHashMap<>();
         private ArrayMode mode = ArrayMode.INDEX;
-        // If true, this array should completely replace parent array when config override resolving is done
-        private boolean overrideWillReplace = false;
         private final String name;
         private final ConfigDefinition configDefinition;
 
@@ -386,14 +384,6 @@ public class ConfigPayloadBuilder {
                 throw new IllegalStateException("Cannot append elements to an array in index mode with more than one element");
             }
             mode = ArrayMode.APPEND;
-        }
-
-        public void replaceWhenOverriding(boolean overrideWillReplace) {
-            this.overrideWillReplace = overrideWillReplace;
-        }
-
-        public boolean replaceWhenOverriding() {
-            return overrideWillReplace;
         }
 
         /**
