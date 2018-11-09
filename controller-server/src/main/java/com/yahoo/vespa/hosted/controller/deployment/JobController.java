@@ -298,7 +298,7 @@ public class JobController {
                        for (JobType type : jobs(id))
                            locked(id, type, deactivateTester, __ -> {
                                try (Lock ___ = curator.lock(id, type)) {
-                                   deactivateTester(id, type);
+                                   deactivateTester(TesterId.of(id), type);
                                    curator.deleteRunData(id, type);
                                    logs.delete(id);
                                }
@@ -311,9 +311,9 @@ public class JobController {
                });
     }
 
-    public void deactivateTester(ApplicationId id, JobType type) {
+    public void deactivateTester(TesterId id, JobType type) {
         try {
-            controller.configServer().deactivate(new DeploymentId(TesterId.of(id).id(), type.zone(controller.system())));
+            controller.configServer().deactivate(new DeploymentId(id.id(), type.zone(controller.system())));
         }
         catch (NoInstanceException ignored) {
             // Already gone -- great!

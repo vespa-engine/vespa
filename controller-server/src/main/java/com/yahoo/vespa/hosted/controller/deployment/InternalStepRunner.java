@@ -409,7 +409,7 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> deactivateTester(RunId id, DualLogger logger) {
         logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-        controller.jobController().deactivateTester(id.application(), id.type());
+        controller.jobController().deactivateTester(id.tester(), id.type());
         return Optional.of(running);
     }
 
