@@ -167,9 +167,6 @@ public class JSONSearchHandlerTestCase {
         assertThat(response, containsString("\"code\":" + com.yahoo.container.protect.Error.INVALID_QUERY_PARAMETER.code));
     }
 
-
-
-
     @Test
     public void testNormalResultJsonAliasRendering() throws Exception {
         JSONObject json = new JSONObject();
@@ -177,8 +174,6 @@ public class JSONSearchHandlerTestCase {
         json.put("query", "abc");
         assertJsonResult(json, driver);
     }
-
-
 
     @Test
     public void testNullQuery() throws Exception {
@@ -193,8 +188,6 @@ public class JSONSearchHandlerTestCase {
                 "  </hit>\n" +
                 "</result>\n", driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE).readAll());
     }
-
-
 
     @Test
     public void testWebServiceStatus() throws Exception {
@@ -247,23 +240,6 @@ public class JSONSearchHandlerTestCase {
         assertJsonResult(json, driver);
     }
 
-    @Test
-    public void testResultLegacyTiledFormat() throws Exception {
-        JSONObject json = new JSONObject();
-        json.put("query", "abc");
-        json.put("format", "tiled");
-        assertTiledResult(json, driver);
-    }
-
-    @Test
-    public void testResultLegacyPageFormat() throws Exception {
-        JSONObject json = new JSONObject();
-        json.put("query", "abc");
-        json.put("format", "page");
-        assertPageResult(json, driver);
-    }
-
-
     private static final String xmlResult =
             "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                     "<result total-hit-count=\"0\">\n" +
@@ -273,10 +249,9 @@ public class JSONSearchHandlerTestCase {
                     "  </hit>\n" +
                     "</result>\n";
 
-    private void assertXmlResult(JSONObject json, RequestHandlerTestDriver driver) throws Exception {
+    private void assertXmlResult(JSONObject json, RequestHandlerTestDriver driver) {
         assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), xmlResult);
     }
-
 
     private static final String jsonResult = "{\"root\":{"
             + "\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},"
@@ -284,24 +259,9 @@ public class JSONSearchHandlerTestCase {
             + "{\"id\":\"testHit\",\"relevance\":1.0,\"fields\":{\"uri\":\"testHit\"}}"
             + "]}}";
 
-    private void assertJsonResult(JSONObject json, RequestHandlerTestDriver driver) throws Exception {
+    private void assertJsonResult(JSONObject json, RequestHandlerTestDriver driver) {
         assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), jsonResult);
 
-    }
-
-    private static final String tiledResult =
-            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
-                    "<result version=\"1.0\">\n" +
-                    "\n" +
-                    "  <hit relevance=\"1.0\">\n" +
-                    "    <id>testHit</id>\n" +
-                    "    <uri>testHit</uri>\n" +
-                    "  </hit>\n" +
-                    "\n" +
-                    "</result>\n";
-
-    private void assertTiledResult(JSONObject json, RequestHandlerTestDriver driver) throws Exception {
-        assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), tiledResult);
     }
 
     private static final String pageResult =
@@ -316,10 +276,6 @@ public class JSONSearchHandlerTestCase {
                     "  </content>\n" +
                     "\n" +
                     "</page>\n";
-
-    private void assertPageResult(JSONObject json, RequestHandlerTestDriver driver) throws Exception {
-        assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), JSON_CONTENT_TYPE), pageResult);
-    }
 
     private void assertOkResult(RequestHandlerTestDriver.MockResponseHandler response, String expected) {
         assertEquals(expected, response.readAll());
@@ -368,8 +324,6 @@ public class JSONSearchHandlerTestCase {
         JSONObject processedGrouping = new JSONObject(map.get("select.grouping"));
         assertEquals(grouping.toString(), processedGrouping.toString());
     }
-
-
 
     @Test
     public void testRequestMapping() throws Exception {
@@ -468,8 +422,6 @@ public class JSONSearchHandlerTestCase {
         json.put("nocachewrite", false);
         json.put("hitcountestimate", true);
 
-
-
         // Create mapping
         Inspector inspector = SlimeUtils.jsonToSlime(json.toString().getBytes("utf-8")).get();
         Map<String, String> map = new HashMap<>();
@@ -484,15 +436,11 @@ public class JSONSearchHandlerTestCase {
                 "&queryProfile=foo&presentation.bolding=true&model.encoding=json&model.queryString=abc&streaming.selection=none&trace.timestamps=false&collapse.size=2&streaming.priority=10&ranking.matchPhase.diversity.attribute=title" +
                 "&ranking.matchPhase.attribute=title&hits=10&streaming.userid=123&pos.bb=1237123W%3B123218N&model.restrict=_doc%2Cjson%2Cxml&ranking.freshness=0.05&user=123";
 
-
-
-        final HttpRequest request = HttpRequest.createTestRequest(url, GET);
+        HttpRequest request = HttpRequest.createTestRequest(url, GET);
 
         // Get mapping
         Map<String, String> propertyMap = request.propertyMap();
         assertEquals("Should have same mapping for properties", map, propertyMap);
     }
-
-
 
 }
