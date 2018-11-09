@@ -2,17 +2,8 @@
 package com.yahoo.vespa.model.container.search.searchchain;
 
 import com.yahoo.component.chain.model.ChainSpecification;
-import com.yahoo.search.cache.QrBinaryCacheConfig;
-import com.yahoo.search.cache.QrBinaryCacheRegionConfig;
 import com.yahoo.search.federation.ProviderConfig;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.yahoo.search.federation.ProviderConfig.Node;
-import static com.yahoo.search.federation.ProviderConfig.Yca;
-
 
 /**
  * A generic provider, used when no type is given.
