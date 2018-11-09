@@ -113,7 +113,6 @@ public class QueryProperties extends Properties {
         else if (key.size()==2 && key.first().equals(Presentation.PRESENTATION)) {
             if (key.last().equals(Presentation.BOLDING)) return query.getPresentation().getBolding();
             if (key.last().equals(Presentation.SUMMARY)) return query.getPresentation().getSummary();
-            if (key.last().equals(Presentation.REPORT_COVERAGE)) return true; // TODO: Remove this line on Vespa 7
             if (key.last().equals(Presentation.FORMAT)) return query.getPresentation().getFormat();
             if (key.last().equals(Presentation.TIMING)) return query.getPresentation().getTiming();
             if (key.last().equals(Presentation.SUMMARY_FIELDS)) return query.getPresentation().getSummaryFields();
@@ -243,7 +242,7 @@ public class QueryProperties extends Properties {
                     query.getPresentation().setTiming(asBoolean(value, true));
                 else if (key.last().equals(Presentation.SUMMARY_FIELDS))
                     query.getPresentation().setSummaryFields(asString(value,""));
-                else if ( ! key.last().equals(Presentation.REPORT_COVERAGE)) // TODO: Change this line to "else" on Vespa 7
+                else
                     throwIllegalParameter(key.last(), Presentation.PRESENTATION);
             }
             else if (key.size()==2 && key.first().equals(Select.SELECT)) {

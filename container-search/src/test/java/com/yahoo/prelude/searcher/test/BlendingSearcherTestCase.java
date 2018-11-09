@@ -51,20 +51,20 @@ public class BlendingSearcherTestCase {
         private final Map<String, Searcher> searchers = new HashMap<>();
         private SearchChainRegistry chainRegistry;
 
-        private final String blendingDocumentId;
+        private final String blendingField;
 
         public BlendingSearcherWrapper() {
-            blendingDocumentId = null;
+            blendingField = null;
         }
 
-        public BlendingSearcherWrapper(String blendingDocumentId) {
-            this.blendingDocumentId = blendingDocumentId;
+        public BlendingSearcherWrapper(String blendingField) {
+            this.blendingField = blendingField;
         }
 
         @SuppressWarnings("serial")
         public BlendingSearcherWrapper(QrSearchersConfig cfg) {
             QrSearchersConfig.Com.Yahoo.Prelude.Searcher.BlendingSearcher s = cfg.com().yahoo().prelude().searcher().BlendingSearcher();
-            blendingDocumentId = s.docid().length() > 0 ? s.docid() : null;
+            blendingField = s.docid().length() > 0 ? s.docid() : null;
         }
 
         public boolean addChained(Searcher searcher, String sourceName) {
@@ -109,7 +109,7 @@ public class BlendingSearcherTestCase {
 
             FederationSearcher fedSearcher =
                     new FederationSearcher(new FederationConfig(builder), contracts, new ComponentRegistry<>());
-            BlendingSearcher blendingSearcher = new BlendingSearcher(blendingDocumentId);
+            BlendingSearcher blendingSearcher = new BlendingSearcher(blendingField);
             blendingChain = new SearchChain(ComponentId.createAnonymousComponentId("blendingChain"), blendingSearcher, fedSearcher);
             return true;
         }
@@ -217,7 +217,7 @@ public class BlendingSearcherTestCase {
         r2.setTotalHitCount(1);
         chain2.addResult(q, r2);
 
-        BlendingSearcherWrapper blender = new BlendingSearcherWrapper("uri");
+        BlendingSearcherWrapper blender = new BlendingSearcherWrapper("[id]");
         blender.addChained(new FillSearcher(chain1), "a");
         blender.addChained(new FillSearcher(chain2), "b");
         blender.initialize();
