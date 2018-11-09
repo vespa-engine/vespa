@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneId;
@@ -29,7 +30,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.hosted.controller.deployment.JobController.testerOf;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static org.junit.Assert.assertEquals;
@@ -45,6 +45,7 @@ public class InternalDeploymentTester {
             .parallel("us-west-1", "us-east-3")
             .build();
     public static final ApplicationId appId = ApplicationId.from("tenant", "application", "default");
+    public static final TesterId testerId = TesterId.of(appId);
     public static final String athenzDomain = "domain";
 
     private final DeploymentTester tester;
@@ -87,8 +88,8 @@ public class InternalDeploymentTester {
      */
     public ApplicationVersion newSubmission() {
         ApplicationVersion version = jobs.submit(appId, BuildJob.defaultSourceRevision, 2, applicationPackage.zippedContent(), new byte[0]);
-        tester.applicationStore().putApplicationPackage(appId, version, applicationPackage.zippedContent());
-        tester.applicationStore().putTesterPackage(testerOf(appId), version, new byte[0]);
+        tester.applicationStore().put(appId, version, applicationPackage.zippedContent());
+        tester.applicationStore().put(testerId, version, new byte[0]);
         return version;
     }
 
@@ -190,13 +191,13 @@ public class InternalDeploymentTester {
         assertEquals(Step.Status.succeeded, jobs.active(run.id()).get().steps().get(Step.installReal));
 
         assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.installTester));
-        tester.configServer().convergeServices(testerOf(appId), zone);
+        tester.configServer().convergeServices(testerId.id(), zone);
         runner.run();
         assertEquals(Step.Status.succeeded, jobs.active(run.id()).get().steps().get(Step.installTester));
 
         // All installation is complete. We now need endpoints, and the tests will then run, and cleanup finish.
         assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.startTests));
-        setEndpoints(testerOf(appId), zone);
+        setEndpoints(testerId.id(), zone);
         runner.run();
         if (!run.versions().sourceApplication().isPresent() || !type.isProduction()) {
             assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.startTests));
@@ -211,20 +212,20 @@ public class InternalDeploymentTester {
         assertTrue(jobs.run(run.id()).get().hasEnded());
         assertFalse(jobs.run(run.id()).get().hasFailed());
         assertEquals(type.isProduction(), app().deployments().containsKey(zone));
-        assertTrue(tester.configServer().nodeRepository().list(zone, testerOf(appId)).isEmpty());
+        assertTrue(tester.configServer().nodeRepository().list(zone, testerId.id()).isEmpty());
 
         if (!app().deployments().containsKey(zone))
             routing.removeEndpoints(deployment);
-        routing.removeEndpoints(new DeploymentId(testerOf(appId), zone));
+        routing.removeEndpoints(new DeploymentId(testerId.id(), zone));
     }
 
     public RunId startSystemTestTests() {
         RunId id = newRun(JobType.systemTest);
         runner.run();
         tester.configServer().convergeServices(appId, JobType.systemTest.zone(tester.controller().system()));
-        tester.configServer().convergeServices(testerOf(appId), JobType.systemTest.zone(tester.controller().system()));
+        tester.configServer().convergeServices(testerId.id(), JobType.systemTest.zone(tester.controller().system()));
         setEndpoints(appId, JobType.systemTest.zone(tester.controller().system()));
-        setEndpoints(testerOf(appId), JobType.systemTest.zone(tester.controller().system()));
+        setEndpoints(testerId.id(), JobType.systemTest.zone(tester.controller().system()));
         runner.run();
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.endTests));
         return id;

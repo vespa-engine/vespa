@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareRes
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
@@ -328,7 +329,7 @@ public class ApplicationController {
 
                 try {
                     applicationPackage = application.get().deploymentJobs().deployedInternally()
-                            ? new ApplicationPackage(applicationStore.getApplicationPackage(application.get().id(), applicationVersion))
+                            ? new ApplicationPackage(applicationStore.get(application.get().id(), applicationVersion))
                             : new ApplicationPackage(artifactRepository.getApplicationPackage(application.get().id(), applicationVersion.id()));
                 }
                 catch (RuntimeException e) { // If application has switched deployment pipeline, artifacts stored prior to the switch are in the other artifact store.
@@ -336,7 +337,7 @@ public class ApplicationController {
                              + (application.get().deploymentJobs().deployedInternally() ? "internally" : "externally"));
                     applicationPackage = application.get().deploymentJobs().deployedInternally()
                             ? new ApplicationPackage(artifactRepository.getApplicationPackage(application.get().id(), applicationVersion.id()))
-                            : new ApplicationPackage(applicationStore.getApplicationPackage(application.get().id(), applicationVersion));
+                            : new ApplicationPackage(applicationStore.get(application.get().id(), applicationVersion));
                 }
                 validateRun(application.get(), zone, platformVersion, applicationVersion);
             }
@@ -402,12 +403,9 @@ public class ApplicationController {
         }
     }
 
-    /** Assembles and deploys a tester application to the given zone. */
-    public ActivateResult deployTester(ApplicationId tester, ApplicationPackage applicationPackage, ZoneId zone, DeployOptions options) {
-        if ( ! tester.instance().isTester())
-            throw new IllegalArgumentException("'" + tester + "' is not a tester application!");
-
-        return deploy(tester, applicationPackage, zone, options, Collections.emptySet(), Collections.emptySet());
+    /** Deploys the given tester application to the given zone. */
+    public ActivateResult deployTester(TesterId tester, ApplicationPackage applicationPackage, ZoneId zone, DeployOptions options) {
+        return deploy(tester.id(), applicationPackage, zone, options, Collections.emptySet(), Collections.emptySet());
     }
 
     private ActivateResult deploy(ApplicationId application, ApplicationPackage applicationPackage,

@@ -28,7 +28,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.FAILURE;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
-import static com.yahoo.vespa.hosted.controller.deployment.JobController.testerOf;
+import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.testerId;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
@@ -66,9 +66,9 @@ public class JobControllerApiHandlerHelperTest {
 
         ZoneId usWest1 = productionUsWest1.zone(tester.tester().controller().system());
         tester.configServer().convergeServices(appId, usWest1);
-        tester.configServer().convergeServices(testerOf(appId), usWest1);
+        tester.configServer().convergeServices(testerId.id(), usWest1);
         tester.setEndpoints(appId, usWest1);
-        tester.setEndpoints(testerOf(appId), usWest1);
+        tester.setEndpoints(testerId.id(), usWest1);
         tester.runner().run();
         tester.cloud().set(FAILURE);
         tester.runner().run();
