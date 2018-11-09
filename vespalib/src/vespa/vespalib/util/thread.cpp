@@ -4,12 +4,12 @@
 
 namespace vespalib {
 
-__thread Thread *Thread::_currentThread = 0;
+__thread Thread *Thread::_currentThread = nullptr;
 
 void
 Thread::Proxy::Run(FastOS_ThreadInterface *, void *)
 {
-    assert(_currentThread == 0);
+    assert(_currentThread == nullptr);
     _currentThread = &thread;
     start.await();
     if (!cancel) {
@@ -17,10 +17,10 @@ Thread::Proxy::Run(FastOS_ThreadInterface *, void *)
         runnable.run();
     }
     assert(_currentThread == &thread);
-    _currentThread = 0;
+    _currentThread = nullptr;
 }
 
-Thread::Proxy::~Proxy() { }
+Thread::Proxy::~Proxy() = default;
 
 Thread::Thread(Runnable &runnable)
     : _proxy(*this, runnable),
@@ -30,7 +30,7 @@ Thread::Thread(Runnable &runnable)
       _woken(false)
 {
     FastOS_ThreadInterface *thread = _pool.NewThread(&_proxy);
-    assert(thread != 0);
+    assert(thread != nullptr);
     (void)thread;
 }
 
@@ -80,7 +80,7 @@ Thread &
 Thread::currentThread()
 {
     Thread *thread = _currentThread;
-    assert(thread != 0);
+    assert(thread != nullptr);
     return *thread;
 }
 
