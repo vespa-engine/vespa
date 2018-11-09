@@ -91,6 +91,13 @@ VespaDocumentSerializer::getContentCode(bool hasHeader, bool hasBody) const
     return content;
 }
 
+static inline size_t wantChunks(bool hasHeader, bool hasBody) {
+    size_t res = 0;
+    if (hasHeader) ++res;
+    if (hasBody) ++res;
+    return res;
+}
+
 void VespaDocumentSerializer::write(const Document &value,
                                     DocSerializationMode mode) {
     nbostream doc_stream;
@@ -101,12 +108,6 @@ void VespaDocumentSerializer::write(const Document &value,
     bool hasBody = false;
 
     const StructFieldValue::Chunks & chunks = value.getFields().getChunks();
-    if (chunks.size() == 2) {
-        // we must assume both types of fields if the original serialization
-        // had that, even if config has changed since then.
-        hasHeader = true;
-        hasBody = true;
-    }
 
     for (const Field & field : value.getFields()) {
         if (field.isHeaderField()) {
@@ -114,35 +115,29 @@ void VespaDocumentSerializer::write(const Document &value,
         } else {
             hasBody = true;
         }
-
         if (hasHeader && hasBody) {
             break;
         }
     }
-
     if (mode != COMPLETE) {
         hasBody = false;
     }
-
     doc_stream << getContentCode(hasHeader, hasBody);
     doc_serializer.write(value.getType());
 
-    if (!structNeedsReserialization(value.getFields())) {
-        // FIXME(vekterli):
-        // Currently assume legacy serialization; a chunk will only ever contain fields
-        // _either_ for the header _or_ for the body, never a mixture!
-        // This is to avoid horrible breakage whilst ripping out old guts.
-
-        if (hasHeader) {
+    if (chunks.size() == wantChunks(hasHeader, hasBody) &&
+        !structNeedsReserialization(value.getFields()))
+    {
+        // here we assume the receiver can handle whatever serialization the
+        // chunks contain, so we just send them as-is, even if some fields
+        // may have moved from header to body or vice versa.
+        if (hasHeader || hasBody) {
             assert(chunks.size() >= 1);
             doc_serializer.writeUnchanged(chunks[0]);
-            if (hasBody) {
-                assert(chunks.size() == 2);
-                doc_serializer.writeUnchanged(chunks[1]);
-            }
-        } else if (hasBody) {
-            assert(chunks.size() == 1);
-            doc_serializer.writeUnchanged(chunks[0]);
+        }
+        if (hasHeader && hasBody) {
+            assert(chunks.size() == 2);
+            doc_serializer.writeUnchanged(chunks[1]);
         }
     } else {
         if (hasHeader) {
