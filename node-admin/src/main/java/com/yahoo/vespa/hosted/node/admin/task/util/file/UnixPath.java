@@ -9,6 +9,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.PosixFileAttributeView;
@@ -66,8 +67,9 @@ public class UnixPath {
         return uncheck(() -> Files.readAllBytes(path));
     }
 
-    public void writeUtf8File(String content, OpenOption... options) {
+    public UnixPath writeUtf8File(String content, OpenOption... options) {
         writeBytes(content.getBytes(StandardCharsets.UTF_8), options);
+        return this;
     }
 
     public void writeBytes(byte[] content, OpenOption... options) {
@@ -82,9 +84,19 @@ public class UnixPath {
      * @param permissions Example: "rwxr-x---" means rwx for owner, rx for group,
      *                    and no permissions for others.
      */
-    public void setPermissions(String permissions) {
+    public UnixPath setPermissions(String permissions) {
         Set<PosixFilePermission> permissionSet = getPosixFilePermissionsFromString(permissions);
         uncheck(() -> Files.setPosixFilePermissions(path, permissionSet));
+        return this;
+    }
+
+    public int getOwnerId() {
+        return (Integer) uncheck(() -> Files.getAttribute(path, "unix:uid"));
+    }
+
+    public UnixPath setOwnerId(int ownerId) {
+        uncheck(() -> Files.setAttribute(path, "unix:uid", ownerId));
+        return this;
     }
 
     public String getOwner() {
@@ -123,6 +135,17 @@ public class UnixPath {
 
     public Optional<FileAttributes> getAttributesIfExists() {
         return IOExceptionUtil.ifExists(this::getAttributes);
+    }
+
+    public UnixPath createNewFile() {
+        uncheck(() -> Files.createFile(path));
+        return this;
+    }
+
+    public UnixPath createNewFile(String permissions) {
+        FileAttribute<?> attribute = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(permissions));
+        uncheck(() -> Files.createFile(path, attribute));
+        return this;
     }
 
     public void createDirectory(String permissions) {
@@ -169,6 +192,12 @@ public class UnixPath {
         } catch (IOException e) {
             throw new RuntimeException("Failed to list contents of directory " + path.toAbsolutePath(), e);
         }
+    }
+
+    /** This path must be on the same file system as the to-path. */
+    public UnixPath atomicMove(Path to) {
+        uncheck(() -> Files.move(path, to, StandardCopyOption.ATOMIC_MOVE));
+        return this;
     }
 
     public boolean moveIfExists(Path to) {

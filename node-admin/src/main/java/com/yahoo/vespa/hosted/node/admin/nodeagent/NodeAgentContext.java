@@ -27,6 +27,8 @@ public interface NodeAgentContext extends TaskContext {
 
     String vespaUser();
 
+    int vespaUserIdOnHost();
+
     /**
      * This method is the inverse of {@link #pathInNodeFromPathOnHost(Path)}}
      *

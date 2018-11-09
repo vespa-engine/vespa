@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -166,10 +167,9 @@ public class AthenzCredentialsMaintainer {
                             false,
                             csr);
             EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
-            writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
+            writePrivateKeyAndCertificate(context.vespaUserIdOnHost(), privateKeyFile, keyPair.getPrivate(),
+                    certificateFile, instanceIdentity.certificate());
             context.log(logger, "Instance successfully registered and credentials written to file");
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 
@@ -192,7 +192,8 @@ public class AthenzCredentialsMaintainer {
                                 identityDocument.providerUniqueId().asDottedString(),
                                 false,
                                 csr);
-                writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
+                writePrivateKeyAndCertificate(context.vespaUserIdOnHost(), privateKeyFile, keyPair.getPrivate(),
+                        certificateFile, instanceIdentity.certificate());
                 context.log(logger, "Instance successfully refreshed and credentials written to file");
             } catch (ZtsClientException e) {
                 if (e.getErrorCode() == 403 && e.getDescription().startsWith("Certificate revoked")) {
@@ -208,15 +209,22 @@ public class AthenzCredentialsMaintainer {
     }
 
 
-    private static void writePrivateKeyAndCertificate(
-            Path privateKeyFile, PrivateKey privateKey, Path certificateFile, X509Certificate certificate) throws IOException {
-        Path tempPrivateKeyFile = toTempPath(privateKeyFile);
-        Files.write(tempPrivateKeyFile, KeyUtils.toPem(privateKey).getBytes());
-        Path tempCertificateFile = toTempPath(certificateFile);
-        Files.write(tempCertificateFile, X509CertificateUtils.toPem(certificate).getBytes());
+    private static void writePrivateKeyAndCertificate(int vespaUserIdOnHost,
+                                                      Path privateKeyFile,
+                                                      PrivateKey privateKey,
+                                                      Path certificateFile,
+                                                      X509Certificate certificate) {
+        writeFile(privateKeyFile, vespaUserIdOnHost, KeyUtils.toPem(privateKey));
+        writeFile(certificateFile, vespaUserIdOnHost, X509CertificateUtils.toPem(certificate));
+    }
 
-        Files.move(tempPrivateKeyFile, privateKeyFile, StandardCopyOption.ATOMIC_MOVE);
-        Files.move(tempCertificateFile, certificateFile, StandardCopyOption.ATOMIC_MOVE);
+    private static void writeFile(Path path, int vespaUserIdOnHost, String utf8Content) {
+        new UnixPath(path.toString() + ".tmp")
+                .createNewFile("---------")
+                .setOwnerId(vespaUserIdOnHost)
+                .setPermissions("r-----------")
+                .writeUtf8File(utf8Content)
+                .atomicMove(path);
     }
 
     private static Path toTempPath(Path file) {
