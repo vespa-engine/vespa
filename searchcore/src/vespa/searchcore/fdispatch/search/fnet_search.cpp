@@ -861,60 +861,45 @@ FastS_FNET_Search::MergeHits()
     }
 }
 
-FastS_SearchInfo
-FastS_FNET_Search::computeCoverage(const std::vector<FastS_FNET_SearchNode> & nodes,
-                                   uint32_t numSearchableCopies, bool adaptiveTimeout)
+void
+FastS_FNET_Search::CheckCoverage()
 {
-    FastS_SearchInfo si;
+    uint64_t covDocs  = 0;
+    uint64_t activeDocs  = 0;
+    uint64_t soonActiveDocs = 0;
+    uint32_t degradedReason = 0;
+    uint16_t nodesQueried = 0;
+    uint16_t nodesReplied = 0;
     size_t cntNone(0);
     size_t askedButNotAnswered(0);
 
-    for (const FastS_FNET_SearchNode & node : nodes) {
+    for (const FastS_FNET_SearchNode & node : _nodes) {
         if (node._qresult != nullptr) {
-            si._coverageDocs  += node._qresult->_coverageDocs;
-            si._activeDocs  += node._qresult->_activeDocs;
-            si._soonActiveDocs += node._qresult->_soonActiveDocs;
-            si._degradeReason |= node._qresult->_coverageDegradeReason;
-            si._nodesQueried += node._qresult->getNodesQueried();
-            si._nodesReplied += node._qresult->getNodesReplied();
+            covDocs  += node._qresult->_coverageDocs;
+            activeDocs  += node._qresult->_activeDocs;
+            soonActiveDocs += node._qresult->_soonActiveDocs;
+            degradedReason |= node._qresult->_coverageDegradeReason;
+            nodesQueried += node._qresult->getNodesQueried();
+            nodesReplied += node._qresult->getNodesReplied();
         } else {
-            si._nodesQueried++;
+            nodesQueried++;
             cntNone++;
             if (node.IsConnected()) {
                 askedButNotAnswered++;
             }
         }
     }
-    bool missingReplies = (askedButNotAnswered != 0) || (si._nodesQueried != si._nodesReplied);
-    const ssize_t missingParts = cntNone - (numSearchableCopies - 1);
-
-    if (missingReplies && adaptiveTimeout) {
-        // TODO This will not be correct when using multilevel dispatch and has timeout on anything, but leaf level.
-        //      We can live with that as leaf level failures are the likely ones.
-        if (si._nodesReplied ) {
-            si._activeDocs += askedButNotAnswered * si._activeDocs/si._nodesReplied;
-            si._soonActiveDocs += askedButNotAnswered * si._soonActiveDocs/si._nodesReplied;
-        }
-        si._degradeReason |= search::engine::SearchReply::Coverage::ADAPTIVE_TIMEOUT;
-    } else if (missingParts > 0) {
+    bool missingReplies = (askedButNotAnswered != 0) || (nodesQueried != nodesReplied);
+    const ssize_t missingParts = cntNone - (_dataset->getSearchableCopies() - 1);
+    if (((missingParts > 0) || (missingReplies && useAdaptiveTimeout())) && (cntNone != _nodes.size())) {
         // TODO This is a dirty way of anticipating missing coverage.
         // It should be done differently
-        if ((cntNone != nodes.size())) {
-            si._activeDocs += missingParts * si._activeDocs/(nodes.size() - cntNone);
-            si._soonActiveDocs += missingParts * si._soonActiveDocs/(nodes.size() - cntNone);
-        }
-        si._degradeReason |= search::engine::SearchReply::Coverage::TIMEOUT;
-
+        activeDocs += missingParts * activeDocs/(_nodes.size() - cntNone);
     }
-    return si;
-}
-
-void
-FastS_FNET_Search::CheckCoverage()
-{
-    FastS_SearchInfo si = computeCoverage(_nodes, _dataset->getSearchableCopies(), useAdaptiveTimeout());
-    _util.SetCoverage(si._coverageDocs, si._activeDocs, si._soonActiveDocs,
-                      si._degradeReason, si._nodesQueried, si._nodesReplied);
+    if (missingReplies && useAdaptiveTimeout()) {
+        degradedReason |= search::engine::SearchReply::Coverage::ADAPTIVE_TIMEOUT;
+    }
+    _util.SetCoverage(covDocs, activeDocs, soonActiveDocs, degradedReason, nodesQueried, nodesReplied);
 }
 
 
