@@ -248,14 +248,7 @@ public class JobController {
                                                              version.get(),
                                                              testPackageBytes);
 
-            application.get().deployments().values().stream()
-                       .map(Deployment::applicationVersion)
-                       .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
-                       .ifPresent(oldestDeployed -> {
-                           controller.applications().applicationStore().prune(id, oldestDeployed);
-                           controller.applications().applicationStore().prune(TesterId.of(id), oldestDeployed);
-                       });
-
+            prunePackages(id);
             controller.applications().storeWithUpdatedConfig(application.withBuiltInternally(true), new ApplicationPackage(packageBytes));
 
             notifyOfNewSubmission(id, projectId, revision, run);
@@ -304,8 +297,6 @@ public class JobController {
                                    logs.delete(id);
                                }
                            });
-                       controller.applications().applicationStore().removeAll(id);
-                       controller.applications().applicationStore().removeAll(tester);
                    }
                    catch (TimeoutException e) {
                        return; // Don't remove the data if we couldn't clean up all resources.
@@ -353,6 +344,18 @@ public class JobController {
                                                                        Optional.of(revision),
                                                                        Optional.empty());
         controller.applications().deploymentTrigger().notifyOfCompletion(report);
+    }
+
+    private void prunePackages(ApplicationId id) {
+        controller.applications().lockIfPresent(id, application -> {
+            application.get().deployments().values().stream()
+                       .map(Deployment::applicationVersion)
+                       .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
+                       .ifPresent(oldestDeployed -> {
+                           controller.applications().applicationStore().prune(id, oldestDeployed);
+                           controller.applications().applicationStore().prune(TesterId.of(id), oldestDeployed);
+                       });
+        });
     }
 
     /** Locks and modifies the list of historic runs for the given application and job type. */
