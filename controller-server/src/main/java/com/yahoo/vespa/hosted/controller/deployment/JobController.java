@@ -297,8 +297,6 @@ public class JobController {
                                    logs.delete(id);
                                }
                            });
-                       controller.applications().applicationStore().removeAll(id);
-                       controller.applications().applicationStore().removeAll(tester);
                    }
                    catch (TimeoutException e) {
                        return; // Don't remove the data if we couldn't clean up all resources.

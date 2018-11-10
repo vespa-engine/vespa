@@ -567,6 +567,8 @@ public class ApplicationController {
                                                    new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()), token.get());
             }
             curator.removeApplication(id);
+            applicationStore.removeAll(id);
+            applicationStore.removeAll(TesterId.of(id));
 
             log.info("Deleted " + application);
         }));
