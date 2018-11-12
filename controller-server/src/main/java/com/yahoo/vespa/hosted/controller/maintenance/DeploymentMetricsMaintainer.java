@@ -6,11 +6,9 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.MetricsService;
-import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.RotationStatus;
-import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -48,7 +46,6 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         AtomicInteger failures = new AtomicInteger(0);
-        AtomicInteger zeroQps = new AtomicInteger(0);
         AtomicReference<Exception> lastException = new AtomicReference<>(null);
         List<Application> applicationList = applications.asList();
 
@@ -66,9 +63,6 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                     for (Deployment deployment : application.deployments().values()) {
                         MetricsService.DeploymentMetrics deploymentMetrics = controller().metricsService()
                                                                                          .getDeploymentMetrics(application.id(), deployment.zone());
-                        if (deploymentMetrics.queriesPerSecond() < 0.0001) {
-                            zeroQps.incrementAndGet();
-                        }
 
                         DeploymentMetrics newMetrics = new DeploymentMetrics(deploymentMetrics.queriesPerSecond(),
                                                                              deploymentMetrics.writesPerSecond(),
@@ -90,13 +84,12 @@ public class DeploymentMetricsMaintainer extends Maintainer {
         pool.shutdown();
         try {
             pool.awaitTermination(30, TimeUnit.MINUTES);
-            log.log(Level.INFO, String.format("Number of application with 0 qps: %d/%d", zeroQps.get(), applicationList.size()));
             if (lastException.get() != null) {
-                log.log(Level.WARNING, String.format("Failed to query metrics service for %d/%d applications. Last error: %s. Retrying in %s",
+                log.log(Level.INFO, String.format("Failed to query metrics service for %d/%d applications. Retrying in %s. Last error: ",
                                                      failures.get(),
                                                      applicationList.size(),
-                                                     Exceptions.toMessageString(lastException.get()),
-                                                     maintenanceInterval()));
+                                                     maintenanceInterval()),
+                        lastException.get());
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
