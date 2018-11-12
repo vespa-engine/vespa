@@ -38,7 +38,7 @@ import java.util.Optional;
  * @see com.yahoo.document.update.FieldUpdate
  * @see com.yahoo.document.update.ValueUpdate
  */
-//TODO Vespa 7 Remove all deprecated methods and use a map to avoid quadratic scaling on insert/update/remove
+//TODO Vespa 7 use a map to avoid quadratic scaling on insert/update/remove
 
 public class DocumentUpdate extends DocumentOperation implements Iterable<FieldPathUpdate> {
 
@@ -158,34 +158,12 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     }
 
     /**
-     * Get an unmodifiable list of all field updates that this document update specifies.
-     *
-     * @return a list of all FieldUpdates in this DocumentUpdate
-     * @deprecated Use fieldUpdates() instead.
-     */
-    @Deprecated
-    public List<FieldUpdate> getFieldUpdates() {
-        return Collections.unmodifiableList(fieldUpdates);
-    }
-
-    /**
      * Get an unmodifiable collection of all field updates that this document update specifies.
      *
      * @return a collection of all FieldUpdates in this DocumentUpdate
      */
     public Collection<FieldUpdate> fieldUpdates() {
         return Collections.unmodifiableCollection(fieldUpdates);
-    }
-
-    /**
-     * Get an unmodifiable list of all field path updates this document update specifies.
-     *
-     * @return Returns a list of all field path updates in this document update.
-     * @deprecated Use fieldPathUpdates() instead.
-     */
-    @Deprecated
-    public List<FieldPathUpdate> getFieldPathUpdates() {
-        return Collections.unmodifiableList(fieldPathUpdates);
     }
 
     /**
@@ -211,36 +189,6 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      */
     public void setDocumentType(DocumentType type) {
         documentType = type;
-    }
-
-    /**
-     * Get the field update at the specified index in the list of field updates.
-     *
-     * @param index the index of the FieldUpdate to return
-     * @return the FieldUpdate at the specified index
-     * @throws IndexOutOfBoundsException if index is out of range
-     * @deprecated use getFieldUpdate(Field field) instead.
-     */
-    @Deprecated
-    public FieldUpdate getFieldUpdate(int index) {
-        return fieldUpdates.get(index);
-    }
-
-    /**
-     * Replaces the field update at the specified index in the list of field updates.
-     *
-     * @param index index of the FieldUpdate to replace
-     * @param upd   the FieldUpdate to be stored at the specified position
-     * @return the FieldUpdate previously at the specified position
-     * @throws IndexOutOfBoundsException if index is out of range
-     * @deprecated Use removeFieldUpdate/addFieldUpdate instead
-     */
-    @Deprecated
-    public FieldUpdate setFieldUpdate(int index, FieldUpdate upd) {
-        FieldUpdate old = fieldUpdates.get(index);
-        fieldUpdates.set(index, upd);
-
-        return old;
     }
 
     /**
@@ -370,19 +318,6 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
         for (FieldPathUpdate pathUpd : update.fieldPathUpdates) {
             addFieldPathUpdate(pathUpd);
         }
-    }
-
-    /**
-     * Removes the field update at the specified position in the list of field updates.
-     *
-     * @param index the index of the FieldUpdate to remove
-     * @return the FieldUpdate previously at the specified position
-     * @throws IndexOutOfBoundsException if index is out of range
-     * @deprecated use removeFieldUpdate(Field field) instead.
-     */
-    @Deprecated
-    public FieldUpdate removeFieldUpdate(int index) {
-        return fieldUpdates.remove(index);
     }
 
     public FieldUpdate removeFieldUpdate(Field field) {
