@@ -34,12 +34,12 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final Path pathToNodeRootOnHost;
     private final Path pathToVespaHome;
     private final String vespaUser;
-    private final String vespaUserIdOnHost;
+    private final String vespaUserOnHost;
 
     public NodeAgentContextImpl(String hostname, NodeType nodeType, AthenzService identity,
                                 DockerNetworking dockerNetworking, ZoneId zoneId,
                                 Path pathToContainerStorage, Path pathToVespaHome,
-                                String vespaUser, String vespaUserIdOnHost) {
+                                String vespaUser, String vespaUserOnHost) {
         this.hostName = HostName.from(Objects.requireNonNull(hostname));
         this.containerName = ContainerName.fromHostname(hostname);
         this.nodeType = Objects.requireNonNull(nodeType);
@@ -50,7 +50,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         this.pathToVespaHome = Objects.requireNonNull(pathToVespaHome);
         this.logPrefix = containerName.asString() + ": ";
         this.vespaUser = vespaUser;
-        this.vespaUserIdOnHost = vespaUserIdOnHost;
+        this.vespaUserOnHost = vespaUserOnHost;
     }
 
     @Override
@@ -90,7 +90,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
 
     @Override
     public String vespaUserOnHost() {
-        return vespaUserIdOnHost;
+        return vespaUserOnHost;
     }
 
     @Override
