@@ -9,6 +9,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.PosixFileAttributeView;
@@ -66,12 +67,13 @@ public class UnixPath {
         return uncheck(() -> Files.readAllBytes(path));
     }
 
-    public void writeUtf8File(String content, OpenOption... options) {
-        writeBytes(content.getBytes(StandardCharsets.UTF_8), options);
+    public UnixPath writeUtf8File(String content, OpenOption... options) {
+        return writeBytes(content.getBytes(StandardCharsets.UTF_8), options);
     }
 
-    public void writeBytes(byte[] content, OpenOption... options) {
+    public UnixPath writeBytes(byte[] content, OpenOption... options) {
         uncheck(() -> Files.write(path, content, options));
+        return this;
     }
 
     public String getPermissions() {
@@ -82,33 +84,36 @@ public class UnixPath {
      * @param permissions Example: "rwxr-x---" means rwx for owner, rx for group,
      *                    and no permissions for others.
      */
-    public void setPermissions(String permissions) {
+    public UnixPath setPermissions(String permissions) {
         Set<PosixFilePermission> permissionSet = getPosixFilePermissionsFromString(permissions);
         uncheck(() -> Files.setPosixFilePermissions(path, permissionSet));
+        return this;
     }
 
     public String getOwner() {
         return getAttributes().owner();
     }
 
-    public void setOwner(String owner) {
+    public UnixPath setOwner(String owner) {
         UserPrincipalLookupService service = path.getFileSystem().getUserPrincipalLookupService();
         UserPrincipal principal = uncheck(
                 () -> service.lookupPrincipalByName(owner),
                 "While looking up user %s", owner);
         uncheck(() -> Files.setOwner(path, principal));
+        return this;
     }
 
     public String getGroup() {
         return getAttributes().group();
     }
 
-    public void setGroup(String group) {
+    public UnixPath setGroup(String group) {
         UserPrincipalLookupService service = path.getFileSystem().getUserPrincipalLookupService();
         GroupPrincipal principal = uncheck(
                 () -> service.lookupPrincipalByGroupName(group),
                 "while looking up group %s", group);
         uncheck(() -> Files.getFileAttributeView(path, PosixFileAttributeView.class).setGroup(principal));
+        return this;
     }
 
     public Instant getLastModifiedTime() {
@@ -125,14 +130,27 @@ public class UnixPath {
         return IOExceptionUtil.ifExists(this::getAttributes);
     }
 
-    public void createDirectory(String permissions) {
+    public UnixPath createNewFile() {
+        uncheck(() -> Files.createFile(path));
+        return this;
+    }
+
+    public UnixPath createNewFile(String permissions) {
+        FileAttribute<?> attribute = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(permissions));
+        uncheck(() -> Files.createFile(path, attribute));
+        return this;
+    }
+
+    public UnixPath createDirectory(String permissions) {
         Set<PosixFilePermission> set = getPosixFilePermissionsFromString(permissions);
         FileAttribute<Set<PosixFilePermission>> attribute = PosixFilePermissions.asFileAttribute(set);
         uncheck(() -> Files.createDirectory(path, attribute));
+        return this;
     }
 
-    public void createDirectory() {
+    public UnixPath createDirectory() {
         uncheck(() -> Files.createDirectory(path));
+        return this;
     }
 
     public boolean isDirectory() {
@@ -152,11 +170,12 @@ public class UnixPath {
             }
         }
 
-        return deleteIfExists();
+        return uncheck(() -> Files.deleteIfExists(path));
     }
 
-    public boolean deleteIfExists() {
-        return uncheck(() -> Files.deleteIfExists(path));
+    public UnixPath deleteIfExists() {
+        uncheck(() -> Files.deleteIfExists(path));
+        return this;
     }
 
     public List<UnixPath> listContentsOfDirectory() {
@@ -169,6 +188,12 @@ public class UnixPath {
         } catch (IOException e) {
             throw new RuntimeException("Failed to list contents of directory " + path.toAbsolutePath(), e);
         }
+    }
+
+    /** This path must be on the same file system as the to-path. Returns UnixPath of 'to'. */
+    public UnixPath atomicMove(Path to) {
+        uncheck(() -> Files.move(path, to, StandardCopyOption.ATOMIC_MOVE));
+        return new UnixPath(to);
     }
 
     public boolean moveIfExists(Path to) {

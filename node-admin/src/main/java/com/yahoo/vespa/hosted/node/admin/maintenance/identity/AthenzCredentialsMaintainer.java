@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -33,7 +34,6 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -166,10 +166,9 @@ public class AthenzCredentialsMaintainer {
                             false,
                             csr);
             EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
-            writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
+            writePrivateKeyAndCertificate(context.vespaUserOnHost(), privateKeyFile, keyPair.getPrivate(),
+                    certificateFile, instanceIdentity.certificate());
             context.log(logger, "Instance successfully registered and credentials written to file");
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 
@@ -192,7 +191,8 @@ public class AthenzCredentialsMaintainer {
                                 identityDocument.providerUniqueId().asDottedString(),
                                 false,
                                 csr);
-                writePrivateKeyAndCertificate(privateKeyFile, keyPair.getPrivate(), certificateFile, instanceIdentity.certificate());
+                writePrivateKeyAndCertificate(context.vespaUserOnHost(), privateKeyFile, keyPair.getPrivate(),
+                        certificateFile, instanceIdentity.certificate());
                 context.log(logger, "Instance successfully refreshed and credentials written to file");
             } catch (ZtsClientException e) {
                 if (e.getErrorCode() == 403 && e.getDescription().startsWith("Certificate revoked")) {
@@ -208,19 +208,22 @@ public class AthenzCredentialsMaintainer {
     }
 
 
-    private static void writePrivateKeyAndCertificate(
-            Path privateKeyFile, PrivateKey privateKey, Path certificateFile, X509Certificate certificate) throws IOException {
-        Path tempPrivateKeyFile = toTempPath(privateKeyFile);
-        Files.write(tempPrivateKeyFile, KeyUtils.toPem(privateKey).getBytes());
-        Path tempCertificateFile = toTempPath(certificateFile);
-        Files.write(tempCertificateFile, X509CertificateUtils.toPem(certificate).getBytes());
-
-        Files.move(tempPrivateKeyFile, privateKeyFile, StandardCopyOption.ATOMIC_MOVE);
-        Files.move(tempCertificateFile, certificateFile, StandardCopyOption.ATOMIC_MOVE);
+    private static void writePrivateKeyAndCertificate(String vespaUserOnHost,
+                                                      Path privateKeyFile,
+                                                      PrivateKey privateKey,
+                                                      Path certificateFile,
+                                                      X509Certificate certificate) {
+        writeFile(privateKeyFile, vespaUserOnHost, KeyUtils.toPem(privateKey));
+        writeFile(certificateFile, vespaUserOnHost, X509CertificateUtils.toPem(certificate));
     }
 
-    private static Path toTempPath(Path file) {
-        return Paths.get(file.toAbsolutePath().toString() + ".tmp");
+    private static void writeFile(Path path, String vespaUserOnHost, String utf8Content) {
+        new UnixPath(path.toString() + ".tmp")
+                .deleteIfExists()
+                .createNewFile("r--------")
+                .setOwner(vespaUserOnHost)
+                .writeUtf8File(utf8Content)
+                .atomicMove(path);
     }
 
     private static X509Certificate readCertificateFromFile(Path certificateFile) throws IOException {
