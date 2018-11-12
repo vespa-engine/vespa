@@ -10,7 +10,6 @@ install_config_definition(src/main/resources/configdefinitions/lowercasing.def s
 install_config_definition(src/main/resources/configdefinitions/measure-qps.def search.statistics.measure-qps.def)
 install_config_definition(src/main/resources/configdefinitions/page-templates.def search.pagetemplates.page-templates.def)
 install_config_definition(src/main/resources/configdefinitions/provider.def search.federation.provider.def)
-install_config_definition(src/main/resources/configdefinitions/qr-binary-cache.def search.cache.qr-binary-cache.def)
 install_config_definition(src/main/resources/configdefinitions/qr-monitor.def prelude.cluster.qr-monitor.def)
 install_config_definition(src/main/resources/configdefinitions/qr-quotetable.def prelude.searcher.qr-quotetable.def)
 install_config_definition(src/main/resources/configdefinitions/qr-start.def search.config.qr-start.def)
