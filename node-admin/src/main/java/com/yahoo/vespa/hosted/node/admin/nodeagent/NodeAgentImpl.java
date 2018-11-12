@@ -470,10 +470,15 @@ public class NodeAgentImpl implements NodeAgent {
         if (!node.equals(lastNode)) {
             logChangesToNodeSpec(lastNode, node);
 
-            if (lastNode == null) {
+            // Current reboot generation uninitialized or incremented from outside to cancel reboot
+            if (currentRebootGeneration < node.getCurrentRebootGeneration())
                 currentRebootGeneration = node.getCurrentRebootGeneration();
+
+            // Either we have changed allocation status (restart gen. only available to allocated nodes), or
+            // restart generation has been incremented from outside to cancel restart
+            if (currentRestartGeneration.isPresent() != node.getCurrentRestartGeneration().isPresent() ||
+                    currentRestartGeneration.map(current -> current < node.getCurrentRestartGeneration().get()).orElse(false))
                 currentRestartGeneration = node.getCurrentRestartGeneration();
-            }
 
             // Every time the node spec changes, we should clear the metrics for this container as the dimensions
             // will change and we will be reporting duplicate metrics.
