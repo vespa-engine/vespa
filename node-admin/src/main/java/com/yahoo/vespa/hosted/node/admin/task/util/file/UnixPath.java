@@ -170,11 +170,12 @@ public class UnixPath {
             }
         }
 
-        return deleteIfExists();
+        return uncheck(() -> Files.deleteIfExists(path));
     }
 
-    public boolean deleteIfExists() {
-        return uncheck(() -> Files.deleteIfExists(path));
+    public UnixPath deleteIfExists() {
+        uncheck(() -> Files.deleteIfExists(path));
+        return this;
     }
 
     public List<UnixPath> listContentsOfDirectory() {

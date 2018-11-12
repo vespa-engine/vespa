@@ -219,6 +219,7 @@ public class AthenzCredentialsMaintainer {
 
     private static void writeFile(Path path, String vespaUserOnHost, String utf8Content) {
         new UnixPath(path.toString() + ".tmp")
+                .deleteIfExists()
                 .createNewFile("r--------")
                 .setOwner(vespaUserOnHost)
                 .writeUtf8File(utf8Content)
