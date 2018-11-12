@@ -348,7 +348,7 @@ public class JobController {
 
     private void prunePackages(ApplicationId id) {
         controller.applications().lockIfPresent(id, application -> {
-            application.get().deployments().values().stream()
+            application.get().productionDeployments().values().stream()
                        .map(Deployment::applicationVersion)
                        .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
                        .ifPresent(oldestDeployed -> {
