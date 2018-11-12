@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.FrameworkUtil;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -20,6 +19,8 @@ import java.util.jar.JarFile;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+import static java.nio.file.Files.createTempDirectory;
+import static org.osgi.framework.FrameworkUtil.getBundle;
 
 /**
  * Wrapper class for schema validators for application package xml files
@@ -96,21 +97,24 @@ public class SchemaValidators {
     }
 
     /**
-     * Look for the schema files that should be in vespa-model.jar and saves them on temp dir.
+     * Look for the schema files in config-model.jar and saves them on temp dir. Uses schema files
+     * in $VESPA_HOME/share/vespa/schema/[major-version].x/ otherwise
      *
      * @return the directory the schema files are stored in
      * @throws IOException if it is not possible to read schema files
      */
     private File saveSchemasFromJar(File tmpBase, Version vespaVersion) throws IOException {
-        final Class<? extends SchemaValidators> schemaValidatorClass = this.getClass();
-        final ClassLoader classLoader = schemaValidatorClass.getClassLoader();
+        Class<? extends SchemaValidators> schemaValidatorClass = this.getClass();
+        ClassLoader classLoader = schemaValidatorClass.getClassLoader();
         Enumeration<URL> uris = classLoader.getResources("schema");
-        if (uris == null) return null;
-        File tmpDir = java.nio.file.Files.createTempDirectory(tmpBase.toPath(), "vespa").toFile();
-        log.log(LogLevel.DEBUG, "Will save all XML schemas found in jar to " + tmpDir);
+        if (uris == null) throw new IllegalArgumentException("Could not find XML schemas ");
+
+        File tmpDir = createTempDirectory(tmpBase.toPath(), "vespa").toFile();
+        log.log(LogLevel.DEBUG, "Will save all XML schemas for " + vespaVersion + " to " + tmpDir);
         while (uris.hasMoreElements()) {
             URL u = uris.nextElement();
             log.log(LogLevel.DEBUG, "uri for resource 'schema'=" + u.toString());
+            // TODO: When is this the case? Remove?
             if ("jar".equals(u.getProtocol())) {
                 JarURLConnection jarConnection = (JarURLConnection) u.openConnection();
                 JarFile jarFile = jarConnection.getJarFile();
@@ -122,17 +126,15 @@ public class SchemaValidators {
                 }
                 jarFile.close();
             } else if ("bundle".equals(u.getProtocol())) {
-                Bundle bundle = FrameworkUtil.getBundle(schemaValidatorClass);
-                log.log(LogLevel.DEBUG, classLoader.toString());
+                Bundle bundle = getBundle(schemaValidatorClass);
                 log.log(LogLevel.DEBUG, "bundle=" + bundle);
-                // TODO: Hack to handle cases where bundle=null
+                // TODO: Hack to handle cases where bundle=null (which seems to always be the case with config-model-fat-amended.jar)
                 if (bundle == null) {
-                    File schemaPath;
-                    if (vespaVersion.getMajor() == 5) {
-                        schemaPath = new File(getDefaults().underVespaHome("share/vespa/schema/version/5.x/schema/"));
-                    } else {
-                        schemaPath = new File(getDefaults().underVespaHome("share/vespa/schema/"));
-                    }
+                    String pathPrefix = getDefaults().underVespaHome("share/vespa/schema/");
+                    File schemaPath = new File(pathPrefix + "version/" + vespaVersion.getMajor() + ".x/schema/");
+                    // Fallback to path without version if path with version does not exist
+                    if (! schemaPath.exists())
+                        schemaPath = new File(pathPrefix);
                     log.log(LogLevel.DEBUG, "Using schemas found in " + schemaPath);
                     copySchemas(schemaPath, tmpDir);
                 } else {
@@ -145,6 +147,7 @@ public class SchemaValidators {
                         writeContentsToFile(tmpDir, url.getFile(), url.openStream());
                     }
                 }
+            // TODO: When is this the case? Remove?
             } else if ("file".equals(u.getProtocol())) {
                 File schemaPath = new File(u.getPath());
                 copySchemas(schemaPath, tmpDir);
@@ -154,7 +157,6 @@ public class SchemaValidators {
     }
 
     private static void copySchemas(File from, File to) throws IOException {
-        // TODO: only copy .rnc files.
         if (! from.exists()) throw new IOException("Could not find schema source directory '" + from + "'");
         if (! from.isDirectory()) throw new IOException("Schema source '" + from + "' is not a directory");
         File sourceFile = new File(from, servicesXmlSchemaName);
