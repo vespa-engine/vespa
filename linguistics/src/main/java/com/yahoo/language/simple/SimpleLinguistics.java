@@ -66,11 +66,4 @@ public class SimpleLinguistics implements Linguistics {
     @Override
     public CharacterClasses getCharacterClasses() { return characterClasses; }
 
-    /** @deprecated do not use */
-    @Deprecated // OK
-    @Override
-    public Tuple2<String, Version> getVersion(Component component) {
-        return new Tuple2<>("yahoo", new Version(1, 0));
-    }
-
 }
