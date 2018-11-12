@@ -68,12 +68,12 @@ public class UnixPath {
     }
 
     public UnixPath writeUtf8File(String content, OpenOption... options) {
-        writeBytes(content.getBytes(StandardCharsets.UTF_8), options);
-        return this;
+        return writeBytes(content.getBytes(StandardCharsets.UTF_8), options);
     }
 
-    public void writeBytes(byte[] content, OpenOption... options) {
+    public UnixPath writeBytes(byte[] content, OpenOption... options) {
         uncheck(() -> Files.write(path, content, options));
+        return this;
     }
 
     public String getPermissions() {
@@ -90,37 +90,30 @@ public class UnixPath {
         return this;
     }
 
-    public int getOwnerId() {
-        return (Integer) uncheck(() -> Files.getAttribute(path, "unix:uid"));
-    }
-
-    public UnixPath setOwnerId(int ownerId) {
-        uncheck(() -> Files.setAttribute(path, "unix:uid", ownerId));
-        return this;
-    }
-
     public String getOwner() {
         return getAttributes().owner();
     }
 
-    public void setOwner(String owner) {
+    public UnixPath setOwner(String owner) {
         UserPrincipalLookupService service = path.getFileSystem().getUserPrincipalLookupService();
         UserPrincipal principal = uncheck(
                 () -> service.lookupPrincipalByName(owner),
                 "While looking up user %s", owner);
         uncheck(() -> Files.setOwner(path, principal));
+        return this;
     }
 
     public String getGroup() {
         return getAttributes().group();
     }
 
-    public void setGroup(String group) {
+    public UnixPath setGroup(String group) {
         UserPrincipalLookupService service = path.getFileSystem().getUserPrincipalLookupService();
         GroupPrincipal principal = uncheck(
                 () -> service.lookupPrincipalByGroupName(group),
                 "while looking up group %s", group);
         uncheck(() -> Files.getFileAttributeView(path, PosixFileAttributeView.class).setGroup(principal));
+        return this;
     }
 
     public Instant getLastModifiedTime() {
@@ -148,14 +141,16 @@ public class UnixPath {
         return this;
     }
 
-    public void createDirectory(String permissions) {
+    public UnixPath createDirectory(String permissions) {
         Set<PosixFilePermission> set = getPosixFilePermissionsFromString(permissions);
         FileAttribute<Set<PosixFilePermission>> attribute = PosixFilePermissions.asFileAttribute(set);
         uncheck(() -> Files.createDirectory(path, attribute));
+        return this;
     }
 
-    public void createDirectory() {
+    public UnixPath createDirectory() {
         uncheck(() -> Files.createDirectory(path));
+        return this;
     }
 
     public boolean isDirectory() {

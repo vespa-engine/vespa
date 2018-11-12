@@ -152,7 +152,7 @@ public class StorageMaintainerTest {
         }
 
         private Path executeAs(NodeType nodeType) {
-            NodeAgentContext context = new NodeAgentContextImpl.Builder("host123-5.test.domain.tld", 1000)
+            NodeAgentContext context = new NodeAgentContextImpl.Builder("host123-5.test.domain.tld")
                     .nodeType(nodeType)
                     .fileSystem(TestFileSystem.create())
                     .zoneId(new ZoneId(SystemName.dev, Environment.prod, RegionName.from("us-north-1"))).build();
@@ -197,7 +197,7 @@ public class StorageMaintainerTest {
         public void testDiskUsed() throws IOException {
             StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, docker, null, null);
             FileSystem fileSystem = TestFileSystem.create();
-            NodeAgentContext context = new NodeAgentContextImpl.Builder("host-1.domain.tld", 1000).fileSystem(fileSystem).build();
+            NodeAgentContext context = new NodeAgentContextImpl.Builder("host-1.domain.tld").fileSystem(fileSystem).build();
             Files.createDirectories(context.pathOnHostFromPathInNode("/"));
 
             terminal.expectCommand("du -xsk /home/docker/host-1 2>&1", 0, "321\t/home/docker/host-1/");
@@ -265,7 +265,7 @@ public class StorageMaintainerTest {
         }
 
         private NodeAgentContext createNodeAgentContextAndContainerStorage(FileSystem fileSystem, String containerName) throws IOException {
-            NodeAgentContext context = new NodeAgentContextImpl.Builder(containerName + ".domain.tld", 1000)
+            NodeAgentContext context = new NodeAgentContextImpl.Builder(containerName + ".domain.tld")
                     .fileSystem(fileSystem).build();
 
             Path containerVespaHomeOnHost = context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome(""));

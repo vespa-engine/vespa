@@ -34,7 +34,6 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -167,7 +166,7 @@ public class AthenzCredentialsMaintainer {
                             false,
                             csr);
             EntityBindingsMapper.writeSignedIdentityDocumentToFile(identityDocumentFile, signedIdentityDocument);
-            writePrivateKeyAndCertificate(context.vespaUserIdOnHost(), privateKeyFile, keyPair.getPrivate(),
+            writePrivateKeyAndCertificate(context.vespaUserOnHost(), privateKeyFile, keyPair.getPrivate(),
                     certificateFile, instanceIdentity.certificate());
             context.log(logger, "Instance successfully registered and credentials written to file");
         }
@@ -192,7 +191,7 @@ public class AthenzCredentialsMaintainer {
                                 identityDocument.providerUniqueId().asDottedString(),
                                 false,
                                 csr);
-                writePrivateKeyAndCertificate(context.vespaUserIdOnHost(), privateKeyFile, keyPair.getPrivate(),
+                writePrivateKeyAndCertificate(context.vespaUserOnHost(), privateKeyFile, keyPair.getPrivate(),
                         certificateFile, instanceIdentity.certificate());
                 context.log(logger, "Instance successfully refreshed and credentials written to file");
             } catch (ZtsClientException e) {
@@ -209,26 +208,21 @@ public class AthenzCredentialsMaintainer {
     }
 
 
-    private static void writePrivateKeyAndCertificate(int vespaUserIdOnHost,
+    private static void writePrivateKeyAndCertificate(String vespaUserOnHost,
                                                       Path privateKeyFile,
                                                       PrivateKey privateKey,
                                                       Path certificateFile,
                                                       X509Certificate certificate) {
-        writeFile(privateKeyFile, vespaUserIdOnHost, KeyUtils.toPem(privateKey));
-        writeFile(certificateFile, vespaUserIdOnHost, X509CertificateUtils.toPem(certificate));
+        writeFile(privateKeyFile, vespaUserOnHost, KeyUtils.toPem(privateKey));
+        writeFile(certificateFile, vespaUserOnHost, X509CertificateUtils.toPem(certificate));
     }
 
-    private static void writeFile(Path path, int vespaUserIdOnHost, String utf8Content) {
+    private static void writeFile(Path path, String vespaUserOnHost, String utf8Content) {
         new UnixPath(path.toString() + ".tmp")
-                .createNewFile("---------")
-                .setOwnerId(vespaUserIdOnHost)
-                .setPermissions("r-----------")
+                .createNewFile("r--------")
+                .setOwner(vespaUserOnHost)
                 .writeUtf8File(utf8Content)
                 .atomicMove(path);
-    }
-
-    private static Path toTempPath(Path file) {
-        return Paths.get(file.toAbsolutePath().toString() + ".tmp");
     }
 
     private static X509Certificate readCertificateFromFile(Path certificateFile) throws IOException {

@@ -34,12 +34,12 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final Path pathToNodeRootOnHost;
     private final Path pathToVespaHome;
     private final String vespaUser;
-    private final int vespaUserIdOnHost;
+    private final String vespaUserIdOnHost;
 
     public NodeAgentContextImpl(String hostname, NodeType nodeType, AthenzService identity,
                                 DockerNetworking dockerNetworking, ZoneId zoneId,
                                 Path pathToContainerStorage, Path pathToVespaHome,
-                                String vespaUser, int vespaUserIdOnHost) {
+                                String vespaUser, String vespaUserIdOnHost) {
         this.hostName = HostName.from(Objects.requireNonNull(hostname));
         this.containerName = ContainerName.fromHostname(hostname);
         this.nodeType = Objects.requireNonNull(nodeType);
@@ -89,7 +89,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
-    public int vespaUserIdOnHost() {
+    public String vespaUserOnHost() {
         return vespaUserIdOnHost;
     }
 
@@ -146,11 +146,10 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private Path pathToContainerStorage;
         private Path pathToVespaHome;
         private String vespaUser;
-        private Integer vespaUserIdOnHost;
+        private String vespaUserOnHost;
 
-        public Builder(String hostname, int vespaUserIdOnHost) {
+        public Builder(String hostname) {
             this.hostname = hostname;
-            this.vespaUserIdOnHost = vespaUserIdOnHost;
         }
 
         public Builder nodeType(NodeType nodeType) {
@@ -188,6 +187,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
+        public Builder vespaUserOnHost(String vespaUserOnHost) {
+            this.vespaUserOnHost = vespaUserOnHost;
+            return this;
+        }
+
         public Builder fileSystem(FileSystem fileSystem) {
             return pathToContainerStorage(fileSystem.getPath("/home/docker"));
         }
@@ -202,7 +206,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                     Optional.ofNullable(pathToContainerStorage).orElseGet(() -> Paths.get("/home/docker")),
                     Optional.ofNullable(pathToVespaHome).orElseGet(() -> Paths.get("/opt/vespa")),
                     Optional.ofNullable(vespaUser).orElse("vespa"),
-                    vespaUserIdOnHost);
+                    Optional.ofNullable(vespaUserOnHost).orElse("container_vespa"));
         }
     }
 }

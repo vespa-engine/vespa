@@ -46,7 +46,7 @@ public class DockerOperationsImplTest {
 
     @Test
     public void processResultFromNodeProgramWhenSuccess() {
-        final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld", 1000).build();
+        final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld").build();
         final ProcessResult actualResult = new ProcessResult(0, "output", "errors");
 
         when(docker.executeInContainerAsUser(any(), any(), any(), any()))
@@ -67,7 +67,7 @@ public class DockerOperationsImplTest {
 
     @Test(expected = RuntimeException.class)
     public void processResultFromNodeProgramWhenNonZeroExitCode() {
-        final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld", 1000).build();
+        final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld").build();
         final ProcessResult actualResult = new ProcessResult(3, "output", "errors");
 
         when(docker.executeInContainerAsUser(any(), any(), any(), any()))

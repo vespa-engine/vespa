@@ -27,7 +27,7 @@ public class CoreCollectorTest {
     private final String GDB_PATH = "/my/path/to/gdb";
     private final DockerOperations docker = mock(DockerOperations.class);
     private final CoreCollector coreCollector = new CoreCollector(docker, Paths.get(GDB_PATH));
-    private final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld", 1000).build();
+    private final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-123.domain.tld").build();
 
     private final Path TEST_CORE_PATH = Paths.get("/tmp/core.1234");
     private final Path TEST_BIN_PATH = Paths.get("/usr/bin/program");
