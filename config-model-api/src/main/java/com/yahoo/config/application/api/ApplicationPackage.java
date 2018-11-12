@@ -150,8 +150,12 @@ public interface ApplicationPackage {
         Element deployElement = XML.getDocument(getDeployment().get()).getDocumentElement();
         if (deployElement == null) return Optional.empty();
         String majorVersionString = deployElement.getAttribute("major-version");
-        if (majorVersionString == null || majorVersionString.isEmpty())
+        if (majorVersionString == null || majorVersionString.isEmpty()) {
+            return Optional.of(Integer.valueOf(6));
+        }
+        if (majorVersionString.equals("any")) {
             return Optional.empty();
+        }
         try {
             return Optional.of(Integer.parseInt(majorVersionString));
         }
