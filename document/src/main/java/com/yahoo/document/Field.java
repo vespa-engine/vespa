@@ -16,7 +16,7 @@ import java.io.Serializable;
  * @author Thomas Gundersen
  * @author bratseth
  */
-//TODO Vespa 7 Remove deprecated methods.
+//TODO Vespa 8 Remove header/body concept
 public class Field extends FieldBase implements FieldSet, Comparable, Serializable {
 
     protected DataType dataType;

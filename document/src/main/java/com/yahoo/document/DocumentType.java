@@ -29,7 +29,7 @@ import java.util.Set;
  * @author <a href="mailto:thomasg@yahoo-inc.com">Thomas Gundersen</a>
  * @author bratseth
  */
-// TODO Vespa 7 Remove header/body concept
+// TODO Vespa 8 Remove header/body concept
 public class DocumentType extends StructuredDataType {
 
     public static final int classId = registerClass(Ids.document + 58, DocumentType.class);
