@@ -12,7 +12,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Version;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigKey;
@@ -83,25 +82,21 @@ public class SuperModelControllerTest {
 
     @Test
     public void test_lb_config_multiple_apps_legacy_super_model() throws IOException, SAXException {
-        Map<TenantName, Map<ApplicationId, ApplicationInfo>> models = new LinkedHashMap<>();
+        Map<ApplicationId, ApplicationInfo> models = new LinkedHashMap<>();
         TenantName t1 = TenantName.from("t1");
         TenantName t2 = TenantName.from("t2");
-        models.put(t1, new LinkedHashMap<>());
-        models.put(t2, new LinkedHashMap<>());
         File testApp1 = new File("src/test/resources/deploy/app");
         File testApp2 = new File("src/test/resources/deploy/advancedapp");
         File testApp3 = new File("src/test/resources/deploy/advancedapp");
-        // TODO must fix equals, hashCode on Tenant
-        Version vespaVersion = Version.fromIntValues(1, 2, 3);
 
         ApplicationId simple = applicationId("mysimpleapp", t1);
         ApplicationId advanced = applicationId("myadvancedapp", t1);
         ApplicationId tooAdvanced = applicationId("minetooadvancedapp", t2);
-        models.get(t1).put(simple, createApplicationInfo(testApp1, simple, 4l));
-        models.get(t1).put(advanced, createApplicationInfo(testApp2, simple, 4l));
-        models.get(t2).put(tooAdvanced, createApplicationInfo(testApp3, simple, 4l));
+        models.put(simple, createApplicationInfo(testApp1, simple, 4l));
+        models.put(advanced, createApplicationInfo(testApp2, advanced, 4l));
+        models.put(tooAdvanced, createApplicationInfo(testApp3, tooAdvanced, 4l));
 
-        SuperModel superModel = new SuperModel(models);
+        SuperModel superModel = new SuperModel(models, false);
         SuperModelController han = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());
         LbServicesConfig.Builder lb = new LbServicesConfig.Builder();
         han.getSuperModel().getConfig(lb);
@@ -121,15 +116,13 @@ public class SuperModelControllerTest {
         File testApp1 = new File("src/test/resources/deploy/app");
         File testApp2 = new File("src/test/resources/deploy/advancedapp");
         File testApp3 = new File("src/test/resources/deploy/advancedapp");
-        // TODO must fix equals, hashCode on Tenant
-        Version vespaVersion = Version.fromIntValues(1, 2, 3);
 
         ApplicationId simple = applicationId("mysimpleapp", t1);
         ApplicationId advanced = applicationId("myadvancedapp", t1);
         ApplicationId tooAdvanced = applicationId("minetooadvancedapp", t2);
         models.put(simple, createApplicationInfo(testApp1, simple, 4l));
-        models.put(advanced, createApplicationInfo(testApp2, simple, 4l));
-        models.put(tooAdvanced, createApplicationInfo(testApp3, simple, 4l));
+        models.put(advanced, createApplicationInfo(testApp2, advanced, 4l));
+        models.put(tooAdvanced, createApplicationInfo(testApp3, tooAdvanced, 4l));
 
         SuperModel superModel = new SuperModel(models, false);
         SuperModelController han = new SuperModelController(new SuperModelConfigProvider(superModel, Zone.defaultZone()), new TestConfigDefinitionRepo(), 2, new UncompressedConfigResponseFactory());

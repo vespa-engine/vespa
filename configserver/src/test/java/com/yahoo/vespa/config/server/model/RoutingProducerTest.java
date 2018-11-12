@@ -17,18 +17,20 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 /**
- * @author can
+ * @author Christian Andersen
  */
 public class RoutingProducerTest {
     @Test
     public void testNodesFromRoutingAppOnly() throws Exception {
-        Map<TenantName, Map<ApplicationId, ApplicationInfo>> testModel = createTestModel(new DeployState.Builder());
+        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder());
         RoutingProducer producer = new RoutingProducer(testModel);
         RoutingConfig.Builder builder = new RoutingConfig.Builder();
         producer.getConfig(builder);
@@ -38,26 +40,26 @@ public class RoutingProducerTest {
         assertThat(config.hosts(1), is("hosted-vespa.routing2.yahoo.com"));
     }
 
-    private Map<TenantName, Map<ApplicationId, ApplicationInfo>> createTestModel(DeployState.Builder deployStateBuilder) throws IOException, SAXException {
-        Map<TenantName, Map<ApplicationId, ApplicationInfo>> tMap = new LinkedHashMap<>();
+    private Map<TenantName, Set<ApplicationInfo>> createTestModel(DeployState.Builder deployStateBuilder) throws IOException, SAXException {
+        Map<TenantName, Set<ApplicationInfo>> apps = new LinkedHashMap<>();
         TenantName foo = TenantName.from("foo");
         TenantName bar = TenantName.from("bar");
         TenantName routing = TenantName.from(TenantRepository.HOSTED_VESPA_TENANT.value());
-        tMap.put(foo, createTestApplications(foo, deployStateBuilder));
-        tMap.put(bar, createTestApplications(bar, deployStateBuilder));
-        tMap.put(routing, createTestApplications(routing, deployStateBuilder));
-        return tMap;
+        apps.put(foo, createTestApplications(foo, deployStateBuilder));
+        apps.put(bar, createTestApplications(bar, deployStateBuilder));
+        apps.put(routing, createTestApplications(routing, deployStateBuilder));
+        return apps;
     }
 
-    private Map<ApplicationId, ApplicationInfo> createTestApplications(TenantName tenant, DeployState.Builder deploystateBuilder) throws IOException, SAXException {
-        Map<ApplicationId, ApplicationInfo> aMap = new LinkedHashMap<>();
+    private Set<ApplicationInfo> createTestApplications(TenantName tenant, DeployState.Builder deploystateBuilder) throws IOException, SAXException {
+        Set<ApplicationInfo> applicationInfos = new LinkedHashSet<>();
         ApplicationId fooApp = new ApplicationId.Builder().tenant(tenant).applicationName("foo").build();
         ApplicationId barApp = new ApplicationId.Builder().tenant(tenant).applicationName("bar").build();
         ApplicationId routingApp = new ApplicationId.Builder().tenant(tenant).applicationName(RoutingProducer.ROUTING_APPLICATION.value()).build();
-        aMap.put(fooApp, createApplication(fooApp, deploystateBuilder));
-        aMap.put(barApp, createApplication(barApp, deploystateBuilder));
-        aMap.put(routingApp, createApplication(routingApp, deploystateBuilder));
-        return aMap;
+        applicationInfos.add(createApplication(fooApp, deploystateBuilder));
+        applicationInfos.add(createApplication(barApp, deploystateBuilder));
+        applicationInfos.add(createApplication(routingApp, deploystateBuilder));
+        return applicationInfos;
     }
 
     private ApplicationInfo createApplication(ApplicationId appId, DeployState.Builder deploystateBuilder) throws IOException, SAXException {

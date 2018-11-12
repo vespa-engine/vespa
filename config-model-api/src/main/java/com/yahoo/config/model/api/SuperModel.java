@@ -8,9 +8,11 @@ import com.yahoo.config.provision.TenantName;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public class SuperModel {
 
@@ -37,6 +39,7 @@ public class SuperModel {
      * Do NOT mutate the returned map.
      * TODO: Make the returned map immutable (and type to Map&lt;ApplicationId, ApplicationInfo&gt;)
      */
+    // TODO: Remove when oldest model used is 6.310 or newer
     public Map<TenantName, Map<ApplicationId, ApplicationInfo>> getAllModels() {
         Map<TenantName, Map<ApplicationId, ApplicationInfo>> newModels = new LinkedHashMap<>();
 
@@ -47,6 +50,18 @@ public class SuperModel {
             newModels.get(key.tenant()).put(key, value);
         });
         return newModels ;
+    }
+
+    public Map<TenantName, Set<ApplicationInfo>> getModelsPerTenant() {
+        Map<TenantName, Set<ApplicationInfo>> newModels = new LinkedHashMap<>();
+
+        this.models.forEach((key, value) -> {
+            if (!newModels.containsKey(key.tenant())) {
+                newModels.put(key.tenant(), new LinkedHashSet<>());
+            }
+            newModels.get(key.tenant()).add(value);
+        });
+        return newModels;
     }
 
     public Map<ApplicationId, ApplicationInfo> getModels() {

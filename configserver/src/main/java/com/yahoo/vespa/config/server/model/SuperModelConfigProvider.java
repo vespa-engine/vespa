@@ -8,7 +8,6 @@ import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -19,8 +18,7 @@ import java.util.Map;
 /**
  * A config model that provides config containing information from all known tenants and applications.
  * 
- * @author vegardh
- * @since 5.9
+ * @author Vegard Havdal
  */
 public class SuperModelConfigProvider implements LbServicesConfig.Producer, RoutingConfig.Producer  {
 
@@ -30,8 +28,8 @@ public class SuperModelConfigProvider implements LbServicesConfig.Producer, Rout
 
     public SuperModelConfigProvider(SuperModel superModel, Zone zone) {
         this.superModel = superModel;
-        this.lbProd = new LbServicesProducer(Collections.unmodifiableMap(superModel.getAllModels()), zone);
-        this.zoneProd = new RoutingProducer(Collections.unmodifiableMap(superModel.getAllModels()));
+        this.lbProd = new LbServicesProducer(Collections.unmodifiableMap(superModel.getModelsPerTenant()), zone);
+        this.zoneProd = new RoutingProducer(Collections.unmodifiableMap(superModel.getModelsPerTenant()));
     }
 
     public SuperModel getSuperModel() {
@@ -53,7 +51,7 @@ public class SuperModelConfigProvider implements LbServicesConfig.Producer, Rout
         }
     }
 
-    public Map<TenantName, Map<ApplicationId, ApplicationInfo>> applicationModels() { return superModel.getAllModels(); }
+    public Map<ApplicationId, ApplicationInfo> applicationModels() { return superModel.getModels(); }
 
     @Override
     public void getConfig(LbServicesConfig.Builder builder) {
@@ -68,15 +66,11 @@ public class SuperModelConfigProvider implements LbServicesConfig.Producer, Rout
     public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, 
                                                                     ApplicationId applicationId,
                                                                     String configId) {
-        TenantName tenant = applicationId.tenant();
-        if (!superModel.getAllModels().containsKey(tenant)) {
-            throw new IllegalArgumentException("Tenant " + tenant + " not found");
+        Map<ApplicationId, ApplicationInfo> models = superModel.getModels();
+        if (!models.containsKey(applicationId)) {
+            throw new IllegalArgumentException("Application " + applicationId + " not found");
         }
-        Map<ApplicationId, ApplicationInfo> applications = superModel.getAllModels().get(tenant);
-        if (!applications.containsKey(applicationId)) {
-            throw new IllegalArgumentException("Application id " + applicationId + " not found");
-        }
-        ApplicationInfo application = applications.get(applicationId);
+        ApplicationInfo application = models.get(applicationId);
         ConfigKey<CONFIGTYPE> key = new ConfigKey<>(configClass, configId);
         ConfigPayload payload = application.getModel().getConfig(key, null);
         return payload.toInstance(configClass, configId);

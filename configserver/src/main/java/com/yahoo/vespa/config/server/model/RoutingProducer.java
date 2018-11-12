@@ -10,26 +10,26 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Create global config based on info from the zone application
  *
- * @author can
- * @since 5.60
+ * @author Christian Andersen
  */
 public class RoutingProducer implements RoutingConfig.Producer {
     static final ApplicationName ROUTING_APPLICATION = ApplicationName.from("routing");
 
-    private final Map<TenantName, Map<ApplicationId, ApplicationInfo>> models;
+    private final Map<TenantName, Set<ApplicationInfo>> models;
 
-    public RoutingProducer(Map<TenantName, Map<ApplicationId, ApplicationInfo>> models) {
+    public RoutingProducer(Map<TenantName, Set<ApplicationInfo>> models) {
         this.models = models;
     }
 
     @Override
     public void getConfig(RoutingConfig.Builder builder) {
-        for (Map<ApplicationId, ApplicationInfo> model : models.values()) {
-            model.values().stream()
+        for (Set<ApplicationInfo> model : models.values()) {
+            model.stream()
                     .filter(application -> isHostedVespaRoutingApplication(application.getApplicationId()))
                     .forEach(application -> {
                         for (HostInfo host : application.getModel().getHosts()) {
