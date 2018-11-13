@@ -62,7 +62,6 @@ public interface FeedClient extends AutoCloseable {
          * @see FeedEndpointException
          * @param exception An exception specifying endpoint and cause. See {@link FeedEndpointException} for details.
          */
-        // TODO Vespa 7: Remove empty default implementation
         default void onEndpointException(FeedEndpointException exception) {}
 
     }
