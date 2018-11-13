@@ -71,8 +71,26 @@ public interface AsyncSession extends Session {
      * @param priority The priority with which to perform this operation.
      * @return the synchronous result of this operation
      * @throws UnsupportedOperationException if this access implementation does not support retrieving
+     * @deprecated the 'headersonly' flag has no effect
      */
+    @Deprecated
     Result get(DocumentId id, boolean headersOnly, DocumentProtocol.Priority priority);
+
+    /**
+     * <p>Gets a document. This method returns immediately.</p>
+     *
+     * <p>If this result is a success, this
+     * call will cause one or more {@link DocumentResponse} objects to appear within the timeout time of this session.
+     * The response returned later will contain the requested document if it is a success.
+     * If it was not a success, this method has no further effects.</p>
+     *
+     * @param id the id of the document to get
+     * @param priority The priority with which to perform this operation.
+     * @return the synchronous result of this operation
+     * @throws UnsupportedOperationException if this access implementation does not support retrieving
+     */
+    Result get(DocumentId id, DocumentProtocol.Priority priority);
+
 
     /**
      * <p>Removes a document if it is present. This method returns immediately.</p>
