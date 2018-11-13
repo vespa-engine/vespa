@@ -42,11 +42,10 @@ public class SummaryDiskAccessValidator extends Processor {
                         throw new IllegalArgumentException(summaryField + " in " + summary + " references " +
                                                            source + ", but this field does not exist");
                     if ( ! isInMemory(field) && ! summary.isFromDisk()) {
-                        // TODO: Set to warning on vespa 7
-                        deployLogger.log(Level.FINE, summaryField + " in " + summary + " references " +
-                                                     source + ", which is not an attribute: Using this " +
-                                                     "summary will cause disk accesses. " +
-                                                     "Set 'from-disk' on this summary class to silence this warning.");
+                        deployLogger.log(Level.WARNING, summaryField + " in " + summary + " references " +
+                                                        source + ", which is not an attribute: Using this " +
+                                                        "summary will cause disk accesses. " +
+                                                        "Set 'from-disk' on this summary class to silence this warning.");
                     }
                 }
             }
