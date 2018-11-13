@@ -60,12 +60,6 @@ public class TestLinguistics implements Linguistics {
         return linguistics.getCharacterClasses();
     }
 
-    @Override
-    @Deprecated
-    public Tuple2<String, Version> getVersion(Linguistics.Component component) {
-        return linguistics.getVersion(component);
-    }
-
 }
 
 
