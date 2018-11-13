@@ -51,6 +51,7 @@ public interface FeedClient extends AutoCloseable {
      * There is an example implementation in class SimpleLoggerResultCallback.
      */
     interface ResultCallback {
+
         void onCompletion(String docId, Result documentResult);
 
         /**
@@ -62,8 +63,8 @@ public interface FeedClient extends AutoCloseable {
          * @see FeedEndpointException
          * @param exception An exception specifying endpoint and cause. See {@link FeedEndpointException} for details.
          */
-        // TODO Vespa 7: Remove empty default implementation
         default void onEndpointException(FeedEndpointException exception) {}
+
     }
 
     /**
