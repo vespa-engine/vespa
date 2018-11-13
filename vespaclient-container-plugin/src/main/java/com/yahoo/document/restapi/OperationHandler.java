@@ -31,18 +31,6 @@ public interface OperationHandler {
         public final Optional<Integer> concurrency;
         public final Optional<String> bucketSpace;
 
-        /** @deprecated Use a VisitOptions.Builder instead */
-        // TODO: Remove on Vespa 7
-        @Deprecated // OK
-        public VisitOptions(Optional<String> cluster, Optional<String> continuation, Optional<Integer> wantedDocumentCount) {
-            this.cluster = cluster;
-            this.continuation = continuation;
-            this.wantedDocumentCount = wantedDocumentCount;
-            this.fieldSet = Optional.empty();
-            this.concurrency = Optional.empty();
-            this.bucketSpace = Optional.empty();
-        }
-
         private VisitOptions(Builder builder) {
             this.cluster = Optional.ofNullable(builder.cluster);
             this.continuation = Optional.ofNullable(builder.continuation);
