@@ -91,7 +91,7 @@ TEST("Specially constructed set of policies allows all authenticated peers") {
     EXPECT_TRUE(verify(allow_all, creds_with_dns_sans({{"anything.goes"}})));
 }
 
-TEST("Non-empty policies do not allow all unauthenticated peers") {
+TEST("Non-empty policies do not allow all authenticated peers") {
     auto allow_not_all = allowed_peers({policy_with({required_san_dns("hello.world")})});
     EXPECT_FALSE(allow_not_all.allows_all_authenticated());
 }
