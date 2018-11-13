@@ -18,7 +18,7 @@ public class SimpleSearcher2 extends SimpleSearcher {
         }
     }
 
-    private class NestedStaticClass {
+    private static class NestedStaticClass {
         private com.yahoo.metrics.simple.Counter counter;
 
         @com.google.inject.Inject
