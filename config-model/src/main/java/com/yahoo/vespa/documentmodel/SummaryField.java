@@ -121,12 +121,6 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
 
     public void setImplicit(boolean implicit) { this.implicit=implicit; }
 
-    @Override // override to make public
-    @Deprecated
-    public void setDataType(DataType type) {
-        super.setDataType(type);
-    }
-
     public boolean isImplicit() { return implicit; }
 
     public void setTransform(SummaryTransform transform) {

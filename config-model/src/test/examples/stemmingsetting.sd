@@ -25,7 +25,7 @@ search stemmingsetting {
 
     field backward type string {
       indexing: index
-      stemming: all
+      stemming: shortest
     }
   }
 
