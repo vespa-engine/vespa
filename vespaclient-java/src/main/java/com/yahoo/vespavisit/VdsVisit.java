@@ -189,7 +189,7 @@ public class VdsVisit {
                 .desc("Only visit up to the given timestamp (microseconds).")
                 .type(Number.class).build());
 
-        options.addOption("e", "headersonly", false, "Only visit headers of documents.[Deprecated]");
+        options.addOption("e", "headersonly", false, "Only visit headers of documents.[Removed in Vespa 7]");
 
         options.addOption(Option.builder("l")
                 .longOpt("fieldset")
@@ -480,7 +480,7 @@ public class VdsVisit {
                 params.setToTimestamp(((Number) line.getParsedOptionValue("t")).longValue());
             }
             if (line.hasOption("e")) {
-                params.fieldSet("[header]");
+                throw new IllegalArgumentException("Headers only option has been removed.");
             }
             if (line.hasOption("l")) {
                 params.fieldSet(line.getOptionValue("l"));
