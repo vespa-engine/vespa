@@ -68,7 +68,7 @@ public class CommandLineOptions {
 
         options.addOption(Option.builder("e")
                 .hasArg(false)
-                .desc("Retrieve header fields only. [Deprecated].")
+                .desc("Retrieve header fields only. [Removed in Vespa 7].")
                 .longOpt(HEADERSONLY_OPTION).build());
 
         options.addOption(Option.builder("f")
@@ -180,17 +180,15 @@ public class CommandLineOptions {
                 throw new IllegalArgumentException("Cannot combine both xml and json output");
             }
 
-            if (printIdsOnly && headersOnly) {
-                throw new IllegalArgumentException("Print ids and headers only options are mutually exclusive.");
+            if (headersOnly) {
+                throw new IllegalArgumentException("Headers only option has been removed.");
             }
-            if ((printIdsOnly || headersOnly) && !fieldSet.isEmpty()) {
-                throw new IllegalArgumentException("Field set option can not be used in combination with print ids or headers only options.");
+            if (printIdsOnly && !fieldSet.isEmpty()) {
+                throw new IllegalArgumentException("Field set option can not be used in combination with print ids option.");
             }
 
             if (printIdsOnly) {
                 fieldSet = "[id]";
-            } else if (headersOnly) {
-                fieldSet = "[header]";
             } else if (fieldSet.isEmpty()) {
                 fieldSet = "[all]";
             }
