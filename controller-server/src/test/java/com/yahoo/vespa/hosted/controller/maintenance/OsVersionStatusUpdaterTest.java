@@ -43,7 +43,7 @@ public class OsVersionStatusUpdaterTest {
         // Setting a new target adds it to current status
         Version version1 = Version.fromString("7.1");
         CloudName cloud = CloudName.defaultName();
-        tester.controller().upgradeOsIn(cloud, version1);
+        tester.controller().upgradeOsIn(cloud, version1, false);
         statusUpdater.maintain();
 
         Map<OsVersion, List<OsVersionStatus.Node>> osVersions = tester.controller().osVersionStatus().versions();

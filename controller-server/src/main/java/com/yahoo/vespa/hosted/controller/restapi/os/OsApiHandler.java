@@ -73,6 +73,7 @@ public class OsApiHandler extends LoggingRequestHandler {
         Inspector root = requestData.get();
         Inspector versionField = root.field("version");
         Inspector cloudField = root.field("cloud");
+        boolean force = root.field("force").asBool();
         if (!versionField.valid() || !cloudField.valid()) {
             throw new IllegalArgumentException("Fields 'version' and 'cloud' are required");
         }
@@ -85,7 +86,7 @@ public class OsApiHandler extends LoggingRequestHandler {
             throw new IllegalArgumentException("Invalid version '" + versionField.asString() + "'", e);
         }
 
-        controller.upgradeOsIn(cloud, target);
+        controller.upgradeOsIn(cloud, target, force);
         Slime response = new Slime();
         Cursor cursor = response.setObject();
         cursor.setString("message", "Set target OS version for cloud '" + cloud.value() + "' to " +

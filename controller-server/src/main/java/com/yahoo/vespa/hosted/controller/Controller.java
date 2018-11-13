@@ -219,7 +219,7 @@ public class Controller extends AbstractComponent {
     }
 
     /** Set the target OS version for infrastructure on cloud in this system */
-    public void upgradeOsIn(CloudName cloud, Version version) {
+    public void upgradeOsIn(CloudName cloud, Version version, boolean force) {
         if (version.isEmpty()) {
             throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
         }
@@ -228,8 +228,8 @@ public class Controller extends AbstractComponent {
         }
         try (Lock lock = curator.lockOsVersions()) {
             Set<OsVersion> versions = new TreeSet<>(curator.readOsVersions());
-            if (versions.stream().anyMatch(osVersion -> osVersion.cloud().equals(cloud) &&
-                                                        osVersion.version().isAfter(version))) {
+            if (!force && versions.stream().anyMatch(osVersion -> osVersion.cloud().equals(cloud) &&
+                                                                  osVersion.version().isAfter(version))) {
                 throw new IllegalArgumentException("Cannot downgrade cloud '" + cloud.value() + "' to version " +
                                                    version.toFullString());
             }
