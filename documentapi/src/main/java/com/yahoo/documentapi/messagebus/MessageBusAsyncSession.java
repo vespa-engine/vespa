@@ -86,8 +86,14 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     }
 
     @Override
+    @Deprecated
     public Result get(DocumentId id, boolean headersOnly, DocumentProtocol.Priority pri) {
-        GetDocumentMessage msg = new GetDocumentMessage(id, headersOnly ? "[header]" : "[all]");
+        return get(id, pri);
+    }
+
+    @Override
+    public Result get(DocumentId id, DocumentProtocol.Priority pri) {
+        GetDocumentMessage msg = new GetDocumentMessage(id, "[all]");
         msg.setPriority(pri);
         return send(msg);
     }
