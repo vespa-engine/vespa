@@ -89,14 +89,6 @@ public:
     bool visitRemoves() const { return _visitRemoves; }
     void setVisitRemoves(bool val) { _visitRemoves = val; }
 
-    void setVisitHeadersOnly(bool visitHeadersOnly_) {
-        _fieldSet = (visitHeadersOnly_ ? "[header]" : "[all]");
-    }
-
-    bool visitHeadersOnly() const {
-        return (_fieldSet == "[header]");
-    }
-
     const string & getFieldSet() const { return _fieldSet; }
     void setFieldSet(vespalib::stringref fieldSet) { _fieldSet = fieldSet; }
 
