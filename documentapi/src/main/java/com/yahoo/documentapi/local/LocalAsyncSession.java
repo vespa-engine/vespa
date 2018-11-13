@@ -74,7 +74,13 @@ public class LocalAsyncSession implements AsyncSession {
     }
 
     @Override
+    @Deprecated
     public Result get(DocumentId id, boolean headersOnly, DocumentProtocol.Priority pri) {
+        return get(id, pri);
+    }
+
+    @Override
+    public Result get(DocumentId id, DocumentProtocol.Priority pri) {
         long req = getNextRequestId();
         try {
             addResponse(new DocumentResponse(req, syncSession.get(id)));
