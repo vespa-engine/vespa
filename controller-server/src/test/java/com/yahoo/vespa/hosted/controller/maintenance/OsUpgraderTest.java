@@ -76,8 +76,8 @@ public class OsUpgraderTest {
         // New OS version released
         Version version1 = Version.fromString("7.1");
         CloudName cloud = CloudName.defaultName();
-        tester.controller().upgradeOsIn(cloud, Version.fromString("7.0"));
-        tester.controller().upgradeOsIn(cloud, version1);
+        tester.controller().upgradeOsIn(cloud, Version.fromString("7.0"), false);
+        tester.controller().upgradeOsIn(cloud, version1, false);
         assertEquals(1, tester.controller().osVersions().size()); // Only allows one version per cloud
         statusUpdater.maintain();
 

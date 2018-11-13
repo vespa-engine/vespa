@@ -87,6 +87,9 @@ public class OsApiTest extends ControllerContainerTest {
         completeUpgrade(zone2, zone3);
         assertFile(new Request("http://localhost:8080/os/v1/"), "versions-all-upgraded.json");
 
+        // Downgrade with force is permitted
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.1\", \"cloud\": \"cloud1\", \"force\": true}", Request.Method.PATCH),
+                       "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.1\"}", 200);
 
         // Error: Missing field 'cloud' or 'version'
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.6\"}", Request.Method.PATCH),
