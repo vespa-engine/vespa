@@ -114,7 +114,6 @@ public class VdsVisitorTestCase {
         String userId = null;
         String groupName = null;
         String selection = null;
-        boolean headersOnly = false;
         long from = 0;
         long to = 0;
         String loadTypeName = null;
@@ -140,7 +139,6 @@ public class VdsVisitorTestCase {
             userId = "1234";
             groupName = null;
             selection = null;
-            headersOnly = true;
             from = 123;
             to = 456;
             loadTypeName = "low";
@@ -192,9 +190,6 @@ public class VdsVisitorTestCase {
         if (qa.selection != null) {
             queryString.append("&streaming.selection=").append(URLEncoder.encode(qa.selection, "UTF-8"));
         }
-        if (qa.headersOnly) {
-            queryString.append("&streaming.headersonly=").append(qa.headersOnly);
-        }
         if (qa.from != 0) {
             queryString.append("&streaming.fromtimestamp=").append(qa.from);
         }
@@ -236,7 +231,6 @@ public class VdsVisitorTestCase {
         } else {
             assertEquals(docType + " and ( " + qa.selection + " )", params.getDocumentSelection());
         }
-        assertEquals(qa.headersOnly, params.getVisitHeadersOnly());
         assertEquals(qa.from, params.getFromTimestamp());
         assertEquals(qa.to, params.getToTimestamp());
         if (qa.loadTypeName != null && loadTypeSet.getNameMap().get(qa.loadTypeName) != null) {
