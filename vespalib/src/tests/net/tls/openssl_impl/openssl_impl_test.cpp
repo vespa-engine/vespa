@@ -8,6 +8,7 @@
 #include <vespa/vespalib/net/tls/impl/openssl_crypto_codec_impl.h>
 #include <vespa/vespalib/net/tls/impl/openssl_tls_context_impl.h>
 #include <vespa/vespalib/test/make_tls_options_for_testing.h>
+#include <vespa/vespalib/test/peer_policy_utils.h>
 #include <iostream>
 #include <stdexcept>
 #include <stdlib.h>
@@ -79,6 +80,14 @@ struct Fixture {
     static std::unique_ptr<CryptoCodec> create_openssl_codec(
             const TransportSecurityOptions& opts, CryptoCodec::Mode mode) {
         auto ctx = TlsContext::create_default_context(opts);
+        return create_openssl_codec(ctx, mode);
+    }
+
+    static std::unique_ptr<CryptoCodec> create_openssl_codec(
+            const TransportSecurityOptions& opts,
+            std::shared_ptr<CertificateVerificationCallback> cert_verify_callback,
+            CryptoCodec::Mode mode) {
+        auto ctx = TlsContext::create_default_context(opts, std::move(cert_verify_callback));
         return create_openssl_codec(ctx, mode);
     }
 
@@ -409,16 +418,26 @@ struct CertFixture : Fixture {
         return {std::move(cert), std::move(key)};
     }
 
-    void reset_client_with_cert_opts(const CertKeyWrapper& ck, std::shared_ptr<CertificateVerificationCallback> cert_cb) {
+    void reset_client_with_cert_opts(const CertKeyWrapper& ck, AllowedPeers allowed) {
         TransportSecurityOptions client_opts(root_ca.cert->to_pem(), ck.cert->to_pem(),
-                                             ck.key->private_to_pem(), std::move(cert_cb));
+                                             ck.key->private_to_pem(), std::move(allowed));
         client = create_openssl_codec(client_opts, CryptoCodec::Mode::Client);
     }
 
-    void reset_server_with_cert_opts(const CertKeyWrapper& ck, std::shared_ptr<CertificateVerificationCallback> cert_cb) {
+    void reset_client_with_cert_opts(const CertKeyWrapper& ck, std::shared_ptr<CertificateVerificationCallback> cert_cb) {
+        TransportSecurityOptions client_opts(root_ca.cert->to_pem(), ck.cert->to_pem(), ck.key->private_to_pem());
+        client = create_openssl_codec(client_opts, std::move(cert_cb), CryptoCodec::Mode::Client);
+    }
+
+    void reset_server_with_cert_opts(const CertKeyWrapper& ck, AllowedPeers allowed) {
         TransportSecurityOptions server_opts(root_ca.cert->to_pem(), ck.cert->to_pem(),
-                                             ck.key->private_to_pem(), std::move(cert_cb));
+                                             ck.key->private_to_pem(), std::move(allowed));
         server = create_openssl_codec(server_opts, CryptoCodec::Mode::Server);
+    }
+
+    void reset_server_with_cert_opts(const CertKeyWrapper& ck, std::shared_ptr<CertificateVerificationCallback> cert_cb) {
+        TransportSecurityOptions server_opts(root_ca.cert->to_pem(), ck.cert->to_pem(), ck.key->private_to_pem());
+        server = create_openssl_codec(server_opts, std::move(cert_cb), CryptoCodec::Mode::Server);
     }
 };
 
@@ -515,6 +534,55 @@ TEST_F("Only DNS SANs are enumerated", CertFixture) {
     f.reset_server_with_cert_opts(ck, server_cb);
     ASSERT_TRUE(f.handshake());
     EXPECT_EQUAL(0u, server_cb->creds.dns_sans.size());
+}
+
+// We don't test too many combinations of peer policies here, only that
+// the wiring is set up. Verification logic is tested elsewhere.
+
+TEST_F("Client rejects server with certificate that DOES NOT match peer policy", CertFixture) {
+    auto client_ck = f.create_ca_issued_peer_cert({"hello.world.example.com"}, {});
+    auto allowed = allowed_peers({policy_with({required_san_dns("crash.wile.example.com")})});
+    f.reset_client_with_cert_opts(client_ck, std::move(allowed));
+    // crash.wile.example.com not present in certificate
+    auto server_ck = f.create_ca_issued_peer_cert(
+            {}, {{"DNS:birdseed.wile.example.com"}, {"DNS:roadrunner.wile.example.com"}});
+    f.reset_server_with_cert_opts(server_ck, AllowedPeers::allow_all_authenticated());
+
+    EXPECT_FALSE(f.handshake());
+}
+
+TEST_F("Client allows server with certificate that DOES match peer policy", CertFixture) {
+    auto client_ck = f.create_ca_issued_peer_cert({"hello.world.example.com"}, {});
+    auto allowed = allowed_peers({policy_with({required_san_dns("crash.wile.example.com")})});
+    f.reset_client_with_cert_opts(client_ck, std::move(allowed));
+    auto server_ck = f.create_ca_issued_peer_cert(
+            {}, {{"DNS:birdseed.wile.example.com"}, {"DNS:crash.wile.example.com"}});
+    f.reset_server_with_cert_opts(server_ck, AllowedPeers::allow_all_authenticated());
+
+    EXPECT_TRUE(f.handshake());
+}
+
+TEST_F("Server rejects client with certificate that DOES NOT match peer policy", CertFixture) {
+    auto server_ck = f.create_ca_issued_peer_cert({"hello.world.example.com"}, {});
+    auto allowed = allowed_peers({policy_with({required_san_dns("crash.wile.example.com")})});
+    f.reset_server_with_cert_opts(server_ck, std::move(allowed));
+    // crash.wile.example.com not present in certificate
+    auto client_ck = f.create_ca_issued_peer_cert(
+            {}, {{"DNS:birdseed.wile.example.com"}, {"DNS:roadrunner.wile.example.com"}});
+    f.reset_client_with_cert_opts(client_ck, AllowedPeers::allow_all_authenticated());
+
+    EXPECT_FALSE(f.handshake());
+}
+
+TEST_F("Server allows client with certificate that DOES match peer policy", CertFixture) {
+    auto server_ck = f.create_ca_issued_peer_cert({"hello.world.example.com"}, {});
+    auto allowed = allowed_peers({policy_with({required_san_dns("crash.wile.example.com")})});
+    f.reset_server_with_cert_opts(server_ck, std::move(allowed));
+    auto client_ck = f.create_ca_issued_peer_cert(
+            {}, {{"DNS:birdseed.wile.example.com"}, {"DNS:crash.wile.example.com"}});
+    f.reset_client_with_cert_opts(client_ck, AllowedPeers::allow_all_authenticated());
+
+    EXPECT_TRUE(f.handshake());
 }
 
 // TODO we can't test embedded nulls since the OpenSSL v3 extension APIs

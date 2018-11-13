@@ -3,6 +3,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
+#include <iosfwd>
 
 namespace vespalib::net::tls {
 
@@ -17,5 +18,7 @@ struct PeerCredentials {
     PeerCredentials();
     ~PeerCredentials();
 };
+
+std::ostream& operator<<(std::ostream&, const PeerCredentials&);
 
 }
