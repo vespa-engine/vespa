@@ -281,6 +281,7 @@ TEST_FF("require that documentdb config manager builds schema with imported attr
         const auto &attrCfg = getDocumentDBConfig(f1, f2)->getAttributesConfig();
         EXPECT_EQUAL(1u, attrCfg.attribute.size());
         EXPECT_EQUAL("regular", attrCfg.attribute[0].name);
+        // This is required to trigger a change to schema, but not to the attributes config
         docType->summaryBuilder.classes[0].id = i+2;
     }
 }
