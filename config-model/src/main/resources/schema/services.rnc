@@ -11,7 +11,6 @@ include "legacygenericcluster.rnc"
 
 start = element services {
    attribute version { "1.0" }? &
-   attribute major-version { text }? & # TODO: Remove on Vespa 7
    attribute application-type { "hosted-infrastructure" }? &
    LegacyGenericCluster* &
    GenericCluster* &
