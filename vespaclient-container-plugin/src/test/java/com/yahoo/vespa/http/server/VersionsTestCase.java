@@ -23,13 +23,14 @@ public class VersionsTestCase {
 
     private static final List<String> EMPTY = Collections.emptyList();
     private static final List<String> ONE_TWO = Arrays.asList("1", "2");
+    private static final List<String> ONE_THREE = Arrays.asList("1", "3");
     private static final List<String> TWO_THREE = Arrays.asList("3", "2");
-    private static final List<String> ONE_NULL_TWO = Arrays.asList("1", null, "2");
-    private static final List<String> ONE_COMMA_TWO = Collections.singletonList("1, 2");
-    private static final List<String> ONE_EMPTY_TWO = Arrays.asList("1", "", "2");
+    private static final List<String> ONE_NULL_THREE = Arrays.asList("1", null, "3");
+    private static final List<String> ONE_COMMA_THREE = Collections.singletonList("1, 3");
+    private static final List<String> ONE_EMPTY_THREE = Arrays.asList("1", "", "3");
     private static final List<String> TOO_LARGE_NUMBER = Collections.singletonList("1000000000");
-    private static final List<String> TWO_TOO_LARGE_NUMBER = Arrays.asList("2", "1000000000");
-    private static final List<String> TWO_COMMA_TOO_LARGE_NUMBER = Arrays.asList("2,1000000000");
+    private static final List<String> THREE_TOO_LARGE_NUMBER = Arrays.asList("3", "1000000000");
+    private static final List<String> THREE_COMMA_TOO_LARGE_NUMBER = Arrays.asList("3,1000000000");
     private static final List<String> GARBAGE = Collections.singletonList("garbage");
 
     @Test
@@ -42,8 +43,15 @@ public class VersionsTestCase {
     @Test
     public void testOneTwo() throws Exception {
         Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(ONE_TWO);
+        assertThat(v.first, instanceOf(ErrorHttpResponse.class));
+        assertThat(v.second, is(-1));
+    }
+
+    @Test
+    public void testOneThree() throws Exception {
+        Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(ONE_THREE);
         assertThat(v.first, nullValue());
-        assertThat(v.second, is(2));
+        assertThat(v.second, is(3));
     }
 
     @Test
@@ -54,24 +62,24 @@ public class VersionsTestCase {
     }
 
     @Test
-    public void testOneNullTwo() throws Exception {
-        Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(ONE_NULL_TWO);
+    public void testOneNullThree() throws Exception {
+        Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(ONE_NULL_THREE);
         assertThat(v.first, nullValue());
-        assertThat(v.second, is(2));
+        assertThat(v.second, is(3));
     }
 
     @Test
-    public void testOneCommaTwo() throws Exception {
-        Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(ONE_COMMA_TWO);
+    public void testOneCommaThree() throws Exception {
+        Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(ONE_COMMA_THREE);
         assertThat(v.first, nullValue());
-        assertThat(v.second, is(2));
+        assertThat(v.second, is(3));
     }
 
     @Test
-    public void testOneEmptyTwo() throws Exception {
-        Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(ONE_EMPTY_TWO);
+    public void testOneEmptyThree() throws Exception {
+        Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(ONE_EMPTY_THREE);
         assertThat(v.first, nullValue());
-        assertThat(v.second, is(2));
+        assertThat(v.second, is(3));
     }
 
     @Test
@@ -83,22 +91,22 @@ public class VersionsTestCase {
         errorResponse.render(errorMsg);
         assertThat(errorMsg.toString(),
                 is("Could not parse X-Yahoo-Feed-Protocol-Versionheader of request (values: [1000000000]). " +
-                            "Server supports protocol versions [2, 3]"));
+                            "Server supports protocol versions [3]"));
         assertThat(v.second, is(-1));
     }
 
     @Test
-    public void testTwoTooLarge() throws Exception {
-        Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(TWO_TOO_LARGE_NUMBER);
+    public void testThreeTooLarge() throws Exception {
+        Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(THREE_TOO_LARGE_NUMBER);
         assertThat(v.first, nullValue());
-        assertThat(v.second, is(2));
+        assertThat(v.second, is(3));
     }
 
     @Test
     public void testTwoCommaTooLarge() throws Exception {
-        Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(TWO_COMMA_TOO_LARGE_NUMBER);
+        Tuple2<HttpResponse, Integer> v = FeedHandler.doCheckProtocolVersion(THREE_COMMA_TOO_LARGE_NUMBER);
         assertThat(v.first, nullValue());
-        assertThat(v.second, is(2));
+        assertThat(v.second, is(3));
     }
 
     @Test
