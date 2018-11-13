@@ -61,7 +61,7 @@ void verify_referenced_file_exists(const vespalib::string& file_path) {
     }
 }
 
-vespalib::string load_file_referenced_by_field(const Cursor& cursor, const char* field) {
+vespalib::string load_file_referenced_by_field(const Inspector& cursor, const char* field) {
     auto file_path = cursor[field].asString().make_string();
     if (file_path.empty()) {
         throw IllegalArgumentException(make_string("TLS config field '%s' has not been set", field));
@@ -70,7 +70,7 @@ vespalib::string load_file_referenced_by_field(const Cursor& cursor, const char*
     return File::readAll(file_path);
 }
 
-RequiredPeerCredential parse_peer_credential(const Cursor& req_entry) {
+RequiredPeerCredential parse_peer_credential(const Inspector& req_entry) {
     auto field_string = req_entry["field"].asString().make_string();
     RequiredPeerCredential::Field field;
     if (field_string == "CN") {
@@ -86,7 +86,7 @@ RequiredPeerCredential parse_peer_credential(const Cursor& req_entry) {
     return RequiredPeerCredential(field, std::move(match));
 }
 
-PeerPolicy parse_peer_policy(const Cursor& peer_entry) {
+PeerPolicy parse_peer_policy(const Inspector& peer_entry) {
     auto& creds = peer_entry["required-credentials"];
     if (creds.children() == 0) {
         throw IllegalArgumentException("\"required-credentials\" array can't be empty (would allow all peers)");
@@ -98,7 +98,7 @@ PeerPolicy parse_peer_policy(const Cursor& peer_entry) {
     return PeerPolicy(std::move(required_creds));
 }
 
-AllowedPeers parse_allowed_peers(const Cursor& allowed_peers) {
+AllowedPeers parse_allowed_peers(const Inspector& allowed_peers) {
     if (!allowed_peers.valid()) {
         // If there's no "allowed-peers" object, valid CA signing is sufficient.
         return AllowedPeers::allow_all_authenticated();
