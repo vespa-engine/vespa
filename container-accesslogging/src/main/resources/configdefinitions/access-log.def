@@ -14,5 +14,4 @@ fileHandler.rotation string default="0 60 ..."
 fileHandler.symlink string default=""
 
 # compress the previous access log after rotation
-# TODO change to "true" for Vespa 7
-fileHandler.compressOnRotation bool default=false
+fileHandler.compressOnRotation bool default=true
