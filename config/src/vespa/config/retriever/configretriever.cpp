@@ -22,7 +22,7 @@ ConfigRetriever::ConfigRetriever(const ConfigKeySet & bootstrapSet,
 {
 }
 
-ConfigRetriever::~ConfigRetriever() {}
+ConfigRetriever::~ConfigRetriever() = default;
 
 ConfigSnapshot
 ConfigRetriever::getBootstrapConfigs(int timeoutInMillis)
@@ -50,11 +50,11 @@ ConfigRetriever::getConfigs(const ConfigKeySet & keySet, int timeoutInMillis)
             vespalib::LockGuard guard(_lock);
             if (_closed)
                 return ConfigSnapshot();
-            _configSubscriber.reset(new GenericConfigSubscriber(_context));
+            _configSubscriber = std::make_unique<GenericConfigSubscriber>(_context);
         }
         _subscriptionList.clear();
-        for (ConfigKeySet::const_iterator it(keySet.begin()), mt(keySet.end()); it != mt; it++) {
-            _subscriptionList.push_back(_configSubscriber->subscribe(*it, _subscribeTimeout));
+        for (const auto & key : keySet) {
+            _subscriptionList.push_back(_configSubscriber->subscribe(key, _subscribeTimeout));
         }
     }
     // Try update the subscribers generation if older than bootstrap
@@ -81,7 +81,7 @@ ConfigRetriever::close()
     vespalib::LockGuard guard(_lock);
     _closed = true;
     _bootstrapSubscriber.close();
-    if (_configSubscriber.get() != NULL)
+    if (_configSubscriber)
         _configSubscriber->close();
 }
 

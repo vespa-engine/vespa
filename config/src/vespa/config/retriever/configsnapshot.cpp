@@ -21,13 +21,9 @@ ConfigSnapshot::ConfigSnapshot()
         : _valueMap(),
           _generation(0) {}
 
-ConfigSnapshot::~ConfigSnapshot() {
-}
+ConfigSnapshot::~ConfigSnapshot() = default;
 
-ConfigSnapshot::ConfigSnapshot(const ConfigSnapshot &rhs) :
-        _valueMap(rhs._valueMap),
-        _generation(rhs._generation) {
-}
+ConfigSnapshot::ConfigSnapshot(const ConfigSnapshot &rhs) = default;
 
 ConfigSnapshot &
 ConfigSnapshot::operator=(const ConfigSnapshot &rhs) {
