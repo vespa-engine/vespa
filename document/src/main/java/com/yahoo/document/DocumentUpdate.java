@@ -38,8 +38,7 @@ import java.util.Optional;
  * @see com.yahoo.document.update.FieldUpdate
  * @see com.yahoo.document.update.ValueUpdate
  */
-//TODO Vespa 7 use a map to avoid quadratic scaling on insert/update/remove
-
+// TODO: Use a map to avoid quadratic scaling on insert/update/remove
 public class DocumentUpdate extends DocumentOperation implements Iterable<FieldPathUpdate> {
 
     //see src/vespa/document/util/identifiableid.h
@@ -424,7 +423,6 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
      * Sets whether this update should create the document it updates if that document does not exist.
      * In this case an empty document is created before the update is applied.
      *
-     * @since 5.17
      * @param value Whether the document it updates should be created.
      */
     public void setCreateIfNonExistent(boolean value) {
@@ -434,8 +432,7 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
     /**
      * Gets whether this update should create the document it updates if that document does not exist.
      *
-     * @since 5.17
-     * @return Whether the document it updates should be created.
+     * @return whether the document it updates should be created.
      */
     public boolean getCreateIfNonExistent() {
         return createIfNonExistent != null && createIfNonExistent;
