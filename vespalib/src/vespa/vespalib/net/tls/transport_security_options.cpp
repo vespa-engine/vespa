@@ -10,7 +10,8 @@ TransportSecurityOptions::TransportSecurityOptions(Builder builder)
     : _ca_certs_pem(std::move(builder._ca_certs_pem)),
       _cert_chain_pem(std::move(builder._cert_chain_pem)),
       _private_key_pem(std::move(builder._private_key_pem)),
-      _authorized_peers(std::move(builder._authorized_peers))
+      _authorized_peers(std::move(builder._authorized_peers)),
+      _accepted_ciphers(std::move(builder._accepted_ciphers))
 {
 }
 
@@ -34,6 +35,9 @@ TransportSecurityOptions::TransportSecurityOptions(vespalib::string ca_certs_pem
       _authorized_peers(std::move(authorized_peers))
 {
 }
+
+TransportSecurityOptions::Builder::Builder() = default;
+TransportSecurityOptions::Builder::~Builder() = default;
 
 TransportSecurityOptions::~TransportSecurityOptions() {
     OPENSSL_cleanse(&_private_key_pem[0], _private_key_pem.size());

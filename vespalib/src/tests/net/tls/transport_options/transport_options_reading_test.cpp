@@ -137,6 +137,24 @@ TEST("empty required-credentials array throws exception") {
                      "\"required-credentials\" array can't be empty (would allow all peers)");
 }
 
+TEST("accepted cipher list is empty if not specified") {
+    const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
+                                    "certificates":"dummy_certs.txt",
+                                    "ca-certificates":"dummy_ca_certs.txt"}})";
+    EXPECT_TRUE(read_options_from_json_string(json)->accepted_ciphers().empty());
+}
+
+TEST("accepted cipher list is populated if specified") {
+    const char* json = R"({"files":{"private-key":"dummy_privkey.txt",
+                                    "certificates":"dummy_certs.txt",
+                                    "ca-certificates":"dummy_ca_certs.txt"},
+                           "accepted-ciphers":["foo", "bar"]})";
+    auto ciphers = read_options_from_json_string(json)->accepted_ciphers();
+    ASSERT_EQUAL(2u, ciphers.size());
+    EXPECT_EQUAL("foo", ciphers[0]);
+    EXPECT_EQUAL("bar", ciphers[1]);
+}
+
 // TODO test parsing of multiple policies
 
 TEST_MAIN() { TEST_RUN_ALL(); }

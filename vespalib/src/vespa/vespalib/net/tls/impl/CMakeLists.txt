@@ -2,6 +2,7 @@
 vespa_add_library(vespalib_vespalib_net_tls_impl OBJECT
     SOURCES
     direct_buffer_bio.cpp
+    iana_cipher_map.cpp
     openssl_tls_context_impl.cpp
     openssl_crypto_codec_impl.cpp
     DEPENDS

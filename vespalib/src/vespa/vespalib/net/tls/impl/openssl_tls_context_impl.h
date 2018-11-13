@@ -43,6 +43,7 @@ private:
     void disable_renegotiation();
     void enforce_peer_certificate_verification();
     void set_ssl_ctx_self_reference();
+    void set_accepted_cipher_suite(const std::vector<vespalib::string>& ciphers);
 
     bool verify_trusted_certificate(::X509_STORE_CTX* store_ctx);
 
