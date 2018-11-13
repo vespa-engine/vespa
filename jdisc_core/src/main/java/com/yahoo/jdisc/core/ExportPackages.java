@@ -47,9 +47,6 @@ public class ExportPackages {
     private static String getExportPackages(String[] jars) throws IOException {
         StringBuilder out = new StringBuilder();
         out.append(getSystemPackages()).append(",")
-           .append("com.sun.security.auth,")
-           .append("com.sun.security.auth.module,")
-           .append("com.sun.management,")
            .append("com.yahoo.jdisc,")
            .append("com.yahoo.jdisc.application,")
            .append("com.yahoo.jdisc.handler,")
@@ -57,21 +54,7 @@ public class ExportPackages {
            .append("com.yahoo.jdisc.statistics,")
            .append("javax.inject;version=1.0.0,")  // Included in guice, but not exported. Needed by container-jersey.
            .append("org.aopalliance.intercept,")
-           .append("org.aopalliance.aop,")
-           .append("sun.misc,")
-           .append("sun.net.util,")
-           .append("sun.security.krb5,")
-
-           // TODO: remove for Vespa 7 (xml-apis:xml-apis:1.4.01 is not a bundle, but exposed from system classpath on Java 9)
-           .append("org.w3c.dom.bootstrap,")
-           .append("org.w3c.dom.css,")
-           .append("org.w3c.dom.events,")
-           .append("org.w3c.dom.html,")
-           .append("org.w3c.dom.ls,")
-           .append("org.w3c.dom.ranges,")
-           .append("org.w3c.dom.stylesheets,")
-           .append("org.w3c.dom.traversal,")
-           .append("org.w3c.dom.views");
+           .append("org.aopalliance.aop");
 
         for (int i = 1; i < jars.length; ++i) {
             out.append(",").append(getExportedPackages(jars[i]));
