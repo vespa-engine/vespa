@@ -7,7 +7,7 @@ namespace vespalib::net::tls {
 namespace {
 
 bool matches_single_san_requirement(const PeerCredentials& peer_creds, const RequiredPeerCredential& requirement) {
-    for (auto& provided_cred : peer_creds.dns_sans) {
+    for (const auto& provided_cred : peer_creds.dns_sans) {
         if (requirement.matches(provided_cred)) {
             return true;
         }
@@ -20,7 +20,7 @@ bool matches_cn_requirement(const PeerCredentials& peer_creds, const RequiredPee
 }
 
 bool matches_all_policy_requirements(const PeerCredentials& peer_creds, const PeerPolicy& policy) {
-    for (auto& required_cred : policy.required_peer_credentials()) {
+    for (const auto& required_cred : policy.required_peer_credentials()) {
         switch (required_cred.field()) {
         case RequiredPeerCredential::Field::SAN_DNS:
             if (!matches_single_san_requirement(peer_creds, required_cred)) {
@@ -59,7 +59,7 @@ bool PolicyConfiguredCertificateVerifier::verify(const PeerCredentials& peer_cre
     if (_allowed_peers.allows_all_authenticated()) {
         return true;
     }
-    for (auto& policy : _allowed_peers.peer_policies()) {
+    for (const auto& policy : _allowed_peers.peer_policies()) {
         if (matches_all_policy_requirements(peer_creds, policy)) {
             return true;
         }
