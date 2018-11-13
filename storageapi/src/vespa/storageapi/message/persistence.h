@@ -94,7 +94,6 @@ public:
     Timestamp getTimestamp() const { return _timestamp; };
     Timestamp getUpdateTimestamp() const { return _updateTimestamp; }
 
-    bool isHeadersOnlyPut() const { return (_updateTimestamp != 0); }
     bool wasFound() const { return _wasFound; }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
