@@ -6,7 +6,7 @@ search indexsettings {
   document indexsettings {
 
     field allstemmed type string {
-        stemming: all
+        stemming: shortest
     }
 
     field usingdefault type string {
