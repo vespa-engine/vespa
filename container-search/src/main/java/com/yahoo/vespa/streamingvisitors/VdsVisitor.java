@@ -57,7 +57,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     private static final CompoundName streamingUserid=new CompoundName("streaming.userid");
     private static final CompoundName streamingGroupname=new CompoundName("streaming.groupname");
     private static final CompoundName streamingSelection=new CompoundName("streaming.selection");
-    private static final CompoundName streamingHeadersonly=new CompoundName("streaming.headersonly");
     private static final CompoundName streamingFromtimestamp=new CompoundName("streaming.fromtimestamp");
     private static final CompoundName streamingTotimestamp=new CompoundName("streaming.totimestamp");
     private static final CompoundName streamingLoadtype=new CompoundName("streaming.loadtype");
@@ -153,7 +152,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         params.setSessionTimeoutMs(query.getTimeout());
         params.setVisitorLibrary("searchvisitor");
         params.setLocalDataHandler(this);
-        params.setVisitHeadersOnly(query.properties().getBoolean(streamingHeadersonly));
         if (query.properties().getDouble(streamingFromtimestamp) != null) {
             params.setFromTimestamp(query.properties().getDouble(streamingFromtimestamp).longValue());
         }
