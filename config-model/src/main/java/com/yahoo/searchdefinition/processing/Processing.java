@@ -65,7 +65,7 @@ public class Processing {
                 SummaryDiskAccessValidator::new,
                 DisallowComplexMapAndWsetKeyTypes::new,
                 SortingSettings::new,
-                FieldSetValidity::new,
+                FieldSetSettings::new,
                 AddExtraFieldsToDocument::new,
                 PredicateProcessor::new,
                 MatchPhaseSettingsValidator::new,

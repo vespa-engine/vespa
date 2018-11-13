@@ -17,43 +17,46 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  * @author vegardh
  * @author bratseth
  */
-public class FieldSetValidity extends Processor {
+// See also IndexInfo.addFieldSetCommands, which does more of this in a complicated way.
+// That should be moved here, and done in the way the match setting is done below
+// (this requires adding normalizing and stemming settings to FieldSet).
+public class FieldSetSettings extends Processor {
 
-    public FieldSetValidity(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+    public FieldSetSettings(Search search,
+                            DeployLogger deployLogger,
+                            RankProfileRegistry rankProfileRegistry,
+                            QueryProfiles queryProfiles) {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        if ( ! validate) return;
-
         for (FieldSet fieldSet : search.fieldSets().userFieldSets().values()) {
-            checkFieldNames(search, fieldSet);
+            if (validate)
+                checkFieldNames(search, fieldSet);
             checkMatching(search, fieldSet);
             checkNormalization(search, fieldSet);
             checkStemming(search, fieldSet);
         }
     }
 
-    private static void checkFieldNames(Search search, FieldSet fieldSet) {
-        for (String fld : fieldSet.getFieldNames()) {
-            ImmutableSDField field = search.getField(fld);
-            if (field == null) {
-                throw new IllegalArgumentException(
-                        "For search '" + search.getName() + "': Field '"+ fld + "' in " + fieldSet + " does not exist.");
-            }
+    private void checkFieldNames(Search search, FieldSet fieldSet) {
+        for (String field : fieldSet.getFieldNames()) {
+            if (search.getField(field) == null)
+                throw new IllegalArgumentException("For search '" + search.getName() +
+                                                   "': Field '"+ field + "' in " + fieldSet + " does not exist.");
         }
     }
 
     private void checkMatching(Search search, FieldSet fieldSet) {
-        Matching fsMatching = null;
-        for (String fld : fieldSet.getFieldNames()) {
-            ImmutableSDField field = search.getField(fld);
+        Matching matching = fieldSet.getMatching();
+        for (String fieldName : fieldSet.getFieldNames()) {
+            ImmutableSDField field = search.getField(fieldName);
             Matching fieldMatching = field.getMatching();
-            if (fsMatching==null) {
-                fsMatching = fieldMatching;
+            if (matching == null) {
+                matching = fieldMatching;
             } else {
-                if ( ! fsMatching.equals(fieldMatching)) {
+                if ( ! matching.equals(fieldMatching)) {
                     warn(search, field.asField(),
                             "The matching settings for the fields in " + fieldSet + " are inconsistent " +
                                     "(explicitly or because of field type). This may lead to recall and ranking issues.");
@@ -61,17 +64,18 @@ public class FieldSetValidity extends Processor {
                 }
             }
         }
+        fieldSet.setMatching(matching); // Assign the uniquely determined matching to the field set
     }
 
     private void checkNormalization(Search search, FieldSet fieldSet) {
-        NormalizeLevel.Level fsNorm = null;
-        for (String fld : fieldSet.getFieldNames()) {
-            ImmutableSDField field = search.getField(fld);
+        NormalizeLevel.Level normalizing = null;
+        for (String fieldName : fieldSet.getFieldNames()) {
+            ImmutableSDField field = search.getField(fieldName);
             NormalizeLevel.Level fieldNorm = field.getNormalizing().getLevel();
-            if (fsNorm==null) {
-                fsNorm = fieldNorm;
+            if (normalizing == null) {
+                normalizing = fieldNorm;
             } else {
-                if ( ! fsNorm.equals(fieldNorm)) {
+                if ( ! normalizing.equals(fieldNorm)) {
                     warn(search, field.asField(),
                             "The normalization settings for the fields in " + fieldSet + " are inconsistent " +
                                     "(explicitly or because of field type). This may lead to recall and ranking issues.");
@@ -82,14 +86,14 @@ public class FieldSetValidity extends Processor {
     }
 
     private void checkStemming(Search search, FieldSet fieldSet) {
-        Stemming fsStemming = null;
-        for (String fld : fieldSet.getFieldNames()) {
-            ImmutableSDField field = search.getField(fld);
+        Stemming stemming = null;
+        for (String fieldName : fieldSet.getFieldNames()) {
+            ImmutableSDField field = search.getField(fieldName);
             Stemming fieldStemming = field.getStemming();
-            if (fsStemming==null) {
-                fsStemming = fieldStemming;
+            if (stemming == null) {
+                stemming = fieldStemming;
             } else {
-                if ( ! fsStemming.equals(fieldStemming)) {
+                if ( ! stemming.equals(fieldStemming)) {
                     warn(search, field.asField(),
                             "The stemming settings for the fields in the fieldset '"+fieldSet.getName()+
                                     "' are inconsistent (explicitly or because of field type). " +
