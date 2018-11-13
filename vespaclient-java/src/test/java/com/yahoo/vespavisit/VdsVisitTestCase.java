@@ -74,7 +74,7 @@ public class VdsVisitTestCase {
         // Short options testing (for options that do not collide with each other)
         String[] args = new String[] {
                 "-o", "654321",
-                "-e"
+                "-i"
         };
         VdsVisit.ArgumentParser parser = createMockArgumentParser();
         VdsVisit.VdsVisitParameters allParams = parser.parse(args);
@@ -84,7 +84,7 @@ public class VdsVisitTestCase {
         assertNotNull(params);
         assertEquals(654321, allParams.getFullTimeout());
         assertEquals(654321, params.getTimeoutMs());
-        assertEquals("[header]", params.getFieldSet());
+        assertEquals("[id]", params.getFieldSet());
     }
 
     @Test
