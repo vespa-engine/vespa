@@ -234,11 +234,6 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     RankProfilesConfigSP newRankProfilesConfig;
     matching::RankingConstants::SP newRankingConstants;
     IndexschemaConfigSP newIndexschemaConfig;
-    AttributesConfigSP newAttributesConfig;
-    SummaryConfigSP newSummaryConfig;
-    SummarymapConfigSP newSummarymapConfig;
-    JuniperrcConfigSP newJuniperrcConfig;
-    ImportedFieldsConfigSP newImportedFieldsConfig;
     MaintenanceConfigSP oldMaintenanceConfig;
     MaintenanceConfigSP newMaintenanceConfig;
 
@@ -262,11 +257,6 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
         newRankProfilesConfig = current->getRankProfilesConfigSP();
         newRankingConstants = current->getRankingConstantsSP();
         newIndexschemaConfig = current->getIndexschemaConfigSP();
-        newAttributesConfig = current->getAttributesConfigSP();
-        newSummaryConfig = current->getSummaryConfigSP();
-        newSummarymapConfig = current->getSummarymapConfigSP();
-        newJuniperrcConfig = current->getJuniperrcConfigSP();
-        newImportedFieldsConfig = current->getImportedFieldsConfigSP();
         oldMaintenanceConfig = current->getMaintenanceConfigSP();
         currentGeneration = current->getGeneration();
     }
@@ -307,31 +297,20 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
             LOG_ABORT("Cannot use bad index schema, validation failed");
         }
     }
-    if (snapshot.isChanged<AttributesConfig>(_configId, currentGeneration)) {
-        newAttributesConfig = snapshot.getConfig<AttributesConfig>(_configId);
-    }
-    if (snapshot.isChanged<SummaryConfig>(_configId, currentGeneration)) {
-        newSummaryConfig = snapshot.getConfig<SummaryConfig>(_configId);
-    }
-    if (snapshot.isChanged<SummarymapConfig>(_configId, currentGeneration)) {
-        newSummarymapConfig = snapshot.getConfig<SummarymapConfig>(_configId);
-    }
-    if (snapshot.isChanged<JuniperrcConfig>(_configId, currentGeneration)) {
-        newJuniperrcConfig = snapshot.getConfig<JuniperrcConfig>(_configId);
-    }
-    if (snapshot.isChanged<ImportedFieldsConfig>(_configId, currentGeneration)) {
-        newImportedFieldsConfig = snapshot.getConfig<ImportedFieldsConfig>(_configId);
-    }
+    AttributesConfigSP newAttributesConfig = snapshot.getConfig<AttributesConfig>(_configId);
+    SummaryConfigSP newSummaryConfig = snapshot.getConfig<SummaryConfig>(_configId);
+    SummarymapConfigSP newSummarymapConfig = snapshot.getConfig<SummarymapConfig>(_configId);
+    JuniperrcConfigSP newJuniperrcConfig = snapshot.getConfig<JuniperrcConfig>(_configId);
+    ImportedFieldsConfigSP newImportedFieldsConfig = snapshot.getConfig<ImportedFieldsConfig>(_configId);
 
     Schema::SP schema(buildSchema(*newAttributesConfig, *newSummaryConfig, *newIndexschemaConfig));
     newMaintenanceConfig = buildMaintenanceConfig(_bootstrapConfig, _docTypeName);
     search::LogDocumentStore::Config storeConfig = buildStoreConfig(_bootstrapConfig->getProtonConfig(),
                                                                     _bootstrapConfig->getHwInfo());
-    if (newMaintenanceConfig && oldMaintenanceConfig && *newMaintenanceConfig == *oldMaintenanceConfig) {
+    if (newMaintenanceConfig && oldMaintenanceConfig && (*newMaintenanceConfig == *oldMaintenanceConfig)) {
         newMaintenanceConfig = oldMaintenanceConfig;
     }
-    DocumentDBConfig::SP newSnapshot(
-            new DocumentDBConfig(generation,
+    auto newSnapshot = std::make_shared<DocumentDBConfig>(generation,
                                  newRankProfilesConfig,
                                  newRankingConstants,
                                  newIndexschemaConfig,
@@ -347,7 +326,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
                                  newMaintenanceConfig,
                                  storeConfig,
                                  _configId,
-                                 _docTypeName));
+                                 _docTypeName);
     assert(newSnapshot->valid());
     {
         std::lock_guard<std::mutex> lock(_pendingConfigMutex);
@@ -366,7 +345,7 @@ DocumentDBConfigManager(const vespalib::string &configId, const vespalib::string
       _pendingConfigMutex()
 { }
 
-DocumentDBConfigManager::~DocumentDBConfigManager() { }
+DocumentDBConfigManager::~DocumentDBConfigManager() = default;
 
 DocumentDBConfig::SP
 DocumentDBConfigManager::getConfig() const {

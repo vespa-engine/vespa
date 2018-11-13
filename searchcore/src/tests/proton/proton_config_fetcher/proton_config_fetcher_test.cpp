@@ -267,16 +267,22 @@ TEST_FF("require that documentdb config manager builds schema with imported attr
     docType->attributesBuilder.attribute[0].name = "imported";
     docType->attributesBuilder.attribute[0].imported = true;
     docType->attributesBuilder.attribute[1].name = "regular";
+    docType->summaryBuilder.classes.resize(1);
+    docType->summaryBuilder.classes[0].id = 1;
+    docType->summaryBuilder.classes[0].name = "a";
 
-    const auto &schema = getDocumentDBConfig(f1, f2)->getSchemaSP();
-    EXPECT_EQUAL(1u, schema->getNumImportedAttributeFields());
-    EXPECT_EQUAL("imported", schema->getImportedAttributeFields()[0].getName());
-    EXPECT_EQUAL(1u, schema->getNumAttributeFields());
-    EXPECT_EQUAL("regular", schema->getAttributeFields()[0].getName());
+    for (size_t i(0); i < 3; i++) {
+        const auto &schema = getDocumentDBConfig(f1, f2)->getSchemaSP();
+        EXPECT_EQUAL(1u, schema->getNumImportedAttributeFields());
+        EXPECT_EQUAL("imported", schema->getImportedAttributeFields()[0].getName());
+        EXPECT_EQUAL(1u, schema->getNumAttributeFields());
+        EXPECT_EQUAL("regular", schema->getAttributeFields()[0].getName());
 
-    const auto &attrCfg = getDocumentDBConfig(f1, f2)->getAttributesConfig();
-    EXPECT_EQUAL(1u, attrCfg.attribute.size());
-    EXPECT_EQUAL("regular", attrCfg.attribute[0].name);
+        const auto &attrCfg = getDocumentDBConfig(f1, f2)->getAttributesConfig();
+        EXPECT_EQUAL(1u, attrCfg.attribute.size());
+        EXPECT_EQUAL("regular", attrCfg.attribute[0].name);
+        docType->summaryBuilder.classes[0].id = i+2;
+    }
 }
 
 TEST_FFF("require that proton config fetcher follows changes to bootstrap",
