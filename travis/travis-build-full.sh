@@ -6,7 +6,8 @@ export SOURCE_DIR=/source
 export NUM_THREADS=6
 export MALLOC_ARENA_MAX=1
 export MAVEN_OPTS="-Xss1m -Xms128m -Xmx2g"
-source /etc/profile.d/devtoolset-7.sh || true
+source /etc/profile.d/enable-devtoolset-7.sh
+source /etc/profile.d/enable-rh-maven35.sh
 
 ccache --max-size=1250M
 ccache --set-config=compression=true
