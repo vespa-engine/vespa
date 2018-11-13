@@ -89,23 +89,9 @@ public class CommandLineOptionsTest {
     }
 
     @Test
-    public void testInvalidCombination1() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Print ids and headers only options are mutually exclusive.");
-        getParsedOptions("--headersonly", "--printids");
-    }
-
-    @Test
-    public void testInvalidCombination2() {
-        exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Field set option can not be used in combination with print ids or headers only options.");
-        getParsedOptions("--headersonly", "--fieldset", "[header]");
-    }
-
-    @Test
     public void testInvalidCombination3() {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage("Field set option can not be used in combination with print ids or headers only options.");
+        exception.expectMessage("Field set option can not be used in combination with print ids option.");
         getParsedOptions("--printids", "--fieldset", "[header]");
     }
 
@@ -157,8 +143,9 @@ public class CommandLineOptionsTest {
 
     @Test
     public void testHeadersOnly() {
+        exception.expect(IllegalArgumentException.class);
+        exception.expectMessage("Headers only option has been removed.");
         ClientParameters params = getParsedOptions("--headersonly");
-        assertEquals("[header]", params.fieldSet);
     }
 
     @Test
