@@ -180,7 +180,6 @@ Messages60Test::testCreateVisitorMessage()
             EXPECT_EQUAL(string("foo bar"), ref.getFieldSet());
             EXPECT_EQUAL(uint32_t(8), ref.getMaximumPendingReplyCount());
             EXPECT_EQUAL(true, ref.visitRemoves());
-            EXPECT_EQUAL(false, ref.visitHeadersOnly());
             EXPECT_EQUAL(false, ref.visitInconsistentBuckets());
             EXPECT_EQUAL(size_t(1), ref.getBuckets().size());
             EXPECT_EQUAL(document::BucketId(16, 1234), ref.getBuckets()[0]);
