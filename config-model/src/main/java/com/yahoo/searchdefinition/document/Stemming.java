@@ -17,10 +17,6 @@ public enum Stemming {
      /** No stemming */
     NONE("none"),
 
-    /** @deprecated incorrectly don't stem at all */
-    @Deprecated
-    ALL("all"),
-
     /** select shortest possible stem */
     SHORTEST("shortest"),
 
@@ -43,12 +39,7 @@ public enum Stemming {
     @SuppressWarnings("deprecation")
     public static Stemming get(String stemmingName) {
         try {
-            Stemming stemming = Stemming.valueOf(stemmingName.toUpperCase());
-            if (stemming.equals(ALL)) {
-                log.warning("note: stemming ALL is the same as stemming mode SHORTEST");
-                stemming = SHORTEST;
-            }
-            return stemming;
+            return Stemming.valueOf(stemmingName.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("'" + stemmingName + "' is not a valid stemming setting");
         }
@@ -71,7 +62,6 @@ public enum Stemming {
             case MULTIPLE: return StemMode.ALL;
             case BEST : return StemMode.BEST;
             case NONE: return StemMode.NONE;
-            case ALL: return StemMode.SHORTEST; // Intentional; preserve historic behavior
             default: throw new IllegalStateException("Inconvertible stem mode " + this);
         }
     }
