@@ -81,7 +81,21 @@ public class DockerOperationsImpl implements DockerOperations {
                 .withEnvironment("VESPA_CONFIGSERVERS", configServers)
                 .withEnvironment("CONTAINER_ENVIRONMENT_SETTINGS", containerEnvironmentResolver.createSettings(node))
                 .withUlimit("nofile", 262_144, 262_144)
-                .withUlimit("nproc", 32_768, 409_600)
+                // The nproc aka RLIMIT_NPROC resource limit works as follows:
+                //  - A process has a (soft) nproc limit, either inherited by the parent or changed with setrlimit(2).
+                //    In bash, a command's limit can be viewed and set with ulimit(1).
+                //  - When a process forks, the number of processes on the host (across all containers) with
+                //    the same real user ID is compared with the limit, and if above the limit, return EAGAIN.
+                //
+                // From experience our Vespa processes require a high limit, say 400k. For all other processes,
+                // we would like to use a much lower limit, say 32k.
+                //
+                // Unfortunately, the Vespa processes runs as the yahoo user which is also used by many non-Vespa
+                // processes. This means all yahoo users must use the high limit. For instance, yinst would start
+                // many yahoo processes along with root processes and other processes. It's non-trivial to get this
+                // exactly right. Instead and for now, we just set a high limit here which will apply to all processes
+                // in the container, unless explicitly modified.
+                .withUlimit("nproc", 409_600, 409_600)
                 .withUlimit("core", -1, -1)
                 .withAddCapability("SYS_PTRACE") // Needed for gcore, pstack etc.
                 .withAddCapability("SYS_ADMIN"); // Needed for perf
