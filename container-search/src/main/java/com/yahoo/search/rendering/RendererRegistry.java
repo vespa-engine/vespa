@@ -6,6 +6,7 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.search.Result;
+import com.yahoo.search.pagetemplates.result.PageTemplatesXmlRenderer;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -20,6 +21,7 @@ import java.util.concurrent.Executor;
 public final class RendererRegistry extends ComponentRegistry<com.yahoo.processing.rendering.Renderer<Result>> {
 
     public static final ComponentId xmlRendererId = ComponentId.fromString("XmlRenderer");
+    public static final ComponentId pageRendererId = ComponentId.fromString("PageTemplatesXmlRenderer");
     public static final ComponentId jsonRendererId = ComponentId.fromString("JsonRenderer");
     public static final ComponentId defaultRendererId = jsonRendererId;
     
@@ -57,6 +59,11 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         xmlRenderer.initId(xmlRendererId);
         register(xmlRenderer.getId(), xmlRenderer);
 
+        // Add page templates renderer
+        Renderer pageRenderer = new PageTemplatesXmlRenderer(executor);
+        pageRenderer.initId(pageRendererId);
+        register(pageRenderer.getId(), pageRenderer);
+
         // add application renderers
         for (Renderer renderer : renderers)
             register(renderer.getId(), renderer);
@@ -69,6 +76,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         // deconstruct the renderers which was created by this
         getRenderer(jsonRendererId.toSpecification()).deconstruct();
         getRenderer(xmlRendererId.toSpecification()).deconstruct();
+        getRenderer(pageRendererId.toSpecification()).deconstruct();
     }
 
     /**
@@ -91,6 +99,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
         if (format == null || format.stringValue().equals("default")) return getDefaultRenderer();
         if (format.stringValue().equals("json")) return getComponent(jsonRendererId);
         if (format.stringValue().equals("xml")) return getComponent(xmlRendererId);
+        if (format.stringValue().equals("page")) return getComponent(pageRendererId);
 
         com.yahoo.processing.rendering.Renderer<Result> renderer = getComponent(format);
         if (renderer == null)
