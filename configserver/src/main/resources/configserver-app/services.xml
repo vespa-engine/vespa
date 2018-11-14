@@ -57,9 +57,6 @@
     <preprocess:include file='hosted-vespa/routing-status.xml' required='false' />
     <preprocess:include file='model-integration.xml' required='true' />
 
-    <!-- TODO Vespa 7: Remove scoreboard.xml, replaced by metrics-packets.xml -->
-    <preprocess:include file='hosted-vespa/scoreboard.xml' required='false' />
-
     <component id="com.yahoo.vespa.configserver.flags.ConfigServerFlagSource" bundle="configserver-flags"/>
     <component id="com.yahoo.vespa.configserver.flags.db.FlagsDbImpl" bundle="configserver-flags"/>
 
