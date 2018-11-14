@@ -553,7 +553,7 @@ void DocumentUpdateTest::testReadSerializedFile()
     CPPUNIT_ASSERT_EQUAL(*type, upd.getType());
 
     // Verify assign value update.
-    FieldUpdate serField = upd.getUpdates()[2];
+    FieldUpdate serField = upd.getUpdates()[1];
     CPPUNIT_ASSERT_EQUAL(serField.getField().getId(), type->getField("intfield").getId());
 
     const ValueUpdate* serValue = &serField[0];
@@ -563,7 +563,7 @@ void DocumentUpdateTest::testReadSerializedFile()
     CPPUNIT_ASSERT_EQUAL(IntFieldValue(4), static_cast<const IntFieldValue&>(assign->getValue()));
 
     // Verify clear field update.
-    serField = upd.getUpdates()[1];
+    serField = upd.getUpdates()[2];
     CPPUNIT_ASSERT_EQUAL(serField.getField().getId(), type->getField("floatfield").getId());
 
     serValue = &serField[0];
