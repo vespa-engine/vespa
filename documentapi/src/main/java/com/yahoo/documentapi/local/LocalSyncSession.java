@@ -10,6 +10,8 @@ import com.yahoo.documentapi.Response;
 import com.yahoo.documentapi.SyncSession;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
+import java.time.Duration;
+
 /**
  * @author bratseth
  */
@@ -36,15 +38,12 @@ public class LocalSyncSession implements SyncSession {
     }
 
     @Override
-    public Document get(DocumentId id) {
+    public Document get(DocumentId id, Duration timeout) {
         return access.documents.get(id);
     }
 
     @Override
-    public Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority pri) {
-        // FIXME: More than half the get() methods are deprecated, but they all
-        // call exactly the same method, including this one, throwing away most
-        // of the parameters
+    public Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority, Duration timeout) {
         return access.documents.get(id);
     }
 
