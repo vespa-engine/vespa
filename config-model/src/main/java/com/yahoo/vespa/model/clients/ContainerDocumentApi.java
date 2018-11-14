@@ -35,26 +35,12 @@ public class ContainerDocumentApi implements FeederConfig.Producer {
 
     public ContainerDocumentApi(ContainerCluster cluster, Options options) {
         this.options = options;
-        //legacySetupSearch(cluster); // TODO: Try to not do that on Vespa 7
         setupHandlers(cluster);
     }
 
     private void setupHandlers(ContainerCluster cluster) {
         cluster.addComponent(newVespaClientHandler("com.yahoo.document.restapi.resource.RestApi", "document/v1/*"));
         cluster.addComponent(newVespaClientHandler("com.yahoo.vespa.http.server.FeedHandler", ContainerCluster.RESERVED_URI_PREFIX + "/feedapi"));
-    }
-
-    private void legacySetupSearch(ContainerCluster cluster) {
-        if (cluster.getSearch() != null) return;
-
-        SearchChains chains = new SearchChains(cluster, "searchchain");
-        ContainerSearch containerSearch = new ContainerSearch(cluster, chains, new ContainerSearch.Options());
-        cluster.setSearch(containerSearch);
-
-        ProcessingHandler<SearchChains> searchHandler = new ProcessingHandler<>(chains,
-                                                                                "com.yahoo.search.handler.SearchHandler");
-        searchHandler.addServerBindings("http://*/search/*", "https://*/search/*");
-        cluster.addComponent(searchHandler);
     }
 
     private Handler newVespaClientHandler(String componentId, String bindingSuffix) {
@@ -66,12 +52,6 @@ public class ContainerDocumentApi implements FeederConfig.Producer {
                     rootBinding + bindingSuffix + '/');
         }
         return handler;
-    }
-
-    private Searcher newVespaClientSearcher(String componentSpec) {
-        return new Searcher<>(new ChainedComponentModel(
-                BundleInstantiationSpecification.getFromStrings(componentSpec, null, vespaClientBundleSpecification),
-                new Dependencies(null, null, null)));
     }
 
     @Override
