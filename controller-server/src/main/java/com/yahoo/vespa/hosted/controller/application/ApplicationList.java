@@ -154,10 +154,15 @@ public class ApplicationList {
         return listOf(list.stream().filter(a -> a.deploymentSpec().canUpgradeAt(instant)));
     }
 
-    /** Returns the subset of applications that hasn't pinned to another major version than the given one */
-    public ApplicationList allowMajorVersion(int majorVersion) {
-        return listOf(list.stream().filter(a -> ! a.deploymentSpec().majorVersion().isPresent() ||
-                                                a.deploymentSpec().majorVersion().get().equals(majorVersion)));
+    /**
+     * Returns the subset of applications that hasn't pinned to an an earlier major version than the given one.
+     *
+     * @param targetMajorVersion the target major version which applications returned allows upgrading to
+     * @param defaultMajorVersion the default major version to assume for applications not specifying one
+     */
+    public ApplicationList allowMajorVersion(int targetMajorVersion, int defaultMajorVersion) {
+        return listOf(list.stream().filter(a -> a.deploymentSpec().majorVersion().orElse(defaultMajorVersion)
+                                           >= targetMajorVersion));
     }
 
     /** Returns the first n application in this (or all, if there are less than n). */

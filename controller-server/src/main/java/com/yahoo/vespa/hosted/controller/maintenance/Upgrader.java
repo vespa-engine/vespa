@@ -98,7 +98,7 @@ public class Upgrader extends Maintainer {
     private void upgrade(ApplicationList applications, Version version) {
         applications = applications.hasProductionDeployment();
         applications = applications.onLowerVersionThan(version);
-        applications = applications.allowMajorVersion(version.getMajor());
+        applications = applications.allowMajorVersion(version.getMajor(), targetMajorVersion().orElse(version.getMajor()));
         applications = applications.notDeploying(); // wait with applications deploying an application change or already upgrading
         applications = applications.notFailingOn(version); // try to upgrade only if it hasn't failed on this version
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
@@ -127,7 +127,19 @@ public class Upgrader extends Maintainer {
 
     /** Sets the number of upgrades per minute */
     public void setUpgradesPerMinute(double n) {
+        if (n < 0)
+            throw new IllegalArgumentException("Upgrades per minute must be >= 0, got " + n);
         curator.writeUpgradesPerMinute(n);
+    }
+
+    /** Returns the target major version for applications not specifying one */
+    public Optional<Integer> targetMajorVersion() {
+        return curator.readTargetMajorVersion();
+    }
+
+    /** Sets the default target major version. Set to empty to determine target version normally (by confidence) */
+    public void setTargetMajorVersion(Optional<Integer> targetMajorVersion) {
+        curator.writeTargetMajorVersion(targetMajorVersion);
     }
 
     /** Override confidence for given version. This will cause the computed confidence to be ignored */

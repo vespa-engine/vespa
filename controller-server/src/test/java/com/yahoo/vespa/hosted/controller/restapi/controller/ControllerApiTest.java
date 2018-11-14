@@ -19,7 +19,7 @@ public class ControllerApiTest extends ControllerContainerTest {
     private static final AthenzIdentity HOSTED_VESPA_OPERATOR = AthenzUser.fromUserId("johnoperator");
 
     @Test
-    public void testControllerApi() throws Exception {
+    public void testControllerApi() {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
 
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/", new byte[0], Request.Method.GET), new File("root.json"));
@@ -40,7 +40,7 @@ public class ControllerApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void testUpgraderApi() throws Exception {
+    public void testUpgraderApi() {
         addUserToHostedOperatorRole(HOSTED_VESPA_OPERATOR);
 
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
@@ -53,7 +53,7 @@ public class ControllerApiTest extends ControllerContainerTest {
         // Set invalid configuration
         tester.assertResponse(
                 hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"upgradesPerMinute\":-1}", Request.Method.PATCH),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Upgrades per minute must be >= 0\"}",
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Upgrades per minute must be >= 0, got -1.0\"}",
                 400);
 
         // Ignores unrecognized field
@@ -65,6 +65,18 @@ public class ControllerApiTest extends ControllerContainerTest {
         // Set upgrades per minute
         tester.assertResponse(
                 hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"upgradesPerMinute\":42.0}", Request.Method.PATCH),
+                "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[]}",
+                200);
+
+        // Set target major version
+        tester.assertResponse(
+                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"targetMajorVersion\":6}", Request.Method.PATCH),
+                "{\"upgradesPerMinute\":42.0,\"targetMajorVersion\":6,\"confidenceOverrides\":[]}",
+                200);
+
+        // Clear target major version
+        tester.assertResponse(
+                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"targetMajorVersion\":null}", Request.Method.PATCH),
                 "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[]}",
                 200);
 
