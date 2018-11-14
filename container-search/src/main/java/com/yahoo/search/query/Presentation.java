@@ -32,7 +32,6 @@ public class Presentation implements Cloneable {
     public static final String BOLDING = "bolding";
     public static final String TIMING = "timing";
     public static final String SUMMARY = "summary";
-    public static final String REPORT_COVERAGE = "reportCoverage";
     public static final String SUMMARY_FIELDS = "summaryFields";
 
     /** The (short) name of the parameter holding the name of the return format to use */
@@ -45,7 +44,6 @@ public class Presentation implements Cloneable {
         argumentType.addField(new FieldDescription(BOLDING, "boolean", "bolding"));
         argumentType.addField(new FieldDescription(TIMING, "boolean", "timing"));
         argumentType.addField(new FieldDescription(SUMMARY, "string", "summary"));
-        argumentType.addField(new FieldDescription(REPORT_COVERAGE, "string", "reportcoverage"));
         argumentType.addField(new FieldDescription(FORMAT, "string", "format template"));
         argumentType.addField(new FieldDescription(SUMMARY_FIELDS, "string", "summaryFields"));
         argumentType.freeze();
