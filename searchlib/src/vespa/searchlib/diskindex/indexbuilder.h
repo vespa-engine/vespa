@@ -7,11 +7,9 @@
 #include <limits>
 #include <vector>
 
-namespace search {
+namespace search::common { class FileHeaderContext; }
 
-namespace common { class FileHeaderContext; }
-
-namespace diskindex {
+namespace search::diskindex {
 
 class BitVectorCandidate;
 
@@ -49,22 +47,21 @@ public:
 
     // schema argument must live until indexbuilder has been deleted.
     IndexBuilder(const Schema &schema); 
-    virtual ~IndexBuilder();
+    ~IndexBuilder() override;
 
-    virtual void startWord(vespalib::stringref word) override;
-    virtual void endWord() override;
-    virtual void startDocument(uint32_t docId) override;
-    virtual void endDocument() override;
-    virtual void startField(uint32_t fieldId) override;
-    virtual void endField() override;
-    virtual void startElement(uint32_t elementId, int32_t weight, uint32_t elementLen) override;
-    virtual void endElement() override;
-    virtual void addOcc(const WordDocElementWordPosFeatures &features) override;
+    void startWord(vespalib::stringref word) override;
+    void endWord() override;
+    void startDocument(uint32_t docId) override;
+    void endDocument() override;
+    void startField(uint32_t fieldId) override;
+    void endField() override;
+    void startElement(uint32_t elementId, int32_t weight, uint32_t elementLen) override;
+    void endElement() override;
+    void addOcc(const WordDocElementWordPosFeatures &features) override;
 
     // TODO: methods for attribute vectors.
 
     // TODO: methods for document summary.
-    inline FieldHandle & getIndexFieldHandle(uint32_t fieldId); 
     void setPrefix(vespalib::stringref prefix);
 
     vespalib::string appendToPrefix(vespalib::stringref name);
@@ -77,9 +74,4 @@ public:
     void close();
 };
 
-} // namespace diskindex
-
-} // namespace search
-
-
-
+}

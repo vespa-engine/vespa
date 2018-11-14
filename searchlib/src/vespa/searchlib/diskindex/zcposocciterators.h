@@ -5,9 +5,7 @@
 #include "zcpostingiterators.h"
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 template <bool bigEndian>
 class Zc4RareWordPosOccIterator : public Zc4RareWordPostingIterator<bigEndian>
@@ -87,7 +85,4 @@ extern template class ZcRareWordPosOccIterator<false>;
 extern template class ZcPosOccIterator<true>;
 extern template class ZcPosOccIterator<false>;
 
-} // namespace diskindex
-
-} // namespace search
-
+}

@@ -7,9 +7,7 @@
 #include <vespa/searchlib/queryeval/iterators.h>
 #include <vespa/fastos/dynamiclibrary.h>
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 using bitcompression::Position;
 
@@ -309,8 +307,4 @@ extern template class ZcPostingIterator<false>;
 extern template class ZcRareWordPostingIterator<true>;
 extern template class ZcRareWordPostingIterator<false>;
 
-
-} // namespace diskindex
-
-} // namespace search
-
+}

@@ -11,7 +11,7 @@ namespace search::diskindex {
 
 DocIdMapping::DocIdMapping()
     : _docIdLimit(0u),
-      _selector(NULL),
+      _selector(nullptr),
       _selectorId(0)
 {
 }
@@ -21,7 +21,7 @@ void
 DocIdMapping::clear()
 {
     _docIdLimit = 0;
-    _selector = NULL;
+    _selector = nullptr;
     _selectorId = 0;
 }
 
@@ -30,7 +30,7 @@ void
 DocIdMapping::setup(uint32_t docIdLimit)
 {
     _docIdLimit = docIdLimit;
-    _selector = NULL;
+    _selector = nullptr;
     _selectorId = 0;
 }
 
@@ -50,8 +50,7 @@ bool
 DocIdMapping::readDocIdLimit(const vespalib::string &mergedDir)
 {
     uint32_t docIdLimit = 0;
-    if (!search::docsummary::DocumentSummary::
-        readDocIdLimit(mergedDir, docIdLimit))
+    if (!search::docsummary::DocumentSummary::readDocIdLimit(mergedDir, docIdLimit))
         return false;
     _docIdLimit = docIdLimit;
     return true;

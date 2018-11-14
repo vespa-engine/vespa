@@ -8,30 +8,15 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "bitvectorkeyscope.h"
 
-namespace search
-{
+namespace search::common { class FileHeaderContext; }
 
 
-namespace common
-{
-
-class FileHeaderContext;
-
-}
-
-
-namespace diskindex
-{
+namespace search::diskindex {
 
 class BitVectorIdxFileWrite
 {
 private:
-    BitVectorIdxFileWrite(const BitVectorIdxFileWrite &) = delete;
-    BitVectorIdxFileWrite(const BitVectorIdxFileWrite &&) = delete;
-    BitVectorIdxFileWrite& operator=(const BitVectorIdxFileWrite &) = delete;
-    BitVectorIdxFileWrite& operator=(const BitVectorIdxFileWrite &&) = delete;
-
-    Fast_BufferedFile *_idxFile;
+    std::unique_ptr<Fast_BufferedFile> _idxFile;
 
 public:
 
@@ -45,32 +30,26 @@ protected:
     void syncCommon();
 
 public:
+    BitVectorIdxFileWrite(const BitVectorIdxFileWrite &) = delete;
+    BitVectorIdxFileWrite(const BitVectorIdxFileWrite &&) = delete;
+    BitVectorIdxFileWrite& operator=(const BitVectorIdxFileWrite &) = delete;
+    BitVectorIdxFileWrite& operator=(const BitVectorIdxFileWrite &&) = delete;
     BitVectorIdxFileWrite(BitVectorKeyScope scope);
 
     ~BitVectorIdxFileWrite();
 
-    void
-    open(const vespalib::string &name, uint32_t docIdLimit,
-         const TuneFileSeqWrite &tuneFileWrite,
-         const search::common::FileHeaderContext &fileHeaderContext);
+    void open(const vespalib::string &name, uint32_t docIdLimit,
+              const TuneFileSeqWrite &tuneFileWrite,
+              const search::common::FileHeaderContext &fileHeaderContext);
 
 
 
-    void
-    addWordSingle(uint64_t wordNum, uint32_t numDocs);
+    void addWordSingle(uint64_t wordNum, uint32_t numDocs);
+    void flush();
+    void sync();
+    void close();
 
-    void
-    flush();
-
-    void
-    sync();
-
-    void
-    close();
-
-    static uint32_t
-    getBitVectorLimit(uint32_t docIdLimit)
-    {
+    static uint32_t getBitVectorLimit(uint32_t docIdLimit) {
         // Must match FastS_BinSizeParams::CalcMaxBinSize()
         uint32_t ret = (docIdLimit + 63) / 64;
         if (ret < 16)
@@ -80,15 +59,8 @@ public:
         return ret;
     }
 
-    void
-    makeIdxHeader(const search::common::FileHeaderContext &fileHeaderContext);
-
-    void
-    updateIdxHeader(uint64_t fileBitSize);
+    void makeIdxHeader(const search::common::FileHeaderContext &fileHeaderContext);
+    void updateIdxHeader(uint64_t fileBitSize);
 };
 
-
-} // namespace diskindex
-
-} // namespace search
-
+}

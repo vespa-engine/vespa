@@ -26,7 +26,7 @@ FileHeader::FileHeader()
 {
 }
 
-FileHeader::~FileHeader() {}
+FileHeader::~FileHeader() = default;
 
 bool
 FileHeader::taste(const vespalib::string &name,

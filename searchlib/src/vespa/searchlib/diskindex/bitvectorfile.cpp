@@ -29,7 +29,7 @@ const size_t FILE_HEADERSIZE_ALIGNMENT = 4096;
 
 BitVectorFileWrite::BitVectorFileWrite(BitVectorKeyScope scope)
     : BitVectorIdxFileWrite(scope),
-      _datFile(NULL),
+      _datFile(nullptr),
       _datHeaderLen(0)
 {
 }
@@ -50,7 +50,7 @@ BitVectorFileWrite::open(const vespalib::string &name,
 {
     vespalib::string datname = name + ".bdat";
 
-    assert(_datFile == NULL);
+    assert(_datFile == nullptr);
 
     Parent::open(name, docIdLimit, tuneFileWrite, fileHeaderContext);
 
@@ -159,7 +159,7 @@ BitVectorFileWrite::close()
 {
     size_t bitmapbytes = BitVector::getFileBytes(_docIdLimit);
 
-    if (_datFile != NULL) {
+    if (_datFile != nullptr) {
         if (_datFile->IsOpened()) {
             uint64_t pos = _datFile->GetPosition();
             assert(pos == static_cast<uint64_t>(_numKeys) *
@@ -170,12 +170,11 @@ BitVectorFileWrite::close()
             _datFile->Close();
         }
         delete _datFile;
-        _datFile = NULL;
+        _datFile = nullptr;
     }
     Parent::close();
 }
 
-BitVectorCandidate::~BitVectorCandidate() {
-}
+BitVectorCandidate::~BitVectorCandidate() = default;
 
 }

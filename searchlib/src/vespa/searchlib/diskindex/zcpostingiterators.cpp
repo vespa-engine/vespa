@@ -4,9 +4,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 using search::fef::TermFieldMatchDataArray;
 using search::bitcompression::FeatureDecodeContext;
@@ -600,6 +598,4 @@ template class ZcPostingIterator<false>;
 template class ZcRareWordPostingIterator<true>;
 template class ZcRareWordPostingIterator<false>;
 
-} // namespace diskindex
-
-} // namespace search
+}

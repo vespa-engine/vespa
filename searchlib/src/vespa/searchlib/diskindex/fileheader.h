@@ -6,10 +6,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 
-namespace search
-{
-
-namespace diskindex
+namespace search::diskindex
 {
 
 class FileHeader
@@ -84,8 +81,4 @@ public:
     }
 };
 
-
-} // namespace diskindex
-
-} // namespace search
-
+}

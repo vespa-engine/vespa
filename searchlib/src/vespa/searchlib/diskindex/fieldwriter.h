@@ -8,9 +8,7 @@
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 /*
  * FieldWriter is used to write a dictionary and posting list file
@@ -22,11 +20,6 @@ namespace diskindex {
 class FieldWriter
 {
 private:
-    FieldWriter(const FieldWriter &rhs) = delete;
-    FieldWriter(const FieldWriter &&rhs) = delete;
-    FieldWriter &operator=(const FieldWriter &rhs) = delete;
-    FieldWriter &operator=(const FieldWriter &&rhs) = delete;
-
     uint64_t _wordNum;
     uint32_t _prevDocId;
 
@@ -55,6 +48,10 @@ private:
     void flush();
 
 public:
+    FieldWriter(const FieldWriter &rhs) = delete;
+    FieldWriter(const FieldWriter &&rhs) = delete;
+    FieldWriter &operator=(const FieldWriter &rhs) = delete;
+    FieldWriter &operator=(const FieldWriter &&rhs) = delete;
     FieldWriter(uint32_t docIdLimit, uint64_t numWordIds);
     ~FieldWriter();
 
@@ -83,7 +80,4 @@ public:
     static void remove(const vespalib::string &prefix);
 };
 
-} // namespace diskindex
-
-} // namespace search
-
+}

@@ -10,9 +10,7 @@
 #include <vespa/vespalib/stllike/cache.h>
 
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 /**
  * This class represents a disk index with a common dictionary, and
@@ -160,6 +158,4 @@ public:
 
 void swap(DiskIndex::LookupResult & a, DiskIndex::LookupResult & b);
 
-} // namespace diskindex
-
-} // namespace search
+}

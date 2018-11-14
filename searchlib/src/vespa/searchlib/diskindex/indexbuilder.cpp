@@ -13,9 +13,7 @@
 LOG_SETUP(".diskindex.indexbuilder");
 
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 namespace {
 
@@ -28,7 +26,7 @@ using index::WordDocElementFeatures;
 using index::schema::DataType;
 using vespalib::getLastErrorString;
 
-static uint32_t
+uint32_t
 noWordPos()
 {
     return std::numeric_limits<uint32_t>::max();
@@ -58,13 +56,6 @@ public:
 
 
 }
-
-inline IndexBuilder::FieldHandle &
-IndexBuilder::getIndexFieldHandle(uint32_t fieldId)
-{
-    return _fields[fieldId];
-}
-
 
 class IndexBuilder::FieldHandle
 {
@@ -269,7 +260,7 @@ public:
 
 
 FileHandle::FileHandle()
-    : _fieldWriter(NULL),
+    : _fieldWriter(nullptr),
       _docIdAndFeatures()
 {
 }
@@ -288,7 +279,7 @@ FileHandle::open(vespalib::stringref dir,
                  const TuneFileSeqWrite &tuneFileWrite,
                  const FileHeaderContext &fileHeaderContext)
 {
-    assert(_fieldWriter == NULL);
+    assert(_fieldWriter == nullptr);
 
     _fieldWriter = new FieldWriter(docIdLimit, numWordIds);
 
@@ -306,10 +297,10 @@ void
 FileHandle::close()
 {
     bool ret = true;
-    if (_fieldWriter != NULL) {
+    if (_fieldWriter != nullptr) {
         bool closeRes = _fieldWriter->close();
         delete _fieldWriter;
-        _fieldWriter = NULL;
+        _fieldWriter = nullptr;
         if (!closeRes) {
             LOG(error,
                 "Could not close term writer");
@@ -340,9 +331,7 @@ IndexBuilder::FieldHandle::FieldHandle(const Schema &schema,
 }
 
 
-IndexBuilder::FieldHandle::~FieldHandle()
-{
-}
+IndexBuilder::FieldHandle::~FieldHandle() = default;
 
 
 void
@@ -523,7 +512,7 @@ SingleIterator::appendFeatures(DocIdAndFeatures &features)
 
 IndexBuilder::IndexBuilder(const Schema &schema)
     : index::IndexBuilder(schema),
-      _currentField(NULL),
+      _currentField(nullptr),
       _curDocId(noDocId()),
       _lowestOKDocId(1u),
       _curWord(),
@@ -546,11 +535,7 @@ IndexBuilder::IndexBuilder(const Schema &schema)
     }
 }
 
-
-IndexBuilder::~IndexBuilder()
-{
-}
-
+IndexBuilder::~IndexBuilder() = default;
 
 void
 IndexBuilder::startWord(vespalib::stringref word)
@@ -568,7 +553,7 @@ void
 IndexBuilder::endWord()
 {
     assert(_inWord);
-    assert(_currentField != NULL);
+    assert(_currentField != nullptr);
     _currentField->endWord();
     _inWord = false;
     _lowestOKDocId = 1u;
@@ -581,7 +566,7 @@ IndexBuilder::startDocument(uint32_t docId)
     assert(_curDocId == noDocId());
     assert(docId >= _lowestOKDocId);
     assert(docId < _docIdLimit);
-    assert(_currentField != NULL);
+    assert(_currentField != nullptr);
     _curDocId = docId;
     assert(_curDocId != noDocId());
     _currentField->startDocument(docId);
@@ -592,7 +577,7 @@ void
 IndexBuilder::endDocument()
 {
     assert(_curDocId != noDocId());
-    assert(_currentField != NULL);
+    assert(_currentField != nullptr);
     _currentField->endDocument();
     _lowestOKDocId = _curDocId + 1;
     _curDocId = noDocId();
@@ -603,11 +588,11 @@ void
 IndexBuilder::startField(uint32_t fieldId)
 {
     assert(_curDocId == noDocId());
-    assert(_currentField == NULL);
+    assert(_currentField == nullptr);
     assert(fieldId < _fields.size());
     assert(fieldId >= _lowestOKFieldId);
     _currentField = &_fields[fieldId];
-    assert(_currentField != NULL);
+    assert(_currentField != nullptr);
 }
 
 
@@ -616,9 +601,9 @@ IndexBuilder::endField()
 {
     assert(_curDocId == noDocId());
     assert(!_inWord);
-    assert(_currentField != NULL);
+    assert(_currentField != nullptr);
     _lowestOKFieldId = _currentField->_fieldId + 1;
-    _currentField = NULL;
+    _currentField = nullptr;
 }
 
 
@@ -627,7 +612,7 @@ IndexBuilder::startElement(uint32_t elementId,
                            int32_t weight,
                            uint32_t elementLen)
 {
-    assert(_currentField != NULL);
+    assert(_currentField != nullptr);
     _currentField->startElement(elementId, weight, elementLen);
 }
 
@@ -635,7 +620,7 @@ IndexBuilder::startElement(uint32_t elementId,
 void
 IndexBuilder::endElement()
 {
-    assert(_currentField != NULL);
+    assert(_currentField != nullptr);
     _currentField->endElement();
 }
 
@@ -643,7 +628,7 @@ IndexBuilder::endElement()
 void
 IndexBuilder::addOcc(const WordDocElementWordPosFeatures &features)
 {
-    assert(_currentField != NULL);
+    assert(_currentField != nullptr);
     _currentField->addOcc(features);
 }
 
@@ -710,7 +695,4 @@ IndexBuilder::close()
     }
 }
 
-
-} // namespace diskindex
-
-} // namespace search
+}

@@ -26,10 +26,7 @@ using search::index::SchemaUtil;
 using search::index::schema::DataType;
 using vespalib::getLastErrorString;
 
-
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 void
 FusionInputIndex::setSchema(const Schema::SP &schema)
@@ -40,7 +37,7 @@ FusionInputIndex::setSchema(const Schema::SP &schema)
 Fusion::Fusion(bool dynamicKPosIndexFormat,
                const TuneFileIndexing &tuneFileIndexing,
                const FileHeaderContext &fileHeaderContext)
-    : _schema(NULL),
+    : _schema(nullptr),
       _oldIndexes(),
       _docIdLimit(0u),
       _numWordIds(0u),
@@ -50,12 +47,10 @@ Fusion::Fusion(bool dynamicKPosIndexFormat,
       _fileHeaderContext(fileHeaderContext)
 { }
 
-
 Fusion::~Fusion()
 {
     ReleaseMappingTables();
 }
-
 
 void
 Fusion::setSchema(const Schema *schema)
@@ -63,13 +58,11 @@ Fusion::setSchema(const Schema *schema)
     _schema = schema;
 }
 
-
 void
 Fusion::setOutDir(const vespalib::string &outDir)
 {
     _outDir = outDir;
 }
-
 
 void
 Fusion::SetOldIndexList(const std::vector<vespalib::string> &oldIndexList)
@@ -589,7 +582,4 @@ Fusion::merge(const Schema &schema,
     return true;
 }
 
-
-} // namespace diskindex
-
-} // namespace search
+}

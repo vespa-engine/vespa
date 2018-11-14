@@ -28,14 +28,12 @@ vespalib::string myId5("Zc.5");
 
 }
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 using vespalib::getLastErrorString;
 
 ZcPosOccRandRead::ZcPosOccRandRead()
-    : _file(new FastOS_File()),
+    : _file(std::make_unique<FastOS_File>()),
       _fileSize(0),
       _minChunkDocs(1 << 30),
       _minSkipDocs(64),
@@ -125,9 +123,9 @@ ZcPosOccRandRead::readPostingList(const PostingListCounts &counts,
     startOffset -= (startOffset & 7);
 
     void *mapPtr = _file->MemoryMapPtr(startOffset);
-    if (mapPtr != NULL) {
+    if (mapPtr != nullptr) {
         handle._mem = mapPtr;
-        handle._allocMem = NULL;
+        handle._allocMem = nullptr;
         handle._allocSize = 0;
     } else {
         uint64_t endOffset = (handle._bitOffset + _headerBitSize +
@@ -145,11 +143,11 @@ ZcPosOccRandRead::readPostingList(const PostingListCounts &counts,
             padExtraAfter = 16 - padAfter;
 
         size_t mallocLen = padBefore + vectorLen + padAfter + padExtraAfter;
-        void *mallocStart = NULL;
-        void *alignedBuffer = NULL;
+        void *mallocStart = nullptr;
+        void *alignedBuffer = nullptr;
         if (mallocLen > 0) {
             alignedBuffer = _file->AllocateDirectIOBuffer(mallocLen, mallocStart);
-            assert(mallocStart != NULL);
+            assert(mallocStart != nullptr);
             assert(endOffset + padAfter + padExtraAfter <= _fileSize);
             _file->ReadBuf(alignedBuffer,
                            padBefore + vectorLen + padAfter,
@@ -365,6 +363,4 @@ Zc4PosOccRandRead::getSubIdentifier()
     return d.getIdentifier();
 }
 
-} // namespace diskindex
-
-} // namespace search
+}

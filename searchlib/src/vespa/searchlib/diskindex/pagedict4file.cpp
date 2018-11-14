@@ -42,8 +42,8 @@ const uint32_t headerAlign = 4096;
 }
 
 PageDict4FileSeqRead::PageDict4FileSeqRead()
-    : _pReader(NULL),
-      _ssReader(NULL),
+    : _pReader(nullptr),
+      _ssReader(nullptr),
       _ssd(),
       _ssReadContext(_ssd),
       _ssfile(),
@@ -261,15 +261,15 @@ PageDict4FileSeqRead::close()
 {
     delete _pReader;
     delete _ssReader;
-    _pReader = NULL;
-    _ssReader = NULL;
+    _pReader = nullptr;
+    _ssReader = nullptr;
 
     _ssReadContext.dropComprBuf();
     _spReadContext.dropComprBuf();
     _pReadContext.dropComprBuf();
-    _ssReadContext.setFile(NULL);
-    _spReadContext.setFile(NULL);
-    _pReadContext.setFile(NULL);
+    _ssReadContext.setFile(nullptr);
+    _spReadContext.setFile(nullptr);
+    _pReadContext.setFile(nullptr);
     _ssfile.Close();
     _spfile.Close();
     _pfile.Close();
@@ -290,9 +290,9 @@ PageDict4FileSeqRead::getParams(PostingListParams &params)
 
 
 PageDict4FileSeqWrite::PageDict4FileSeqWrite()
-    : _pWriter(NULL),
-      _spWriter(NULL),
-      _ssWriter(NULL),
+    : _pWriter(nullptr),
+      _spWriter(nullptr),
+      _ssWriter(nullptr),
       _pe(),
       _pWriteContext(_pe),
       _pfile(),
@@ -333,9 +333,9 @@ PageDict4FileSeqWrite::open(const vespalib::string &name,
                             const TuneFileSeqWrite &tuneFileWrite,
                             const FileHeaderContext &fileHeaderContext)
 {
-    assert(_pWriter == NULL);
-    assert(_spWriter == NULL);
-    assert(_ssWriter == NULL);
+    assert(_pWriter == nullptr);
+    assert(_spWriter == nullptr);
+    assert(_ssWriter == nullptr);
 
     vespalib::string pname = name + ".pdat";
     vespalib::string spname = name + ".spdat";
@@ -428,15 +428,15 @@ PageDict4FileSeqWrite::close()
     _pWriteContext.dropComprBuf();
     _pfile.Sync();
     _pfile.Close();
-    _pWriteContext.setFile(NULL);
+    _pWriteContext.setFile(nullptr);
     _spWriteContext.dropComprBuf();
     _spfile.Sync();
     _spfile.Close();
-    _spWriteContext.setFile(NULL);
+    _spWriteContext.setFile(nullptr);
     _ssWriteContext.dropComprBuf();
     _ssfile.Sync();
     _ssfile.Close();
-    _ssWriteContext.setFile(NULL);
+    _ssWriteContext.setFile(nullptr);
 
     // Update file headers
     updatePHeader(usedPBits);
@@ -446,9 +446,9 @@ PageDict4FileSeqWrite::close()
     delete _pWriter;
     delete _spWriter;
     delete _ssWriter;
-    _pWriter = NULL;
-    _spWriter = NULL;
-    _ssWriter = NULL;
+    _pWriter = nullptr;
+    _spWriter = nullptr;
+    _ssWriter = nullptr;
 
     return true;
 }

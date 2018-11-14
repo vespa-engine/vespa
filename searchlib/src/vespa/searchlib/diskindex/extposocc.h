@@ -4,25 +4,21 @@
 
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search
-{
-
-class TuneFileSeqRead;
-class TuneFileSeqWrite;
-
-namespace index {
-
-class PostingListParams;
-class PostingListCountFileSeqWrite;
-class PostingListCountFileSeqRead;
-class PostingListFileSeqWrite;
-class PostingListFileSeqRead;
-class Schema;
-
+namespace search { 
+    class TuneFileSeqRead;
+    class TuneFileSeqWrite;
 }
 
-namespace diskindex
-{
+namespace search::index { 
+    class PostingListParams;
+    class PostingListCountFileSeqWrite;
+    class PostingListCountFileSeqRead;
+    class PostingListFileSeqWrite;
+    class PostingListFileSeqRead;
+    class Schema;
+}
+
+namespace search::diskindex {
 
 
 void
@@ -48,7 +44,4 @@ makePosOccRead(const vespalib::string &name,
                const index::PostingListParams &featureParams,
                const TuneFileSeqRead &tuneFileRead);
 
-} // namespace diskindex
-
-} // namespace search
-
+}

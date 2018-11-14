@@ -8,22 +8,12 @@
 #include <vespa/vespalib/stllike/string.h>
 #include "bitvectoridxfile.h"
 
-namespace search
-{
-
-
-namespace diskindex
-{
+namespace search::diskindex {
 
 
 class BitVectorFileWrite : public BitVectorIdxFileWrite
 {
 private:
-    BitVectorFileWrite(const BitVectorFileWrite &) = delete;
-    BitVectorFileWrite(const BitVectorFileWrite &&) = delete;
-    BitVectorFileWrite& operator=(const BitVectorFileWrite &) = delete;
-    BitVectorFileWrite& operator=(const BitVectorFileWrite &&) = delete;
-
     using Parent = BitVectorIdxFileWrite;
 
     Fast_BufferedFile *_datFile;
@@ -33,33 +23,24 @@ private:
     uint32_t _datHeaderLen;
 
 public:
+    BitVectorFileWrite(const BitVectorFileWrite &) = delete;
+    BitVectorFileWrite(const BitVectorFileWrite &&) = delete;
+    BitVectorFileWrite& operator=(const BitVectorFileWrite &) = delete;
+    BitVectorFileWrite& operator=(const BitVectorFileWrite &&) = delete;
     BitVectorFileWrite(BitVectorKeyScope scope);
-
     ~BitVectorFileWrite();
 
-    void
-    open(const vespalib::string &name, uint32_t docIdLimit,
-         const TuneFileSeqWrite &tuneFileWrite,
-         const common::FileHeaderContext &fileHeaderContext);
+    void open(const vespalib::string &name, uint32_t docIdLimit,
+            const TuneFileSeqWrite &tuneFileWrite,
+            const common::FileHeaderContext &fileHeaderContext);
 
 
-    void
-    addWordSingle(uint64_t wordNum, const BitVector &bitVector);
-
-    void
-    flush();
-
-    void
-    sync();
-
-    void
-    close();
-
-    void
-    makeDatHeader(const common::FileHeaderContext &fileHeaderContext);
-
-    void
-    updateDatHeader(uint64_t fileBitSize);
+    void addWordSingle(uint64_t wordNum, const BitVector &bitVector);
+    void flush();
+    void sync();
+    void close();
+    void makeDatHeader(const common::FileHeaderContext &fileHeaderContext);
+    void updateDatHeader(uint64_t fileBitSize);
 };
 
 
@@ -96,9 +77,7 @@ public:
 
     ~BitVectorCandidate();
 
-    void
-    clear()
-    {
+    void clear() {
         if (__builtin_expect(_numDocs > _bitVectorLimit, false)) {
             _bv->clear();
         }
@@ -106,9 +85,7 @@ public:
         _array.clear();
     }
 
-    void
-    flush(BitVector &obv)
-    {
+    void flush(BitVector &obv) {
         if (__builtin_expect(_numDocs > _bitVectorLimit, false)) {
             obv.orWith(*_bv);
         } else {
@@ -119,9 +96,7 @@ public:
         clear();
     }
 
-    void
-    add(uint32_t docId)
-    {
+    void add(uint32_t docId) {
         if (_numDocs < _bitVectorLimit) {
             _array.push_back(docId);
         } else {
@@ -139,37 +114,19 @@ public:
     /*
      * Get number of documents buffered.  This might include duplicates.
      */
-    uint64_t
-    getNumDocs() const
-    {
-        return _numDocs;
-    }
+    uint64_t getNumDocs() const { return _numDocs; }
 
-    bool
-    empty() const
-    {
-        return _numDocs == 0;
-    }
+    bool empty() const { return _numDocs == 0; }
 
     /*
      * Return true if array limit has been exceeded and bitvector has been
      * populated.
      */
-    bool
-    getCrossedBitVectorLimit() const
-    {
+    bool getCrossedBitVectorLimit() const {
         return _numDocs > _bitVectorLimit;
     }
 
-    BitVector &
-    getBitVector()
-    {
-        return *_bv;
-    }
+    BitVector &getBitVector() { return *_bv; }
 };
 
-
-} // namespace diskindex
-
-} // namespace search
-
+}

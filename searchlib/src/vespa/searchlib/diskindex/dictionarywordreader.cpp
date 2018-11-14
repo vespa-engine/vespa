@@ -22,9 +22,7 @@ DictionaryWordReader::DictionaryWordReader()
 }
 
 
-DictionaryWordReader::~DictionaryWordReader()
-{
-}
+DictionaryWordReader::~DictionaryWordReader() = default;
 
 
 bool

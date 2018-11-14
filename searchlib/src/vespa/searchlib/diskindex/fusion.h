@@ -9,22 +9,20 @@
 #include <vector>
 #include <string>
 
-namespace search
-{
+namespace search {
 
 template <class IN>
 class PostingPriorityQueue;
+}
 
-namespace common
-{
+namespace search::common {
 
 class TuneFileIndexing;
 class FileHeaderContext;
 
 }
 
-namespace diskindex
-{
+namespace search::diskindex {
 
 class FieldReader;
 class FieldWriter;
@@ -108,7 +106,7 @@ public:
     const index::Schema &
     getSchema() const
     {
-        assert(_schema.get() != NULL);
+        assert(_schema.get() != nullptr);
         return *_schema.get();
     }
 
@@ -215,7 +213,7 @@ protected:
     const Schema &
     getSchema() const
     {
-        assert(_schema != NULL);
+        assert(_schema != nullptr);
         return *_schema;
     }
 public:
@@ -257,7 +255,4 @@ public:
           const search::common::FileHeaderContext &fileHeaderContext);
 };
 
-} // namespace diskindex
-
-} // namespace search
-
+}

@@ -18,10 +18,7 @@ vespalib::string mySSId("PageDict4SS.1");
 
 using vespalib::getLastErrorString;
 
-namespace search {
-
-namespace diskindex {
-
+namespace search::diskindex {
 
 PageDict4RandRead::PageDict4RandRead()
     : DictionaryFileRandRead(),
@@ -42,7 +39,7 @@ PageDict4RandRead::PageDict4RandRead()
 }
 
 
-PageDict4RandRead::~PageDict4RandRead() { }
+PageDict4RandRead::~PageDict4RandRead() = default;
 
 
 void
@@ -179,8 +176,7 @@ PageDict4RandRead::lookup(vespalib::stringref word,
                      ssRes._pageNum);
 
         PLookupRes pRes;
-        const char *pData = static_cast<const char *>
-                             (_pfile->MemoryMapPtr(0));
+        const char *pData = static_cast<const char *>(_pfile->MemoryMapPtr(0));
         pRes.lookup(*_ssReader,
                     pData + pageSize * spRes._pageNum,
                     word,
@@ -209,16 +205,11 @@ PageDict4RandRead::open(const vespalib::string &name,
     vespalib::string spname = name + ".spdat";
     vespalib::string ssname = name + ".ssdat";
 
-    if (tuneFileRead.getWantMemoryMap() || true) {
-        int mmapFlags(tuneFileRead.getMemoryMapFlags());
-        _ssfile->enableMemoryMap(mmapFlags);
-        _spfile->enableMemoryMap(mmapFlags);
-        _pfile->enableMemoryMap(mmapFlags);
-    } else if (tuneFileRead.getWantDirectIO()) {
-        _ssfile->EnableDirectIO();
-        _spfile->EnableDirectIO();
-        _pfile->EnableDirectIO();
-    }
+    int mmapFlags(tuneFileRead.getMemoryMapFlags());
+    _ssfile->enableMemoryMap(mmapFlags);
+    _spfile->enableMemoryMap(mmapFlags);
+    _pfile->enableMemoryMap(mmapFlags);
+
 
     if (!_ssfile->OpenReadOnly(ssname.c_str())) {
         LOG(error, "could not open %s: %s", _ssfile->GetFileName(), getLastErrorString().c_str());
@@ -259,7 +250,7 @@ PageDict4RandRead::close()
     _ssReader.reset();
 
     _ssReadContext.dropComprBuf();
-    _ssReadContext.setFile(NULL);
+    _ssReadContext.setFile(nullptr);
     _ssfile->Close();
     _spfile->Close();
     _pfile->Close();
@@ -273,7 +264,4 @@ PageDict4RandRead::getNumWordIds() const
     return _ssd._numWordIds;
 }
 
-
-} // namespace diskindex
-
-} // namespace search
+}

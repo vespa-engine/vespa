@@ -7,9 +7,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.bitvectordictionary");
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 
 BitVectorDictionary::BitVectorDictionary()
@@ -23,7 +21,7 @@ BitVectorDictionary::BitVectorDictionary()
 
 BitVectorDictionary::~BitVectorDictionary()
 {
-    if (_datFile.get() != NULL) {
+    if (_datFile.get() != nullptr) {
         _datFile->Close();
     }
 }
@@ -100,7 +98,4 @@ BitVectorDictionary::lookup(uint64_t wordNum)
                                  itr->_numDocs);
 }
 
-
-} // namespace diskindex
-
-} // namespace search
+}

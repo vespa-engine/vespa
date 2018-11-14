@@ -20,9 +20,7 @@ using namespace search::index;
 using namespace search::query;
 using namespace search::queryeval;
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 void swap(DiskIndex::LookupResult & a, DiskIndex::LookupResult & b)
 {
@@ -37,12 +35,12 @@ DiskIndex::LookupResult::LookupResult()
 {
 }
 
-DiskIndex::Key::Key() : _indexes() { }
+DiskIndex::Key::Key() = default;
 DiskIndex::Key::Key(const IndexList & indexes, vespalib::stringref word) :
     _word(word),
     _indexes(indexes)
 { }
-DiskIndex::Key::~Key() { }
+DiskIndex::Key::~Key() = default;
 
 DiskIndex::DiskIndex(const vespalib::string &indexDir, size_t cacheSize)
     : _indexDir(indexDir),
@@ -58,7 +56,7 @@ DiskIndex::DiskIndex(const vespalib::string &indexDir, size_t cacheSize)
     calculateSize();
 }
 
-DiskIndex::~DiskIndex() {}
+DiskIndex::~DiskIndex() = default;
 
 bool
 DiskIndex::loadSchema()
@@ -471,7 +469,4 @@ DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSp
     }
 }
 
-
-} // namespace diskindex
-
-} // namespace search
+}

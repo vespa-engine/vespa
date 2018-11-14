@@ -7,9 +7,7 @@
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 class ZcPosOccRandRead : public index::PostingListFileRandRead
 {
@@ -83,7 +81,4 @@ public:
 };
 
 
-} // namespace diskindex
-
-} // namespace search
-
+}
