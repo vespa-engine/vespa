@@ -20,10 +20,6 @@ rpc.host string default="" restart
 ## The id this service should register itself with in slobrok
 rpc.slobrokId string default="" restart
 
-## Whether to obtain coverage reports by default. This can be overridden with
-## the 'reportcoverage' HTTP parameter.
-coveragereports bool default=false restart
-
 ## A unique identifier string for this QRS. The only guarantee given is
 ## this string will be unique for every QRS in a Vespa application.
 discriminator string default="qrserver.0" restart

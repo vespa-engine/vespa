@@ -685,7 +685,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertTrue(config.rpc().enabled());
         assertEquals("", config.rpc().host());
         assertFalse(config.restartOnDeploy());
-        assertFalse(config.coveragereports());
         assertEquals("filedistribution/" + hostname, config.filedistributor().configid());
     }
 
