@@ -1,13 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "updateoperation.h"
-#include <vespa/storage/distributor/distributormetricsset.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <vespa/document/fieldvalue/document.h>
+#include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
+
 LOG_SETUP(".distributor.callback.doc.update");
 
 
@@ -20,10 +22,8 @@ UpdateOperation::UpdateOperation(DistributorComponent& manager,
                                  const std::shared_ptr<api::UpdateCommand> & msg,
                                  PersistenceOperationMetricSet& metric)
     : Operation(),
-      _trackerInstance(metric,
-               std::shared_ptr<api::BucketInfoReply>(new api::UpdateReply(*msg)),
-               manager,
-               msg->getTimestamp()),
+      _trackerInstance(metric, std::make_shared<api::UpdateReply>(*msg),
+                       manager, msg->getTimestamp()),
       _tracker(_trackerInstance),
       _msg(msg),
       _manager(manager),
@@ -114,23 +114,18 @@ void
 UpdateOperation::onReceive(DistributorMessageSender& sender,
                           const std::shared_ptr<api::StorageReply> & msg)
 {
-    api::UpdateReply& reply =
-        static_cast<api::UpdateReply&>(*msg);
+    auto& reply = static_cast<api::UpdateReply&>(*msg);
 
     if (msg->getType() == api::MessageType::UPDATE_REPLY) {
         uint16_t node = _tracker.handleReply(reply);
 
         if (node != (uint16_t)-1) {
             if (reply.getResult().getResult() == api::ReturnCode::OK) {
-                _results.push_back(OldTimestamp(
-                                           reply.getBucketId(),
-                                           reply.getOldTimestamp(),
-                                           node));
+                _results.emplace_back(reply.getBucketId(), reply.getOldTimestamp(), node);
             }
 
             if (_tracker.getReply().get()) {
-                api::UpdateReply& replyToSend =
-                    static_cast<api::UpdateReply&>(*_tracker.getReply());
+                auto& replyToSend = static_cast<api::UpdateReply&>(*_tracker.getReply());
 
                 uint64_t oldTs = 0;
                 uint64_t goodNode = 0;
@@ -147,12 +142,17 @@ UpdateOperation::onReceive(DistributorMessageSender& sender,
 
                 for (uint32_t i = 0; i < _results.size(); i++) {
                     if (_results[i].oldTs < oldTs) {
-                        replyToSend.setNodeWithNewestTimestamp(
-                                _results[goodNode].nodeId);
-                        _newestTimestampLocation.first =
-                            _results[goodNode].bucketId;
-                        _newestTimestampLocation.second =
-                            _results[goodNode].nodeId;
+                        LOG(warning, "Update operation for '%s' in bucket %s updated documents with different timestamps. "
+                                     "This should not happen and may indicate undetected replica divergence. "
+                                     "Found ts=%zu on node %u, ts=%zu on node %u",
+                                     reply.getDocumentId().toString().c_str(),
+                                     reply.getBucket().toString().c_str(),
+                                     _results[i].oldTs, _results[i].nodeId,
+                                     _results[goodNode].oldTs, _results[goodNode].nodeId);
+
+                        replyToSend.setNodeWithNewestTimestamp(_results[goodNode].nodeId);
+                        _newestTimestampLocation.first  = _results[goodNode].bucketId;
+                        _newestTimestampLocation.second = _results[goodNode].nodeId;
                         break;
                     }
                 }
