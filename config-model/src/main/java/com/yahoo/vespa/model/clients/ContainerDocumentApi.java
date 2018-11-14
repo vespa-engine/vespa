@@ -35,7 +35,7 @@ public class ContainerDocumentApi implements FeederConfig.Producer {
 
     public ContainerDocumentApi(ContainerCluster cluster, Options options) {
         this.options = options;
-        legacySetupSearch(cluster); // TODO: Try to not do that on Vespa 7
+        //legacySetupSearch(cluster); // TODO: Try to not do that on Vespa 7
         setupHandlers(cluster);
     }
 
