@@ -120,7 +120,7 @@ public class StorageMaintainer {
                     .withTags(tags));
 
             // configserver-new
-            Path configServerNewCheckPath = Paths.get("curl");
+            Path configServerNewCheckPath = Paths.get("/usr/bin/curl");
             configs.add(new SecretAgentCheckConfig(nodeTypeToRole(context.nodeType())+"-new", 60, configServerNewCheckPath,
                                                    "-s", "localhost:19071/yamas-metrics")
                                 .withTags(tags));
