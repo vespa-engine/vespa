@@ -45,10 +45,10 @@ public interface SyncSession extends Session {
      * @throws UnsupportedOperationException Thrown if this access does not
      *                                       support retrieving.
      */
-    Document get(DocumentId id);
+    default Document get(DocumentId id) { return get(id, null); }
 
     /**
-     * <p>Gets a document.</p>
+     * Gets a document with an unspecified timeout
      *
      * @param id       The id of the document to get.
      * @param fieldSet A comma-separated list of fields to retrieve
@@ -58,7 +58,9 @@ public interface SyncSession extends Session {
      * @throws UnsupportedOperationException Thrown if this access does not
      *                                       support retrieving.
      */
-    Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority);
+    default Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority) {
+        return get(id, fieldSet, priority, null);
+    }
 
     /**
      * <p>Gets a document with timeout.</p>
@@ -70,10 +72,7 @@ public interface SyncSession extends Session {
      * @throws UnsupportedOperationException Thrown if this access does not support retrieving.
      * @throws DocumentAccessException on any messagebus error, including timeout ({@link com.yahoo.messagebus.ErrorCode#TIMEOUT}).
      */
-    // TODO Vespa 7: Remove default implementation. Consider removing get() overloads without timeout.
-    default Document get(DocumentId id, Duration timeout) {
-        return get(id);
-    }
+    Document get(DocumentId id, Duration timeout);
 
     /**
      * <p>Gets a document with timeout. </p>
@@ -87,10 +86,7 @@ public interface SyncSession extends Session {
      * @throws UnsupportedOperationException Thrown if this access does not support retrieving.
      * @throws DocumentAccessException on any messagebus error, including timeout ({@link com.yahoo.messagebus.ErrorCode#TIMEOUT}).
      */
-    // TODO Vespa 7: Remove default implementation. Consider removing get() overloads without timeout.
-    default Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority, Duration timeout) {
-        return get(id, fieldSet, priority);
-    }
+    Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority, Duration timeout);
 
     /**
      * <p>Removes a document if it is present and condition is fulfilled.</p>
