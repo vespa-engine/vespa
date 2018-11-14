@@ -21,7 +21,7 @@ BitVectorDictionary::BitVectorDictionary()
 
 BitVectorDictionary::~BitVectorDictionary()
 {
-    if (_datFile.get() != nullptr) {
+    if (_datFile) {
         _datFile->Close();
     }
 }
@@ -62,7 +62,9 @@ BitVectorDictionary::open(const vespalib::string &pathPrefix,
     idxFile.Close();
 
     _vectorSize = BitVector::getFileBytes(_docIdLimit);
-    _datFile.reset(new FastOS_File());
+    _datFile = std::make_unique<FastOS_File>();
+    _datFile->setFAdviseOptions(tuneFileRead.getAdvise());
+
     if (tuneFileRead.getWantMemoryMap()) {
         _datFile->enableMemoryMap(tuneFileRead.getMemoryMapFlags());
     } else if (tuneFileRead.getWantDirectIO()) {

@@ -25,9 +25,9 @@ PageDict4RandRead::PageDict4RandRead()
       _ssReader(),
       _ssd(),
       _ssReadContext(_ssd),
-      _ssfile(new FastOS_File()),
-      _spfile(new FastOS_File()),
-      _pfile(new FastOS_File()),
+      _ssfile(std::make_unique<FastOS_File>()),
+      _spfile(std::make_unique<FastOS_File>()),
+      _pfile(std::make_unique<FastOS_File>()),
       _ssFileBitSize(0u),
       _spFileBitSize(0u),
       _pFileBitSize(0u),
@@ -210,6 +210,10 @@ PageDict4RandRead::open(const vespalib::string &name,
     _spfile->enableMemoryMap(mmapFlags);
     _pfile->enableMemoryMap(mmapFlags);
 
+    int fadvise = tuneFileRead.getAdvise();
+    _ssfile->setFAdviseOptions(fadvise);
+    _spfile->setFAdviseOptions(fadvise);
+    _pfile->setFAdviseOptions(fadvise);
 
     if (!_ssfile->OpenReadOnly(ssname.c_str())) {
         LOG(error, "could not open %s: %s", _ssfile->GetFileName(), getLastErrorString().c_str());
@@ -256,7 +260,6 @@ PageDict4RandRead::close()
     _pfile->Close();
     return true;
 }
-
 
 uint64_t
 PageDict4RandRead::getNumWordIds() const

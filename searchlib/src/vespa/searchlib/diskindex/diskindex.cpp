@@ -299,7 +299,7 @@ DiskIndex::readPostingList(const LookupResult &lookupRes) const
     handle->_bitLength = lookupRes.counts._bitLength;
     SchemaUtil::IndexIterator it(_schema, lookupRes.indexId);
     handle->_file = _postingFiles[it.getIndex()].get();
-    if (handle->_file == NULL) {
+    if (handle->_file == nullptr) {
         return PostingListHandle::UP();
     }
     const uint32_t firstSegment = 0;
@@ -317,7 +317,7 @@ DiskIndex::readBitVector(const LookupResult &lookupRes) const
 {
     SchemaUtil::IndexIterator it(_schema, lookupRes.indexId);
     BitVectorDictionary * dict = _bitVectorDicts[it.getIndex()].get();
-    if (dict == NULL) {
+    if (dict == nullptr) {
         return BitVector::UP();
     }
     return dict->lookup(lookupRes.wordNum);

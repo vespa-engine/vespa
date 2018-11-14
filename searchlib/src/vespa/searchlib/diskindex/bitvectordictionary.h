@@ -51,7 +51,7 @@ public:
      * bit vector if found.
      *
      * @param wordNum the word number to lookup a bit vector for.
-     * @return the loaded bit vector or NULL if not found.
+     * @return the loaded bit vector or nullptr if not found.
      **/
     BitVector::UP lookup(uint64_t wordNum);
 
