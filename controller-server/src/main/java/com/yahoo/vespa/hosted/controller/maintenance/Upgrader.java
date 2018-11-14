@@ -137,7 +137,7 @@ public class Upgrader extends Maintainer {
         return curator.readTargetMajorVersion();
     }
 
-    /** Sets the number of upgrades per minute */
+    /** Sets the default target major version. Set to empty to determine target version normally (by confidence) */
     public void setTargetMajorVersion(Optional<Integer> targetMajorVersion) {
         curator.writeTargetMajorVersion(targetMajorVersion);
     }
