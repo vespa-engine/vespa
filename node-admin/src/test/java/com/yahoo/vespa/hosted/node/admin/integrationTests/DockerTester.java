@@ -29,7 +29,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -90,7 +89,7 @@ public class DockerTester implements AutoCloseable {
 
         Clock clock = Clock.systemUTC();
         FileSystem fileSystem = TestFileSystem.create();
-        DockerOperations dockerOperations = new DockerOperationsImpl(docker, processExecuter, node -> "", Collections.emptyList(), ipAddresses);
+        DockerOperations dockerOperations = new DockerOperationsImpl(docker, processExecuter, ipAddresses);
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(
