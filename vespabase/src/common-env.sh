@@ -123,7 +123,7 @@ export MALLOC_ARENA_MAX=1
 # how to find the "java" program?
 # should be available in $VESPA_HOME/bin or JAVA_HOME
 if [ "$JAVA_HOME" ] && [ -f "${JAVA_HOME}/bin/java" ]; then
-    PATH="${PATH}:${JAVA_HOME}/bin"
+    PATH="${JAVA_HOME}/bin:${PATH}"
 fi
 
 VESPA_VALGRIND_SUPPREESSIONS_OPT=""
