@@ -46,14 +46,11 @@ public class DockerOperationsImpl implements DockerOperations {
 
     private final Docker docker;
     private final ProcessExecuter processExecuter;
-    private final List<String> configServerHostnames;
     private final IPAddresses ipAddresses;
 
-    public DockerOperationsImpl(Docker docker, ProcessExecuter processExecuter,
-                                List<String> configServerHostnames, IPAddresses ipAddresses) {
+    public DockerOperationsImpl(Docker docker, ProcessExecuter processExecuter, IPAddresses ipAddresses) {
         this.docker = docker;
         this.processExecuter = processExecuter;
-        this.configServerHostnames = configServerHostnames;
         this.ipAddresses = ipAddresses;
     }
 
@@ -66,15 +63,12 @@ public class DockerOperationsImpl implements DockerOperations {
                 () -> new RuntimeException("Unable to find a valid IPv6 address for " + node.getHostname() +
                         ". Missing an AAAA DNS entry?"));
 
-        String configServers = String.join(",", configServerHostnames);
-
         Docker.CreateContainerCommand command = docker.createContainerCommand(
                 node.getWantedDockerImage().get(),
                 ContainerResources.from(node.getMinCpuCores(), node.getMinMainMemoryAvailableGb()),
                 context.containerName(),
                 node.getHostname())
                 .withManagedBy(MANAGER_NAME)
-                .withEnvironment("VESPA_CONFIGSERVERS", configServers)
                 .withUlimit("nofile", 262_144, 262_144)
                 .withUlimit("nproc", 32_768, 409_600)
                 .withUlimit("core", -1, -1)

@@ -20,7 +20,6 @@ import org.mockito.InOrder;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.OptionalLong;
 
@@ -40,7 +39,7 @@ public class DockerOperationsImplTest {
     private final ProcessExecuter processExecuter = mock(ProcessExecuter.class);
     private final IPAddresses ipAddresses = new IPAddressesMock();
     private final DockerOperationsImpl dockerOperations = new DockerOperationsImpl(
-            docker, processExecuter, Collections.emptyList(), ipAddresses);
+            docker, processExecuter, ipAddresses);
 
     @Test
     public void processResultFromNodeProgramWhenSuccess() {
