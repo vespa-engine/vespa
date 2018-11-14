@@ -1,0 +1,25 @@
+search test {
+
+    document test {
+
+        field word1 type array<string> {
+            indexing: index | summary | attribute
+            match: word
+            stemming: none
+            normalizing: none
+        }
+
+        field word2 type array<string> {
+            indexing: index | summary | attribute
+            match: word
+            stemming: none
+            normalizing: none
+        }
+
+    }
+
+    fieldset words {
+        fields: word1,word2
+    }
+
+}

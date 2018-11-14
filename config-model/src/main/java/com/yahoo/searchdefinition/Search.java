@@ -582,19 +582,13 @@ public class Search implements Serializable, ImmutableSearch {
         return false;
     }
 
-    /**
-     * The field set settings for this search
-     *
-     * @return field set settings for this
-     */
-    public FieldSets fieldSets() {
-        return fieldSets;
-    }
+    /** The field set settings for this search */
+    public FieldSets fieldSets() { return fieldSets; }
 
     /**
      * For adding structs defined in document scope
      *
-     * @param dt The struct to add.
+     * @param dt the struct to add
      * @return self, for chaining
      */
     public Search addType(SDDocumentType dt) {
@@ -606,4 +600,5 @@ public class Search implements Serializable, ImmutableSearch {
         docType.addAnnotation(dt);
         return this;
     }
+
 }

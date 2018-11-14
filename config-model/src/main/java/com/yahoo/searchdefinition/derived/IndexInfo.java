@@ -295,7 +295,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
         builder.indexinfo(iiB);
     }
 
-    // TODO: Move this to the FieldSetValidity processor (and rename it) as that already has to look at this.
+    // TODO: Move this to the FieldSetSettings processor (and rename it) as that already has to look at this.
     private void addFieldSetCommands(IndexInfoConfig.Indexinfo.Builder iiB, FieldSet fieldSet) {
         // Explicit query commands on the field set, overrides everything.
         if (!fieldSet.queryCommands().isEmpty()) {
