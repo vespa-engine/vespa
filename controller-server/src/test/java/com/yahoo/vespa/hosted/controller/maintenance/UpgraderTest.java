@@ -20,6 +20,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
@@ -891,7 +892,7 @@ public class UpgraderTest {
     }
 
     @Test
-    public void testPinningMajorVersion() {
+    public void testPinningMajorVersionInApplication() {
         Version version = Version.fromString("6.2");
         tester.upgradeSystem(version);
 
@@ -922,6 +923,61 @@ public class UpgraderTest {
         tester.upgrader().maintain();
         tester.triggerUntilQuiescence();
         assertEquals(0, tester.buildService().jobs().size());
+    }
+
+    @Test
+    public void testPinningMajorVersionInUpgrader() {
+        Version version = Version.fromString("6.2");
+        tester.upgradeSystem(version);
+
+        ApplicationPackage version7CanaryApplicationPackage = new ApplicationPackageBuilder()
+                                                                       .majorVersion(7)
+                                                                       .upgradePolicy("canary")
+                                                                       .environment(Environment.prod)
+                                                                       .region("us-west-1")
+                                                                       .build();
+        ApplicationPackage version7DefaultApplicationPackage = new ApplicationPackageBuilder()
+                                                                .majorVersion(7)
+                                                                .upgradePolicy("default")
+                                                                .environment(Environment.prod)
+                                                                .region("us-west-1")
+                                                                .build();
+
+        // Setup applications
+        Application canary0 = tester.createAndDeploy("canary", 1, version7CanaryApplicationPackage);
+        Application default0 = tester.createAndDeploy("default0", 2, version7DefaultApplicationPackage);
+        Application default1 = tester.createAndDeploy("default1", 3, "default");
+
+        // New major version is released, but we don't want to upgrade to it yet
+        tester.upgrader().setTargetMajorVersion(Optional.of(6));
+        version = Version.fromString("7.0");
+        tester.upgradeSystem(version);
+        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
+        tester.triggerUntilQuiescence();
+
+        // ... canary upgrade to it because it explicitly wants 7
+        assertEquals(2, tester.buildService().jobs().size());
+        tester.completeUpgrade(canary0, version, version7CanaryApplicationPackage);
+        assertEquals(0, tester.buildService().jobs().size());
+        tester.computeVersionStatus();
+
+        // default0 upgrades, but not default1
+        tester.upgrader().maintain();
+        tester.triggerUntilQuiescence();
+        assertEquals(2, tester.buildService().jobs().size());
+        tester.completeUpgrade(default0, version, version7DefaultApplicationPackage);
+
+        // Nothing more happens ...
+        tester.upgrader().maintain();
+        tester.triggerUntilQuiescence();
+        assertEquals(0, tester.buildService().jobs().size());
+
+        // Now we want upgrade the latest application
+        tester.upgrader().setTargetMajorVersion(Optional.empty());
+        tester.upgrader().maintain();
+        tester.triggerUntilQuiescence();
+        assertEquals(2, tester.buildService().jobs().size());
+        tester.completeUpgrade(default1, version, "default");
     }
 
     @Test

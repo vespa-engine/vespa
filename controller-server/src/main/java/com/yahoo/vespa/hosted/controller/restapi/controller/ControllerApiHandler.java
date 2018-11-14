@@ -20,6 +20,7 @@ import com.yahoo.yolean.Exceptions;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.logging.Level;
 
@@ -102,7 +103,7 @@ public class ControllerApiHandler extends LoggingRequestHandler {
 
     private HttpResponse configureUpgrader(HttpRequest request) {
         String upgradesPerMinuteField = "upgradesPerMinute";
-        String confidenceOverrideField = "confidenceOverride";
+        String targetMajorVersionField = "targetMajorVersion";
 
         byte[] jsonBytes = toJsonBytes(request.getData());
         Inspector inspect = SlimeUtils.jsonToSlime(jsonBytes).get();
@@ -110,6 +111,9 @@ public class ControllerApiHandler extends LoggingRequestHandler {
 
         if (inspect.field(upgradesPerMinuteField).valid()) {
             upgrader.setUpgradesPerMinute(inspect.field(upgradesPerMinuteField).asDouble());
+        } else if (inspect.field(targetMajorVersionField).valid()) {
+            int target = (int)inspect.field(targetMajorVersionField).asLong();
+            upgrader.setTargetMajorVersion(Optional.ofNullable(target == 0 ? null : target)); // 0 is the default value
         } else {
             return ErrorResponse.badRequest("No such modifiable field(s)");
         }
