@@ -37,7 +37,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     @Test
-    public void document_api_config_is_added_to_container_cluster() throws Exception {
+    public void document_api_config_is_added_to_container_cluster() {
         Element elem = DomBuilderTest.parse(
                 "<jdisc id='cluster1' version='1.0'>",
                 "  <document-api>",
@@ -60,7 +60,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     @Test
-    public void custom_bindings_are_allowed() throws Exception {
+    public void custom_bindings_are_allowed() {
         Element elem = DomBuilderTest.parse(
                 "<jdisc id='cluster1' version='1.0'>",
                 "  <document-api>",
@@ -86,7 +86,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     @Test
-    public void requireThatHandlersAreSetup() throws Exception {
+    public void requireThatHandlersAreSetup() {
         Element elem = DomBuilderTest.parse(
                 "<jdisc id='cluster1' version='1.0'>",
                 "  <document-api />",
@@ -99,11 +99,6 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         assertThat(handlerMap.get("com.yahoo.container.handler.VipStatusHandler"), not(nullValue()));
         assertThat(handlerMap.get("com.yahoo.container.handler.observability.ApplicationStatusHandler"), not(nullValue()));
         assertThat(handlerMap.get("com.yahoo.container.jdisc.state.StateHandler"), not(nullValue()));
-
-        assertThat(handlerMap.get("com.yahoo.search.handler.SearchHandler"), not(nullValue()));
-        assertThat(handlerMap.get("com.yahoo.search.handler.SearchHandler").getServerBindings().contains("http://*/search/*"), is(true));
-        assertThat(handlerMap.get("com.yahoo.search.handler.SearchHandler").getServerBindings().contains("https://*/search/*"), is(true));
-        assertThat(handlerMap.get("com.yahoo.search.handler.SearchHandler").getServerBindings().size(), equalTo(2));
 
         assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler"), not(nullValue()));
         assertThat(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().contains("http://*/" + ContainerCluster.RESERVED_URI_PREFIX + "/feedapi"), is(true));
