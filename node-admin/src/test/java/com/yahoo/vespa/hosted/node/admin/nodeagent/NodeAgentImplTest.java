@@ -655,7 +655,9 @@ public class NodeAgentImplTest {
             long calledTimeout = (long) invocation.getArguments()[1];
             String[] calledCommand = new String[invocation.getArguments().length - 2];
             System.arraycopy(invocation.getArguments(), 2, calledCommand, 0, calledCommand.length);
-            calledCommand[calledCommand.length - 1] = calledCommand[calledCommand.length - 1].replaceAll("\"timestamp\":\\d+", "\"timestamp\":0");
+            calledCommand[calledCommand.length - 1] = calledCommand[calledCommand.length - 1]
+                    .replaceAll("\"timestamp\":\\d+", "\"timestamp\":0")
+                    .replaceAll("([0-9]+\\.[0-9]{1,3})([0-9]*)", "$1"); // Only keep the first 3 decimals
 
             assertEquals(context, calledContainerName);
             assertEquals(5L, calledTimeout);

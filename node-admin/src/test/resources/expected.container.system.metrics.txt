@@ -10,6 +10,8 @@ s:
     "metrics": {
         "mem.limit": 4294967296,
         "mem.used": 1073741824,
+        "mem_total.util": 40.808,
+        "mem_total.used": 1752707072,
         "disk.used": 39625000000,
         "cpu.sys.util": 3.402,
         "disk.util": 15.85,

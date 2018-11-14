@@ -626,6 +626,7 @@ public class NodeAgentImpl implements NodeAgent {
 
         long memoryTotalBytesUsed = memoryTotalBytesUsage - memoryTotalBytesCache;
         double memoryUsageRatio = (double) memoryTotalBytesUsed / memoryTotalBytes;
+        double memoryTotalUsageRatio = (double) memoryTotalBytesUsage / memoryTotalBytes;
         Optional<Double> diskUsageRatio = diskTotalBytesUsed.map(used -> (double) used / diskTotalBytes);
 
         List<DimensionMetrics> metrics = new ArrayList<>();
@@ -633,6 +634,8 @@ public class NodeAgentImpl implements NodeAgent {
                 .withMetric("mem.limit", memoryTotalBytes)
                 .withMetric("mem.used", memoryTotalBytesUsed)
                 .withMetric("mem.util", 100 * memoryUsageRatio)
+                .withMetric("mem_total.used", memoryTotalBytesUsage)
+                .withMetric("mem_total.util", 100 * memoryTotalUsageRatio)
                 .withMetric("cpu.util", 100 * cpuUsageRatioOfAllocated)
                 .withMetric("cpu.sys.util", 100 * cpuKernelUsageRatioOfAllocated)
                 .withMetric("disk.limit", diskTotalBytes);
