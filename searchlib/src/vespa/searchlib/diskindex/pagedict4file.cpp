@@ -290,9 +290,9 @@ PageDict4FileSeqRead::getParams(PostingListParams &params)
 
 
 PageDict4FileSeqWrite::PageDict4FileSeqWrite()
-    : _pWriter(nullptr),
-      _spWriter(nullptr),
-      _ssWriter(nullptr),
+    : _pWriter(),
+      _spWriter(),
+      _ssWriter(),
       _pe(),
       _pWriteContext(_pe),
       _pfile(),
@@ -312,17 +312,11 @@ PageDict4FileSeqWrite::PageDict4FileSeqWrite()
 }
 
 
-PageDict4FileSeqWrite::~PageDict4FileSeqWrite()
-{
-    delete _pWriter;
-    delete _spWriter;
-    delete _ssWriter;
-}
+PageDict4FileSeqWrite::~PageDict4FileSeqWrite() = default;
 
 
 void
-PageDict4FileSeqWrite::writeWord(vespalib::stringref word,
-                                 const PostingListCounts &counts)
+PageDict4FileSeqWrite::writeWord(vespalib::stringref word, const PostingListCounts &counts)
 {
     _pWriter->addCounts(word, counts);
 }
@@ -333,9 +327,9 @@ PageDict4FileSeqWrite::open(const vespalib::string &name,
                             const TuneFileSeqWrite &tuneFileWrite,
                             const FileHeaderContext &fileHeaderContext)
 {
-    assert(_pWriter == nullptr);
-    assert(_spWriter == nullptr);
-    assert(_ssWriter == nullptr);
+    assert( ! _pWriter);
+    assert( ! _spWriter);
+    assert( ! _ssWriter);
 
     vespalib::string pname = name + ".pdat";
     vespalib::string spname = name + ".spdat";
@@ -401,9 +395,9 @@ PageDict4FileSeqWrite::open(const vespalib::string &name,
     makeSPHeader(fileHeaderContext);
     makeSSHeader(fileHeaderContext);
 
-    _ssWriter = new SSWriter(_sse);
-    _spWriter = new SPWriter(*_ssWriter, _spe);
-    _pWriter = new PWriter(*_spWriter, _pe);
+    _ssWriter = std::make_unique<SSWriter>(_sse);
+    _spWriter = std::make_unique<SPWriter>(*_ssWriter, _spe);
+    _pWriter = std::make_unique<PWriter>(*_spWriter, _pe);
     _spWriter->setup();
     _pWriter->setup();
 
@@ -443,12 +437,9 @@ PageDict4FileSeqWrite::close()
     updateSPHeader(usedSPBits);
     updateSSHeader(usedSSBits);
 
-    delete _pWriter;
-    delete _spWriter;
-    delete _ssWriter;
-    _pWriter = nullptr;
-    _spWriter = nullptr;
-    _ssWriter = nullptr;
+    _pWriter.reset();
+    _spWriter.reset();
+    _ssWriter.reset();
 
     return true;
 }

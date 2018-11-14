@@ -40,7 +40,7 @@ public:
 
     void open(const vespalib::string &name, uint32_t docIdLimit,
               const TuneFileSeqWrite &tuneFileWrite,
-              const search::common::FileHeaderContext &fileHeaderContext);
+              const common::FileHeaderContext &fileHeaderContext);
 
 
 
@@ -59,7 +59,7 @@ public:
         return ret;
     }
 
-    void makeIdxHeader(const search::common::FileHeaderContext &fileHeaderContext);
+    void makeIdxHeader(const common::FileHeaderContext &fileHeaderContext);
     void updateIdxHeader(uint64_t fileBitSize);
 };
 

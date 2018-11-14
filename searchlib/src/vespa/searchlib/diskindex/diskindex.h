@@ -9,7 +9,6 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/cache.h>
 
-
 namespace search::diskindex {
 
 /**
@@ -148,7 +147,6 @@ public:
 
     const index::Schema &getSchema() const { return _schema; }
     const vespalib::string &getIndexDir() const { return _indexDir; }
-    const TuneFileSearch &getTuneFileSearch() const { return _tuneFileSearch; }
 
     /**
      * Needed for the Cache::BackingStore interface.

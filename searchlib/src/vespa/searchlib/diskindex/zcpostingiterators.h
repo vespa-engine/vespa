@@ -280,18 +280,15 @@ public:
     // Counts used for assertions
     const PostingListCounts &_counts;
 
-    ZcPostingIterator(uint32_t minChunkDocs,
-                      bool dynamicK,
-                      const PostingListCounts &counts,
-                      const search::fef::TermFieldMatchDataArray &matchData,
-                      Position start, uint32_t docIdLimit);
+    ZcPostingIterator(uint32_t minChunkDocs, bool dynamicK, const PostingListCounts &counts,
+                      const search::fef::TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit);
 
 
     void doUnpack(uint32_t docId) override;
     void readWordStart(uint32_t docIdLimit) override;
     void rewind(Position start) override;
 
-    virtual void featureSeek(uint64_t offset) override {
+    void featureSeek(uint64_t offset) override {
         _decodeContext->_valI = _featuresValI + (_featuresBitOffset + offset) / 64;
         _decodeContext->setupBits((_featuresBitOffset + offset) & 63);
     }

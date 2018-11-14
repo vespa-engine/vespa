@@ -20,7 +20,6 @@ private:
 
 public:
     TuneFileSeqRead() : _tuneControl(NORMAL) { }
-    void setWantNormal() { _tuneControl = NORMAL; }
     void setWantDirectIO() { _tuneControl = DIRECTIO; }
     bool getWantDirectIO() const { return _tuneControl == DIRECTIO; }
 
@@ -64,8 +63,6 @@ private:
 
 public:
     TuneFileSeqWrite() : _tuneControl(NORMAL) { }
-    void setWantNormal() { _tuneControl = NORMAL; }
-    void setWantSyncWrites() { _tuneControl = OSYNC; }
     void setWantDirectIO() { _tuneControl = DIRECTIO; }
     bool getWantDirectIO() const { return _tuneControl == DIRECTIO; }
     bool getWantSyncWrites() const { return _tuneControl == OSYNC; }
@@ -108,7 +105,6 @@ public:
           _advise(0)
     { }
 
-    void setMemoryMapFlags(int flags) { _mmapFlags = flags; }
     void setAdvise(int advise)        { _advise = advise; }
     void setWantMemoryMap() { _tuneControl = MMAP; }
     void setWantDirectIO()  { _tuneControl = DIRECTIO; }

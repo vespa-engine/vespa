@@ -37,20 +37,15 @@ public:
      * Create iterator for single word.  Semantic lifetime of counts and
      * handle must exceed lifetime of iterator.
      */
-    search::queryeval::SearchIterator *
-    createIterator(const PostingListCounts &counts,
-                   const PostingListHandle &handle,
-                   const search::fef::TermFieldMatchDataArray &matchData,
-                   bool usebitVector) const override;
+    queryeval::SearchIterator *
+    createIterator(const PostingListCounts &counts, const PostingListHandle &handle,
+                   const fef::TermFieldMatchDataArray &matchData, bool usebitVector) const override;
 
     /**
      * Read (possibly partial) posting list into handle.
      */
-    void
-    readPostingList(const PostingListCounts &counts,
-                    uint32_t firstSegment,
-                    uint32_t numSegments,
-                    PostingListHandle &handle) override;
+    void readPostingList(const PostingListCounts &counts, uint32_t firstSegment,
+                         uint32_t numSegments, PostingListHandle &handle) override;
 
     bool open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;
@@ -68,11 +63,9 @@ public:
      * Create iterator for single word.  Semantic lifetime of counts and
      * handle must exceed lifetime of iterator.
      */
-    search::queryeval::SearchIterator *
-    createIterator(const PostingListCounts &counts,
-                   const PostingListHandle &handle,
-                   const search::fef::TermFieldMatchDataArray &matchData,
-                   bool usebitVector) const override;
+    queryeval::SearchIterator *
+    createIterator(const PostingListCounts &counts, const PostingListHandle &handle,
+                   const fef::TermFieldMatchDataArray &matchData, bool usebitVector) const override;
 
     void readHeader() override;
 

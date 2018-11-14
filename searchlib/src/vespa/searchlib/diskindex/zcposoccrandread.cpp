@@ -60,9 +60,6 @@ createIterator(const PostingListCounts &counts,
                const search::fef::TermFieldMatchDataArray &matchData,
                bool usebitVector) const
 {
-    (void) counts;
-    (void) handle;
-    (void) matchData;
     (void) usebitVector;
 
     typedef EGPosOccEncodeContext<true> EC;
@@ -171,14 +168,15 @@ bool
 ZcPosOccRandRead::
 open(const vespalib::string &name, const TuneFileRandRead &tuneFileRead)
 {
+    _file->setFAdviseOptions(tuneFileRead.getAdvise());
     if (tuneFileRead.getWantMemoryMap()) {
         _file->enableMemoryMap(tuneFileRead.getMemoryMapFlags());
-    } else  if (tuneFileRead.getWantDirectIO())
+    } else  if (tuneFileRead.getWantDirectIO()) {
         _file->EnableDirectIO();
+    }
     bool res = _file->OpenReadOnly(name.c_str());
     if (!res) {
-        LOG(error, "could not open %s: %s",
-            _file->GetFileName(), getLastErrorString().c_str());
+        LOG(error, "could not open %s: %s", _file->GetFileName(), getLastErrorString().c_str());
         return false;
     }
     _fileSize = _file->GetSize();

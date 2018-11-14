@@ -28,7 +28,7 @@ public:
 
     const uint64_t *getOld2NewWordNums() const {
         return (_old2newwords.empty())
-            ? NULL
+            ? nullptr
             : &_old2newwords[0];
     }
 
@@ -37,8 +37,6 @@ public:
     void noMappingFile();
     void clear();
     void setup(uint32_t numWordIds);
-    uint64_t getMaxMappedWordNum() const;
-    void sanityCheck(bool allowHoles);
 };
 
 
@@ -55,16 +53,9 @@ class WordNumMapper
 
 public:
     WordNumMapper()
-        : _old2newwords(NULL),
+        : _old2newwords(nullptr),
           _oldDictSize(0)
     {}
-
-    WordNumMapper(const WordNumMapping &mapping)
-        : _old2newwords(NULL),
-          _oldDictSize(0)
-    {
-        setup(mapping);
-    }
 
     void setup(const WordNumMapping &mapping) {
         _old2newwords = mapping.getOld2NewWordNums();
@@ -72,14 +63,10 @@ public:
     }
 
     uint64_t map(uint32_t wordNum) const {
-        return (_old2newwords != NULL)
+        return (_old2newwords != nullptr)
             ? _old2newwords[wordNum]
             : wordNum;
     }
-
-    uint64_t getMaxWordNum() const { return _oldDictSize; }
-    uint64_t getMaxMappedWordNum() const { return map(_oldDictSize); }
-    void sanityCheck(bool allowHoles);
 };
 
 }

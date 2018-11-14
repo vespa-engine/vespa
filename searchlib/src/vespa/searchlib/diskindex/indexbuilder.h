@@ -66,10 +66,9 @@ public:
 
     vespalib::string appendToPrefix(vespalib::stringref name);
 
-    void
-    open(uint32_t docIdLimit, uint64_t numWordIds,
-         const TuneFileIndexing &tuneFileIndexing,
-         const search::common::FileHeaderContext &fileHandleContext);
+    void open(uint32_t docIdLimit, uint64_t numWordIds,
+              const TuneFileIndexing &tuneFileIndexing,
+              const common::FileHeaderContext &fileHandleContext);
 
     void close();
 };

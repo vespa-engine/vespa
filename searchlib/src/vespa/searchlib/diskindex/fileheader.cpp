@@ -16,9 +16,7 @@ using bitcompression::FeatureDecodeContextBE;
 
 FileHeader::FileHeader()
     : _bigEndian(false),
-      _hostEndian(false),
       _completed(false),
-      _allowNoFileBitSize(false),
       _version(0),
       _headerLen(0),
       _fileBitSize(0),
@@ -73,7 +71,7 @@ FileHeader::taste(const vespalib::string &name,
             return false;
         }
     }
-    _hostEndian = _bigEndian == (htonl(1) == 1);
+
     if (header.hasTag("frozen")) {
         _completed = header.getTag("frozen").asInteger() != 0;
     } else {
@@ -92,7 +90,7 @@ FileHeader::taste(const vespalib::string &name,
                 name.c_str(), _fileBitSize, fileSize);
             LOG_ABORT("should not be reached");
         }
-    } else if (!_allowNoFileBitSize) {
+    } else {
         LOG(error, "FileHeader::taste(\"%s\"): Missing fileBitSize tag", name.c_str());
         return false;
     }

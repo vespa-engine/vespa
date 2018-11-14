@@ -67,13 +67,8 @@ public:
 
 
     BitVectorCandidate(uint32_t docIdLimit)
-        : _array(),
-          _numDocs(0u),
-          _bitVectorLimit(BitVectorFileWrite::getBitVectorLimit(docIdLimit)),
-          _bv(BitVector::create(docIdLimit))
-    {
-        _array.reserve(_bitVectorLimit);
-    }
+        : BitVectorCandidate(docIdLimit, BitVectorFileWrite::getBitVectorLimit(docIdLimit))
+    { }
 
     ~BitVectorCandidate();
 

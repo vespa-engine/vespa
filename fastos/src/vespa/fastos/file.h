@@ -103,7 +103,6 @@ protected:
     static FailedHandler _failedHandler;
 
 public:
-    static int getDefaultFAdviseOptions()             { return _defaultFAdviseOptions; }
     static void setDefaultFAdviseOptions(int options) { _defaultFAdviseOptions = options; }
     int getFAdviseOptions()                     const { return _fAdviseOptions; }
     void setFAdviseOptions(int options)               { _fAdviseOptions = options; }
