@@ -1,29 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.clients;
 
-import com.yahoo.component.ComponentId;
-import com.yahoo.component.ComponentSpecification;
-import com.yahoo.component.chain.Phase;
-import com.yahoo.component.chain.dependencies.Dependencies;
-import com.yahoo.component.chain.model.ChainSpecification;
-import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
-import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
-import com.yahoo.vespa.model.container.search.ContainerSearch;
-import com.yahoo.vespa.model.container.search.searchchain.SearchChain;
-import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
-import com.yahoo.vespa.model.container.search.searchchain.Searcher;
 import com.yahoo.vespaclient.config.FeederConfig;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * @author Einar M R Rosenvinge
