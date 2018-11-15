@@ -17,6 +17,7 @@ import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.PACKET_SEPAR
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.STATUS_CODE_KEY;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.STATUS_MSG_KEY;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.TIMESTAMP_KEY;
+import static com.yahoo.container.jdisc.state.StateHandlerTestBase.SNAPSHOT_INTERVAL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -42,10 +43,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
     @Test
     public void metrics_are_included_after_snapshot() throws Exception {
         metric.add("counter", 1, null);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
-        String response = requestAsString("http://localhost/metrics-packets");
-
-        List<JsonNode> packets = toJsonPackets(response);
+        List<JsonNode> packets = incrementTimeAndGetJsonPackets();
         assertEquals(2, packets.size());
 
         JsonNode counterPacket = packets.get(1);
@@ -55,10 +53,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
     @Test
     public void metadata_is_included_in_each_metrics_packet() throws Exception {
         metric.add("counter", 1, null);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
-        String response = requestAsString("http://localhost/metrics-packets");
-
-        List<JsonNode> packets = toJsonPackets(response);
+        List<JsonNode> packets = incrementTimeAndGetJsonPackets();
         JsonNode counterPacket = packets.get(1);
 
         assertTrue(counterPacket.has(TIMESTAMP_KEY));
@@ -67,14 +62,22 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
     }
 
     @Test
+    public void timestamp_resolution_is_in_seconds() throws Exception {
+        metric.add("counter", 1, null);
+        List<JsonNode> packets = incrementTimeAndGetJsonPackets();
+        JsonNode counterPacket = packets.get(1);
+
+        assertEquals(SNAPSHOT_INTERVAL/1000L, counterPacket.get(TIMESTAMP_KEY).asLong());
+    }
+
+    @Test
     public void expected_aggregators_are_output_for_gauge_metrics() throws Exception{
         Metric.Context context = metric.createContext(Collections.singletonMap("dim1", "value1"));
         metric.set("gauge", 0.2, null);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
-        String response = requestAsString("http://localhost/metrics-packets");
 
-        List<JsonNode> packets = toJsonPackets(response);
+        List<JsonNode> packets = incrementTimeAndGetJsonPackets();
         JsonNode gaugeMetric = packets.get(1).get(METRICS_KEY);
+
         assertEquals(0.2, gaugeMetric.get("gauge.last").asDouble(), 0.1);
         assertEquals(0.2, gaugeMetric.get("gauge.average").asDouble(), 0.1);
         assertEquals(0.2, gaugeMetric.get("gauge.max").asDouble(), 0.1);
@@ -84,10 +87,8 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
     public void dimensions_from_context_are_included() throws Exception {
         Metric.Context context = metric.createContext(Collections.singletonMap("dim1", "value1"));
         metric.add("counter", 1, context);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
-        String response = requestAsString("http://localhost/metrics-packets");
 
-        List<JsonNode> packets = toJsonPackets(response);
+        List<JsonNode> packets = incrementTimeAndGetJsonPackets();
         JsonNode counterPacket = packets.get(1);
 
         assertTrue(counterPacket.has(DIMENSIONS_KEY));
@@ -100,15 +101,12 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
         Metric.Context context = metric.createContext(Collections.singletonMap("dim1", "value1"));
         metric.add("counter1", 1, context);
         metric.add("counter2", 2, context);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
-        String response = requestAsString("http://localhost/metrics-packets");
 
-        List<JsonNode> packets = toJsonPackets(response);
+        List<JsonNode> packets = incrementTimeAndGetJsonPackets();
         assertEquals(2, packets.size());
         JsonNode countersPacket = packets.get(1);
 
         assertEquals("value1", countersPacket.get(DIMENSIONS_KEY).get("dim1").asText());
-
         assertCountMetric(countersPacket, "counter1.count", 1);
         assertCountMetric(countersPacket, "counter2.count", 2);
     }
@@ -119,11 +117,16 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
         Metric.Context context2 = metric.createContext(Collections.singletonMap("dim2", "value2"));
         metric.add("counter1", 1, context1);
         metric.add("counter2", 1, context2);
+
+        List<JsonNode> packets = incrementTimeAndGetJsonPackets();
+        assertEquals(3, packets.size());
+    }
+
+    private List<JsonNode> incrementTimeAndGetJsonPackets() throws Exception {
         incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
         String response = requestAsString("http://localhost/metrics-packets");
 
-        List<JsonNode> packets = toJsonPackets(response);
-        assertEquals(3, packets.size());
+        return toJsonPackets(response);
     }
 
     private List<JsonNode> toJsonPackets(String response) throws Exception {
