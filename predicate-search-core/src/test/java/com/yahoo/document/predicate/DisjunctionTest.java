@@ -7,7 +7,6 @@ import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -48,15 +47,6 @@ public class DisjunctionTest {
 
         node = new Disjunction(Arrays.asList(foo, bar));
         assertEquals(Arrays.asList(foo, bar), node.getOperands());
-    }
-
-    @Test
-    public void requireThatCloneIsImplemented() throws CloneNotSupportedException {
-        Disjunction node1 = new Disjunction(SimplePredicates.newString("a"), SimplePredicates.newString("b"));
-        Disjunction node2 = node1.clone();
-        assertEquals(node1, node2);
-        assertNotSame(node1, node2);
-        assertNotSame(node1.getOperands(), node2.getOperands());
     }
 
     @Test

@@ -22,11 +22,6 @@ public class BooleanPredicate extends PredicateValue {
     }
 
     @Override
-    public BooleanPredicate clone() throws CloneNotSupportedException {
-        return (BooleanPredicate)super.clone();
-    }
-
-    @Override
     public int hashCode() {
         return value ? Boolean.TRUE.hashCode() : Boolean.FALSE.hashCode();
     }

@@ -8,17 +8,11 @@ import static com.yahoo.document.predicate.Predicates.feature;
 import static com.yahoo.document.predicate.Predicates.not;
 import static com.yahoo.document.predicate.Predicates.or;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
  */
 public class PredicateTest {
-
-    @Test
-    public void requireThatPredicateIsCloneable() {
-        assertTrue(Cloneable.class.isAssignableFrom(Predicate.class));
-    }
 
     @Test
     public void requireThatANDConstructsAConjunction() {

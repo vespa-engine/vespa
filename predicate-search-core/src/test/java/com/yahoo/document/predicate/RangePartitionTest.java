@@ -27,14 +27,6 @@ public class RangePartitionTest {
     }
 
     @Test
-    public void requireThatCloneIsImplemented() throws CloneNotSupportedException {
-        RangePartition node1 = new RangePartition("foo=300-399");
-        RangePartition node2 = node1.clone();
-        assertEquals(node1, node2);
-        assertNotSame(node1, node2);
-    }
-
-    @Test
     public void requireThatHashCodeIsImplemented() {
         assertEquals(new RangePartition("foo=0-9").hashCode(), new RangePartition("foo=0-9").hashCode());
     }

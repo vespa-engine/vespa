@@ -25,14 +25,6 @@ public class RangeEdgePartitionTest {
     }
 
     @Test
-    public void requireThatCloneIsImplemented() throws CloneNotSupportedException {
-        RangeEdgePartition node1 = new RangeEdgePartition("foo=10", 10, 0, 0);
-        RangeEdgePartition node2 = node1.clone();
-        assertEquals(node1, node2);
-        assertNotSame(node1, node2);
-    }
-
-    @Test
     public void requireThatHashCodeIsImplemented() {
         assertEquals(new RangeEdgePartition("foo=-10", 10, 2, 3).hashCode(),
                 new RangeEdgePartition("foo=-10", 10, 2, 3).hashCode());

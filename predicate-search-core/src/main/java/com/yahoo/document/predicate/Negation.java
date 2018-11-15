@@ -32,13 +32,6 @@ public class Negation extends PredicateOperator {
     }
 
     @Override
-    public Negation clone() throws CloneNotSupportedException {
-        Negation obj = (Negation)super.clone();
-        obj.operand = operand.clone();
-        return obj;
-    }
-
-    @Override
     public int hashCode() {
         return operand.hashCode();
     }

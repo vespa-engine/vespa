@@ -31,11 +31,6 @@ public class RangePartition extends PredicateValue {
     }
 
     @Override
-    public RangePartition clone() throws CloneNotSupportedException {
-        return (RangePartition)super.clone();
-    }
-
-    @Override
     public int hashCode() {
         return label.hashCode();
     }

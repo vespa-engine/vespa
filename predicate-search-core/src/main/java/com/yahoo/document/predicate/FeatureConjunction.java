@@ -77,11 +77,6 @@ public class FeatureConjunction extends PredicateOperator {
     }
 
     @Override
-    public FeatureConjunction clone() throws CloneNotSupportedException {
-        return new FeatureConjunction(operands);
-    }
-
-    @Override
     public int hashCode() {
         return operands.hashCode();
     }

@@ -12,7 +12,6 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -59,15 +58,6 @@ public class FeatureSetTest {
         node = new FeatureSet("key", Arrays.asList("valueA", "valueB"));
         assertEquals("key", node.getKey());
         assertValues(Arrays.asList("valueA", "valueB"), node);
-    }
-
-    @Test
-    public void requireThatCloneIsImplemented() throws CloneNotSupportedException {
-        FeatureSet node1 = new FeatureSet("key", "valueA", "valueB");
-        FeatureSet node2 = node1.clone();
-        assertEquals(node1, node2);
-        assertNotSame(node1, node2);
-        assertNotSame(node1.getValues(), node2.getValues());
     }
 
     @Test

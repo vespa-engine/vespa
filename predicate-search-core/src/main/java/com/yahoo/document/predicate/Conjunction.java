@@ -44,16 +44,6 @@ public class Conjunction extends PredicateOperator {
     }
 
     @Override
-    public Conjunction clone() throws CloneNotSupportedException {
-        Conjunction obj = (Conjunction)super.clone();
-        obj.operands = new ArrayList<>(operands.size());
-        for (Predicate operand : operands) {
-            obj.operands.add(operand.clone());
-        }
-        return obj;
-    }
-
-    @Override
     public int hashCode() {
         return operands.hashCode();
     }

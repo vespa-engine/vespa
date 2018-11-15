@@ -67,13 +67,6 @@ public class FeatureSet extends PredicateValue {
     }
 
     @Override
-    public FeatureSet clone() throws CloneNotSupportedException {
-        FeatureSet obj = (FeatureSet)super.clone();
-        obj.values = new TreeSet<>(values);
-        return obj;
-    }
-
-    @Override
     public int hashCode() {
         return (key.hashCode() + values.hashCode()) * 31;
     }

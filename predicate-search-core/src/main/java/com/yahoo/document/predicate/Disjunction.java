@@ -44,16 +44,6 @@ public class Disjunction extends PredicateOperator {
     }
 
     @Override
-    public Disjunction clone() throws CloneNotSupportedException {
-        Disjunction obj = (Disjunction)super.clone();
-        obj.operands = new ArrayList<>(operands.size());
-        for (Predicate operand : operands) {
-            obj.operands.add(operand.clone());
-        }
-        return obj;
-    }
-
-    @Override
     public int hashCode() {
         return operands.hashCode();
     }

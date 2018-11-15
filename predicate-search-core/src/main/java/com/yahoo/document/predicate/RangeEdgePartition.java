@@ -30,11 +30,6 @@ public class RangeEdgePartition extends RangePartition {
     }
 
     @Override
-    public RangeEdgePartition clone() throws CloneNotSupportedException {
-        return (RangeEdgePartition)super.clone();
-    }
-
-    @Override
     public int hashCode() {
         return super.hashCode()
                 + Long.valueOf(value).hashCode()

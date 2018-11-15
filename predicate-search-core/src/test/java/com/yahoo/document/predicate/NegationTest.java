@@ -5,7 +5,6 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -29,15 +28,6 @@ public class NegationTest {
         Predicate bar = SimplePredicates.newString("bar");
         node.setOperand(bar);
         assertSame(bar, node.getOperand());
-    }
-
-    @Test
-    public void requireThatCloneIsImplemented() throws CloneNotSupportedException {
-        Negation node1 = new Negation(SimplePredicates.newString("a"));
-        Negation node2 = node1.clone();
-        assertEquals(node1, node2);
-        assertNotSame(node1, node2);
-        assertNotSame(node1.getOperand(), node2.getOperand());
     }
 
     @Test

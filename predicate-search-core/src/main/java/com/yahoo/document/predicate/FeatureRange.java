@@ -84,11 +84,6 @@ public class FeatureRange extends PredicateValue {
     }
 
     @Override
-    public FeatureRange clone() throws CloneNotSupportedException {
-        return (FeatureRange)super.clone();
-    }
-
-    @Override
     public int hashCode() {
         return ((key.hashCode() + (from != null ? from.hashCode() : 0)) * 31 + (to != null ? to.hashCode() : 0)) * 31;
     }

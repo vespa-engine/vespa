@@ -13,16 +13,11 @@ import java.nio.charset.StandardCharsets;
 /**
  * @author Simon Thoresen Hult
  */
-public abstract class Predicate implements Cloneable {
+public abstract class Predicate {
 
     private final static char QUOTE_CHAR = '\'';
     private final static Ascii.Encoder ASCII_ENCODER = Ascii.newEncoder(StandardCharsets.UTF_8, QUOTE_CHAR);
     private final static Ascii.Decoder ASCII_DECODER = Ascii.newDecoder(StandardCharsets.UTF_8);
-
-    @Override
-    public Predicate clone() throws CloneNotSupportedException {
-        return (Predicate)super.clone();
-    }
 
     @Override
     public final String toString() {

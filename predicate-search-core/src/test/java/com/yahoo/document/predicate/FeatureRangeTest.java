@@ -64,14 +64,6 @@ public class FeatureRangeTest {
     }
 
     @Test
-    public void requireThatCloneIsImplemented() throws CloneNotSupportedException {
-        FeatureRange node1 = new FeatureRange("foo", 6L, 9L);
-        FeatureRange node2 = node1.clone();
-        assertEquals(node1, node2);
-        assertNotSame(node1, node2);
-    }
-
-    @Test
     public void requireThatHashCodeIsImplemented() {
         assertEquals(new FeatureRange("key").hashCode(), new FeatureRange("key").hashCode());
     }
