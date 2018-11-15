@@ -5,7 +5,6 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 
 import static java.lang.Long.min;
-import static java.lang.Integer.max;
 
 /**
  * Tuning of proton config for a search node based on the node flavor of that node.
@@ -31,6 +30,7 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
         tuneFlushStrategyTlsSize(builder.flush.memory);
         tuneSummaryReadIo(builder.summary.read);
         tuneSummaryCache(builder.summary.cache);
+        tuneSearchReadIo(builder.search.mmap);
     }
 
     private void tuneSummaryCache(ProtonConfig.Summary.Cache.Builder builder) {
@@ -79,6 +79,12 @@ public class NodeFlavorTuning implements ProtonConfig.Producer {
     private void tuneSummaryReadIo(ProtonConfig.Summary.Read.Builder builder) {
         if (nodeFlavor.hasFastDisk()) {
             builder.io(ProtonConfig.Summary.Read.Io.DIRECTIO);
+        }
+    }
+
+    private void tuneSearchReadIo(ProtonConfig.Search.Mmap.Builder builder) {
+        if (nodeFlavor.hasFastDisk()) {
+            builder.advise(ProtonConfig.Search.Mmap.Advise.RANDOM);
         }
     }
 
