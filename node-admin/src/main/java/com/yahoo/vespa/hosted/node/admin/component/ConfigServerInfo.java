@@ -17,12 +17,14 @@ import static java.util.stream.Collectors.toMap;
  * @author hakon
  */
 public class ConfigServerInfo {
+    private final List<String> configServerHostNames;
     private final URI loadBalancerEndpoint;
     private final Map<String, URI> configServerURIs;
     private final AthenzService configServerIdentity;
 
     public ConfigServerInfo(String loadBalancerHostName, List<String> configServerHostNames,
                             String scheme, int port, AthenzService configServerAthenzIdentity) {
+        this.configServerHostNames = configServerHostNames;
         this.configServerURIs = createConfigServerUris(scheme, configServerHostNames, port);
         this.loadBalancerEndpoint = createLoadBalancerEndpoint(loadBalancerHostName, scheme, port);
         this.configServerIdentity = configServerAthenzIdentity;
@@ -30,6 +32,10 @@ public class ConfigServerInfo {
 
     private static URI createLoadBalancerEndpoint(String loadBalancerHost, String scheme, int port) {
         return URI.create(scheme + "://" + loadBalancerHost + ":" + port);
+    }
+
+    public List<String> getConfigServerHostNames() {
+        return configServerHostNames;
     }
 
     public List<URI> getConfigServerUris() {
