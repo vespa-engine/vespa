@@ -110,7 +110,7 @@ public class ClusterSearcher extends Searcher {
         super(id);
         this.fs4ResourcePool = fs4ResourcePool;
 
-        Dispatcher dispatcher = new Dispatcher(dispatchConfig, fs4ResourcePool, clusterInfoConfig.nodeCount(), vipStatus);
+        Dispatcher dispatcher = new Dispatcher(id.stringValue(), dispatchConfig, fs4ResourcePool, clusterInfoConfig.nodeCount(), vipStatus);
 
         monitor = (dispatcher.searchCluster().directDispatchTarget().isPresent()) // dispatcher should decide vip status instead
                 ? new ClusterMonitor(this, monitorConfig, Optional.empty())

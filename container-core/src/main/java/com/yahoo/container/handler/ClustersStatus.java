@@ -32,7 +32,7 @@ public class ClustersStatus extends AbstractComponent {
     private final Object mutex = new Object();
 
     /** The status of clusters, when known. Note that clusters may exist for which there is no knowledge yet. */
-    private final Map<Object, Boolean> clusterStatus = new HashMap<>();
+    private final Map<String, Boolean> clusterStatus = new HashMap<>();
 
     public void setContainerHasClusters(boolean containerHasClusters) {
         synchronized (mutex) {
@@ -48,16 +48,32 @@ public class ClustersStatus extends AbstractComponent {
         }
     }
 
-    public void setUp(Object clusterIdentifier) {
+    void setUp(String clusterIdentifier) {
         synchronized (mutex) {
             clusterStatus.put(clusterIdentifier, Boolean.TRUE);
         }
     }
 
-    public void setDown(Object clusterIdentifier) {
+    void setDown(String clusterIdentifier) {
         synchronized (mutex) {
             clusterStatus.put(clusterIdentifier, Boolean.FALSE);
         }
+    }
+
+    /**
+     @deprecated Use setUp(String) instead
+     */
+    @Deprecated
+    public void setUp(Object clusterIdentifier) {
+        setUp((String) clusterIdentifier);
+    }
+
+    /**
+     @deprecated Use setDown(String) instead
+     */
+    @Deprecated
+    public void setDown(Object clusterIdentifier) {
+        setDown((String) clusterIdentifier);
     }
 
     /** Returns whether this container should receive traffic based on the state of this */

@@ -100,9 +100,9 @@ public class ClusterMonitor implements Runnable, Freezable {
         if ( ! hasInformationAboutAllNodes()) return;
         
         if (hasWorkingNodesWithDocumentsOnline()) {
-            vipStatus.get().addToRotation(this);
+            vipStatus.get().addToRotation(nodeManager.getId().stringValue());
         } else {
-            vipStatus.get().removeFromRotation(this);
+            vipStatus.get().removeFromRotation(nodeManager.getId().stringValue());
         }
     }
 

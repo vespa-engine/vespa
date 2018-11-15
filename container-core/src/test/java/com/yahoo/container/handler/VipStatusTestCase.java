@@ -18,9 +18,9 @@ public class VipStatusTestCase {
         clustersStatus.setContainerHasClusters(true);
         VipStatus v = new VipStatus(clustersStatus);
 
-        Object cluster1 = new Object();
-        Object cluster2 = new Object();
-        Object cluster3 = new Object();
+        String cluster1 = new String("a");
+        String cluster2 = new String("b");
+        String cluster3 = new String("c");
 
         // initial state
         assertFalse(v.isInRotation());
