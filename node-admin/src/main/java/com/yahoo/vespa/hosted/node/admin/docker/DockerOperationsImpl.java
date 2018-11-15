@@ -69,6 +69,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 context.containerName(),
                 node.getHostname())
                 .withManagedBy(MANAGER_NAME)
+                .withEnvironment("VESPA_CONFIGSERVERS", "dummy") // TODO: Remove January 2019
                 .withUlimit("nofile", 262_144, 262_144)
                 // The nproc aka RLIMIT_NPROC resource limit works as follows:
                 //  - A process has a (soft) nproc limit, either inherited by the parent or changed with setrlimit(2).
