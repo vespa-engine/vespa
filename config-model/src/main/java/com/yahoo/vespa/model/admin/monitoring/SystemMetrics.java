@@ -18,6 +18,8 @@ public class SystemMetrics {
     public static final String MEM_LIMIT = "mem.limit";
     public static final String MEM_USED = "mem.used";
     public static final String MEM_UTIL = "mem.util";
+    public static final String MEM_TOTAL_USED = "mem_total.used";
+    public static final String MEM_TOTAL_UTIL = "mem_total.util";
 
     public static final MetricSet systemMetricSet = createSystemMetricSet();
 
@@ -30,7 +32,9 @@ public class SystemMetrics {
                                 new Metric(DISK_UTIL),
                                 new Metric(MEM_LIMIT),
                                 new Metric(MEM_USED),
-                                new Metric(MEM_UTIL)
+                                new Metric(MEM_UTIL),
+                                new Metric(MEM_TOTAL_USED),
+                                new Metric(MEM_TOTAL_UTIL)
                 );
 
         Set<Metric> nonDockerNodeMetrics =
