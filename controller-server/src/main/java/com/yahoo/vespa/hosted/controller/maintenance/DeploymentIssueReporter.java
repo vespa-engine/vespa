@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
@@ -117,7 +118,7 @@ public class DeploymentIssueReporter extends Maintainer {
     private void fileDeploymentIssueFor(ApplicationId applicationId) {
         try {
             Tenant tenant = ownerOf(applicationId);
-            User asignee = userFor(tenant);
+            User asignee = tenant instanceof UserTenant ? userFor(tenant) : null;
             Optional<IssueId> ourIssueId = controller().applications().require(applicationId).deploymentJobs().issueId();
             IssueId issueId = deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, asignee, tenant.contact().get());
             store(applicationId, issueId);

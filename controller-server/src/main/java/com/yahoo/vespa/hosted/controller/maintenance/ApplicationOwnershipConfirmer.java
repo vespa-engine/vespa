@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
@@ -51,7 +52,9 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
                            try {
                                Tenant tenant = ownerOf(application.id());
                                Optional<IssueId> ourIssueId = application.ownershipIssueId();
-                               ourIssueId = ownershipIssues.confirmOwnership(ourIssueId, application.id(), userFor(tenant), tenant.contact().orElseThrow(RuntimeException::new));
+                               Contact contact = tenant.contact().orElseThrow(RuntimeException::new);
+                               User asignee = tenant instanceof UserTenant ? userFor(tenant) : null;
+                               ourIssueId = ownershipIssues.confirmOwnership(ourIssueId, application.id(), asignee, contact);
                                ourIssueId.ifPresent(issueId -> store(issueId, application.id()));
                            }
                            catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
