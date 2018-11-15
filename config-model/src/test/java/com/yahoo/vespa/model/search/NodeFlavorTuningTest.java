@@ -87,6 +87,12 @@ public class NodeFlavorTuningTest {
     }
 
     @Test
+    public void require_that_search_read_mmap_advise_is_set_based_on_disk() {
+        assertSearchReadAdvise(ProtonConfig.Search.Mmap.Advise.RANDOM, true);
+        assertSearchReadAdvise(ProtonConfig.Search.Mmap.Advise.NORMAL, false);
+    }
+
+    @Test
     public void require_that_summary_cache_max_bytes_is_set_based_on_memory() {
         assertEquals(1*GB/20, configFromMemorySetting(1).summary().cache().maxbytes());
         assertEquals(256*GB/20, configFromMemorySetting(256).summary().cache().maxbytes());
@@ -113,6 +119,10 @@ public class NodeFlavorTuningTest {
 
     private static void assertSummaryReadIo(ProtonConfig.Summary.Read.Io.Enum expValue, boolean fastDisk) {
         assertEquals(expValue, configFromDiskSetting(fastDisk).summary().read().io());
+    }
+
+    private static void assertSearchReadAdvise(ProtonConfig.Search.Mmap.Advise.Enum expValue, boolean fastDisk) {
+        assertEquals(expValue, configFromDiskSetting(fastDisk).search().mmap().advise());
     }
 
     private static void assertSharedDisk(boolean sharedDisk, boolean docker) {
