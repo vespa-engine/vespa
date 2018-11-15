@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NoInstanceException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
@@ -67,6 +68,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -78,6 +80,10 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
+import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
+import static java.util.Comparator.naturalOrder;
 
 /**
  * A singleton owned by the Controller which contains the methods and state for controlling applications.
@@ -163,6 +169,16 @@ public class ApplicationController {
     public ArtifactRepository artifacts() { return artifactRepository; }
 
     public ApplicationStore applicationStore() {  return applicationStore; }
+
+    /** Returns the oldest Vespa version installed on any active or reserved production node for the given application. */
+    public Version oldestInstalledPlatform(ApplicationId id) {
+        return get(id).flatMap(application -> application.productionDeployments().keySet().stream()
+                                                         .flatMap(zone -> configServer().nodeRepository().list(zone, id, EnumSet.of(active, reserved)).stream())
+                                                         .map(Node::currentVersion)
+                                                         .filter(version -> ! version.isEmpty())
+                                                         .min(naturalOrder()))
+                      .orElse(controller.systemVersion());
+    }
 
     /**
      * Set the rotations marked as 'global' either 'in' or 'out of' service.
