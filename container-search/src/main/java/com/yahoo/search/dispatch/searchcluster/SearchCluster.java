@@ -41,6 +41,7 @@ public class SearchCluster implements NodeManager<Node> {
     private final double minGroupCoverage;
     private final int maxNodesDownPerGroup;
     private final int size;
+    private final String clusterId;
     private final ImmutableMap<Integer, Group> groups;
     private final ImmutableMultimap<String, Node> nodesByHost;
     private final ImmutableList<Group> orderedGroups;
@@ -60,13 +61,14 @@ public class SearchCluster implements NodeManager<Node> {
     // Only needed until query requests are moved to rpc
     private final FS4ResourcePool fs4ResourcePool;
 
-    public SearchCluster(DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize, VipStatus vipStatus) {
-        this(dispatchConfig.minActivedocsPercentage(), dispatchConfig.minGroupCoverage(), dispatchConfig.maxNodesDownPerGroup(),
+    public SearchCluster(String clusterId, DispatchConfig dispatchConfig, FS4ResourcePool fs4ResourcePool, int containerClusterSize, VipStatus vipStatus) {
+        this(clusterId, dispatchConfig.minActivedocsPercentage(), dispatchConfig.minGroupCoverage(), dispatchConfig.maxNodesDownPerGroup(),
                 toNodes(dispatchConfig), fs4ResourcePool, containerClusterSize, vipStatus);
     }
 
-    public SearchCluster(double minActivedocsCoverage, double minGroupCoverage, int maxNodesDownPerGroup, List<Node> nodes, FS4ResourcePool fs4ResourcePool,
+    public SearchCluster(String clusterId, double minActivedocsCoverage, double minGroupCoverage, int maxNodesDownPerGroup, List<Node> nodes, FS4ResourcePool fs4ResourcePool,
             int containerClusterSize, VipStatus vipStatus) {
+        this.clusterId = clusterId;
         this.minActivedocsCoveragePercentage = minActivedocsCoverage;
         this.minGroupCoverage = minGroupCoverage;
         this.maxNodesDownPerGroup = maxNodesDownPerGroup;
@@ -194,7 +196,7 @@ public class SearchCluster implements NodeManager<Node> {
         node.setWorking(true);
 
         if (usesDirectDispatchTo(node))
-            vipStatus.addToRotation(this);
+            vipStatus.addToRotation(clusterId);
     }
 
     /** Used by the cluster monitor to manage node status */
@@ -204,16 +206,16 @@ public class SearchCluster implements NodeManager<Node> {
 
         // Take ourselves out if we usually dispatch only to our own host
         if (usesDirectDispatchTo(node))
-            vipStatus.removeFromRotation(this);
+            vipStatus.removeFromRotation(clusterId);
     }
 
     private void updateSufficientCoverage(Group group, boolean sufficientCoverage) {
         // update VIP status if we direct dispatch to this group and coverage status changed
         if (usesDirectDispatchTo(group) && sufficientCoverage != group.hasSufficientCoverage()) {
             if (sufficientCoverage) {
-                vipStatus.addToRotation(this);
+                vipStatus.addToRotation(clusterId);
             } else {
-                vipStatus.removeFromRotation(this);
+                vipStatus.removeFromRotation(clusterId);
             }
         }
         group.setHasSufficientCoverage(sufficientCoverage);

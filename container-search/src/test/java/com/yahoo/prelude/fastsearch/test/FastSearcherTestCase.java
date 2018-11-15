@@ -83,7 +83,7 @@ public class FastSearcherTestCase {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                                                      new FS4ResourcePool(1),
-                                                     new MockDispatcher(Collections.emptyList()),
+                                                     new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      new CacheParams(100, 1e64),
@@ -104,7 +104,7 @@ public class FastSearcherTestCase {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                                                      new FS4ResourcePool(1),
-                                                     new MockDispatcher(Collections.emptyList()),
+                                                     new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      new CacheParams(100, 1e64),
@@ -137,7 +137,7 @@ public class FastSearcherTestCase {
         MockFS4ResourcePool mockFs4ResourcePool = new MockFS4ResourcePool();
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                 mockFs4ResourcePool,
-                new MockDispatcher(nodes, mockFs4ResourcePool, 1, new VipStatus()),
+                new MockDispatcher("a", nodes, mockFs4ResourcePool, 1, new VipStatus()),
                 new SummaryParameters(null),
                 new ClusterParams("testhittype"),
                 new CacheParams(0, 0),
@@ -177,7 +177,7 @@ public class FastSearcherTestCase {
             new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder().documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("testDb")));
         FastSearcher fastSearcher = new FastSearcher(mockBackend,
                                                      new FS4ResourcePool(1),
-                                                     new MockDispatcher(Collections.emptyList()),
+                                                     new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      new CacheParams(100, 1e64),
@@ -369,7 +369,7 @@ public class FastSearcherTestCase {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
         return new FastSearcher(mockBackend,
                                 new FS4ResourcePool(1),
-                                new MockDispatcher(Collections.emptyList()),
+                                new MockDispatcher("a", Collections.emptyList()),
                                 new SummaryParameters(null),
                                 new ClusterParams("testhittype"),
                                 new CacheParams(100, 1e64),
@@ -382,7 +382,7 @@ public class FastSearcherTestCase {
         MockFSChannel.resetDocstamp();
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                                                      new FS4ResourcePool(1),
-                                                     new MockDispatcher(Collections.emptyList()),
+                                                     new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      new CacheParams(100, 1e64),
@@ -425,7 +425,7 @@ public class FastSearcherTestCase {
         MockFSChannel.resetDocstamp();
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
                                                      new FS4ResourcePool(1),
-                                                     new MockDispatcher(Collections.emptyList()),
+                                                     new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      new CacheParams(100, 1e64),
@@ -479,7 +479,7 @@ public class FastSearcherTestCase {
     @Test
     public void testSinglePassGroupingIsNotForcedWithSingleNodeGroups() {
         MockDispatcher dispatcher =
-                new MockDispatcher(ImmutableList.of(new Node(0, "host0", 123, 0),
+                new MockDispatcher("a", ImmutableList.of(new Node(0, "host0", 123, 0),
                                                     new Node(2, "host1", 123, 0)));
 
         FastSearcher fastSearcher = new FastSearcher(new MockBackend(),
@@ -524,7 +524,7 @@ public class FastSearcherTestCase {
         Backend backend = listeners.getBackend(server.host.getHostString(),server.host.getPort());
         FastSearcher fastSearcher = new FastSearcher(backend,
                                                      new FS4ResourcePool(1),
-                                                     new MockDispatcher(Collections.emptyList()),
+                                                     new MockDispatcher("a", Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      new CacheParams(0, 0.0d),

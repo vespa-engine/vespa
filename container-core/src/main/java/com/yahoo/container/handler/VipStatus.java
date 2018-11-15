@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
-import java.util.IdentityHashMap;
-import java.util.Map;
-
 import com.google.inject.Inject;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.VipStatusConfig;
@@ -52,13 +49,25 @@ public class VipStatus {
     }
 
     /** Note that a cluster (which influences up/down state) is up */
-    public void addToRotation(Object clusterIdentifier) {
+    public void addToRotation(String clusterIdentifier) {
         clustersStatus.setUp(clusterIdentifier);
     }
 
     /** Note that a cluster (which influences up/down state) is down */
-    public void removeFromRotation(Object clusterIdentifier) {
+    public void removeFromRotation(String clusterIdentifier) {
         clustersStatus.setDown(clusterIdentifier);
+    }
+
+    /** @deprecated Use addToRotation(String) instead  */
+    @Deprecated
+    public void addToRotation(Object clusterIdentifier) {
+        addToRotation((String) clusterIdentifier);
+    }
+
+    /** @deprecated Use removeFromRotation(String) instead  */
+    @Deprecated
+    public void removeFromRotation(Object clusterIdentifier) {
+        removeFromRotation((String) clusterIdentifier);
     }
 
     /** Returns whether this container should receive traffic at this time */

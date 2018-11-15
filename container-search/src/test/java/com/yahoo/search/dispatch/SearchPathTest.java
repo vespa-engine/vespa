@@ -69,7 +69,7 @@ public class SearchPathTest {
 
     @Test
     public void searchPathMustFilterNodesBasedOnDefinition() {
-        MockSearchCluster cluster = new MockSearchCluster(3, 3);
+        MockSearchCluster cluster = new MockSearchCluster("a",3, 3);
 
         assertThat(distKeysAsString(SearchPath.selectNodes("1/1", cluster)), equalTo("5"));
         assertThat(distKeysAsString(SearchPath.selectNodes("/1", cluster)), equalTo("4,5,6"));

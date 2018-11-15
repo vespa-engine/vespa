@@ -21,8 +21,8 @@ public class MockSearchCluster extends SearchCluster {
     private final ImmutableMap<Integer, Group> groups;
     private final ImmutableMultimap<String, Node> nodesByHost;
 
-    public MockSearchCluster(int groups, int nodesPerGroup) {
-        super(100, 100, 0, Collections.emptyList(), null, 1, null);
+    public MockSearchCluster(String clusterId, int groups, int nodesPerGroup) {
+        super(clusterId, 100, 100, 0, Collections.emptyList(), null, 1, null);
 
         ImmutableMap.Builder<Integer, Group> groupBuilder = ImmutableMap.builder();
         ImmutableMultimap.Builder<String, Node> hostBuilder = ImmutableMultimap.builder();
