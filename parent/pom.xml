@@ -678,6 +678,16 @@
                 <artifactId>jna</artifactId>
                 <version>${jna.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.tensorflow</groupId>
+                <artifactId>proto</artifactId>
+                <version>${tensorflow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.tensorflow</groupId>
+                <artifactId>tensorflow</artifactId>
+                <version>${tensorflow.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -686,6 +696,7 @@
         <antlr4.version>4.5</antlr4.version>
         <asm.version>6.2</asm.version>
         <jna.version>4.5.2</jna.version>
+        <tensorflow.version>1.11.0</tensorflow.version>
         <!-- Athenz dependencies. Make sure these dependencies matches those in Vespa's internal repositories -->
         <athenz.version>1.7.43</athenz.version>
         <commons-lang.version>2.6</commons-lang.version>
