@@ -17,6 +17,7 @@ import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.PACKET_SEPAR
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.STATUS_CODE_KEY;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.STATUS_MSG_KEY;
 import static com.yahoo.container.jdisc.state.MetricsPacketsHandler.TIMESTAMP_KEY;
+import static com.yahoo.container.jdisc.state.StateHandlerTestBase.SNAPSHOT_INTERVAL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -58,6 +59,15 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
         assertTrue(counterPacket.has(TIMESTAMP_KEY));
         assertTrue(counterPacket.has(APPLICATION_KEY));
         assertEquals(APPLICATION_NAME, counterPacket.get(APPLICATION_KEY).asText());
+    }
+
+    @Test
+    public void timestamp_resolution_is_in_seconds() throws Exception {
+        metric.add("counter", 1, null);
+        List<JsonNode> packets = incrementTimeAndGetJsonPackets();
+        JsonNode counterPacket = packets.get(1);
+
+        assertEquals(SNAPSHOT_INTERVAL/1000L, counterPacket.get(TIMESTAMP_KEY).asLong());
     }
 
     @Test

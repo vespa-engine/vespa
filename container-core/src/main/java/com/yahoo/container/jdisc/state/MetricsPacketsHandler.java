@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.yahoo.container.jdisc.state.StateHandler.getSnapshotPreprocessor;
 
@@ -151,7 +152,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
 
     private void addMetaData(long timestamp, String application, JSONObjectWithLegibleException packet) {
         packet.put(APPLICATION_KEY, application);
-        packet.put(TIMESTAMP_KEY, timestamp);
+        packet.put(TIMESTAMP_KEY, TimeUnit.MILLISECONDS.toSeconds(timestamp));
     }
 
     private void addDimensions(MetricDimensions metricDimensions, JSONObjectWithLegibleException packet) throws JSONException {
