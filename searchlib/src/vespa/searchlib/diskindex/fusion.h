@@ -9,22 +9,18 @@
 #include <vector>
 #include <string>
 
-namespace search
-{
+namespace search {
 
 template <class IN>
 class PostingPriorityQueue;
-
-namespace common
-{
-
-class TuneFileIndexing;
-class FileHeaderContext;
-
 }
 
-namespace diskindex
-{
+namespace search::common {
+    class TuneFileIndexing;
+    class FileHeaderContext;
+}
+
+namespace search::diskindex {
 
 class FieldReader;
 class FieldWriter;
@@ -52,68 +48,24 @@ public:
     {
     }
 
-    virtual
-    ~FusionInputIndex()
-    {
+    virtual ~FusionInputIndex() {}
+
+    void setPath(const vespalib::string &path) { _path = path; }
+    const vespalib::string & getPath() const { return _path; }
+    void setTmpPath(const vespalib::string &tmpPath) { _tmpPath = tmpPath; }
+    const vespalib::string &getTmpPath() const { return _tmpPath; }
+    const WordNumMapping & getWordNumMapping() const { return _wordNumMapping; }
+    WordNumMapping & getWordNumMapping() { return _wordNumMapping; }
+    const DocIdMapping & getDocIdMapping() const { return _docIdMapping; }
+
+    DocIdMapping & getDocIdMapping() { return _docIdMapping; }
+
+    const index::Schema &getSchema() const {
+        assert(_schema);
+        return *_schema;
     }
 
-    void
-    setPath(const vespalib::string &path)
-    {
-        _path = path;
-    }
-
-    const vespalib::string &
-    getPath() const
-    {
-        return _path;
-    }
-
-    void
-    setTmpPath(const vespalib::string &tmpPath)
-    {
-        _tmpPath = tmpPath;
-    }
-
-    const vespalib::string &
-    getTmpPath() const
-    {
-        return _tmpPath;
-    }
-
-    const WordNumMapping &
-    getWordNumMapping() const
-    {
-        return _wordNumMapping;
-    }
-
-    WordNumMapping &
-    getWordNumMapping()
-    {
-        return _wordNumMapping;
-    }
-
-    const DocIdMapping &
-    getDocIdMapping() const
-    {
-        return _docIdMapping;
-    }
-
-    DocIdMapping &
-    getDocIdMapping()
-    {
-        return _docIdMapping;
-    }
-
-    const index::Schema &
-    getSchema() const
-    {
-        assert(_schema.get() != NULL);
-        return *_schema.get();
-    }
-
-    void
-    setSchema(const index::Schema::SP &schema);
+    void setSchema(const index::Schema::SP &schema);
 };
 
 
@@ -132,45 +84,28 @@ public:
            const TuneFileIndexing &tuneFileIndexing,
            const search::common::FileHeaderContext &fileHeaderContext);
 
-    virtual
-    ~Fusion();
+    virtual ~Fusion();
 
     void SetOldIndexList(const std::vector<vespalib::string> &oldIndexList);
-
     bool mergeFields();
     bool mergeField(uint32_t id);
     bool openInputFieldReaders(const SchemaUtil::IndexIterator &index,
                                std::vector<std::unique_ptr<FieldReader> > &
                                readers);
-    bool openFieldWriter(const SchemaUtil::IndexIterator &index,
-                         FieldWriter &writer);
-    bool setupMergeHeap(const std::vector<std::unique_ptr<FieldReader> > &
-                        readers,
-                        FieldWriter &writer,
-                        PostingPriorityQueue<FieldReader> &heap);
+    bool openFieldWriter(const SchemaUtil::IndexIterator &index, FieldWriter & writer);
+    bool setupMergeHeap(const std::vector<std::unique_ptr<FieldReader> > & readers,
+                        FieldWriter &writer, PostingPriorityQueue<FieldReader> &heap);
     bool mergeFieldPostings(const SchemaUtil::IndexIterator &index);
     bool openInputWordReaders(const SchemaUtil::IndexIterator &index,
-                              std::vector<
-                                 std::unique_ptr<DictionaryWordReader> > &
-                              readers,
+                              std::vector<std::unique_ptr<DictionaryWordReader> > &readers,
                               PostingPriorityQueue<DictionaryWordReader> &heap);
     bool renumberFieldWordIds(const SchemaUtil::IndexIterator &index);
-
-    void
-    setSchema(const Schema *schema);
-
-    void
-    setOutDir(const vespalib::string &outDir);
-
+    void setSchema(const Schema *schema);
+    void setOutDir(const vespalib::string &outDir);
     void makeTmpDirs();
-
     bool CleanTmpDirs();
-
-    bool
-    readSchemaFiles();
-
-    bool
-    checkSchemaCompat();
+    bool readSchemaFiles();
+    bool checkSchemaCompat();
 
     template <class Reader, class Writer>
     static bool
@@ -179,12 +114,6 @@ public:
 protected:
     bool ReadMappingFiles(const SchemaUtil::IndexIterator *index);
     bool ReleaseMappingTables();
-
-    static unsigned int noGen()
-    {
-        return static_cast<unsigned int>(-1);
-    }
-
 protected:
 
     typedef FusionInputIndex OldIndex;
@@ -210,54 +139,28 @@ protected:
     vespalib::string _outDir;
 
     const TuneFileIndexing &_tuneFileIndexing;
-    const search::common::FileHeaderContext &_fileHeaderContext;
+    const common::FileHeaderContext &_fileHeaderContext;
 
-    const Schema &
-    getSchema() const
-    {
-        assert(_schema != NULL);
+    const Schema &getSchema() const {
+        assert(_schema != nullptr);
         return *_schema;
     }
 public:
 
-    void
-    setDocIdLimit(uint32_t docIdLimit)
-    {
-        _docIdLimit = docIdLimit;
-    }
-
-    void
-    setNumWordIds(uint64_t numWordIds)
-    {
-        _numWordIds = numWordIds;
-    }
-
-    std::vector<std::shared_ptr<OldIndex> > &
-    getOldIndexes()
-    {
-        return _oldIndexes;
-    }
-
-    virtual OldIndex *
-    allocOldIndex()
-    {
-        return new OldIndex;
-    }
+    void setDocIdLimit(uint32_t docIdLimit) { _docIdLimit = docIdLimit; }
+    std::vector<std::shared_ptr<OldIndex> > & getOldIndexes() { return _oldIndexes; }
+    virtual OldIndex *allocOldIndex() { return new OldIndex; }
 
     /**
      * This method is used by new indexing pipeline to merge indexes.
      */
-    static bool
-    merge(const Schema &schema,
-          const vespalib::string &dir,
-          const std::vector<vespalib::string> &sources,
-          const SelectorArray &docIdSelector,
-          bool dynamicKPosOccFormat,
-          const TuneFileIndexing &tuneFileIndexing,
-          const search::common::FileHeaderContext &fileHeaderContext);
+    static bool merge(const Schema &schema,
+                      const vespalib::string &dir,
+                      const std::vector<vespalib::string> &sources,
+                      const SelectorArray &docIdSelector,
+                      bool dynamicKPosOccFormat,
+                      const TuneFileIndexing &tuneFileIndexing,
+                      const common::FileHeaderContext &fileHeaderContext);
 };
 
-} // namespace diskindex
-
-} // namespace search
-
+}

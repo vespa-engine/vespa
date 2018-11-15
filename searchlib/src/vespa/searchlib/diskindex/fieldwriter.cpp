@@ -30,7 +30,7 @@ FieldWriter::FieldWriter(uint32_t docIdLimit,
 {
 }
 
-FieldWriter::~FieldWriter() { }
+FieldWriter::~FieldWriter() = default;
 
 bool
 FieldWriter::open(const vespalib::string &prefix,
@@ -170,13 +170,11 @@ FieldWriter::close()
     return ret;
 }
 
-
 void
 FieldWriter::setFeatureParams(const PostingListParams &params)
 {
     _posoccfile->setFeatureParams(params);
 }
-
 
 void
 FieldWriter::getFeatureParams(PostingListParams &params)
@@ -197,14 +195,14 @@ static const char *termOccNames[] =
     "dictionary.spdat",
     "dictionary.ssdat",
     "dictionary.words",
-    NULL,
+    nullptr,
 };
 
 
 void
 FieldWriter::remove(const vespalib::string &prefix)
 {
-    for (const char **j = termOccNames; *j != NULL; ++j) {
+    for (const char **j = termOccNames; *j != nullptr; ++j) {
         vespalib::string tmpName = prefix + *j;
         FastOS_File::Delete(tmpName.c_str());
     }

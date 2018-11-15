@@ -4,9 +4,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 using search::fef::TermFieldMatchDataArray;
 using search::bitcompression::FeatureDecodeContext;
@@ -39,7 +37,7 @@ template <bool bigEndian>
 Zc4RareWordPostingIterator<bigEndian>::
 Zc4RareWordPostingIterator(const TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit)
     : ZcIteratorBase(matchData, start, docIdLimit),
-      _decodeContext(NULL),
+      _decodeContext(nullptr),
       _residue(0),
       _prevDocId(0),
       _numDocs(0)
@@ -206,8 +204,8 @@ ZcRareWordPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
 
 ZcPostingIteratorBase::ZcPostingIteratorBase(const TermFieldMatchDataArray &matchData, Position start, uint32_t docIdLimit)
     : ZcIteratorBase(matchData, start, docIdLimit),
-      _valI(NULL),
-      _valIBase(NULL),
+      _valI(nullptr),
+      _valIBase(nullptr),
       _featureSeekPos(0),
       _l1(),
       _l2(),
@@ -228,12 +226,12 @@ ZcPostingIterator(uint32_t minChunkDocs,
                   const search::fef::TermFieldMatchDataArray &matchData,
                   Position start, uint32_t docIdLimit)
     : ZcPostingIteratorBase(matchData, start, docIdLimit),
-      _decodeContext(NULL),
+      _decodeContext(nullptr),
       _minChunkDocs(minChunkDocs),
       _docIdK(0),
       _dynamicK(dynamicK),
       _numDocs(0),
-      _featuresValI(NULL),
+      _featuresValI(nullptr),
       _featuresBitOffset(0),
       _counts(counts)
 { }
@@ -600,6 +598,4 @@ template class ZcPostingIterator<false>;
 template class ZcRareWordPostingIterator<true>;
 template class ZcRareWordPostingIterator<false>;
 
-} // namespace diskindex
-
-} // namespace search
+}

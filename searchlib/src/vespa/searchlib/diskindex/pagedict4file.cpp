@@ -42,8 +42,8 @@ const uint32_t headerAlign = 4096;
 }
 
 PageDict4FileSeqRead::PageDict4FileSeqRead()
-    : _pReader(NULL),
-      _ssReader(NULL),
+    : _pReader(nullptr),
+      _ssReader(nullptr),
       _ssd(),
       _ssReadContext(_ssd),
       _ssfile(),
@@ -261,15 +261,15 @@ PageDict4FileSeqRead::close()
 {
     delete _pReader;
     delete _ssReader;
-    _pReader = NULL;
-    _ssReader = NULL;
+    _pReader = nullptr;
+    _ssReader = nullptr;
 
     _ssReadContext.dropComprBuf();
     _spReadContext.dropComprBuf();
     _pReadContext.dropComprBuf();
-    _ssReadContext.setFile(NULL);
-    _spReadContext.setFile(NULL);
-    _pReadContext.setFile(NULL);
+    _ssReadContext.setFile(nullptr);
+    _spReadContext.setFile(nullptr);
+    _pReadContext.setFile(nullptr);
     _ssfile.Close();
     _spfile.Close();
     _pfile.Close();
@@ -290,9 +290,9 @@ PageDict4FileSeqRead::getParams(PostingListParams &params)
 
 
 PageDict4FileSeqWrite::PageDict4FileSeqWrite()
-    : _pWriter(NULL),
-      _spWriter(NULL),
-      _ssWriter(NULL),
+    : _pWriter(),
+      _spWriter(),
+      _ssWriter(),
       _pe(),
       _pWriteContext(_pe),
       _pfile(),
@@ -312,17 +312,11 @@ PageDict4FileSeqWrite::PageDict4FileSeqWrite()
 }
 
 
-PageDict4FileSeqWrite::~PageDict4FileSeqWrite()
-{
-    delete _pWriter;
-    delete _spWriter;
-    delete _ssWriter;
-}
+PageDict4FileSeqWrite::~PageDict4FileSeqWrite() = default;
 
 
 void
-PageDict4FileSeqWrite::writeWord(vespalib::stringref word,
-                                 const PostingListCounts &counts)
+PageDict4FileSeqWrite::writeWord(vespalib::stringref word, const PostingListCounts &counts)
 {
     _pWriter->addCounts(word, counts);
 }
@@ -333,9 +327,9 @@ PageDict4FileSeqWrite::open(const vespalib::string &name,
                             const TuneFileSeqWrite &tuneFileWrite,
                             const FileHeaderContext &fileHeaderContext)
 {
-    assert(_pWriter == NULL);
-    assert(_spWriter == NULL);
-    assert(_ssWriter == NULL);
+    assert( ! _pWriter);
+    assert( ! _spWriter);
+    assert( ! _ssWriter);
 
     vespalib::string pname = name + ".pdat";
     vespalib::string spname = name + ".spdat";
@@ -401,9 +395,9 @@ PageDict4FileSeqWrite::open(const vespalib::string &name,
     makeSPHeader(fileHeaderContext);
     makeSSHeader(fileHeaderContext);
 
-    _ssWriter = new SSWriter(_sse);
-    _spWriter = new SPWriter(*_ssWriter, _spe);
-    _pWriter = new PWriter(*_spWriter, _pe);
+    _ssWriter = std::make_unique<SSWriter>(_sse);
+    _spWriter = std::make_unique<SPWriter>(*_ssWriter, _spe);
+    _pWriter = std::make_unique<PWriter>(*_spWriter, _pe);
     _spWriter->setup();
     _pWriter->setup();
 
@@ -428,27 +422,24 @@ PageDict4FileSeqWrite::close()
     _pWriteContext.dropComprBuf();
     _pfile.Sync();
     _pfile.Close();
-    _pWriteContext.setFile(NULL);
+    _pWriteContext.setFile(nullptr);
     _spWriteContext.dropComprBuf();
     _spfile.Sync();
     _spfile.Close();
-    _spWriteContext.setFile(NULL);
+    _spWriteContext.setFile(nullptr);
     _ssWriteContext.dropComprBuf();
     _ssfile.Sync();
     _ssfile.Close();
-    _ssWriteContext.setFile(NULL);
+    _ssWriteContext.setFile(nullptr);
 
     // Update file headers
     updatePHeader(usedPBits);
     updateSPHeader(usedSPBits);
     updateSSHeader(usedSSBits);
 
-    delete _pWriter;
-    delete _spWriter;
-    delete _ssWriter;
-    _pWriter = NULL;
-    _spWriter = NULL;
-    _ssWriter = NULL;
+    _pWriter.reset();
+    _spWriter.reset();
+    _ssWriter.reset();
 
     return true;
 }

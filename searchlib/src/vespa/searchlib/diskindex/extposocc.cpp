@@ -22,18 +22,13 @@ using search::index::PostingListCounts;
 using search::index::PostingListParams;
 using search::index::Schema;
 
-namespace
-{
+namespace {
 
 vespalib::string PosOccIdCooked = "PosOcc.1.Cooked";
 
 }
 
-namespace search
-{
-
-namespace diskindex
-{
+namespace search::diskindex {
 
 void
 setupDefaultPosOccParameters(PostingListParams *countParams,
@@ -66,7 +61,7 @@ makePosOccWrite(const vespalib::string &name,
                 uint32_t indexId,
                 const TuneFileSeqWrite &tuneFileWrite)
 {
-    PostingListFileSeqWrite *posOccWrite = NULL;
+    PostingListFileSeqWrite *posOccWrite = nullptr;
 
     FileHeader fileHeader;
     if (fileHeader.taste(name, tuneFileWrite)) {
@@ -111,7 +106,7 @@ makePosOccRead(const vespalib::string &name,
                const PostingListParams &featureParams,
                const TuneFileSeqRead &tuneFileRead)
 {
-    PostingListFileSeqRead *posOccRead = NULL;
+    PostingListFileSeqRead *posOccRead = nullptr;
 
     FileHeader fileHeader;
     if (fileHeader.taste(name, tuneFileRead)) {
@@ -146,7 +141,4 @@ makePosOccRead(const vespalib::string &name,
     return posOccRead;
 }
 
-
-} // namespace diskindex
-
-} // namespace search
+}

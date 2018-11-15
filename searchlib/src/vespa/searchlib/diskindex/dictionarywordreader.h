@@ -4,12 +4,7 @@
 #include "pagedict4file.h"
 #include <vespa/fastlib/io/bufferedfile.h>
 
-namespace search
-{
-
-namespace diskindex
-{
-
+namespace search::diskindex {
 
 /*
  * Helper class, will be used by fusion later to handle generation of
@@ -28,20 +23,14 @@ public:
     {
     }
 
-    void
-    tryWriteWord(vespalib::stringref word)
-    {
+    void tryWriteWord(vespalib::stringref word) {
         if (word != _word || _wordNum == 0) {
             ++_wordNum;
             _word = word;
         }
     }
 
-    uint64_t
-    getWordNum() const
-    {
-        return _wordNum;
-    }
+    uint64_t getWordNum() const { return _wordNum; }
 };
 
 
@@ -63,35 +52,17 @@ private:
     using DictionaryFileSeqRead = index::DictionaryFileSeqRead;
     std::unique_ptr<DictionaryFileSeqRead> _dictFile;
 
-    void
-    allocFiles();
-
-    static uint64_t
-    noWordNumHigh()
-    {
-        return std::numeric_limits<uint64_t>::max();
-    }
-
-    static uint64_t
-    noWordNum()
-    {
-        return 0u;
-    }
-
+    static uint64_t noWordNumHigh() { return std::numeric_limits<uint64_t>::max(); }
+    static uint64_t noWordNum() { return 0u; }
 public:
     DictionaryWordReader();
-
     ~DictionaryWordReader();
 
-    bool
-    isValid() const
-    {
+    bool isValid() const {
         return _wordNum != noWordNumHigh();
     }
 
-    bool
-    operator<(const DictionaryWordReader &rhs) const
-    {
+    bool operator<(const DictionaryWordReader &rhs) const {
         if (!isValid())
             return false;
         if (!rhs.isValid())
@@ -99,37 +70,24 @@ public:
         return _word < rhs._word;
     }
 
-    void
-    read()
-    {
+    void read() {
         _dictFile->readWord(_word, _wordNum, _counts);
     }
 
-    bool
-    open(const vespalib::string & dictionaryName,
-         const vespalib::string & wordMapName,
-         const TuneFileSeqRead &tuneFileRead);
+    bool open(const vespalib::string & dictionaryName,
+              const vespalib::string & wordMapName,
+              const TuneFileSeqRead &tuneFileRead);
 
-    void
-    close();
+    void close();
 
-    void
-    writeNewWordNum(uint64_t newWordNum)
-    {
+    void writeNewWordNum(uint64_t newWordNum) {
         _old2newwordfile->WriteBuf(&newWordNum, sizeof(newWordNum));
     }
 
-    void
-    write(WordAggregator &writer)
-    {
+    void write(WordAggregator &writer) {
         writer.tryWriteWord(_word);
         writeNewWordNum(writer.getWordNum());
     }
 };
 
-
-
-} // namespace diskindex
-
-} // namespace search
-
+}

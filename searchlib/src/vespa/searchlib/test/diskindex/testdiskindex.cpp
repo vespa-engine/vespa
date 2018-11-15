@@ -5,14 +5,12 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/io/fileutil.h>
 
-namespace search {
+namespace search::diskindex {
 
 using index::DummyFileHeaderContext;
 using index::Schema;
 using index::WordDocElementWordPosFeatures;
 using index::schema::DataType;
-
-namespace diskindex {
 
 struct Builder
 {
@@ -106,21 +104,14 @@ TestDiskIndex::openIndex(const std::string &dir, bool directio, bool readmmap,
     if (readmmap) {
         tuneFileRead.setWantMemoryMap();
     }
-    _index.reset(new DiskIndex(dir));
+    _index = std::make_unique<DiskIndex>(dir);
     bool ok(_index->setup(tuneFileRead));
     assert(ok);
     (void) ok;
 }
 
-TestDiskIndex::TestDiskIndex() :
-    _schema(),
-    _index()
-{
-}
+TestDiskIndex::TestDiskIndex() = default;
 
-TestDiskIndex::~TestDiskIndex()
-{
-}
+TestDiskIndex::~TestDiskIndex() = default;
 
-}
 }

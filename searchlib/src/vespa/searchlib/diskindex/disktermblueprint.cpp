@@ -56,9 +56,9 @@ namespace {
 bool
 areAnyParentsEquiv(const Blueprint * node)
 {
-    return (node == NULL)
+    return (node == nullptr)
            ? false
-           : (dynamic_cast<const EquivBlueprint *>(node) != NULL)
+           : (dynamic_cast<const EquivBlueprint *>(node) != nullptr)
              ? true
              : areAnyParentsEquiv(node->getParent());
 }
@@ -71,7 +71,7 @@ DiskTermBlueprint::fetchPostings(bool strict)
     (void) strict;
     _hasEquivParent = areAnyParentsEquiv(getParent());
     _bitVector = _diskIndex.readBitVector(*_lookupRes);
-    if (!_useBitVector || (_bitVector.get() == NULL)) {
+    if (!_useBitVector || !_bitVector) {
         _postingHandle = _diskIndex.readPostingList(*_lookupRes);
     }
     _fetchPostingsDone = true;
@@ -80,7 +80,7 @@ DiskTermBlueprint::fetchPostings(bool strict)
 SearchIterator::UP
 DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda, bool strict) const
 {
-    if ((_bitVector.get() != NULL) && (_useBitVector || (tfmda[0]->isNotNeeded() && !_hasEquivParent))) {
+    if (_bitVector && (_useBitVector || (tfmda[0]->isNotNeeded() && !_hasEquivParent))) {
         LOG(debug, "Return BitVectorIterator: %s, wordNum(%" PRIu64 "), docCount(%" PRIu64 ")",
             getName(_lookupRes->indexId).c_str(), _lookupRes->wordNum, _lookupRes->counts._numDocs);
         return BitVectorIterator::create(_bitVector.get(), tfmda, strict);

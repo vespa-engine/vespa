@@ -7,9 +7,7 @@
 #include <vespa/searchlib/bitcompression/countcompression.h>
 #include <vespa/searchlib/bitcompression/pagedict4.h>
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 class PageDict4RandRead : public index::DictionaryFileRandRead
 {
@@ -55,6 +53,4 @@ public:
     uint64_t getNumWordIds() const override;
 };
 
-} // namespace diskindex
-
-} // namespace search
+}

@@ -78,7 +78,7 @@ Zc4PostingSeqRead(PostingListCountFileSeqRead *countFile)
       _wordStart(0),
       _residue(0)
 {
-    if (_countFile != NULL) {
+    if (_countFile != nullptr) {
         PostingListParams params;
         _countFile->getParams(params);
         params.get("docIdLimit", _docIdLimit);
@@ -492,7 +492,7 @@ Zc4PostingSeqRead::close()
 {
     _readContext.dropComprBuf();
     _file.Close();
-    _readContext.setFile(NULL);
+    _readContext.setFile(nullptr);
     return true;
 }
 
@@ -500,7 +500,7 @@ Zc4PostingSeqRead::close()
 void
 Zc4PostingSeqRead::getParams(PostingListParams &params)
 {
-    if (_countFile != NULL) {
+    if (_countFile != nullptr) {
         PostingListParams countParams;
         _countFile->getParams(countParams);
         params = countParams;
@@ -614,7 +614,7 @@ Zc4PostingSeqWrite(PostingListCountFileSeqWrite *countFile)
       _minSkipDocs(64),
       _docIdLimit(10000000),
       _docIds(),
-      _encodeFeatures(NULL),
+      _encodeFeatures(nullptr),
       _featureOffset(0),
       _featureWriteContext(sizeof(uint64_t)),
       _writePos(0),
@@ -630,7 +630,7 @@ Zc4PostingSeqWrite(PostingListCountFileSeqWrite *countFile)
 {
     _encodeContext.setWriteContext(&_writeContext);
 
-    if (_countFile != NULL) {
+    if (_countFile != nullptr) {
         PostingListParams params;
         _countFile->getParams(params);
         params.get("docIdLimit", _docIdLimit);
@@ -874,7 +874,7 @@ Zc4PostingSeqWrite::close()
     _writeContext.dropComprBuf();
     _file.Sync();
     _file.Close();
-    _writeContext.setFile(NULL);
+    _writeContext.setFile(nullptr);
     updateHeader();
     return true;
 }
@@ -885,7 +885,7 @@ void
 Zc4PostingSeqWrite::
 setParams(const PostingListParams &params)
 {
-    if (_countFile != NULL)
+    if (_countFile != nullptr)
         _countFile->setParams(params);
     params.get("docIdLimit", _docIdLimit);
     params.get("minChunkDocs", _minChunkDocs);
@@ -897,7 +897,7 @@ void
 Zc4PostingSeqWrite::
 getParams(PostingListParams &params)
 {
-    if (_countFile != NULL) {
+    if (_countFile != nullptr) {
         PostingListParams countParams;
         _countFile->getParams(countParams);
         params = countParams;

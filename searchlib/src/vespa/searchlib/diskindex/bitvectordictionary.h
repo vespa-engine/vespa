@@ -7,9 +7,7 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 /**
  * This dictionary provides a sparse mapping from word number -> BitVector.
@@ -53,7 +51,7 @@ public:
      * bit vector if found.
      *
      * @param wordNum the word number to lookup a bit vector for.
-     * @return the loaded bit vector or NULL if not found.
+     * @return the loaded bit vector or nullptr if not found.
      **/
     BitVector::UP lookup(uint64_t wordNum);
 
@@ -62,7 +60,5 @@ public:
     const std::vector<WordSingleKey> & getEntries() const { return _entries; }
 };
 
-} // namespace diskindex
-
-} // namespace search
+}
 

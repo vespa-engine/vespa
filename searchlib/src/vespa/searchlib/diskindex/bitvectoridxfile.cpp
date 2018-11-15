@@ -14,8 +14,7 @@ using search::common::FileHeaderContext;
 namespace {
 
 void
-readHeader(vespalib::FileHeader &h,
-           const vespalib::string &name)
+readHeader(vespalib::FileHeader &h, const vespalib::string &name)
 {
     Fast_BufferedFile file(32768u);
     file.OpenReadOnly(name.c_str());
@@ -28,7 +27,7 @@ const size_t FILE_HEADERSIZE_ALIGNMENT = 4096;
 }
 
 BitVectorIdxFileWrite::BitVectorIdxFileWrite(BitVectorKeyScope scope)
-    : _idxFile(NULL),
+    : _idxFile(),
       _numKeys(0),
       _docIdLimit(0),
       _idxHeaderLen(0),
@@ -37,11 +36,7 @@ BitVectorIdxFileWrite::BitVectorIdxFileWrite(BitVectorKeyScope scope)
 }
 
 
-BitVectorIdxFileWrite::~BitVectorIdxFileWrite()
-{
-    // No implicit close() call, but cleanup memory allocations.
-    delete _idxFile;
-}
+BitVectorIdxFileWrite::~BitVectorIdxFileWrite() = default;
 
 
 uint64_t
@@ -65,9 +60,8 @@ BitVectorIdxFileWrite::open(const vespalib::string &name,
     }
     vespalib::string idxname = name + getBitVectorKeyScopeSuffix(_scope);
 
-    assert(_idxFile == NULL);
-    FastOS_FileInterface *idxfile = new FastOS_File;
-    _idxFile = new Fast_BufferedFile(idxfile);
+    assert( !_idxFile);
+    _idxFile = std::make_unique<Fast_BufferedFile>(new FastOS_File());
     if (tuneFileWrite.getWantSyncWrites())
         _idxFile->EnableSyncWrites();
     if (tuneFileWrite.getWantDirectIO())
@@ -174,7 +168,7 @@ BitVectorIdxFileWrite::sync()
 void
 BitVectorIdxFileWrite::close()
 {
-    if (_idxFile != NULL) {
+    if (_idxFile) {
         if (_idxFile->IsOpened()) {
             uint64_t pos = _idxFile->GetPosition();
             assert(pos == idxSize());
@@ -182,8 +176,7 @@ BitVectorIdxFileWrite::close()
             updateIdxHeader(pos * 8);
             _idxFile->Close();
         }
-        delete _idxFile;
-        _idxFile = NULL;
+        _idxFile.reset();
     }
 }
 

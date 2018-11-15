@@ -5,11 +5,9 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <cassert>
 
-namespace search {
+namespace search { class BitVector; }
 
-class BitVector;
-
-namespace diskindex {
+namespace search::diskindex {
 
 typedef vespalib::Array<uint8_t> SelectorArray;
 
@@ -37,17 +35,17 @@ public:
     uint8_t _selectorId;
 
     DocIdMapper()
-        : _selector(NULL),
+        : _selector(nullptr),
           _docIdLimit(0u),
           _selectorLimit(0),
           _selectorId(0u)
     { }
 
     void setup(const DocIdMapping &mapping) {
-        _selector = (mapping._selector != NULL) ?
-                    &((*mapping._selector)[0]) : NULL;
+        _selector = (mapping._selector != nullptr) ?
+                    &((*mapping._selector)[0]) : nullptr;
         _docIdLimit = mapping._docIdLimit;
-        _selectorLimit = (mapping._selector != NULL) ?
+        _selectorLimit = (mapping._selector != nullptr) ?
                          (*mapping._selector).size() :
                          0u;
         _selectorId = mapping._selectorId;
@@ -59,7 +57,7 @@ public:
 
     uint32_t mapDocId(uint32_t docId) const {
         assert(docId < _docIdLimit);
-        if (_selector != NULL &&
+        if (_selector != nullptr &&
             (docId >= _selectorLimit || _selector[docId] != _selectorId)) {
             docId = noDocId();
         }
@@ -67,7 +65,4 @@ public:
     }
 };
 
-} // namespace diskindex
-
-} // namespace search
-
+}

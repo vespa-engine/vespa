@@ -7,9 +7,9 @@
 namespace search::diskindex {
 
 ZcBuf::ZcBuf()
-    : _valI(NULL),
-      _valE(NULL),
-      _mallocStart(NULL),
+    : _valI(nullptr),
+      _valE(nullptr),
+      _mallocStart(nullptr),
       _mallocSize(0)
 {
 }

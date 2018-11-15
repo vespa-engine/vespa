@@ -5,9 +5,7 @@
 #include "zcpostingiterators.h"
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 template <bool bigEndian>
 class Zc4RareWordPosOccIterator : public Zc4RareWordPostingIterator<bigEndian>
@@ -21,7 +19,7 @@ private:
 public:
     Zc4RareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
                               const bitcompression::PosOccFieldsParams *fieldsParams,
-                              const search::fef::TermFieldMatchDataArray &matchData);
+                              const fef::TermFieldMatchDataArray &matchData);
 };
 
 
@@ -38,7 +36,7 @@ public:
     Zc4PosOccIterator(Position start, uint64_t bitLength, uint32_t docIdLimit,
                       uint32_t minChunkDocs, const index::PostingListCounts &counts,
                       const bitcompression::PosOccFieldsParams *fieldsParams,
-                      const search::fef::TermFieldMatchDataArray &matchData);
+                      const fef::TermFieldMatchDataArray &matchData);
 };
 
 
@@ -54,7 +52,7 @@ private:
 public:
     ZcRareWordPosOccIterator(Position start, uint64_t bitLength, uint32_t docidLimit,
                              const bitcompression::PosOccFieldsParams *fieldsParams,
-                             const search::fef::TermFieldMatchDataArray &matchData);
+                             const fef::TermFieldMatchDataArray &matchData);
 };
 
 
@@ -71,7 +69,7 @@ public:
     ZcPosOccIterator(Position start, uint64_t bitLength, uint32_t docidLimit,
                      uint32_t minChunkDocs, const index::PostingListCounts &counts,
                      const bitcompression::PosOccFieldsParams *fieldsParams,
-                     const search::fef::TermFieldMatchDataArray &matchData);
+                     const fef::TermFieldMatchDataArray &matchData);
 };
 
 
@@ -87,7 +85,4 @@ extern template class ZcRareWordPosOccIterator<false>;
 extern template class ZcPosOccIterator<true>;
 extern template class ZcPosOccIterator<false>;
 
-} // namespace diskindex
-
-} // namespace search
-
+}

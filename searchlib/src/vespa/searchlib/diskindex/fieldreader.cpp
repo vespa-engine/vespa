@@ -40,9 +40,7 @@ FieldReader::FieldReader()
 }
 
 
-FieldReader::~FieldReader()
-{
-}
+FieldReader::~FieldReader() = default;
 
 
 void

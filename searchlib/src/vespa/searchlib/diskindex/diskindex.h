@@ -9,10 +9,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/cache.h>
 
-
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 /**
  * This class represents a disk index with a common dictionary, and
@@ -109,7 +106,7 @@ public:
      * @param indexId the id of the field to
      *                perform lookup for.
      * @param word the word to lookup.
-     * @return the lookup result or NULL if the word is not found.
+     * @return the lookup result or nullptr if the word is not found.
      **/
     LookupResult::UP lookup(uint32_t indexId, vespalib::stringref word);
     LookupResultVector lookup(const std::vector<uint32_t> & indexes, vespalib::stringref word);
@@ -127,7 +124,7 @@ public:
      * Read the bit vector corresponding to the given lookup result.
      *
      * @param lookupRes the result of the previous dictionary lookup.
-     * @return the bit vector or NULL if no bit vector exists for the
+     * @return the bit vector or nullptr if no bit vector exists for the
      *         word in the lookup result.
      **/
     BitVector::UP readBitVector(const LookupResult &lookupRes) const;
@@ -150,7 +147,6 @@ public:
 
     const index::Schema &getSchema() const { return _schema; }
     const vespalib::string &getIndexDir() const { return _indexDir; }
-    const TuneFileSearch &getTuneFileSearch() const { return _tuneFileSearch; }
 
     /**
      * Needed for the Cache::BackingStore interface.
@@ -160,6 +156,4 @@ public:
 
 void swap(DiskIndex::LookupResult & a, DiskIndex::LookupResult & b);
 
-} // namespace diskindex
-
-} // namespace search
+}

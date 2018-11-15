@@ -64,37 +64,4 @@ WordNumMapping::setup(uint32_t numWordIds)
     _oldDictSize = numWordIds;
 }
 
-
-void
-WordNumMapper::sanityCheck(bool allowHoles)
-{
-    uint64_t dictSize = getMaxWordNum();
-    uint64_t mappedWordNum = map(0u);
-    assert(mappedWordNum == 0u);
-    for (uint64_t wordNum = 1; wordNum <= dictSize; ++wordNum) {
-        uint64_t prevMappedWordNum = mappedWordNum;
-        mappedWordNum = map(wordNum);
-        if (mappedWordNum == 0u && allowHoles)
-            continue;   // In case some words are being removed
-        assert(mappedWordNum > prevMappedWordNum);
-        (void) prevMappedWordNum;
-    }
-}
-
-
-uint64_t
-WordNumMapping::getMaxMappedWordNum() const
-{
-    WordNumMapper mapper(*this);
-    return mapper.getMaxMappedWordNum();
-}
-
-
-void
-WordNumMapping::sanityCheck(bool allowHoles)
-{
-    WordNumMapper mapper(*this);
-    mapper.sanityCheck(allowHoles);
-}
-
 }

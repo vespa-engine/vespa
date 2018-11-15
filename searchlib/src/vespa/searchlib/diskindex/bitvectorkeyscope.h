@@ -2,12 +2,7 @@
 
 #pragma once
 
-
-namespace search
-{
-
-namespace diskindex
-{
+namespace search::diskindex {
 
 enum class BitVectorKeyScope
 {
@@ -16,7 +11,5 @@ enum class BitVectorKeyScope
 };
 
 const char *getBitVectorKeyScopeSuffix(BitVectorKeyScope scope);
-
-}
 
 }

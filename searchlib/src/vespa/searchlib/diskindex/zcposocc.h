@@ -5,9 +5,7 @@
 #include "zcposting.h"
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 
-namespace search {
-
-namespace diskindex {
+namespace search::diskindex {
 
 class Zc4PosOccSeqRead : public Zc4PostingSeqRead
 {
@@ -59,8 +57,4 @@ public:
     ZcPosOccSeqWrite(const Schema &schema, uint32_t indexId, index::PostingListCountFileSeqWrite *countFile);
 };
 
-
-} // namespace diskindex
-
-} // namespace search
-
+}

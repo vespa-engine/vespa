@@ -11,11 +11,7 @@
 #include "docidmapper.h"
 #include "fieldwriter.h"
 
-namespace search
-{
-
-namespace diskindex
-{
+namespace search::diskindex {
 
 class FieldReaderFieldInfo;
 
@@ -58,83 +54,48 @@ protected:
     uint32_t _docIdLimit;
     vespalib::string _word;
 
-    static uint64_t
-    noWordNumHigh()
-    {
+    static uint64_t noWordNumHigh() {
         return std::numeric_limits<uint64_t>::max();
     }
 
-    static uint64_t
-    noWordNum()
-    {
+    static uint64_t noWordNum() {
         return 0u;
     }
 
-    void
-    readCounts();
-
-    void
-    readDocIdAndFeatures();
+    void readCounts();
+    void readDocIdAndFeatures();
 
 public:
     FieldReader();
 
-    virtual
-    ~FieldReader();
+    virtual ~FieldReader();
 
-    virtual void
-    read();
+    virtual void read();
+    virtual bool allowRawFeatures();
 
-    virtual bool
-    allowRawFeatures();
-
-    void
-    write(FieldWriter &writer)
-    {
+    void write(FieldWriter &writer) {
         if (_wordNum != writer.getSparseWordNum()) {
             writer.newWord(_wordNum, _word);
         }
         writer.add(_docIdAndFeatures);
     }
 
-    bool
-    isValid() const
-    {
-        return _wordNum != noWordNumHigh();
-    }
+    bool isValid() const { return _wordNum != noWordNumHigh(); }
 
-    bool
-    operator<(const FieldReader &rhs) const
-    {
+    bool operator<(const FieldReader &rhs) const {
         return _wordNum < rhs._wordNum ||
             (_wordNum == rhs._wordNum &&
              _docIdAndFeatures._docId < rhs._docIdAndFeatures._docId);
     }
 
-    virtual void
-    setup(const WordNumMapping &wordNumMapping,
-          const DocIdMapping &docIdMapping);
+    virtual void setup(const WordNumMapping &wordNumMapping, const DocIdMapping &docIdMapping);
+    virtual bool open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead);
+    virtual bool close();
+    virtual void setFeatureParams(const PostingListParams &params);
+    virtual void getFeatureParams(PostingListParams &params);
+    uint32_t getDocIdLimit() const { return _docIdLimit; }
 
-    virtual bool
-    open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead);
-
-    virtual bool
-    close();
-
-    virtual void
-    setFeatureParams(const PostingListParams &params);
-
-    virtual void
-    getFeatureParams(PostingListParams &params);
-
-    uint32_t
-    getDocIdLimit() const
-    {
-        return _docIdLimit;
-    }
-
-    static std::unique_ptr<FieldReader>
-    allocFieldReader(const IndexIterator &index, const Schema &oldSchema);
+    static std::unique_ptr<FieldReader> allocFieldReader(const IndexIterator &index, const Schema &oldSchema);
 };
 
 
@@ -149,13 +110,8 @@ private:
 
 public:
     FieldReaderEmpty(const IndexIterator &index);
-
-    virtual bool
-    open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead)
-        override;
-
-    virtual void
-    getFeatureParams(PostingListParams &params) override;
+    bool open(const vespalib::string &prefix, const TuneFileSeqRead &tuneFileRead) override;
+    void getFeatureParams(PostingListParams &params) override;
 };
 
 /*
@@ -169,18 +125,9 @@ private:
     bool _hasElementWeights;
 public:
     FieldReaderStripInfo(const IndexIterator &index);
-
-    virtual bool
-    allowRawFeatures() override;
-
-    virtual void
-    read() override;
-
-    virtual void
-    getFeatureParams(PostingListParams &params) override;
+    bool allowRawFeatures() override;
+    void read() override;
+    void getFeatureParams(PostingListParams &params) override;
 };
 
-
-} // namespace diskindex
-
-} // namespace search
+}
