@@ -1508,8 +1508,6 @@ void body(SDField field) : { }
     <BODY>
     {
         deployLogger.log(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
-        field.setHeader(false);
-        field.setHeaderOrBodyDefined(true);
     }
 }
 
@@ -1523,8 +1521,6 @@ void header(SDField field) : { }
     <HEADER>
     {
         deployLogger.log(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
-        field.setHeader(true);
-        field.setHeaderOrBodyDefined(true);
     }
 }
 
