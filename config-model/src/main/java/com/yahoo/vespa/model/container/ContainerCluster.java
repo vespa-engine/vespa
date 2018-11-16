@@ -117,7 +117,6 @@ public final class ContainerCluster
         PageTemplatesConfig.Producer,
         SemanticRulesConfig.Producer,
         DocprocConfig.Producer,
-        MetricDefaultsConfig.Producer,
         ClusterInfoConfig.Producer,
         ServletPathsConfig.Producer,
         RoutingProviderConfig.Producer,
@@ -176,7 +175,6 @@ public final class ContainerCluster
     private final boolean isHostedVespa;
 
     private Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
-    private MetricDefaultsConfig.Factory.Enum defaultMetricConsumerFactory;
 
     private ApplicationMetaData applicationMetaData = null;
 
@@ -718,11 +716,6 @@ public final class ContainerCluster
     }
 
     @Override
-    public void getConfig(MetricDefaultsConfig.Builder builder) {
-        if (defaultMetricConsumerFactory != null) builder.factory(defaultMetricConsumerFactory);
-    }
-
-    @Override
     public void getConfig(ClusterInfoConfig.Builder builder) {
         builder.clusterId(name);
         builder.nodeCount(containers.size());
@@ -757,11 +750,6 @@ public final class ContainerCluster
             );
         }
         return builders;
-    }
-
-    public void setDefaultMetricConsumerFactory(MetricDefaultsConfig.Factory.Enum defaultMetricConsumerFactory) {
-        Objects.requireNonNull(defaultMetricConsumerFactory, "defaultMetricConsumerFactory");
-        this.defaultMetricConsumerFactory = defaultMetricConsumerFactory;
     }
 
     public boolean isHostedVespa() {

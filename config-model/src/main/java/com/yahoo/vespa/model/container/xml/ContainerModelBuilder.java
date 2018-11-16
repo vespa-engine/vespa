@@ -174,7 +174,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addDefaultHandlers(cluster);
         addStatusHandlers(cluster, context);
-        setDefaultMetricConsumerFactory(cluster);
 
         addHttp(deployState, spec, cluster);
 
@@ -253,10 +252,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             addConfiguredComponents(deployState, cluster, components, "component");
         }
         addConfiguredComponents(deployState, cluster, spec, "component");
-    }
-
-    private void setDefaultMetricConsumerFactory(ContainerCluster cluster) {
-        cluster.setDefaultMetricConsumerFactory(MetricDefaultsConfig.Factory.Enum.STATE_MONITOR);
     }
 
     private void addDefaultHandlers(ContainerCluster cluster) {
