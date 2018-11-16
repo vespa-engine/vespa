@@ -90,7 +90,7 @@ public class DockerTester implements AutoCloseable {
 
         Clock clock = Clock.systemUTC();
         FileSystem fileSystem = TestFileSystem.create();
-        DockerOperations dockerOperations = new DockerOperationsImpl(docker, processExecuter, Collections.emptyList(), ipAddresses);
+        DockerOperations dockerOperations = new DockerOperationsImpl(docker, processExecuter, node -> "", Collections.emptyList(), ipAddresses);
 
         MetricReceiverWrapper mr = new MetricReceiverWrapper(MetricReceiver.nullImplementation);
         Function<String, NodeAgent> nodeAgentFactory = (hostName) -> new NodeAgentImpl(
