@@ -192,7 +192,7 @@ ProcessMemoryStats::create(uint64_t sizeEpsilon)
         if (samples.back().similarTo(*(samples.rbegin()+1), sizeEpsilon)) {
             return samples.back();
         }
-        LOG(info, "create(): Memory stats have changed, trying to read smaps file again: i=%zu, prevStats={%s}, currStats={%s}",
+        LOG(debug, "create(): Memory stats have changed, trying to read smaps file again: i=%zu, prevStats={%s}, currStats={%s}",
             i, (samples.rbegin()+1)->toString().c_str(), samples.back().toString().c_str());
     }
     std::sort(samples.begin(), samples.end());
