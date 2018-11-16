@@ -224,8 +224,11 @@ public class NodeRepository extends AbstractComponent {
 
             case controller:
                 // Controllers:
-                // - port 4443 (HTTPS) from the world
+                // - port 4443 (HTTPS + Athenz) from the world
+                // - port 443+8443 (HTTPS + Okta) from the world. NOTE: controller host has 443->8443 iptable mapping.
                 trustedPorts.add(4443);
+                trustedPorts.add(443);
+                trustedPorts.add(8443);
                 break;
 
             default:
