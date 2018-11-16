@@ -40,21 +40,6 @@ import static org.junit.Assert.assertTrue;
 public class ContainerClusterTest {
 
     @Test
-    public void requireThatDefaultMetricConsumerFactoryCanBeConfigured() {
-        ContainerCluster cluster = newContainerCluster();
-        cluster.setDefaultMetricConsumerFactory(MetricDefaultsConfig.Factory.Enum.YAMAS_SCOREBOARD);
-        assertEquals(MetricDefaultsConfig.Factory.Enum.YAMAS_SCOREBOARD,
-                getMetricDefaultsConfig(cluster).factory());
-    }
-
-    @Test
-    public void requireThatDefaultMetricConsumerFactoryMatchesConfigDefault() {
-        ContainerCluster cluster = newContainerCluster();
-        assertEquals(new MetricDefaultsConfig(new MetricDefaultsConfig.Builder()).factory(),
-                getMetricDefaultsConfig(cluster).factory());
-    }
-
-    @Test
     public void requireThatClusterInfoIsPopulated() {
         ContainerCluster cluster = newContainerCluster();
         ClusterInfoConfig config = getClusterInfoConfig(cluster);
@@ -299,12 +284,6 @@ public class ContainerClusterTest {
         addContainer(deployState.getDeployLogger(), cluster, "c1", "host-c1");
         addContainer(deployState.getDeployLogger(), cluster, "c2", "host-c2");
         return cluster;
-    }
-
-    private static MetricDefaultsConfig getMetricDefaultsConfig(ContainerCluster cluster) {
-        MetricDefaultsConfig.Builder builder = new MetricDefaultsConfig.Builder();
-        cluster.getConfig(builder);
-        return new MetricDefaultsConfig(builder);
     }
 
     private static ClusterInfoConfig getClusterInfoConfig(ContainerCluster cluster) {
