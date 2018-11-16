@@ -66,10 +66,6 @@ public class DockerHostCapacity {
         return freeCapacityOf(dockerHost, false).hasCapacityFor(requestedCapacity) && freeIPs(dockerHost) > 0;
     }
 
-    boolean hasCapacityWhenRetiredAndInactiveNodesAreGone(Node dockerHost, ResourceCapacity requestedCapacity) {
-        return freeCapacityOf(dockerHost, true).hasCapacityFor(requestedCapacity) && freeIPs(dockerHost) > 0;
-    }
-
     /**
      * Number of free (not allocated) IP addresses assigned to the dockerhost.
      */
