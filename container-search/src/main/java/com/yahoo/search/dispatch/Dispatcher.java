@@ -115,6 +115,7 @@ public class Dispatcher extends AbstractComponent {
             if (nodes.isEmpty()) {
                 return Optional.empty();
             } else {
+                query.trace(false, 2, "Dispatching internally with search path ", searchPath);
                 return invokerFactory.supply(query, -1, nodes, true);
             }
         } catch (InvalidSearchPathException e) {
@@ -133,7 +134,7 @@ public class Dispatcher extends AbstractComponent {
         int max = Integer.min(searchCluster.orderedGroups().size(), MAX_GROUP_SELECTION_ATTEMPTS);
         Set<Integer> rejected = null;
         for (int i = 0; i < max; i++) {
-            Optional<Group> groupInCluster = loadBalancer.takeGroupForQuery(query, rejected);
+            Optional<Group> groupInCluster = loadBalancer.takeGroupForQuery(rejected);
             if (!groupInCluster.isPresent()) {
                 // No groups available
                 break;
@@ -142,7 +143,8 @@ public class Dispatcher extends AbstractComponent {
             boolean acceptIncompleteCoverage = (i == max - 1);
             Optional<SearchInvoker> invoker = invokerFactory.supply(query, group.id(), group.nodes(), acceptIncompleteCoverage);
             if (invoker.isPresent()) {
-                query.trace(false, 2, "Dispatching internally to ", group);
+                query.trace(false, 2, "Dispatching internally to search group ", group.id());
+                query.getModel().setSearchPath("/" + group.id());
                 invoker.get().teardown(() -> loadBalancer.releaseGroup(group));
                 return invoker;
             } else {

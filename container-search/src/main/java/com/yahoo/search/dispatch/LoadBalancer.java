@@ -48,11 +48,10 @@ public class LoadBalancer {
      * Select and allocate the search cluster group which is to be used for the provided query. Callers <b>must</b> call
      * {@link #releaseGroup} symmetrically for each taken allocation.
      *
-     * @param query the query for which this allocation is made
      * @param rejectedGroups if not null, the load balancer will only return groups with IDs not in the set
      * @return The node group to target, or <i>empty</i> if the internal dispatch logic cannot be used
      */
-    public Optional<Group> takeGroupForQuery(Query query, Set<Integer> rejectedGroups) {
+    public Optional<Group> takeGroupForQuery(Set<Integer> rejectedGroups) {
         if (scoreboard == null) {
             return Optional.empty();
         }
