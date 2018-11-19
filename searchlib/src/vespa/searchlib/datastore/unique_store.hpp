@@ -134,8 +134,8 @@ private:
                 EntryRef &mappedRef = _mapping[iRef.bufferId()][iRef.offset()];
                 assert(!mappedRef.valid());
                 EntryRef newRef = _store.move(itr.getKey());
-                std::atomic_thread_fence(std::memory_order_release);
                 mappedRef = newRef;
+                _dict.thaw(itr);
                 itr.writeKey(newRef);
             }
             ++itr;
