@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.collect.ImmutableSet;
@@ -44,7 +44,7 @@ public class NodeSerializer {
     // Node fields
     private static final String hostnameKey = "hostname";
     private static final String ipAddressesKey = "ipAddresses";
-    private static final String additionalIpAddressesKey = "additionalIpAddresses";
+    private static final String ipAddressPoolKey = "additionalIpAddresses";
     private static final String openStackIdKey = "openStackId";
     private static final String parentHostnameKey = "parentHostname";
     private static final String historyKey = "history";
@@ -99,7 +99,7 @@ public class NodeSerializer {
     private void toSlime(Node node, Cursor object) {
         object.setString(hostnameKey, node.hostname());
         toSlime(node.ipAddresses(), object.setArray(ipAddressesKey));
-        toSlime(node.additionalIpAddresses(), object.setArray(additionalIpAddressesKey));
+        toSlime(node.ipAddressPool().asSet(), object.setArray(ipAddressPoolKey));
         object.setString(openStackIdKey, node.openStackId());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));
         object.setString(flavorKey, node.flavor().name());
@@ -153,7 +153,7 @@ public class NodeSerializer {
     private Node nodeFromSlime(Node.State state, Inspector object) {
         return new Node(object.field(openStackIdKey).asString(),
                         ipAddressesFromSlime(object, ipAddressesKey),
-                        ipAddressesFromSlime(object, additionalIpAddressesKey),
+                        ipAddressesFromSlime(object, ipAddressPoolKey),
                         object.field(hostnameKey).asString(),
                         parentHostnameFromSlime(object),
                         flavorFromSlime(object),

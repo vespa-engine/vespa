@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
@@ -190,7 +190,7 @@ public class CuratorDatabaseClient {
 
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
-            Node newNode = new Node(node.openStackId(), node.ipAddresses(), node.additionalIpAddresses(), node.hostname(),
+            Node newNode = new Node(node.openStackId(), node.ipAddresses(), node.ipAddressPool().asSet(), node.hostname(),
                                     node.parentHostname(), node.flavor(),
                                     newNodeStatus(node, toState),
                                     toState,

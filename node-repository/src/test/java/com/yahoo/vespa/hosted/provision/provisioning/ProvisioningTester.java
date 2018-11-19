@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -151,7 +152,7 @@ public class ProvisioningTester {
         return hosts2;
     }
 
-    public void activate(ApplicationId application, Set<HostSpec> hosts) {
+    public void activate(ApplicationId application, Collection<HostSpec> hosts) {
         NestedTransaction transaction = new NestedTransaction();
         transaction.add(new CuratorTransaction(curator));
         provisioner.activate(transaction, application, hosts);
@@ -165,7 +166,7 @@ public class ProvisioningTester {
         deactivateTransaction.commit();
     }
 
-    Set<String> toHostNames(Set<HostSpec> hosts) {
+    Collection<String> toHostNames(Collection<HostSpec> hosts) {
         return hosts.stream().map(HostSpec::hostname).collect(Collectors.toSet());
     }
 
@@ -231,9 +232,12 @@ public class ProvisioningTester {
         return makeReadyNodes(n, flavor, type, 0);
     }
 
-    List<Node> makeProvisionedNodes(int n, String flavor, NodeType type, int additionalIps) {
-        List<Node> nodes = new ArrayList<>(n);
+    List<Node> makeProvisionedNodes(int count, String flavor, NodeType type, int ipAddressPoolSize) {
+        return makeProvisionedNodes(count, flavor, type, ipAddressPoolSize, false);
+    }
 
+    List<Node> makeProvisionedNodes(int n, String flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
+        List<Node> nodes = new ArrayList<>(n);
 
         for (int i = 0; i < n; i++) {
             nextHost++;
@@ -257,21 +261,26 @@ public class ProvisioningTester {
             hostIps.add(ipv4);
             hostIps.add(ipv6);
 
-            Set<String> addips = new HashSet<>();
-            for (int ipSeq = 1; ipSeq < additionalIps; ipSeq++) {
+            Set<String> ipAddressPool = new LinkedHashSet<>();
+            for (int poolIp = 1; poolIp < ipAddressPoolSize; poolIp++) {
                 nextIP++;
-                String ipv6node = String.format("::%d", nextIP);
-                addips.add(ipv6node);
-                nameResolver.addRecord(String.format("node-%d-of-%s",ipSeq, hostname), ipv6node);
+                String ipv6Addr = String.format("::%d", nextIP);
+                ipAddressPool.add(ipv6Addr);
+                nameResolver.addRecord(String.format("node-%d-of-%s", poolIp, hostname), ipv6Addr);
+                if (dualStack) {
+                    String ipv4Addr = String.format("127.0.127.%d", nextIP);
+                    ipAddressPool.add(ipv4Addr);
+                    nameResolver.addRecord(String.format("node-%d-of-%s", poolIp, hostname), ipv4Addr);
+                }
             }
 
             nodes.add(nodeRepository.createNode(hostname,
-                    hostname,
-                    hostIps,
-                    addips,
-                    Optional.empty(),
-                    nodeFlavors.getFlavorOrThrow(flavor),
-                    type));
+                                                hostname,
+                                                hostIps,
+                                                ipAddressPool,
+                                                Optional.empty(),
+                                                nodeFlavors.getFlavorOrThrow(flavor),
+                                                type));
         }
         nodes = nodeRepository.addNodes(nodes);
         return nodes;
@@ -309,9 +318,12 @@ public class ProvisioningTester {
         return nodeRepository.getNodes(application.getApplicationId(), Node.State.active);
     }
 
+    List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize) {
+        return makeReadyNodes(n, flavor, type, ipAddressPoolSize, false);
+    }
 
-    List<Node> makeReadyNodes(int n, String flavor, NodeType type, int additionalIps) {
-        List<Node> nodes = makeProvisionedNodes(n, flavor, type, additionalIps);
+    List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
+        List<Node> nodes = makeProvisionedNodes(n, flavor, type, ipAddressPoolSize, dualStack);
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }

@@ -1,13 +1,13 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.testutils;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -27,8 +27,15 @@ public class MockNameResolver implements NameResolver {
     private final Map<String, Set<String>> records = new HashMap<>();
 
     public MockNameResolver addRecord(String hostname, String... ipAddress) {
-        Arrays.stream(ipAddress).forEach(Objects::requireNonNull);
-        records.put(hostname, ImmutableSet.copyOf(ipAddress));
+        Objects.requireNonNull(hostname, "hostname must be non-null");
+        Arrays.stream(ipAddress).forEach(ip -> Objects.requireNonNull(ip, "ipAddress must be non-null"));
+        records.compute(hostname, (ignored, ipAddresses) -> {
+            if (ipAddresses == null) {
+                ipAddresses = new LinkedHashSet<>();
+            }
+            ipAddresses.addAll(Arrays.asList(ipAddress));
+            return ipAddresses;
+        });
         return this;
     }
 

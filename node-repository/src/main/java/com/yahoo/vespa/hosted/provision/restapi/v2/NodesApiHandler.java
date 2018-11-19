@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.component.Version;
@@ -215,14 +215,14 @@ public class NodesApiHandler extends LoggingRequestHandler {
         Optional<String> parentHostname = optionalString(inspector.field("parentHostname"));
         Set<String> ipAddresses = new HashSet<>();
         inspector.field("ipAddresses").traverse((ArrayTraverser) (i, item) -> ipAddresses.add(item.asString()));
-        Set<String> additionalIpAddresses = new HashSet<>();
-        inspector.field("additionalIpAddresses").traverse((ArrayTraverser) (i, item) -> additionalIpAddresses.add(item.asString()));
+        Set<String> ipAddressPool = new HashSet<>();
+        inspector.field("additionalIpAddresses").traverse((ArrayTraverser) (i, item) -> ipAddressPool.add(item.asString()));
 
         return nodeRepository.createNode(
                 inspector.field("openStackId").asString(),
                 inspector.field("hostname").asString(),
                 ipAddresses,
-                additionalIpAddresses,
+                ipAddressPool,
                 parentHostname,
                 nodeFlavors.getFlavorOrThrow(inspector.field("flavor").asString()),
                 nodeTypeFromSlime(inspector.field("type")));

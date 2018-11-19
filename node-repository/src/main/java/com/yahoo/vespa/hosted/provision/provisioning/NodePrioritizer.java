@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -8,6 +8,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.util.ArrayList;
@@ -132,18 +133,24 @@ public class NodePrioritizer {
             if (!hostHasCapacityForWantedFlavor || conflictingCluster) continue;
 
             log.log(LogLevel.DEBUG, "Trying to add new Docker node on " + node);
-            Set<String> ipAddresses = DockerHostCapacity.findFreeIps(node, allNodes);
-            if (ipAddresses.isEmpty()) continue;
-            String ipAddress = ipAddresses.stream().findFirst().get();
-            Optional<String> hostname = nameResolver.getHostname(ipAddress);
-            if (!hostname.isPresent()) {
-                log.log(LogLevel.DEBUG, "Could not find hostname for " + ipAddress + ", skipping it");
+
+            Optional<IP.Allocation> allocation = node.ipAddressPool().findAllocation(list);
+            if (!allocation.isPresent()) continue; // No free addresses in this pool
+
+            String hostname;
+            try {
+                hostname = allocation.get().resolveHostname(nameResolver);
+            } catch (IllegalArgumentException e) {
+                log.log(LogLevel.WARNING, "Failed to resolve hostname for allocation: " + allocation.get() + ", skipping", e);
                 continue;
             }
-            Node newNode = Node.createDockerNode("fake-" + hostname.get(),
-                                                 Collections.singleton(ipAddress),
-                                                 Collections.emptySet(), hostname.get(),
-                                                 Optional.of(node.hostname()), getFlavor(requestedNodes),
+
+            Node newNode = Node.createDockerNode("fake-" + hostname,
+                                                 allocation.get().addresses(),
+                                                 Collections.emptySet(),
+                                                 hostname,
+                                                 Optional.of(node.hostname()),
+                                                 getFlavor(requestedNodes),
                                                  NodeType.tenant);
             PrioritizableNode nodePri = toNodePriority(newNode, false, true);
             if (!nodePri.violatesSpares || isAllocatingForReplacement) {

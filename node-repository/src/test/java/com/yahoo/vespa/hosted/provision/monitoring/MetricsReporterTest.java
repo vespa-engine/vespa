@@ -1,6 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.monitoring;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
@@ -31,7 +32,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -120,13 +120,9 @@ public class MetricsReporterTest {
                                                            true);
 
         // Allow 4 containers
-        Set<String> additionalIps = new HashSet<>();
-        additionalIps.add("::2");
-        additionalIps.add("::3");
-        additionalIps.add("::4");
-        additionalIps.add("::5");
+        Set<String> ipAddressPool = ImmutableSet.of("::2", "::3", "::4", "::5");
 
-        Node dockerHost = Node.create("openStackId1", Collections.singleton("::1"), additionalIps, "dockerHost", Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
+        Node dockerHost = Node.create("openStackId1", Collections.singleton("::1"), ipAddressPool, "dockerHost", Optional.empty(), nodeFlavors.getFlavorOrThrow("host"), NodeType.host);
         nodeRepository.addNodes(Collections.singletonList(dockerHost));
         nodeRepository.dirtyRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());

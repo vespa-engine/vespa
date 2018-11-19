@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import com.google.common.collect.ImmutableSet;
@@ -239,18 +239,18 @@ public class SerializationTest {
     }
 
     @Test
-    public void serialize_additional_ip_addresses() {
+    public void serialize_ip_address_pool() {
         Node node = createNode();
 
-        // Test round-trip with additional addresses
-        node = node.withAdditionalIpAddresses(ImmutableSet.of("10.0.0.1", "10.0.0.2", "10.0.0.3"));
+        // Test round-trip with IP address pool
+        node = node.withIpAddressPool(ImmutableSet.of("::1", "::2", "::3"));
         Node copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
-        assertEquals(node.additionalIpAddresses(), copy.additionalIpAddresses());
+        assertEquals(node.ipAddressPool(), copy.ipAddressPool());
 
-        // Test round-trip without additional addresses (handle empty ip set)
+        // Test round-trip without IP address pool (handle empty pool)
         node = createNode();
         copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
-        assertEquals(node.additionalIpAddresses(), copy.additionalIpAddresses());
+        assertEquals(node.ipAddressPool(), copy.ipAddressPool());
     }
 
     @Test
