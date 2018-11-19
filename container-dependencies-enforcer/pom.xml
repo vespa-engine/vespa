@@ -104,8 +104,6 @@
                                                 <include>org.apache.felix:org.apache.felix.framework:[${felix.version}]:jar:provided</include>
                                                 <include>org.apache.felix:org.apache.felix.log:[1.0.1]:jar:provided</include>
                                                 <include>org.apache.felix:org.apache.felix.main:[${felix.version}]:jar:provided</include>
-                                                <include>org.apache.httpcomponents:httpclient:[${apache.httpclient.version}]:jar:provided</include>
-                                                <include>org.apache.httpcomponents:httpcore:[${apache.httpcore.version}]:jar:provided</include>
                                                 <include>org.bouncycastle:bcpkix-jdk15on:[${bouncycastle.version}]:jar:provided</include>
                                                 <include>org.bouncycastle:bcprov-jdk15on:[${bouncycastle.version}]:jar:provided</include>
                                                 <include>org.eclipse.jetty:jetty-http:[${jetty.version}]:jar:provided</include>
