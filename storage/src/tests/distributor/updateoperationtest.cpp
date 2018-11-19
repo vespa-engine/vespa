@@ -61,7 +61,7 @@ public:
     }
 
     void replyToMessage(UpdateOperation& callback, MessageSenderStub& sender, uint32_t index,
-                        uint64_t oldTimestamp, api::BucketInfo info = api::BucketInfo(2,4,6));
+                        uint64_t oldTimestamp, const api::BucketInfo& info = api::BucketInfo(2,4,6));
 
     std::shared_ptr<UpdateOperation>
     sendUpdate(const std::string& bucketState);
@@ -94,7 +94,7 @@ UpdateOperation_Test::sendUpdate(const std::string& bucketState)
 
 void
 UpdateOperation_Test::replyToMessage(UpdateOperation& callback, MessageSenderStub& sender, uint32_t index,
-                                     uint64_t oldTimestamp, api::BucketInfo info)
+                                     uint64_t oldTimestamp, const api::BucketInfo& info)
 {
     std::shared_ptr<api::StorageMessage> msg2  = sender.commands[index];
     UpdateCommand* updatec = dynamic_cast<UpdateCommand*>(msg2.get());
@@ -123,6 +123,9 @@ UpdateOperation_Test::testSimple()
             std::string("UpdateReply(doc:test:test, BucketId(0x0000000000000000), "
                         "timestamp 100, timestamp of updated doc: 90) ReturnCode(NONE)"),
             sender.getLastReply(true));
+
+    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    CPPUNIT_ASSERT_EQUAL(0UL, metrics.diverging_timestamp_updates.getValue());
 }
 
 void
@@ -168,6 +171,9 @@ UpdateOperation_Test::testMultiNode()
                     "node(idx=1,crc=0x2,docs=4/4,bytes=6/6,trusted=true,active=false,ready=false), "
                     "node(idx=0,crc=0x2,docs=4/4,bytes=6/6,trusted=true,active=false,ready=false)"),
             dumpBucket(_bId));
+
+    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    CPPUNIT_ASSERT_EQUAL(0UL, metrics.diverging_timestamp_updates.getValue());
 }
 
 void
@@ -188,5 +194,8 @@ UpdateOperation_Test::testMultiNodeInconsistentTimestamp()
                         "timestamp 100, timestamp of updated doc: 120 Was inconsistent "
                         "(best node 1)) ReturnCode(NONE)"),
             sender.getLastReply(true));
+
+    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    CPPUNIT_ASSERT_EQUAL(1UL, metrics.diverging_timestamp_updates.getValue());
 }
 

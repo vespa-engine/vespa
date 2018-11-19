@@ -20,14 +20,15 @@ using document::BucketSpace;
 UpdateOperation::UpdateOperation(DistributorComponent& manager,
                                  DistributorBucketSpace &bucketSpace,
                                  const std::shared_ptr<api::UpdateCommand> & msg,
-                                 PersistenceOperationMetricSet& metric)
+                                 UpdateMetricSet& metric)
     : Operation(),
       _trackerInstance(metric, std::make_shared<api::UpdateReply>(*msg),
                        manager, msg->getTimestamp()),
       _tracker(_trackerInstance),
       _msg(msg),
       _manager(manager),
-      _bucketSpace(bucketSpace)
+      _bucketSpace(bucketSpace),
+      _metrics(metric)
 {
 }
 
@@ -149,6 +150,7 @@ UpdateOperation::onReceive(DistributorMessageSender& sender,
                                      reply.getBucket().toString().c_str(),
                                      _results[i].oldTs, _results[i].nodeId,
                                      _results[goodNode].oldTs, _results[goodNode].nodeId);
+                        _metrics.diverging_timestamp_updates.inc();
 
                         replyToSend.setNodeWithNewestTimestamp(_results[goodNode].nodeId);
                         _newestTimestampLocation.first  = _results[goodNode].bucketId;

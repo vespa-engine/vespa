@@ -34,6 +34,7 @@ vespa_add_library(storage_distributor
     statecheckers.cpp
     statusreporterdelegate.cpp
     throttlingoperationstarter.cpp
+    update_metric_set.cpp
     visitormetricsset.cpp
     $<TARGET_OBJECTS:storage_distributoroperation>
     $<TARGET_OBJECTS:storage_distributoroperationexternal>

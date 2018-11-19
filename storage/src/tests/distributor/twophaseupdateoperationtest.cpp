@@ -204,7 +204,7 @@ TwoPhaseUpdateOperationTest::replyToMessage(
         api::ReturnCode::Result result)
 {
     std::shared_ptr<api::StorageMessage> msg2 = sender.commands.at(index);
-    UpdateCommand& updatec = dynamic_cast<UpdateCommand&>(*msg2);
+    auto& updatec = dynamic_cast<UpdateCommand&>(*msg2);
     std::unique_ptr<api::StorageReply> reply(updatec.makeReply());
     static_cast<api::UpdateReply*>(reply.get())->setOldTimestamp(oldTimestamp);
     reply->setResult(api::ReturnCode(result, ""));
@@ -222,7 +222,7 @@ TwoPhaseUpdateOperationTest::replyToPut(
         const std::string& traceMsg)
 {
     std::shared_ptr<api::StorageMessage> msg2 = sender.commands.at(index);
-    PutCommand& putc = dynamic_cast<PutCommand&>(*msg2);
+    auto& putc = dynamic_cast<PutCommand&>(*msg2);
     std::unique_ptr<api::StorageReply> reply(putc.makeReply());
     reply->setResult(api::ReturnCode(result, ""));
     if (!traceMsg.empty()) {
@@ -240,7 +240,7 @@ TwoPhaseUpdateOperationTest::replyToCreateBucket(
         api::ReturnCode::Result result)
 {
     std::shared_ptr<api::StorageMessage> msg2 = sender.commands.at(index);
-    CreateBucketCommand& putc = dynamic_cast<CreateBucketCommand&>(*msg2);
+    auto& putc = dynamic_cast<CreateBucketCommand&>(*msg2);
     std::unique_ptr<api::StorageReply> reply(putc.makeReply());
     reply->setResult(api::ReturnCode(result, ""));
     callback.receive(sender,
@@ -257,8 +257,7 @@ TwoPhaseUpdateOperationTest::replyToGet(
         api::ReturnCode::Result result,
         const std::string& traceMsg)
 {
-    const api::GetCommand& get(
-            static_cast<const api::GetCommand&>(*sender.commands.at(index)));
+    auto& get = static_cast<const api::GetCommand&>(*sender.commands.at(index));
     std::shared_ptr<api::StorageReply> reply;
 
     if (haveDocument) {

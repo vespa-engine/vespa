@@ -2,6 +2,7 @@
 #pragma once
 
 #include "persistence_operation_metric_set.h"
+#include "update_metric_set.h"
 #include "visitormetricsset.h"
 #include <vespa/metrics/metrics.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
@@ -12,7 +13,7 @@ class DistributorMetricSet : public metrics::MetricSet
 {
 public:
     metrics::LoadMetric<PersistenceOperationMetricSet> puts;
-    metrics::LoadMetric<PersistenceOperationMetricSet> updates;
+    metrics::LoadMetric<UpdateMetricSet> updates;
     metrics::LoadMetric<PersistenceOperationMetricSet> update_puts;
     metrics::LoadMetric<PersistenceOperationMetricSet> update_gets;
     metrics::LoadMetric<PersistenceOperationMetricSet> removes;
