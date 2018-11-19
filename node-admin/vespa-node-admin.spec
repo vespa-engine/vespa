@@ -16,7 +16,6 @@ License:        Commercial
 URL:            http://vespa.ai
 
 Requires: bash
-Requires: java-1.8.0-openjdk-headless
 Requires: vespa-base = %{version}
 Requires: vespa-standalone-container = %{version}
 Requires: vespa-node-maintainer = %{version}
