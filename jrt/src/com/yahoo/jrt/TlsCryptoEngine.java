@@ -2,17 +2,11 @@
 package com.yahoo.jrt;
 
 import com.yahoo.security.SslContextBuilder;
-import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.TransportSecurityOptions;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.channels.SocketChannel;
-import java.nio.file.Files;
-import java.security.cert.X509Certificate;
-import java.util.List;
 
 /**
  * A {@link CryptoSocket} that creates {@link TlsCryptoSocket} instances.
@@ -40,9 +34,10 @@ public class TlsCryptoEngine implements CryptoEngine {
     }
 
     private static SSLContext createSslContext(TransportSecurityOptions options) {
-        return new SslContextBuilder()
-                .withTrustStore(options.getCaCertificatesFile())
-                .withKeyStore(options.getPrivateKeyFile(), options.getCertificatesFile())
-                .build();
+        SslContextBuilder builder = new SslContextBuilder();
+        options.getCertificatesFile()
+                .ifPresent(certificates -> builder.withKeyStore(options.getPrivateKeyFile().get(), certificates));
+        options.getCaCertificatesFile().ifPresent(builder::withTrustStore);
+        return builder.build();
     }
 }
