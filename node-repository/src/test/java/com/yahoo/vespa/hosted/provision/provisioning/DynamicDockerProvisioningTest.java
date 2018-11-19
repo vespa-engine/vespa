@@ -20,6 +20,7 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -198,19 +199,14 @@ public class DynamicDockerProvisioningTest {
         fail("Two groups have been allocated to the same parent host");
     }
 
+    @Ignore // TODO: Re-enable if we reintroduce spare capacity requirement
     @Test
     public void spare_capacity_used_only_when_replacement() {
         // Use spare capacity only when replacement (i.e one node is failed)
         // Test should allocate as much capacity as possible, verify that it is not possible to allocate one more unit
         // Verify that there is still capacity (available spare)
         // Fail one node and redeploy, Verify that one less node is empty.
-
-
         ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
-        // Only run test if there _is_ spare capacity
-        if (tester.provisioner().getSpareCapacityProd() == 0) {
-            return;
-        }
 
         // Setup test
         ApplicationId application1 = tester.makeApplicationId();
