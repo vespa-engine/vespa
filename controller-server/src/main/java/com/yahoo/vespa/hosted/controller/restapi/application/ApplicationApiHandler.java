@@ -492,6 +492,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
 
         application.ownershipIssueId().ifPresent(issueId -> object.setString("ownershipIssueId", issueId.value()));
+        application.owner().ifPresent(owner -> object.setString("owner", owner.username()));
         application.deploymentJobs().issueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
     }
 

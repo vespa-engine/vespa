@@ -58,13 +58,11 @@ public class ApplicationOwnershipConfirmerTest {
         Optional<IssueId> issueId = Optional.of(IssueId.from("1"));
         issues.response = issueId;
         confirmer.maintain();
-        confirmer.maintain();
 
         assertFalse("No issue is stored for an application newer than 3 months.", propertyApp.get().ownershipIssueId().isPresent());
         assertFalse("No issue is stored for an application newer than 3 months.", userApp.get().ownershipIssueId().isPresent());
 
         tester.clock().advance(Duration.ofDays(91));
-        confirmer.maintain();
         confirmer.maintain();
 
         assertEquals("Confirmation issue has been filed for property owned application.", issueId, propertyApp.get().ownershipIssueId());
@@ -74,7 +72,6 @@ public class ApplicationOwnershipConfirmerTest {
 
         // No new issue is created, so return empty now.
         issues.response = Optional.empty();
-        confirmer.maintain();
         confirmer.maintain();
 
         assertEquals("Confirmation issue reference is not updated when no issue id is returned.", issueId, propertyApp.get().ownershipIssueId());
@@ -86,16 +83,20 @@ public class ApplicationOwnershipConfirmerTest {
         tester.controller().applications().deactivate(userApp.get().id(), userApp.get().productionDeployments().keySet().stream().findAny().get());
         assertTrue("No production deployments are listed for user.", userApp.get().productionDeployments().isEmpty());
         confirmer.maintain();
-        confirmer.maintain();
 
         // Time has passed, and a new confirmation issue is in order for the property which is still in production.
         Optional<IssueId> issueId2 = Optional.of(IssueId.from("2"));
         issues.response = issueId2;
         confirmer.maintain();
-        confirmer.maintain();
 
         assertEquals("A new confirmation issue id is stored when something is returned to the maintainer.", issueId2, propertyApp.get().ownershipIssueId());
         assertEquals("Confirmation issue for application without production deployments has not been filed.", issueId, userApp.get().ownershipIssueId());
+
+        assertFalse("No owner is stored for application", propertyApp.get().owner().isPresent());
+        issues.owner = Optional.of(User.from("username"));
+        confirmer.maintain();
+        assertEquals("Owner has been added to application", propertyApp.get().owner().get().username(), "username");
+
     }
 
     private class MockOwnershipIssues implements OwnershipIssues {
@@ -103,6 +104,7 @@ public class ApplicationOwnershipConfirmerTest {
         private Optional<IssueId> response;
         private boolean escalatedToContact = false;
         private boolean escalatedToTerminator = false;
+        private Optional<User> owner = Optional.empty();
 
         @Override
         public Optional<IssueId> confirmOwnership(Optional<IssueId> issueId, ApplicationId applicationId, User asignee, Contact contact) {
@@ -115,6 +117,10 @@ public class ApplicationOwnershipConfirmerTest {
             else escalatedToTerminator = true;
         }
 
+        @Override
+        public Optional<User> getConfirmedOwner(IssueId issueId) {
+            return owner;
+        }
     }
 
 }
