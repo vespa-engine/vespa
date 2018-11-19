@@ -41,6 +41,7 @@ import org.osgi.framework.ServiceReference;
 import javax.management.remote.JMXServiceURL;
 import javax.servlet.DispatcherType;
 
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.BindException;
 import java.net.MalformedURLException;
@@ -302,9 +303,10 @@ public class JettyHttpServer extends AbstractServerProvider {
     public void start() {
         try {
             server.start();
-        } catch (final BindException e) {
-            throw new RuntimeException("Failed to start server due to BindExecption. ListenPorts = " + listenedPorts.toString(), e);
         } catch (final Exception e) {
+            if (e instanceof IOException && e.getCause() instanceof BindException) {
+                throw new RuntimeException("Failed to start server due to BindExecption. ListenPorts = " + listenedPorts.toString(), e.getCause());
+            }
             throw new RuntimeException("Failed to start server.", e);
         }
     }
