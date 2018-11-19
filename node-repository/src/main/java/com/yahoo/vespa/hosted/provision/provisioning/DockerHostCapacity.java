@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
@@ -6,9 +6,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Capacity calculation for docker hosts.
@@ -70,7 +68,7 @@ public class DockerHostCapacity {
      * Number of free (not allocated) IP addresses assigned to the dockerhost.
      */
     int freeIPs(Node dockerHost) {
-        return findFreeIps(dockerHost, allNodes.asList()).size();
+        return dockerHost.ipAddressPool().findUnused(allNodes).size();
     }
 
     public ResourceCapacity getFreeCapacityTotal() {
@@ -138,15 +136,4 @@ public class DockerHostCapacity {
         return isInactive || isRetired;
     }
 
-    /**
-     * Compare the additional ip addresses against the set of used addresses on
-     * child nodes.
-     */
-    static Set<String> findFreeIps(Node dockerHost, List<Node> allNodes) {
-        Set<String> freeIPAddresses = new HashSet<>(dockerHost.additionalIpAddresses());
-        for (Node child : new NodeList(allNodes).childrenOf(dockerHost).asList()) {
-            freeIPAddresses.removeAll(child.ipAddresses());
-        }
-        return freeIPAddresses;
-    }
 }

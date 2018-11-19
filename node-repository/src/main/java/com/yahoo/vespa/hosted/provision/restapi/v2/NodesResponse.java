@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -185,7 +185,7 @@ class NodesResponse extends HttpResponse {
         object.setBool("wantToDeprovision", node.status().wantToDeprovision());
         toSlime(node.history(), object.setArray("history"));
         ipAddressesToSlime(node.ipAddresses(), object.setArray("ipAddresses"));
-        ipAddressesToSlime(node.additionalIpAddresses(), object.setArray("additionalIpAddresses"));
+        ipAddressesToSlime(node.ipAddressPool().asSet(), object.setArray("additionalIpAddresses"));
         node.status().hardwareDivergence().ifPresent(hardwareDivergence -> object.setString("hardwareDivergence", hardwareDivergence));
     }
 

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.google.common.collect.ImmutableSet;
@@ -20,7 +20,6 @@ import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -79,8 +78,8 @@ public class DynamicDockerProvisioningTest {
         addAndAssignNode(application2, "2b", dockerHosts.get(3).hostname(), clusterSpec2, flavor, 1, tester);
 
         // Redeploy both applications (to be agnostic on which hosts are picked as spares)
-        deployapp(application1, clusterSpec1, flavor, tester, 2);
-        deployapp(application2, clusterSpec2, flavor, tester, 2);
+        deployApp(application1, clusterSpec1, flavor, tester, 2);
+        deployApp(application2, clusterSpec2, flavor, tester, 2);
 
         // Assert that we have two spare nodes (two hosts that are don't have allocations)
         Set<String> hostsWithChildren = new HashSet<>();
@@ -89,7 +88,7 @@ public class DynamicDockerProvisioningTest {
                 hostsWithChildren.add(node.parentHostname().get());
             }
         }
-        Assert.assertEquals(4 - tester.provisioner().getSpareCapacityProd(), hostsWithChildren.size());
+        assertEquals(4 - tester.provisioner().getSpareCapacityProd(), hostsWithChildren.size());
 
     }
 
@@ -112,26 +111,26 @@ public class DynamicDockerProvisioningTest {
         // Application 1
         ApplicationId application1 = makeApplicationId("t1", "a1");
         ClusterSpec clusterSpec1 = clusterSpec("myContent.t1.a1");
-        deployapp(application1, clusterSpec1, flavor, tester, 3);
+        deployApp(application1, clusterSpec1, flavor, tester, 3);
 
         // Application 2
         ApplicationId application2 = makeApplicationId("t2", "a2");
         ClusterSpec clusterSpec2 = clusterSpec("myContent.t2.a2");
-        deployapp(application2, clusterSpec2, flavor, tester, 2);
+        deployApp(application2, clusterSpec2, flavor, tester, 2);
 
         // Application 3
         ApplicationId application3 = makeApplicationId("t3", "a3");
         ClusterSpec clusterSpec3 = clusterSpec("myContent.t3.a3");
-        deployapp(application3, clusterSpec3, flavor, tester, 2);
+        deployApp(application3, clusterSpec3, flavor, tester, 2);
 
         // App 2 and 3 should have been allocated to the same nodes - fail one of the parent hosts from there
         String parent = tester.nodeRepository().getNodes(application2).stream().findAny().get().parentHostname().get();
         tester.nodeRepository().failRecursively(parent, Agent.system, "Testing");
 
         // Redeploy all applications
-        deployapp(application1, clusterSpec1, flavor, tester, 3);
-        deployapp(application2, clusterSpec2, flavor, tester, 2);
-        deployapp(application3, clusterSpec3, flavor, tester, 2);
+        deployApp(application1, clusterSpec1, flavor, tester, 3);
+        deployApp(application2, clusterSpec2, flavor, tester, 2);
+        deployApp(application3, clusterSpec3, flavor, tester, 2);
 
         Map<Integer, Integer> numberOfChildrenStat = new HashMap<>();
         for (Node node : dockerHosts) {
@@ -173,7 +172,7 @@ public class DynamicDockerProvisioningTest {
         addAndAssignNode(application1, "1b", dockerHosts.get(1).hostname(), clusterSpec1, flavor, 1, tester);
 
         // Redeploy both applications (to be agnostic on which hosts are picked as spares)
-        deployapp(application1, clusterSpec1, flavor, tester, 2);
+        deployApp(application1, clusterSpec1, flavor, tester, 2);
 
         // Assert that we have two spare nodes (two hosts that are don't have allocations)
         Set<String> hostsWithChildren = new HashSet<>();
@@ -182,7 +181,7 @@ public class DynamicDockerProvisioningTest {
                 hostsWithChildren.add(node.parentHostname().get());
             }
         }
-        Assert.assertEquals(2, hostsWithChildren.size());
+        assertEquals(2, hostsWithChildren.size());
     }
 
     @Test(expected = OutOfCapacityException.class)
@@ -271,12 +270,28 @@ public class DynamicDockerProvisioningTest {
         tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, flavor.canonicalName());
     }
 
+    @Test
+    public void provision_dual_stack_containers() {
+        ProvisioningTester tester = new ProvisioningTester(new Zone(Environment.prod, RegionName.from("us-east")), flavorsConfig());
+        tester.makeReadyNodes(2, "host-large", NodeType.host, 10, true);
+        deployZoneApp(tester);
+
+        ApplicationId application = tester.makeApplicationId();
+        Flavor flavor = tester.nodeRepository().getAvailableFlavors().getFlavorOrThrow("d-3");
+        List<HostSpec> hosts = tester.prepare(application, clusterSpec("myContent.t1.a1"), 2, 1, flavor.canonicalName());
+        tester.activate(application, hosts);
+
+        List<Node> activeNodes = tester.nodeRepository().getNodes(application);
+        assertEquals(ImmutableSet.of("::12", "127.0.127.12"), activeNodes.get(0).ipAddresses());
+        assertEquals(ImmutableSet.of("::2", "127.0.127.2"), activeNodes.get(1).ipAddresses());
+    }
+
     private ApplicationId makeApplicationId(String tenant, String appName) {
         return ApplicationId.from(tenant, appName, "default");
     }
 
-    private void deployapp(ApplicationId id, ClusterSpec spec, Flavor flavor, ProvisioningTester tester, int nodecount) {
-        List<HostSpec> hostSpec = tester.prepare(id, spec, nodecount, 1, flavor.canonicalName());
+    private void deployApp(ApplicationId id, ClusterSpec spec, Flavor flavor, ProvisioningTester tester, int nodeCount) {
+        List<HostSpec> hostSpec = tester.prepare(id, spec, nodeCount, 1, flavor.canonicalName());
         tester.activate(id, new HashSet<>(hostSpec));
     }
 
@@ -338,6 +353,6 @@ public class DynamicDockerProvisioningTest {
     }
 
     private ClusterSpec clusterSpec(String clusterId) {
-        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.100"), false);
+        return ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from(clusterId), Version.fromString("6.42"), false);
     }
 }

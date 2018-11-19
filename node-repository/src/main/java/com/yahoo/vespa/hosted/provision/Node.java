@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
 import com.google.common.collect.ImmutableSet;
@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.Status;
+import com.yahoo.vespa.hosted.provision.node.IP;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -30,7 +31,7 @@ public final class Node {
 
     private final String id;
     private final Set<String> ipAddresses;
-    private final Set<String> additionalIpAddresses;
+    private final IP.AddressPool ipAddressPool;
     private final String hostname;
     private final String openStackId;
     private final Optional<String> parentHostname;
@@ -46,24 +47,24 @@ public final class Node {
     private Optional<Allocation> allocation;
 
     /** Temporary method until we can merge it with the other create method */
-    public static Node createDockerNode(String openStackId, Set<String> ipAddresses, Set<String> additionalIpAddresses, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
-        return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, Status.initial(), State.reserved,
+    public static Node createDockerNode(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
+        return new Node(openStackId, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, Status.initial(), State.reserved,
             Optional.empty(), History.empty(), type);
     }
 
     /** Creates a node in the initial state (reserved for docker containers, provisioned otherwise) */
-    public static Node create(String openStackId, Set<String> ipAddresses, Set<String> additionalIpAddresses, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
-        return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
+    public static Node create(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname, Flavor flavor, NodeType type) {
+        return new Node(openStackId, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, Status.initial(), State.provisioned,
                 Optional.empty(), History.empty(), type);
     }
 
     /** Do not use. Construct nodes by calling {@link NodeRepository#createNode} */
-    private Node(String openStackId, Set<String> ipAddresses, Set<String> additionalIpAddresses, String hostname, Optional<String> parentHostname,
+    private Node(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
                  Flavor flavor, Status status, State state, Allocation allocation, History history, NodeType type) {
-        this(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status, state, Optional.of(allocation), history, type);
+        this(openStackId, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status, state, Optional.of(allocation), history, type);
     }
 
-    public Node(String openStackId, Set<String> ipAddresses, Set<String> additionalIpAddresses, String hostname, Optional<String> parentHostname,
+    public Node(String openStackId, Set<String> ipAddresses, Set<String> ipAddressPool, String hostname, Optional<String> parentHostname,
                 Flavor flavor, Status status, State state, Optional<Allocation> allocation,
                 History history, NodeType type) {
         Objects.requireNonNull(openStackId, "A node must have an openstack id");
@@ -79,7 +80,7 @@ public final class Node {
 
         this.id = hostname;
         this.ipAddresses = ImmutableSet.copyOf(ipAddresses);
-        this.additionalIpAddresses = ImmutableSet.copyOf(additionalIpAddresses);
+        this.ipAddressPool = new IP.AddressPool(this, ipAddressPool);
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.openStackId = openStackId;
@@ -100,8 +101,9 @@ public final class Node {
     /** Returns the IP addresses of this node */
     public Set<String> ipAddresses() { return ipAddresses; }
 
-    /** Returns the additional IP addresses of this node (used to 'child' nodes) */
-    public Set<String> additionalIpAddresses() { return additionalIpAddresses; }
+    /** Returns the IP address pool available on this node. These IP addresses are available for use by containers
+     * running on this node */
+    public IP.AddressPool ipAddressPool() { return ipAddressPool; }
 
     /** Returns the host name of this node */
     public String hostname() { return hostname; }
@@ -165,28 +167,28 @@ public final class Node {
 
     /** Returns a node with the status assigned to the given value */
     public Node with(Status status) {
-        return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a node with the type assigned to the given value */
     public Node with(NodeType type) {
-        return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a node with the flavor assigned to the given value */
     public Node with(Flavor flavor) {
-        return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this with the reboot generation set to generation */
     public Node withReboot(Generation generation) {
-        return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status.withReboot(generation), state,
+        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status.withReboot(generation), state,
                         allocation, history, type);
     }
 
     /** Returns a copy of this with the openStackId set */
     public Node withOpenStackId(String openStackId) {
-        return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this with a history record saying it was detected to be down at this instant */
@@ -210,24 +212,24 @@ public final class Node {
      * Do not use this to allocate a node.
      */
     public Node with(Allocation allocation) {
-        return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
     /** Returns a copy of this node with the IP addresses set to the given value. */
     public Node withIpAddresses(Set<String> ipAddresses) {
-        return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status, state,
-                allocation, history, type);
+        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state,
+                        allocation, history, type);
     }
 
-    /** Returns a copy of this node with the additional IP addresses set to the given value. */
-    public Node withAdditionalIpAddresses(Set<String> additionalIpAddresses) {
-        return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status, state,
-                allocation, history, type);
+    /** Returns a copy of this node with IP address pool set to the given value. */
+    public Node withIpAddressPool(Set<String> ipAddressPool) {
+        return new Node(openStackId, ipAddresses, ipAddressPool, hostname, parentHostname, flavor, status, state,
+                        allocation, history, type);
     }
 
     /** Returns a copy of this node with the parent hostname assigned to the given value. */
     public Node withParentHostname(String parentHostname) {
-        return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, Optional.of(parentHostname), flavor, status, state,
+        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, Optional.of(parentHostname), flavor, status, state,
                         allocation, history, type);
     }
 
@@ -242,22 +244,22 @@ public final class Node {
 
     /** Returns a copy of this node with the given history. */
     public Node with(History history) {
-        return new Node(openStackId, ipAddresses, additionalIpAddresses, hostname, parentHostname, flavor, status, state, allocation, history, type);
+        return new Node(openStackId, ipAddresses, ipAddressPool.asSet(), hostname, parentHostname, flavor, status, state, allocation, history, type);
     }
 
-    private void requireNonEmptyString(Optional<String> value, String message) {
+    private static void requireNonEmptyString(Optional<String> value, String message) {
         Objects.requireNonNull(value, message);
         if (value.isPresent())
             requireNonEmptyString(value.get(), message);
     }
 
-    private void requireNonEmptyString(String value, String message) {
+    private static void requireNonEmptyString(String value, String message) {
         Objects.requireNonNull(value, message);
         if (value.trim().isEmpty())
             throw new IllegalArgumentException(message + ", but was '" + value + "'");
     }
 
-    private void requireIpAddresses(Set<String> values, String message) {
+    private static void requireIpAddresses(Set<String> values, String message) {
         if (values.isEmpty()) {
             throw new IllegalArgumentException(message);
         }

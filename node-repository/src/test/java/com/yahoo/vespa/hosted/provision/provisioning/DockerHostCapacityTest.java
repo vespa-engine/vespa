@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.Flavor;
@@ -10,7 +10,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -124,11 +124,11 @@ public class DockerHostCapacityTest {
 
     private Set<String> generateIPs(int start, int count) {
         // Allow 4 containers
-        Set<String> additionalIps = new HashSet<>();
+        Set<String> ipAddressPool = new LinkedHashSet<>();
         for (int i = start; i < (start + count); i++) {
-            additionalIps.add("::" + i);
+            ipAddressPool.add("::" + i);
         }
-        return additionalIps;
+        return ipAddressPool;
     }
 
 }
