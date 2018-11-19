@@ -29,7 +29,7 @@ public enum JobType {
     productionAwsUsEast1b  ("production-aws-us-east-1b"   , ZoneId.from("prod"   , "aws-us-east-1b") , null                                                          ),
     productionCdAwsUsEast1a("production-cd-aws-us-east-1a", null                                                       , ZoneId.from("prod"    , "cd-aws-us-east-1a")),
     productionCdUsCentral1 ("production-cd-us-central-1"  , null                                                       , ZoneId.from("prod"    , "cd-us-central-1")  ),
-    productionCdUsCentral2 ("production-cd-us-central-2"  , null                                                       , ZoneId.from("prod"    , "cd-us-central-2")  );
+    productionCdUsWest1    ("production-cd-us-west-1"     , null                                                       , ZoneId.from("prod"    , "cd-us-west-1")     );
 
     private final String jobName;
     private final ImmutableMap<SystemName, ZoneId> zones;
