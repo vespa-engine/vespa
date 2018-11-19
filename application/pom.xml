@@ -129,6 +129,12 @@
       <groupId>xerces</groupId>
       <artifactId>xercesImpl</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <scope>test</scope>
+    </dependency>
+
 
     <!-- These dependencies are necessary in test classpath when using jdisc_http_filters -->
     <dependency>
