@@ -286,6 +286,15 @@ public class UriPatternTestCase {
                         "scheme://host:69/foo/bar");
     }
 
+    @Test
+    public void requireThatUrisWithImplicitPortFromSchemeMatchesBindingWithExplicitPort() {
+        UriPattern httpPattern = new UriPattern("http://host:80/path");
+        assertMatch(httpPattern, "http://host/path", NO_GROUPS);
+
+        UriPattern httpsPattern = new UriPattern("https://host:443/path");
+        assertMatch(httpsPattern, "https://host/path", NO_GROUPS);
+    }
+
     private static void assertIllegalPattern(String uri) {
         try {
             new UriPattern(uri);

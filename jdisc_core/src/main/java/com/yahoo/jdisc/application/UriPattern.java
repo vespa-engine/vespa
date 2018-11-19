@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
  * </ul>
  *
  * @author Simon Thoresen Hult
+ * @author bjorncs
  */
 public class UriPattern implements Comparable<UriPattern> {
 
@@ -86,7 +87,7 @@ public class UriPattern implements Comparable<UriPattern> {
         if (pathMatch == null) {
             return null;
         }
-        if (port > 0 && port != uri.getPort()) {
+        if (port > 0 && port != resolvePortComponent(uri)) {
             return null;
         }
         // Match scheme before host because it has a higher chance of differing (e.g. http versus https)
@@ -155,6 +156,20 @@ public class UriPattern implements Comparable<UriPattern> {
             return 0;
         }
         return Integer.parseInt(str);
+    }
+
+    private static int resolvePortComponent(URI uri) {
+        int rawPort = uri.getPort();
+        return rawPort != -1 ? rawPort : resolvePortFromScheme(uri.getScheme());
+    }
+
+    private static int resolvePortFromScheme(String scheme) {
+        if (scheme == null) return -1;
+        switch (scheme) {
+            case "http": return 80;
+            case "https": return 443;
+            default: return -1;
+        }
     }
 
     /**
