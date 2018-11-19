@@ -134,7 +134,7 @@ public class NodePrioritizer {
 
             log.log(LogLevel.DEBUG, "Trying to add new Docker node on " + node);
 
-            Optional<IP.Allocation> allocation = node.ipAddressPool().findAllocation(new NodeList(allNodes));
+            Optional<IP.Allocation> allocation = node.ipAddressPool().findAllocation(list);
             if (!allocation.isPresent()) continue; // No free addresses in this pool
 
             String hostname;
