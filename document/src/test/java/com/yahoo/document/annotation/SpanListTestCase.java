@@ -55,7 +55,7 @@ public class SpanListTestCase extends AbstractTypesTest {
         }
         SpanList spanList2;
         {
-            DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(man, buffer);
+            DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(man, buffer);
             StringFieldValue value = new StringFieldValue();
             deserializer.read(null, value);
             spanList2 = (SpanList)value.getSpanTree("bababa").getRoot();
