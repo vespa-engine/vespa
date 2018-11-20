@@ -345,38 +345,6 @@ public class Document extends StructuredFieldValue {
         serialize((DocumentWriter)data);
     }
 
-    @SuppressWarnings("deprecation")
-    @Deprecated // remove before Vespa 8
-    public void serializeHeader(Serializer data) throws SerializationException {
-        if (data instanceof DocumentWriter) {
-            if (data instanceof com.yahoo.document.serialization.VespaDocumentSerializer42) {
-                ((com.yahoo.document.serialization.VespaDocumentSerializer42)data).setHeaderOnly(true);
-            }
-            serialize((DocumentWriter)data);
-        } else if (data instanceof BufferSerializer) {
-            serialize(DocumentSerializerFactory.create42(((BufferSerializer) data).getBuf(), true));
-        } else {
-            DocumentSerializer fw = DocumentSerializerFactory.create42(new GrowableByteBuffer(), true);
-            serialize(fw);
-            data.put(null, fw.getBuf().getByteBuffer());
-        }
-    }
-
-    @Deprecated // remove before Vespa 8
-    public void serializeBody(Serializer data) throws SerializationException {
-        if (getBody().getFieldCount() > 0) {
-            if (data instanceof FieldWriter) {
-                getBody().serialize(new Field("body", getBody().getDataType()), (FieldWriter) data);
-            } else if (data instanceof BufferSerializer) {
-                getBody().serialize(new Field("body", getBody().getDataType()), DocumentSerializerFactory.create42(((BufferSerializer) data).getBuf()));
-            } else {
-                DocumentSerializer fw = DocumentSerializerFactory.create42(new GrowableByteBuffer());
-                getBody().serialize(new Field("body", getBody().getDataType()), fw);
-                data.put(null, fw.getBuf().getByteBuffer());
-            }
-        }
-    }
-
     @Override
     public DocumentType getDataType() {
         return (DocumentType)super.getDataType();

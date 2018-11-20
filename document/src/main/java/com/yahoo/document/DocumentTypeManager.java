@@ -273,12 +273,6 @@ public class DocumentTypeManager {
         return new Document(data);
     }
 
-    @Deprecated // TODO remove before Vespa 8
-    public Document createDocument(GrowableByteBuffer header, GrowableByteBuffer body) {
-        DocumentDeserializer data = DocumentDeserializerFactory.create42(this, header, body);
-        return new Document(data);
-    }
-
     /**
      * Returns a read only view of the registered data types
      *
