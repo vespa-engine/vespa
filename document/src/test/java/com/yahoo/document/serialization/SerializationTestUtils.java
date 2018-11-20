@@ -33,7 +33,7 @@ public class SerializationTestUtils {
 
     public static Document deserializeDocument(byte[] buf, TestDocumentFactory factory) {
         Document document = factory.createDocument();
-        DocumentDeserializerFactory.create42(factory.typeManager(), new GrowableByteBuffer(ByteBuffer.wrap(buf))).read(document);
+        DocumentDeserializerFactory.create6(factory.typeManager(), new GrowableByteBuffer(ByteBuffer.wrap(buf))).read(document);
         return document;
     }
 

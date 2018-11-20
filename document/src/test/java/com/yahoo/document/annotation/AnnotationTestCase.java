@@ -119,7 +119,7 @@ public class AnnotationTestCase extends AbstractTypesTest {
         serializer.write(annotation);
         buffer.flip();
 
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create42(man, buffer);
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(man, buffer);
         Annotation annotation2 = new Annotation();
         deserializer.read(annotation2);
 
